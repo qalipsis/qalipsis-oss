@@ -1,5 +1,6 @@
 package io.evolue.api.java.annotations;
 
+import io.evolue.api.java.components.TestDataSource;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -8,15 +9,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Specifies a parameter which should be fed with the data provided to the assertion.
+ * Specifies a serializer of data data.
  *
- * @see io.evolue.api.java.components.AssertionDataSource
- * @see Assertion
+ * @see TestDataSource
+ * @see DataSourceDescriptor
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Inherited
 @Documented
-public @interface AssertionData {
+public @interface ConverterDescriptor {
 
 }

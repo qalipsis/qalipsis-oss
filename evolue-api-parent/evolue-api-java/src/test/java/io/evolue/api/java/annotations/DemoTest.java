@@ -1,18 +1,46 @@
 package io.evolue.api.java.annotations;
 
+import io.evolue.api.java.aware.SelectorAware;
+import io.evolue.api.java.aware.TagsAware;
+import io.evolue.api.java.aware.TargetAware;
 import io.evolue.api.java.components.AssertionDataSource;
+import io.evolue.api.java.components.Converter;
 import io.evolue.api.java.components.PaceStrategy;
+import io.evolue.api.java.components.Request;
+import io.evolue.api.java.components.Response;
 import io.evolue.api.java.components.TestDataSource;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class DemoTest {
 
+	@ConverterDescriptor
+	public static class DeviceSerializer implements Converter<Device, byte[]> {
+
+	}
+
 	/**
 	 * Class generating data for the test to be run.
 	 */
-	@DataSourceDescriptor(value = "uuidGenerator")
-	public static class MyDataSource implements TestDataSource<UUID> {
+	@DataSourceDescriptor(value = "uuidGenerator-us")
+	public static class MyUsDataSource implements TestDataSource<UUID>, TargetAware {
+
+		@Override
+		public boolean hasNext() {
+			return true;
+		}
+
+		@Override
+		public UUID next() {
+			return UUID.randomUUID();
+		}
+	}
+
+	/**
+	 * Class generating data for the test to be run.
+	 */
+	@DataSourceDescriptor(value = "uuidGenerator-eu")
+	public static class MyEuDataSource implements TestDataSource<UUID>, TargetAware {
 
 		@Override
 		public boolean hasNext() {
@@ -29,7 +57,7 @@ public class DemoTest {
 	 * Class fetching the data used for assertion.
 	 */
 	@DataSourceDescriptor(value = "lastCreatedDevice")
-	public static class LastCreatedDeviceDataSource implements AssertionDataSource<Device> {
+	public static class LastCreatedDeviceDataSource implements AssertionDataSource<Device>, TagsAware, SelectorAware {
 
 	}
 
@@ -70,21 +98,43 @@ public class DemoTest {
 		}
 	}
 
-	@Scenario(value = "my-simple-test", machines = 10, selectors = {"zone:eu,us"})
-	public static class SimpleTest {
+	public abstract static class SimpleTest {
 
-		@TestDescriptor(
+		@Action(
 				value = "createObject",
 				iterations = 0,
-				paceStrategy = "objectCreationPace"
+				paceStrategy = "objectCreationPace",
+				selectors = {"zone:eu"}
 		)
-		public Device createObject(@Data("uuidGenerator") final UUID deviceUuid) {
+		public Request createEuObject(@Data("uuidGenerator-eu") final UUID deviceUuid) {
 			final Device device = new Device(deviceUuid);
-			// Do something here to trigger the test.
-			return device;
+			/*return HTTP.scheme("https")
+					.host("")
+					.header("","")
+					.post("/", device)
+					.loadJs(true);
+					.responseAssertion(response -> {});*/
+			return null;
 		}
 
-		@AssertionDescriptor(
+		@Action(
+				value = "createObject",
+				iterations = 0,
+				paceStrategy = "objectCreationPace",
+				selectors = {"zone:us"}
+		)
+		public Request createUsObject(@Data("uuidGenerator-us") final UUID deviceUuid) {
+			final Device device = new Device(deviceUuid);
+			/*return HTTP.scheme("https")
+					.host("")
+					.header("","")
+					.post("/", device)
+					.loadJs(true);
+					.responseAssertion(response -> {});*/
+			return null;
+		}
+
+		@Assertion(
 				value = "assertObjectCreation",
 				of = "createObject",
 				timeout = 5,
@@ -93,17 +143,38 @@ public class DemoTest {
 				dataKeyExpression = "uuid"
 		)
 		public long assertObjectCreation(@TestData final UUID deviceUuid, @TestReturn final Device sentDevice,
+				final Response response, final Request request,
 				@Data("LastCreatedDeviceDataSource") final Device actuallyCreatedDevice) {
 
 			// Run some assertions here.
 			return actuallyCreatedDevice.savedTimestamp;
 		}
 
-		@TestDescriptor(afterEachSuccess = "assertObjectCreation")
+		@Action(afterEachSuccess = "assertObjectCreation")
 		public void useDeviceCreationTimestamp(@TestData final UUID deviceUuid,
-				@AssertionData final long deviceCreationTimestamp) {
+				@AssertionResult final long deviceCreationTimestamp) {
 
 			// Do some operation with the device creation timestamp.
 		}
 	}
+
+	@Scenario(
+			value = "my-simple-test",
+			machines = 10,
+			selectors = {"zone:eu"},
+			rampUpStrategy = "",
+			sessionHolder = ""
+	)
+	public static class EuSimpleTest extends SimpleTest {
+
+	}
+
+	@Scenario(
+			value = "my-simple-test",
+			machines = 100,
+			selectors = {"zone:us"},
+			rampUpStrategy = "",
+			sessionHolder = ""
+	)
+	public static class UsSimpleTest extends SimpleTest{}
 }

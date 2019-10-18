@@ -15,13 +15,18 @@ import java.util.concurrent.TimeUnit;
 @Target({ElementType.METHOD})
 @Inherited
 @Documented
-public @interface AssertionDescriptor {
+public @interface Assertion {
 
 	/**
 	 * Name of assertion. If no value is supplied, the name will be created from the annotated class and its parent
 	 * scenario.
 	 */
 	String value() default "";
+
+	/**
+	 * Selectors to determine the agents on which the assertion has to be executed.
+	 */
+	String[] selectors() default {};
 
 	/**
 	 * Timeout after which the assertion is cancelled and considered failed.
@@ -36,7 +41,7 @@ public @interface AssertionDescriptor {
 	/**
 	 * Name of the tests that have to be asserted.
 	 *
-	 * @see TestDescriptor#value
+	 * @see Action#value
 	 */
 	String of();
 

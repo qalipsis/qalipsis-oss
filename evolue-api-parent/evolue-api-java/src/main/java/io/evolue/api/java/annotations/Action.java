@@ -14,13 +14,18 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @Inherited
 @Documented
-public @interface TestDescriptor {
+public @interface Action {
 
 	/**
 	 * Name of test. If no value is supplied, the name will be created from the annotated class and its parent
 	 * scenario.
 	 */
 	String value() default "";
+
+	/**
+	 * Selectors to determine the agents on which the test has to be executed.
+	 */
+	String[] selectors() default {};
 
 	/**
 	 * Number of successive iterations. Values strictly lower than 1 are considered infinite.

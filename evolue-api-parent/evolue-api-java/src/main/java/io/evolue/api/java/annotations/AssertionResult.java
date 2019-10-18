@@ -17,6 +17,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.PARAMETER})
 @Inherited
 @Documented
-public @interface AssertionData {
+public @interface AssertionResult {
 
 }

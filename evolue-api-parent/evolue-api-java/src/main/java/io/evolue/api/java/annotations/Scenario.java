@@ -31,7 +31,7 @@ public @interface Scenario {
 	 * When set to true, the machine running a test will be interrupted if a test execution is interrupted before
 	 * expected end.
 	 *
-	 * @see TestDescriptor#failureBeforeInterrupt
+	 * @see Action#failureBeforeInterrupt
 	 */
 	boolean interruptOnTestFailure() default false;
 
@@ -39,12 +39,12 @@ public @interface Scenario {
 	 * When set to true, the machine running a test will be interrupted if an assertion execution is interrupted before
 	 * expected end.
 	 *
-	 * @see AssertionDescriptor#failureBeforeInterrupt
+	 * @see Assertion#failureBeforeInterrupt
 	 */
 	boolean interruptOnAssertionFailure() default false;
 
 	/**
-	 * Selectors to determine the agents on which the scenario have to be executed.
+	 * Selectors to determine the agents on which the scenario has to be executed.
 	 */
 	String[] selectors() default {};
 
@@ -52,4 +52,18 @@ public @interface Scenario {
 	 * Tags to add to the metrics and results.
 	 */
 	String[] tags() default {};
+
+	/**
+	 * Name or alias of the ramp-up strategy to define the pace of start of all the machines.
+	 *
+	 * // TODO Interface and annotation
+	 */
+	String rampUpStrategy() default "";
+
+	/**
+	 * Name or alias of the bean in charge of opening, maintaining and closing the machine session.
+	 *
+	 * // TODO Interface and annotation
+	 */
+	String sessionHolder() default "";
 }
