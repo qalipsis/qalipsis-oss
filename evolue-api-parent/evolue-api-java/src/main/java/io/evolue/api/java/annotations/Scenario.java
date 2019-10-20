@@ -55,15 +55,11 @@ public @interface Scenario {
 
 	/**
 	 * Name or alias of the ramp-up strategy to define the pace of start of all the machines.
-	 *
-	 * // TODO Interface and annotation
 	 */
 	String rampUpStrategy() default "";
 
 	/**
 	 * Name or alias of the bean in charge of opening, maintaining and closing the machine session.
-	 *
-	 * // TODO Interface and annotation
 	 */
 	String sessionHolder() default "";
 }
