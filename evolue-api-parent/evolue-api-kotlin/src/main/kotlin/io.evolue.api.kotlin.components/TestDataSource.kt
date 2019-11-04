@@ -1,6 +1,6 @@
-package components
+package io.evolue.api.kotlin.components
 
-interface DataSource<T> {
+interface TestDataSource<T> {
 
     suspend fun reset()
 

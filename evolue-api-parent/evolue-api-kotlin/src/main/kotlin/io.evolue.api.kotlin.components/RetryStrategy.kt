@@ -1,6 +1,6 @@
-package components
+package io.evolue.api.kotlin.components
 
 interface RetryStrategy {
 
-    fun canRetry(): Boolean
+    suspend fun canRetry(): Boolean
 }

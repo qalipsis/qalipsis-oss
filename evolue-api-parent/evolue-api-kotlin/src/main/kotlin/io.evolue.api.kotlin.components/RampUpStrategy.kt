@@ -1,6 +1,6 @@
 package io.evolue.api.kotlin.components
 
-interface PaceStrategy {
+interface RampUpStrategy {
 
     suspend fun next()
 }

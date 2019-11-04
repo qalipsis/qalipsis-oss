@@ -17,6 +17,8 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
-
+    implementation(
+            kotlin("stdlib")
+    )
+    implementation("com.willowtreeapps.assertk:assertk-jvm:0.20")
 }
