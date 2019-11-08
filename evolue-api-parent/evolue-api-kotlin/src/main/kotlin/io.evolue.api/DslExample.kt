@@ -43,10 +43,10 @@ class MyScenario : ScenarioSpec("add to cart", {
                         }
                         .assert {
                             timeout(Duration.ofMillis(3000))
-                            verify { (user, event), response, items, metrics ->
-                                assertThat(metrics.duration).isLessThanOrEqualTo(Duration.ofMillis(300))
-                                assertThat(items).isNotEmpty()
-                            }
+                                    .verify { (user, event), response, items, metrics ->
+                                        assertThat(metrics.duration).isLessThanOrEqualTo(Duration.ofMillis(300))
+                                        assertThat(items).isNotEmpty()
+                                    }
                                     .map { (user, event), response, items ->
                                         items.size
                                     }.combineAndThen("Pay", CsvTestDataSource<CreditCard>("gcs://repository/creditcards.csv")) {
@@ -67,10 +67,10 @@ class MyScenario : ScenarioSpec("add to cart", {
             }
             .assert("User's cart should be loaded") {
                 timeout(Duration.ofMillis(3000))
-                verify { user, response, items, metrics ->
-                    assertThat(metrics.duration).isLessThanOrEqualTo(Duration.ofMillis(300))
-                    assertThat(items).isNotEmpty()
-                }
+                        .verify { user, response, items, metrics ->
+                            assertThat(metrics.duration).isLessThanOrEqualTo(Duration.ofMillis(300))
+                            assertThat(items).isNotEmpty()
+                        }
                         // Here is the lottery!
                         .map { user, httpResponse, items -> Math.random() }
                         .then("Did I win?") {
