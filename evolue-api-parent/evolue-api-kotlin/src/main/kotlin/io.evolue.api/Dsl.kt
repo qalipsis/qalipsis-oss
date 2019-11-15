@@ -1,269 +1,145 @@
 package io.evolue.api
 
-import io.evolue.api.kotlin.components.AssertionDataSource
-import io.evolue.api.kotlin.components.Request
-import io.evolue.api.kotlin.components.TestDataSource
+import io.mockk.mockk
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.stream.Stream
 
-/**
- * A scenario defines the context of the execution of the machines for a given use case.
- *
- * @param S the type of the state machine, aka receiver of the test operations.
- * @param I the type of the input of the datasource.
- */
-open class ScenarioSpec(val name: String, init: ScenarioSpec.() -> Unit) {
 
-    /**
-     * Test cases to execute in the given scenario.
-     */
-    private val actions = mutableListOf<ActionSpec<out Any?, out Any?, out Any?>>()
+interface ObservableSpec<T> {
 
-    /**
-     * Creates and declares a new test case to execute in the parent scenario.
-     */
-    fun action(name: String = "${this.name}.test-${this.actions.size + 1}"): ActionSpec<Void, Any?, Void> {
-        return ActionSpec(name)
-    }
+    // Only forward data matching the filter.
+    fun filter(rule: (input: T) -> Boolean): ObservableSpec<T>
+
+    // Values not matching the filter trigger errors.
+    fun validate(rule: (input: T) -> Boolean): ObservableSpec<T>
+
+    // Do something with the potential errors from validation or processing.
+    fun catchError(e: Throwable): ObservableSpec<T>
+
+    // Convert an iterable input (T being iterable) into a stream.
+    fun <V> stream(rule: (input: T) -> Stream<V>): ObservableSpec<V>
+
+    fun <V> mapEntry(rule: (input: T) -> V): ObservableSpec<V>
+
+    fun delay(value: Long): ObservableSpec<T>
+
+    fun delay(value: Duration): ObservableSpec<T>
+
+    // Wait for the observable being completed.
+    fun complete(): ObservableSpec<out Iterable<T>>
+
+    // Correlate the observable with another one to provide data from two different sources.
+    fun <K, V> correlate(observable: ObservableSpec<V>, leftKey: (input: T) -> K, rightKey: (input: V) -> K): ObservableSpec<Pair<T, V>>
 }
 
-/**
- * Wrapper class to pass the data related to the execution of a test.
- */
-data class TestExecutionContext(val iterationIndex: Long, val elapsedTime: Duration)
+interface ActionSpec<T, R, O> : ActionObservableSpec<T, R, O> {
 
-interface ExecutableSpec
+    var timeout: Duration
 
-/**
- * An action describes a test case to execute in a parent scenario.
- *
- * @param S the type of the state machine, aka receiver of the test operations.
- * @param I the type of the input of the datasource.
- */
-class ActionSpec<I, R, O>(val name: String) : ExecutableSpec {
+    var tags: Map<String, Any>
 
-    internal var dataSource: TestDataSource<I>? = null
+    var selector: List<String>
 
-    internal var requestBuilder: (input: I, context: TestExecutionContext) -> Request<Any?>? = { _, _ -> null }
+    fun configure(init: ActionSpec<T, R, O>.() -> Unit): ActionObservableSpec<T, R, O>
 
-    internal var entitySupplier: ((input: I, response: R) -> O)? = null
-
-    internal var mapper: ((input: I, output: O) -> Any?)? = null
-
-    internal var checkBeforeConversion: (response: R) -> Boolean? = { _ -> true }
-
-    internal var followers = mutableListOf<Follower>()
-
-    fun <D> with(dataSource: TestDataSource<D>): ActionSpec<D, R, O> {
-        this as ActionSpec<D, R, O>
-        this.dataSource = dataSource
-        return this
-    }
-
-    fun <U> request(requestBuilder: (input: I, context: TestExecutionContext) -> Request<U>?): ActionSpec<I, U, O> {
-        this.requestBuilder = requestBuilder
-        return this as ActionSpec<I, U, O>
-    }
-
-    /**
-     * Validates the response before converting it into an entity.
-     */
-    fun check(checkBeforeConversion: (response: R) -> Boolean): ActionSpec<I, R, O> {
-        this.checkBeforeConversion = checkBeforeConversion
-        return this
-    }
-
-    /**
-     * Defines the action to convert the response into an output.
-     */
-    fun <U> entity(conversion: (response: R) -> U): ActionSpec<I, R, U> {
-        this.entitySupplier = entitySupplier
-        return this as ActionSpec<I, R, U>
-    }
-
-    /**
-     * Convert the output to a different entity.
-     */
-    fun <V> map(conversion: (input: I, output: O) -> V?): ActionSpec<I, R, V> {
-        this.mapper = mapper
-        return this as ActionSpec<I, R, V>
-    }
-
-    /**
-     * Add another action as a follower.
-     */
-    fun then(name: String, init: ActionSpec<O, out Any?, out Any?>.() -> Unit): ActionSpec<I, R, O> {
-        val action = ActionSpec<O, Any?, Void>(name)
-        followers.add(Follower(action))
-        action.init()
-        return this
-    }
-
-    /**
-     * Add another action as follower after a delay.
-     */
-    fun then(name: String, delay: Duration = Duration.ZERO, init: ActionSpec<O, out Any?, Unit>.() -> Unit): ActionSpec<I, R, O> {
-        val action = ActionSpec<O, Any?, Unit>(name)
-        followers.add(Follower(action, delay))
-        action.init()
-        return this
-    }
-
-    /**
-     * Add another action combined with a datasource as a follower.
-     */
-    fun <U> combineAndThen(name: String, dataSource: TestDataSource<U>, init: ActionSpec<Pair<O, U>, out Any?, Unit>.() -> Unit): ActionSpec<I, R, O> {
-        val action = ActionSpec<Pair<O, U>, Unit, Unit>(name)
-        followers.add(Follower(action))
-        action.with(dataSource)
-        action.init()
-        return this
-    }
-
-    /**
-     * Add another action combined with a datasource as follower after a delay.
-     */
-    fun <U> combineAndThen(name: String, delay: Duration = Duration.ZERO, dataSource: TestDataSource<U>, init: ActionSpec<Triple<I, O, U>, out Any?, out Any?>.() -> Unit): ActionSpec<I, R, O> {
-        val action = ActionSpec<Triple<I, O, U>, Any?, Void>(name)
-        followers.add(Follower(action, delay))
-        action.with(dataSource)
-        action.init()
-        return this
-    }
-
-    /**
-     * Add an assertion as a follower.
-     */
-    fun assert(name: String, init: AssertionSpec<I, R, O, Unit>.() -> Unit): ActionSpec<I, R, O> {
-        val assertion = AssertionSpec<I, R, O, Unit>(name)
-        followers.add(Follower(assertion))
-        assertion.init()
-        return this
-    }
-
-    /**
-     * Add an assertion as a follower.
-     */
-    fun correlate(name: String, init: CorrelationSpec<I, Unit, R, O>.() -> Unit): ActionSpec<I, R, O> {
-        val matching = CorrelationSpec<I, Unit, R, O>(name)
-        matching.init()
-        followers.add(Follower(matching.assertion))
-        return this
-    }
 }
 
-/**
- * An action describes a test case to execute in a parent scenario.
- *
- * @param S the type of the state machine, aka receiver of the test operations.
- * @param I the type of the input of the datasource.
- */
-class CorrelationSpec<I, U, R, O>(val name: String) {
+interface AssertionSpec<I, AI, AR, AO, O> : AssertionObservableSpec<I, AI, AR, AO, O> {
 
-    internal var dataSource: AssertionDataSource<U>? = null
+    fun configure(init: AssertionSpec<I, AI, AR, AO, O>.() -> Unit): AssertionObservableSpec<I, AI, AR, AO, O>
 
-    internal var dataSourceKeyExtractor: ((U?) -> Any?)? = null
-
-    internal var actionKeyExtractor: ((I?, R?, O?) -> Any?)? = null
-
-    internal val assertion = AssertionSpec<Pair<out I, out U>, R, O, Unit>(name)
-
-    fun <D> with(dataSource: AssertionDataSource<D>): CorrelationSpec<I, D, R, O> {
-        this as CorrelationSpec<I, D, R, O>
-        this.dataSource = dataSource
-        return this
-    }
-
-    fun key(dataSourceKeyExtractor: (U?) -> Any?): CorrelationSpec<I, U, R, O> {
-        this.dataSourceKeyExtractor = dataSourceKeyExtractor
-        return this
-    }
-
-    fun actionKey(actionKeyExtractor: (I?, R?, O?) -> Any?): CorrelationSpec<I, U, R, O> {
-        this.actionKeyExtractor = actionKeyExtractor
-        return this
-    }
-
-    fun assert(init: AssertionSpec<Pair<I, U>, R, O, Unit>.() -> Unit): AssertionSpec<Pair<I, U>, R, O, Unit> {
-        assertion.init()
-        return assertion
-    }
 }
 
-/**
- * An action describes a test case to execute in a parent scenario.
- *
- * @param S the type of the state machine, aka receiver of the test operations.
- * @param I the type of the input of the datasource.
- */
-class AssertionSpec<I, R, O, Z>(val name: String) : ExecutableSpec {
+interface ActionObservableSpec<T, R, O> : ObservableSpec<ActionOutput<T, R, O>> {
 
-    internal var timeout = Duration.ZERO
+    fun <V, W> action(name: String, request: Request<Pair<T, O>, V, W>): ActionObservableSpec<Pair<T, O>, V, W>
 
-    internal var supplier: ((I, R, O, Metrics) -> Unit)? = null
+    fun <V, W> action(name: String, requestBuilder: (input: T, output: O) -> Request<Pair<T, O>, V, W>): ActionSpec<Pair<T, O>, V, W>
 
-    internal var mapper: ((I, R, O) -> Any?)? = null
+    fun <V> mapInput(conversion: (T) -> V): ActionObservableSpec<V, R, O>
 
-    internal var followers = mutableListOf<Follower>()
+    fun <V> map(conversion: (O) -> V): ActionObservableSpec<T, R, V>
 
-    fun timeout(timeout: Duration): AssertionSpec<I, R, O, Z> {
-        this.timeout = timeout
-        return this
-    }
+    fun <V> assert(name: String, assertion: Assertion<Unit, T, R, O, V>): AssertionObservableSpec<Unit, T, R, O, V>
 
-    fun verify(supplier: (I, R, O, Metrics) -> Unit): AssertionSpec<I, R, O, Z> {
-        this.supplier = supplier
-        return this
-    }
+    fun <V> assert(name: String, assertion: (input: T, response: R, output: O) -> V): AssertionSpec<Unit, T, R, O, V>
 
-    fun <U> map(mapper: (I, R, O) -> U): AssertionSpec<I, R, O, U> {
-        this as AssertionSpec<I, R, O, U>
-        this.mapper = mapper
-        return this
-    }
+    fun parallel(init: ActionObservableSpec<T, R, O>.() -> Unit): ActionObservableSpec<T, R, O>
 
-    /**
-     * Add another action as a follower.
-     */
-    fun then(name: String, init: ActionSpec<Z, out Any?, out Any?>.() -> Unit): AssertionSpec<I, R, O, Z> {
-        val action = ActionSpec<Z, Any?, Void>(name)
-        followers.add(Follower(action))
-        action.init()
-        return this
-    }
+    override fun delay(value: Long): ActionObservableSpec<T, R, O>
 
-    /**
-     * Add another action as follower after a delay.
-     */
-    fun then(name: String, delay: Duration = Duration.ZERO, init: ActionSpec<Z, out Any?, Unit>.() -> Unit): AssertionSpec<I, R, O, Z> {
-        val action = ActionSpec<Z, Any?, Unit>(name)
-        followers.add(Follower(action, delay))
-        action.init()
-        return this
-    }
+    override fun delay(value: Duration): ActionObservableSpec<T, R, O>
 
-    /**
-     * Add another action combined with a datasource as a follower.
-     */
-    fun <U> combineAndThen(name: String, dataSource: TestDataSource<U>, init: ActionSpec<Pair<Z, U>, out Any?, Unit>.() -> Unit): AssertionSpec<I, R, O, Z> {
-        val action = ActionSpec<Pair<Z, U>, Unit, Unit>(name)
-        followers.add(Follower(action))
-        action.with(dataSource)
-        action.init()
-        return this
-    }
-
-    /**
-     * Add another action combined with a datasource as follower after a delay.
-     */
-    fun <U> combineAndThen(name: String, delay: Duration = Duration.ZERO, dataSource: TestDataSource<U>, init: ActionSpec<Pair<Z, U>, out Any?, out Any?>.() -> Unit): AssertionSpec<I, R, O, Z> {
-        val action = ActionSpec<Pair<Z, U>, Any?, Void>(name)
-        followers.add(Follower(action, delay))
-        action.with(dataSource)
-        action.init()
-        return this
-    }
 }
 
-class Follower(executableSpec: ExecutableSpec, delay: Duration = Duration.ZERO)
+interface AssertionObservableSpec<I, AI, AR, AO, O> : ObservableSpec<AssertionOutput<I, AI, AR, AO, O>> {
 
-data class Metrics(val duration: Duration)
+    fun <V> mapAssertion(conversion: (I, O) -> V): AssertionObservableSpec<I, AI, AR, AO, V>
+
+    fun <V, W> action(name: String, request: Request<ActionAfterAssertion<AI, AO, I, O>, V, W>): ActionObservableSpec<ActionAfterAssertion<AI, AO, I, O>, V, W>
+
+    fun <V, W> action(name: String, requestBuilder: (actionInput: AI, actionOutput: AO, assertInput: I, assertOutput: O) -> Request<ActionAfterAssertion<AI, AO, I, O>, V, W>): ActionSpec<ActionAfterAssertion<AI, AO, I, O>, V, W>
+
+    fun parallel(init: AssertionObservableSpec<I, AI, AR, AO, O>.() -> Unit): AssertionObservableSpec<I, AI, AR, AO, O>
+
+    fun <V, W> mapInput(conversion: (I, AI) -> Pair<V, W>): AssertionObservableSpec<V, W, AR, AO, O>
+
+    fun <V, W> map(conversion: (AO, O) -> Pair<V, W>): AssertionObservableSpec<I, AI, AR, V, W>
+
+    override fun delay(value: Long): AssertionObservableSpec<I, AI, AR, AO, O>
+
+    override fun delay(value: Duration): AssertionObservableSpec<I, AI, AR, AO, O>
+}
+
+data class ActionAfterAction<I, O>(val previousActionInput: I, val previousActionOutput: O)
+
+data class ActionAfterAssertion<AI, AO, SI, SO>(val previousActionInput: AI, val previousActionOutput: AO, val assertionInput: SI, val assertionOutput: SO)
+
+interface ObserverSpec<T> {
+
+    fun onSubscribe(d: ObservableSpec<out T>)
+
+    fun onNext(t: T)
+
+    fun onError(e: Throwable)
+
+    fun onComplete()
+
+    fun onFailure()
+}
+
+interface Request<I, R, O> {
+
+    suspend fun execute(input: I): CompletableFuture<R>
+
+    fun check(response: R) = true
+
+    fun entity(response: R): O
+
+}
+
+interface Assertion<I, AI, AR, AO, O> {
+
+    suspend fun execute(input: I): CompletableFuture<O>
+}
+
+data class ActionOutput<I, R, O>(val input: I, val response: R, val output: O)
+
+data class AssertionOutput<I, AI, AR, AO, O>(val input: I, val actionInput: ActionOutput<AI, AR, AO>, val output: O)
+
+fun <R, O> action(name: String, requestBuilder: () -> Request<Unit, R, O>): ActionSpec<Unit, R, O> {
+    return mockk()
+}
+
+fun <I, R, O> anyRequest(): Request<I, R, O> {
+    return mockk()
+}
+
+fun <I, R, O> otherRequest(): Request<I, R, O> {
+    return mockk()
+}
+
+fun <I, R, O> anotherRequest(): Request<I, R, O> {
+    return mockk()
+}

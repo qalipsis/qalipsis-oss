@@ -21,4 +21,5 @@ dependencies {
             kotlin("stdlib")
     )
     implementation("com.willowtreeapps.assertk:assertk-jvm:0.20")
+    implementation("io.mockk:mockk:1.9.3")
 }
