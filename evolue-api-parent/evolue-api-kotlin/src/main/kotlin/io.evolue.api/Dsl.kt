@@ -33,7 +33,29 @@ interface ObservableSpec<T> {
     fun <K, V> correlate(observable: ObservableSpec<V>, leftKey: (input: T) -> K, rightKey: (input: V) -> K): ObservableSpec<Pair<T, V>>
 }
 
-interface ActionSpec<T, R, O> : ActionObservableSpec<T, R, O> {
+interface ActionObservableSpec<INPUT, RESPONSE> : ObservableSpec<ActionOutput<INPUT, RESPONSE>> {
+
+    fun <R2> action(name: String, request: Request<RESPONSE, R2>): ActionObservableSpec<RESPONSE, R2>
+
+    fun <R2> action(name: String, requestBuilder: (input: RESPONSE) -> Request<RESPONSE, R2>): ActionSpec<RESPONSE, R2>
+
+    fun <OUTPUT> map(conversion: (INPUT, RESPONSE) -> OUTPUT): ActionObservableSpec<INPUT, OUTPUT>
+
+    fun <OUTPUT> assert(name: String, assertion: Assertion<ActionOutput<INPUT, RESPONSE>, OUTPUT>): AssertionObservableSpec<RESPONSE, OUTPUT>
+
+    fun <OUTPUT> assert(name: String, assertion: (ActionOutput<INPUT, RESPONSE>) -> OUTPUT): AssertionSpec<RESPONSE, OUTPUT>
+
+    fun parallel(init: ActionObservableSpec<INPUT, RESPONSE>.() -> Unit): ActionObservableSpec<INPUT, RESPONSE>
+
+    override fun filter(rule: (input: ActionOutput<INPUT, RESPONSE>) -> Boolean): ActionObservableSpec<INPUT, RESPONSE>
+
+    override fun delay(value: Long): ActionObservableSpec<INPUT, RESPONSE>
+
+    override fun delay(value: Duration): ActionObservableSpec<INPUT, RESPONSE>
+
+}
+
+interface ActionSpec<INPUT, RESPONSE> : ActionObservableSpec<INPUT, RESPONSE> {
 
     var timeout: Duration
 
@@ -41,60 +63,31 @@ interface ActionSpec<T, R, O> : ActionObservableSpec<T, R, O> {
 
     var selector: List<String>
 
-    fun configure(init: ActionSpec<T, R, O>.() -> Unit): ActionObservableSpec<T, R, O>
+    fun configure(init: ActionSpec<INPUT, RESPONSE>.() -> Unit): ActionObservableSpec<INPUT, RESPONSE>
 
 }
 
-interface AssertionSpec<I, AI, AR, AO, O> : AssertionObservableSpec<I, AI, AR, AO, O> {
+interface AssertionSpec<INPUT, OUTPUT> : AssertionObservableSpec<INPUT, OUTPUT> {
 
-    fun configure(init: AssertionSpec<I, AI, AR, AO, O>.() -> Unit): AssertionObservableSpec<I, AI, AR, AO, O>
-
-}
-
-interface ActionObservableSpec<T, R, O> : ObservableSpec<ActionOutput<T, R, O>> {
-
-    fun <V, W> action(name: String, request: Request<Pair<T, O>, V, W>): ActionObservableSpec<Pair<T, O>, V, W>
-
-    fun <V, W> action(name: String, requestBuilder: (input: T, output: O) -> Request<Pair<T, O>, V, W>): ActionSpec<Pair<T, O>, V, W>
-
-    fun <V> mapInput(conversion: (T) -> V): ActionObservableSpec<V, R, O>
-
-    fun <V> map(conversion: (O) -> V): ActionObservableSpec<T, R, V>
-
-    fun <V> assert(name: String, assertion: Assertion<Unit, T, R, O, V>): AssertionObservableSpec<Unit, T, R, O, V>
-
-    fun <V> assert(name: String, assertion: (input: T, response: R, output: O) -> V): AssertionSpec<Unit, T, R, O, V>
-
-    fun parallel(init: ActionObservableSpec<T, R, O>.() -> Unit): ActionObservableSpec<T, R, O>
-
-    override fun delay(value: Long): ActionObservableSpec<T, R, O>
-
-    override fun delay(value: Duration): ActionObservableSpec<T, R, O>
+    fun configure(init: AssertionSpec<INPUT, OUTPUT>.() -> Unit): AssertionObservableSpec<INPUT, OUTPUT>
 
 }
 
-interface AssertionObservableSpec<I, AI, AR, AO, O> : ObservableSpec<AssertionOutput<I, AI, AR, AO, O>> {
 
-    fun <V> mapAssertion(conversion: (I, O) -> V): AssertionObservableSpec<I, AI, AR, AO, V>
+interface AssertionObservableSpec<INPUT, OUTPUT> : ObservableSpec<AssertionOutput<INPUT, OUTPUT>> {
 
-    fun <V, W> action(name: String, request: Request<ActionAfterAssertion<AI, AO, I, O>, V, W>): ActionObservableSpec<ActionAfterAssertion<AI, AO, I, O>, V, W>
+    fun <OUTPUT2> map(conversion: (INPUT, OUTPUT) -> OUTPUT2): AssertionObservableSpec<INPUT, OUTPUT2>
 
-    fun <V, W> action(name: String, requestBuilder: (actionInput: AI, actionOutput: AO, assertInput: I, assertOutput: O) -> Request<ActionAfterAssertion<AI, AO, I, O>, V, W>): ActionSpec<ActionAfterAssertion<AI, AO, I, O>, V, W>
+    fun <RESPONSE> action(name: String, request: Request<OUTPUT, RESPONSE>): ActionObservableSpec<OUTPUT, RESPONSE>
 
-    fun parallel(init: AssertionObservableSpec<I, AI, AR, AO, O>.() -> Unit): AssertionObservableSpec<I, AI, AR, AO, O>
+    fun <RESPONSE> action(name: String, requestBuilder: (OUTPUT) -> Request<OUTPUT, RESPONSE>): ActionObservableSpec<OUTPUT, RESPONSE>
 
-    fun <V, W> mapInput(conversion: (I, AI) -> Pair<V, W>): AssertionObservableSpec<V, W, AR, AO, O>
+    fun parallel(init: AssertionObservableSpec<INPUT, OUTPUT>.() -> Unit): AssertionObservableSpec<INPUT, OUTPUT>
 
-    fun <V, W> map(conversion: (AO, O) -> Pair<V, W>): AssertionObservableSpec<I, AI, AR, V, W>
+    override fun delay(value: Long): AssertionObservableSpec<INPUT, OUTPUT>
 
-    override fun delay(value: Long): AssertionObservableSpec<I, AI, AR, AO, O>
-
-    override fun delay(value: Duration): AssertionObservableSpec<I, AI, AR, AO, O>
+    override fun delay(value: Duration): AssertionObservableSpec<INPUT, OUTPUT>
 }
-
-data class ActionAfterAction<I, O>(val previousActionInput: I, val previousActionOutput: O)
-
-data class ActionAfterAssertion<AI, AO, SI, SO>(val previousActionInput: AI, val previousActionOutput: AO, val assertionInput: SI, val assertionOutput: SO)
 
 interface ObserverSpec<T> {
 
@@ -109,37 +102,34 @@ interface ObserverSpec<T> {
     fun onFailure()
 }
 
-interface Request<I, R, O> {
+interface Request<I, R> {
 
     suspend fun execute(input: I): CompletableFuture<R>
 
     fun check(response: R) = true
-
-    fun entity(response: R): O
-
 }
 
-interface Assertion<I, AI, AR, AO, O> {
+interface Assertion<INPUT, OUTPUT> {
 
-    suspend fun execute(input: I): CompletableFuture<O>
+    suspend fun execute(input: INPUT): CompletableFuture<OUTPUT>
 }
 
-data class ActionOutput<I, R, O>(val input: I, val response: R, val output: O)
+data class ActionOutput<I, R>(val input: I, val response: R)
 
-data class AssertionOutput<I, AI, AR, AO, O>(val input: I, val actionInput: ActionOutput<AI, AR, AO>, val output: O)
+data class AssertionOutput<INPUT, OUTPUT>(val input: INPUT, val output: OUTPUT)
 
-fun <R, O> action(name: String, requestBuilder: () -> Request<Unit, R, O>): ActionSpec<Unit, R, O> {
+fun <R> action(name: String, requestBuilder: () -> Request<Unit, R>): ActionSpec<Unit, R> {
     return mockk()
 }
 
-fun <I, R, O> anyRequest(): Request<I, R, O> {
+fun <R> anyRequest(): Request<Unit, R> {
     return mockk()
 }
 
-fun <I, R, O> otherRequest(): Request<I, R, O> {
+fun <I> otherRequest(value: I): Request<I, String> {
     return mockk()
 }
 
-fun <I, R, O> anotherRequest(): Request<I, R, O> {
+fun <I> anotherRequest(value: I): Request<I, Map<String, String>> {
     return mockk()
 }
