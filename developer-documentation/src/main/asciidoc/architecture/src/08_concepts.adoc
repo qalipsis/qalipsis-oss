@@ -1,0 +1,274 @@
+[[section-concepts]]
+== Cross-cutting Concepts
+
+NOTE: This section will be enhanced while developing the solution
+
+=== DSL
+
+In order to improve the user experience of the developers preparing the scenarios, a Kotlin DSL will be provided.
+
+One of the main advantages of Kotlin here is the ability to add extension functions on an existing class, making it easy to integrate plugins.
+
+The DSL is a reactive like builder, made to reduce the code verbosity while keeping openness.
+
+=== Plugins
+
+Evolue is designed to be extremely extensible.
+Thus, most of the supported technologies to generate load are provided using dedicated plugins.
+When developing a scenario, the developer only has to include the relevant plugin as classpath dependencies.
+
+A plugin contains the following elements to extend the core specifications:
+
+* Steps specifications,
+* Extended properties and functions to generate new steps specifications in the DSL,
+* Converters for the step specifications to executable steps.
+
+=== Directed Acyclic Graph (DAG)
+
+Since the data flow in a scenario is directed, the structure of a scenario can be represented as a https://en.wikipedia.org/wiki/Directed_acyclic_graph[DAG], where each step is a potential node.
+
+The main point is that a DAG is built deterministically and is required for the orchestration of a scenario.
+Additionally, the DAG provides to possibility to perform optimizations, like merge of multiple operations into a single step and is a good representation to monitor the progress of a scenario, because metrics can be displayed in detail for each step.
+
+All those details are required at runtime in order to build the graph and distribute the steps on the relevant factories.
+See <<Head and factories>> for more details.
+This aim at limiting the amount of information to serialize and transport over the wire when using in a distributed context.
+
+A simple representation of a DAG can be seen in figure <<simple-dag>> where the step 4 is a correlation one, in charge of merging the data coming from steps 2 and 3.
+
+[[simple-dag]]
+.Example of simple DAG
+[plantuml,simple-dag,png]
+....
+digraph simpledag {
+  node[shape=record]
+  step1 [label="{step: 1}"]
+  step2 [label="{step: 2}"]
+  step3 [label="{step: 3}"]
+  step4 [label="{step: 4 | Here is a correlation}"]
+  step5 [label="{step: 5}"]
+
+  step1 -> step2
+  step2 -> step4 [label="Extractor for key from step 2"]
+  step3 -> step4 [label="Extractor for key from step 3"]
+  step4 -> step5
+}
+....
+
+It is also possible to distribute the steps over several factories matching the same selectors.
+The figure <<distributed-dag>> shows an example of DAG in which the steps 1 and 2 are run on factories having the label *us-east* while steps 3 to 5 execute on factories with the label *eu-west*.
+This implies a data serialization and a logical transfer between steps 2 and 4, geographically between Boston and Paris: in one direction for the data and both directions for the flow control events.
+Of course such data transfer under the Atlantic ocean will introduce a significant latency.
+
+[[distributed-dag]]
+.Example of distributed DAG
+[plantuml,distributed-dag,png]
+....
+digraph distributeddag {
+  node[shape=record]
+  step1 [label="{step: 1 | selector: us-east}",style=filled,fillcolor="#e5331f"]
+  step2 [label="{step: 2 | selector: us-east}",style=filled,fillcolor="#e5331f"]
+  step3 [label="{step: 3 | selector: eu-west}",style=filled,fillcolor="#1fa0e5"]
+  step4 [label="{step: 4 | selector: eu-west}",style=filled,fillcolor="#1fa0e5"]
+  step5 [label="{step: 5 | selector: eu-west}",style=filled,fillcolor="#1fa0e5"]
+
+  step1 -> step2
+  step2 -> step4 [arrowtail="dot", dir=both]
+  step3 -> step4 -> step5
+}
+....
+
+The distributed aspects of Evolue implies some drawbacks to tackle.
+Let's consider the example of figure <<distributed-split-dag>> where step 1 is a unique data source reading data from a non public PostgreSQL database and acts as a single data source will feed all the minions being part of this scenario.
+Otherwise, we would have to massively duplicate the execution of same queries and overload the database to often fetch the same data.
+Step 2 is a transformation block.
+
+Part of the data generated is used locally on the same factory 1 while another part is transferred to factory 2 where other minions run the rest of the same scenario.
+
+Thus, it is required for the step 2 to know how to split the data in order to reduce the load on the wire, the CPU and memory.
+
+=== Topics, partitioning and selectors
+
+In a distributed architecture, not all the components are running in the same sub-network and have technical access to the same systems.
+
+Hence, some steps cannot be run anywhere but only in restricted areas (it is very likely that you will not provide access to your database from the Internet, will you?). <<distributed-split-dag>> provides an example of distributed scenario.
+
+[[distributed-split-dag]]
+.Example of distributed DAG
+[plantuml,distributed-partitioned-dag,png]
+....
+digraph distributedpartitioneddag {
+  node[shape=record]
+  step1 [label="{step: 1 | read pgsql | factory 1}",style=filled,fillcolor="#e5331f"]
+  step2 [label="{step: 2 | transform | factory 1}",style=filled,fillcolor="#e5331f"]
+  step3_1 [label="{step: 3 | assert | factory 1}",style=filled,fillcolor="#e5331f"]
+  step3_2 [label="{step: 5 | transform | factory 2}",style=filled,fillcolor="#1fa0e5"]
+  step4_1 [label="{step: 4 | action | factory 1}",style=filled,fillcolor="#e5331f"]
+  step4_2 [label="{step: 6 | assert | factory 2}",style=filled,fillcolor="#1fa0e5"]
+
+  step1 -> step2
+  step2 -> step3_1
+  step2 -> step3_2 [arrowtail="dot", dir=both]
+  step3_1 -> step4_1
+  step3_2 -> step4_2
+}
+....
+
+Selectors are assigned to both factories and steps, in order to determine at startup on which factories a step can be run.
+As a matter of fact, selectors apply on a DAG, meaning a consecutive list of steps, making them co-located in a single factory.
+This makes the minions to technically run not only in a single factory but on different ones.
+
+In order to make the data exchange between them much mor efficient, the APIs `random data forwarding` and `deterministic data forwarding` are provided, which are basically post boxes with notifications to the relevant topics.
+
+A topic is created for each used combination (and sub-combination) of selectors.
+Then a factory will subscribe to all the topics related to the combination of its own selectors.
+
+Those different solutions aim at reducing the overhead on the network by only transporting the minimal required set of information.
+
+You can read <<Deterministic remote correlation>> and <<Fuzzy remote correlation>> for more details.
+
+A later improvement might consist of a back-flow channel to transport the information of which minion expect which key from steps 3 and 5, but it is very likely that the transport of the information will increase the latency.
+
+=== Decomposition of a scenario into DAGs
+
+One of the most sensible feature from the factories consist in the decomposition of scenario specifications into DAGs.
+
+At startup, the factories scan their classpath to look for the scenario specifications.
+Then they perform a fast visit of the specification in order to calculate a predictive hash representation, which is then transmitted to the head to compare the different versions of the scenario across all the factories.
+
+When the directive to decompose a scenario is received, the factory has to navigate the specifications once again.
+Each step is given an ID composed of the ID of the DAG and the index of the step in the navigation process.
+While navigating through the specifications:
+
+* If a step has no selector or one selector in common with the previously seen step, they are linked.
+* Otherwise, a new DAG is created and both steps are informed of its ancestors or descendants (there might several of each).
+
+==== Conversion of a DAG to actual executable steps
+
+Each step specification comes with a converter, taking a specification as an input and providing an executable step as an output.
+
+Each converter implements an interface parameterized by a generic type, being the class of the specification.
+The converted is then injected in a step factory service.
+
+When a step specification is found, the factory is requested to convert it, searches the adequate converter and returns the actual step.
+
+=== Head directives
+
+Head can provide directives to the adequate factories by pushing a record to the relevant topic.
+There are two use cases:
+
+* Broadcast message: the record has to be processed by all its consumer and is completely pushed to the topic
+* Race message: the record will be consumed by different factories but has to be processed only one.
+Thus, the message only contains a reference to the location of the directive in the shared cache and the first consumer able to process it will peek the message from the cache.
+The consumers coming later will also try to peek it but will find nothing and thus do nothing.
+
+A unique API `head directive` will be used for both use cases.
+
+=== Executable step
+
+Am executable step, is basically a function taking values or channels as parameters.
+When values are set, the step is said coupled to its ancestor.
+Otherwise it is uncoupled.
+
+Steps are linked altogether to perform a DAG.
+
+It also provides either values or channels as output values for the next step.
+
+The steps can be decorated to monitor their activity, generate metrics, handle failures or extend their capabilities.
+
+A step is not assigned to a single minion, but the information of the minion is passed to the step when an execution as to be performed.
+
+=== Timed out steps
+
+Some steps are relevant for timeouts (like the assertions for instance) and cannot wait for all the input records to be ready before it is actually triggered.
+
+In that case, the input is not a set of records coming from the different ancestors but an entity containing a timeout channel and a rendezvous channel activated when all the records are ready.
+If the timeout channel is received first, the steps goes in failure.
+If the rendezvous channel is received first, the step can normally be executed.
+
+In order to manage the timeouts in a similar way for all the steps, a decorator is used around the step to enhance its capabilities.
+
+=== Cross-minion step
+
+When deploying thousands of minions, all using data from a single database, it does not look very convenient to let them individually connect and fetch the database.
+
+To work around this issue, it is possible to mark a step as a cross-minion, making it executed only once in a unique factory.
+Its data will then be broadcasted to different minions, as described earlier in the runtime view section.
+
+A cross-minion step is the unique step of a the DAG owning it, and can however be run concurrently (like several threads reading data frequently to reduce the size of the responses while keeping the system responsive).
+
+Common examples of cross-minion steps are data sources and messaging consumers.
+
+=== Security
+
+The attack surface of the factories is limited to the integrated technologies and their weaknesses.
+Apart from that, there is no direct way to attach them, because they have no network entry (REST API, TCP/UDP listener).
+
+In the contrary, the head provides a much wider surface with its REST APIs and GUI. While securing them might be done in a lot of different ways, Evolue does not aim to address all of them.
+However, the following will be provided:
+
+* Basic authentication (enabled by default),
+* JWT token validated against public key from a OAuth2 server (disabled by default),
+* Integration of LDAP as an additional user database,
+* https://owasp.org/www-project-cheat-sheets/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#Verifying_Same_Origin_with_Standard_Headers[Cross Site Request Forgery protection] (enabled by default),
+* HTTP server support of TLS (disabled by default, because it requires valid certificates)
+
+For more complex use cases, a gateway like https://www.krakend.io[KrakenD] can be used in front of the head.
+
+Finally, data exchange and storage will be secured depending on the capability of the underlying software:
+
+* TLS for the TCP communication when supported (like Apache Kafka, Redis and PostgreSQL for instance),
+* Authentication when supported.
+
+=== Light thread, suspended functions and channels
+
+In order to support a massive amount of minions and simulate realistic sporadic behaviors of systems and humans, it is encouraged to use light threads (let's say coroutines) and non blocking functions.
+
+Waiting operations, either for IO purpose or simply delay, will be implemented using channels in Kotlin suspended functions.
+
+At the matter of fact, all the core of the factories will be made of suspended functions.
+
+=== Evolue messaging protocol
+
+Evolue strongly relies on messaging to exchange data to and from heads and factories.
+The way records are exchanged was already described above, in the section <<API and Communication>>.
+
+The payload will be transported as a JSON string in the first version, and will migrate to https://developers.google.com/protocol-buffers/docs/overview[protobuf] in the future to improve performance and reduce CPU and memory overhead, by translating from string to bytes manipulation.
+
+=== Head REST APIs
+
+The head provides a set of APIs for managing the factories, driving campaigns and collecting reporting data.
+
+Since both external systems and the GUI will use them, it might be relevant to create different facades, which will converge to single services.
+That way, internal changes will not affect the clients and they can even have different requirements than the GUI in term of format, paging and so on...
+
+For security reasons, the APIs can be disabled at startup of the head by setting the flag `--no-rest-api`.
+
+=== Distributed tracing
+
+For a presentation of distributed tracing, see the official page of https://opentracing.io[opentracing.io].
+
+An ID is assigned to each minion, which is later used as a trace ID.
+An ID is assigned to each step, which is later used as a span ID.
+The parent span ID is the one of the first parent is there are several (the `this` step on which the correction is called).
+
+This allows later filtering to see the behavior of a single minion over all steps, or a single step over all minions.
+
+Thus, it is important to have a predictive strategy to generate step IDs, so that each decomposition of a same scenario lead to the same IDs.
+IDs of minions cannot be reused neither, thus the value of last minion has to be kept in the configuration database to be reused between campaigns.
+
+=== GUI / no GUI
+
+Evolue can be run as a service in CI/CD workflow, for which no graphical user interface is required.
+In that case, the head is started with the following flags:
+
+* `--no-gui`: disables the graphical user interface
+* `--required-factories`: integer, number of factories to wait before starting the campaign.
+* `--load-factor`: float, indicating the coefficient to multiply the number of default minions for each scenario, in order to drive the actual load.
+* `--speed-factor`: float, indicating the coefficient to divide the waiting delays.
+* `--timeout-factor`: float, indicating the coefficient to multiply the timeouts.
+
+=== Test results compatibility
+
+In order to make the integration with CI tools easier, Evolue generates on demand (using the API or CLI flag `--junit-results` at startup) the set of files in the https://llg.cubic.org/docs/junit/[JUnit format].
+Unofficial XSD Schema can be found http://windyroad.com.au/dl/Open%20Source/JUnit.xsd[here].

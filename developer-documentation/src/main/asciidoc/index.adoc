@@ -1,0 +1,15 @@
+:title: Evolue - Technical documentation
+:imagesdir: ./images
+:favicon: ./images/evolue.ico
+:stylesheet: {includedir}/stylesheets/colony.css
+
+= image:evolue-big-no-headline.png[evolue-big-no-headline,100] Technical documentation
+
+== Presentation
+
+TODO
+
+== Documentation
+
+* link:architecture/index.html[Architecture documentation]
+* link:documentation-guidelines.html[Documentation guidelines]

@@ -1,0 +1,109 @@
+[[section-solution-strategy]]
+== Solution Strategy
+
+=== Top-level components
+
+Evolue contains six components, responsible for the different aspects of the application:
+
+. Head: Web server for testers to drive the test campaigns and browse the metrics and dashboards.
+It also orchestrates the factory to coordinate the overall execution.
+. Factory: Daemon in charge of analyzing, preparing and running the scenarios steps, generating the load by simulating the users or devices using the targeted system to test.
+. Messaging platform: Used only when Evolue is deployed as a cluster, in order to transport data between heads and factories as well as between the factories themselves.
+. Time-Series storage: One or more servers to manage and host the metrics.
+. Configuration database: One or more RDMS server to host the configuration.
+. Cache: One or more servers to share the cached data among all the factories.
+
+==== Standalone deployment
+
+For very simple use cases and light load, it is possible to deploy all the components as a standalone application containing all the components.
+
+All the components run as a single process of their own and factories selectors are ignored.
+
+As all the components will run in the same JVM (apart from the Time-Series storage, which can be either embedded or isolated), the messaging consists of a set of Kotlin broadcast channels.
+
+The Cache component is a set of Caffeine cache, to be configured for each scenario as heap or non-heap stack.
+
+Finally, the database is an embedded persistent Apache Derby.
+
+==== Cluster
+
+To simulate middle to heavy load and make Evolue resilient to failures, it is encouraged to deploy it as a cluster, in which all the components are distinct processes deployed on distinct servers.
+Factories and head can be added to increase computing capabilities.
+Servers can be virtual machines or even containers.
+It is not necessary to use physical machines.
+
+An example of configuration for a cluster consists of:
+
+* One or more heads, potentially behind a HTTP load-balancer,
+* Three or more factories,
+* A cluster of Redis nodes or Apache Kafka brokers as a messaging platform,
+* A time-series cluster with its associated GUI,
+* A cluster of RDMS for the configuration,
+* A cluster of Redis nodes for the shared cache.
+
+[plantuml,cluster-deployment,png]
+----
+actor Testers
+agent Factories
+frame Head
+queue "Messaging\nplatform" as Messaging
+stack Cache
+interface HTTP
+database Configuration
+database "Time-series" as TS
+control "Load Balancer" as LB
+
+Testers -down-> HTTP
+HTTP -down-> LB
+LB -down-> Head
+Head -right-> Messaging
+Head -down-> Configuration
+Head -> Cache
+Head <-down-> TS
+Messaging <-right-> Factories
+Factories <-down-> Cache
+
+----
+
+==== Geographical redundancy
+
+Geographical redundancy plays an important role when factories are distributed over several continents and aims at reducing the overall latency by keeping the data near the consumers.
+
+While some platforms support mirroring and geographical redundancy, it might be required to use or develop specific tools to distribute data among different clusters for others.
+
+=== API and Communication
+
+Communications in Evolue use the https://kafka.apache.org/protocol[Apache Kafka protocol] as a model:
+
+* Each feature is described as an API.
+* Each API is versioned and several versions are supported by heads and factories to allow backward compatibility.
+* The handshake between factories and heads allows to validate the compliance of the supported versions.
+* Broadcasted messages from the head will always use the minimal common version.
+* Each sent message contains the following routing headers:
+** API key
+** API version
+** Correlation ID to match requests and responses
+** Factories selectors as integers
+
+If the messaging platform does not support native headers, a byte array is concatenated to the payload, containing the following:
+
+* Size of the header in bytes (`uint16`, maximal: 65 535), allowing to later add fields and maintain backward compatibility
+* API key (`uint16`)
+* API version (`uint16`)
+* Correlation ID (`int32`)
+* Room for later enhancements
+
+If the messaging platform does not support binary (like Redis), the header is concatenated as a base 64 string.
+
+=== Development process and quality validation
+
+Source code is stored on Github and built with Github actions.
+Features and fixes are developed and built on specific branches based upon either the head one or a given release (candidate) for fixes already promoted versions.
+
+Head branch is nightly built and analyzed by SonarQube standard rules.
+
+New releases are made public every three months, except for critical fixes, which can happen anytime on decision of the team.
+Source code of each release is tagged with the number of the version.
+
+Release notes are published on the website https://evolue.io and in the README.md file to make it accessible to Github users.
+Breaking changes are listed first if any.

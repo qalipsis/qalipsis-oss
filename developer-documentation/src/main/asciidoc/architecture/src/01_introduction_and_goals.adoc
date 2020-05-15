@@ -1,0 +1,88 @@
+[[section-introduction-and-goals]]
+== Introduction and Goals
+
+=== Requirements Overview
+
+==== What is evolue?
+
+Evolue is a load and performance testing tool for distributed systems.
+From many aspects, it can be compared to existing tools like JMeter, Gatlin or Locust, but aims at tackling some of their pitfalls:
+
+* None of them is natively designed for distributed platforms: running a test and combine its output with other data sources to perform assertions is from complex to impossible.
+* Existing commercial solutions do not use the latest technologies to scale concurrent simulated users and are either less powerful or very expensive due to the required physical resources (CPU and memory).
+* Most of the solutions “shifted to the right”, meaning they do target testers with no development skills, which drastically reduces the scope of the supported protocols and platforms due to the required GUI or simplifications to implement tests.
+
+Evolue is platform-agnostic, highly-configurable and supports any protocol or target system, either with the existing plugins or by user-developed modules.
+
+The users, which are IT-developers, can create tests in a couple of minutes for any kind of targeted system and with few hardware resources (and subsequently save a significant amount of time and money).
+
+It generates detailed load test metrics and reports you can easily share and it interfaces with the most popular monitoring tools.
+
+It integrates into your continuous deployment pipeline to make build fail/pass based upon performance, as well as real-time constant monitoring of any infrastructure.
+
+==== Who is this solution for?
+
+* Any organization or team in charge of either developing, testing or operating a software.
+* Any branch which has IT operations, but specifically the teams monitoring either an infrastructure (IT landscape) or critical software platforms.
+
+==== Where/when will this solution be used?
+
+There are three main use cases:
+
+. evolue is deployed to load-test an infrastructure or software before it is deployed to production, to make sure it can address the normal demands as well as peaks (for instance for online shops in period of seasonal sale or registration systems for conferences, for which the demand increase can really be sudden).
+. evolue is integrated in the continuous deployment pipeline to be run automatically on schedule or when code changes.
+Hence, it periodically checks that the performance of last developments did not negatively affect the performance of the software you are building, comparing to past results and expectations specified by either developers, operations, users or stakeholders.
+If the results overreach configured threshold, the build will fail, preventing the software to be delivered and forcing the developers to fix the issue.
+. evolue acts as a constant monitoring tool for operation teams, and provides constant insights on the behavior of the application to detect deviations, trends and correlates them with resources consumption.
+
+=== Quality Goals
+
+.Quality goals
+[options="header",cols="1,2,12"]
+|===
+| Priority | Goal | Description
+| 1 | _Reliability_ |
+In its most advanced deployment configuration, there is no single point of failure: heads are redundant, messaging platform is a cluster and if a factory fails, its minions are rebalanced on other ones until it gets back to life.
+
+Evolue should be able to run endless.
+| 2 | _Performance_ |
+Messages should be transported between factories/heads with less of 10ms latency on the same geographical continent.
+
+A single factory of Evolue can simulate 5000 users on a web site with 2 GB RAM and 4 CPU.
+| 3 | _Correctness_ |
+All test successes, failures and errors are reported.
+
+| 4 | _Compliance_ |
+Each major version of Evolue is backward compliant with the previous major version.
+
+Evolue can run on the current JVM LTS version.
+
+Any Java library compliant with the current JVM LTS version can be used in Evolue.
+| 5 | _Maintainability_ |
+Sonarqube rates Evolue as A for all aspects with default configuration.
+
+There is neither blocking, nor major issues according to Sonarqube with default configuration.
+
+There is neither bug no vulnerability according to Sonarqube with default configuration.
+
+Unit-tests coverage is above 80%.
+
+Duplication rate is below 1%.
+|===
+
+=== Stakeholders
+
+Because we do not consider that DevOps is a target for all the organizations, we split the operations and development teams.
+
+.Stakeholders
+[options="header",cols="1,3"]
+|===
+| Role | Goal, Intention
+| _Software developer_ |
+Wants to write integration and load tests to validate a system and expects a simple, clear and powerful DSL to develop then
+| _Software tester_ |
+Wants to execute test campaigns to validate business and technical features and expects precise reporting and dashboard, as well as reactive adaptation to test conditions changes
+| _Operations team member_ |
+Wants to operate an infrastructure to run test and expects it to be scalable, reliable and resource saving.
+
+|===

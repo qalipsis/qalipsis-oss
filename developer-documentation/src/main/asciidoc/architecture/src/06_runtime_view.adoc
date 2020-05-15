@@ -1,0 +1,320 @@
+[[section-runtime-view]]
+== Runtime View
+
+[role="arc42help"]
+****
+.Contents
+The runtime view describes concrete behavior and interactions of the system’s building blocks in form of scenarios from the following areas:
+
+* important use cases or features: how do building blocks execute them?
+* interactions at critical external interfaces: how do building blocks cooperate with users and neighboring systems?
+* operation and administration: launch, start-up, stop
+* error and exception scenarios
+
+Remark: The main criterion for the choice of possible scenarios (sequences, workflows) is their *architectural relevance*.
+It is *not* important to describe a large number of scenarios.
+You should rather document a representative selection.
+
+.Motivation
+You should understand how (instances of) building blocks of your system perform their job and communicate at runtime.
+You will mainly capture scenarios in your documentation to communicate your architecture to stakeholders that are less willing or able to read and understand the static models (building block view, deployment view).
+
+.Form
+There are many notations for describing scenarios, e.g.
+
+* numbered list of steps (in natural language)
+* activity diagrams or flow charts
+* sequence diagrams
+* BPMN or EPCs (event process chains)
+* state machines
+* ...
+
+****
+
+=== Initialization
+
+Before a campaign can be executed, there are several operations to perform in order to:
+
+* Initialize the scenarios
+* Prepare the cluster of factories
+* Warm all the minions up
+* Ramp the active minions up
+
+The following sequence diagram describes the relevant actions.
+
+The entity `Factory` is used when the factory is individually considered, while `Factories` is messages are broadcasted.
+
+.Initialization steps
+[plantuml,evolue-initialization-steps,png]
+----
+@startuml
+skinparam componentStyle uml2
+
+control Head
+actor Factory
+collections Factories
+
+
+Head --> Head : is ready
+Factory -> Head : handshake
+Head --> Factory : factory ID & selectors as integers
+Head -> Head : user call or required factories matched
+Head -> Factories : prepare DAGs of all scenarios
+Factory --> Head : DAGs of scenario A
+Factory --> Factories : DAGs of scenario A
+Head -> Head : all scenarios either ready or discarded
+Head -> Factories : assign minions
+Factory -> Factory : warm up minion
+Factories -> Head : assignment complete
+Head -> Factories : ramp-up active minions
+
+@enduml
+----
+
+==== Handshake between factory and head
+
+When an factory is starting up, it has to register to the head and perform a kind of handshake to verify their ability to work together.
+
+. The factory is configured to access the messaging platform.
+. Once started, the factory pushes a registration message to the `head` topic to initialize the handshake, which contains:
+** A header called "cid": correlation ID used to match the requests and responses altogether
+** A JSON payload containing:
+*** If the factory was able to find back its ID from a past execution, it is sent.
+*** The list of selectors of the factory.
+*** For each supported API:
+**** key: key of an API supported by the worked
+**** min: minimal supported version for the API
+**** max: maximal supported version for the API
+*** List of the supported scenarios specifications fetched from the classpath and their hashes used to compare the version and detect conflicts in the head.
+. The head searches for the equivalent integers of the received selectors, creates new ones and save them in the configuration database.
+. The head locally assigns an ID to the factory, saves the supported scenarios and selectors of the factories in the database.
+. The head pushes a response message to a the `all-factories` topic consumed by all the factories, containing:
+** The routing headers
+** The assigned factory ID (being also the name of the topic for direct communication)
+** A map with the translation of selectors to integers
+. Each factory consumes the message from the `all-factories` topic and only the one having emitted the correlation ID processes it and keeps the translation of selectors.
+
+==== Preparation of the directed acyclic graphs
+
+Once the user manually triggers the action or the number of registered factories is greater than the minimal required, it is time to prepare the execution.
+
+. For each known scenario, the head:
+.. Pushes a semaphore value to the shared cache
+.. Sends a message to the `all-factories` topic:
+* Targeted API is `decompose scenario`, no selector is set in the header
+* The payload contains:
+** The name and hash of the scenario specifications
+** The key of the of the semaphore value in the shared cache
+** The greatest version of the API `load scenario` supported by all the factories.
+. Each factory consumes the message and only processes the ones containing a name and hash of scenario specification it embeds:
+.. It tries to peek the semaphore value from the shared cache and stops if the value does not exists
+.. Otherwise:
+... The factory splits the scenario specifications into a list of directed acyclic graphs:
+* A DAG is composed of all the connected vertices having at least one selector in common
+* Each vertex (step) being uniquely described by a name and hash from its specification, those values are used as reference to describe the DAG
+* When a DAG is interrupted because the selectors changes from a step to another, the last outer vertices are documented with the ID of the next step and the selectors of the factory running it.
+This will allow an efficient routing of the information between steps.
+* The DAG to trigger as start of a scenario is marked as `start`.
+* The decomposition is a collection of entities containing (more in the section for design decisions):
+** The biggest set of common selectors as a key.
+** A globally unique ID.
+** The collection of DAGs supporting the set of selectors.
+... The factory saves the list of DAGs into the shared cache and notifies the selectors-related topics and `head` topics with the result of the decomposition:
+* When pushing as a request (one by collection of DAG) to the selectors-related topics, targeted API is `load scenario` and the DAG-related selectors are set in the header.
+No correlation ID is set.
+* When pushing as a response to the `head` topic (one response for the whole scenario), targeted API is `decompose scenario`, the correlation ID is the one received from the head request.
+No selector is set.
+* The version of the API is the one received in the `decompose scenario` request
+.. In parallel, all the factories consume the selectors-related topics also for the API `load scenario` and for each DAG matching its own selectors, it creates the logical steps and components composing the DAGs.
+
+If a timeout is reached without having received all the responses, the head requests the decomposition once again for the missing scenarios.
+The new request is ignored by the factories, which already tried to decompose the scenario.
+After a certain number of failing attempts, the unprepared scenarios will be discarded.
+
+==== Assignment of minions
+
+Once all the scenarios are either prepared or discarded according to the head, it is time to create the minions in idle mode, ready to start.
+
+. The head creates the IDs for all the minions for all the scenarios.
+. For each collection of DAGs received during the decomposition, it creates a queue containing all the IDs of the minions attached to the scenario.
+. Then the head broadcasts a message to each topic related to the selectors of the DAG collection, which contains:
+* The API key for `assign minion`
+* A correlation ID.
+* The name of the queue containing the minions IDs.
+. The factories will consume the topics related to their own selectors and peek the first Minion ID from the queue.
+The fastest factories will hence host more minions, creating a natural balancing.
+A later version of this API might support a different mode of assignment.
+. When a factory finally reads an empty queue, it pushes a message to the `head` topic containing the following details (the head will received a message from each factory, which does not matter):
+* The API key for `assign minion`
+* The correlation ID provided by the head in the request.
+* A status `COMPLETE`
+. Once all the assignments are in status `COMPLETE`, the head can trigger the next step.
+
+
+==== Ramp-up of active minions
+
+*TODO: Define which component trigger the start of a new minion:*
+
+* Head would consider the ramp-up globally but add inconstant latency due to the messaging and skew the startup pace.
+* Factory would be close to real-time but would ignore the total of available minions.
+
+In any case, the first vertex of each start DAG (see above) contains a single-use rendezvous channel, to keep the minion idled.
+When the minion has to be started, the channel is closed to release the execution flow.
+
+=== States of a minion
+
+.States of a minion
+[plantuml,evolue-minion-states,png]
+----
+@startuml
+hide empty description
+skinparam componentStyle uml2
+
+[*] --> Idle
+Idle : The minions wa just\ncreated and is paused
+Idle --> Running
+Running : The minion executes steps
+Running -right-> Paused
+Paused : The minion is suspended
+Paused -left-> Running
+Running -down-> Completed
+Completed : The minion executed all\nexpected iterations of all its steps
+Completed --> [*]
+
+@enduml
+----
+
+=== Local correlation
+
+Local correlation occurs several steps running in the same factory are providing inputs for a single step, like shown in the following figure.
+
+.DAG with correlation
+[plantuml,simple-dag,png]
+....
+digraph simpledag {
+  node[shape=record]
+  step1 [label="{step: 1}"]
+  step2 [label="{step: 2}"]
+  step3 [label="{step: 3}"]
+  step4 [label="{step: 4 | Here is a correlation}"]
+  step5 [label="{step: 5}"]
+
+  step1 -> step2
+  step2 -> step4 [label="Extractor for key from step 2"]
+  step3 -> step4 [label="Extractor for key from step 3"]
+  step4 -> step5
+}
+....
+
+The correlator keeps the records of each incoming step in a local cache as they are being provided and pushes them to the next step when they are complete.
+
+.Local correlation of records from different sources
+[plantuml,evolue-local-correlation-from-different-sources,png]
+----
+@startuml
+
+start
+:correlator receives a record;
+
+if(
+__all other records__ awaiting for __same target step__
+with __same key__ exist in the local cache
+) then (yes)
+:__all the records__ are pushed
+onto the next step's channels;
+else (no)
+:wait for next reception;
+endif
+stop
+@enduml
+----
+
+=== Deterministic remote correlation
+
+Deterministic remote correlation occurs when it is known which minion will consume the record.
+It happens when a DAG is interrupted between two factories and has to be transported between them.
+
+In that case, the API key of the message is `deterministic data forwarding` and the payload contains:
+
+* Minion ID (`int64`)
+* Target step ID (`int64`)
+* Record correlation key (`int64`) (not to be confused with the field `correlation ID`)
+* Key of the record in the cache (`string`)
+
+The message is sent to the topics related to the selectors of the DAG containing the target step.
+
+To calculate the correction keys in a deterministic way, the source and target steps will be specified with a lambda function.
+
+.Targeted remote correlation of records from different sources
+[plantuml,evolue-targeted-remote-correlation-from-different-sources,png]
+----
+@startuml
+
+start
+:correlator receives a record;
+if(
+the pair minion ID / step ID is known locally
+) then (yes)
+  if(
+  __all other records__ awaiting for __same target step__
+  with __same key__ exist in the cache
+  ) then (yes)
+  :__all the records__ are read from the cache;
+  :__all the records__ are pushed
+  onto the next step's channels;
+  else (no)
+  :wait for next reception;
+  endif
+else (no)
+:ignore;
+endif
+
+stop
+@enduml
+----
+
+=== Fuzzy remote correlation
+
+Fuzzy correlation occurs when there is no information about the minion, which will use the record.
+
+It happens for instance when a datasource is broadcasting records so that assertions can verify and compare data with the ones received from actions.
+
+All factories / steps configured with the relevant steps consume the same record.
+When the message has to be consumed only once, the same strategy than for the <<Head directives>> will be applied.
+
+In that case, the API key of the message is `fuzzy data forwarding` and the payload contains:
+
+* Target step ID (`int64`)
+* Key of the record in the cache (`string`)
+
+The message is sent to the topics related to the selectors of the DAG containing the target step.
+
+.Fuzzy remote correlation of records from different sources
+[plantuml,evolue-fuzzy-remote-correlation-from-different-sources,png]
+----
+@startuml
+
+start
+:correlator receives a record;
+if(
+the step ID is part of local DAGs
+) then (yes)
+  if(
+  __all other records__ awaiting for __same target step__
+  with __same key__ exist in the cache
+  ) then (yes)
+  :__all the records__ are read from the cache;
+  :__all the records__ are pushed
+  onto the next step's channels;
+  else (no)
+  :wait for next reception;
+  endif
+else (no)
+:ignore;
+endif
+
+stop
+
+@enduml
+----
+
