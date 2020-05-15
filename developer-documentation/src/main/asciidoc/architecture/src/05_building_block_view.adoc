@@ -254,7 +254,7 @@ The runner is a singleton for each factory.
 
 Minions registry::
 Responsibility:::
-Keeps the list of minions with their available details to keep the available state of internal minions.
+Keeps the list of minions with their details and states.
 Basically, a storage of minions with their UUID as key.
 
 Status reporter::
@@ -403,27 +403,26 @@ skinparam componentStyle uml2
 
 
 package "Head directive consumer" {
-    DirectiveReader "1" -left-> "1" DirectiveCacheReader: pops\ndirective >
+    DirectiveConsumer "1" -left-> "1" DirectiveCacheReader: pops\ndirective >
 }
 
-DirectiveReader "1" -down-> "1" ScenariosKeeper: analyzes\nscenario >
-DirectiveReader "1" -down-> "1" Runner: do >
+DirectiveConsumer "1" -down-> "1" Runner: do >
 
 Runner "1" *-down- "*" Minion
 Runner "1" ..> "*" Minion: creates,\npauses\nresumes and\ndestroys >
 Runner "1" -right-> MinionsRegistry: maintains >
-Runner "1" -left-> ScenariosKeeper: anaylzes >
+Runner "1" -left-> ScenariosKeeper: analyzes >
 
 Runner -down-> HeadNotifier: pushes\nupdates >
 ScenariosKeeper -> HeadNotifier: pushes\n >
 
 ----
 
-DirectiveReader::
-The DirectiveReader is a consumer of the messages coming from the head and forwards them to the relevant component of the factory: Runner or ScenariosKeeper.
+DirectiveConsumer::
+The DirectiveConsumer is a consumer of the messages coming from the head and forwards them to the relevant component of the factory: Runner or ScenariosKeeper.
 
 DirectiveCacheReader::
-When the received directive is relevant for the factory but not is only a reference to an entry in the directive cache, the DirectiveReader asks the DirectiveCacheReader to pop the actual directive from the distributed directive cache, using the provided key.
+When the received directive is relevant for the factory but not is only a reference to an entry in the directive cache, the DirectiveConsumer asks the DirectiveCacheReader to pop the actual directive from the distributed directive cache, using the provided key.
 If the directive was already popped by another factory, it is just ignored.
 
 ScenariosKeeper::
@@ -442,7 +441,7 @@ It helps to find a minion easily when when it is clearly identified as the targe
 The MinionsRegistry also provides utility functions to find the Minions in a given state in order to support the Runner operations.
 
 Runner::
-The Runner is the headpiece of the factory and drives the minions to execute directed acyclic graphs (aka DAGs) as requested by the head.
+The Runner is the masterpiece of the factory and drives the minions to execute directed acyclic graphs (aka DAGs) as requested by the head.
 It creates the Minions and assign them a list of DAGs, which are not directly connected altogether.
 The DAGs generally have input and output which are connected via messaging to the other DAGs of the same minions running on different factories.
 
@@ -458,7 +457,7 @@ DirectedAcyclicGraph "1" *-left- "*" Step: owns
 Runner "Singleton" *-down-> "*" Minion
 Step -left-> ExternalSystem
 
-Minion *-right- State: owns >
+Minion *-right- MinionState: owns >
 Minion "many" *-up- "any" DirectedAcyclicGraph: executes >
 Minion -down-> "Singleton" MetricsReporter : saves\nmetric >
 
@@ -469,11 +468,10 @@ Step -down-> CorrelationProcessor : forwards\nrecord\nfor\ncorrelation
 DirectedAcyclicGraph::
 The https://en.wikipedia.org/wiki/Directed_acyclic_graph[DirectedAcyclicGraph] (or DAG) is a representation of consecutive or parallel vertices for the steps to perform locally on a single factory.
 We support fan-in (one vertex has several direct ancestors) and fan-out (one vertex is direct ancestor of several ones).
-However, we set a limitation on the construction of the DAGs: a vertex cannot be direct descendant of an ancestor of its direct ancestor.
-Differently said, there is no possibility to create an edge bypassing a sibling child vertex.
+However, we set a limitation on the construction of the DAGs: a vertex cannot be direct descendant of a transitive ancestor.
 +
-Since for technical and security reason some steps cannot be run anywhere (like reading a database or accessing a protected resource), the DAGs of a single minions can be distributed and executed on different factories.
-A scenario is composed of at least one or more DAGs
+Since for technical and security reason some steps cannot be run anywhere (like reading a database or accessing a protected resource), the DAGs of a single minion can be distributed and executed on different factories.
+A scenario is composed of at least one or more DAGs.
 +
 A DAG is not owned by a Minion, but its execution is.
 Each vertex of a DAG has a unique ID used to route the data on the wire.
