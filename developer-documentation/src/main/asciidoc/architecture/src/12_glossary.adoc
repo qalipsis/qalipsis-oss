@@ -1,0 +1,43 @@
+[[section-glossary]]
+== Glossary
+
+[options="header",cols="1,3"]
+|===
+| Term         | Definition
+| Action     |
+Specific kind of step generating load on the tested system. It generally creates or executes requests.
+| Assertion     |
+Specific kind of step generally using data from actions and data sources to perform verifications.
+| Campaign     |
+Complete execution of all the scenarios by all the minions, in order to verify the behavior of the tested system under heavy load.
+| Correlation     |
+General strategy to bring together either requests and responses or set of records that are related.
+
+We generally use a correlation ID or key to find the matches.
+| Directed acyclic graphs (DAG) |
+Sub-part of a scenario containing uninterrupted ordered lists of steps and sharing at least one selector in common.
+| Domain Specific Language (DSL) |
+Syntactic sugar provided to the users so that they can easily and safely create scenario specifications.
+| Factory     |
+Daemon service hosting the activity minions (or part of them).
+| Head     |
+Daemon service in charge of driving the factories and providing graphical management and feedback to the users.
+| Minion     |
+Logical entity hosted by factories, which simulates the activity of a user, IoT device or system to create load on the target system.
+| Queue   |
+First-in first-out collection of messages, in which each message can be consumed only once in total.
+| Scenario   |
+Complete directed set of all steps to be run by a family of minion to simulate load and verify the behavior of the target system.
+| Scenario specifications |
+Description of a scenario using the DSL.
+| Selector |
+Single label to specify a connivance between steps and factories where they should be executed.
+| Step     |
+Atom of a scenario, describing a unique simple operation to perform.
+| Step specifications    |
+Description of a step using the DSL.
+| Topic     |
+In the sense of Kafka: queue able to provide the same messages to different (groups of) consumers.
+| Vertex     |
+See Step.
+|===
