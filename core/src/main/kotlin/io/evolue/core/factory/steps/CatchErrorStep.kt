@@ -14,13 +14,13 @@ import io.evolue.api.steps.ErrorProcessingStep
  *
  * @author Eric Jessé
  */
-class CatchErrorStep<I, O>(
+class CatchErrorStep<I>(
     id: StepId,
     private val block: ((error: Collection<StepError>) -> Unit)
-) : AbstractStep<I, O>(id, null), ErrorProcessingStep<I, O> {
+) : AbstractStep<I, I>(id, null), ErrorProcessingStep<I, I> {
 
     @Throws(Throwable::class)
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(context: StepContext<I, I>) {
         if (context.errors.isNotEmpty()) {
             log.trace("${context.errors.size} error(s) to be caught")
             this.block(context.errors)

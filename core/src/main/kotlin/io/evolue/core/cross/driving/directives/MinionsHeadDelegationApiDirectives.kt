@@ -53,6 +53,12 @@ internal class MinionsRampUpPreparationDirective(
      * The time to wait before the first minion is executed.
      * This should take the latency of the factories into consideration.
      */
-    val startOffsetMs: Long = 3000
+    val startOffsetMs: Long = 3000,
+
+    /**
+     * The speed factor to apply on the ramp-up strategy. Each strategy will apply it differently depending on
+     * its own implementation.
+     */
+    val speedFactor: Double = 1.0
 
 ) : DescriptiveDirective()

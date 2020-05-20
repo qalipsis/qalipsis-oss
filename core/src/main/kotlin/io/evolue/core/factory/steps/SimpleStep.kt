@@ -15,7 +15,7 @@ class SimpleStep<I, O>(
     id: StepId,
     retryPolicy: RetryPolicy?,
     private val specification: (suspend (context: StepContext<I, O>) -> Unit)
-) : AbstractStep<I, O>(id, null) {
+) : AbstractStep<I, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, O>) {
         specification(context)

@@ -18,7 +18,7 @@ internal class BroadcastFromBeginningTopic(
     /**
      * Size of the buffer to keep the past received records.
      */
-    private val bufferSize: Int,
+    bufferSize: Int,
     /**
      * Time to idle of a subscription. Once idle a subscription passed this duration, it is automatically cancelled.
      */

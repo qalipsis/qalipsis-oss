@@ -14,6 +14,7 @@ import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.orchestration.ScenariosKeeper
+import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.time.EvolueTimeAssertions
 import io.mockk.coEvery
@@ -117,20 +118,14 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldThrowExceptionWhenMinionsToStartIsZero() {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000)
+        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000, 3.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
             directive.scenarioId to (0..27).map { "minion-$it" }.toList()
         )
 
-        every { scenariosKeeper.getScenario("my-scenario") } returns relaxedMockk {
-            every { rampUpStrategy } returns relaxedMockk {
-                every { iterator(any()) } returns relaxedMockk {
-                    every { next() } returns MinionsStartingLine(0, 500)
-                }
-            }
-        }
+        every { scenariosKeeper.getScenario("my-scenario") } returns relaxedMockk { }
 
         coEvery { feedbackProducer.publish(capture(feedbacks)) } answers {}
         coEvery { directiveProducer.publish(capture(createdDirective)) } answers {}
@@ -168,19 +163,20 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldThrowExceptionWhenStartOffsetIsZero() {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000)
+        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000, 2.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
             directive.scenarioId to (0..27).map { "minion-$it" }.toList()
         )
 
-        every { scenariosKeeper.getScenario("my-scenario") } returns relaxedMockk {
-            every { rampUpStrategy } returns relaxedMockk {
-                every { iterator(any()) } returns relaxedMockk {
-                    every { next() } returns MinionsStartingLine(3, 0)
-                }
+        val mockedRampupStrategy: RampUpStrategy = relaxedMockk {
+            every { iterator(any(), any()) } returns relaxedMockk {
+                every { next() } returns MinionsStartingLine(3, 0)
             }
+        }
+        every { scenariosKeeper.getScenario("my-scenario") } returns relaxedMockk {
+            every { rampUpStrategy } returns mockedRampupStrategy
         }
 
         coEvery { feedbackProducer.publish(capture(feedbacks)) } answers {}
@@ -198,6 +194,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
             scenariosKeeper.getScenario("my-scenario")
             feedbackProducer.publish(any())
             minionsCreationPreparationDirectiveProcessor.minions
+            mockedRampupStrategy.iterator(28, 2.0)
             feedbackProducer.publish(any())
         }
         feedbacks.forEach {
@@ -219,7 +216,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldCreateOneDirectiveWithAllTheStarts() {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000)
+        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000, 2.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
@@ -227,13 +224,14 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         )
 
         // Scenario with a ramp-up to start 3 minions every 500 ms.
+        val mockedRampupStrategy: RampUpStrategy = relaxedMockk {
+            every { iterator(any(), any()) } returns relaxedMockk {
+                every { next() } returns MinionsStartingLine(3, 500)
+            }
+        }
         every { scenariosKeeper.getScenario("my-scenario") } returns relaxedMockk {
             every { id } returns "my-scenario"
-            every { rampUpStrategy } returns relaxedMockk {
-                every { iterator(any()) } returns relaxedMockk {
-                    every { next() } returns MinionsStartingLine(3, 500)
-                }
-            }
+            every { rampUpStrategy } returns mockedRampupStrategy
         }
 
         coEvery { feedbackProducer.publish(capture(feedbacks)) } answers {}
@@ -250,6 +248,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
             scenariosKeeper.getScenario("my-scenario")
             feedbackProducer.publish(any())
             minionsCreationPreparationDirectiveProcessor.minions
+            mockedRampupStrategy.iterator(28, 2.0)
             directiveProducer.publish(any())
             feedbackProducer.publish(any())
         }
@@ -259,6 +258,8 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         }
         assertThat(feedbacks[0]::status).isEqualTo(FeedbackStatus.IN_PROGRESS)
         assertThat(feedbacks[1]::status).isEqualTo(FeedbackStatus.COMPLETED)
+
+
 
         createdDirective.captured.apply {
             assertThat(this).isInstanceOf(MinionsStartDirective::class)

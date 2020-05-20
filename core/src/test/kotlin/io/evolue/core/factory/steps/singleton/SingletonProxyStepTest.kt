@@ -27,7 +27,7 @@ internal class SingletonProxyStepTest {
     internal fun shouldNotExecuteWhenNotInitialized() {
         val remoteChannel = Channel<Long>(100)
         val topic = topic(TopicMode.UNICAST, fromBeginning = true)
-        val step = SingletonProxyStep("", null, remoteChannel, topic)
+        val step = SingletonProxyStep("", remoteChannel, topic)
         val ctx = StepTestHelper.createStepContext<Long, Long>()
 
         // then
@@ -43,7 +43,7 @@ internal class SingletonProxyStepTest {
     internal fun initShouldStartBroadcastChannelConsumptionWithoutFilter() {
         val remoteChannel = Channel<Int>(100)
         val topic = topic(TopicMode.UNICAST, fromBeginning = true)
-        val step = SingletonProxyStep("", null, remoteChannel, topic)
+        val step = SingletonProxyStep("", remoteChannel, topic)
 
         // when
         runBlocking {
@@ -69,7 +69,7 @@ internal class SingletonProxyStepTest {
     internal fun initShouldStartBroadcastChannelConsumptionWithFilter() {
         val remoteChannel = Channel<Int>(100)
         val topic = topic(TopicMode.UNICAST, fromBeginning = true)
-        val step = SingletonProxyStep("", null, remoteChannel, topic) { value -> value >= 5 }
+        val step = SingletonProxyStep("", remoteChannel, topic) { value -> value >= 5 }
 
         // when
         runBlocking {
@@ -95,7 +95,7 @@ internal class SingletonProxyStepTest {
     internal fun closeShouldStopChannelConsumption() {
         val remoteChannel = Channel<Topic.Record>()
         val topic = topic(TopicMode.UNICAST)
-        val step = SingletonProxyStep("", null, remoteChannel, topic)
+        val step = SingletonProxyStep("", remoteChannel, topic)
 
         // when
         runBlocking {
@@ -123,7 +123,7 @@ internal class SingletonProxyStepTest {
         val topic = mockk<Topic>(relaxed = true) {
             coEvery { subscribe(ctx.minionId) } returns subscription
         }
-        val step = SingletonProxyStep("", null, remoteChannel, topic)
+        val step = SingletonProxyStep("", remoteChannel, topic)
         runBlocking {
             step.init()
         }

@@ -2,6 +2,8 @@ package io.evolue.core.factory.orchestration
 
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
+import io.evolue.api.orchestration.DirectedAcyclicGraph
+import io.evolue.api.orchestration.Scenario
 import java.util.concurrent.ConcurrentHashMap
 
 /**

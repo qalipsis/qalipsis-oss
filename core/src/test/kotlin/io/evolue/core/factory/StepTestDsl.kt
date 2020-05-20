@@ -2,10 +2,12 @@ package io.evolue.core.factory
 
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
+import io.evolue.api.orchestration.DirectedAcyclicGraph
+import io.evolue.api.orchestration.Scenario
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.steps.AbstractStep
 import io.evolue.api.steps.ErrorProcessingStep
-import io.evolue.core.factory.orchestration.DirectedAcyclicGraph
+import io.evolue.test.mockk.relaxedMockk
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Assertions
 import java.util.concurrent.atomic.AtomicReference
@@ -16,7 +18,8 @@ import java.util.concurrent.atomic.AtomicReference
  */
 
 internal fun dag(configure: DirectedAcyclicGraph.() -> Unit = {}): DirectedAcyclicGraph {
-    val dag = DirectedAcyclicGraph("my-dag", "my-scenario", scenarioStart = false, singleton = false)
+    val dag = DirectedAcyclicGraph("my-dag", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
+        scenarioStart = false, singleton = false)
     dag.configure()
     return dag
 }

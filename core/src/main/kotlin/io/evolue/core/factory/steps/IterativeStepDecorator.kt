@@ -24,7 +24,7 @@ class IterativeStepDecorator<I, O>(
     override val id: StepId
         get() = decorated.id
 
-    override val retryPolicy: RetryPolicy? = null
+    override var retryPolicy: RetryPolicy? = null
 
     override fun next(): MutableList<Step<O, *>> = decorated.next()
 

@@ -14,11 +14,12 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
 /**
- * Decorator for [Step]s considered to be data providers for [CorrelationStep]s.
+ * Decorator for [Step]s considered to be "secondary" steps for [CorrelationStep]s.
  *
  * @author Eric Jessé
  */
-internal class CorrelationOutputDecorator<O>(private val decorated: Step<Any?, O>) : Step<Any?, O>, StepExecutor {
+internal class CorrelationOutputDecorator<I : Any?, O : Any?>(private val decorated: Step<I, O>) : Step<I, O>,
+    StepExecutor {
 
     @VisibleForTesting
     internal val broadcastChannel = BroadcastChannel<CorrelationRecord<O>>(Channel.BUFFERED)
@@ -26,7 +27,7 @@ internal class CorrelationOutputDecorator<O>(private val decorated: Step<Any?, O
     override val id: StepId
         get() = decorated.id
 
-    override val retryPolicy: RetryPolicy? = null
+    override var retryPolicy: RetryPolicy? = null
 
     override fun next(): MutableList<Step<O, *>> = decorated.next()
 
@@ -39,7 +40,7 @@ internal class CorrelationOutputDecorator<O>(private val decorated: Step<Any?, O
         broadcastChannel.close()
     }
 
-    override suspend fun execute(context: StepContext<Any?, O>) {
+    override suspend fun execute(context: StepContext<I, O>) {
         // Consume the data emitted by the decorated step to populate the broadcast channel for the correlation steps.
         GlobalScope.launch {
             for (record in context.output as Channel<O>) {

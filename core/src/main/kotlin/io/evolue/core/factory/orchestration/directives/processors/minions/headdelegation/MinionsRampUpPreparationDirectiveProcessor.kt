@@ -45,7 +45,8 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
 
                 val createdMinions =
                     LinkedList(minionsCreationPreparationDirectiveProcessor.minions[directive.scenarioId])
-                val rampUpStrategyIterator = scenario.rampUpStrategy.iterator(createdMinions.size)
+                val rampUpStrategyIterator =
+                    scenario.rampUpStrategy.iterator(createdMinions.size, directive.speedFactor)
                 var start = System.currentTimeMillis() + directive.startOffsetMs
                 val minionsStartDefinitions = mutableListOf<MinionStartDefinition>()
 

@@ -25,7 +25,7 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     implementation(project(":api:api-common"))
-    implementation(project(":api:api-specifications"))
+    implementation(project(":api:api-dsl"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${properties["kotlinCoroutinesVersion"]}")
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("com.google.guava:guava:28.2-jre")

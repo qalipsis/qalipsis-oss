@@ -6,7 +6,7 @@ import kotlinx.coroutines.channels.SendChannel
 import java.time.Duration
 
 /**
- *  Abstract implementation of [Topic] for the ones that are based upon native capabilities of
+ *  Abstract implementation of [topic] for the ones that are based upon native capabilities of
  *  [kotlinx.coroutines.channels.Channel]s.
  *
  * @author Eric Jessé

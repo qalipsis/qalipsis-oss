@@ -22,8 +22,7 @@ import java.util.concurrent.TimeUnit
  *
  * @author Eric Jessé
  */
-internal class InMemoryDirectiveRegistry :
-    DirectiveRegistry {
+internal class InMemoryDirectiveRegistry : DirectiveRegistry {
 
     /**
      * Cache of real [QueueDirective]s accessible by the keys of their references.

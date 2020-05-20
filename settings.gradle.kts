@@ -3,7 +3,7 @@ rootProject.name = "evolue"
 include(
     "api",
     "api:api-common",
-    "api:api-specifications",
+    "api:api-dsl",
     "test",
 
     "core",

@@ -4,6 +4,7 @@ import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepError
 import io.evolue.api.events.EventLogger
 import io.evolue.api.logging.LoggerHelper.logger
+import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.steps.ErrorProcessingStep
 import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepExecutor
@@ -53,7 +54,7 @@ internal class Runner(
         val creationTimestamp = System.currentTimeMillis()
         dag.rootSteps.forEach { step ->
             val ctx =
-                StepContext<Unit, Any>(minionId = minionImpl.id, scenarioId = dag.scenarioId,
+                StepContext<Unit, Any>(minionId = minionImpl.id, scenarioId = dag.scenario.id,
                     directedAcyclicGraphId = dag.id, stepId = step.id, creation = creationTimestamp)
             minionImpl.attach(GlobalScope.launch {
                 executeStepRecursively(minionImpl, step as Step<Any?, Any?>, ctx as StepContext<Any?, Any?>)

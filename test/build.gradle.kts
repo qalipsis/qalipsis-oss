@@ -16,9 +16,8 @@ kapt {
 }
 
 dependencies {
-    implementation(
-        kotlin("stdlib")
-    )
+    implementation(kotlin("stdlib"))
+    api(kotlin("reflect"))
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation(project(":api:api-common"))
     api("io.mockk:mockk:1.9.3")

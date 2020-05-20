@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class PaceStep<I>(
     id: StepId,
-    private val specification: ((pastPeriodMs: Long) -> Long)
+    private val specification: (pastPeriodMs: Long) -> Long
 ) : AbstractStep<I, I>(id, null) {
 
     private val nextExecutions = ConcurrentHashMap<MinionId, NextExecution>()

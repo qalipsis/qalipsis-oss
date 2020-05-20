@@ -16,7 +16,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
 import java.time.Duration
 
 
@@ -38,24 +37,19 @@ internal class CorrelationStep<I, O>(
     id: StepId,
 
     /**
+     * Specification of the key extractor based upon the value received from the primary parent.
+     */
+    private val correlationKeyExtractor: ((record: CorrelationRecord<I>) -> Any?),
+
+    /**
      * Configuration for the consumption and correlation from secondary parents.
      */
     private val secondaryCorrelations: Collection<SecondaryCorrelation>,
 
     /**
-     * Timeout after which, the execution of the step on the primary context is interrupted.
-     */
-    private val executionTimeout: Duration,
-
-    /**
      * Timeout, after which the values received but not forwarded are evicted from the cache.
      */
-    cacheTimeout: Duration,
-
-    /**
-     * Specification of the key extractor based upon the value received from the primary parent.
-     */
-    private val correlationKeyExtractor: ((record: CorrelationRecord<*>) -> Any?)
+    cacheTimeout: Duration
 
 ) : AbstractStep<I, O>(id, null) {
 
@@ -97,12 +91,10 @@ internal class CorrelationStep<I, O>(
             CorrelationRecord(context.minionId, context.parentStepId!!,
                 input))?.let { key ->
             try {
-                withTimeout(executionTimeout.toMillis()) {
                     val cachedSecondaryValues = cache.get(key)!!.receive()
                     val values =
                         arrayListOf(input) + secondaryCorrelations.map { cachedSecondaryValues[it.sourceStepId] }
                     (context.output as Channel<Any?>).send(values.toTypedArray())
-                }
             } finally {
                 log.trace("Invalidating cache with key $key")
                 cache.invalidate(key)

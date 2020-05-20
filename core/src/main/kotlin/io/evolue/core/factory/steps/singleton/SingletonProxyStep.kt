@@ -4,7 +4,6 @@ import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.messaging.Topic
-import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.steps.AbstractStep
 import io.evolue.core.exceptions.NotInitializedStepException
 import kotlinx.coroutines.GlobalScope
@@ -13,17 +12,14 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
 /**
- * Step to provide data from an output [io.evolue.api.steps.Step] running in a singleton
- * [io.evolue.core.factory.orchestration.MinionImpl] to the one of a standard [Minion].
+ * Step to provide data from an output [io.evolue.api.steps.Step] running in a singleton [Minion] to a standard [Minion].
  *
- * This step is part of a non-singleton DAG and acts as a proxy to buffer and deliver the records to the buffers.
+ * This step is part of a non-singleton DAG and acts as a proxy to buffer and deliver the records to the contexts.
  *
  * @author Eric Jessé
  */
 internal class SingletonProxyStep<I>(
     id: StepId,
-
-    retryPolicy: RetryPolicy?,
 
     /**
      * [ReceiveChannel] obtained from a [io.evolue.core.factory.steps.singleton.SingletonOutputDecorator] to forward the records.
@@ -42,7 +38,7 @@ internal class SingletonProxyStep<I>(
      */
     private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true }
 
-) : AbstractStep<I, I>(id, retryPolicy) {
+) : AbstractStep<I, I>(id, null) {
 
     private lateinit var consumptionJob: Job
 

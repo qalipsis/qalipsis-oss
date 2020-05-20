@@ -15,7 +15,7 @@ interface Step<I : Any?, O : Any?> {
 
     val id: StepId;
 
-    val retryPolicy: RetryPolicy?;
+    var retryPolicy: RetryPolicy?;
 
     /**
      * Execute the operation implies by the step.

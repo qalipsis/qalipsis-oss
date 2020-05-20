@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.flowOf
 class FlatMapStep<I, O>(
     id: StepId,
     retryPolicy: RetryPolicy?,
-    private val block: ((input: Any?) -> Flow<O>) = { input ->
+    private val block: ((input: I) -> Flow<O>) = { input ->
         when (input) {
             null -> emptyFlow()
             is Collection<*> ->

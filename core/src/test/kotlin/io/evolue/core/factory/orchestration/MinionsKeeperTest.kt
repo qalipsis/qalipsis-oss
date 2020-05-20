@@ -2,6 +2,8 @@ package io.evolue.core.factory.orchestration
 
 import io.evolue.api.events.EventLogger
 import io.evolue.api.logging.LoggerHelper.logger
+import io.evolue.api.orchestration.DirectedAcyclicGraph
+import io.evolue.api.orchestration.Scenario
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.test.coroutines.AbstractCoroutinesTest
 import io.evolue.test.mockk.coVerifyOnce
@@ -67,7 +69,8 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @Timeout(1)
     internal fun shouldCreatePausedMinion() {
         // given
-        val dag = DirectedAcyclicGraph("my-dag", "my-scenario", singleton = false, scenarioStart = true)
+        val dag = DirectedAcyclicGraph("my-dag", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
+            singleton = false, scenarioStart = true)
         every {
             scenariosKeeper.getDag("my-scenario", "my-dag")
         } returns dag
@@ -99,7 +102,8 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @Test
     internal fun shouldCreateSingletonPausedMinion() {
         // given
-        val dag = DirectedAcyclicGraph("my-dag", "my-scenario", singleton = true, scenarioStart = true)
+        val dag = DirectedAcyclicGraph("my-dag", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
+            singleton = true, scenarioStart = true)
         every {
             scenariosKeeper.getDag("my-scenario", "my-dag")
         } returns dag

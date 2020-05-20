@@ -3,6 +3,8 @@ package io.evolue.core.factory.orchestration.directives.processors.minions.headd
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import io.evolue.api.orchestration.DirectedAcyclicGraph
+import io.evolue.api.orchestration.Scenario
 import io.evolue.core.cross.driving.TestDescriptiveDirective
 import io.evolue.core.cross.driving.directives.DirectiveProducer
 import io.evolue.core.cross.driving.directives.DirectiveRegistry
@@ -11,8 +13,6 @@ import io.evolue.core.cross.driving.directives.MinionsCreationPreparationDirecti
 import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
-import io.evolue.core.factory.orchestration.DirectedAcyclicGraph
-import io.evolue.core.factory.orchestration.Scenario
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.test.coroutines.AbstractCoroutinesTest
 import io.evolue.test.mockk.relaxedMockk
@@ -105,8 +105,10 @@ internal class MinionsCreationPreparationDirectiveProcessorTest : AbstractCorout
                 Scenario(
                     "my-scenario",
                     mutableListOf(
-                        DirectedAcyclicGraph("my-dag-1", "my-scenario", mutableListOf(), false, false),
-                        DirectedAcyclicGraph("my-dag-2", "my-scenario", mutableListOf(), false, false)
+                        DirectedAcyclicGraph("my-dag-1", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
+                            mutableListOf(), false, false),
+                        DirectedAcyclicGraph("my-dag-2", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
+                            mutableListOf(), false, false)
                     ),
                     relaxedMockk()
                 )

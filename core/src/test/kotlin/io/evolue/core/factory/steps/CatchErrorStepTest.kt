@@ -19,7 +19,7 @@ internal class CatchErrorStepTest {
     @Timeout(1)
     fun shouldIgnoreStepWhenNoError() {
         val reference = AtomicInteger(0)
-        val step = CatchErrorStep<Any, Any>("") { _ -> reference.incrementAndGet() }
+        val step = CatchErrorStep<Any>("") { _ -> reference.incrementAndGet() }
         val ctx = createStepContext<Any, Any>()
 
         runBlocking {
@@ -33,7 +33,7 @@ internal class CatchErrorStepTest {
     @Timeout(1)
     fun shouldExecuteStepWhenErrors() {
         val reference = AtomicInteger(0)
-        val step = CatchErrorStep<Any, Any>("") { _ -> reference.incrementAndGet() }
+        val step = CatchErrorStep<Any>("") { _ -> reference.incrementAndGet() }
         val ctx = createStepContext<Any, Any>(errors = mutableListOf(StepError(RuntimeException(""))))
 
         runBlocking {

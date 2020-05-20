@@ -9,7 +9,7 @@ import kotlinx.coroutines.selects.select
 import java.time.Duration
 
 /**
- * A [Topic] is a messaging interface able to address different models of pub/sub behind a unified interface.
+ * A [topic] is a messaging interface able to address different models of pub/sub behind a unified interface.
  * It is freely inspired by [Apache Kafka topics][https://kafka.apache.org], moving customer configuration
  * (like <i>auto.offset.reset<i>,  <i>connections.max.idle.ms<i>) to the topic configuration for the ease-of-use.
  *
@@ -141,7 +141,7 @@ enum class TopicMode {
 /**
  * Creates a new topic.
  *
- * @param mode mode of the [Topic] to create. See [TopicMode] for more details.
+ * @param mode mode of the [topic] to create. See [TopicMode] for more details.
  * @param bufferSize size of the buffer to keep the received records. ({@code 1024} by default [mode] is [BROADCAST] and [fromBeginning] is {@code true}, {@code 1024} otherwise)
  * @param fromBeginning defines if new subscriptions start from the beginning of the buffer or only at present time.
  * @param subscriptionIdleTimeout duration of the idle subscriptions before they are cancelled.
