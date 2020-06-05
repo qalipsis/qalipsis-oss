@@ -59,13 +59,15 @@ internal class SingletonStepSpecificationConverterTest {
         singletonSpec.nextSteps.add(nextSpec2)
 
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), singletonSpec)
+        creationContext.createdStep(mockedCreatedStep)
+
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).all {
+        assertThat(creationContext.createdStep!!).all {
             isInstanceOf(SingletonOutputDecorator::class)
             prop("decorated").isSameAs(mockedCreatedStep)
         }
@@ -73,7 +75,7 @@ internal class SingletonStepSpecificationConverterTest {
         assertThat(singletonSpec.nextSteps).each {
             it.all {
                 isInstanceOf(SingletonProxyStepSpecification::class)
-                prop("singletonOutputDecorator").isSameAs(result)
+                prop("singletonOutputDecorator").isSameAs(creationContext.createdStep)
                 prop("singletonType").isEqualTo(SingletonType.BROADCAST)
                 prop("bufferSize").isEqualTo(123)
                 prop("idleTimeout").isEqualTo(Duration.ofMillis(456))
@@ -100,14 +102,14 @@ internal class SingletonStepSpecificationConverterTest {
         val mockedCreatedStep: Step<Int, String> = relaxedMockk()
         val creationContext =
             StepCreationContextImpl(relaxedMockk(), relaxedMockk(), relaxedMockk<StepSpecification<Int, String, *>>())
-
+        creationContext.createdStep(mockedCreatedStep)
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).isSameAs(mockedCreatedStep)
+        assertThat(creationContext.createdStep!!).isSameAs(mockedCreatedStep)
     }
 
     inner class TestSingletonSpecification(

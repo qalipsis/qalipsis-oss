@@ -11,13 +11,12 @@ typealias MinionId = Identifier
 
 typealias ScenarioId = Identifier
 
-/**
- * Human readable of a step.
- */
 typealias StepName = Identifier
 
-typealias StepId = Identifier
+typealias StepId = StepName
 
 typealias DirectedAcyclicGraphId = Identifier
 
 typealias SharedStateName = Identifier
+
+typealias CampaignId = Identifier

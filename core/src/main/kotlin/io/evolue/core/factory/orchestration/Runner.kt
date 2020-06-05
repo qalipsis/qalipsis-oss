@@ -54,7 +54,8 @@ internal class Runner(
         val creationTimestamp = System.currentTimeMillis()
         dag.rootSteps.forEach { step ->
             val ctx =
-                StepContext<Unit, Any>(minionId = minionImpl.id, scenarioId = dag.scenario.id,
+                StepContext<Unit, Any>(campaignId = minionImpl.campaignId, minionId = minionImpl.id,
+                    scenarioId = dag.scenario.id,
                     directedAcyclicGraphId = dag.id, stepId = step.id, creation = creationTimestamp)
             minionImpl.attach(GlobalScope.launch {
                 executeStepRecursively(minionImpl, step as Step<Any?, Any?>, ctx as StepContext<Any?, Any?>)
@@ -68,12 +69,12 @@ internal class Runner(
     private suspend fun executeStepRecursively(minionImpl: MinionImpl, step: Step<Any?, Any?>,
                                                ctx: StepContext<Any?, Any?>) {
         // Asynchronously read the output to trigger the next steps.
-        if (step.next().isNotEmpty()) {
+        if (step.next.isNotEmpty()) {
             // The output is read asynchronously to release the current coroutine and let the step execute.
             minionImpl.attach(GlobalScope.launch {
                 var errorOfContextProcessed = false
                 for (outputRecord in ctx.output as Channel) {
-                    (step.next()).forEach { nextStep ->
+                    step.next.forEach { nextStep ->
                         if (ctx.exhausted) {
                             errorOfContextProcessed = true
                         }
@@ -87,7 +88,7 @@ internal class Runner(
                 }
                 // If the context is exhausted, it only the error processing steps are executed.
                 if (!errorOfContextProcessed && ctx.exhausted) {
-                    step.next().forEach { nextStep ->
+                    step.next.forEach { nextStep ->
                         val nextContext = StepContextBuilder.next(ctx, nextStep.id)
                         minionImpl.attach(launch {
                             executeStepRecursively(minionImpl, nextStep as Step<Any?, Any?>,

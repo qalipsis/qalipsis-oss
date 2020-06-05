@@ -4,7 +4,6 @@ import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * <p>
@@ -17,25 +16,16 @@ import java.util.concurrent.ConcurrentHashMap
  * The decomposition of the scenario (requested from the head as a reference to a directive) is then shared to
  * all the factories via messaging and kept in each registry.
  * </p>
+ *
+ * @author Eric Jessé
  */
-internal class ScenariosKeeper {
+internal interface ScenariosKeeper {
 
-    /**
-     * Collection of DAGs accessible by scenario and DAG ID.
-     */
-    private val dagsByScenario: MutableMap<ScenarioId, MutableMap<DirectedAcyclicGraphId, DirectedAcyclicGraph>> =
-        ConcurrentHashMap()
+    fun hasScenario(scenarioId: ScenarioId): Boolean
 
-    private val scenarios: MutableMap<ScenarioId, Scenario> = ConcurrentHashMap()
+    fun getScenario(scenarioId: ScenarioId): Scenario?
 
-    fun hasScenario(scenarioId: ScenarioId): Boolean = scenarios.containsKey(scenarioId)
+    fun hasDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): Boolean
 
-    fun getScenario(scenarioId: ScenarioId): Scenario? = scenarios[scenarioId]
-
-    fun hasDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): Boolean =
-        dagsByScenario[scenarioId]?.containsKey(dagId) ?: false
-
-    fun getDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph? =
-        dagsByScenario[scenarioId]?.get(dagId)
-
+    fun getDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph?
 }

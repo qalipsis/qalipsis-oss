@@ -26,7 +26,7 @@ class IterativeStepDecorator<I, O>(
 
     override var retryPolicy: RetryPolicy? = null
 
-    override fun next(): MutableList<Step<O, *>> = decorated.next()
+    override var next = decorated.next
 
     var delayMillis = delay.toMillis()
 

@@ -1,6 +1,6 @@
 package io.evolue.api.steps
 
-import io.evolue.api.scenario
+import io.evolue.api.scenario.scenario
 
 /**
  * Simple step specification only used for tests.

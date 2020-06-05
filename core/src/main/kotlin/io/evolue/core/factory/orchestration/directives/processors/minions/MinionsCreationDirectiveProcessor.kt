@@ -25,7 +25,7 @@ internal class MinionsCreationDirectiveProcessor(
     override suspend fun process(directive: MinionsCreationDirectiveReference) {
         directiveRegistry.pop(directive)?.let { minionId ->
             GlobalScope.launch {
-                minionsKeeper.create(directive.scenarioId, directive.dagId, minionId)
+                minionsKeeper.create(directive.campaignId, directive.scenarioId, directive.dagId, minionId)
             }
         }
     }

@@ -72,20 +72,18 @@ interface Topic {
     data class Record(
         val headers: MutableMap<String, Any> = mutableMapOf(),
         val value: Any?
-    ) {
-        val receivedTimestamp = System.currentTimeMillis()
-    }
+    )
 
     class TopicSubscription(
         internal val channel: ReceiveChannel<Record>,
-        idleTimeout: Duration,
+        private val idleTimeout: Duration,
         private val cancellation: (() -> Unit)
     ) {
         private var active = true
 
         private val activityChannel = Channel<Unit>(1)
 
-        private var timeout: ReceiveChannel<Unit> = ticker(idleTimeout.toMillis())
+        private var timeout: ReceiveChannel<Unit> = buildTimeout()
 
         init {
             GlobalScope.launch {
@@ -93,7 +91,7 @@ interface Topic {
                     select<Unit> {
                         activityChannel.onReceive { _ ->
                             timeout.cancel()
-                            timeout = ticker(idleTimeout.toMillis())
+                            timeout = buildTimeout()
                         }
                         timeout.onReceive { _ ->
                             cancel()
@@ -102,6 +100,9 @@ interface Topic {
                 }
             }
         }
+
+        private fun buildTimeout() = if (idleTimeout.toMillis() > 0) ticker(idleTimeout.toMillis()) else Channel(
+            Channel.RENDEZVOUS)
 
         suspend fun poll(): Record {
             if (!active) {
@@ -144,10 +145,10 @@ enum class TopicMode {
  * @param mode mode of the [topic] to create. See [TopicMode] for more details.
  * @param bufferSize size of the buffer to keep the received records. ({@code 1024} by default [mode] is [BROADCAST] and [fromBeginning] is {@code true}, {@code 1024} otherwise)
  * @param fromBeginning defines if new subscriptions start from the beginning of the buffer or only at present time.
- * @param subscriptionIdleTimeout duration of the idle subscriptions before they are cancelled.
+ * @param subscriptionIdleTimeout duration of the idle subscriptions (subscriptions not receiving any record) before they are cancelled.
  */
 fun topic(mode: TopicMode = TopicMode.BROADCAST, bufferSize: Int = -1, fromBeginning: Boolean = false,
-          subscriptionIdleTimeout: Duration = Duration.ofMinutes(1)): Topic {
+          subscriptionIdleTimeout: Duration = Duration.ZERO): Topic {
     return when {
         TopicMode.UNICAST == mode -> {
             val actualBufferSize = if (bufferSize > 0) bufferSize else Channel.UNLIMITED

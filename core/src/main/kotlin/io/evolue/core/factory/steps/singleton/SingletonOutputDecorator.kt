@@ -29,7 +29,7 @@ internal class SingletonOutputDecorator<I, O>(private val decorated: Step<I, O>)
 
     override var retryPolicy: RetryPolicy? = null
 
-    override fun next(): MutableList<Step<O, *>> = mutableListOf()
+    override var next = mutableListOf<Step<O, *>>()
 
     override suspend fun init() {
         decorated.init()

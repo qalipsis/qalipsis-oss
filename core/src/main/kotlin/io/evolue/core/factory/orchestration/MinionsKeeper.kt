@@ -1,6 +1,7 @@
 package io.evolue.core.factory.orchestration
 
 import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.context.CampaignId
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.MinionId
 import io.evolue.api.context.ScenarioId
@@ -39,13 +40,14 @@ internal class MinionsKeeper(
     /**
      * Create a new Minion for the given scenario and directed acyclic graph.
      *
+     * @param campaignId the ID of the campaign to execute.
      * @param scenarioId the ID of the scenario to execute.
      * @param dagId the ID of the directed acyclic graph to execute in the scenario.
      * @param minionId the ID of the minion.
      */
-    fun create(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId, minionId: MinionId) {
+    fun create(campaignId: CampaignId, scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId, minionId: MinionId) {
         scenariosKeeper.getDag(scenarioId, dagId)?.let { dag ->
-            val minion = MinionImpl(minionId, true, eventLogger, meterRegistry)
+            val minion = MinionImpl(campaignId, minionId, true, eventLogger, meterRegistry)
             if (dag.singleton) {
                 // All singletons are started at the time time, but before the "real" minions.
                 readySingletonsMinions.computeIfAbsent(scenarioId) { mutableListOf() }.add(minion)

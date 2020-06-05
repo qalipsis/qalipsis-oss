@@ -31,7 +31,12 @@ class Scenario(
     /**
      * [RetryPolicy] to define on the steps of the scenario when none is explicitly set.
      */
-    val defaultRetryPolicy: RetryPolicy = NoRetryPolicy()
+    val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
+
+    /**
+     * Default minions count to run the scenario when runtime factor is 1.
+     */
+    val minionsCount: Int = 1
 ) {
 
     private val steps = mutableMapOf<StepId, Channel<Step<*, *>>>()

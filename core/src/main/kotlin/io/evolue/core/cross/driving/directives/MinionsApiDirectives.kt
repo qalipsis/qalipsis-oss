@@ -1,5 +1,6 @@
 package io.evolue.core.cross.driving.directives
 
+import io.evolue.api.context.CampaignId
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.MinionId
 import io.evolue.api.context.ScenarioId
@@ -11,6 +12,10 @@ import io.evolue.api.context.ScenarioId
  * It is published to the directive consumers as a [MinionsCreationDirectiveReference].
  */
 internal class MinionsCreationDirective(
+    /**
+     * The ID of the campaign for which the minion has to be created.
+     */
+    val campaignId: CampaignId,
     /**
      * The ID of the scenario for which the minion has to be created.
      */
@@ -26,7 +31,7 @@ internal class MinionsCreationDirective(
 ) : QueueDirective<MinionId, QueueDirectiveReference<MinionId>>(values) {
 
     override fun toReference(): QueueDirectiveReference<MinionId> {
-        return MinionsCreationDirectiveReference(key, scenarioId, dagId)
+        return MinionsCreationDirectiveReference(key, campaignId, scenarioId, dagId)
     }
 }
 
@@ -35,6 +40,10 @@ internal class MinionsCreationDirective(
  */
 internal class MinionsCreationDirectiveReference(
     key: DirectiveKey,
+    /**
+     * The ID of the campaign for which the minion has to be created.
+     */
+    val campaignId: CampaignId,
     /**
      * The ID of the scenario for which the minion has to be created.
      */

@@ -20,7 +20,7 @@ internal class BroadcastFromBeginningTopic(
      */
     bufferSize: Int,
     /**
-     * Time to idle of a subscription. Once idle a subscription passed this duration, it is automatically cancelled.
+     * Idle time of a subscription. Once a subscription passed this duration without record, it is cancelled.
      */
     private val idleTimeout: Duration
 ) : Topic {

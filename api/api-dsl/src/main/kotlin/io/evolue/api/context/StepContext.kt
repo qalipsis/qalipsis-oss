@@ -28,6 +28,11 @@ data class StepContext<IN : Any?, OUT : Any?>(
     val errors: MutableList<StepError> = mutableListOf(),
 
     /**
+     * Identifier of the test campaign owning the context.
+     */
+    val campaignId: CampaignId = "",
+
+    /**
      * Identifier of the Minion owning the context.
      */
     val minionId: MinionId,
@@ -83,6 +88,7 @@ data class StepContext<IN : Any?, OUT : Any?>(
      */
     fun toEventTagsMap(): Map<String, String> {
         val result = mutableMapOf(
+            "campaign" to campaignId,
             "minion" to minionId,
             "scenario" to scenarioId,
             "dag" to directedAcyclicGraphId,

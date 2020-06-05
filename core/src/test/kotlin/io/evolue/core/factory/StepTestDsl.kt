@@ -82,7 +82,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun step(id: String): TestStep<O, O> {
         val step = ForwarderTestStep<O>(id)
-        this.next().add(step)
+        this.next.add(step)
         return step
     }
 
@@ -91,7 +91,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun <O2> errorGenerator(id: String): TestStep<O, O> {
         val step = TestStep<O, O>(id, generateException = true)
-        this.next().add(step)
+        this.next.add(step)
         return step
     }
 
@@ -100,7 +100,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun processError(id: String): TestStep<O, O> {
         val step = ErrorProcessingTestStep<O>(id)
-        this.next().add(step)
+        this.next.add(step)
         return step
     }
 
@@ -109,7 +109,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun <O2> recoverError(id: String, output: O2): TestStep<O, O2> {
         val step = RecoveryTestStep<O, O2>(id, output)
-        this.next().add(step)
+        this.next.add(step)
         return step
     }
 
@@ -141,7 +141,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
     }
 
     fun collectChildren(steps: MutableMap<StepId, TestStep<*, *>>) {
-        next().forEach {
+        next.forEach {
             val step = it as TestStep<*, *>
             steps[it.id] = step
             step.collectChildren(steps)

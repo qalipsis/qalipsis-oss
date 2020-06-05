@@ -62,6 +62,7 @@ internal class IterativeStepDecoratorTest {
         val decoratedStep: Step<Any, Any> = mockk {
             coEvery { execute(any()) } answers { executionTimestamps.add(System.currentTimeMillis()) }
             every { retryPolicy } returns null
+            every { next } returns mutableListOf()
         }
         val step = spyk(IterativeStepDecorator(10, delay = Duration.ofMillis(10), decorated = decoratedStep))
         val ctx = StepTestHelper.createStepContext<Any, Any>(TestEntity())
@@ -88,6 +89,7 @@ internal class IterativeStepDecoratorTest {
                 throw RuntimeException("Error ${executionCount.incrementAndGet()}")
             }
             every { retryPolicy } returns null
+            every { next } returns mutableListOf()
         }
         val step = spyk(IterativeStepDecorator(10, decorated = decoratedStep))
         val ctx = StepTestHelper.createStepContext<Any, Any>(TestEntity())

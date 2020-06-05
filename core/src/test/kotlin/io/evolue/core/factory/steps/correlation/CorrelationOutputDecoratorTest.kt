@@ -33,6 +33,7 @@ internal class CorrelationOutputDecoratorTest {
             }
             every { id } answers { "my-step" }
             every { retryPolicy } returns null
+            every { next } returns mutableListOf()
         }
         val ctx = StepTestHelper.createStepContext<Any?, String>()
         val step = spyk(CorrelationOutputDecorator(decoratedStep))
@@ -66,6 +67,7 @@ internal class CorrelationOutputDecoratorTest {
         // given
         val decoratedStep: Step<Any?, String> = mockk(relaxUnitFun = true) {
             every { id } answers { " " }
+            every { next } returns mutableListOf()
         }
         val step = CorrelationOutputDecorator(decoratedStep)
 

@@ -1,7 +1,7 @@
 package io.evolue.core.cross.driving.feedback
 
 /**
- * Service to produce the feedback from factories to the heads.
+ * Service to produce the feedbacks from factories to the heads.
  *
  * @author Eric Jessé
  */

@@ -1,7 +1,7 @@
 package io.evolue.api.rampup
 
-import io.evolue.api.ScenarioSpecificationImplementation
-import io.evolue.api.scenario
+import io.evolue.api.scenario.ScenarioSpecificationImplementation
+import io.evolue.api.scenario.scenario
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

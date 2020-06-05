@@ -7,10 +7,10 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
-import io.evolue.api.ScenarioSpecification
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
+import io.evolue.api.scenario.ScenarioSpecification
 import io.evolue.api.steps.CorrelationStepSpecification
 import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepCreationContext
@@ -66,7 +66,7 @@ internal class CorrelationStepSpecificationConverterTest {
             every { id } returns "the-other-step"
         }
         val scenarioSpec: ScenarioSpecification = relaxedMockk {
-            every { has("other-step") } returns true
+            every { exists("other-step") } returns true
         }
         val scen: Scenario = relaxedMockk {
             coEvery { findStep("other-step") } returns otherStep
@@ -84,7 +84,7 @@ internal class CorrelationStepSpecificationConverterTest {
         }
 
         // then
-        verifyOnce { scenarioSpec.has("other-step") }
+        verifyOnce { scenarioSpec.exists("other-step") }
 
         // Verify that the secondary step is replaced in the scenario by its decorator.
         val replacedStepSlot = slot<CorrelationOutputDecorator<*, *>>()

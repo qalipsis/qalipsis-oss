@@ -53,7 +53,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest : AbstractCorout
     @Test
     @Timeout(1)
     internal fun shouldAcceptMinionsCreationPreparationDirective() {
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns true
 
         Assertions.assertTrue(processor.accept(directive))
@@ -68,7 +68,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest : AbstractCorout
     @Test
     @Timeout(1)
     internal fun shouldNotAcceptMinionsCreationPreparationDirectiveForUnknownScenario() {
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
@@ -77,7 +77,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest : AbstractCorout
     @Test
     @Timeout(1)
     internal fun shouldNotProcessWhenScenarioNotFound() {
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
         every { scenariosKeeper.getScenario("my-scenario") } returns null
 
         // when
@@ -97,7 +97,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest : AbstractCorout
     @Timeout(1)
     internal fun shouldCreateDirectivesForEachDag() {
         // given
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
         coEvery { directiveRegistry.read(refEq(directive)) } returns 123
         val createdDirectives = mutableListOf<MinionsCreationDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()

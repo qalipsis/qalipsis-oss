@@ -92,7 +92,7 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             }
         }
         val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
 
         // when
         val executionDuration = coMeasureTime {
@@ -164,7 +164,7 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             this.step<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
         }
         val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -188,7 +188,7 @@ internal class RunnerTest : AbstractCoroutinesTest() {
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
         val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -217,7 +217,7 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             }
         }
         val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -251,11 +251,11 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             }
         }
         val dag = dag {
-            this.step<Int>("step-1", output = 12, retryPolicy = retryPolicy)
+            this.step("step-1", output = 12, retryPolicy = retryPolicy)
                 .step("step-2")
         }
         val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
 
         // when
         runBlocking {

@@ -1,8 +1,9 @@
 package io.evolue.api.steps
 
-import io.evolue.api.ScenarioSpecification
+import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.scenario.ScenarioSpecification
 import java.time.Duration
 
 /**
@@ -16,6 +17,8 @@ abstract class AbstractStepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : Ste
     override var name: StepName? = null
 
     override var scenario: ScenarioSpecification? = null
+
+    override var directedAcyclicGraphId: DirectedAcyclicGraphId? = null
 
     override var timeout: Duration? = null
 
@@ -33,7 +36,15 @@ abstract class AbstractStepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : Ste
     }
 
     override fun add(step: StepSpecification<*, *, *>) {
-        scenario?.register(step)
+        scenario!!.register(step)
+        // If either the current or next step is a singleton but not the other, a new DAG is built.
+        if ((this is SingletonStepSpecification<*, *, *> && step !is SingletonStepSpecification<*, *, *>)
+            || (this !is SingletonStepSpecification<*, *, *> && step is SingletonStepSpecification<*, *, *>)
+        ) {
+            step.directedAcyclicGraphId = scenario!!.getDagId()
+        } else {
+            step.directedAcyclicGraphId = this.directedAcyclicGraphId
+        }
         nextSteps.add(step)
     }
 

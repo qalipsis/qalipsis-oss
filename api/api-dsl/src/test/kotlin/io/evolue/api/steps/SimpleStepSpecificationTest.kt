@@ -1,8 +1,8 @@
 package io.evolue.api.steps
 
-import io.evolue.api.ScenarioSpecificationImplementation
 import io.evolue.api.context.StepContext
-import io.evolue.api.scenario
+import io.evolue.api.scenario.ScenarioSpecificationImplementation
+import io.evolue.api.scenario.scenario
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -22,7 +22,8 @@ internal class SimpleStepSpecificationTest {
 
     @Test
     internal fun `should add simple step to scenario`() {
-        val scenario = scenario("my-scenario") as ScenarioSpecificationImplementation
+        val scenario = scenario(
+            "my-scenario") as ScenarioSpecificationImplementation
         val specification: suspend (context: StepContext<Int, String>) -> Unit = { _ -> }
         scenario.execute(specification)
 

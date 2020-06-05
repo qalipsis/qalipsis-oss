@@ -10,8 +10,7 @@ abstract class StepSpecificationDecoratorConverter<SPEC : StepSpecification<*, *
     /**
      * Decorate the step according to the specification.
      */
-    abstract suspend fun <I, O> decorate(creationContext: StepCreationContext<SPEC>,
-                                         decoratedStep: Step<I, O>): Step<*, *>
+    abstract suspend fun decorate(creationContext: StepCreationContext<SPEC>)
 
     /**
      * Order of the converter in the complete processing chain.

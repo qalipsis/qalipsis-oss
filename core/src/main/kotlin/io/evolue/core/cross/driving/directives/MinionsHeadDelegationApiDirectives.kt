@@ -1,5 +1,6 @@
 package io.evolue.core.cross.driving.directives
 
+import io.evolue.api.context.CampaignId
 import io.evolue.api.context.ScenarioId
 
 /**
@@ -14,6 +15,10 @@ import io.evolue.api.context.ScenarioId
  */
 internal class MinionsCreationPreparationDirective(
     /**
+     * The ID of the campaign for which the minion has to be created.
+     */
+    val campaignId: CampaignId,
+    /**
      * The ID of the scenario for which the minion has to be created.
      */
     val scenarioId: ScenarioId,
@@ -25,7 +30,7 @@ internal class MinionsCreationPreparationDirective(
 ) : SingleUseDirective<Int, SingleUseDirectiveReference<Int>>(count) {
 
     override fun toReference(): SingleUseDirectiveReference<Int> {
-        return MinionsCreationPreparationDirectiveReference(key, scenarioId)
+        return MinionsCreationPreparationDirectiveReference(key, campaignId, scenarioId)
     }
 }
 
@@ -34,6 +39,10 @@ internal class MinionsCreationPreparationDirective(
  */
 internal class MinionsCreationPreparationDirectiveReference(
     key: DirectiveKey,
+    /**
+     * The ID of the campaign for which the minion has to be created.
+     */
+    val campaignId: CampaignId,
     /**
      * The ID of the scenario for which the minion has to be created.
      */
@@ -44,6 +53,11 @@ internal class MinionsCreationPreparationDirectiveReference(
  * Directive to calculate the ramp-up of the minions given the scenario strategy.
  */
 internal class MinionsRampUpPreparationDirective(
+    /**
+     * The ID of the campaign for which the minion has to be created.
+     */
+    val campaignId: CampaignId,
+
     /**
      * The ID of the scenario for which the ramp-up has to be executed.
      */

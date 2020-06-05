@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.common.annotations.VisibleForTesting
 import io.evolue.api.events.EventGeoPoint
 import io.evolue.api.events.EventRange
+import io.evolue.api.lang.durationSinceNanos
 import io.evolue.api.logging.LoggerHelper.logger
-import io.evolue.api.time.durationSinceNanos
 import io.evolue.core.factory.events.Event
 import io.evolue.core.factory.eventslogger.BufferedEventLogger
 import io.ktor.client.HttpClient
@@ -175,7 +175,7 @@ ${it.second.get()}
             """.trimIndent()
                 }.joinToString(separator = "\n", postfix = "\n")
             meterRegistry.timer("events-conversion", "logger", "elasticsearch")
-                .record(durationSinceNanos(conversionStart))
+                .record(conversionStart.durationSinceNanos())
 
             val exportStart = System.nanoTime()
             try {
@@ -202,7 +202,7 @@ ${it.second.get()}
             } catch (e: Exception) {
                 // TODO Reprocess 3 times when an exception is received.
                 meterRegistry.timer(EVENTS_EXPORT_TIMER_NAME, "logger", "elasticsearch", "status", "error")
-                    .record(durationSinceNanos(exportStart))
+                    .record(exportStart.durationSinceNanos())
                 log.error(e.message, e)
             }
         }

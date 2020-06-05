@@ -1,6 +1,6 @@
 package io.evolue.api.rampup
 
-import io.evolue.api.RampUpSpecification
+import io.evolue.api.scenario.RampUpSpecification
 import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
 import io.evolue.core.factory.orchestration.rampup.RampUpStrategyIterator
 

@@ -60,7 +60,8 @@ internal class MinionsCreationPreparationDirectiveProcessor(
                     } else {
                         minions.addAll(allMinions)
                     }
-                    val minionsCreationDirective = MinionsCreationDirective(scenario.id, dag.id, minions)
+                    val minionsCreationDirective =
+                        MinionsCreationDirective(directive.campaignId, scenario.id, dag.id, minions)
                     directiveProducer.publish(minionsCreationDirective)
                 }
                 feedbackProducer.publish(

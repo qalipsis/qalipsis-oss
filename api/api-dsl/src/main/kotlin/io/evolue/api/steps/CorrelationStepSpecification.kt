@@ -1,9 +1,9 @@
 package io.evolue.api.steps
 
 import cool.graph.cuid.Cuid
-import io.evolue.api.ScenarioSpecification
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepName
+import io.evolue.api.scenario.ScenarioSpecification
 import java.time.Duration
 
 /**

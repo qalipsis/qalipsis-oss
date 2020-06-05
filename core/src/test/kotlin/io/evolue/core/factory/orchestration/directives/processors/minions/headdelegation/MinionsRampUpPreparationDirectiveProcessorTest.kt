@@ -56,7 +56,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Test
     @Timeout(1)
     internal fun shouldAcceptMinionsRampUpPreparationDirective() {
-        val directive = MinionsRampUpPreparationDirective("my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns true
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf<ScenarioId, List<MinionId>>(
             directive.scenarioId to emptyList()
@@ -74,7 +74,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Test
     @Timeout(1)
     internal fun shouldNotAcceptMinionsRampUpPreparationDirectiveForUnknownScenario() {
-        val directive = MinionsRampUpPreparationDirective("my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
@@ -83,7 +83,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Test
     @Timeout(1)
     internal fun shouldNotAcceptMinionsRampUpPreparationDirectiveWhenMinionsWereNotCreatedLocally() {
-        val directive = MinionsRampUpPreparationDirective("my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns true
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf<ScenarioId, List<MinionId>>()
 
@@ -93,7 +93,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Test
     @Timeout(1)
     internal fun shouldNotProcessWhenScenarioNotFound() {
-        val directive = MinionsRampUpPreparationDirective("my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosKeeper.getScenario("my-scenario") } returns null
 
         // when
@@ -118,7 +118,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldThrowExceptionWhenMinionsToStartIsZero() {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000, 3.0)
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 3.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
@@ -163,7 +163,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldThrowExceptionWhenStartOffsetIsZero() {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000, 2.0)
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
@@ -216,7 +216,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldCreateOneDirectiveWithAllTheStarts() {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-scenario", 2000, 2.0)
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(

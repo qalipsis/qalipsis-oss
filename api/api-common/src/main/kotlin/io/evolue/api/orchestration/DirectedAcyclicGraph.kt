@@ -45,12 +45,21 @@ data class DirectedAcyclicGraph(
      */
     val singleton: Boolean
 ) {
-
     private val steps = mutableMapOf<StepId, Step<*, *>>()
+
+    val stepsCount: Int
+        get() = steps.size
+
+    init {
+        scenario.dags.add(this)
+    }
 
     fun addStep(step: Step<*, *>) {
         steps[step.id] = step
         scenario.addStep(step)
+        if (rootSteps.isEmpty()) {
+            rootSteps.add(step as Step<Unit, *>)
+        }
     }
 
     suspend fun findStep(stepId: StepId) = scenario.findStep(stepId)

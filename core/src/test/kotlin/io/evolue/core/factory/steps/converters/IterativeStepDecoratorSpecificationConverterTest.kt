@@ -42,14 +42,15 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
                 every { iterations } returns 123
                 every { iterationPeriods } returns Duration.ZERO
             })
+        creationContext.createdStep(mockedCreatedStep)
 
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).all {
+        assertThat(creationContext.createdStep!!).all {
             isInstanceOf(IterativeStepDecorator::class)
             prop("iterations").isEqualTo(123L)
             prop("delay").isEqualTo(Duration.ZERO)
@@ -67,14 +68,15 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
                 every { iterations } returns 123
                 every { iterationPeriods } returns Duration.ofMillis(-12)
             })
+        creationContext.createdStep(mockedCreatedStep)
 
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).all {
+        assertThat(creationContext.createdStep!!).all {
             isInstanceOf(IterativeStepDecorator::class)
             prop("iterations").isEqualTo(123L)
             prop("delay").isEqualTo(Duration.ZERO)
@@ -92,14 +94,15 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
                 every { iterations } returns 0
                 every { iterationPeriods } returns Duration.ZERO
             })
+        creationContext.createdStep(mockedCreatedStep)
 
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).isSameAs(mockedCreatedStep)
+        assertThat(creationContext.createdStep).isSameAs(mockedCreatedStep)
     }
 
 
@@ -113,14 +116,15 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
                 every { iterations } returns -1
                 every { iterationPeriods } returns Duration.ZERO
             })
+        creationContext.createdStep(mockedCreatedStep)
 
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).isSameAs(mockedCreatedStep)
+        assertThat(creationContext.createdStep).isSameAs(mockedCreatedStep)
     }
 
 }

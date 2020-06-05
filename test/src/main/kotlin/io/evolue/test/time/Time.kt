@@ -1,9 +1,9 @@
 package io.evolue.test.time
 
-import io.evolue.api.time.isLongerOrEqualTo
-import io.evolue.api.time.isLongerThan
-import io.evolue.api.time.isShorterOrEqualTo
-import io.evolue.api.time.isShorterThan
+import io.evolue.api.lang.isLongerOrEqualTo
+import io.evolue.api.lang.isLongerThan
+import io.evolue.api.lang.isShorterOrEqualTo
+import io.evolue.api.lang.isShorterThan
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.fail
 import java.time.Duration

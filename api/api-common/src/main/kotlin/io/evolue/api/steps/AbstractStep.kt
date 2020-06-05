@@ -10,9 +10,7 @@ import io.evolue.api.retry.RetryPolicy
  */
 abstract class AbstractStep<I, O>(override val id: StepId, override var retryPolicy: RetryPolicy?) : Step<I, O> {
 
-    private val nextSteps: MutableList<Step<O, *>> = mutableListOf()
-
-    override fun next() = nextSteps
+    override val next: MutableList<Step<O, *>> = mutableListOf()
 
     override suspend fun init() {
         // No-op.

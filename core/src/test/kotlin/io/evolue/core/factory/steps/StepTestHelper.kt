@@ -33,7 +33,7 @@ internal object StepTestHelper {
                 inputChannel.send(it)
             }
         }
-        return StepContext(inputChannel, outputChannel, errors, minionId, scenarioId, directedAcyclicGraphId,
+        return StepContext(inputChannel, outputChannel, errors, "", minionId, scenarioId, directedAcyclicGraphId,
             parentStepId, stepId, stepIterationIndex, attemptsAfterFailure, System.currentTimeMillis(), exhausted,
             completed
         )

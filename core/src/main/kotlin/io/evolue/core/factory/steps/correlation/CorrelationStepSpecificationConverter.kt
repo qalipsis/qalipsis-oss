@@ -21,7 +21,7 @@ internal class CorrelationStepSpecificationConverter : StepSpecificationConverte
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<CorrelationStepSpecification<*, *>>) {
         val spec = creationContext.stepSpecification as CorrelationStepSpecification<I, O>
-        if (!creationContext.scenarioSpecification.has(spec.secondaryStepName)) {
+        if (!creationContext.scenarioSpecification.exists(spec.secondaryStepName)) {
             throw InvalidSpecificationException(
                 "The dependency step ${spec.secondaryStepName} of ${spec.name ?: "Unknown"} of type CorrelationStep does not exist in the scenario")
         }

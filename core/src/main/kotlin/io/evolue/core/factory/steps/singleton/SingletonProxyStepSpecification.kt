@@ -1,8 +1,9 @@
 package io.evolue.core.factory.steps.singleton
 
-import io.evolue.api.ScenarioSpecification
+import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.scenario.ScenarioSpecification
 import io.evolue.api.steps.SingletonType
 import io.evolue.api.steps.StepSpecification
 import java.time.Duration
@@ -49,6 +50,8 @@ internal data class SingletonProxyStepSpecification<INPUT>(
     override var iterationPeriods: Duration = Duration.ZERO
 
     override var retryPolicy: RetryPolicy? = null
+
+    override var directedAcyclicGraphId: DirectedAcyclicGraphId? = next.directedAcyclicGraphId
 
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = mutableListOf(next)

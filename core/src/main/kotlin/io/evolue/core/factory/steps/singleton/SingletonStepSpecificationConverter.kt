@@ -24,16 +24,15 @@ internal class SingletonStepSpecificationConverter :
     override val order: Int
         get() = 100
 
-    override suspend fun <I, O> decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>,
-                                         decoratedStep: Step<I, O>): Step<*, *> {
+    override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
-        return if (spec is SingletonStepSpecification<*, *, *>) {
+        if (spec is SingletonStepSpecification<*, *, *>) {
             // The actual step is decorated with a SingletonOutputDecorator.
-            val outputStep = SingletonOutputDecorator(decoratedStep)
+            val outputStep = SingletonOutputDecorator(creationContext.createdStep as Step<Any?, Any?>)
             // All the next step specifications have to be decorated by [SingletonProxyStepSpecification].
             spec.nextSteps.replaceAll {
                 SingletonProxyStepSpecification(
-                    it as StepSpecification<O, *, *>,
+                    it as StepSpecification<Any?, *, *>,
                     outputStep,
                     spec.singletonType,
                     spec.bufferSize,
@@ -41,9 +40,7 @@ internal class SingletonStepSpecificationConverter :
                     spec.fromBeginning
                 )
             }
-            outputStep
-        } else {
-            decoratedStep
+            creationContext.createdStep(outputStep)
         }
     }
 

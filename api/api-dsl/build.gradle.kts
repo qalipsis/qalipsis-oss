@@ -5,6 +5,10 @@ plugins {
     kotlin("kapt")
 }
 
+kapt {
+    useBuildCache = false
+}
+
 description = "Evolue API Kotlin DSL"
 
 tasks.withType<KotlinCompile> {

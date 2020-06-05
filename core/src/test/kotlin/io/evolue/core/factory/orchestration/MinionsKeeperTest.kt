@@ -81,16 +81,18 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
 
         // when
-        minionsKeeper.create("my-scenario", "my-dag", "my-minion")
+        minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
         runnerCountDown.await()
 
         // then
         coVerifyOnce {
             scenariosKeeper.getDag("my-scenario", "my-dag")
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", tags = mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", tags = mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started",
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
         confirmVerified(scenariosKeeper, runner, eventLogger, meterRegistry)
@@ -114,16 +116,18 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
 
         // when
-        minionsKeeper.create("my-scenario", "my-dag", "my-minion")
+        minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
         runnerCountDown.await()
 
         // then
         coVerifyOnce {
             scenariosKeeper.getDag("my-scenario", "my-dag")
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", tags = mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", tags = mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started",
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
 
@@ -143,7 +147,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
 
         // when
-        minionsKeeper.create("my-scenario", "my-dag", "my-minion")
+        minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
         // Wait to be sure the runner is not called.
         Thread.sleep(30)
 

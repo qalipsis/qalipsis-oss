@@ -29,7 +29,7 @@ internal class CorrelationOutputDecorator<I : Any?, O : Any?>(private val decora
 
     override var retryPolicy: RetryPolicy? = null
 
-    override fun next(): MutableList<Step<O, *>> = decorated.next()
+    override var next = decorated.next
 
     override suspend fun init() {
         decorated.init()

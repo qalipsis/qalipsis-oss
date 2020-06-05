@@ -34,6 +34,6 @@ internal class DirectiveFeedback(
     val error: String? = null
 ) : Feedback(key)
 
-internal enum class FeedbackStatus {
-    IN_PROGRESS, COMPLETED, FAILED
+internal enum class FeedbackStatus(val isDone: Boolean) {
+    IN_PROGRESS(false), COMPLETED(true), FAILED(true)
 }

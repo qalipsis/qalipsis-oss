@@ -1,7 +1,7 @@
 package io.evolue.api.steps
 
-import io.evolue.api.ScenarioSpecification
 import io.evolue.api.orchestration.DirectedAcyclicGraph
+import io.evolue.api.scenario.ScenarioSpecification
 
 /**
  * Mutable context to convert a [StepSpecification] to a [Step].

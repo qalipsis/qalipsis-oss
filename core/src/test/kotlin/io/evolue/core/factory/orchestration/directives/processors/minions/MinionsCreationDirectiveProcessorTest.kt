@@ -45,7 +45,7 @@ internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() 
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag"
             )
         every { scenariosKeeper.hasDag("my-scenario", "my-dag") } returns true
 
@@ -64,7 +64,7 @@ internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() 
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag"
             )
         every { scenariosKeeper.hasDag("my-scenario", "my-dag") } returns false
 
@@ -78,7 +78,7 @@ internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() 
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag"
             )
         coEvery {
             registry.pop(refEq(directive))
@@ -94,7 +94,7 @@ internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() 
         // then
         coVerify {
             registry.pop(directive)
-            minionsKeeper.create("my-scenario", "my-dag", "my-minion")
+            minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
         }
         confirmVerified(registry, minionsKeeper)
     }
@@ -106,7 +106,7 @@ internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() 
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag"
             )
         coEvery {
             registry.pop<MinionId>(refEq(directive))

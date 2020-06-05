@@ -1,7 +1,7 @@
 package io.evolue.api.steps
 
-import io.evolue.api.ScenarioSpecification
 import io.evolue.api.context.CorrelationRecord
+import io.evolue.api.scenario.ScenarioSpecification
 import io.evolue.test.mockk.relaxedMockk
 import io.mockk.every
 import org.junit.jupiter.api.Assertions.assertEquals

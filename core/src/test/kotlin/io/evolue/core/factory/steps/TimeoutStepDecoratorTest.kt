@@ -49,6 +49,7 @@ internal class TimeoutStepDecoratorTest {
             coEvery { execute(any()) } answers { }
             every { id } answers { "my-step" }
             every { retryPolicy } returns null
+            every { next } returns mutableListOf()
         }
         val ctx = StepTestHelper.createStepContext<Any, Any>()
         val step = spyk(TimeoutStepDecorator(Duration.ofMillis(10L), decoratedStep, meterRegistry))
@@ -73,6 +74,7 @@ internal class TimeoutStepDecoratorTest {
             coEvery { execute(any()) } coAnswers { delay(timeout + 10) }
             every { id } answers { "my-step" }
             every { retryPolicy } returns null
+            every { next } returns mutableListOf()
         }
         val ctx = StepTestHelper.createStepContext<Any, Any>()
         val step = spyk(TimeoutStepDecorator(Duration.ofMillis(timeout), decoratedStep, meterRegistry))

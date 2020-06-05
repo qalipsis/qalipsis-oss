@@ -44,14 +44,15 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
             StepCreationContextImpl(relaxedMockk(), relaxedMockk(), relaxedMockk<StepSpecification<Int, String, *>> {
                 every { timeout } returns Duration.ofMillis(123)
             })
+        creationContext.createdStep(mockedCreatedStep)
 
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).all {
+        assertThat(creationContext.createdStep!!).all {
             isInstanceOf(TimeoutStepDecorator::class)
             prop("timeout").isEqualTo(Duration.ofMillis(123))
             prop("decorated").isSameAs(mockedCreatedStep)
@@ -69,13 +70,14 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
             StepCreationContextImpl(relaxedMockk(), relaxedMockk(), relaxedMockk<StepSpecification<Int, String, *>> {
                 every { timeout } returns null
             })
+        creationContext.createdStep(mockedCreatedStep)
 
         // when
-        val result = runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>, mockedCreatedStep)
+        runBlocking {
+            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(result).isSameAs(mockedCreatedStep)
+        assertThat(creationContext.createdStep).isSameAs(mockedCreatedStep)
     }
 }

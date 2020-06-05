@@ -1,6 +1,6 @@
 package io.evolue.core.factory.steps
 
-import io.evolue.api.time.durationSince
+import io.evolue.api.lang.durationSince
 import io.evolue.test.time.EvolueTimeAssertions
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -28,7 +28,7 @@ internal class DelayStepTest {
 
             Assertions.assertEquals(123, (ctx.output as Channel).receive())
         }
-        EvolueTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delay), durationSince(start))
+        EvolueTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delay), start.durationSince())
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }
 }

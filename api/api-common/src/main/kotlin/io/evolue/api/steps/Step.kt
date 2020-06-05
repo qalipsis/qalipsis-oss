@@ -13,20 +13,20 @@ import io.evolue.api.retry.RetryPolicy
  */
 interface Step<I : Any?, O : Any?> {
 
-    val id: StepId;
+    val id: StepId
 
-    var retryPolicy: RetryPolicy?;
+    var retryPolicy: RetryPolicy?
+
+    /**
+     * Returns the list of next steps or an empty list if there is none.
+     */
+    val next: MutableList<Step<O, *>>
 
     /**
      * Execute the operation implies by the step.
      */
     @Throws(Exception::class)
     suspend fun execute(context: StepContext<I, O>)
-
-    /**
-     * Returns the list of next steps or an empty list if there is none.
-     */
-    fun next(): MutableList<Step<O, *>>
 
     /**
      * Operation to execute just after the creation of the step.

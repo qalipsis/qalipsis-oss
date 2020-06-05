@@ -1,8 +1,9 @@
 package io.evolue.api.steps
 
-import io.evolue.api.ScenarioSpecification
+import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.scenario.ScenarioSpecification
 import java.time.Duration
 
 /**
@@ -21,6 +22,11 @@ interface StepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : StepSpecificatio
      * The parent [ScenarioSpecification] to which the [StepSpecification] belongs.
      */
     var scenario: ScenarioSpecification?
+
+    /**
+     * ID of the directed acyclic graph attached to the step.
+     */
+    var directedAcyclicGraphId: DirectedAcyclicGraphId?
 
     /**
      * Defines the delay after which a non completed execution triggers a failure.
@@ -48,7 +54,7 @@ interface StepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : StepSpecificatio
     val nextSteps: MutableList<StepSpecification<*, *, *>>
 
     /**
-     * Add a new [StepSpecification] as root of the scenario.
+     * Add the [StepSpecification] as next step of the current one, declare it in the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
      */
     fun add(step: StepSpecification<*, *, *>)
 

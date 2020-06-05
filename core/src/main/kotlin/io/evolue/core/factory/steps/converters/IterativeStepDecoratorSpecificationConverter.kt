@@ -1,7 +1,6 @@
 package io.evolue.core.factory.steps.converters
 
 import io.evolue.api.steps.AbstractStepSpecification
-import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
@@ -18,15 +17,12 @@ internal class IterativeStepDecoratorSpecificationConverter :
 
     override val order: Int = 750
 
-    override suspend fun <I, O> decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>,
-                                         decoratedStep: Step<I, O>): Step<*, *> {
+    override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
-        return if (spec.iterations > 0) {
-            IterativeStepDecorator(spec.iterations,
+        if (spec.iterations > 0) {
+            creationContext.createdStep(IterativeStepDecorator(spec.iterations,
                 if (!spec.iterationPeriods.isNegative) spec.iterationPeriods else Duration.ZERO,
-                decoratedStep)
-        } else {
-            decoratedStep
+                creationContext.createdStep!!))
         }
     }
 

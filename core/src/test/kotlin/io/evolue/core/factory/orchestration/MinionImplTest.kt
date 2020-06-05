@@ -73,7 +73,7 @@ internal class MinionImplTest {
     internal fun attachAndJoin() {
         // given
         val completionCounter = AtomicInteger()
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
         minion.onComplete { completionCounter.incrementAndGet() }
         val executionCounter = AtomicInteger()
 
@@ -96,12 +96,14 @@ internal class MinionImplTest {
         assertEquals(1, completionCounter.get())
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-completed", null, mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-completed", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         verifyExactly(3) { executingStepsGauge.incrementAndGet() }
         verifyExactly(3) { executingStepsGauge.decrementAndGet() }
@@ -113,7 +115,7 @@ internal class MinionImplTest {
     @Timeout(1)
     internal fun shouldSuspendCallerUntilTheMinionStarts() {
         // given
-        val minion = MinionImpl("my-minion", true, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", true, eventLogger, meterRegistry)
 
         // when
         GlobalScope.launch {
@@ -128,11 +130,13 @@ internal class MinionImplTest {
         assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null, mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         confirmVerified(eventLogger, meterRegistry, executingStepsGauge)
     }
@@ -141,7 +145,7 @@ internal class MinionImplTest {
     @Timeout(1)
     internal fun waitForStartAndCancel() {
         // given
-        val minion = MinionImpl("my-minion", true, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", true, eventLogger, meterRegistry)
 
         // when
         GlobalScope.launch {
@@ -157,12 +161,16 @@ internal class MinionImplTest {
         // then
         assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-completed", null, mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-cancellation-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-cancellation-completed", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 
         confirmVerified(eventLogger, meterRegistry, executingStepsGauge)
@@ -173,7 +181,7 @@ internal class MinionImplTest {
     internal fun joinAndCancel() {
         // given
         val completionCounter = AtomicInteger()
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
         minion.onComplete { completionCounter.incrementAndGet() }
         val executionCounter = AtomicInteger()
         val startLatch = SuspendedCountLatch(1)
@@ -202,13 +210,17 @@ internal class MinionImplTest {
         assertEquals(0, completionCounter.get())
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-completed", null, mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-cancellation-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-cancellation-completed", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         verifyExactly(3) {
             executingStepsGauge.incrementAndGet()
@@ -223,7 +235,7 @@ internal class MinionImplTest {
     internal fun shouldSuspendJoinCallWhenNoJobStart() {
         // given
         val completionCounter = AtomicInteger()
-        val minion = MinionImpl("my-minion", false, eventLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
         minion.onComplete { completionCounter.incrementAndGet() }
 
         // then
@@ -237,11 +249,13 @@ internal class MinionImplTest {
         assertEquals(0, completionCounter.get())
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("minion", "my-minion")), any<AtomicInteger>())
-            meterRegistry.timer("minion-maintenance", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null, mapOf("minion" to "my-minion"))
+            meterRegistry.gauge("minion-executing-steps",
+                listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
+            meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
+            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.debug("minion-maintenance-routine-started", null,
+                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 
         confirmVerified(eventLogger, meterRegistry, executingStepsGauge)
@@ -264,7 +278,7 @@ internal class MinionImplTest {
 
         val minions = mutableListOf<MinionImpl>()
         for (i in 0 until minionsCount) {
-            val minion = MinionImpl("$i", false, eventLogger, meterRegistry)
+            val minion = MinionImpl("my-campaign", "$i", false, eventLogger, meterRegistry)
             minion.onComplete { completionCounter.incrementAndGet() }
             minions.add(minion)
         }
