@@ -181,7 +181,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"tags\":{\"key-1\":\"value-1\",\"key-2\":\"value-2\"}}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -193,7 +193,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals(
                 "{\"@timestamp\":\"${expectedTimestamp(event)}\",\"name\":\"my-event\",\"level\":\"info\"}",
-                result.get(),
+                result,
                 false)
         }
 
@@ -205,7 +205,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"message\":\"my-message\"}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"message\":\"my-message\"}", result, false)
         }
 
         @Test
@@ -216,7 +216,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"boolean\":true}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"boolean\":true}", result, false)
         }
 
         @Test
@@ -227,7 +227,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123.65}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123.65}", result, false)
         }
 
         @Test
@@ -238,7 +238,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"non-finite-decimal\":\"Infinity\"}", result.get(),
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"non-finite-decimal\":\"Infinity\"}", result,
                 false)
         }
 
@@ -250,7 +250,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"non-finite-decimal\":\"-Infinity\"}", result.get(),
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"non-finite-decimal\":\"-Infinity\"}", result,
                 false)
         }
 
@@ -262,7 +262,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"non-finite-decimal\":\"NaN\"}", result.get(),
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"non-finite-decimal\":\"NaN\"}", result,
                 false)
         }
 
@@ -274,7 +274,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123.65}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123.65}", result, false)
         }
 
         @Test
@@ -285,7 +285,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123.65}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123.65}", result, false)
         }
 
         @Test
@@ -296,7 +296,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123}", result, false)
         }
 
         @Test
@@ -307,7 +307,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123}", result, false)
         }
 
         @Test
@@ -318,7 +318,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
             val result = logger.writeDocument(event)
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
-                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123}", result.get(), false)
+                event)}\",\"name\":\"my-event\",\"level\":\"info\",\"number\":123}", result, false)
         }
 
         @Test
@@ -331,7 +331,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"instant\":\"${DateTimeFormatter.ISO_INSTANT.format(
-                now)}\"}", result.get(), false)
+                now)}\"}", result, false)
         }
 
         @Test
@@ -344,7 +344,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"instant\":\"${DateTimeFormatter.ISO_INSTANT.format(
-                now)}\"}", result.get(), false)
+                now)}\"}", result, false)
         }
 
         @Test
@@ -357,7 +357,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"instant\":\"${DateTimeFormatter.ISO_INSTANT.format(
-                now.atZone(ZoneId.systemDefault()))}\"}", result.get(), false)
+                now.atZone(ZoneId.systemDefault()))}\"}", result, false)
         }
 
         @Test
@@ -374,7 +374,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"error\":\"my-error\",\"stack-trace\":\"this is the stack\"}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -386,7 +386,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"duration\":12000,\"unit\":\"milliseconds\"}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -399,7 +399,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"duration\":12000000000,\"unit\":\"nanoseconds\"}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -411,7 +411,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"latitude\":12.34,\"longitude\":34.76}",
-                result.get(),
+                result,
                 false)
         }
 
@@ -424,7 +424,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"lower-bound\":12.34,\"upper-bound\":34.76}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -436,7 +436,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"values\":[\"12.34\",\"here is the test\"]}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -448,7 +448,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"values\":[\"12.34\",\"here is the test\"]}",
-                result.get(), false)
+                result, false)
         }
 
         @Test
@@ -460,7 +460,7 @@ internal class ElasticsearchEventLoggerTest : AbstractCoroutinesTest() {
 
             JSONAssert.assertEquals("{\"@timestamp\":\"${expectedTimestamp(
                 event)}\",\"name\":\"my-event\",\"level\":\"info\",\"value\":\"{\\\"property1\\\":1243.65,\\\"property2\\\":\\\"here is the test\\\"}\"}",
-                result.get(), false)
+                result, false)
         }
 
 
