@@ -15,12 +15,12 @@ internal interface DirectiveRegistry {
     /**
      * Pop first value from a [QueueDirective].
      */
-    suspend fun <T> pop(key: QueueDirectiveReference<T>): T?
+    suspend fun <T> pop(reference: QueueDirectiveReference<T>): T?
 
     /**
      * Return the full set of records from a [ListDirective].
      */
-    suspend fun <T> list(key: ListDirectiveReference<T>): List<T>
+    suspend fun <T> list(reference: ListDirectiveReference<T>): List<T>
 
     /**
      * Delete and returns the value of the [SingleUseDirective] if it was not yet read.

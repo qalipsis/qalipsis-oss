@@ -5,13 +5,18 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
 import io.evolue.api.states.SharedStateDefinition
 import io.evolue.api.states.SharedStateRegistry
+import io.evolue.core.cross.configuration.ENV_STANDALONE
+import io.micronaut.context.annotation.Requires
 import java.time.Duration
+import javax.inject.Singleton
 
 /**
  * Implementation of [SharedStateRegistry] based upon the cache library [Caffeine][https://github.com/ben-manes/caffeine].
  *
  * @author Eric Jessé
  */
+@Singleton
+@Requires(env = [ENV_STANDALONE])
 class InMemorySharedStateRegistry(timeToLive: Duration) : SharedStateRegistry {
 
     private val cache: Cache<SharedStateDefinition, Any> = Caffeine.newBuilder()

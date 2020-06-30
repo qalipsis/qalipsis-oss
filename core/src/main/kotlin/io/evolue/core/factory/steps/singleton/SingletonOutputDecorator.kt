@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
+import javax.inject.Singleton
 
 /**
  * Decorator for [Step]s considered to be outputs of singleton.
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class SingletonOutputDecorator<I, O>(private val decorated: Step<I, O>) : Step<I, O>, StepExecutor {
 
     @VisibleForTesting

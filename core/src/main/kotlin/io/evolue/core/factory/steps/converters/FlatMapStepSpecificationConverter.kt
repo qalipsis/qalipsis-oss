@@ -6,12 +6,14 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.FlatMapStep
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [FlatMapStepSpecification] to [FlatMapStep].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class FlatMapStepSpecificationConverter :
     StepSpecificationConverter<FlatMapStepSpecification<*, *>> {
 

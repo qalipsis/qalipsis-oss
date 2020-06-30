@@ -1,7 +1,7 @@
 package io.evolue.api.steps
 
 import io.evolue.api.orchestration.DirectedAcyclicGraph
-import io.evolue.api.scenario.ScenarioSpecification
+import io.evolue.api.scenario.MutableScenarioSpecification
 
 /**
  * Mutable context to convert a [StepSpecification] to a [Step].
@@ -10,7 +10,7 @@ import io.evolue.api.scenario.ScenarioSpecification
  */
 class StepCreationContextImpl<SPEC : StepSpecification<*, *, *>>(
 
-    override val scenarioSpecification: ScenarioSpecification,
+    override val scenarioSpecification: MutableScenarioSpecification,
 
     override val directedAcyclicGraph: DirectedAcyclicGraph,
 

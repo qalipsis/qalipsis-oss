@@ -99,11 +99,11 @@ internal class MinionImplTest {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null,
+            eventLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-completed", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.info("minion-completed", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         verifyExactly(3) { executingStepsGauge.incrementAndGet() }
         verifyExactly(3) { executingStepsGauge.decrementAndGet() }
@@ -133,9 +133,9 @@ internal class MinionImplTest {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null,
+            eventLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         confirmVerified(eventLogger, meterRegistry, executingStepsGauge)
@@ -164,12 +164,12 @@ internal class MinionImplTest {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null,
+            eventLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-started", null,
+            eventLogger.info("minion-cancellation-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-completed", null,
+            eventLogger.info("minion-cancellation-completed", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 
@@ -213,13 +213,13 @@ internal class MinionImplTest {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null,
+            eventLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-started", null,
+            eventLogger.info("minion-cancellation-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-cancellation-completed", null,
+            eventLogger.info("minion-cancellation-completed", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         verifyExactly(3) {
@@ -252,9 +252,9 @@ internal class MinionImplTest {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started", null,
+            eventLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started", null,
                 mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 

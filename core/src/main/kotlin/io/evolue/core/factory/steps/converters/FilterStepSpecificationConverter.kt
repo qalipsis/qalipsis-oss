@@ -6,12 +6,14 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.FilterStep
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [FilterStepSpecification] to [FilterStep].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class FilterStepSpecificationConverter :
     StepSpecificationConverter<FilterStepSpecification<*>> {
 

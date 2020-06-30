@@ -15,7 +15,6 @@ configure<JavaPluginConvention> {
 
 tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.ALL
-    gradleVersion = "6.1.1"
 }
 
 allprojects {

@@ -8,6 +8,7 @@ import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.steps.ErrorProcessingStep
 import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepExecutor
+import io.evolue.core.annotations.LogInput
 import io.evolue.core.factory.context.StepContextBuilder
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.GlobalScope
@@ -15,6 +16,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Singleton
 
 /**
  * The Runner is the masterpiece of the factory and drives the minions to execute directed acyclic graphs (aka DAGs)
@@ -27,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class Runner(
     private val eventLogger: EventLogger,
     private val meterRegistry: MeterRegistry
@@ -43,6 +46,7 @@ internal class Runner(
     /**
      * Execute the dag onto the specified minion.
      */
+    @LogInput
     suspend fun run(minionImpl: MinionImpl, dag: DirectedAcyclicGraph) {
         idleMinionsGauge.incrementAndGet()
         minionImpl.waitForStart()
@@ -68,6 +72,7 @@ internal class Runner(
      */
     private suspend fun executeStepRecursively(minionImpl: MinionImpl, step: Step<Any?, Any?>,
                                                ctx: StepContext<Any?, Any?>) {
+        log.trace("Executing step ${step.id} with minion ${minionImpl.id} on context $ctx")
         // Asynchronously read the output to trigger the next steps.
         if (step.next.isNotEmpty()) {
             // The output is read asynchronously to release the current coroutine and let the step execute.
@@ -106,14 +111,14 @@ internal class Runner(
 
     private suspend fun executeSingleStep(step: Step<Any?, Any?>, ctx: StepContext<Any?, Any?>) {
         if (!ctx.exhausted || step is ErrorProcessingStep) {
-            eventLogger.debug("step-${step.id}-started", tagsSupplier = { ctx.toEventTagsMap() })
+            eventLogger.info("step-${step.id}-started", tagsSupplier = { ctx.toEventTagsMap() })
 
             runningStepsGauge.incrementAndGet()
             val start = System.nanoTime()
             try {
                 executeStep(step, ctx)
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventLogger.debug("step-${step.id}-completed", tagsSupplier = { ctx.toEventTagsMap() })
+                    eventLogger.info("step-${step.id}-completed", tagsSupplier = { ctx.toEventTagsMap() })
                     meterRegistry.timer("step-execution", "step", step.id, "status", "completed").record(duration)
                 }
             } catch (t: Throwable) {

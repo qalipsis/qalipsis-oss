@@ -1,15 +1,19 @@
 package io.evolue.core.factory.orchestration
 
+import io.evolue.api.context.MinionId
+import io.evolue.api.context.ScenarioId
 import io.evolue.api.events.EventLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
 import io.evolue.api.sync.SuspendedCountLatch
+import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.test.coroutines.AbstractCoroutinesTest
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.time.EvolueTimeAssertions
 import io.evolue.test.time.coMeasureTime
+import io.evolue.test.utils.getProperty
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
@@ -52,6 +56,9 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @RelaxedMockK
     lateinit private var meterRegistry: MeterRegistry
 
+    @RelaxedMockK
+    lateinit private var feedbackProducer: FeedbackProducer
+
     private var initialized = false
 
     @BeforeEach
@@ -78,7 +85,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         val runnerCountDown = CountDownLatch(1)
         coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
 
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -90,15 +97,15 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started",
+            eventLogger.info("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started",
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
         confirmVerified(scenariosKeeper, runner, eventLogger, meterRegistry)
 
         Assertions.assertFalse(minionSlot.captured.isStarted())
-        Assertions.assertTrue(minionsKeeper.minions.containsKey("my-minion"))
+        Assertions.assertTrue(minionsKeeper.getProperty<Map<MinionId, MinionImpl>>("minions").containsKey("my-minion"))
     }
 
     @Test
@@ -113,7 +120,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         val runnerCountDown = CountDownLatch(1)
         coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
 
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -125,8 +132,8 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
             meterRegistry.gauge("minion-executing-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventLogger.debug("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventLogger.debug("minion-maintenance-routine-started",
+            eventLogger.info("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventLogger.trace("minion-maintenance-routine-started",
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
@@ -134,7 +141,8 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         confirmVerified(scenariosKeeper, runner, eventLogger, meterRegistry)
 
         Assertions.assertFalse(minionSlot.captured.isStarted())
-        Assertions.assertTrue(minionsKeeper.readySingletonsMinions["my-scenario"]!!.contains(minionSlot.captured))
+        Assertions.assertTrue(minionsKeeper.getProperty<Map<ScenarioId, List<MinionImpl>>>(
+            "readySingletonsMinions")["my-scenario"]!!.contains(minionSlot.captured))
     }
 
     @Test
@@ -144,7 +152,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
             scenariosKeeper.getDag("my-scenario", "my-dag")
         } returns null
 
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -154,17 +162,19 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
         // then
         verify { scenariosKeeper.getDag("my-scenario", "my-dag") }
         confirmVerified(scenariosKeeper, runner, eventLogger, meterRegistry)
-        Assertions.assertFalse(minionsKeeper.minions.containsKey("my-minion"))
-        Assertions.assertFalse(minionsKeeper.readySingletonsMinions.containsKey("my-scenario"))
+        Assertions.assertFalse(minionsKeeper.getProperty<Map<MinionId, MinionImpl>>("minions").containsKey("my-minion"))
+        Assertions.assertFalse(minionsKeeper.getProperty<Map<ScenarioId, List<MinionImpl>>>("readySingletonsMinions")
+            .containsKey("my-scenario"))
     }
 
     @Test
     internal fun shouldStartSingletonsImmediately() {
         // given
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
         val minion1: MinionImpl = mockk(relaxed = true)
         val minion2: MinionImpl = mockk(relaxed = true)
-        minionsKeeper.readySingletonsMinions["my-scenario"] = mutableListOf(minion1, minion2)
+        minionsKeeper.getProperty<MutableMap<ScenarioId, List<MinionImpl>>>("readySingletonsMinions")["my-scenario"] =
+            mutableListOf(minion1, minion2)
 
         // when
         runBlocking {
@@ -181,10 +191,11 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @Test
     internal fun shouldIgnoreSingletonsStartWhenScenarioNotExist() {
         // given
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
         val minion1: MinionImpl = mockk(relaxed = true)
         val minion2: MinionImpl = mockk(relaxed = true)
-        minionsKeeper.readySingletonsMinions["my-scenario"] = mutableListOf(minion1, minion2)
+        minionsKeeper.getProperty<MutableMap<ScenarioId, List<MinionImpl>>>("readySingletonsMinions")["my-scenario"] =
+            mutableListOf(minion1, minion2)
 
         // when
         runBlocking {
@@ -197,7 +208,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @Test
     internal fun shouldStartMinionImmediately() {
         // given
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
         val startTime = AtomicLong()
         val latch = SuspendedCountLatch(1)
         val minion: MinionImpl = mockk(relaxed = true) {
@@ -206,7 +217,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
                 latch.release()
             }
         }
-        minionsKeeper.minions["my-minion"] = minion
+        minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")["my-minion"] = minion
 
         // when
         val duration = coMeasureTime {
@@ -223,9 +234,9 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @Test
     internal fun shouldIgnoreMinionStartWhenNotExist() {
         // given
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
         val minion: MinionImpl = mockk(relaxed = true)
-        minionsKeeper.minions["my-minion"] = minion
+        minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")["my-minion"] = minion
 
         // when
         runBlocking {
@@ -240,7 +251,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
     @Test
     internal fun shouldStartMinionLater() {
         // given
-        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry)
+        val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventLogger, meterRegistry, feedbackProducer)
         val latch = SuspendedCountLatch(1)
         val minion: MinionImpl = mockk(relaxed = true) {
             coEvery { start() } coAnswers {
@@ -248,7 +259,7 @@ internal class MinionsKeeperTest : AbstractCoroutinesTest() {
                 logger().debug("Minion was started.")
             }
         }
-        minionsKeeper.minions["my-minion"] = minion
+        minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")["my-minion"] = minion
 
         // when
         val duration = coMeasureTime {

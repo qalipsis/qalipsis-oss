@@ -4,6 +4,7 @@ import io.evolue.core.cross.driving.TestDescriptiveDirective
 import io.evolue.core.cross.driving.directives.Directive
 import io.evolue.core.factory.orchestration.directives.processors.DirectiveProcessor
 import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.mockk.relaxedMockk
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -35,13 +36,15 @@ internal class ChannelBasedDirectiveConsumerTest : AbstractCoroutinesTest() {
         val directive2 = TestDescriptiveDirective()
         every { processor1.accept(refEq(directive1)) } returns true
         every { processor2.accept(refEq(directive2)) } returns true
-        val channel = Channel<Directive>(1)
-        ChannelBasedDirectiveConsumer(channel, listOf(processor1, processor2))
+        val directiveChannel = Channel<Directive>(1)
 
         // when
+        ChannelBasedDirectiveConsumer(relaxedMockk {
+            every { channel } returns directiveChannel
+        }, listOf(processor1, processor2)).init()
         runBlocking {
-            channel.send(directive1)
-            channel.send(directive2)
+            directiveChannel.send(directive1)
+            directiveChannel.send(directive2)
             // Wait for the data to be consumed.
             delay(5)
         }

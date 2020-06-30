@@ -3,6 +3,7 @@ package io.evolue.api.steps
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecification
 import java.time.Duration
 
@@ -21,7 +22,7 @@ interface StepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : StepSpecificatio
     /**
      * The parent [ScenarioSpecification] to which the [StepSpecification] belongs.
      */
-    var scenario: ScenarioSpecification?
+    var scenario: MutableScenarioSpecification?
 
     /**
      * ID of the directed acyclic graph attached to the step.

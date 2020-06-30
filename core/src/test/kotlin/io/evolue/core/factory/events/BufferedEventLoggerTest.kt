@@ -136,7 +136,7 @@ internal class BufferedEventLoggerTest : AbstractCoroutinesTest() {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should publish when linger time is over`() {
         val logger = TestBufferedEventLogger(EventLevel.INFO, Duration.ofMillis(80), 100, 2)
         logger.start()
@@ -200,7 +200,7 @@ internal class BufferedEventLoggerTest : AbstractCoroutinesTest() {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `stopping the logger should force publish`() {
         val logger = TestBufferedEventLogger(EventLevel.INFO, Duration.ofMinutes(1), 100, 1)
 

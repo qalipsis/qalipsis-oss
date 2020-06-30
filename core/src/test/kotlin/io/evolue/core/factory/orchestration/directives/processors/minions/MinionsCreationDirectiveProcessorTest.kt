@@ -7,6 +7,7 @@ import io.evolue.core.cross.driving.directives.MinionsCreationDirectiveReference
 import io.evolue.core.factory.orchestration.MinionsKeeper
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.mockk.coVerifyExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.ExtendWith
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
@@ -80,20 +82,25 @@ internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() 
                 "my-directive",
                 "my-campaign", "my-scenario", "my-dag"
             )
+        val counterCall = AtomicInteger(10)
         coEvery {
             registry.pop(refEq(directive))
-        } returns "my-minion"
+        } answers {
+            if (counterCall.getAndDecrement() > 0) "my-minion" else null
+        }
 
         // when
         runBlocking {
             processor.process(directive)
-            // Wait for the directive to be fully completed.
+            // Wait for the directive to be fully processed.
             delay(20)
         }
 
         // then
-        coVerify {
+        coVerifyExactly(11) {
             registry.pop(directive)
+        }
+        coVerifyExactly(10) {
             minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
         }
         confirmVerified(registry, minionsKeeper)

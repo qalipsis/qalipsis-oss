@@ -3,7 +3,7 @@ package io.evolue.api.steps
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
-import io.evolue.api.scenario.ScenarioSpecification
+import io.evolue.api.scenario.MutableScenarioSpecification
 import java.time.Duration
 
 /**
@@ -16,7 +16,7 @@ abstract class AbstractStepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : Ste
 
     override var name: StepName? = null
 
-    override var scenario: ScenarioSpecification? = null
+    override var scenario: MutableScenarioSpecification? = null
 
     override var directedAcyclicGraphId: DirectedAcyclicGraphId? = null
 

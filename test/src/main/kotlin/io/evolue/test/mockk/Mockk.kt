@@ -4,13 +4,15 @@ import io.mockk.MockKVerificationScope
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.reflect.KClass
 
 /**
  *
  * @author Eric Jessé
  */
 
-inline fun <reified T : Any> relaxedMockk(block: T.() -> Unit = {}) = mockk<T>(relaxed = true, block = block)
+inline fun <reified T : Any> relaxedMockk(vararg moreInterfaces: KClass<*> = emptyArray(), block: T.() -> Unit = {}) =
+    mockk<T>(moreInterfaces = *moreInterfaces, relaxed = true, block = block)
 
 fun verifyOnce(verifyBlock: MockKVerificationScope.() -> Unit) = verify(exactly = 1, verifyBlock = verifyBlock)
 

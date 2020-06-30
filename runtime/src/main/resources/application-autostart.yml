@@ -1,0 +1,5 @@
+campaign:
+  minions-count-per-scenario: 0
+  minions-factor: 1.0
+  speed-factor: 1.0
+  start-offset-ms: 500

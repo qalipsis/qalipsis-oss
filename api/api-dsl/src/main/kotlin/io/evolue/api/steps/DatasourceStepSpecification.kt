@@ -1,5 +1,6 @@
 package io.evolue.api.steps
 
+import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecification
 import kotlinx.coroutines.flow.Flow
 
@@ -15,6 +16,6 @@ data class DatasourceStepSpecification<OUTPUT>(
 fun <OUTPUT> ScenarioSpecification.datasource(
     specification: (suspend () -> Flow<OUTPUT>)): DatasourceStepSpecification<OUTPUT> {
     val step = DatasourceStepSpecification(specification)
-    this.add(step)
+    (this as MutableScenarioSpecification).add(step)
     return step
 }

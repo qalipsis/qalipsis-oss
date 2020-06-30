@@ -4,6 +4,7 @@ import io.evolue.api.exceptions.InvalidSpecificationException
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
 import io.evolue.api.processors.ServicesLoader
+import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ReadableScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecificationsKeeper
@@ -24,7 +25,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.spyk
@@ -83,7 +83,7 @@ internal class ScenariosKeeperImplTest {
     @Test
     internal fun `should decorate converted step`() {
         // given
-        val scenarioSpecification: ScenarioSpecification = relaxedMockk { }
+        val scenarioSpecification: MutableScenarioSpecification = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
         val stepSpecification: StepSpecification<Any?, Any?, *> = relaxedMockk { }
         val createdStep: Step<Any?, Any?> = relaxedMockk { }
@@ -105,7 +105,7 @@ internal class ScenariosKeeperImplTest {
     @Test
     internal fun `should not decorate unconverted step`() {
         // given
-        val scenarioSpecification: ScenarioSpecification = relaxedMockk { }
+        val scenarioSpecification: MutableScenarioSpecification = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
         val stepSpecification: StepSpecification<Any?, Any?, *> = relaxedMockk { }
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
@@ -125,7 +125,7 @@ internal class ScenariosKeeperImplTest {
     @Test
     internal fun `should convert single step`() {
         // given
-        val scenarioSpecification: ScenarioSpecification = relaxedMockk { }
+        val scenarioSpecification: MutableScenarioSpecification = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
         val stepSpecification: StepSpecification<Any?, Any?, *> = relaxedMockk { }
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
@@ -150,7 +150,7 @@ internal class ScenariosKeeperImplTest {
     @Test
     internal fun `should not convert single step when no converter is found`() {
         // given
-        val scenarioSpecification: ScenarioSpecification = relaxedMockk { }
+        val scenarioSpecification: MutableScenarioSpecification = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
         val stepSpecification: StepSpecification<Any?, Any?, *> = relaxedMockk { }
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
@@ -174,12 +174,11 @@ internal class ScenariosKeeperImplTest {
     @Test
     internal fun `should convert steps and followers`() {
         // given
-        val scenarioSpecification: ReadableScenarioSpecification = mockk(
-            relaxed = true,
-            moreInterfaces = *arrayOf(ScenarioSpecification::class)
+        val scenarioSpecification: ReadableScenarioSpecification = relaxedMockk(
+            ScenarioSpecification::class, MutableScenarioSpecification::class
         )
         val scenario: Scenario = relaxedMockk { }
-        val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
+        val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk() {
             every { directedAcyclicGraphId } returns "dag-1"
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
@@ -221,9 +220,8 @@ internal class ScenariosKeeperImplTest {
     @Test
     internal fun `should not convert followers when step is not converted`() {
         // given
-        val scenarioSpecification: ReadableScenarioSpecification = mockk(
-            relaxed = true,
-            moreInterfaces = *arrayOf(ScenarioSpecification::class)
+        val scenarioSpecification: ReadableScenarioSpecification = relaxedMockk(
+            ScenarioSpecification::class, MutableScenarioSpecification::class
         )
         val scenario: Scenario = relaxedMockk { }
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {

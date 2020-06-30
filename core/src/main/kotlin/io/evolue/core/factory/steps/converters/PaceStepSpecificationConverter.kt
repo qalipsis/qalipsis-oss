@@ -6,12 +6,14 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.PaceStep
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [PaceStepSpecification] to [PaceStep].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class PaceStepSpecificationConverter :
     StepSpecificationConverter<PaceStepSpecification<*>> {
 

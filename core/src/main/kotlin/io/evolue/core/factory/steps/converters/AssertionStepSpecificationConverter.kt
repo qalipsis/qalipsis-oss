@@ -8,12 +8,14 @@ import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.AssertionStep
 import io.micrometer.core.instrument.MeterRegistry
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [AssertionStepSpecification] to [AssertionStep].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class AssertionStepSpecificationConverter(
     private val eventLogger: EventLogger,
     private val meterRegistry: MeterRegistry

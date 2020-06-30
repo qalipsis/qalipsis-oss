@@ -20,15 +20,23 @@ kapt {
     generateStubs = true
 }
 
+allOpen{
+    annotations(
+        "io.micronaut.aop.Around",
+        "javax.inject.Singleton",
+        "javax.inject.Singleton"
+    )
+}
+
 dependencies {
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${properties["kotlinCoroutinesVersion"]}")
+    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
 
     implementation(project(":api:api-common"))
     implementation(project(":api:api-dsl"))
     implementation(project(":api:api-processors"))
 
-    implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("com.google.guava:guava:29.0-jre")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
     implementation("cool.graph:cuid-java:0.1.1")
@@ -36,12 +44,9 @@ dependencies {
     implementation("io.ktor:ktor-client-apache:1.3.1")
     implementation("io.ktor:ktor-client-auth:1.3.1")
     implementation("io.ktor:ktor-client-auth-jvm:1.3.1")
-
+    implementation("io.micronaut.configuration:micronaut-micrometer-core")
     implementation("javax.annotation:javax.annotation-api")
-    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
-    implementation("io.micrometer:micrometer-registry-elastic:1.4.1")
     implementation("io.micronaut:micronaut-validation")
-    implementation("io.micronaut:micronaut-http-server-netty")
     implementation("io.micronaut:micronaut-runtime")
 
     kapt(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
@@ -53,6 +58,7 @@ dependencies {
     testImplementation("io.ktor:ktor-client-mock-jvm:1.3.1")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
+    testImplementation("ch.qos.logback:logback-classic:1.2.3")
 
     kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
     kaptTest("io.micronaut:micronaut-inject-java")

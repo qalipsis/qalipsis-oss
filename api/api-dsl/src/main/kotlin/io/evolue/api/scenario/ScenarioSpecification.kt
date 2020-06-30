@@ -13,7 +13,8 @@ import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
  */
 internal class ScenarioSpecificationImplementation(
     internal val name: String
-) : ScenarioSpecification, ConfigurableScenarioSpecification, ReadableScenarioSpecification {
+) : MutableScenarioSpecification, ConfigurableScenarioSpecification, ReadableScenarioSpecification,
+    RampUpSpecification {
 
     override var minionsCount = 1
 
@@ -53,7 +54,7 @@ internal class ScenarioSpecificationImplementation(
         this.rampUpStrategy = rampUpStrategy
     }
 
-    override fun strategy(retryPolicy: RetryPolicy) {
+    override fun retryPolicy(retryPolicy: RetryPolicy) {
         this.retryPolicy = retryPolicy
     }
 
@@ -76,8 +77,7 @@ interface ReadableScenarioSpecification {
     val rootSteps: List<StepSpecification<*, *, *>>
 }
 
-interface ConfigurableScenarioSpecification : RampUpSpecification,
-    RetrySpecification {
+interface ConfigurableScenarioSpecification : RetrySpecification {
 
     fun rampUp(specification: RampUpSpecification.() -> Unit)
 
@@ -101,10 +101,13 @@ interface RetrySpecification {
      * Define the default retry strategy for all the steps of the scenario.
      * The strategy can be redefined individually for each step.
      */
-    fun strategy(retryPolicy: RetryPolicy)
+    fun retryPolicy(retryPolicy: RetryPolicy)
 }
 
-interface ScenarioSpecification {
+/**
+ * Interface of a scenario as seen by the steps.
+ */
+interface MutableScenarioSpecification : ScenarioSpecification {
 
     /**
      * Add the step as root of the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
@@ -122,6 +125,11 @@ interface ScenarioSpecification {
      */
     fun getDagId(): DirectedAcyclicGraphId
 }
+
+/**
+ *
+ */
+interface ScenarioSpecification
 
 internal val scenariosSpecifications = mutableMapOf<ScenarioId, ReadableScenarioSpecification>()
 

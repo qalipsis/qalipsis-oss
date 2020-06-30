@@ -1,7 +1,5 @@
 package io.evolue.core.cross.driving.feedback
 
-import kotlinx.coroutines.flow.Flow
-
 /**
  * Service for the head to consume the feedbacks from factories.
  *
@@ -9,6 +7,6 @@ import kotlinx.coroutines.flow.Flow
  */
 internal interface FeedbackConsumer {
 
-    suspend fun subscribe(): Flow<Feedback>
+    suspend fun onReceive(block: suspend (Feedback) -> Unit)
 
 }

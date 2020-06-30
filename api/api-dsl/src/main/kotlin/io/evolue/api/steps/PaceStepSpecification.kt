@@ -1,5 +1,7 @@
 package io.evolue.api.steps
 
+import java.time.Duration
+
 /**
  * Specification for a [io.evolue.core.factory.steps.PaceStep].
  *
@@ -16,8 +18,12 @@ fun <INPUT> StepSpecification<*, INPUT, *>.pace(
     return step
 }
 
-fun <INPUT> StepSpecification<*, INPUT, *>.constantPace(periodInMs: Long): PaceStepSpecification<INPUT> {
-    return pace { _ -> periodInMs }
+fun <INPUT> StepSpecification<*, INPUT, *>.constantPace(durationInMs: Long): PaceStepSpecification<INPUT> {
+    return pace { _ -> durationInMs }
+}
+
+fun <INPUT> StepSpecification<*, INPUT, *>.constantPace(duration: Duration): PaceStepSpecification<INPUT> {
+    return pace { _ -> duration.toMillis() }
 }
 
 fun <INPUT> StepSpecification<*, INPUT, *>.acceleratingPace(startPeriodMs: Long, accelerator: Double,

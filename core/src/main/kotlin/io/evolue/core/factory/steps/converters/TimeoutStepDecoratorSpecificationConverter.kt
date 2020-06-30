@@ -6,12 +6,14 @@ import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
 import io.evolue.core.factory.steps.TimeoutStepDecorator
 import io.micrometer.core.instrument.MeterRegistry
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationDecoratorConverter] from any [AbstractStepSpecification] to [TimeoutStepDecorator].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class TimeoutStepDecoratorSpecificationConverter(
     private val meterRegistry: MeterRegistry
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {

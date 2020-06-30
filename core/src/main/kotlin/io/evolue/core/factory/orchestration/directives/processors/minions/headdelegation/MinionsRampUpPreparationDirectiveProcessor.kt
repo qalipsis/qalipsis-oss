@@ -1,6 +1,7 @@
 package io.evolue.core.factory.orchestration.directives.processors.minions.headdelegation
 
 import io.evolue.api.logging.LoggerHelper.logger
+import io.evolue.core.annotations.LogInputAndOutput
 import io.evolue.core.cross.driving.directives.Directive
 import io.evolue.core.cross.driving.directives.DirectiveProducer
 import io.evolue.core.cross.driving.directives.MinionStartDefinition
@@ -11,7 +12,9 @@ import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.core.factory.orchestration.directives.processors.DirectiveProcessor
+import io.evolue.core.factory.orchestration.directives.processors.minions.MinionsStartSingletonsDirectiveProcessor
 import java.util.LinkedList
+import javax.inject.Singleton
 
 /**
  *
@@ -20,6 +23,7 @@ import java.util.LinkedList
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class MinionsRampUpPreparationDirectiveProcessor(
     private val scenariosKeeper: ScenariosKeeper,
     private val directiveProducer: DirectiveProducer,
@@ -27,6 +31,7 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
     private val minionsCreationPreparationDirectiveProcessor: MinionsCreationPreparationDirectiveProcessor
 ) : DirectiveProcessor<MinionsRampUpPreparationDirective> {
 
+    @LogInputAndOutput
     override fun accept(directive: Directive): Boolean {
         if (directive is MinionsRampUpPreparationDirective) {
             // The scenario has to be known and the same factory should have generated all the minions IDs.

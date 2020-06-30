@@ -1,5 +1,6 @@
 package io.evolue.api.steps
 
+import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.scenario
 
 /**
@@ -10,7 +11,7 @@ import io.evolue.api.scenario.scenario
 class DummyStepSpecification : AbstractStepSpecification<Unit, Int, DummyStepSpecification>() {
 
     init {
-        scenario = scenario("my-scenario")
+        scenario = scenario("my-scenario") as MutableScenarioSpecification
     }
 }
 

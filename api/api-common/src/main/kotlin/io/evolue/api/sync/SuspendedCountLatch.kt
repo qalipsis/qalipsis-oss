@@ -4,6 +4,7 @@ import io.evolue.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onReceiveOrNull
 import kotlinx.coroutines.channels.receiveOrNull
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicLong
@@ -27,9 +28,9 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 class SuspendedCountLatch(
-    private var initialCount: Long,
-    private val allowsNegative: Boolean = false,
-    private val onReleaseAction: suspend (() -> Unit) = {}) {
+        private var initialCount: Long,
+        private val allowsNegative: Boolean = false,
+        private val onReleaseAction: suspend (() -> Unit) = {}) {
 
     private var syncFlag = Channel<Unit>(1)
 
@@ -67,7 +68,7 @@ class SuspendedCountLatch(
         }
     }
 
-    suspend fun increment(value: Long) {
+    suspend fun increment(value: Long = 1) {
         mutex.withLock {
             count.addAndGet(value)
             logger().trace("Count is now $count")
@@ -78,11 +79,13 @@ class SuspendedCountLatch(
         }
     }
 
-    suspend fun increment() {
-        increment(1)
+    fun blockingIncrement(value: Long = 1) {
+        runBlocking {
+            increment(value)
+        }
     }
 
-    suspend fun decrement(value: Long) {
+    suspend fun decrement(value: Long = 1) {
         mutex.withLock {
             require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
             count.addAndGet(-value)
@@ -94,8 +97,10 @@ class SuspendedCountLatch(
         }
     }
 
-    suspend fun decrement() {
-        decrement(1)
+    fun blockingDecrement(value: Long = 1) {
+        runBlocking {
+            decrement(value)
+        }
     }
 
     fun get() = count.get()

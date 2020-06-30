@@ -6,12 +6,14 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.CatchExhaustedContextStep
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [CatchExhaustedContextStepSpecification] to [CatchExhaustedContextStep].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class CatchExhaustedContextStepSpecificationConverter :
     StepSpecificationConverter<CatchExhaustedContextStepSpecification<*, *>> {
 

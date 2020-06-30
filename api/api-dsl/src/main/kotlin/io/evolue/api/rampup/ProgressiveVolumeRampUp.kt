@@ -67,7 +67,6 @@ class ProgressiveVolumeRampUp(private val periodMs: Long, private val minionsCou
     }
 }
 
-
 /**
  * Increase the volume of minions to start at a constant pace.
  */

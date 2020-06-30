@@ -28,7 +28,6 @@ import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.spyk
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -56,7 +55,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should start minions creation with same minions total when campaign a starts and minionsCountPerScenario is specified`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val campaignManager = DefaultCampaignManager(
             10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
             directiveProducer = directiveProducer
@@ -104,7 +102,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should start minions creation with same minions total when campaign a starts and minionsCountFactor is specified`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val campaignManager = DefaultCampaignManager(
             minionsCountFactor = 2.0, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
             directiveProducer = directiveProducer
@@ -152,7 +149,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should accept MinionsCreationDirectiveReference`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val campaignManager = DefaultCampaignManager(
             10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
             directiveProducer = directiveProducer
@@ -166,7 +162,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should not accept other directives`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val campaignManager = DefaultCampaignManager(
             10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
             directiveProducer = directiveProducer
@@ -180,7 +175,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should store the directives`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val campaignManager = DefaultCampaignManager(
             10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
             directiveProducer = directiveProducer
@@ -202,7 +196,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should process MinionsCreationPreparationDirective in progress when the directive exists`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationPreparationDirective("directive", "", 123)
         val campaignManager = spyk(DefaultCampaignManager(
@@ -237,7 +230,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should process done MinionsCreationPreparationDirective when the directive exists`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationPreparationDirective("directive", "", 123)
         val campaignManager = spyk(DefaultCampaignManager(
@@ -272,7 +264,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should ignore MinionsCreationPreparationDirective when the directive does not exist`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val campaignManager = spyk(DefaultCampaignManager(
             10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
@@ -300,7 +291,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should process MinionsCreationDirectiveReference in progress when the directive exists`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
         val campaignManager = spyk(DefaultCampaignManager(
@@ -335,7 +325,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should process done MinionsCreationDirectiveReference when the directive exists`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
         val campaignManager = spyk(DefaultCampaignManager(
@@ -370,7 +359,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should ignore MinionsCreationDirectiveReference when the directive does not exist`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val campaignManager = spyk(DefaultCampaignManager(
             10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
@@ -398,7 +386,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should process failed feedback for MinionsCreationPreparationDirective`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val onCriticalFailure: (String) -> Unit = { _ -> countDownLatch.countDown() }
         val directive = MinionsCreationPreparationDirective("directive", "", 123)
@@ -423,7 +410,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should process failed feedback for MinionsCreationDirectiveReference`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val countDownLatch = CountDownLatch(1)
         val onCriticalFailure: (String) -> Unit = { _ -> countDownLatch.countDown() }
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
@@ -448,7 +434,6 @@ internal class DefaultCampaignManagerTest {
     @Timeout(1)
     internal fun `should trigger ramp-up when all the scenarios are ready`() {
         // given
-        coEvery { feedbackConsumer.subscribe() } returns emptyFlow()
         val campaignManager = DefaultCampaignManager(
             10, speedFactor = 2.87, startOffsetMs = 876, feedbackConsumer = feedbackConsumer,
             scenarioRepository = scenarioRepository,

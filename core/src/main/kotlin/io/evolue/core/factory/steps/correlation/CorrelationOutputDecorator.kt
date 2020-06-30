@@ -12,12 +12,14 @@ import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
+import javax.inject.Singleton
 
 /**
  * Decorator for [Step]s considered to be "secondary" steps for [CorrelationStep]s.
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class CorrelationOutputDecorator<I : Any?, O : Any?>(private val decorated: Step<I, O>) : Step<I, O>,
     StepExecutor {
 

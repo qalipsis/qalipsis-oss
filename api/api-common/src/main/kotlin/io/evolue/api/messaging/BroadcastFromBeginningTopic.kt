@@ -1,6 +1,7 @@
 package io.evolue.api.messaging
 
 import com.google.common.collect.EvictingQueue
+import io.evolue.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -40,8 +41,8 @@ internal class BroadcastFromBeginningTopic(
         }
         return subscriptionMutex.withLock {
             val subscriptionChannel = Channel<Topic.Record>(Channel.UNLIMITED)
-
             if (buffer.isNotEmpty()) {
+                log.trace("Adding ${buffer.size} buffered record(s) to the new subscription")
                 buffer.forEach { subscriptionChannel.send(it) }
             }
             val subscription = Topic.TopicSubscription(subscriptionChannel, idleTimeout) {
@@ -59,7 +60,11 @@ internal class BroadcastFromBeginningTopic(
         subscriptionMutex.withLock {
             buffer.add(record)
         }
-        subscriptions.values.map { it.channel as Channel<Topic.Record> }.forEach { c -> c.send(record) }
+
+        log.trace("Adding one record to ${subscriptions.size} subscriptions")
+        subscriptions.values
+            .map { it.channel as Channel<Topic.Record> }
+            .forEach { c -> c.send(record) }
     }
 
     override suspend fun produce(value: Any?) = produce(Topic.Record(value = value))
@@ -87,5 +92,10 @@ internal class BroadcastFromBeginningTopic(
         if (!open) {
             throw ClosedTopicException()
         }
+    }
+
+    companion object {
+        @JvmStatic
+        private val log = logger()
     }
 }

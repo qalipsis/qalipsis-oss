@@ -5,7 +5,7 @@ package io.evolue.api.events
  *
  * @author Eric Jessé
  */
-enum class EventLevel() {
+enum class EventLevel {
     // The order of the declarations matters.
     TRACE, DEBUG, INFO, WARN, ERROR, OFF
 }

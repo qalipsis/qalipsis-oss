@@ -1,0 +1,12 @@
+logging:
+  console: false
+  root: warn
+  level:
+    events: info
+    io.evolue.sample: info
+
+campaign:
+  minions-count-per-scenario: 0
+  minions-factor: 1
+  speed-factor: 1
+  start-offset-ms: 500

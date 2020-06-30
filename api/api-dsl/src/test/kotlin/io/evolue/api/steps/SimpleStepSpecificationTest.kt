@@ -24,9 +24,10 @@ internal class SimpleStepSpecificationTest {
     internal fun `should add simple step to scenario`() {
         val scenario = scenario(
             "my-scenario") as ScenarioSpecificationImplementation
-        val specification: suspend (context: StepContext<Int, String>) -> Unit = { _ -> }
+        val specification: suspend (context: StepContext<Unit, String>) -> Unit = { _ -> }
         scenario.execute(specification)
 
         assertEquals(SimpleStepSpecification(specification), scenario.rootSteps[0])
     }
+
 }

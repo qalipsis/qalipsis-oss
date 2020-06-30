@@ -10,6 +10,7 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
+import javax.inject.Singleton
 
 /**
  * Decorator of [SingletonStepSpecification] by [SingletonOutputDecorator] and converter from
@@ -17,6 +18,7 @@ import io.evolue.api.steps.StepSpecificationDecoratorConverter
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class SingletonStepSpecificationConverter :
     StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>(),
     StepSpecificationConverter<SingletonProxyStepSpecification<*>> {

@@ -9,8 +9,12 @@ internal typealias DirectiveKey = String
  * A Directive is sent from the header to the factories to notify them of operations to perform.
  */
 internal abstract class Directive(
-    val key: DirectiveKey = Cuid.createCuid()
-)
+        val key: DirectiveKey = Cuid.createCuid()
+) {
+    override fun toString(): String {
+        return "${this::class.simpleName}(key=$key)"
+    }
+}
 
 /**
  * Kind of [Directive] containing all the relevant information to process the directive.
@@ -36,10 +40,10 @@ internal interface ReferencableDirective<T : DirectiveReference> {
  * They are published to the directive consumers as a [SingleUseDirectiveReference].
  */
 internal abstract class SingleUseDirective<T, R : SingleUseDirectiveReference<T>>(
-    /**
-     * Values to initialize the queue.
-     */
-    val value: T
+        /**
+         * Values to initialize the queue.
+         */
+        val value: T
 ) : Directive(), ReferencableDirective<R>
 
 /**
@@ -54,10 +58,10 @@ internal abstract class SingleUseDirectiveReference<T>(key: DirectiveKey) : Dire
  * They are published to the directive consumers as a [QueueDirectiveReference].
  */
 internal abstract class QueueDirective<T, R : QueueDirectiveReference<T>>(
-    /**
-     * Values to initialize the queue.
-     */
-    values: List<T>
+        /**
+         * Values to initialize the queue.
+         */
+        values: List<T>
 ) : Directive(), ReferencableDirective<R> {
 
     internal val queue: LinkedList<T> = LinkedList<T>(values)
@@ -75,10 +79,10 @@ internal abstract class QueueDirectiveReference<T>(key: DirectiveKey) : Directiv
  *
  */
 internal abstract class ListDirective<T, R : ListDirectiveReference<T>>(
-    /**
-     * Values to initialize the set.
-     */
-    values: List<T>
+        /**
+         * Values to initialize the set.
+         */
+        values: List<T>
 ) : Directive(), ReferencableDirective<R> {
 
     internal val set: List<T> = values

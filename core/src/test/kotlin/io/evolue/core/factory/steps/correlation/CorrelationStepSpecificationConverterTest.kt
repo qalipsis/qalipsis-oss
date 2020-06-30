@@ -10,7 +10,7 @@ import assertk.assertions.isSameAs
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
-import io.evolue.api.scenario.ScenarioSpecification
+import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.steps.CorrelationStepSpecification
 import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepCreationContext
@@ -65,7 +65,7 @@ internal class CorrelationStepSpecificationConverterTest {
         val otherStep: Step<*, *> = relaxedMockk {
             every { id } returns "the-other-step"
         }
-        val scenarioSpec: ScenarioSpecification = relaxedMockk {
+        val scenarioSpec: MutableScenarioSpecification = relaxedMockk {
             every { exists("other-step") } returns true
         }
         val scen: Scenario = relaxedMockk {

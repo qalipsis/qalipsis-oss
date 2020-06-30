@@ -1,8 +1,10 @@
 package io.evolue.api.messaging
 
+import io.evolue.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -116,6 +118,18 @@ interface Topic {
             return poll().value
         }
 
+        suspend fun <T> onReceiveValue(block: suspend (T) -> Unit) {
+            while (active) {
+                activityChannel.send(Unit)
+                val record = channel.receiveOrNull()
+                if (record == null) {
+                    active = false
+                } else {
+                    block(record.value as T)
+                }
+            }
+        }
+
         fun isActive() = active
 
         fun cancel() {
@@ -123,6 +137,11 @@ interface Topic {
             timeout.cancel()
             activityChannel.close()
             cancellation()
+        }
+
+        companion object {
+            @JvmStatic
+            private val log = logger()
         }
     }
 }

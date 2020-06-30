@@ -6,7 +6,7 @@ import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 
 /**
- * JUnit 5 extension in charge of cancelling the undone running coroutines to avoid frictions
+ * JUnit 5 extension in charge of cancelling the uncomplete coroutines of the global scope to avoid pollution
  * between the tests.
  *
  * @author Eric Jessé
@@ -19,5 +19,6 @@ class CoroutineCleanExtension : AfterEachCallback {
         } catch (e: Exception) {
             // Just ignore.
         }
+        Thread.sleep(500)
     }
 }

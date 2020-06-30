@@ -1,0 +1,70 @@
+server:
+  port: 8400
+monitoring:
+  enabled: true
+  elasticsearch:
+    hosts: http://localhost:9200
+    enabled: false
+    step: PT1M
+    index: evolue-metrics
+    indexDateFormat: yyyy-MM-dd
+    autoCreateIndex: true
+logging:
+  console: true
+  pattern: "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t] %logger.%M.%L : %m%n"
+  file:
+    path: evolue.log
+    max-size: 30MB
+    max-history: 3
+    total-capacity: 100MB
+    async: true
+    queue-size: 1024
+    include-caller-data: true
+    never-block: false
+  events:
+    path: evolue-events.log
+    max-size: 30MB
+    max-history: 3
+    total-capacity: 100MB
+    pattern: "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- %m%n"
+    async: true
+    queue-size: 1024
+    include-caller-data: false
+    never-block: false
+  root: warn
+  level:
+    io.evolue.core.head: info
+    io.micronaut: warn
+    io.netty: warn
+    io.evolue: warn
+    events: info
+
+# Micronaut configuration.
+micronaut:
+  server:
+    port: ${server.port}
+  metrics:
+    enabled: ${monitoring.enabled}
+    binders:
+      jvm:
+        enabled: true
+      web:
+        enabled: true
+      uptime:
+        enabled: true
+      processor:
+        enabled: true
+      files:
+        enabled: true
+      logback:
+        enabled: false
+      cache:
+        enabled: false
+    export:
+      elastic:
+        host: ${monitoring.elasticsearch.hosts}
+        enabled: ${monitoring.elasticsearch.enabled}
+        step: ${monitoring.elasticsearch.step}
+        index: ${monitoring.elasticsearch.index}
+        indexDateFormat: ${monitoring.elasticsearch.indexDateFormat}
+        autoCreateIndex: ${monitoring.elasticsearch.autoCreateIndex}

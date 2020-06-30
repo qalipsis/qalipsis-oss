@@ -9,8 +9,11 @@ include(
     "test",
 
     "core",
-    "plugin",
+    "runtime",
 
-    "developer-documentation"
+    "developer-documentation",
+
+    "samples",
+    "samples:simple"
 )
 

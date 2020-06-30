@@ -18,4 +18,9 @@ internal interface DirectiveProcessor<D : Directive> {
      * Execute the directive in the current factory.
      */
     suspend fun process(directive: D)
+
+    /**
+     * Defines the order of the processor in the chain. Default is 0.
+     */
+    fun order() = 0
 }

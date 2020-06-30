@@ -6,12 +6,14 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.CatchErrorStep
+import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [CatchErrorStepSpecification] to [CatchErrorStep].
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class CatchErrorStepSpecificationConverter : StepSpecificationConverter<CatchErrorStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

@@ -147,8 +147,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             runningStepsGauge.incrementAndGet()
             runningStepsGauge.decrementAndGet()
             executedStepCounter.increment()
-            eventLogger.debug(match { it.startsWith("step-") && it.endsWith("-started") }, tagsSupplier = any())
-            eventLogger.debug(match { it.startsWith("step-") && it.endsWith("-completed") }, tagsSupplier = any())
+            eventLogger.info(match { it.startsWith("step-") && it.endsWith("-started") }, tagsSupplier = any())
+            eventLogger.info(match { it.startsWith("step-") && it.endsWith("-completed") }, tagsSupplier = any())
             meterRegistry.timer("step-execution", "step", any(), "status", "completed")
             stepExecutionTimer.record(any<Duration>())
         }

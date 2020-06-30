@@ -27,6 +27,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.util.StringEscapeUtils
+import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
@@ -47,6 +48,7 @@ import java.util.Random
 import java.util.UUID
 import java.util.regex.Pattern
 import javax.annotation.Nullable
+import javax.inject.Singleton
 
 
 /**
@@ -55,6 +57,8 @@ import javax.annotation.Nullable
  *
  * @author Eric Jessé
  */
+@Singleton
+@Requires(property = "events.export.elasticsearch.enabled", value = "true")
 internal class ElasticsearchEventLogger(
     private val configuration: ElasticsearchEventLoggerConfiguration,
     private val meterRegistry: MeterRegistry,
@@ -79,8 +83,8 @@ internal class ElasticsearchEventLogger(
         if (configuration.username != null && configuration.password != null) {
             install(Auth) {
                 basic {
-                    username = configuration.username
-                    password = configuration.password
+                    username = configuration.username!!
+                    password = configuration.password!!
                 }
             }
         }
@@ -95,7 +99,7 @@ internal class ElasticsearchEventLogger(
                 setContentCompressionEnabled(true)
             }
             if (configuration.proxy != null) {
-                proxy = ProxyBuilder.http(configuration.proxy)
+                proxy = ProxyBuilder.http(configuration.proxy!!)
             }
         }
     }

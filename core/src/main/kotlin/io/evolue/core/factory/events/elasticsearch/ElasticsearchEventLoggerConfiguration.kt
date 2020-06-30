@@ -1,6 +1,7 @@
 package io.evolue.core.factory.events.elasticsearch
 
 import io.evolue.api.events.EventLevel
+import io.micronaut.context.annotation.ConfigurationProperties
 import java.time.Duration
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
@@ -22,10 +23,11 @@ import javax.validation.constraints.NotNull
  * @property password password of the user to use for basic authentication when connecting to Elasticsearch.
  * @property shards number of shards to apply on the created indices for events, default: 1.
  * @property replicas number of replicas to apply on the created indices for events, default: 0.
- * @property proxy URL of the http proxy to use to access to Elasticsearch, it might be convenient to support other kind of authentication in Elasticsearch.
+ * @property proxy URL of the http proxy to use to access to Elasticsearch, it might be convenient in order to support other kind of authentication in Elasticsearch.
  *
  * @author Eric Jessé
  */
+@ConfigurationProperties("events.export.elasticsearch")
 data class ElasticsearchEventLoggerConfiguration(
     @NotNull
     val loggableLevel: EventLevel = EventLevel.INFO,

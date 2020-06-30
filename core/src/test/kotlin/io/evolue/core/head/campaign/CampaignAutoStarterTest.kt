@@ -4,14 +4,16 @@ import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedback
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedbackScenario
 import io.evolue.core.cross.driving.feedback.Feedback
 import io.evolue.core.cross.driving.feedback.FeedbackConsumer
+import io.evolue.test.coroutines.AbstractCoroutinesTest
 import io.evolue.test.mockk.coVerifyNever
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
 import io.mockk.coEvery
+import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.junit5.MockKExtension
-import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.CountDownLatch
 
@@ -19,7 +21,7 @@ import java.util.concurrent.CountDownLatch
  * @author Eric Jessé
  */
 @ExtendWith(MockKExtension::class)
-internal class CampaignAutoStarterTest {
+internal class CampaignAutoStarterTest : AbstractCoroutinesTest() {
 
     @RelaxedMockK
     lateinit var feedbackConsumer: FeedbackConsumer
@@ -27,7 +29,14 @@ internal class CampaignAutoStarterTest {
     @RelaxedMockK
     lateinit var campaignManager: CampaignManager
 
+    @RelaxedMockK
+    lateinit var headScenarioRepository: HeadScenarioRepository
+
+    @InjectMockKs
+    lateinit var campaignAutoStarter: CampaignAutoStarter
+
     @Test
+    @Timeout(3)
     internal fun `should start a campaign when factory registers`() {
         // given
         val countDown = CountDownLatch(1)
@@ -39,12 +48,13 @@ internal class CampaignAutoStarterTest {
                 io.mockk.every { id } returns "scen-2"
             }
         )
-        coEvery { feedbackConsumer.subscribe() } returns flowOf(FactoryRegistrationFeedback(scenarios)).also {
+        coEvery { feedbackConsumer.onReceive(any()) } coAnswers {
+            (firstArg() as suspend (Feedback) -> Unit).invoke(FactoryRegistrationFeedback(scenarios))
             countDown.countDown()
         }
 
         // when
-        CampaignAutoStarter(feedbackConsumer, campaignManager)
+        campaignAutoStarter.init()
 
         // then
         countDown.await()
@@ -52,15 +62,17 @@ internal class CampaignAutoStarterTest {
     }
 
     @Test
+    @Timeout(1)
     internal fun `should not start a campaign when other feedback is received`() {
         // given
         val countDown = CountDownLatch(1)
-        coEvery { feedbackConsumer.subscribe() } returns flowOf(relaxedMockk<Feedback>()).also {
+        coEvery { feedbackConsumer.onReceive(any()) } coAnswers {
+            (firstArg() as suspend (Feedback) -> Unit).invoke(relaxedMockk())
             countDown.countDown()
         }
 
         // when
-        CampaignAutoStarter(feedbackConsumer, campaignManager)
+        campaignAutoStarter.init()
 
         // then
         countDown.await()

@@ -4,6 +4,7 @@ import cool.graph.cuid.Cuid
 import io.evolue.api.context.MinionId
 import io.evolue.api.context.ScenarioId
 import io.evolue.api.logging.LoggerHelper.logger
+import io.evolue.core.annotations.LogInputAndOutput
 import io.evolue.core.cross.driving.directives.Directive
 import io.evolue.core.cross.driving.directives.DirectiveProducer
 import io.evolue.core.cross.driving.directives.DirectiveRegistry
@@ -14,7 +15,9 @@ import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.core.factory.orchestration.directives.processors.DirectiveProcessor
+import io.evolue.core.factory.orchestration.directives.processors.minions.MinionsStartSingletonsDirectiveProcessor
 import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Singleton
 
 /**
  *
@@ -23,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
+@Singleton
 internal class MinionsCreationPreparationDirectiveProcessor(
     private val scenariosKeeper: ScenariosKeeper,
     private val directiveRegistry: DirectiveRegistry,
@@ -32,6 +36,7 @@ internal class MinionsCreationPreparationDirectiveProcessor(
 
     val minions: MutableMap<ScenarioId, List<MinionId>> = ConcurrentHashMap()
 
+    @LogInputAndOutput
     override fun accept(directive: Directive): Boolean {
         if (directive is MinionsCreationPreparationDirectiveReference) {
             return scenariosKeeper.hasScenario(directive.scenarioId)
@@ -42,7 +47,7 @@ internal class MinionsCreationPreparationDirectiveProcessor(
     override suspend fun process(directive: MinionsCreationPreparationDirectiveReference) {
         scenariosKeeper.getScenario(directive.scenarioId)?.let { scenario ->
             directiveRegistry.read(directive)?.let { minionsCount ->
-                log.debug("Creating $minionsCount minions for the scenario ${directive.scenarioId}")
+                log.debug("Creating $minionsCount minions IDs for the scenario ${directive.scenarioId}")
                 feedbackProducer.publish(
                     DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.IN_PROGRESS)
                 )
@@ -76,9 +81,7 @@ internal class MinionsCreationPreparationDirectiveProcessor(
     }
 
     companion object {
-
         @JvmStatic
         private val log = logger()
-
     }
 }
