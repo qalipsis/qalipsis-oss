@@ -27,7 +27,7 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     @Test
     internal fun `should have order 500`() {
         // given
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = TimeoutStepDecoratorSpecificationConverter(meterRegistry)
 
         // then + when
@@ -37,7 +37,7 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     @Test
     internal fun `should decorate step with timeout`() {
         // given
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = TimeoutStepDecoratorSpecificationConverter(meterRegistry)
         val mockedCreatedStep: Step<Int, String> = relaxedMockk()
         val creationContext =
@@ -63,7 +63,7 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     @Test
     internal fun `should not decorate step without timeout`() {
         // given
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = TimeoutStepDecoratorSpecificationConverter(meterRegistry)
         val mockedCreatedStep: Step<Int, String> = relaxedMockk()
         val creationContext =

@@ -7,6 +7,7 @@ import io.evolue.api.states.SharedStateDefinition
 import io.evolue.api.states.SharedStateRegistry
 import io.evolue.core.cross.configuration.ENV_STANDALONE
 import io.micronaut.context.annotation.Requires
+import io.micronaut.context.annotation.Value
 import java.time.Duration
 import javax.inject.Singleton
 
@@ -17,18 +18,42 @@ import javax.inject.Singleton
  */
 @Singleton
 @Requires(env = [ENV_STANDALONE])
-class InMemorySharedStateRegistry(timeToLive: Duration) : SharedStateRegistry {
+class InMemorySharedStateRegistry(
+        @Value("\${shared-registry.time-to-live:PT1M}") timeToLive: Duration
+) : SharedStateRegistry {
 
-    private val cache: Cache<SharedStateDefinition, Any> = Caffeine.newBuilder()
+    private val cache: Cache<SharedStateDefinition, Any?> = Caffeine.newBuilder()
         .expireAfter(SharedStateDefinitionExpiry(timeToLive))
         .build()
 
-    override fun set(definition: SharedStateDefinition, payload: Any) {
-        cache.put(definition, payload)
+    override fun set(definition: SharedStateDefinition, payload: Any?) {
+        if (payload == null) {
+            cache.invalidate(definition)
+        } else {
+            cache.put(definition, payload)
+        }
+    }
+
+    override fun set(values: Map<SharedStateDefinition, Any?>) {
+        values.forEach { (def, value) -> set(def, value) }
     }
 
     override fun <T> get(definition: SharedStateDefinition): T? {
         return cache.getIfPresent(definition) as T
+    }
+
+    override fun get(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
+        return definitions.map { it.sharedStateName to get<Any>(it) }.toMap()
+    }
+
+    override fun <T> remove(definition: SharedStateDefinition): T? {
+        return get<T>(definition)?.also { cache.invalidate(definition) }
+    }
+
+    override fun remove(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
+        return get(definitions).also {
+            definitions.forEach { cache.invalidate(it) }
+        }
     }
 
     override fun contains(definition: SharedStateDefinition): Boolean {
@@ -39,7 +64,7 @@ class InMemorySharedStateRegistry(timeToLive: Duration) : SharedStateRegistry {
         Expiry<SharedStateDefinition, Any> {
 
         override fun expireAfterUpdate(key: SharedStateDefinition, value: Any, currentTime: Long,
-                                       currentDuration: Long): Long {
+                currentDuration: Long): Long {
             return key.timeToLive?.toNanos() ?: currentDuration
         }
 
@@ -48,7 +73,7 @@ class InMemorySharedStateRegistry(timeToLive: Duration) : SharedStateRegistry {
         }
 
         override fun expireAfterRead(key: SharedStateDefinition, value: Any, currentTime: Long,
-                                     currentDuration: Long): Long {
+                currentDuration: Long): Long {
             return key.timeToLive?.toNanos() ?: currentDuration
         }
 

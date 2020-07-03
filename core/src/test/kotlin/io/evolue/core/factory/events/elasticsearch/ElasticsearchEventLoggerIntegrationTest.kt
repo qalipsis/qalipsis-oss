@@ -270,7 +270,7 @@ internal class ElasticsearchEventLoggerIntegrationTest : AbstractCoroutinesTest(
 
         @Container
         @JvmStatic
-        val es7 = ElasticsearchContainer("7.6.2")
+        val es7 = ElasticsearchContainer("7.8.0")
 
         /**
          * Provide the data for the parameterized test. The first side of the pair is the Docker container
