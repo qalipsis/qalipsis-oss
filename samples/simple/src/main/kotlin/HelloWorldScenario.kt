@@ -7,6 +7,8 @@ import io.evolue.api.steps.constantPace
 import io.evolue.api.steps.execute
 import io.evolue.api.steps.map
 import io.evolue.api.steps.returns
+import io.evolue.api.steps.shelve
+import io.evolue.api.steps.unshelve
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
@@ -31,15 +33,20 @@ class HelloWorldScenario {
         }
             .returns<String> { context ->
                 val now = System.currentTimeMillis()
-                "Hello World! I'm the minion ${context.minionId} and starting after ${now - start} ms"
+                "Hello World! I'm the minion ${context.minionId}"
             }.configure {
                 name = "entry"
             }
+            .shelve { input -> mapOf("started at" to System.currentTimeMillis()) }
             .map { str -> str!!.toUpperCase() }.configure {
                 name = "map-1"
             }
             .constantPace(Duration.ofMillis(100))
-            .execute<String, Unit> { str -> logger.info(str.input.receive()) }
+            .unshelve<String, Long>("started at")
+            .execute<Pair<String, Long?>, Unit> { ctx ->
+                val input = ctx.input.receive()
+                logger.info("${input.first} and started after ${input.second!! - start} ms")
+            }
             .configure {
                 name = "log"
                 iterations = 2

@@ -5,6 +5,10 @@
 *.log
 *.log.*.gz
 
+
+# Temporary files
+*.tmp
+
 # BlueJ files
 *.ctxt
 

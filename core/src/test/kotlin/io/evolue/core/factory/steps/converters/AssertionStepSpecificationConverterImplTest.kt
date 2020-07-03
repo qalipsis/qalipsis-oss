@@ -27,8 +27,8 @@ internal class AssertionStepSpecificationConverterImplTest {
     @Test
     internal fun `should support expected spec`() {
         // given
-        val eventLogger: EventLogger = relaxedMockk();
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val eventLogger: EventLogger = relaxedMockk()
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = AssertionStepSpecificationConverter(eventLogger, meterRegistry)
 
         // when+then
@@ -38,8 +38,8 @@ internal class AssertionStepSpecificationConverterImplTest {
     @Test
     internal fun `should not support unexpected spec`() {
         // given
-        val eventLogger: EventLogger = relaxedMockk();
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val eventLogger: EventLogger = relaxedMockk()
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = AssertionStepSpecificationConverter(eventLogger, meterRegistry)
 
         // when+then
@@ -54,8 +54,8 @@ internal class AssertionStepSpecificationConverterImplTest {
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
 
-        val eventLogger: EventLogger = relaxedMockk();
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val eventLogger: EventLogger = relaxedMockk()
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = AssertionStepSpecificationConverter(eventLogger, meterRegistry)
 
         // when
@@ -82,8 +82,8 @@ internal class AssertionStepSpecificationConverterImplTest {
         val spec = AssertionStepSpecification(blockSpecification)
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
 
-        val eventLogger: EventLogger = relaxedMockk();
-        val meterRegistry: MeterRegistry = relaxedMockk();
+        val eventLogger: EventLogger = relaxedMockk()
+        val meterRegistry: MeterRegistry = relaxedMockk()
         val converter = AssertionStepSpecificationConverter(eventLogger, meterRegistry)
 
         // when

@@ -39,6 +39,9 @@ logging:
     io.evolue: warn
     events: info
 
+shared-registry:
+  time-to-live: PT1M
+
 # Micronaut configuration.
 micronaut:
   server:

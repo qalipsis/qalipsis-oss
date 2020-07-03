@@ -7,9 +7,17 @@ package io.evolue.api.states
  */
 interface SharedStateRegistry {
 
-    operator fun set(definition: SharedStateDefinition, payload: Any)
+    operator fun set(definition: SharedStateDefinition, payload: Any?)
+
+    fun set(values: Map<SharedStateDefinition, Any?>)
 
     operator fun <T> get(definition: SharedStateDefinition): T?
+
+    fun <T> remove(definition: SharedStateDefinition): T?
+
+    fun get(definitions: Iterable<SharedStateDefinition>): Map<String, Any?>
+
+    fun remove(definitions: Iterable<SharedStateDefinition>): Map<String, Any?>
 
     fun contains(definition: SharedStateDefinition): Boolean
 
