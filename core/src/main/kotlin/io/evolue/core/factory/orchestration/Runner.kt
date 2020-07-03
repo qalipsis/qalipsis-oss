@@ -91,7 +91,7 @@ internal class Runner(
                         })
                     }
                 }
-                // If the context is exhausted, it only the error processing steps are executed.
+                // If the context is exhausted, it only ensures that the error processing steps are executed.
                 if (!errorOfContextProcessed && ctx.exhausted) {
                     step.next.forEach { nextStep ->
                         val nextContext = StepContextBuilder.next(ctx, nextStep.id)

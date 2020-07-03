@@ -170,12 +170,11 @@ internal class ElasticsearchEventLogger(
                     indexFormatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(event.timestamp),
                         Clock.systemUTC().zone)) to writeDocument(event)
                 }
-                .filter { it.second.isPresent }
                 .map {
                     """{ "create" : { "_index" : "${configuration.indexPrefix}-${it.first}", "_type" : "${DOCUMENT_TYPE}", "_id" : "${UUID(
                         random.nextLong(),
                         random.nextLong())}" } }
-${it.second.get()}
+                        ${it.second}
             """.trimIndent()
                 }.joinToString(separator = "\n", postfix = "\n")
             meterRegistry.timer("events-conversion", "logger", "elasticsearch")
@@ -219,7 +218,7 @@ ${it.second.get()}
      * [EventGeoPoint]s, [EventRange]s and [Throwable]s are interpreted.
      */
     @VisibleForTesting
-    fun writeDocument(event: Event): Optional<String> {
+    fun writeDocument(event: Event): String {
         val timestamp = generateTimestamp(event.timestamp)
         val sb = StringBuilder("{\"@timestamp\":\"").append(timestamp).append('"')
             .append(",\"name\":\"").append(StringEscapeUtils.escapeJson(event.name)).append('"')
@@ -288,7 +287,7 @@ ${it.second.get()}
             }
         }
         sb.append("}")
-        return Optional.of(sb.toString())
+        return sb.toString()
     }
 
     /**

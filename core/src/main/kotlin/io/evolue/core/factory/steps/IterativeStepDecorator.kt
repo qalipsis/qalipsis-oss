@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
 import java.time.Duration
 
 /**
- * Decorator of a step, aimaing at executing it a given number of times or indefinitely.
+ * Decorator of a step, aiming at executing it a given number of times or indefinitely.
  *
  * @author Eric Jessé
  */
