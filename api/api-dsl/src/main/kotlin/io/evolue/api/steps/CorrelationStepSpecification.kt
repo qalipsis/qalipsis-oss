@@ -22,8 +22,8 @@ data class CorrelationStepSpecification<INPUT, OUTPUT>(
 }
 
 fun <INPUT, OTHER_INPUT : Any?> StepSpecification<*, INPUT, *>.correlate(on: CorrelationRecord<INPUT>.() -> Any?,
-                                                                         with: ScenarioSpecification.() -> AbstractStepSpecification<*, OTHER_INPUT, *>,
-                                                                         having: CorrelationRecord<OTHER_INPUT>.() -> Any?): CorrelationStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>> {
+    with: ScenarioSpecification.() -> AbstractStepSpecification<*, OTHER_INPUT, *>,
+    having: CorrelationRecord<OTHER_INPUT>.() -> Any?): CorrelationStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>> {
     val secondaryStep = scenario!!.with()
     if (secondaryStep.name.isNullOrBlank()) {
         secondaryStep.name = Cuid.createCuid()
@@ -33,8 +33,8 @@ fun <INPUT, OTHER_INPUT : Any?> StepSpecification<*, INPUT, *>.correlate(on: Cor
 }
 
 fun <INPUT, OTHER_INPUT : Any?> StepSpecification<*, INPUT, *>.correlate(on: CorrelationRecord<INPUT>.() -> Any?,
-                                                                         with: String,
-                                                                         having: CorrelationRecord<OTHER_INPUT>.() -> Any?): CorrelationStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>> {
+    with: String,
+    having: CorrelationRecord<OTHER_INPUT>.() -> Any?): CorrelationStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>> {
     val step = CorrelationStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>>(on,
         having as CorrelationRecord<out Any?>.() -> Any?, with)
     this.add(step)

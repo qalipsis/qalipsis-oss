@@ -9,7 +9,7 @@ import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 
 /**
- * Configuration for [ElasticsearchEventLogger].
+ * Configuration for [ElasticsearchEventsLogger].
  *
  * @property loggableLevel minimal accepted level of events, default: INFO.
  * @property urls list of URLs to the Elasticsearch instances, default: http://localhost:9200.

@@ -2,7 +2,9 @@ package io.evolue.core.factory.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import io.evolue.api.context.StepContext
 import io.evolue.api.steps.CatchExhaustedContextStepSpecification
@@ -11,32 +13,26 @@ import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.core.factory.steps.CatchExhaustedContextStep
 import io.evolue.test.assertk.prop
 import io.evolue.test.mockk.relaxedMockk
+import io.evolue.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
  * @author Eric Jessé
  */
-internal class CatchExhaustedContextStepSpecificationConverterTest {
+internal class CatchExhaustedContextStepSpecificationConverterTest :
+    AbstractStepSpecificationConverterTest<CatchExhaustedContextStepSpecificationConverter>() {
 
     @Test
-    internal fun `should support expected spec`() {
-        // given
-        val converter = CatchExhaustedContextStepSpecificationConverter()
-
+    override fun `should support expected spec`() {
         // when+then
         assertTrue(converter.support(relaxedMockk<CatchExhaustedContextStepSpecification<*, *>>()))
     }
 
     @Test
-    internal fun `should not support unexpected spec`() {
-        // given
-        val converter = CatchExhaustedContextStepSpecificationConverter()
-
+    override fun `should not support unexpected spec`() {
         // when+then
         Assertions.assertFalse(converter.support(relaxedMockk()))
     }
@@ -48,9 +44,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest {
         val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
         spec.name = "my-step"
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
-
-        val converter = CatchExhaustedContextStepSpecificationConverter()
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
@@ -59,12 +53,10 @@ internal class CatchExhaustedContextStepSpecificationConverterTest {
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertEquals("my-step", it.id)
-            assertThat(it).all {
-                isInstanceOf(CatchExhaustedContextStep::class)
-                prop("block").isSameAs(blockSpecification)
-            }
+        assertThat(creationContext.createdStep!!).all {
+            isInstanceOf(CatchExhaustedContextStep::class)
+            prop("id").isEqualTo("my-step")
+            prop("block").isSameAs(blockSpecification)
         }
     }
 
@@ -74,9 +66,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest {
         val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
         spec.name = "my-step"
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
-
-        val converter = CatchExhaustedContextStepSpecificationConverter()
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
@@ -85,12 +75,10 @@ internal class CatchExhaustedContextStepSpecificationConverterTest {
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertNotNull(it.id)
-            assertThat(it).all {
-                isInstanceOf(CatchExhaustedContextStep::class)
-                prop("block").isSameAs(blockSpecification)
-            }
+        assertThat(creationContext.createdStep!!).all {
+            isInstanceOf(CatchExhaustedContextStep::class)
+            prop("id").isNotNull()
+            prop("block").isSameAs(blockSpecification)
         }
     }
 }

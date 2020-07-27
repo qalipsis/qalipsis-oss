@@ -18,7 +18,9 @@ import io.evolue.api.steps.StepSpecification
 import io.evolue.test.assertk.prop
 import io.evolue.test.assertk.typedProp
 import io.evolue.test.mockk.relaxedMockk
+import io.evolue.test.steps.AbstractStepSpecificationConverterTest
 import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -30,23 +32,23 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
-internal class SingletonStepSpecificationConverterTest {
+internal class SingletonStepSpecificationConverterTest :
+    AbstractStepSpecificationConverterTest<SingletonStepSpecificationConverter>() {
+
+    @RelaxedMockK
+    lateinit var decoratedStep: Step<Int, String>
+
+    @RelaxedMockK
+    lateinit var stepSpecification: StepSpecification<Int, String, *>
 
     @Test
     internal fun `should have order 100`() {
-        // given
-        val converter = SingletonStepSpecificationConverter()
-
         // then + when
         assertEquals(100, converter.order)
     }
 
     @Test
     internal fun `should decorate step singleton specifications`() {
-        // given
-        val converter = SingletonStepSpecificationConverter()
-
-        val mockedCreatedStep: Step<Int, String> = relaxedMockk()
         val nextSpec1: StepSpecification<String, *, *> = relaxedMockk()
         val nextSpec2: StepSpecification<String, *, *> = relaxedMockk()
         val singletonSpec = TestSingletonSpecification(
@@ -58,8 +60,8 @@ internal class SingletonStepSpecificationConverterTest {
         singletonSpec.nextSteps.add(nextSpec1)
         singletonSpec.nextSteps.add(nextSpec2)
 
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), singletonSpec)
-        creationContext.createdStep(mockedCreatedStep)
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, singletonSpec)
+        creationContext.createdStep(decoratedStep)
 
         // when
         runBlocking {
@@ -69,7 +71,7 @@ internal class SingletonStepSpecificationConverterTest {
         // then
         assertThat(creationContext.createdStep!!).all {
             isInstanceOf(SingletonOutputDecorator::class)
-            prop("decorated").isSameAs(mockedCreatedStep)
+            prop("decorated").isSameAs(decoratedStep)
         }
 
         assertThat(singletonSpec.nextSteps).each {
@@ -98,18 +100,15 @@ internal class SingletonStepSpecificationConverterTest {
     @Test
     internal fun `should not decorate non singleton step`() {
         // given
-        val converter = SingletonStepSpecificationConverter()
-        val mockedCreatedStep: Step<Int, String> = relaxedMockk()
-        val creationContext =
-            StepCreationContextImpl(relaxedMockk(), relaxedMockk(), relaxedMockk<StepSpecification<Int, String, *>>())
-        creationContext.createdStep(mockedCreatedStep)
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, stepSpecification)
+        creationContext.createdStep(decoratedStep)
         // when
         runBlocking {
             converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
         }
 
         // then
-        assertThat(creationContext.createdStep!!).isSameAs(mockedCreatedStep)
+        assertThat(creationContext.createdStep!!).isSameAs(decoratedStep)
     }
 
     inner class TestSingletonSpecification(
@@ -122,19 +121,13 @@ internal class SingletonStepSpecificationConverterTest {
 
 
     @Test
-    internal fun `should support expected spec`() {
-        // given
-        val converter = SingletonStepSpecificationConverter()
-
+    override fun `should support expected spec`() {
         // when+then
         Assertions.assertTrue(converter.support(relaxedMockk<SingletonProxyStepSpecification<*>>()))
     }
 
     @Test
-    internal fun `should not support unexpected spec`() {
-        // given
-        val converter = SingletonStepSpecificationConverter()
-
+    override fun `should not support unexpected spec`() {
         // when+then
         Assertions.assertFalse(converter.support(relaxedMockk()))
     }
@@ -155,9 +148,8 @@ internal class SingletonStepSpecificationConverterTest {
             Duration.ofMillis(456),
             true
         )
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
-        val converter = SingletonStepSpecificationConverter()
 
         // when
         runBlocking {
@@ -170,9 +162,9 @@ internal class SingletonStepSpecificationConverterTest {
             assertThat(it).all {
                 isInstanceOf(SingletonProxyStep::class)
                 prop("subscriptionChannel").isSameAs(receiveChannel)
-                typedProp<Step<*, *>, Topic>("topic").all {
+                typedProp<Topic>("topic").all {
                     transform { topic -> topic::class.simpleName }.isEqualTo("BroadcastFromBeginningTopic")
-                    typedProp<Topic, Collection<*>>("buffer").prop("maxSize").isEqualTo(123)
+                    typedProp<Collection<*>>("buffer").prop("maxSize").isEqualTo(123)
                     prop("idleTimeout").isEqualTo(Duration.ofMillis(456))
                 }
             }

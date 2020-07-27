@@ -48,13 +48,13 @@ import kotlin.reflect.KClass
  */
 @Singleton
 internal class DefaultCampaignManager(
-        @PositiveOrZero @Value("\${campaign.minions-count-per-scenario}") private val minionsCountPerScenario: Int = 0,
-        @Positive @Value("\${campaign.minions-factor}") private val minionsCountFactor: Double = 1.0,
-        @Positive @Value("\${campaign.speed-factor}") private val speedFactor: Double = 1.0,
-        @Positive @Value("\${campaign.start-offset-ms}") private val startOffsetMs: Long = 1000,
-        private val feedbackConsumer: FeedbackConsumer,
-        private val scenarioRepository: HeadScenarioRepository,
-        private val directiveProducer: DirectiveProducer
+    @PositiveOrZero @Value("\${campaign.minions-count-per-scenario}") private val minionsCountPerScenario: Int = 0,
+    @Positive @Value("\${campaign.minions-factor}") private val minionsCountFactor: Double = 1.0,
+    @Positive @Value("\${campaign.speed-factor}") private val speedFactor: Double = 1.0,
+    @Positive @Value("\${campaign.start-offset-ms}") private val startOffsetMs: Long = 1000,
+    private val feedbackConsumer: FeedbackConsumer,
+    private val scenarioRepository: HeadScenarioRepository,
+    private val directiveProducer: DirectiveProducer
 ) : CampaignManager, DirectiveProcessor<Directive> {
 
     /**
@@ -184,7 +184,7 @@ internal class DefaultCampaignManager(
      */
     @VisibleForTesting
     internal fun receivedMinionsCreationPreparationFeedback(feedback: DirectiveFeedback,
-            directive: MinionsCreationPreparationDirective) {
+                                                            directive: MinionsCreationPreparationDirective) {
         when (feedback.status) {
             FeedbackStatus.IN_PROGRESS -> log.debug(
                 "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions are being created")
@@ -201,7 +201,7 @@ internal class DefaultCampaignManager(
      */
     @VisibleForTesting
     internal suspend fun receiveMinionsCreationDirectiveFeedback(feedback: DirectiveFeedback,
-            directive: MinionsCreationDirectiveReference) {
+                                                                 directive: MinionsCreationDirectiveReference) {
         when (feedback.status) {
             FeedbackStatus.IN_PROGRESS -> log.debug(
                 "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions are being created")
@@ -253,7 +253,7 @@ internal class DefaultCampaignManager(
     }
 
     data class DirectiveInProgress<T : Directive>(
-            val directive: T
+        val directive: T
     ) {
 
         fun isA(directiveClass: KClass<out Directive>) = directiveClass.isInstance(directive)

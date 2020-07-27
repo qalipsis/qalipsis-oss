@@ -1,23 +1,23 @@
 package io.evolue.core.factory.steps.converters
 
 import cool.graph.cuid.Cuid
-import io.evolue.api.events.EventLogger
+import io.evolue.api.annotations.StepConverter
+import io.evolue.api.events.EventsLogger
 import io.evolue.api.steps.AssertionStepSpecification
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.AssertionStep
 import io.micrometer.core.instrument.MeterRegistry
-import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [AssertionStepSpecification] to [AssertionStep].
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepConverter
 internal class AssertionStepSpecificationConverter(
-    private val eventLogger: EventLogger,
+    private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry
 ) : StepSpecificationConverter<AssertionStepSpecification<*, *>> {
 
@@ -27,7 +27,7 @@ internal class AssertionStepSpecificationConverter(
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<AssertionStepSpecification<*, *>>) {
         val spec = creationContext.stepSpecification as AssertionStepSpecification<I, O>
-        val step = AssertionStep(spec.name ?: Cuid.createCuid(), eventLogger, meterRegistry, spec.assertionBlock)
+        val step = AssertionStep(spec.name ?: Cuid.createCuid(), eventsLogger, meterRegistry, spec.assertionBlock)
         creationContext.createdStep(step)
     }
 

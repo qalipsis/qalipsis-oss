@@ -1,19 +1,19 @@
 package io.evolue.core.factory.steps.converters
 
 import cool.graph.cuid.Cuid
+import io.evolue.api.annotations.StepConverter
 import io.evolue.api.steps.PaceStepSpecification
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.PaceStep
-import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [PaceStepSpecification] to [PaceStep].
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepConverter
 internal class PaceStepSpecificationConverter :
     StepSpecificationConverter<PaceStepSpecification<*>> {
 

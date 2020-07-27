@@ -13,7 +13,7 @@ import io.evolue.core.factory.orchestration.directives.processors.DirectiveProce
  * @author Eric Jessé
  */
 internal abstract class AbstractDirectiveConsumer(
-        directiveProcessors: Collection<DirectiveProcessor<*>>
+    directiveProcessors: Collection<DirectiveProcessor<*>>
 ) : StartupFactoryComponent {
 
     private val orderedDirectiveProcessors = directiveProcessors.sortedBy { it.order() }

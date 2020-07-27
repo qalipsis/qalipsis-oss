@@ -52,7 +52,7 @@ internal class DefaultCampaignManagerTest {
     lateinit var directiveProducer: DirectiveProducer
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should start minions creation with same minions total when campaign a starts and minionsCountPerScenario is specified`() {
         // given
         val campaignManager = DefaultCampaignManager(
@@ -99,7 +99,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should start minions creation with same minions total when campaign a starts and minionsCountFactor is specified`() {
         // given
         val campaignManager = DefaultCampaignManager(
@@ -146,7 +146,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should accept MinionsCreationDirectiveReference`() {
         // given
         val campaignManager = DefaultCampaignManager(
@@ -159,7 +159,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should not accept other directives`() {
         // given
         val campaignManager = DefaultCampaignManager(
@@ -172,7 +172,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should store the directives`() {
         // given
         val campaignManager = DefaultCampaignManager(
@@ -193,7 +193,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should process MinionsCreationPreparationDirective in progress when the directive exists`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -227,7 +227,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should process done MinionsCreationPreparationDirective when the directive exists`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -261,7 +261,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should ignore MinionsCreationPreparationDirective when the directive does not exist`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -288,7 +288,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should process MinionsCreationDirectiveReference in progress when the directive exists`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -322,7 +322,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should process done MinionsCreationDirectiveReference when the directive exists`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -356,7 +356,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should ignore MinionsCreationDirectiveReference when the directive does not exist`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -383,7 +383,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should process failed feedback for MinionsCreationPreparationDirective`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -407,7 +407,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should process failed feedback for MinionsCreationDirectiveReference`() {
         // given
         val countDownLatch = CountDownLatch(1)
@@ -431,7 +431,7 @@ internal class DefaultCampaignManagerTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should trigger ramp-up when all the scenarios are ready`() {
         // given
         val campaignManager = DefaultCampaignManager(

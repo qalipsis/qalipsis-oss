@@ -1,5 +1,6 @@
 package io.evolue.core.factory.steps
 
+import io.evolue.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions

@@ -2,7 +2,7 @@ package io.evolue.core.factory.orchestration
 
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepError
-import io.evolue.api.events.EventLogger
+import io.evolue.api.events.EventsLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.steps.ErrorProcessingStep
@@ -31,7 +31,7 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class Runner(
-    private val eventLogger: EventLogger,
+    private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry
 ) : StepExecutor {
 
@@ -71,7 +71,7 @@ internal class Runner(
      * Execute a single step onto the specified context and triggers the next steps asynchronously in different coroutines.
      */
     private suspend fun executeStepRecursively(minionImpl: MinionImpl, step: Step<Any?, Any?>,
-                                               ctx: StepContext<Any?, Any?>) {
+        ctx: StepContext<Any?, Any?>) {
         log.trace("Executing step ${step.id} with minion ${minionImpl.id} on context $ctx")
         // Asynchronously read the output to trigger the next steps.
         if (step.next.isNotEmpty()) {
@@ -111,19 +111,19 @@ internal class Runner(
 
     private suspend fun executeSingleStep(step: Step<Any?, Any?>, ctx: StepContext<Any?, Any?>) {
         if (!ctx.exhausted || step is ErrorProcessingStep) {
-            eventLogger.info("step-${step.id}-started", tagsSupplier = { ctx.toEventTagsMap() })
+            eventsLogger.info("step-${step.id}-started", tagsSupplier = { ctx.toEventTags() })
 
             runningStepsGauge.incrementAndGet()
             val start = System.nanoTime()
             try {
                 executeStep(step, ctx)
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventLogger.info("step-${step.id}-completed", tagsSupplier = { ctx.toEventTagsMap() })
+                    eventsLogger.info("step-${step.id}-completed", tagsSupplier = { ctx.toEventTags() })
                     meterRegistry.timer("step-execution", "step", step.id, "status", "completed").record(duration)
                 }
             } catch (t: Throwable) {
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventLogger.warn("step-${step.id}-failed", t, tagsSupplier = { ctx.toEventTagsMap() })
+                    eventsLogger.warn("step-${step.id}-failed", t, tagsSupplier = { ctx.toEventTags() })
                     meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)
                 }
                 ctx.errors.add(StepError(t))

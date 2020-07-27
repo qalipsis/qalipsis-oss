@@ -150,7 +150,6 @@ A later version of this API might support a different mode of assignment.
 * A status `COMPLETE`
 . Once all the assignments are in status `COMPLETE`, the head can trigger the next step.
 
-
 ==== Ramp-up of active minions
 
 *TODO: Define which component trigger the start of a new minion:*

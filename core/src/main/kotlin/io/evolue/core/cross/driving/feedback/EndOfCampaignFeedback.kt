@@ -8,5 +8,5 @@ import io.evolue.api.context.CampaignId
  * @author Eric Jessé
  */
 internal data class EndOfCampaignFeedback(
-        val campaignId: CampaignId
+    val campaignId: CampaignId
 ) : Feedback()

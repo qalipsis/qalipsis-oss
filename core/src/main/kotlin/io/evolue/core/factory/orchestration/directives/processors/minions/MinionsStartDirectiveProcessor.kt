@@ -13,9 +13,9 @@ import javax.inject.Singleton
 
 @Singleton
 internal class MinionsStartDirectiveProcessor(
-        private val directiveRegistry: DirectiveRegistry,
-        private val scenariosKeeper: ScenariosKeeper,
-        private val minionsKeeper: MinionsKeeper
+    private val directiveRegistry: DirectiveRegistry,
+    private val scenariosKeeper: ScenariosKeeper,
+    private val minionsKeeper: MinionsKeeper
 ) : DirectiveProcessor<MinionsStartDirectiveReference> {
 
     @LogInputAndOutput

@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import io.evolue.api.states.SharedStateRegistry
 import io.evolue.api.steps.StepCreationContext
@@ -13,33 +14,31 @@ import io.evolue.core.factory.steps.SingularUnshelveStep
 import io.evolue.core.factory.steps.UnshelveStep
 import io.evolue.test.assertk.prop
 import io.evolue.test.mockk.relaxedMockk
+import io.evolue.test.steps.AbstractStepSpecificationConverterTest
+import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
  * @author Eric Jessé
  */
-internal class UnUnshelveStepSpecificationConverterTest {
-    @Test
-    internal fun `should support expected spec`() {
-        // given
-        val sharedStateRegistry: SharedStateRegistry = relaxedMockk()
-        val converter = UnshelveStepSpecificationConverter(sharedStateRegistry)
+internal class UnUnshelveStepSpecificationConverterTest :
+    AbstractStepSpecificationConverterTest<UnshelveStepSpecificationConverter>() {
 
+    @RelaxedMockK
+    lateinit var sharedStateRegistry: SharedStateRegistry
+
+    @Test
+    override fun `should support expected spec`() {
         // when+then
         assertTrue(converter.support(relaxedMockk<UnshelveStepSpecification<*, *>>()))
     }
 
     @Test
-    internal fun `should not support unexpected spec`() {
-        // given
-        val sharedStateRegistry: SharedStateRegistry = relaxedMockk()
-        val converter = UnshelveStepSpecificationConverter(sharedStateRegistry)
-
+    override fun `should not support unexpected spec`() {
         // when+then
         assertFalse(converter.support(relaxedMockk()))
     }
@@ -51,9 +50,6 @@ internal class UnUnshelveStepSpecificationConverterTest {
         val spec = UnshelveStepSpecification<String, Map<String, Any?>>(keys, true, false)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
-
-        val sharedStateRegistry: SharedStateRegistry = relaxedMockk()
-        val converter = UnshelveStepSpecificationConverter(sharedStateRegistry)
 
         // when
         runBlocking {
@@ -79,23 +75,18 @@ internal class UnUnshelveStepSpecificationConverterTest {
         val spec = UnshelveStepSpecification<String, Map<String, Any?>>(keys, false, false)
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
 
-        val sharedStateRegistry: SharedStateRegistry = relaxedMockk()
-        val converter = UnshelveStepSpecificationConverter(sharedStateRegistry)
-
         // when
         runBlocking {
             converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertNotNull(it.id)
-            assertThat(it).all {
-                isInstanceOf(UnshelveStep::class)
-                prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-                prop("names").isSameAs(keys)
-                prop("delete").isEqualTo(false)
-            }
+        assertThat(creationContext.createdStep!!).all {
+            isInstanceOf(UnshelveStep::class)
+            prop("id").isNotNull()
+            prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
+            prop("names").isSameAs(keys)
+            prop("delete").isEqualTo(false)
         }
     }
 
@@ -115,14 +106,12 @@ internal class UnUnshelveStepSpecificationConverterTest {
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertNotNull(it.id)
-            assertThat(it).all {
-                isInstanceOf(SingularUnshelveStep::class)
-                prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-                prop("name").isEqualTo("value-1")
-                prop("delete").isEqualTo(true)
-            }
+        assertThat(creationContext.createdStep!!).all {
+            isInstanceOf(SingularUnshelveStep::class)
+            prop("id").isNotNull()
+            prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
+            prop("name").isEqualTo("value-1")
+            prop("delete").isEqualTo(true)
         }
     }
 }

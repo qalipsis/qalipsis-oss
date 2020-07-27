@@ -15,7 +15,6 @@ import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.core.factory.orchestration.directives.processors.DirectiveProcessor
-import io.evolue.core.factory.orchestration.directives.processors.minions.MinionsStartSingletonsDirectiveProcessor
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Singleton
 

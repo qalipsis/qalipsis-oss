@@ -1,6 +1,7 @@
 package io.evolue.core.factory.steps.singleton
 
 import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.StepDecorator
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
 import io.evolue.api.retry.RetryPolicy
@@ -11,7 +12,6 @@ import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
-import javax.inject.Singleton
 
 /**
  * Decorator for [Step]s considered to be outputs of singleton.
@@ -20,7 +20,7 @@ import javax.inject.Singleton
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepDecorator
 internal class SingletonOutputDecorator<I, O>(private val decorated: Step<I, O>) : Step<I, O>, StepExecutor {
 
     @VisibleForTesting

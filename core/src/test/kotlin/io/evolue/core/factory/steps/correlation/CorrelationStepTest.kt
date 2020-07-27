@@ -5,7 +5,7 @@ import io.evolue.api.messaging.TopicMode
 import io.evolue.api.messaging.topic
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.exceptions.NotInitializedStepException
-import io.evolue.core.factory.steps.StepTestHelper
+import io.evolue.test.steps.StepTestHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay

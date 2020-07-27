@@ -4,7 +4,7 @@ import io.evolue.api.context.CampaignId
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.MinionId
 import io.evolue.api.context.ScenarioId
-import io.evolue.api.events.EventLogger
+import io.evolue.api.events.EventsLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.orchestration.MinionsRegistry
 import io.evolue.api.sync.SuspendedCountLatch
@@ -26,11 +26,11 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class MinionsKeeper(
-        private val scenariosKeeper: ScenariosKeeper,
-        private val runner: Runner,
-        private val eventLogger: EventLogger,
-        private val meterRegistry: MeterRegistry,
-        private val feedbackProducer: FeedbackProducer
+    private val scenariosKeeper: ScenariosKeeper,
+    private val runner: Runner,
+    private val eventsLogger: EventsLogger,
+    private val meterRegistry: MeterRegistry,
+    private val feedbackProducer: FeedbackProducer
 ) : MinionsRegistry {
 
     private val minions: MutableMap<MinionId, MinionImpl> = ConcurrentHashMap()
@@ -46,7 +46,7 @@ internal class MinionsKeeper(
     private val runningMinionsLatch = SuspendedCountLatch(0) {
         log.info("All the minions were executed")
         campaignId?.let {
-            eventLogger.info("end-of-campaign", null, "campaignId" to it)
+            eventsLogger.info("end-of-campaign", null, "campaignId" to it)
             feedbackProducer.publish(EndOfCampaignFeedback(it))
         }
     }
@@ -64,7 +64,7 @@ internal class MinionsKeeper(
         this.campaignId = campaignId
         scenariosKeeper.getDag(scenarioId, dagId)?.let { dag ->
             log.trace("Creating minion ${minionId} for DAG ${dagId} of scenario ${scenarioId}")
-            val minion = MinionImpl(campaignId, minionId, true, eventLogger, meterRegistry)
+            val minion = MinionImpl(campaignId, minionId, true, eventsLogger, meterRegistry)
             if (dag.singleton) {
                 // All singletons are started at the time time, but before the "real" minions.
                 readySingletonsMinions.computeIfAbsent(scenarioId) { mutableListOf() }.add(minion)

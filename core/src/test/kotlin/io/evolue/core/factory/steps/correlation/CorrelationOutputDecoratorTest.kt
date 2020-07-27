@@ -3,12 +3,13 @@ package io.evolue.core.factory.steps.correlation
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepContext
 import io.evolue.api.steps.Step
-import io.evolue.core.factory.steps.StepTestHelper
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
+import io.evolue.test.steps.StepTestHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.mockk
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -17,24 +18,26 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
+@WithMockk
 internal class CorrelationOutputDecoratorTest {
+
+    @RelaxedMockK
+    lateinit var decoratedStep: Step<Any?, String>
 
     @Test
     @Timeout(3)
     fun shouldForwardDataOfDecoratedStep() {
         // given
-        val decoratedStep: Step<Any?, String> = mockk {
-            coEvery { execute(any()) } coAnswers {
-                ((firstArg() as StepContext<Any, String>).output).apply {
-                    send("my-value-1")
-                    send("my-value-2")
-                    send("my-value-3")
-                }
+        coEvery { decoratedStep.execute(any()) } coAnswers {
+            ((firstArg() as StepContext<Any, String>).output).apply {
+                send("my-value-1")
+                send("my-value-2")
+                send("my-value-3")
             }
-            every { id } answers { "my-step" }
-            every { retryPolicy } returns null
-            every { next } returns mutableListOf()
         }
+        every { decoratedStep.id } answers { "my-step" }
+        every { decoratedStep.retryPolicy } returns null
+        every { decoratedStep.next } returns mutableListOf()
         val ctx = StepTestHelper.createStepContext<Any?, String>()
         val step = spyk(CorrelationOutputDecorator(decoratedStep))
 
@@ -65,10 +68,8 @@ internal class CorrelationOutputDecoratorTest {
     @Test
     internal fun shouldCloseAllChannels() {
         // given
-        val decoratedStep: Step<Any?, String> = mockk(relaxUnitFun = true) {
-            every { id } answers { " " }
-            every { next } returns mutableListOf()
-        }
+        every { decoratedStep.id } answers { " " }
+        every { decoratedStep.next } returns mutableListOf()
         val step = CorrelationOutputDecorator(decoratedStep)
 
         // when

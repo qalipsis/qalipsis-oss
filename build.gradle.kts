@@ -51,11 +51,11 @@ allprojects {
     }
 
     tasks.named("test", Test::class) {
-        this.exclude("**/*IntegrationTest.*")
+        this.exclude("**/*IntegrationTest.*", "**/*IntegrationTest$*")
     }
 
     tasks.register("integrationTest", Test::class) {
         this.group = "verification"
-        include("**/*IntegrationTest.*")
+        include("**/*IntegrationTest.*", "**/*IntegrationTest$*")
     }
 }

@@ -4,6 +4,7 @@ import io.evolue.api.states.SharedStateDefinition
 import io.evolue.api.states.SharedStateRegistry
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.mockk.verifyOnce
+import io.evolue.test.steps.StepTestHelper
 import io.mockk.confirmVerified
 import io.mockk.every
 import kotlinx.coroutines.channels.Channel

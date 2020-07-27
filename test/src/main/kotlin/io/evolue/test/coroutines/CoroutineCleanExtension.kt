@@ -19,6 +19,6 @@ class CoroutineCleanExtension : AfterEachCallback {
         } catch (e: Exception) {
             // Just ignore.
         }
-        Thread.sleep(500)
+        Thread.sleep(800)
     }
 }

@@ -22,7 +22,7 @@ import javax.inject.Singleton
  */
 @Singleton
 open class LogbackConfigurer(
-        private val config: LoggingConfiguration
+    private val config: LoggingConfiguration
 ) : Configurer {
 
     override fun configure() {
@@ -68,8 +68,8 @@ open class LogbackConfigurer(
     }
 
     private fun buildRollingFileAppender(name: String, context: LoggerContext,
-            configFile: LoggingConfiguration.LoggingFile,
-            defaultPattern: String?): Appender<ILoggingEvent> {
+                                         configFile: LoggingConfiguration.LoggingFile,
+                                         defaultPattern: String?): Appender<ILoggingEvent> {
         val configuredMaxSize = if (configFile.maxSize.isNullOrBlank()) "30MB" else configFile.maxSize
         val configuredTotalCap = if (configFile.totalCapacity.isNullOrBlank()) "100MB" else configFile.totalCapacity
         val configuredMaxHistory = configFile.maxHistory

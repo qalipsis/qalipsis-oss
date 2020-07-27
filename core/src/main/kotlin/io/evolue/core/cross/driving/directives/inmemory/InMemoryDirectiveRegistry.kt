@@ -34,7 +34,7 @@ import javax.inject.Singleton
 @Singleton
 @Requires(env = [ENV_STANDALONE])
 internal class InMemoryDirectiveRegistry(
-        private val feedbackProducer: FeedbackProducer
+    private val feedbackProducer: FeedbackProducer
 ) : DirectiveRegistry {
 
     /**

@@ -5,7 +5,7 @@ import io.evolue.api.messaging.Topic
 import io.evolue.api.messaging.TopicMode
 import io.evolue.api.messaging.topic
 import io.evolue.core.exceptions.NotInitializedStepException
-import io.evolue.core.factory.steps.StepTestHelper
+import io.evolue.test.steps.StepTestHelper
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified

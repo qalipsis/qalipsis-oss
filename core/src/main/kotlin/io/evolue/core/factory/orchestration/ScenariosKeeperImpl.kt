@@ -18,7 +18,6 @@ import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
-import io.evolue.core.annotations.LogInput
 import io.evolue.core.annotations.LogInputAndOutput
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedback
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedbackDirectedAcyclicGraph
@@ -39,10 +38,10 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class ScenariosKeeperImpl(
-        private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
-        private val feedbackProducer: FeedbackProducer,
-        private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
-        private val stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
+    private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
+    private val feedbackProducer: FeedbackProducer,
+    private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
+    stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
 ) : ScenariosKeeper, StartupFactoryComponent {
 
     /**
@@ -53,11 +52,11 @@ internal class ScenariosKeeperImpl(
 
     private val scenarios: MutableMap<ScenarioId, Scenario> = ConcurrentHashMap()
 
+    // Sort the decorator converters in the expected order.
+    private val stepSpecificationDecoratorConverters = stepSpecificationDecoratorConverters.sortedBy { it.order }
+
     @PostConstruct
     fun init() {
-        // Sort the decorator converters in the expected order.
-        stepSpecificationDecoratorConverters.sortedBy { it.order }
-
         // Load all the scenarios specifications into memory.
         ServicesLoader.loadServices<Any>("scenarios")
         // Fetch and convert them.
@@ -95,7 +94,7 @@ internal class ScenariosKeeperImpl(
 
     @VisibleForTesting
     internal fun convertScenario(scenarioId: ScenarioId,
-            scenarioSpecification: ReadableScenarioSpecification): Scenario {
+                                 scenarioSpecification: ReadableScenarioSpecification): Scenario {
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
             "The scenario ${scenarioId} requires a ramp-up strategy")
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
@@ -113,10 +112,10 @@ internal class ScenariosKeeperImpl(
 
     @VisibleForTesting
     internal suspend fun convertSteps(scenarioSpecification: ReadableScenarioSpecification,
-            scenario: Scenario,
-            dags: MutableMap<String, DirectedAcyclicGraph>,
-            parentStep: Step<*, *>?,
-            stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
+                                      scenario: Scenario,
+                                      dags: MutableMap<String, DirectedAcyclicGraph>,
+                                      parentStep: Step<*, *>?,
+                                      stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
         if (stepsSpecifications.size == 1) {
             runBlocking {
                 convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepsSpecifications[0])
@@ -133,11 +132,11 @@ internal class ScenariosKeeperImpl(
     }
 
     private suspend fun convertStepRecursively(
-            scenarioSpecification: ReadableScenarioSpecification,
-            scenario: Scenario,
-            dags: MutableMap<String, DirectedAcyclicGraph>,
-            parentStep: Step<*, *>?,
-            stepSpecification: StepSpecification<Any?, Any?, *>) {
+        scenarioSpecification: ReadableScenarioSpecification,
+        scenario: Scenario,
+        dags: MutableMap<String, DirectedAcyclicGraph>,
+        parentStep: Step<*, *>?,
+        stepSpecification: StepSpecification<Any?, Any?, *>) {
 
         // Get or create the DAG to attach the step.
         val dag = dags.computeIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->

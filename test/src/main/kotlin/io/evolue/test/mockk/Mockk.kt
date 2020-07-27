@@ -1,9 +1,14 @@
 package io.evolue.test.mockk
 
 import io.mockk.MockKVerificationScope
+import io.mockk.clearAllMocks
 import io.mockk.coVerify
+import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.extension.AfterEachCallback
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.ExtensionContext
 import kotlin.reflect.KClass
 
 /**
@@ -29,3 +34,19 @@ fun verifyNever(verifyBlock: MockKVerificationScope.() -> Unit) = verify(exactly
 
 fun coVerifyNever(verifyBlock: suspend MockKVerificationScope.() -> Unit) =
     coVerify(exactly = 0, verifyBlock = verifyBlock)
+
+
+@ExtendWith(MockKExtension::class, MockkCleanExtension::class)
+annotation class WithMockk
+
+/**
+ * JUnit 5 extension in charge of cleaning all the current mocks.
+ *
+ * @author Eric Jessé
+ */
+class MockkCleanExtension : AfterEachCallback {
+
+    override fun afterEach(context: ExtensionContext?) {
+        clearAllMocks()
+    }
+}

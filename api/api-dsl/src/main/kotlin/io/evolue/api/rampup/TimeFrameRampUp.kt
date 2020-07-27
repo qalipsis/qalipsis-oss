@@ -37,7 +37,7 @@ data class TimeFrameRampUp(private val periodInMs: Long, private val timeFrameIn
 
 
     inner class TimeFrameRampUpIterator(private val periodInMs: Long, timeFrameInMs: Long,
-                                        totalMinionsCount: Int) : RampUpStrategyIterator {
+        totalMinionsCount: Int) : RampUpStrategyIterator {
 
         private var remainingMinions = totalMinionsCount
 

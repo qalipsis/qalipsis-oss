@@ -5,7 +5,7 @@ plugins {
     application
     kotlin("jvm")
     kotlin("kapt")
-    id("com.github.johnrengelman.shadow") version "6.0.0"
+    id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
 description = "Evolue Simple Demo"
@@ -33,7 +33,8 @@ dependencies {
 
 application {
     mainClassName = "io.evolue.runtime.Evolue"
-    applicationDefaultJvmArgs = listOf("-noverify", "-XX:TieredStopAtLevel=1", "-Dcom.sun.management.jmxremote", "-Dmicronaut.env.deduction=false")
+    applicationDefaultJvmArgs = listOf("-noverify", "-XX:TieredStopAtLevel=1", "-Dcom.sun.management.jmxremote",
+        "-Dmicronaut.env.deduction=false")
     this.ext["workingDir"] = projectDir
 }
 

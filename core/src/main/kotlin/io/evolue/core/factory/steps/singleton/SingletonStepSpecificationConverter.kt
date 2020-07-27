@@ -1,6 +1,7 @@
 package io.evolue.core.factory.steps.singleton
 
 import cool.graph.cuid.Cuid
+import io.evolue.api.annotations.StepConverter
 import io.evolue.api.messaging.TopicMode
 import io.evolue.api.messaging.topic
 import io.evolue.api.steps.SingletonStepSpecification
@@ -10,7 +11,6 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
-import javax.inject.Singleton
 
 /**
  * Decorator of [SingletonStepSpecification] by [SingletonOutputDecorator] and converter from
@@ -18,7 +18,7 @@ import javax.inject.Singleton
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepConverter
 internal class SingletonStepSpecificationConverter :
     StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>(),
     StepSpecificationConverter<SingletonProxyStepSpecification<*>> {

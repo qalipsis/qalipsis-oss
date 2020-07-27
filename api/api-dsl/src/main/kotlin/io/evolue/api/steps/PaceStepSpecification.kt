@@ -27,7 +27,7 @@ fun <INPUT> StepSpecification<*, INPUT, *>.constantPace(duration: Duration): Pac
 }
 
 fun <INPUT> StepSpecification<*, INPUT, *>.acceleratingPace(startPeriodMs: Long, accelerator: Double,
-                                                            minPeriodMs: Long): PaceStepSpecification<INPUT> {
+    minPeriodMs: Long): PaceStepSpecification<INPUT> {
     // Secure the accelerator to avoid divide by 0 and negative values.
     val actualAccelerator = 1 / accelerator.coerceAtLeast(10E-12)
     return pace { pastPeriodMs ->

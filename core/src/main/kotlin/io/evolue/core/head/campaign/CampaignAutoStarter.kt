@@ -27,9 +27,9 @@ import kotlin.system.exitProcess
 @Singleton
 @Requires(env = [ENV_AUTOSTART])
 internal class CampaignAutoStarter(
-        private val feedbackConsumer: FeedbackConsumer,
-        private val campaignManager: CampaignManager,
-        private val headScenarioRepository: HeadScenarioRepository
+    private val feedbackConsumer: FeedbackConsumer,
+    private val campaignManager: CampaignManager,
+    private val headScenarioRepository: HeadScenarioRepository
 ) : ProcessBlocker, StartupHeadComponent {
 
     private val latch = SuspendedCountLatch(1)

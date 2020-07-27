@@ -15,6 +15,7 @@ import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.time.EvolueTimeAssertions
 import io.mockk.coEvery
@@ -23,19 +24,17 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
     @RelaxedMockK

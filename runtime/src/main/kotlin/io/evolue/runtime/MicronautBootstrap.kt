@@ -10,7 +10,7 @@ import io.micronaut.context.annotation.Context
 @Context
 class MicronautBootstrap(
     configurers: Collection<Configurer>
-)  {
+) {
 
     init {
         configurers.forEach { it.configure() }

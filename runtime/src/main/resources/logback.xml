@@ -15,11 +15,11 @@
     </filter>
   </appender>
 
+  <logger additive="false" name="events"/>
+
+  <!-- When events are saved as logs. -->
   <root level="${LOGGING_LEVEL:-INFO}">
     <appender-ref ref="console"/>
   </root>
-
-  <!-- When events are saved as logs. -->
-  <logger name="events" additive="false" />
 
 </configuration>

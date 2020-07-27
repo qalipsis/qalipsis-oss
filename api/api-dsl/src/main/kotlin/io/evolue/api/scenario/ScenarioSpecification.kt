@@ -11,7 +11,7 @@ import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
  *
  * @author Eric Jessé
  */
-internal class ScenarioSpecificationImplementation(
+class ScenarioSpecificationImplementation(
     internal val name: String
 ) : MutableScenarioSpecification, ConfigurableScenarioSpecification, ReadableScenarioSpecification,
     RampUpSpecification {
@@ -134,7 +134,7 @@ interface ScenarioSpecification
 internal val scenariosSpecifications = mutableMapOf<ScenarioId, ReadableScenarioSpecification>()
 
 fun scenario(name: ScenarioId,
-             configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }): ScenarioSpecification {
+    configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }): ScenarioSpecification {
     val scenario = ScenarioSpecificationImplementation(name)
     scenario.configuration()
     scenariosSpecifications[name] = scenario

@@ -7,9 +7,9 @@ package io.evolue.core.head.persistence
  */
 interface Repository<ENTITY : Entity<ID>, ID : Any> {
 
-    fun save(scenario: ENTITY): ENTITY
+    fun save(entity: ENTITY): ENTITY
 
-    fun saveAll(scenarios: Collection<ENTITY>): Collection<ENTITY>
+    fun saveAll(entities: Collection<ENTITY>): Collection<ENTITY>
 
     fun getAll(): Collection<ENTITY>
 

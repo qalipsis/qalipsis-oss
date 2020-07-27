@@ -59,17 +59,17 @@ tasks {
         // To later apply the CSS: https://asciidoctor.org/docs/produce-custom-themes-using-asciidoctor-stylesheet-factory/
         options(mapOf("doctype" to "book", "ruby" to "erubis"))
         attributes(mapOf(
-                "build-gradle" to file("build.gradle"),
-                "outputDir" to file("build/docs"),
-                "source-highlighter" to "coderay",
-                "snippets" to file("${project.buildDir}/snippets"),
-                "toc" to "left",
-                "toc-title" to "Table of Contents",
-                "toclevels" to "4",
-                "icons" to "font",
-                "sectlinks" to "",
-                "docinfo" to "shared",
-                "idseparator" to "-"
+            "build-gradle" to file("build.gradle"),
+            "outputDir" to file("build/docs"),
+            "source-highlighter" to "coderay",
+            "snippets" to file("${project.buildDir}/snippets"),
+            "toc" to "left",
+            "toc-title" to "Table of Contents",
+            "toclevels" to "4",
+            "icons" to "font",
+            "sectlinks" to "",
+            "docinfo" to "shared",
+            "idseparator" to "-"
         ))
 
         //dependsOn(*(dependsOn.plus("asciidoctorPdf").toTypedArray()))
@@ -90,18 +90,18 @@ tasks {
         // To later apply the CSS: https://asciidoctor.org/docs/produce-custom-themes-using-asciidoctor-stylesheet-factory/
         options(mapOf("doctype" to "book", "ruby" to "erubis"))
         attributes(mapOf(
-                "build-gradle" to file("build.gradle"),
-                "outputDir" to file("build/docs"),
-                "source-highlighter" to "coderay",
-                "snippets" to file("${project.buildDir}/snippets"),
-                "imagesdir" to "./images",
-                "toc" to "top",
-                "toc-title" to "Table of Contents",
-                "toclevels" to "4",
-                "icons" to "font",
-                "sectlinks" to "",
-                "docinfo" to "shared",
-                "idseparator" to "-"
+            "build-gradle" to file("build.gradle"),
+            "outputDir" to file("build/docs"),
+            "source-highlighter" to "coderay",
+            "snippets" to file("${project.buildDir}/snippets"),
+            "imagesdir" to "./images",
+            "toc" to "top",
+            "toc-title" to "Table of Contents",
+            "toclevels" to "4",
+            "icons" to "font",
+            "sectlinks" to "",
+            "docinfo" to "shared",
+            "idseparator" to "-"
         ))
     }
 }

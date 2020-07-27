@@ -18,7 +18,7 @@ import io.evolue.core.factory.orchestration.rampup.RampUpStrategyIterator
  * @property maxMinionsCountProLaunch
  */
 class ProgressiveVolumeRampUp(private val periodMs: Long, private val minionsCountProLaunchAtStart: Int,
-                              private val multiplier: Double, private val maxMinionsCountProLaunch: Int) :
+    private val multiplier: Double, private val maxMinionsCountProLaunch: Int) :
     RampUpStrategy {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
@@ -48,8 +48,8 @@ class ProgressiveVolumeRampUp(private val periodMs: Long, private val minionsCou
     }
 
     inner class ProgressiveVolumeRampUpIterator(private val periodMs: Long, minionsCountProLaunchAtStart: Int,
-                                                private val multiplier: Double,
-                                                private val maxMinionsCountProLaunch: Int, totalMinionsCount: Int) :
+        private val multiplier: Double,
+        private val maxMinionsCountProLaunch: Int, totalMinionsCount: Int) :
         RampUpStrategyIterator {
 
         private var nextVolume = minionsCountProLaunchAtStart
@@ -71,6 +71,6 @@ class ProgressiveVolumeRampUp(private val periodMs: Long, private val minionsCou
  * Increase the volume of minions to start at a constant pace.
  */
 fun RampUpSpecification.more(periodMs: Long, minionsCountProLaunchAtStart: Int, multiplier: Double,
-                             maxMinionsCountProLaunch: Int) {
+    maxMinionsCountProLaunch: Int) {
     strategy(ProgressiveVolumeRampUp(periodMs, minionsCountProLaunchAtStart, multiplier, maxMinionsCountProLaunch))
 }
