@@ -19,7 +19,7 @@ import javax.inject.Singleton
 @Singleton
 @Requires(env = [ENV_STANDALONE])
 class InMemorySharedStateRegistry(
-        @Value("\${shared-registry.time-to-live:PT1M}") timeToLive: Duration
+    @Value("\${shared-registry.time-to-live:PT1M}") timeToLive: Duration
 ) : SharedStateRegistry {
 
     private val cache: Cache<SharedStateDefinition, Any?> = Caffeine.newBuilder()
@@ -64,7 +64,7 @@ class InMemorySharedStateRegistry(
         Expiry<SharedStateDefinition, Any> {
 
         override fun expireAfterUpdate(key: SharedStateDefinition, value: Any, currentTime: Long,
-                currentDuration: Long): Long {
+            currentDuration: Long): Long {
             return key.timeToLive?.toNanos() ?: currentDuration
         }
 
@@ -73,7 +73,7 @@ class InMemorySharedStateRegistry(
         }
 
         override fun expireAfterRead(key: SharedStateDefinition, value: Any, currentTime: Long,
-                currentDuration: Long): Long {
+            currentDuration: Long): Long {
             return key.timeToLive?.toNanos() ?: currentDuration
         }
 

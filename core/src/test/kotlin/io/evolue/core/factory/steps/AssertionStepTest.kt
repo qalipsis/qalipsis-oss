@@ -1,13 +1,14 @@
 package io.evolue.core.factory.steps
 
-import io.evolue.api.events.EventLogger
+import io.evolue.api.events.EventsLogger
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.verifyOnce
+import io.evolue.test.steps.StepTestHelper
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,16 +18,15 @@ import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class AssertionStepTest {
 
     @RelaxedMockK
-    lateinit var eventLogger: EventLogger
+    lateinit var eventsLogger: EventsLogger
 
     @RelaxedMockK
     lateinit var meterRegistry: MeterRegistry
@@ -42,7 +42,7 @@ internal class AssertionStepTest {
     @Test
     @Timeout(1)
     fun shouldSimplyForwardWithDefaultStep() {
-        val step = AssertionStep<Int, Int>("my-step", eventLogger, meterRegistry)
+        val step = AssertionStep<Int, Int>("my-step", eventsLogger, meterRegistry)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
         runBlocking {
@@ -56,16 +56,16 @@ internal class AssertionStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "success", "minion", "my-minion")
             counter.increment()
-            eventLogger.info("step-my-step-assertion-success", tagsSupplier = any())
+            eventsLogger.info("step-my-step-assertion-success", tagsSupplier = any())
         }
 
-        confirmVerified(eventLogger, meterRegistry, counter)
+        confirmVerified(eventsLogger, meterRegistry, counter)
     }
 
     @Test
     @Timeout(2)
     fun shouldApplyMapping() {
-        val step = AssertionStep<Int, String>("my-step", eventLogger, meterRegistry) { value -> value.toString() }
+        val step = AssertionStep<Int, String>("my-step", eventsLogger, meterRegistry) { value -> value.toString() }
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
         runBlocking {
@@ -79,15 +79,15 @@ internal class AssertionStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "success", "minion", "my-minion")
             counter.increment()
-            eventLogger.info("step-my-step-assertion-success", tagsSupplier = any())
+            eventsLogger.info("step-my-step-assertion-success", tagsSupplier = any())
         }
-        confirmVerified(eventLogger, meterRegistry, counter)
+        confirmVerified(eventsLogger, meterRegistry, counter)
     }
 
     @Test
     @Timeout(1)
     fun shouldNotForwardDataWhenAssertionThrowingError() {
-        val step = AssertionStep<Int, String>("my-step", eventLogger, meterRegistry) { value ->
+        val step = AssertionStep<Int, String>("my-step", eventsLogger, meterRegistry) { value ->
             fail<Any>("This is an error")
             value.toString()
         }
@@ -104,16 +104,16 @@ internal class AssertionStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "failure", "minion", "my-minion")
             counter.increment()
-            eventLogger.warn("step-my-step-assertion-failure", tagsSupplier = any())
+            eventsLogger.warn("step-my-step-assertion-failure", tagsSupplier = any())
         }
 
-        confirmVerified(eventLogger, meterRegistry, counter)
+        confirmVerified(eventsLogger, meterRegistry, counter)
     }
 
     @Test
     @Timeout(1)
     fun shouldNotForwardDataWhenAssertionThrowingException() {
-        val step = AssertionStep<Int, String>("my-step", eventLogger, meterRegistry) { value ->
+        val step = AssertionStep<Int, String>("my-step", eventsLogger, meterRegistry) { value ->
             throw RuntimeException("The error")
             value.toString()
         }
@@ -130,8 +130,8 @@ internal class AssertionStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "error", "minion", "my-minion")
             counter.increment()
-            eventLogger.warn("step-my-step-assertion-error", tagsSupplier = any())
+            eventsLogger.warn("step-my-step-assertion-error", tagsSupplier = any())
         }
-        confirmVerified(eventLogger, meterRegistry, counter)
+        confirmVerified(eventsLogger, meterRegistry, counter)
     }
 }

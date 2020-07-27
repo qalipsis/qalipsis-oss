@@ -16,9 +16,9 @@ import io.evolue.api.steps.AbstractStep
  * @property specification the closure generating a map of values to push to the shared registry from the context input
  */
 class ShelveStep<I>(
-        id: StepId,
-        private val sharedStateRegistry: SharedStateRegistry,
-        private val specification: (input: I) -> Map<String, Any?>
+    id: StepId,
+    private val sharedStateRegistry: SharedStateRegistry,
+    private val specification: (input: I) -> Map<String, Any?>
 ) : AbstractStep<I, I>(id, null) {
 
     override suspend fun execute(context: StepContext<I, I>) {

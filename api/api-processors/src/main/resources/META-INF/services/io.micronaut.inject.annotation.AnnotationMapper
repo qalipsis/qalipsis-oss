@@ -1,0 +1,3 @@
+io.evolue.api.processors.StepConverterAnnotationMapper
+io.evolue.api.processors.StepDecoratorAnnotationMapper
+io.evolue.api.processors.PluginComponentAnnotationMapper

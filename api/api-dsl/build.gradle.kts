@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    id("java-test-fixtures")
 }
 
 description = "Evolue API Kotlin DSL"
@@ -12,7 +13,7 @@ kapt {
     useBuildCache = false
 }
 
-allOpen{
+allOpen {
     annotations(
         "io.micronaut.aop.Around"
     )
@@ -31,6 +32,7 @@ dependencies {
     implementation("javax.annotation:javax.annotation-api")
     implementation(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
     implementation("io.micronaut:micronaut-inject-java")
+    implementation("io.micronaut.micrometer:micronaut-micrometer-core")
 
     kapt(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
     kapt("io.micronaut:micronaut-inject-java")

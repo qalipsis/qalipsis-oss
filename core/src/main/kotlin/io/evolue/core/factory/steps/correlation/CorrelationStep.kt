@@ -91,10 +91,10 @@ internal class CorrelationStep<I, O>(
             CorrelationRecord(context.minionId, context.parentStepId!!,
                 input))?.let { key ->
             try {
-                    val cachedSecondaryValues = cache.get(key)!!.receive()
-                    val values =
-                        arrayListOf(input) + secondaryCorrelations.map { cachedSecondaryValues[it.sourceStepId] }
-                    (context.output as Channel<Any?>).send(values.toTypedArray())
+                val cachedSecondaryValues = cache.get(key)!!.receive()
+                val values =
+                    arrayListOf(input) + secondaryCorrelations.map { cachedSecondaryValues[it.sourceStepId] }
+                (context.output as Channel<Any?>).send(values.toTypedArray())
             } finally {
                 log.trace("Invalidating cache with key $key")
                 cache.invalidate(key)

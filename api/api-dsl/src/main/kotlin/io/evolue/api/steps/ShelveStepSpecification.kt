@@ -6,11 +6,11 @@ package io.evolue.api.steps
  * @author Eric Jessé
  */
 data class ShelveStepSpecification<INPUT>(
-        val specification: (input: INPUT) -> Map<String, Any?>
+    val specification: (input: INPUT) -> Map<String, Any?>
 ) : AbstractStepSpecification<INPUT, INPUT, ShelveStepSpecification<INPUT>>()
 
 fun <INPUT> StepSpecification<*, INPUT, *>.shelve(
-        specification: (input: INPUT) -> Map<String, Any?>): ShelveStepSpecification<INPUT> {
+    specification: (input: INPUT) -> Map<String, Any?>): ShelveStepSpecification<INPUT> {
     val step = ShelveStepSpecification(specification)
     this.add(step)
     return step

@@ -14,13 +14,13 @@ import java.time.Duration
 
 /**
  *
- * Example to create a very simple scenario that just displays several times "I'm the minion X and starting at YYY" as upper case.
+ * Example to create a very simple scenario that just displays several times "I'M THE MINION X and finished after .... ms".
  *
  * @author Eric Jessé
  */
 class HelloWorldScenario {
 
-    val minions = 50000
+    val minions = 50_000
     var start = System.currentTimeMillis()
 
     @Scenario
@@ -32,7 +32,6 @@ class HelloWorldScenario {
             }
         }
             .returns<String> { context ->
-                val now = System.currentTimeMillis()
                 "Hello World! I'm the minion ${context.minionId}"
             }.configure {
                 name = "entry"
@@ -45,7 +44,7 @@ class HelloWorldScenario {
             .unshelve<String, Long>("started at")
             .execute<Pair<String, Long?>, Unit> { ctx ->
                 val input = ctx.input.receive()
-                logger.info("${input.first} and started after ${input.second!! - start} ms")
+                logger.info("${input.first} and finished after ${input.second!! - start} ms")
             }
             .configure {
                 name = "log"

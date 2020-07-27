@@ -35,7 +35,7 @@ class UserDefinedRampUp(
     }
 
     inner class UserDefinedRampUpIterator(private val totalMinionsCount: Int, private val speedFactor: Double,
-                                          private val specification: (pastPeriodMs: Long, totalMinionsCount: Int, speedFactor: Double) -> MinionsStartingLine) :
+        private val specification: (pastPeriodMs: Long, totalMinionsCount: Int, speedFactor: Double) -> MinionsStartingLine) :
         RampUpStrategyIterator {
 
         private var pastPeriodMs = 0L

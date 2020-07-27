@@ -15,7 +15,7 @@
     </filter>
   </appender>
 
-  <logger level="DEBUG" name="io.evolue" additivity="false"/>
+  <logger additivity="false" level="DEBUG" name="io.evolue"/>
 
   <root level="${LOGGING_LEVEL:-INFO}">
     <appender-ref ref="console"/>

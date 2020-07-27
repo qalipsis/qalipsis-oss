@@ -1,19 +1,19 @@
 package io.evolue.core.factory.steps.converters
 
+import io.evolue.api.annotations.StepConverter
 import io.evolue.api.steps.AbstractStepSpecification
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
 import io.evolue.core.factory.steps.IterativeStepDecorator
 import java.time.Duration
-import javax.inject.Singleton
 
 /**
  * [StepSpecificationDecoratorConverter] from any [AbstractStepSpecification] to [IterativeStepDecorator].
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepConverter
 internal class IterativeStepDecoratorSpecificationConverter :
     StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 

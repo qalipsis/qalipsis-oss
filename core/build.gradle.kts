@@ -20,10 +20,9 @@ kapt {
     generateStubs = true
 }
 
-allOpen{
+allOpen {
     annotations(
         "io.micronaut.aop.Around",
-        "javax.inject.Singleton",
         "javax.inject.Singleton"
     )
 }
@@ -44,7 +43,7 @@ dependencies {
     implementation("io.ktor:ktor-client-apache:1.3.1")
     implementation("io.ktor:ktor-client-auth:1.3.1")
     implementation("io.ktor:ktor-client-auth-jvm:1.3.1")
-    implementation("io.micronaut.configuration:micronaut-micrometer-core")
+    implementation("io.micronaut.micrometer:micronaut-micrometer-core")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
@@ -52,13 +51,15 @@ dependencies {
     kapt(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
+    kapt(project(":api:api-processors"))
 
     testImplementation(project(":test"))
     testImplementation("io.ktor:ktor-client-mock:1.3.1")
     testImplementation("io.ktor:ktor-client-mock-jvm:1.3.1")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-    testImplementation("ch.qos.logback:logback-classic:1.2.3")
+    testImplementation(testFixtures(project(":api:api-dsl")))
+    testImplementation(testFixtures(project(":api:api-common")))
 
     kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
     kaptTest("io.micronaut:micronaut-inject-java")

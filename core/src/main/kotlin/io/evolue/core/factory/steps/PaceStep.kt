@@ -33,7 +33,7 @@ class PaceStep<I>(
     }
 
     private data class NextExecution(val periodMs: Long = 0,
-                                     val timestampNanos: Long = System.nanoTime() + periodMs * 1_000_000)
+        val timestampNanos: Long = System.nanoTime() + periodMs * 1_000_000)
 
     companion object {
         @JvmStatic

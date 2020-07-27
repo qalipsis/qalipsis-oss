@@ -20,6 +20,7 @@ import io.evolue.test.assertk.typedProp
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.mockk.verifyOnce
+import io.evolue.test.steps.AbstractStepSpecificationConverterTest
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.slot
@@ -33,22 +34,17 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
-internal class CorrelationStepSpecificationConverterTest {
+internal class CorrelationStepSpecificationConverterTest :
+    AbstractStepSpecificationConverterTest<CorrelationStepSpecificationConverter>() {
 
     @Test
-    internal fun `should support expected spec`() {
-        // given
-        val converter = CorrelationStepSpecificationConverter()
-
+    override fun `should support expected spec`() {
         // when+then
         assertTrue(converter.support(relaxedMockk<CorrelationStepSpecification<*, *>>()))
     }
 
     @Test
-    internal fun `should not support unexpected spec`() {
-        // given
-        val converter = CorrelationStepSpecificationConverter()
-
+    override fun `should not support unexpected spec`() {
         // when+then
         Assertions.assertFalse(converter.support(relaxedMockk()))
     }
@@ -76,8 +72,6 @@ internal class CorrelationStepSpecificationConverterTest {
         }
         val creationContext = StepCreationContextImpl(scenarioSpec, dag, spec)
 
-        val converter = CorrelationStepSpecificationConverter()
-
         // when
         runBlocking {
             converter.convert<String, Int>(creationContext as StepCreationContext<CorrelationStepSpecification<*, *>>)
@@ -102,7 +96,7 @@ internal class CorrelationStepSpecificationConverterTest {
             assertThat(it).all {
                 isInstanceOf(CorrelationStep::class)
                 prop("correlationKeyExtractor").isSameAs(primaryKeyExtractor)
-                typedProp<Step<*, *>, Collection<SecondaryCorrelation>>("secondaryCorrelations").all {
+                typedProp<Collection<SecondaryCorrelation>>("secondaryCorrelations").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
                         prop("sourceStepId").isEqualTo("the-other-step")

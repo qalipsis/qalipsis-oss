@@ -9,8 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-internal abstract class InMemoryRepository<ENTITY : Entity<ID>, ID : Any> :
-    Repository<ENTITY, ID> {
+internal abstract class InMemoryRepository<ENTITY : Entity<ID>, ID : Any> : Repository<ENTITY, ID> {
 
     private val entities = ConcurrentHashMap<ID, ENTITY>()
 

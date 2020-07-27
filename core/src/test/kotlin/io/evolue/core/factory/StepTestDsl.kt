@@ -25,8 +25,8 @@ internal fun dag(configure: DirectedAcyclicGraph.() -> Unit = {}): DirectedAcycl
 }
 
 internal fun <O> DirectedAcyclicGraph.step(id: String, output: O? = null,
-                                           retryPolicy: RetryPolicy? = null,
-                                           generateException: Boolean = false): TestStep<Unit, O> {
+    retryPolicy: RetryPolicy? = null,
+    generateException: Boolean = false): TestStep<Unit, O> {
     val step = TestStep<Unit, O>(id, retryPolicy, output, generateException = generateException)
     this.rootSteps.add(step)
     return step
@@ -49,8 +49,8 @@ internal fun DirectedAcyclicGraph.steps(): Map<StepId, TestStep<*, *>> {
 }
 
 internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null, private val output: O? = null,
-                                   private val delay: Long? = null,
-                                   private val generateException: Boolean = false) :
+    private val delay: Long? = null,
+    private val generateException: Boolean = false) :
     AbstractStep<I, O>(id, retryPolicy) {
 
     var received: I? = null

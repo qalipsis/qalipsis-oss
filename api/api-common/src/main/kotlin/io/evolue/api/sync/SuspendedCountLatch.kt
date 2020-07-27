@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 class SuspendedCountLatch(
-        private var initialCount: Long,
-        private val allowsNegative: Boolean = false,
-        private val onReleaseAction: suspend (() -> Unit) = {}) {
+    private var initialCount: Long,
+    private val allowsNegative: Boolean = false,
+    private val onReleaseAction: suspend (() -> Unit) = {}) {
 
     private var syncFlag = Channel<Unit>(1)
 

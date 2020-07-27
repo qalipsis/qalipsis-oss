@@ -2,7 +2,9 @@ package io.evolue.core.factory.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.steps.FlatMapStepSpecification
@@ -11,35 +13,29 @@ import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.core.factory.steps.FlatMapStep
 import io.evolue.test.assertk.prop
 import io.evolue.test.mockk.relaxedMockk
+import io.evolue.test.steps.AbstractStepSpecificationConverterTest
 import io.mockk.every
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
  * @author Eric Jessé
  */
-internal class FlatMapStepSpecificationConverterTest {
+internal class FlatMapStepSpecificationConverterTest :
+    AbstractStepSpecificationConverterTest<FlatMapStepSpecificationConverter>() {
 
     @Test
-    internal fun `should support expected spec`() {
-        // given
-        val converter = FlatMapStepSpecificationConverter()
-
+    override fun `should support expected spec`() {
         // when+then
         assertTrue(converter.support(relaxedMockk<FlatMapStepSpecification<*, *>>()))
     }
 
     @Test
-    internal fun `should not support unexpected spec`() {
-        // given
-        val converter = FlatMapStepSpecificationConverter()
-
+    override fun `should not support unexpected spec`() {
         // when+then
         assertFalse(converter.support(relaxedMockk()))
     }
@@ -51,9 +47,7 @@ internal class FlatMapStepSpecificationConverterTest {
         val spec = FlatMapStepSpecification(blockSpecification)
         spec.name = "my-step"
         spec.retryPolicy = relaxedMockk()
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
-
-        val converter = FlatMapStepSpecificationConverter()
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
@@ -61,13 +55,11 @@ internal class FlatMapStepSpecificationConverterTest {
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertEquals("my-step", it.id)
-            assertThat(it).all {
-                isInstanceOf(FlatMapStep::class)
-                prop("retryPolicy").isSameAs(spec.retryPolicy)
-                prop("block").isSameAs(blockSpecification)
-            }
+        assertThat(creationContext.createdStep!!).all {
+            isInstanceOf(FlatMapStep::class)
+            prop("id").isEqualTo("my-step")
+            prop("retryPolicy").isSameAs(spec.retryPolicy)
+            prop("block").isSameAs(blockSpecification)
         }
     }
 
@@ -82,21 +74,17 @@ internal class FlatMapStepSpecificationConverterTest {
             every { scenario.defaultRetryPolicy } returns mockedRetryPolicy
         }, spec)
 
-        val converter = FlatMapStepSpecificationConverter()
-
         // when
         runBlocking {
             converter.convert<String, Int>(creationContext as StepCreationContext<FlatMapStepSpecification<*, *>>)
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertNotNull(it.id)
-            assertThat(it).all {
-                isInstanceOf(FlatMapStep::class)
-                prop("retryPolicy").isSameAs(mockedRetryPolicy)
-                prop("block").isSameAs(blockSpecification)
-            }
+        assertThat(creationContext.createdStep!!).all {
+            isInstanceOf(FlatMapStep::class)
+            prop("id").isNotNull()
+            prop("retryPolicy").isSameAs(mockedRetryPolicy)
+            prop("block").isSameAs(blockSpecification)
         }
     }
 

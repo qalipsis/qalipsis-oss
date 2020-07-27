@@ -23,7 +23,7 @@ internal class EvolueStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(4)
+    @Timeout(8)
     internal fun `should start with additional environments`() {
         val exitCode =
             Evolue.start(arrayOf("-e", "these", "-e", "are", "-e", "my", "-e", "additional", "-e", "environments"))

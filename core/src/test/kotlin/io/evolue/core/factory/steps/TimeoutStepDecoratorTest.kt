@@ -1,15 +1,16 @@
 package io.evolue.core.factory.steps
 
 import io.evolue.api.steps.Step
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.verifyOnce
+import io.evolue.test.steps.StepTestHelper
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.TimeoutCancellationException
@@ -22,13 +23,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.ExtendWith
 import java.time.Duration
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class TimeoutStepDecoratorTest {
 
     @RelaxedMockK

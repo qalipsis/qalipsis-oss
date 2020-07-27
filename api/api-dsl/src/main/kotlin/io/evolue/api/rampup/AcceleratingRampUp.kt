@@ -18,7 +18,7 @@ import io.evolue.core.factory.orchestration.rampup.RampUpStrategyIterator
  * @property minionsCountProLaunch the number of minions to start at each launch.
  */
 class AcceleratingRampUp(private val startPeriodMs: Long, private val accelerator: Double,
-                         private val minPeriodMs: Long, private val minionsCountProLaunch: Int) : RampUpStrategy {
+    private val minPeriodMs: Long, private val minionsCountProLaunch: Int) : RampUpStrategy {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
         AcceleratingRampUpIterator(startPeriodMs, accelerator * speedFactor,
@@ -47,7 +47,7 @@ class AcceleratingRampUp(private val startPeriodMs: Long, private val accelerato
     }
 
     inner class AcceleratingRampUpIterator(startPeriodMs: Long, accelerator: Double, private val minPeriodMs: Long,
-                                           private val minionsCountProLaunch: Int, totalMinionsCount: Int) :
+        private val minionsCountProLaunch: Int, totalMinionsCount: Int) :
         RampUpStrategyIterator {
 
         private var nextPeriod = startPeriodMs
@@ -72,6 +72,6 @@ class AcceleratingRampUp(private val startPeriodMs: Long, private val accelerato
  * Start a constant number of minions launched at an accelerating pace.
  */
 fun RampUpSpecification.faster(startPeriodMs: Long, accelerator: Double, minPeriodMs: Long,
-                               minionsCountProLaunch: Int) {
+    minionsCountProLaunch: Int) {
     strategy(AcceleratingRampUp(startPeriodMs, accelerator, minPeriodMs, minionsCountProLaunch))
 }

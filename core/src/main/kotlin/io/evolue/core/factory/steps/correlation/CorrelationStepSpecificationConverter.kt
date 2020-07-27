@@ -1,20 +1,20 @@
 package io.evolue.core.factory.steps.correlation
 
 import cool.graph.cuid.Cuid
+import io.evolue.api.annotations.StepConverter
 import io.evolue.api.exceptions.InvalidSpecificationException
 import io.evolue.api.steps.CorrelationStepSpecification
 import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
-import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [CorrelationStepSpecification] to [CorrelationStep].
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepConverter
 internal class CorrelationStepSpecificationConverter : StepSpecificationConverter<CorrelationStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

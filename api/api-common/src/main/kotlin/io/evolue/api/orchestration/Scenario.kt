@@ -7,7 +7,7 @@ import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.steps.Step
 import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * A [Scenario] represents a full chain of [DirectedAcyclicGraph]s containing all the steps to perform.
@@ -48,8 +48,8 @@ class Scenario(
     /**
      * The find step operation is suspended to wait until the
      */
-    suspend fun findStep(stepId: StepId): Step<*, *> {
-        return withTimeout(10000) {
+    suspend fun findStep(stepId: StepId): Step<*, *>? {
+        return withTimeoutOrNull(10000) {
             steps.computeIfAbsent(stepId) { Channel(Channel.CONFLATED) }.receive()
         }
     }

@@ -17,10 +17,10 @@ import io.evolue.api.steps.AbstractStep
  * @property delete when set to true, the values are removed from the registry after use
  */
 class UnshelveStep<I>(
-        id: StepId,
-        private val sharedStateRegistry: SharedStateRegistry,
-        private val names: List<String>,
-        private val delete: Boolean
+    id: StepId,
+    private val sharedStateRegistry: SharedStateRegistry,
+    private val names: List<String>,
+    private val delete: Boolean
 ) : AbstractStep<I, Pair<I, Map<String, Any?>>>(id, null) {
 
     override suspend fun execute(context: StepContext<I, Pair<I, Map<String, Any?>>>) {
@@ -46,10 +46,10 @@ class UnshelveStep<I>(
  * @property delete when set to true, the value is removed from the registry after use
  */
 class SingularUnshelveStep<I, O>(
-        id: StepId,
-        private val sharedStateRegistry: SharedStateRegistry,
-        private val name: String,
-        private val delete: Boolean
+    id: StepId,
+    private val sharedStateRegistry: SharedStateRegistry,
+    private val name: String,
+    private val delete: Boolean
 ) : AbstractStep<I, Pair<I, O?>>(id, null) {
 
     override suspend fun execute(context: StepContext<I, Pair<I, O?>>) {

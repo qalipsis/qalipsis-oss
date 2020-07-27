@@ -15,5 +15,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation(project(":api:api-dsl"))
-    api("io.micronaut:micronaut-inject:${properties["micronautVersion"]}")
+    api(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    api("io.micronaut:micronaut-inject-java")
+    api("io.micronaut:micronaut-validation")
 }

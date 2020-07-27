@@ -1,7 +1,7 @@
 package io.evolue.core.factory.orchestration
 
 import io.evolue.api.context.StepContext
-import io.evolue.api.events.EventLogger
+import io.evolue.api.events.EventsLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.sync.SuspendedCountLatch
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger
 internal class RunnerTest : AbstractCoroutinesTest() {
 
     @RelaxedMockK("eventReporter")
-    lateinit private var eventLogger: EventLogger
+    lateinit private var eventsLogger: EventsLogger
 
     @RelaxedMockK("meterRegistry")
     lateinit private var meterRegistry: MeterRegistry
@@ -91,8 +91,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
                 processError("step-6")
             }
         }
-        val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
+        val runner = Runner(eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
 
         // when
         val executionDuration = coMeasureTime {
@@ -147,8 +147,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             runningStepsGauge.incrementAndGet()
             runningStepsGauge.decrementAndGet()
             executedStepCounter.increment()
-            eventLogger.info(match { it.startsWith("step-") && it.endsWith("-started") }, tagsSupplier = any())
-            eventLogger.info(match { it.startsWith("step-") && it.endsWith("-completed") }, tagsSupplier = any())
+            eventsLogger.info(match { it.startsWith("step-") && it.endsWith("-started") }, tagsSupplier = any())
+            eventsLogger.info(match { it.startsWith("step-") && it.endsWith("-completed") }, tagsSupplier = any())
             meterRegistry.timer("step-execution", "step", any(), "status", "completed")
             stepExecutionTimer.record(any<Duration>())
         }
@@ -163,8 +163,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
         val dag = dag {
             this.step<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
         }
-        val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
+        val runner = Runner(eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -187,8 +187,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             this.step<Int>("step-1", generateException = true)
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
-        val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
+        val runner = Runner(eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -216,8 +216,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
                 this.step("step-4")
             }
         }
-        val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
+        val runner = Runner(eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -254,8 +254,8 @@ internal class RunnerTest : AbstractCoroutinesTest() {
             this.step("step-1", output = 12, retryPolicy = retryPolicy)
                 .step("step-2")
         }
-        val runner = Runner(eventLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventLogger, meterRegistry)
+        val runner = Runner(eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {

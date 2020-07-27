@@ -14,6 +14,9 @@ include(
     "developer-documentation",
 
     "samples",
-    "samples:simple"
+    "samples:simple",
+
+    "plugins",
+    "plugins:netty"
 )
 

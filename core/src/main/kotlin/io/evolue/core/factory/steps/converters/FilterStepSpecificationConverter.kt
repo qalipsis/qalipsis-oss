@@ -1,19 +1,19 @@
 package io.evolue.core.factory.steps.converters
 
 import cool.graph.cuid.Cuid
+import io.evolue.api.annotations.StepConverter
 import io.evolue.api.steps.FilterStepSpecification
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.core.factory.steps.FilterStep
-import javax.inject.Singleton
 
 /**
  * [StepSpecificationConverter] from [FilterStepSpecification] to [FilterStep].
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepConverter
 internal class FilterStepSpecificationConverter :
     StepSpecificationConverter<FilterStepSpecification<*>> {
 

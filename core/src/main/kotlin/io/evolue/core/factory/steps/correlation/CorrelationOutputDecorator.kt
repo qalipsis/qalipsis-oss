@@ -1,6 +1,7 @@
 package io.evolue.core.factory.steps.correlation
 
 import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.StepDecorator
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
@@ -12,14 +13,13 @@ import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
-import javax.inject.Singleton
 
 /**
  * Decorator for [Step]s considered to be "secondary" steps for [CorrelationStep]s.
  *
  * @author Eric Jessé
  */
-@Singleton
+@StepDecorator
 internal class CorrelationOutputDecorator<I : Any?, O : Any?>(private val decorated: Step<I, O>) : Step<I, O>,
     StepExecutor {
 

@@ -35,7 +35,7 @@ data class RegularRampUp(private val periodInMs: Long, private val minionsCountP
     }
 
     inner class RegularRampUpIterator(private val periodInMs: Long, private val minionsCountProLaunch: Int,
-                                      totalMinionsCount: Int) : RampUpStrategyIterator {
+        totalMinionsCount: Int) : RampUpStrategyIterator {
 
         private var remainingMinions = totalMinionsCount
 

@@ -5,22 +5,21 @@ import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedbackScenario
 import io.evolue.core.cross.driving.feedback.Feedback
 import io.evolue.core.cross.driving.feedback.FeedbackConsumer
 import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyNever
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.CountDownLatch
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class CampaignAutoStarterTest : AbstractCoroutinesTest() {
 
     @RelaxedMockK

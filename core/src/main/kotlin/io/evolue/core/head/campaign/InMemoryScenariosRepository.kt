@@ -1,7 +1,6 @@
 package io.evolue.core.head.campaign
 
 import io.evolue.api.context.ScenarioId
-import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.core.cross.configuration.ENV_VOLATILE
 import io.evolue.core.head.persistence.inmemory.InMemoryRepository
 import io.micronaut.context.annotation.Requires

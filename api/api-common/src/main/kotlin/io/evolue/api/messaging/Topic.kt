@@ -167,7 +167,7 @@ enum class TopicMode {
  * @param subscriptionIdleTimeout duration of the idle subscriptions (subscriptions not receiving any record) before they are cancelled.
  */
 fun topic(mode: TopicMode = TopicMode.BROADCAST, bufferSize: Int = -1, fromBeginning: Boolean = false,
-          subscriptionIdleTimeout: Duration = Duration.ZERO): Topic {
+    subscriptionIdleTimeout: Duration = Duration.ZERO): Topic {
     return when {
         TopicMode.UNICAST == mode -> {
             val actualBufferSize = if (bufferSize > 0) bufferSize else Channel.UNLIMITED
