@@ -5,15 +5,26 @@ import io.evolue.api.steps.AbstractPluginStepWrapper
 import io.evolue.api.steps.AbstractScenarioSpecificationWrapper
 import io.evolue.api.steps.StepSpecification
 
+
 /**
  * Step wrapper to append to all steps before using a step from the Netty plugin.
  *
  * @author Eric Jessé
  */
-class NettyPluginSpecification<I, O>(wrappedStepSpec: StepSpecification<I, O, *>) :
-    AbstractPluginStepWrapper<I, O>(wrappedStepSpec)
+interface NettyPluginSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
+    StepSpecification<INPUT, OUTPUT, SELF>
 
-fun <INPUT, OUTPUT> StepSpecification<INPUT, OUTPUT, *>.netty() = NettyPluginSpecification(this)
+/**
+ * Step wrapper to append to all steps before using a step from the Netty plugin.
+ *
+ * @author Eric Jessé
+ */
+class NettyPluginSpecificationImpl<INPUT, OUTPUT>(wrappedStepSpec: StepSpecification<INPUT, OUTPUT, *>) :
+    AbstractPluginStepWrapper<INPUT, OUTPUT>(wrappedStepSpec),
+    NettyPluginSpecification<INPUT, OUTPUT, AbstractPluginStepWrapper<INPUT, OUTPUT>>
+
+fun <INPUT, OUTPUT> StepSpecification<INPUT, OUTPUT, *>.netty(): NettyPluginSpecification<INPUT, OUTPUT, *> =
+    NettyPluginSpecificationImpl(this)
 
 /**
  * Scenario wrapper to append to a scenario before using a step from the Netty plugin.

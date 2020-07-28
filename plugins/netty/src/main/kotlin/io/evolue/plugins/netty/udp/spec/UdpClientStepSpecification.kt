@@ -15,7 +15,8 @@ import io.evolue.plugins.netty.configuration.MetricsConfiguration
  */
 data class UdpClientStepSpecification<INPUT> internal constructor(
     val configurationBlock: UdpClientStepSpecification<INPUT>.() -> Unit
-) : AbstractStepSpecification<INPUT, Pair<INPUT, ByteArray>, UdpClientStepSpecification<INPUT>>() {
+) : AbstractStepSpecification<INPUT, Pair<INPUT, ByteArray>, UdpClientStepSpecification<INPUT>>(),
+    NettyPluginSpecification<INPUT, Pair<INPUT, ByteArray>, UdpClientStepSpecification<INPUT>> {
 
     internal var requestBlock: suspend (input: INPUT) -> ByteArray = { ByteArray(0) }
 
@@ -46,8 +47,7 @@ data class UdpClientStepSpecification<INPUT> internal constructor(
     }
 }
 
-
-fun <INPUT> NettyPluginSpecification<*, INPUT>.udp(
+fun <INPUT> NettyPluginSpecification<*, INPUT, *>.udp(
     configurationBlock: UdpClientStepSpecification<INPUT>.() -> Unit): UdpClientStepSpecification<INPUT> {
     val step = UdpClientStepSpecification(configurationBlock)
     this.add(step)

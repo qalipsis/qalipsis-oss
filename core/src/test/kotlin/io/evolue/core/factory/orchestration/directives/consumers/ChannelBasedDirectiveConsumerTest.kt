@@ -3,24 +3,24 @@ package io.evolue.core.factory.orchestration.directives.consumers
 import io.evolue.core.cross.driving.TestDescriptiveDirective
 import io.evolue.core.cross.driving.directives.Directive
 import io.evolue.core.factory.orchestration.directives.processors.DirectiveProcessor
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.relaxedMockk
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
-internal class ChannelBasedDirectiveConsumerTest : AbstractCoroutinesTest() {
+@WithMockk
+@CleanCoroutines
+internal class ChannelBasedDirectiveConsumerTest {
 
     @RelaxedMockK
     lateinit var processor1: DirectiveProcessor<*>

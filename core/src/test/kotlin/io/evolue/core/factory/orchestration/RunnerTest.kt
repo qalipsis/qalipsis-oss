@@ -9,7 +9,8 @@ import io.evolue.core.factory.dag
 import io.evolue.core.factory.delayedStep
 import io.evolue.core.factory.step
 import io.evolue.core.factory.steps
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyExactly
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
@@ -20,12 +21,10 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Timer
-import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -34,16 +33,16 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
+@CleanCoroutines
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
-internal class RunnerTest : AbstractCoroutinesTest() {
+internal class RunnerTest {
 
     @RelaxedMockK("eventReporter")
     lateinit private var eventsLogger: EventsLogger
@@ -53,7 +52,6 @@ internal class RunnerTest : AbstractCoroutinesTest() {
 
     @BeforeEach
     internal fun setUp() {
-        clearAllMocks()
         val defaultGauge: AtomicInteger = relaxedMockk()
         val defaultCounter: Counter = relaxedMockk()
         val defaultTimer: Timer = relaxedMockk()

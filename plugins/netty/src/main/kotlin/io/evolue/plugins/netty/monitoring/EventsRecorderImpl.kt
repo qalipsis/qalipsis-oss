@@ -10,30 +10,30 @@ class EventsRecorderImpl(
 ) : EventsRecorder {
 
     override fun recordConnecting(stepContext: StepContext<*, *>) {
-        eventsLogger.info("connecting", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.connecting", tagsSupplier = { stepContext.toEventTags() })
     }
 
     override fun recordSuccessfulConnection(stepContext: StepContext<*, *>) {
-        eventsLogger.info("connection-succeeded", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.connection-succeeded", tagsSupplier = { stepContext.toEventTags() })
     }
 
     override fun recordFailedConnection(stepContext: StepContext<*, *>) {
-        eventsLogger.info("connection-failed", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.connection-failed", tagsSupplier = { stepContext.toEventTags() })
     }
 
     override fun recordSending(stepContext: StepContext<*, *>) {
-        eventsLogger.info("sending-data", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.sending-data", tagsSupplier = { stepContext.toEventTags() })
     }
 
     override fun recordSent(stepContext: StepContext<*, *>) {
-        eventsLogger.info("data-sent", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.data-sent", tagsSupplier = { stepContext.toEventTags() })
     }
 
     override fun recordReceiving(stepContext: StepContext<*, *>) {
-        eventsLogger.info("receiving-data", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.receiving-data", tagsSupplier = { stepContext.toEventTags() })
     }
 
     override fun recordReceived(stepContext: StepContext<*, *>) {
-        eventsLogger.info("data-received", tagsSupplier = { stepContext.toEventTags() })
+        eventsLogger.info("netty.data-received", tagsSupplier = { stepContext.toEventTags() })
     }
 }

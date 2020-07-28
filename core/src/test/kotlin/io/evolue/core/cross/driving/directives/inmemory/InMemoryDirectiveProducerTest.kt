@@ -5,20 +5,19 @@ import io.evolue.core.cross.driving.TestListDirective
 import io.evolue.core.cross.driving.TestQueueDirective
 import io.evolue.core.cross.driving.TestSingleUseDirective
 import io.evolue.core.cross.driving.directives.DirectiveRegistry
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class InMemoryDirectiveProducerTest {
 
     @RelaxedMockK

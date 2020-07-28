@@ -5,7 +5,7 @@ import ch.qos.logback.classic.LoggerContext
 import io.evolue.api.events.EventsLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.sync.SuspendedCountLatch
-import io.evolue.test.coroutines.CoroutineCleanExtension
+import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.mockk.verifyExactly
@@ -28,7 +28,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 @WithMockk
-@ExtendWith(CoroutineCleanExtension::class)
+@CleanCoroutines
 internal class MinionImplTest {
 
     @RelaxedMockK

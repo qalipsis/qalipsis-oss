@@ -1,20 +1,19 @@
 package io.evolue.api.events
 
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.verifyOnce
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * Tests to validate the default implementations of [EventsLogger].
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 class EventsLoggerTest {
 
     @RelaxedMockK

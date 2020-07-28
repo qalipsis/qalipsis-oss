@@ -18,6 +18,7 @@ import io.evolue.core.cross.driving.directives.MinionsRampUpPreparationDirective
 import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackConsumer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyNever
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.utils.getProperty
@@ -26,20 +27,18 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class DefaultCampaignManagerTest {
 
     @RelaxedMockK

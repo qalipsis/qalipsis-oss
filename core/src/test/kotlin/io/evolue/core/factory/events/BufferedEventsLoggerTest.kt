@@ -3,7 +3,7 @@ package io.evolue.core.factory.events
 import io.evolue.api.events.EventLevel
 import io.evolue.core.factory.eventslogger.BufferedEventsLogger
 import io.evolue.core.factory.eventslogger.elasticsearch.ElasticsearchEventsLoggerTest
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
-internal class BufferedEventsLoggerTest : AbstractCoroutinesTest() {
+@CleanCoroutines
+internal class BufferedEventsLoggerTest {
 
     @Test
     internal fun `should not log when logger level is OFF`() {

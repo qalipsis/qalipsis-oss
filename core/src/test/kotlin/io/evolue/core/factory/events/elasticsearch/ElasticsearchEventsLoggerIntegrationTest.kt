@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.evolue.api.events.EventGeoPoint
 import io.evolue.api.events.EventRange
 import io.evolue.core.factory.eventslogger.elasticsearch.ElasticsearchEventsLoggerTest
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.relaxedMockk
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
@@ -45,7 +45,8 @@ import java.util.stream.Stream
  * @author Eric Jessé
  */
 @Testcontainers(disabledWithoutDocker = true)
-internal class ElasticsearchEventsLoggerIntegrationTest : AbstractCoroutinesTest() {
+@CleanCoroutines
+internal class ElasticsearchEventsLoggerIntegrationTest {
 
     // The meter registry should provide a timer that execute the expressions to record.
     private val meterRegistry: MeterRegistry = relaxedMockk {

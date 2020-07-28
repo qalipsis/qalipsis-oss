@@ -8,7 +8,7 @@ import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
@@ -41,7 +41,8 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 @WithMockk
-internal class MinionsKeeperTest : AbstractCoroutinesTest() {
+@CleanCoroutines
+internal class MinionsKeeperTest {
 
     @RelaxedMockK
     private lateinit var scenariosKeeper: ScenariosKeeper
