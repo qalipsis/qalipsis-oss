@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    id("java-test-fixtures")
 }
 
 description = "Evolue Runtime"
@@ -48,6 +49,8 @@ dependencies {
     kapt(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
+
+    testFixturesImplementation(kotlin("stdlib"))
 
     testImplementation(project(":test"))
     testImplementation("javax.annotation:javax.annotation-api")

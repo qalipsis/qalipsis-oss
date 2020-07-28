@@ -1,0 +1,10 @@
+logging:
+  level:
+    io.evolue: DEBUG
+    root: INFO
+  file:
+    path: evolue-test.log
+    async: false
+  events:
+    path: evolue-events-test.log
+    async: true

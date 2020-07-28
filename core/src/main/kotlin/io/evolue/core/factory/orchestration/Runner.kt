@@ -61,6 +61,7 @@ internal class Runner(
                 StepContext<Unit, Any>(campaignId = minionImpl.campaignId, minionId = minionImpl.id,
                     scenarioId = dag.scenario.id,
                     directedAcyclicGraphId = dag.id, stepId = step.id, creation = creationTimestamp)
+            (ctx.input as Channel<Unit>).send(Unit)
             minionImpl.attach(GlobalScope.launch {
                 executeStepRecursively(minionImpl, step as Step<Any?, Any?>, ctx as StepContext<Any?, Any?>)
             })

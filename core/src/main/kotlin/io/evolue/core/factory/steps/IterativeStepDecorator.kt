@@ -17,7 +17,7 @@ import java.time.Duration
  */
 class IterativeStepDecorator<I, O>(
     private val iterations: Long = 1,
-    private val delay: Duration = Duration.ZERO,
+    delay: Duration = Duration.ZERO,
     private val decorated: Step<I, O>
 ) : Step<I, O>, StepExecutor {
 
@@ -43,6 +43,7 @@ class IterativeStepDecorator<I, O>(
             input = Channel<I>(Channel.CONFLATED),
             output = context.output,
             scenarioId = context.scenarioId,
+            campaignId = context.campaignId,
             directedAcyclicGraphId = context.directedAcyclicGraphId,
             errors = context.errors, // Really share the same instance.
             exhausted = context.exhausted,
@@ -53,16 +54,19 @@ class IterativeStepDecorator<I, O>(
         var remainingIterations = iterations
         val input = context.input.receive()
         while (remainingIterations > 0) {
-            log.trace("Executing iteration ${internalContext.stepIterationIndex}")
+            val currentIteration = internalContext.stepIterationIndex
             (internalContext.input as Channel<I>).send(input)
+            log.trace("Executing iteration ${currentIteration} for context ${context}")
             executeStep(decorated, internalContext)
-            internalContext.stepIterationIndex++
+            internalContext.stepIterationIndex = internalContext.stepIterationIndex + 1
             remainingIterations--
+            log.trace("Executed iteration ${currentIteration} for context ${context}, remaining ${remainingIterations}")
             if (delayMillis > 0 && remainingIterations > 0) {
-                log.trace("Applying delay of ${delay} before next iteration")
-                delay(delay.toMillis())
+                log.trace("Applying delay of ${delayMillis} ms before next iteration")
+                delay(delayMillis)
             }
         }
+        log.trace("End of the iterations for context ${context}")
     }
 
     companion object {

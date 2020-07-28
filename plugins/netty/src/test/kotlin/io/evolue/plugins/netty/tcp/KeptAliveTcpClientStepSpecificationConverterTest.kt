@@ -172,7 +172,7 @@ internal class KeptAliveTcpClientStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step when connection owner exists but is a different type`() {
+    internal fun `should convert spec without name nor retry policy to step when connection owner exists but is of a different type`() {
         // given
         val requestSpecification: suspend (input: Int) -> ByteArray = { ByteArray(1) { it.toByte() } }
         val spec = KeptAliveTcpClientStepSpecification<Int>(

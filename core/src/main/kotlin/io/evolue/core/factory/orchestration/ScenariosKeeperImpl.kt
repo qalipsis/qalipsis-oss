@@ -61,10 +61,15 @@ internal class ScenariosKeeperImpl(
         ServicesLoader.loadServices<Any>("scenarios")
         // Fetch and convert them.
         scenarioSpecificationsKeeper.asMap().forEach { (scenarioId, scenarioSpecification) ->
-            val scenario = convertScenario(scenarioId, scenarioSpecification)
-            scenarios[scenarioId] = scenario
-            scenario.dags.forEach { dag ->
-                dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
+            try {
+                val scenario = convertScenario(scenarioId, scenarioSpecification)
+                scenarios[scenarioId] = scenario
+                scenario.dags.forEach { dag ->
+                    dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
+                }
+            } catch (e: Exception) {
+                log.error(e.message, e)
+                throw e
             }
         }
 
@@ -94,7 +99,7 @@ internal class ScenariosKeeperImpl(
 
     @VisibleForTesting
     internal fun convertScenario(scenarioId: ScenarioId,
-                                 scenarioSpecification: ReadableScenarioSpecification): Scenario {
+        scenarioSpecification: ReadableScenarioSpecification): Scenario {
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
             "The scenario ${scenarioId} requires a ramp-up strategy")
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
@@ -112,10 +117,10 @@ internal class ScenariosKeeperImpl(
 
     @VisibleForTesting
     internal suspend fun convertSteps(scenarioSpecification: ReadableScenarioSpecification,
-                                      scenario: Scenario,
-                                      dags: MutableMap<String, DirectedAcyclicGraph>,
-                                      parentStep: Step<*, *>?,
-                                      stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
+        scenario: Scenario,
+        dags: MutableMap<String, DirectedAcyclicGraph>,
+        parentStep: Step<*, *>?,
+        stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
         if (stepsSpecifications.size == 1) {
             runBlocking {
                 convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepsSpecifications[0])

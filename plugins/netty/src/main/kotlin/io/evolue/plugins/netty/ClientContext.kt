@@ -1,6 +1,7 @@
 package io.evolue.plugins.netty
 
 import io.evolue.api.context.StepContext
+import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.plugins.netty.configuration.ExecutionEventsConfiguration
 import io.evolue.plugins.netty.configuration.ExecutionMetricsConfiguration
 import io.netty.channel.ChannelFuture
@@ -32,37 +33,67 @@ internal class ClientContext<I, O>(
     private val onClose: () -> Unit
 ) {
 
+    /**
+     * Metrics configuration of the step creating the context.
+     */
+    val initialExecutionMetricsConfiguration = executionContext.get().metricsConfiguration
+
+    /**
+     * Events configuration of the step creating the context.
+     */
+    val initialExecutionEventsConfiguration = executionContext.get().eventsConfiguration
+
     var open = true
 
     private val remainingUsages = AtomicInteger(usagesCount)
 
     private val mutex = Mutex()
 
+    /**
+     * Executes the request using the configuration of the step creating the context.
+     */
+    suspend fun <T> executeWithInitialConfiguration(context: StepContext<T, Pair<T, O>>, closeOnFailure: Boolean,
+                                                    closeAfterExecution: Boolean,
+                                                    requestBlock: suspend (input: T) -> I) {
+        execute(context, closeOnFailure, closeAfterExecution, initialExecutionMetricsConfiguration,
+            initialExecutionEventsConfiguration, requestBlock)
+    }
+
+    /**
+     * Executes the request using the configuration of a different step than the one using the context.
+     */
     suspend fun <T> execute(context: StepContext<T, Pair<T, O>>, closeOnFailure: Boolean,
-        closeAfterExecution: Boolean, metricsConfiguration: ExecutionMetricsConfiguration,
-        eventsConfiguration: ExecutionEventsConfiguration, requestBlock: suspend (input: T) -> I) {
+                            closeAfterExecution: Boolean, metricsConfiguration: ExecutionMetricsConfiguration,
+                            eventsConfiguration: ExecutionEventsConfiguration, requestBlock: suspend (input: T) -> I) {
         if (!open) {
             throw RuntimeException("Connection is closed and cannot be reused")
         }
         var failure = false
         try {
+            log.trace("Reusing the connection {} for the context {}", channel.channel().localAddress(), context)
             executionContext.set(ClientExecutionContext(context, metricsConfiguration, eventsConfiguration))
+            log.trace("Waiting for input")
             val input = context.input.receive()
+            log.trace("Processing input")
             val request = requestBlock(input)
 
             // The use of the connection has to be thread-safe to avoid collisions when reusing in several
             // concurrent steps.
             val result = mutex.withLock {
+                log.trace("Sending request")
                 inboundChannel.send(request)
+                log.trace("Waiting for an answer")
                 resultChannel.receive()
             }
             if (result.isSuccess) {
+                log.trace("Answer received with success")
                 context.output.send(input to result.getOrThrow())
             } else {
                 throw result.exceptionOrNull()!!
             }
         } catch (t: Throwable) {
             failure = true
+            log.warn("Unexpected error : '${t.message}' on context ${context}", t)
             throw t
         } finally {
             executionContext.set(null)
@@ -72,7 +103,8 @@ internal class ClientContext<I, O>(
         }
     }
 
-    private fun close() {
+    fun close() {
+        log.trace("Closing the connection {}", channel.channel().localAddress())
         open = false
         try {
             channel.channel().close()
@@ -84,5 +116,10 @@ internal class ClientContext<I, O>(
                 resultChannel.close()
             }
         }
+    }
+
+    companion object {
+        @JvmStatic
+        private val log = logger()
     }
 }

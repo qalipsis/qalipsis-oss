@@ -61,9 +61,10 @@ dependencies {
     testImplementation(project(":api:api-dsl"))
     testImplementation(testFixtures(project(":api:api-dsl")))
     testImplementation(testFixtures(project(":api:api-common")))
+    testImplementation(testFixtures(project(":runtime")))
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-
+    testRuntimeOnly(project(":runtime"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest(project(":api:api-processors"))
 }

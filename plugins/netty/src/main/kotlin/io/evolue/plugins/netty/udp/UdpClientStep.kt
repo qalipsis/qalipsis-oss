@@ -2,6 +2,7 @@ package io.evolue.plugins.netty.udp
 
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
+import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.plugins.netty.AbstractClientStep
 import io.evolue.plugins.netty.ClientExecutionContext
@@ -50,6 +51,7 @@ internal class UdpClientStep<I>(
     override suspend fun doExecute(channel: ChannelFuture, context: StepContext<I, Pair<I, ByteArray>>,
                                    inboundChannel: Channel<ByteArray>, resultChannel: Channel<Result<ByteArray>>,
                                    connectionExecutionContext: AtomicReference<ClientExecutionContext>) {
+        log.trace("Executing with {}", context)
         try {
             val input = context.input.receive()
             val request = requestBlock(input)
@@ -66,6 +68,12 @@ internal class UdpClientStep<I>(
             throw t
         } finally {
             channel.channel().close()
+            log.trace("Executed with {}", context)
         }
+    }
+
+    companion object {
+        @JvmStatic
+        private val log = logger()
     }
 }

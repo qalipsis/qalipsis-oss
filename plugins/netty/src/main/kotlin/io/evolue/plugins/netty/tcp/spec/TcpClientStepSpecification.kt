@@ -47,7 +47,15 @@ data class TcpClientStepSpecification<INPUT> internal constructor(
     }
 }
 
-
+/**
+ * Create a new TCP connection to send requests to a remote address.
+ * It is not necessary to explicitly close the TCP connection after use if the workflow is straightforward.
+ *
+ * @see reuseTcp
+ * @see closeTcp
+ *
+ * @author Eric Jessé
+ */
 fun <INPUT> NettyPluginSpecification<*, INPUT, *>.tcp(
     configurationBlock: TcpClientStepSpecification<INPUT>.() -> Unit): TcpClientStepSpecification<INPUT> {
     val step = TcpClientStepSpecification(configurationBlock)
@@ -55,6 +63,15 @@ fun <INPUT> NettyPluginSpecification<*, INPUT, *>.tcp(
     return step
 }
 
+/**
+ * Create a new TCP connection to send requests to a remote address.
+ * It is not necessary to explicitly close the TCP connection after use if the workflow is straightforward.
+ *
+ * @see reuseTcp
+ * @see closeTcp
+ *
+ * @author Eric Jessé
+ */
 fun NettyScenarioSpecification.tcp(
     configurationBlock: TcpClientStepSpecification<Unit>.() -> Unit): TcpClientStepSpecification<Unit> {
     val step = TcpClientStepSpecification(configurationBlock)
@@ -62,6 +79,11 @@ fun NettyScenarioSpecification.tcp(
     return step
 }
 
+/**
+ * Specification for a [io.evolue.plugins.netty.tcp.KeptAliveTcpClientStep].
+ *
+ * @author Eric Jessé
+ */
 data class KeptAliveTcpClientStepSpecification<INPUT>(
     val stepName: String,
     val configurationBlock: KeptAliveTcpClientStepSpecification<INPUT>.() -> Unit
@@ -100,12 +122,22 @@ data class KeptAliveTcpClientStepSpecification<INPUT>(
     }
 
     data class OptionsConfiguration(
-        var closeOnFailure: Boolean = true,
-        var closeAfterUse: Boolean = true
+        var closeOnFailure: Boolean = false,
+        var closeAfterUse: Boolean = false
     )
-
 }
 
+/**
+ * Keep a previously created TCP connection open and reuse it to perform new requests to the remote address.
+ * It is not necessary to explicitly close the TCP connection after use if the workflow is straightforward.
+ *
+ * @param stepName name of the step where the TCP connection was open.
+ *
+ * @see tcp
+ * @see closeTcp
+ *
+ * @author Eric Jessé
+ */
 fun <INPUT> NettyPluginSpecification<*, INPUT, *>.reuseTcp(
     stepName: String,
     configurationBlock: KeptAliveTcpClientStepSpecification<INPUT>.() -> Unit
@@ -117,3 +149,19 @@ fun <INPUT> NettyPluginSpecification<*, INPUT, *>.reuseTcp(
     return step
 }
 
+data class CloseTcpClientStepSpecification<INPUT>(val stepName: String) :
+    AbstractStepSpecification<INPUT, INPUT, CloseTcpClientStepSpecification<INPUT>>(),
+    NettyPluginSpecification<INPUT, INPUT, CloseTcpClientStepSpecification<INPUT>>
+
+/**
+ * Keep a previously created TCP connection open until that point.
+ *
+ *@param stepName name of the step where the TCP connection was open.
+ *
+ * @author Eric Jessé
+ */
+fun <INPUT> NettyPluginSpecification<*, INPUT, *>.closeTcp(stepName: String): CloseTcpClientStepSpecification<INPUT> {
+    val step = CloseTcpClientStepSpecification<INPUT>(stepName)
+    this.add(step)
+    return step
+}

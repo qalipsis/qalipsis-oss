@@ -59,8 +59,7 @@ object Evolue : Callable<Unit> {
         exitProcess(start(args))
     }
 
-    // Visible for test only.
-    internal fun start(args: Array<String>): Int {
+    fun start(args: Array<String> = emptyArray()): Int {
         this.args = args
         return CommandLine(Evolue)
             .setCaseInsensitiveEnumValuesAllowed(true)
@@ -150,7 +149,7 @@ object Evolue : Callable<Unit> {
     }
 
     private fun <T> promptAndValidate(message: String, errorMessage: String, conversion: String.() -> T,
-                                      validation: (T) -> Boolean): T {
+        validation: (T) -> Boolean): T {
         var choice: T? = null
         while (choice == null) {
             print("${message} ")
