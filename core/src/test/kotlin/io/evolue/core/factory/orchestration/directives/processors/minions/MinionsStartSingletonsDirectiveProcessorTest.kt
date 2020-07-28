@@ -4,23 +4,22 @@ import io.evolue.core.cross.driving.TestDescriptiveDirective
 import io.evolue.core.cross.driving.directives.MinionsStartSingletonsDirective
 import io.evolue.core.factory.orchestration.MinionsKeeper
 import io.evolue.core.factory.orchestration.ScenariosKeeper
+import io.evolue.test.mockk.WithMockk
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class MinionsStartSingletonsDirectiveProcessorTest {
 
     @RelaxedMockK

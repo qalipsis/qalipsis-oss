@@ -14,7 +14,7 @@ import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.orchestration.ScenariosKeeper
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.relaxedMockk
 import io.mockk.coEvery
@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Timeout
  * @author Eric Jessé
  */
 @WithMockk
-internal class MinionsCreationPreparationDirectiveProcessorTest : AbstractCoroutinesTest() {
+@CleanCoroutines
+internal class MinionsCreationPreparationDirectiveProcessorTest {
 
     @RelaxedMockK
     lateinit var scenariosKeeper: ScenariosKeeper

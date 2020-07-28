@@ -14,7 +14,8 @@ import io.evolue.plugins.netty.configuration.ExecutionMetricsConfiguration
  */
 data class TcpClientStepSpecification<INPUT> internal constructor(
     val configurationBlock: TcpClientStepSpecification<INPUT>.() -> Unit
-) : AbstractStepSpecification<INPUT, Pair<INPUT, ByteArray>, TcpClientStepSpecification<INPUT>>() {
+) : AbstractStepSpecification<INPUT, Pair<INPUT, ByteArray>, TcpClientStepSpecification<INPUT>>(),
+    NettyPluginSpecification<INPUT, Pair<INPUT, ByteArray>, TcpClientStepSpecification<INPUT>> {
 
     internal var requestBlock: suspend (input: INPUT) -> ByteArray = { ByteArray(0) }
 
@@ -47,7 +48,7 @@ data class TcpClientStepSpecification<INPUT> internal constructor(
 }
 
 
-fun <INPUT> NettyPluginSpecification<*, INPUT>.tcp(
+fun <INPUT> NettyPluginSpecification<*, INPUT, *>.tcp(
     configurationBlock: TcpClientStepSpecification<INPUT>.() -> Unit): TcpClientStepSpecification<INPUT> {
     val step = TcpClientStepSpecification(configurationBlock)
     this.add(step)
@@ -64,7 +65,8 @@ fun NettyScenarioSpecification.tcp(
 data class KeptAliveTcpClientStepSpecification<INPUT>(
     val stepName: String,
     val configurationBlock: KeptAliveTcpClientStepSpecification<INPUT>.() -> Unit
-) : AbstractStepSpecification<INPUT, Pair<INPUT, ByteArray>, KeptAliveTcpClientStepSpecification<INPUT>>() {
+) : AbstractStepSpecification<INPUT, Pair<INPUT, ByteArray>, KeptAliveTcpClientStepSpecification<INPUT>>(),
+    NettyPluginSpecification<INPUT, Pair<INPUT, ByteArray>, KeptAliveTcpClientStepSpecification<INPUT>> {
 
     internal var requestBlock: suspend (input: INPUT) -> ByteArray = { ByteArray(0) }
 
@@ -104,7 +106,7 @@ data class KeptAliveTcpClientStepSpecification<INPUT>(
 
 }
 
-fun <INPUT> NettyPluginSpecification<*, INPUT>.reuseTcp(
+fun <INPUT> NettyPluginSpecification<*, INPUT, *>.reuseTcp(
     stepName: String,
     configurationBlock: KeptAliveTcpClientStepSpecification<INPUT>.() -> Unit
 ): KeptAliveTcpClientStepSpecification<INPUT> {

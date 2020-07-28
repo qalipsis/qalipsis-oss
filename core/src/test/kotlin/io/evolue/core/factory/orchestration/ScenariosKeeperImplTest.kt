@@ -16,6 +16,7 @@ import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyExactly
 import io.evolue.test.mockk.coVerifyNever
 import io.evolue.test.mockk.coVerifyOnce
@@ -24,7 +25,6 @@ import io.evolue.test.mockk.verifyOnce
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.spyk
@@ -38,14 +38,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
+@WithMockk
 internal class ScenariosKeeperImplTest {
 
     @RelaxedMockK

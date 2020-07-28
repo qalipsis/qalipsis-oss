@@ -6,7 +6,8 @@ import io.evolue.core.cross.driving.directives.DirectiveRegistry
 import io.evolue.core.cross.driving.directives.MinionsCreationDirectiveReference
 import io.evolue.core.factory.orchestration.MinionsKeeper
 import io.evolue.core.factory.orchestration.ScenariosKeeper
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
+import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -14,20 +15,19 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
-internal class MinionsCreationDirectiveProcessorTest : AbstractCoroutinesTest() {
+@WithMockk
+@CleanCoroutines
+internal class MinionsCreationDirectiveProcessorTest {
 
     @RelaxedMockK
     lateinit var registry: DirectiveRegistry

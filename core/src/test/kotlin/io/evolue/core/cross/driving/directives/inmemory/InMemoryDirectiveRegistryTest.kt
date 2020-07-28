@@ -16,11 +16,11 @@ import io.evolue.core.cross.driving.TestSingleUseDirectiveReference
 import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
+import io.evolue.test.mockk.WithMockk
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -28,15 +28,15 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.ExtendWith
 import java.util.Collections
 import java.util.concurrent.CountDownLatch
 
 /**
  * @author Eric Jessé
  */
-@ExtendWith(MockKExtension::class)
-internal class InMemoryDirectiveRegistryTest : AbstractCoroutinesTest() {
+@WithMockk
+@CleanCoroutines
+internal class InMemoryDirectiveRegistryTest {
 
     @RelaxedMockK
     lateinit var feedbackProducer: FeedbackProducer

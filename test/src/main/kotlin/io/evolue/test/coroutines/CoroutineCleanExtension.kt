@@ -3,6 +3,7 @@ package io.evolue.test.coroutines
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import org.junit.jupiter.api.extension.AfterEachCallback
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
 
 /**
@@ -22,3 +23,7 @@ class CoroutineCleanExtension : AfterEachCallback {
         Thread.sleep(800)
     }
 }
+
+
+@ExtendWith(CoroutineCleanExtension::class)
+annotation class CleanCoroutines

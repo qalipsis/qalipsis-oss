@@ -4,7 +4,7 @@ import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedback
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedbackScenario
 import io.evolue.core.cross.driving.feedback.Feedback
 import io.evolue.core.cross.driving.feedback.FeedbackConsumer
-import io.evolue.test.coroutines.AbstractCoroutinesTest
+import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyNever
 import io.evolue.test.mockk.coVerifyOnce
@@ -20,7 +20,8 @@ import java.util.concurrent.CountDownLatch
  * @author Eric Jessé
  */
 @WithMockk
-internal class CampaignAutoStarterTest : AbstractCoroutinesTest() {
+@CleanCoroutines
+internal class CampaignAutoStarterTest {
 
     @RelaxedMockK
     lateinit var feedbackConsumer: FeedbackConsumer
