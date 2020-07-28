@@ -111,7 +111,7 @@ internal class RunnerTest {
             }
         }
         steps["step-1"]!!.let {
-            Assertions.assertNull(it.received)
+            Assertions.assertEquals(Unit, it.received)
             it.assertHasParent(null)
         }
         steps["step-2"]!!.let {
@@ -123,7 +123,7 @@ internal class RunnerTest {
             it.assertHasParent("step-2")
         }
         steps["step-4"]!!.let {
-            Assertions.assertNull(it.received)
+            Assertions.assertEquals(Unit, it.received)
             it.assertHasParent(null)
         }
         steps["step-5"]!!.let {

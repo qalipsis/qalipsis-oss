@@ -3,6 +3,7 @@ package io.evolue.plugins.netty.tcp
 import cool.graph.cuid.Cuid
 import io.evolue.api.annotations.StepConverter
 import io.evolue.api.exceptions.InvalidSpecificationException
+import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
@@ -20,7 +21,9 @@ internal class KeptAliveTcpClientStepSpecificationConverter() :
     StepSpecificationConverter<KeptAliveTcpClientStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
-        return stepSpecification is KeptAliveTcpClientStepSpecification
+        return (stepSpecification is KeptAliveTcpClientStepSpecification).also {
+            log.trace("Support of {} is {}", stepSpecification, it)
+        }
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<KeptAliveTcpClientStepSpecification<*>>) {
@@ -40,17 +43,22 @@ internal class KeptAliveTcpClientStepSpecificationConverter() :
             }
         }
 
-        connectionOwner.addUsage(requiresChannelActivityMonitoring(spec.metricsConfiguration, spec.eventsConfiguration))
+        log.trace("Found connection owner for spec {}: {}", spec, connectionOwner)
+        val usages = spec.iterations.coerceAtLeast(1).toInt()
+        connectionOwner.addUsage(requiresChannelActivityMonitoring(spec.metricsConfiguration, spec.eventsConfiguration),
+            usages)
+        log.trace("Adding {} usages to {}", usages, connectionOwner)
 
         val step =
             KeptAliveTcpClientStep(spec.name ?: Cuid.createCuid(), spec.retryPolicy, connectionOwner, spec.requestBlock,
                 spec.optionsConfiguration, spec.metricsConfiguration, spec.eventsConfiguration)
         creationContext.createdStep(step)
+        log.trace("Step {} created from {}", step, spec)
     }
 
     // Visible for test only.
     fun requiresChannelActivityMonitoring(metricsConfiguration: ExecutionMetricsConfiguration,
-        eventsConfiguration: ExecutionEventsConfiguration): Boolean {
+                                          eventsConfiguration: ExecutionEventsConfiguration): Boolean {
         return metricsConfiguration.dataReceived
                 || metricsConfiguration.dataSent
                 || metricsConfiguration.timeToLastByte
@@ -58,5 +66,10 @@ internal class KeptAliveTcpClientStepSpecificationConverter() :
                 || eventsConfiguration.received
                 || eventsConfiguration.sending
                 || eventsConfiguration.sent
+    }
+
+    companion object {
+        @JvmStatic
+        private val log = logger()
     }
 }

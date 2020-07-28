@@ -2,6 +2,7 @@ package io.evolue.plugins.netty.tcp
 
 import cool.graph.cuid.Cuid
 import io.evolue.api.annotations.StepConverter
+import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
@@ -21,7 +22,9 @@ internal class TcpClientStepSpecificationConverter(
 ) : StepSpecificationConverter<TcpClientStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
-        return stepSpecification is TcpClientStepSpecification
+        return (stepSpecification is TcpClientStepSpecification).also {
+            log.trace("Support of {} is {}", stepSpecification, it)
+        }
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<TcpClientStepSpecification<*>>) {
@@ -31,6 +34,11 @@ internal class TcpClientStepSpecificationConverter(
                 spec.connectionConfiguration, spec.metricsConfiguration, spec.eventsConfiguration, metricsRecorder,
                 eventsRecorder)
         creationContext.createdStep(step)
+        log.trace("Step {} created from {}", step, spec)
     }
 
+    companion object {
+        @JvmStatic
+        private val log = logger()
+    }
 }

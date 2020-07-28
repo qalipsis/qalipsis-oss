@@ -3,6 +3,7 @@ package io.evolue.plugins.netty.tcp
 import io.evolue.api.context.MinionId
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
+import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.plugins.netty.AbstractClientStep
 import io.evolue.plugins.netty.ClientContext
@@ -37,7 +38,8 @@ internal class TcpClientStep<I>(
     private val eventsConfiguration: TcpEventsConfiguration,
     private val metricsRecorder: MetricsRecorder,
     private val eventsRecorder: EventsRecorder
-) : AbstractClientStep<I, ByteArray>(id, retryPolicy, connectionConfiguration, metricsConfiguration.toMetricsConfiguration(),
+) : AbstractClientStep<I, ByteArray>(id, retryPolicy, connectionConfiguration,
+    metricsConfiguration.toMetricsConfiguration(),
     eventsConfiguration.toEventsConfiguration()) {
 
     /**
@@ -57,7 +59,7 @@ internal class TcpClientStep<I>(
     private val clientContexts = ConcurrentHashMap<MinionId, ClientContext<ByteArray, ByteArray>>()
 
     override fun Bootstrap.initBootstrap(inboundChannel: Channel<ByteArray>, resultChannel: Channel<Result<ByteArray>>,
-        connectionExecutionContext: AtomicReference<ClientExecutionContext>): Bootstrap {
+                                         connectionExecutionContext: AtomicReference<ClientExecutionContext>): Bootstrap {
         return channel(NioSocketChannel::class.java)
             .option(ChannelOption.TCP_NODELAY, connectionConfiguration.noDelay)
             .handler(TcpChannelInitializer(
@@ -74,6 +76,22 @@ internal class TcpClientStep<I>(
             ))
     }
 
+    override suspend fun execute(context: StepContext<I, Pair<I, ByteArray>>) {
+        log.trace("Executing with {}", context)
+        try {
+            if (clientContexts.containsKey(context.minionId)) {
+                // If a connection was already open in a previous iteration, reuse it.
+                clientContexts[context.minionId]!!.executeWithInitialConfiguration(context,
+                    connectionConfiguration.closeOnFailure, usagesCount.get() <= 1 && !connectionConfiguration.keepOpen,
+                    requestBlock)
+            } else {
+                super.execute(context)
+            }
+        } finally {
+            log.trace("Executed with {}", context)
+        }
+    }
+
     override suspend fun doExecute(
         channel: ChannelFuture,
         context: StepContext<I, Pair<I, ByteArray>>,
@@ -81,6 +99,8 @@ internal class TcpClientStep<I>(
         resultChannel: Channel<Result<ByteArray>>,
         connectionExecutionContext: AtomicReference<ClientExecutionContext>) {
 
+        log.trace("Creating a client context for channel ${channel.channel()
+            .localAddress()} with ${usagesCount.get()} planned usages")
         val clientContext =
             ClientContext(channel, inboundChannel, resultChannel, connectionExecutionContext,
                 usagesCount.get()) { clientContexts.remove(context.minionId) }
@@ -95,19 +115,40 @@ internal class TcpClientStep<I>(
     }
 
     suspend fun <I> execute(context: StepContext<I, Pair<I, ByteArray>>, closeOnFailure: Boolean,
-        closeAfterExecution: Boolean, metricsConfiguration: ExecutionMetricsConfiguration,
-        eventsConfiguration: ExecutionEventsConfiguration, requestBlock: suspend (input: I) -> ByteArray) {
+                            closeAfterExecution: Boolean, metricsConfiguration: ExecutionMetricsConfiguration,
+                            eventsConfiguration: ExecutionEventsConfiguration,
+                            requestBlock: suspend (input: I) -> ByteArray) {
         val clientContext = clientContexts[context.minionId] ?: throw RuntimeException("No open connection")
         clientContext.execute(context, closeOnFailure, closeAfterExecution, metricsConfiguration, eventsConfiguration,
             requestBlock)
     }
 
     /**
+     * Keep the connections open, waiting for a later step to close them manually.
+     */
+    fun keepOpen() {
+        connectionConfiguration.keepOpen = true
+    }
+
+    /**
+     * Close the connection if not yet done.
+     */
+    fun close(context: StepContext<*, *>) {
+        if (clientContexts.containsKey(context.minionId)) {
+            clientContexts[context.minionId]!!.close()
+        }
+    }
+
+    /**
      * Add a further step as a user of the same connection.
      */
-    fun addUsage(withMonitoring: Boolean) {
-        usagesCount.incrementAndGet()
+    fun addUsage(withMonitoring: Boolean, count: Int = 1) {
+        usagesCount.addAndGet(count)
         channelMonitoringForOtherStepsEnabled = channelMonitoringForOtherStepsEnabled || withMonitoring
     }
 
+    companion object {
+        @JvmStatic
+        private val log = logger()
+    }
 }

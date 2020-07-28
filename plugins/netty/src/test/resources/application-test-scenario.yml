@@ -1,0 +1,11 @@
+logging:
+  console: true
+  root: info
+  level:
+    io:
+      evolue:
+        plugins:
+          netty: info
+        core:
+          factory:
+            steps: info

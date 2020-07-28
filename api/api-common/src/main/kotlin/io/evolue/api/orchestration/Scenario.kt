@@ -42,15 +42,18 @@ class Scenario(
     private val steps = mutableMapOf<StepId, Channel<Step<*, *>>>()
 
     fun addStep(step: Step<*, *>) {
-        steps.computeIfAbsent(step.id) { Channel(Channel.CONFLATED) }.offer(step)
+        steps.computeIfAbsent(step.id) { Channel(1) }.offer(step)
     }
 
     /**
-     * The find step operation is suspended to wait until the
+     * The find step operation is suspended to wait until the step is created.
      */
     suspend fun findStep(stepId: StepId): Step<*, *>? {
         return withTimeoutOrNull(10000) {
-            steps.computeIfAbsent(stepId) { Channel(Channel.CONFLATED) }.receive()
+            val chan = steps.computeIfAbsent(stepId) { Channel(1) }
+            val step = chan.receive()
+            chan.offer(step)
+            step
         }
     }
 
