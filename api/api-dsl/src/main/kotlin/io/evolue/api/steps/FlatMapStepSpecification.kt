@@ -11,16 +11,30 @@ import kotlinx.coroutines.flow.flowOf
  * @author Eric Jessé
  */
 data class FlatMapStepSpecification<INPUT, OUTPUT>(
-    val block: (input: INPUT) -> Flow<OUTPUT>
+        val block: (input: INPUT) -> Flow<OUTPUT>
 ) : AbstractStepSpecification<INPUT, OUTPUT, FlatMapStepSpecification<INPUT, OUTPUT>>()
 
+/**
+ * Converts any input into a [Flow] of records provided one by one
+ * to the next step.
+ *
+ * @param block the rule to convert the input into a [Flow].
+ *
+ * @author Eric Jessé
+ */
 fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatMap(
-    block: (input: INPUT) -> Flow<OUTPUT>): FlatMapStepSpecification<INPUT, OUTPUT> {
+        block: (input: INPUT) -> Flow<OUTPUT>): FlatMapStepSpecification<INPUT, OUTPUT> {
     val step = FlatMapStepSpecification(block)
     this.add(step)
     return step
 }
 
+/**
+ * Converts any input of type [Collection], [Array], [Sequence], [Map] into a [Flow] of records provided one by one
+ * to the next step.
+ *
+ * @author Eric Jessé
+ */
 fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatten(): FlatMapStepSpecification<INPUT, OUTPUT> {
     return flatMap { input ->
         when (input) {
