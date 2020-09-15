@@ -108,7 +108,7 @@ internal class TcpClientStep<I>(
         clientContext.execute(context, connectionConfiguration.closeOnFailure, usagesCount.get() <= 1,
             connectionExecutionContext.get().metricsConfiguration, connectionExecutionContext.get().eventsConfiguration,
             requestBlock)
-        // Only store the contexts if it is still open.
+        // Store the contexts only if it is still open.
         if (clientContext.open) {
             clientContexts[context.minionId] = clientContext
         }

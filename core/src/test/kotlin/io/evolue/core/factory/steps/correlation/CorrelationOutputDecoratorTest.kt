@@ -2,19 +2,20 @@ package io.evolue.core.factory.steps.correlation
 
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepContext
+import io.evolue.api.messaging.Topic
 import io.evolue.api.steps.Step
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.steps.StepTestHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
@@ -23,6 +24,9 @@ internal class CorrelationOutputDecoratorTest {
 
     @RelaxedMockK
     lateinit var decoratedStep: Step<Any?, String>
+
+    @RelaxedMockK
+    lateinit var topic: Topic<CorrelationRecord<String>>
 
     @Test
     @Timeout(3)
@@ -39,9 +43,7 @@ internal class CorrelationOutputDecoratorTest {
         every { decoratedStep.retryPolicy } returns null
         every { decoratedStep.next } returns mutableListOf()
         val ctx = StepTestHelper.createStepContext<Any?, String>()
-        val step = spyk(CorrelationOutputDecorator(decoratedStep))
-
-        val subscription = step.subscribe()
+        val step = spyk(CorrelationOutputDecorator(decoratedStep, topic))
 
         // when
         runBlocking {
@@ -55,30 +57,12 @@ internal class CorrelationOutputDecoratorTest {
         coVerify {
             decoratedStep.execute(ctx)
         }
-        runBlocking {
-            assertEquals(
-                CorrelationRecord("my-minion", "my-step", "my-value-1"), subscription.receive())
-            assertEquals(
-                CorrelationRecord("my-minion", "my-step", "my-value-2"), subscription.receive())
-            assertEquals(
-                CorrelationRecord("my-minion", "my-step", "my-value-3"), subscription.receive())
+
+        coVerifyOrder {
+            topic.produceValue(CorrelationRecord("my-minion", "my-step", "my-value-1"))
+            topic.produceValue(CorrelationRecord("my-minion", "my-step", "my-value-2"))
+            topic.produceValue(CorrelationRecord("my-minion", "my-step", "my-value-3"))
         }
     }
 
-    @Test
-    internal fun shouldCloseAllChannels() {
-        // given
-        every { decoratedStep.id } answers { " " }
-        every { decoratedStep.next } returns mutableListOf()
-        val step = CorrelationOutputDecorator(decoratedStep)
-
-        // when
-        runBlocking {
-            step.destroy()
-        }
-
-        // then
-        coVerifyOnce { decoratedStep.destroy() }
-        Assertions.assertTrue(step.broadcastChannel.isClosedForSend)
-    }
 }

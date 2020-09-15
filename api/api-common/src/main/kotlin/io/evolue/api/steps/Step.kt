@@ -23,18 +23,29 @@ interface Step<I : Any?, O : Any?> {
     val next: MutableList<Step<O, *>>
 
     /**
+     * Operation to execute just after the creation of the step.
+     */
+    suspend fun init() = Unit
+
+    /**
+     * Operation to execute when a campaign starts.
+     */
+    @Throws(Exception::class)
+    suspend fun start() = Unit
+
+    /**
      * Execute the operation implies by the step.
      */
     @Throws(Exception::class)
     suspend fun execute(context: StepContext<I, O>)
 
     /**
-     * Operation to execute just after the creation of the step.
+     * Operation to execute when a campaign ends.
      */
-    suspend fun init()
+    suspend fun stop() = Unit
 
     /**
      * Operation to execute just before the destruction of the step.
      */
-    suspend fun destroy()
+    suspend fun destroy() = Unit
 }

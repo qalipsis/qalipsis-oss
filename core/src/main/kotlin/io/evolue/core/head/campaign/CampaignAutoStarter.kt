@@ -1,6 +1,6 @@
 package io.evolue.core.head.campaign
 
-import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.VisibleForTest
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.cross.configuration.ENV_AUTOSTART
@@ -10,9 +10,8 @@ import io.evolue.core.cross.driving.feedback.FeedbackConsumer
 import io.evolue.core.head.StartupHeadComponent
 import io.evolue.core.head.lifetime.ProcessBlocker
 import io.micronaut.context.annotation.Requires
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.inject.Singleton
@@ -27,9 +26,9 @@ import kotlin.system.exitProcess
 @Singleton
 @Requires(env = [ENV_AUTOSTART])
 internal class CampaignAutoStarter(
-    private val feedbackConsumer: FeedbackConsumer,
-    private val campaignManager: CampaignManager,
-    private val headScenarioRepository: HeadScenarioRepository
+        private val feedbackConsumer: FeedbackConsumer,
+        private val campaignManager: CampaignManager,
+        private val headScenarioRepository: HeadScenarioRepository
 ) : ProcessBlocker, StartupHeadComponent {
 
     private val latch = SuspendedCountLatch(1)
@@ -38,9 +37,9 @@ internal class CampaignAutoStarter(
 
     @PostConstruct
     fun init() {
-        consumptionJob = GlobalScope.launch {
+        runBlocking {
             log.debug("Consuming from $feedbackConsumer")
-            feedbackConsumer.onReceive { feedback ->
+            consumptionJob = feedbackConsumer.onReceive { feedback ->
                 log.debug("Received feedback $feedback")
                 when (feedback) {
                     is FactoryRegistrationFeedback -> {
@@ -48,7 +47,7 @@ internal class CampaignAutoStarter(
                             headScenarioRepository.saveAll(feedback.scenarios)
                             latch.reset()
                             campaignManager.start(
-                                scenarios = feedback.scenarios.map { it.id }) { message ->
+                                    scenarios = feedback.scenarios.map { it.id }) { message ->
                                 onCriticalFailure(message)
                             }
                         } else {
@@ -72,7 +71,7 @@ internal class CampaignAutoStarter(
     /**
      * Log the error and quit the program.
      */
-    @VisibleForTesting
+    @VisibleForTest
     internal fun onCriticalFailure(message: String) {
         log.error(message)
         System.err.println("An error occurred that requires the program to exit.")

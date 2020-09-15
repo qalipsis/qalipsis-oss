@@ -1,6 +1,7 @@
 package io.evolue.core.factory.orchestration
 
-import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.VisibleForTest
+import io.evolue.api.context.CampaignId
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
 import io.evolue.api.exceptions.InvalidSpecificationException
@@ -18,17 +19,22 @@ import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
+import io.evolue.core.annotations.LogInput
 import io.evolue.core.annotations.LogInputAndOutput
+import io.evolue.core.cross.driving.feedback.CampaignStartedForDagFeedback
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedback
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedbackDirectedAcyclicGraph
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedbackScenario
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
+import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.core.factory.StartupFactoryComponent
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 import javax.inject.Singleton
 
 /**
@@ -38,10 +44,10 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class ScenariosKeeperImpl(
-    private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
-    private val feedbackProducer: FeedbackProducer,
-    private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
-    stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
+        private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
+        private val feedbackProducer: FeedbackProducer,
+        private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
+        stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
 ) : ScenariosKeeper, StartupFactoryComponent {
 
     /**
@@ -76,18 +82,34 @@ internal class ScenariosKeeperImpl(
         publishScenarioCreationFeedback(scenarios.values)
     }
 
-    @VisibleForTesting
+    @PreDestroy
+    fun destroy() {
+        runBlocking {
+            dagsByScenario.values.flatMap { it.values }.flatMap { it.rootSteps }.forEach {
+                destroyStepRecursively(it)
+            }
+        }
+    }
+
+    private suspend fun destroyStepRecursively(step: Step<*, *>) {
+        step.destroy()
+        step.next.forEach {
+            destroyStepRecursively(it)
+        }
+    }
+
+    @VisibleForTest
     internal fun publishScenarioCreationFeedback(scenarios: Collection<Scenario>) {
         val feedbackScenarios = scenarios.map { scenario ->
             val feedbackDags = scenario.dags.map {
                 FactoryRegistrationFeedbackDirectedAcyclicGraph(
-                    it.id, it.singleton, it.scenarioStart, it.stepsCount
+                        it.id, it.singleton, it.scenarioStart, it.stepsCount
                 )
             }
             FactoryRegistrationFeedbackScenario(
-                scenario.id,
-                scenario.minionsCount,
-                feedbackDags
+                    scenario.id,
+                    scenario.minionsCount,
+                    feedbackDags
             )
         }
 
@@ -97,30 +119,30 @@ internal class ScenariosKeeperImpl(
         }
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     internal fun convertScenario(scenarioId: ScenarioId,
-        scenarioSpecification: ReadableScenarioSpecification): Scenario {
+                                 scenarioSpecification: ReadableScenarioSpecification): Scenario {
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
-            "The scenario ${scenarioId} requires a ramp-up strategy")
+                "The scenario ${scenarioId} requires a ramp-up strategy")
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario = Scenario(scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
-            minionsCount = scenarioSpecification.minionsCount)
+                minionsCount = scenarioSpecification.minionsCount)
 
         val dags = ConcurrentHashMap(mutableMapOf<String, DirectedAcyclicGraph>())
         runBlocking {
             @Suppress("UNCHECKED_CAST")
             convertSteps(scenarioSpecification, scenario, dags, null,
-                scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
+                    scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
         }
         return scenario
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     internal suspend fun convertSteps(scenarioSpecification: ReadableScenarioSpecification,
-        scenario: Scenario,
-        dags: MutableMap<String, DirectedAcyclicGraph>,
-        parentStep: Step<*, *>?,
-        stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
+                                      scenario: Scenario,
+                                      dags: MutableMap<String, DirectedAcyclicGraph>,
+                                      parentStep: Step<*, *>?,
+                                      stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
         if (stepsSpecifications.size == 1) {
             runBlocking {
                 convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepsSpecifications[0])
@@ -137,16 +159,16 @@ internal class ScenariosKeeperImpl(
     }
 
     private suspend fun convertStepRecursively(
-        scenarioSpecification: ReadableScenarioSpecification,
-        scenario: Scenario,
-        dags: MutableMap<String, DirectedAcyclicGraph>,
-        parentStep: Step<*, *>?,
-        stepSpecification: StepSpecification<Any?, Any?, *>) {
+            scenarioSpecification: ReadableScenarioSpecification,
+            scenario: Scenario,
+            dags: MutableMap<String, DirectedAcyclicGraph>,
+            parentStep: Step<*, *>?,
+            stepSpecification: StepSpecification<Any?, Any?, *>) {
 
         // Get or create the DAG to attach the step.
         val dag = dags.computeIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->
             DirectedAcyclicGraph(dagId, scenario, scenarioStart = false,
-                singleton = stepSpecification is SingletonStepSpecification)
+                    singleton = stepSpecification is SingletonStepSpecification)
         }
 
         val context =
@@ -155,15 +177,16 @@ internal class ScenariosKeeperImpl(
         decorateStep(context)
 
         context.createdStep?.let { step ->
+            step.init()
             dag.addStep(step)
             parentStep?.let { ps -> (ps as Step<*, Any?>).next.add(step as Step<Any?, *>) }
 
             convertSteps(scenarioSpecification, scenario, dags, step,
-                stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
+                    stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
         }
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     internal suspend fun convertSingleStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         stepSpecificationConverters
             .firstOrNull { it.support(context.stepSpecification) }
@@ -172,7 +195,7 @@ internal class ScenariosKeeperImpl(
             }
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     internal suspend fun decorateStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         context.createdStep?.let {
             stepSpecificationDecoratorConverters
@@ -180,7 +203,6 @@ internal class ScenariosKeeperImpl(
                 .forEach { converter -> converter.decorate(context) }
         }
     }
-
 
     @LogInputAndOutput
     override fun hasScenario(scenarioId: ScenarioId): Boolean = scenarios.containsKey(scenarioId)
@@ -196,6 +218,56 @@ internal class ScenariosKeeperImpl(
     override fun getDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph? =
         dagsByScenario[scenarioId]?.get(dagId)
 
+    @LogInput(level = Level.DEBUG)
+    override fun startScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
+        runBlocking {
+            dagsByScenario[scenarioId]!!.values.forEach { dag ->
+                val feedback = CampaignStartedForDagFeedback(
+                        scenarioId = scenarioId,
+                        dagId = dag.id,
+                        campaignId = campaignId,
+                        status = FeedbackStatus.IN_PROGRESS
+                )
+                log.trace("Sending feedback: $feedback")
+                feedbackProducer.publish(feedback)
+
+                dag.rootSteps.forEach {
+                    startStepRecursively(it)
+                }
+                val completionFeedback = CampaignStartedForDagFeedback(
+                        scenarioId = scenarioId,
+                        dagId = dag.id,
+                        campaignId = campaignId,
+                        status = FeedbackStatus.COMPLETED
+                )
+                log.trace("Sending feedback: $completionFeedback")
+                feedbackProducer.publish(completionFeedback)
+            }
+        }
+    }
+
+    private suspend fun startStepRecursively(step: Step<*, *>) {
+        step.start()
+        step.next.forEach {
+            startStepRecursively(it)
+        }
+    }
+
+    @LogInput(level = Level.DEBUG)
+    override fun stopScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
+        runBlocking {
+            dagsByScenario[scenarioId]!!.values.flatMap { it.rootSteps }.forEach {
+                stopStepRecursively(it)
+            }
+        }
+    }
+
+    private suspend fun stopStepRecursively(step: Step<*, *>) {
+        step.stop()
+        step.next.forEach {
+            stopStepRecursively(it)
+        }
+    }
 
     companion object {
 

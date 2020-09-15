@@ -1,6 +1,6 @@
 package io.evolue.core.head.campaign
 
-import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.VisibleForTest
 import io.evolue.api.context.CampaignId
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
@@ -8,12 +8,14 @@ import io.evolue.api.lang.concurrentSet
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.core.annotations.LogInput
 import io.evolue.core.annotations.LogInputAndOutput
+import io.evolue.core.cross.driving.directives.CampaignStartDirective
 import io.evolue.core.cross.driving.directives.Directive
 import io.evolue.core.cross.driving.directives.DirectiveKey
 import io.evolue.core.cross.driving.directives.DirectiveProducer
 import io.evolue.core.cross.driving.directives.MinionsCreationDirectiveReference
 import io.evolue.core.cross.driving.directives.MinionsCreationPreparationDirective
 import io.evolue.core.cross.driving.directives.MinionsRampUpPreparationDirective
+import io.evolue.core.cross.driving.feedback.CampaignStartedForDagFeedback
 import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.Feedback
 import io.evolue.core.cross.driving.feedback.FeedbackConsumer
@@ -32,9 +34,9 @@ import javax.validation.constraints.PositiveOrZero
 import kotlin.reflect.KClass
 
 /**
- * Component to manage a new Campaign.
+ * Component to manage a new Campaign for all the known scenarios.
  *
- * The component inherits from [DirectiveProcessor] because when a directive is delegated to factories,the head has to be aware of them.
+ * The component inherits from [DirectiveProcessor] to be aware of the directive delegated to the factories, the head has to be aware of them.
  *
  * @author Eric Jessé
  *
@@ -48,13 +50,13 @@ import kotlin.reflect.KClass
  */
 @Singleton
 internal class DefaultCampaignManager(
-    @PositiveOrZero @Value("\${campaign.minions-count-per-scenario}") private val minionsCountPerScenario: Int = 0,
-    @Positive @Value("\${campaign.minions-factor}") private val minionsCountFactor: Double = 1.0,
-    @Positive @Value("\${campaign.speed-factor}") private val speedFactor: Double = 1.0,
-    @Positive @Value("\${campaign.start-offset-ms}") private val startOffsetMs: Long = 1000,
-    private val feedbackConsumer: FeedbackConsumer,
-    private val scenarioRepository: HeadScenarioRepository,
-    private val directiveProducer: DirectiveProducer
+        @PositiveOrZero @Value("\${campaign.minions-count-per-scenario}") private val minionsCountPerScenario: Int = 0,
+        @Positive @Value("\${campaign.minions-factor}") private val minionsCountFactor: Double = 1.0,
+        @Positive @Value("\${campaign.speed-factor}") private val speedFactor: Double = 1.0,
+        @Positive @Value("\${campaign.start-offset-ms}") private val startOffsetMs: Long = 1000,
+        private val feedbackConsumer: FeedbackConsumer,
+        private val scenarioRepository: HeadScenarioRepository,
+        private val directiveProducer: DirectiveProducer
 ) : CampaignManager, DirectiveProcessor<Directive> {
 
     /**
@@ -68,14 +70,24 @@ internal class DefaultCampaignManager(
     private val directivesInProgress = ConcurrentHashMap<DirectiveKey, DirectiveInProgress<*>>()
 
     /**
-     * Dags for which the minions were all successfully created.
+     * Dags that are ready to be started.
      */
     private val readyDagsByScenario = ConcurrentHashMap<ScenarioId, MutableCollection<DirectedAcyclicGraphId>>()
 
     /**
+     * Dags for which the campaign was successfully started.
+     */
+    private val startedDagsByScenario = ConcurrentHashMap<ScenarioId, MutableCollection<DirectedAcyclicGraphId>>()
+
+    /**
      * Scenarios that are ready to start.
      */
-    private val readyScenario = concurrentSet<ScenarioId>()
+    private val readyScenarios = concurrentSet<ScenarioId>()
+
+    /**
+     * Scenarios that are started.
+     */
+    private val startedScenarios = concurrentSet<ScenarioId>()
 
     /**
      * Action to execute when a critical problem occurs during the campaign.
@@ -104,12 +116,14 @@ internal class DefaultCampaignManager(
      */
     @LogInput
     override suspend fun start(id: CampaignId, scenarios: List<ScenarioId>, onCriticalFailure: (String) -> Unit) {
-        this.directivesInProgress.clear()
+        directivesInProgress.clear()
         this.scenarios.clear()
-        this.readyDagsByScenario.clear()
-        this.readyScenario.clear()
-        this.onCriticalFailure = onCriticalFailure
+        readyDagsByScenario.clear()
+        readyScenarios.clear()
+        startedDagsByScenario.clear()
+        startedScenarios.clear()
 
+        this.onCriticalFailure = onCriticalFailure
         scenarioRepository.getAll(scenarios).forEach { scenario ->
             this.scenarios[scenario.id] = scenario
             triggerMinionsCreation(id, scenario)
@@ -121,10 +135,11 @@ internal class DefaultCampaignManager(
      */
     private suspend fun triggerMinionsCreation(id: CampaignId, scenario: HeadScenario) {
         log.debug(
-            "Campaign ${id}, scenario ${scenario.id} - creating the directive to create the IDs for all the minions")
+                "Campaign ${id}, scenario ${scenario.id} - creating the directive to create the IDs for all the minions")
         val count =
             if (minionsCountPerScenario > 0) minionsCountPerScenario else (scenario.minionsCount * minionsCountFactor).toInt()
 
+        readyDagsByScenario[scenario.id] = concurrentSet()
         val directive = MinionsCreationPreparationDirective(id, scenario.id, count)
         directivesInProgress[directive.key] = DirectiveInProgress(directive)
         directiveProducer.publish(directive)
@@ -150,19 +165,22 @@ internal class DefaultCampaignManager(
         return Int.MIN_VALUE
     }
 
-    private suspend fun processFeedBack(feedback: Feedback) {
+    @VisibleForTest
+    @LogInput
+    internal suspend fun processFeedBack(feedback: Feedback) {
         when (feedback) {
             is DirectiveFeedback -> {
                 log.debug("Processing a directive feedback: ${feedback}")
                 processDirectiveFeedback(feedback)
             }
+            is CampaignStartedForDagFeedback -> receiveCampaignStartedFeedback(feedback)
         }
     }
 
     /**
      * Broadcast the received directive feedback to the relevant method.
      */
-    @VisibleForTesting
+    @VisibleForTest
     internal suspend fun processDirectiveFeedback(feedback: DirectiveFeedback) {
         if (directivesInProgress.containsKey(feedback.directiveKey)) {
             val directiveInProgress = directivesInProgress[feedback.directiveKey]!!
@@ -172,8 +190,8 @@ internal class DefaultCampaignManager(
                 directiveInProgress.isA(MinionsCreationDirectiveReference::class)
                 -> receiveMinionsCreationDirectiveFeedback(feedback, directiveInProgress.get())
             }
-            // Remove the directive is done, whether failed or successful.
-            if (feedback.status.isDone) {
+            // Remove the failed directive to avoid further processing.
+            if (feedback.status == FeedbackStatus.FAILED) {
                 directivesInProgress.remove(feedback.directiveKey)
             }
         }
@@ -182,14 +200,14 @@ internal class DefaultCampaignManager(
     /**
      * Log the feedback from a [MinionsCreationPreparationDirective] or trigger the critical failure action when the feedback is in failure.
      */
-    @VisibleForTesting
+    @VisibleForTest
     internal fun receivedMinionsCreationPreparationFeedback(feedback: DirectiveFeedback,
                                                             directive: MinionsCreationPreparationDirective) {
         when (feedback.status) {
             FeedbackStatus.IN_PROGRESS -> log.debug(
-                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions are being created")
+                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions are being created")
             FeedbackStatus.FAILED -> onCriticalFailure(
-                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions could not be created: ${feedback.error}")
+                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions could not be created: ${feedback.error}")
             FeedbackStatus.COMPLETED -> {
                 log.debug("Scenario ${directive.scenarioId} - IDs for all the minions were created")
             }
@@ -199,24 +217,30 @@ internal class DefaultCampaignManager(
     /**
      * Process the feedback from a [MinionsCreationDirectiveReference].
      */
-    @VisibleForTesting
+    @VisibleForTest
     internal suspend fun receiveMinionsCreationDirectiveFeedback(feedback: DirectiveFeedback,
                                                                  directive: MinionsCreationDirectiveReference) {
         when (feedback.status) {
             FeedbackStatus.IN_PROGRESS -> log.debug(
-                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions are being created")
-            FeedbackStatus.FAILED -> onCriticalFailure(
-                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions could not be created: ${feedback.error}")
+                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions are being created")
+            FeedbackStatus.FAILED -> {
+                // Prevents the completed feedbacks to be processed.
+                readyDagsByScenario.clear()
+                readyScenarios.clear()
+                // TODO Cancel the campaign.
+                onCriticalFailure(
+                        "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions could not be created: ${feedback.error}")
+            }
             FeedbackStatus.COMPLETED -> {
-                log.debug(
-                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions were created")
-
-                with(readyDagsByScenario.computeIfAbsent(directive.scenarioId) { concurrentSet() }) {
+                readyDagsByScenario[directive.scenarioId]?.apply {
+                    log.debug(
+                            "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions were created")
                     add(directive.dagId)
                     // When all the DAGs of the scenario are ready, the scenario is marked ready.
                     if (scenarios.containsKey(directive.scenarioId)
                         && size == scenarios[directive.scenarioId]!!.directedAcyclicGraphs.size
                     ) {
+                        readyDagsByScenario.remove(directive.scenarioId)
                         onScenarioReady(directive.campaignId, directive.scenarioId)
                     }
                 }
@@ -229,8 +253,8 @@ internal class DefaultCampaignManager(
      */
     private suspend fun onScenarioReady(campaignId: CampaignId, scenarioId: ScenarioId) {
         log.debug("Campaign ${campaignId}, scenario ${scenarioId} - All minions were created")
-        readyScenario.add(scenarioId)
-        if (readyScenario.size == scenarios.keys.size) {
+        readyScenarios.add(scenarioId)
+        if (readyScenarios.size == scenarios.keys.size) {
             onAllScenariosReady(campaignId)
         }
     }
@@ -239,12 +263,75 @@ internal class DefaultCampaignManager(
      * Trigger the ramp-up when all the minions for all the scenarios are ready.
      */
     private suspend fun onAllScenariosReady(campaignId: CampaignId) {
-        log.info("All minions for all the scenarios were created, now preparing the ramp-up")
-        scenarios.keys.forEach { scenarioId ->
+        log.info("All minions for all the scenarios were created, now starting the campaign")
+        readyDagsByScenario.clear()
+        directivesInProgress.clear()
+        startedDagsByScenario.clear()
+        startedScenarios.clear()
+
+        readyScenarios.forEach { scenarioId ->
+            startedDagsByScenario[scenarioId] = concurrentSet()
+            val directive = CampaignStartDirective(campaignId, scenarioId)
+            directivesInProgress[directive.key] = DirectiveInProgress(directive)
+            directiveProducer.publish(directive)
+        }
+        readyScenarios.clear()
+    }
+
+    private suspend fun receiveCampaignStartedFeedback(feedback: CampaignStartedForDagFeedback) {
+        when (feedback.status) {
+            FeedbackStatus.IN_PROGRESS -> log.debug(
+                    "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign is being started")
+            FeedbackStatus.FAILED -> {
+                // Prevents the completed feedbacks to be processed.
+                startedDagsByScenario.clear()
+                readyScenarios.clear()
+                // TODO Cancel the campaign.
+                onCriticalFailure(
+                        "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign could not be started: ${feedback.error}")
+            }
+            FeedbackStatus.COMPLETED -> {
+                startedDagsByScenario[feedback.scenarioId]?.apply {
+                    log.debug(
+                            "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign is started")
+                    add(feedback.dagId)
+                    // When all the DAGs of the scenario are ready, the scenario is marked ready.
+                    if (scenarios.containsKey(feedback.scenarioId)
+                        && size == scenarios[feedback.scenarioId]!!.directedAcyclicGraphs.size
+                    ) {
+                        startedDagsByScenario.remove(feedback.scenarioId)
+                        onScenarioStarted(feedback.campaignId, feedback.scenarioId)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Mark the scenario ready and triggers [onAllScenariosReady] if all the others are ready.
+     */
+    private suspend fun onScenarioStarted(campaignId: CampaignId, scenarioId: ScenarioId) {
+        log.debug("Campaign ${campaignId}, scenario ${scenarioId} - All minions were created")
+        startedScenarios.add(scenarioId)
+        if (startedScenarios.size == scenarios.keys.size) {
+            onAllScenariosStarted(campaignId)
+        }
+    }
+
+    /**
+     * Trigger the ramp-up when all the minions for all the scenarios are ready.
+     */
+    private suspend fun onAllScenariosStarted(campaignId: CampaignId) {
+        log.info("All minions for all the scenarios were created, now starting the campaign")
+        startedDagsByScenario.clear()
+        directivesInProgress.clear()
+
+        startedScenarios.forEach { scenarioId ->
             val directive = MinionsRampUpPreparationDirective(campaignId, scenarioId, startOffsetMs, speedFactor)
             directivesInProgress[directive.key] = DirectiveInProgress(directive)
             directiveProducer.publish(directive)
         }
+        startedScenarios.clear()
     }
 
     companion object {
@@ -253,7 +340,7 @@ internal class DefaultCampaignManager(
     }
 
     data class DirectiveInProgress<T : Directive>(
-        val directive: T
+            val directive: T
     ) {
 
         fun isA(directiveClass: KClass<out Directive>) = directiveClass.isInstance(directive)

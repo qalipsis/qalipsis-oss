@@ -1,10 +1,10 @@
 package io.evolue.core.cross.driving.feedback
 
 import cool.graph.cuid.Cuid
-import io.evolue.api.messaging.TopicMode
-import io.evolue.api.messaging.topic
+import io.evolue.api.messaging.broadcastTopic
 import io.evolue.core.cross.configuration.ENV_STANDALONE
 import io.micronaut.context.annotation.Requires
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import javax.inject.Singleton
 
@@ -18,13 +18,13 @@ import javax.inject.Singleton
 @Requires(env = [ENV_STANDALONE])
 internal class InMemoryFeedbackProducerAndConsumer : FeedbackProducer, FeedbackConsumer {
 
-    private val topic = topic(TopicMode.BROADCAST, fromBeginning = true)
+    private val topic = broadcastTopic<Feedback>()
 
     override suspend fun publish(feedback: Feedback) {
-        topic.produce(feedback)
+        topic.produceValue(feedback)
     }
 
-    override suspend fun onReceive(block: suspend (Feedback) -> Unit) {
+    override suspend fun onReceive(block: suspend (Feedback) -> Unit): Job {
         return topic.subscribe(Cuid.createCuid()).onReceiveValue(block)
     }
 

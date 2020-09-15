@@ -22,7 +22,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldAwaitUntilZeroAndExecuteOnDoneAction() {
+    internal fun `should await until zero and execute onDone action`() {
         // given
         val doneFlag = AtomicBoolean(false)
         val rendezVousFlag = Channel<Unit>(Channel.RENDEZVOUS)
@@ -56,7 +56,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldResetThenAwaitUntilZeroAndExecuteOnDoneAction() {
+    internal fun `should reset then await until zero and execute onDone action`() {
         // given
         val doneFlag = AtomicInteger()
         val rendezVousFlag = Channel<Unit>(Channel.RENDEZVOUS)
@@ -90,7 +90,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldNotSuspendWhenInitialValueIsZeroButNotExecuteOnDoneAction() {
+    internal fun `should not suspend when initial value is zero but not execute onDone Action`() {
         // given
         val doneFlag = AtomicBoolean(false)
         val countLatch = SuspendedCountLatch(0) { doneFlag.set(true) }
@@ -107,7 +107,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldReleaseButNotExecuteOnDoneAction() {
+    internal fun `should release but not execute onDone action`() {
         // given
         val doneFlag = AtomicBoolean(false)
         val countLatch = SuspendedCountLatch(20) { doneFlag.set(true) }
@@ -129,7 +129,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldThrowExceptionWhenDecrementingToNegative() {
+    internal fun `should throw exception when decrementing to negative`() {
         // given
         val countLatch = SuspendedCountLatch(0)
 
@@ -143,7 +143,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldThrowExceptionWhenInitialValueIsNegative() {
+    internal fun `should throw exception when initial value is negative`() {
         assertThrows<IllegalArgumentException> {
             SuspendedCountLatch(-1)
         }

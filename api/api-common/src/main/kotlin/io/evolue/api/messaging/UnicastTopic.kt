@@ -9,35 +9,23 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class UnicastTopic(
-    /**
-     * Size of the buffer to keep the received records.
-     */
-    bufferSize: Int,
+internal class UnicastTopic<T>(
+        /**
+         * Size of the buffer to keep the received records.
+         */
+        bufferSize: Int,
 
-    /**
-     * Idle time of a subscription. Once a subscription passed this duration without record, it is cancelled.
-     */
-    idleTimeout: Duration,
+        /**
+         * Idle time of a subscription. Once a subscription passed this duration without record, it is cancelled.
+         */
+        idleTimeout: Duration
 
-    /**
-     * Defines if the first subscriber will receive all the records from the beginning or only from now on.
-     * When set to {@code false}, records before the first subscription are simply discarded.
-     */
-    private val fromBeginning: Boolean
+) : AbstractChannelBasedTopic<T>(idleTimeout) {
 
-) : ChannelBasedTopic(idleTimeout) {
-
-    override val channel = Channel<Topic.Record>(bufferSize)
-
-    override suspend fun produce(record: Topic.Record) {
-        if (fromBeginning || subscriptions.isNotEmpty()) {
-            super.produce(record)
-        }
-    }
+    override val channel = Channel<Record<T>>(bufferSize)
 
     override fun buildSubscriptionChannel() = channel
 
-    override fun onSubscriptionCancel(subscriptionChannel: ReceiveChannel<Topic.Record>) = {}
+    override fun onSubscriptionCancel(subscriptionChannel: ReceiveChannel<Record<T>>) = {}
 
 }

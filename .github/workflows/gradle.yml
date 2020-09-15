@@ -27,21 +27,29 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - name: Cache Gradle packages
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-evolue-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-evolue-gradle-
 
       - name: Cache Gradle wrapper
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.gradle/wrapper
           key: ${{ runner.os }}-evolue-gradle-wrapper-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-evolue-gradle-wrapper-
 
-      - name: Unit tests
-        run: ./gradlew --no-daemon --parallel --continue --info clean test
+      - name: Tests
+        run: ./gradlew clean test integrationTest  --continue
 
-      - name: Integration tests
-        run: ./gradlew --no-daemon --parallel --continue --info integrationTest
+      - name: Report
+        if: always()
+        run: ./gradlew testReport --continue
+
+      - name: Upload Tests report
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: JUnit Report
+          path: ./build/reports/tests/

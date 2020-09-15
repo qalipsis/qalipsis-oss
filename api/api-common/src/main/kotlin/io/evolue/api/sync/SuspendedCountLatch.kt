@@ -13,16 +13,18 @@ import java.util.concurrent.atomic.AtomicLong
  * A synchronization aid that allows one or more coroutines to wait until
  * a set of operations being performed in other coroutines completes.
  *
- * <p>A [SuspendedCountLatch] is initialized with a given <em>count</em>.
+ *
+ * A [SuspendedCountLatch] is initialized with a given _count_.
  * The [await] methods block until the current count reaches
  * zero due to invocations of the [decrement] method, after which
  * all waiting coroutines are released and any subsequent invocations of
  * [await] return immediately. The count can be reset.
  *
- * <p>A {@code SuspendedBarrier} supports an optional lambda command
+ *
+ * [onReleaseAction] supports an optional lambda command
  * that is run once per barrier point, after the last coroutine in the party
  * arrives, but before any coroutines are released.
- * This <em>barrier action</em> is useful
+ * This _barrier action_ is useful
  * for updating shared-state before any of the parties continue.
  *
  * @author Eric Jessé

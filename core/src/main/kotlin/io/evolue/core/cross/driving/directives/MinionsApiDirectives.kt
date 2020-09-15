@@ -94,11 +94,15 @@ internal class MinionsStartDirectiveReference(
 ) : ListDirectiveReference<MinionStartDefinition>(key)
 
 /**
- * Directive to start the singleton minions for a given scenario.
+ * Directive to start a new campaign for a given scenario.
  */
-internal class MinionsStartSingletonsDirective(
-    /**
-     * The ID of the scenario for which the singleton minions has to be started.
-     */
-    val scenarioId: ScenarioId
+internal class CampaignStartDirective(
+        /**
+         * The ID of the campaign to start.
+         */
+        val campaignId: CampaignId,
+        /**
+         * The ID of the scenario for which the campaign has to be started.
+         */
+        val scenarioId: ScenarioId,
 ) : DescriptiveDirective()

@@ -96,11 +96,11 @@ internal class CorrelationStepSpecificationConverterTest :
             assertThat(it).all {
                 isInstanceOf(CorrelationStep::class)
                 prop("correlationKeyExtractor").isSameAs(primaryKeyExtractor)
-                typedProp<Collection<SecondaryCorrelation>>("secondaryCorrelations").all {
+                typedProp<Collection<SecondaryCorrelation<*>>>("secondaryCorrelations").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
                         prop("sourceStepId").isEqualTo("the-other-step")
-                        prop("subscriptionChannel").isNotNull()
+                        prop("topic").isNotNull()
                         prop("keyExtractor").isSameAs(secondaryKeyExtractor)
                     }
                 }

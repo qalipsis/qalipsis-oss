@@ -1,5 +1,7 @@
 package io.evolue.core.cross.driving.feedback
 
+import kotlinx.coroutines.Job
+
 /**
  * Service for the head to consume the feedbacks from factories.
  *
@@ -7,6 +9,6 @@ package io.evolue.core.cross.driving.feedback
  */
 internal interface FeedbackConsumer {
 
-    suspend fun onReceive(block: suspend (Feedback) -> Unit)
+    suspend fun onReceive(block: suspend (Feedback) -> Unit): Job
 
 }

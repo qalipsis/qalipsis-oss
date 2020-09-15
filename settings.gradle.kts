@@ -1,22 +1,23 @@
 rootProject.name = "evolue"
 
 include(
-    "api",
-    "api:api-common",
-    "api:api-dsl",
-    "api:api-processors",
-    "api:api-processors-test",
-    "test",
+        "api",
+        "api:api-common",
+        "api:api-dsl",
+        "api:api-processors",
+        "api:api-processors-test",
+        "test",
 
-    "core",
-    "runtime",
+        "core",
+        "runtime",
 
-    "developer-documentation",
+        "developer-documentation",
 
-    "samples",
-    "samples:simple",
+        "samples",
+        "samples:simple",
 
-    "plugins",
-    "plugins:netty"
+        "plugins",
+        "plugins:netty",
+        "plugins:jackson"
 )
 

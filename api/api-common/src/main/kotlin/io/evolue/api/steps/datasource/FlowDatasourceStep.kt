@@ -1,8 +1,9 @@
-package io.evolue.api.steps
+package io.evolue.api.steps.datasource
 
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
 import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.steps.AbstractStep
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 
@@ -12,10 +13,10 @@ import kotlinx.coroutines.flow.collect
  *
  * @author Eric Jessé
  */
-abstract class DatasourceStep<O>(
-    id: StepId,
-    retryPolicy: RetryPolicy?,
-    private val dataSupplier: suspend () -> Flow<O>
+abstract class FlowDatasourceStep<O>(
+        id: StepId,
+        retryPolicy: RetryPolicy?,
+        private val dataSupplier: suspend () -> Flow<O>
 ) : AbstractStep<Unit, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<Unit, O>) {

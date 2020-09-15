@@ -5,6 +5,6 @@ package io.evolue.api.context
  *
  * @author Eric Jessé
  */
-class StepError(
-    val cause: Throwable
+data class StepError(
+        val cause: Throwable
 )

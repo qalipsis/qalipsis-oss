@@ -9,23 +9,33 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
 import io.evolue.api.messaging.Topic
 import io.evolue.api.steps.AbstractStepSpecification
+import io.evolue.api.steps.SingletonConfiguration
 import io.evolue.api.steps.SingletonStepSpecification
 import io.evolue.api.steps.SingletonType
 import io.evolue.api.steps.Step
 import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.api.steps.StepSpecification
+import io.evolue.core.factory.steps.decorators.OutputTopicStepDecorator
+import io.evolue.core.factory.steps.decorators.TopicBuilder
+import io.evolue.core.factory.steps.decorators.TopicConfiguration
+import io.evolue.core.factory.steps.decorators.TopicType
 import io.evolue.test.assertk.prop
 import io.evolue.test.assertk.typedProp
 import io.evolue.test.mockk.relaxedMockk
+import io.evolue.test.mockk.verifyOnce
 import io.evolue.test.steps.AbstractStepSpecificationConverterTest
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import kotlinx.coroutines.channels.ReceiveChannel
+import io.mockk.mockkObject
+import io.mockk.slot
+import io.mockk.unmockkObject
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -41,6 +51,19 @@ internal class SingletonStepSpecificationConverterTest :
     @RelaxedMockK
     lateinit var stepSpecification: StepSpecification<Int, String, *>
 
+    @RelaxedMockK
+    lateinit var buildTopic: Topic<String>
+
+    @BeforeAll
+    internal fun setUpAll() {
+        mockkObject(TopicBuilder)
+    }
+
+    @AfterAll
+    internal fun tearDownAll() {
+        unmockkObject(TopicBuilder)
+    }
+
     @Test
     internal fun `should have order 100`() {
         // then + when
@@ -49,16 +72,18 @@ internal class SingletonStepSpecificationConverterTest :
 
     @Test
     internal fun `should decorate step singleton specifications`() {
+        mockkObject(TopicBuilder)
+        val topicConfiguration = slot<TopicConfiguration>()
+        every { TopicBuilder.build<String>(capture(topicConfiguration)) } returns buildTopic
+
         val nextSpec1: StepSpecification<String, *, *> = relaxedMockk()
         val nextSpec2: StepSpecification<String, *, *> = relaxedMockk()
-        val singletonSpec = TestSingletonSpecification(
-            SingletonType.BROADCAST,
-            123,
-            Duration.ofMillis(456),
-            true
-        )
+        val singletonSpec = TestSingletonSpecification()
         singletonSpec.nextSteps.add(nextSpec1)
         singletonSpec.nextSteps.add(nextSpec2)
+        singletonSpec.singletonConfiguration.type = SingletonType.LOOP
+        singletonSpec.singletonConfiguration.bufferSize = 6543
+        singletonSpec.singletonConfiguration.idleTimeout = Duration.ofSeconds(1265)
 
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, singletonSpec)
         creationContext.createdStep(decoratedStep)
@@ -70,18 +95,14 @@ internal class SingletonStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(SingletonOutputDecorator::class)
+            isInstanceOf(OutputTopicStepDecorator::class)
             prop("decorated").isSameAs(decoratedStep)
         }
 
-        assertThat(singletonSpec.nextSteps).each {
-            it.all {
+        assertThat(singletonSpec.nextSteps).each { spec ->
+            spec.all {
                 isInstanceOf(SingletonProxyStepSpecification::class)
-                prop("singletonOutputDecorator").isSameAs(creationContext.createdStep)
-                prop("singletonType").isEqualTo(SingletonType.BROADCAST)
-                prop("bufferSize").isEqualTo(123)
-                prop("idleTimeout").isEqualTo(Duration.ofMillis(456))
-                prop("fromBeginning").isEqualTo(true)
+                prop("topic").isSameAs(buildTopic)
                 transform { it.nextSteps }.hasSize(1)
             }
         }
@@ -94,6 +115,12 @@ internal class SingletonStepSpecificationConverterTest :
             prop("next").isSameAs(nextSpec2)
             transform { it.nextSteps[0] }.isSameAs(nextSpec2)
         }
+        assertThat(topicConfiguration.captured).all {
+            prop("type").isEqualTo(TopicType.LOOP)
+            prop("bufferSize").isEqualTo(6543)
+            prop("idleTimeout").isEqualTo(Duration.ofSeconds(1265))
+        }
+        verifyOnce { TopicBuilder.build<String>(refEq(topicConfiguration.captured)) }
     }
 
 
@@ -111,14 +138,6 @@ internal class SingletonStepSpecificationConverterTest :
         assertThat(creationContext.createdStep!!).isSameAs(decoratedStep)
     }
 
-    inner class TestSingletonSpecification(
-        override val singletonType: SingletonType,
-        override val bufferSize: Int,
-        override val idleTimeout: Duration,
-        override val fromBeginning: Boolean
-    ) : AbstractStepSpecification<Int, Int, TestSingletonSpecification>(),
-        SingletonStepSpecification<Int, Int, TestSingletonSpecification>
-
 
     @Test
     override fun `should support expected spec`() {
@@ -135,21 +154,13 @@ internal class SingletonStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec without name`() {
         // given
-        val receiveChannel: ReceiveChannel<String> = relaxedMockk()
-        val singletonOutputStep: SingletonOutputDecorator<Int, String> = relaxedMockk {
-            every { subscribe() } returns receiveChannel
-        }
+        every { TopicBuilder.build<String>(any()) } returns buildTopic
         val nextStep: StepSpecification<String, *, *> = relaxedMockk()
         val spec = SingletonProxyStepSpecification(
-            nextStep,
-            singletonOutputStep,
-            SingletonType.BROADCAST,
-            123,
-            Duration.ofMillis(456),
-            true
+                nextStep,
+                buildTopic
         )
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
-
 
         // when
         runBlocking {
@@ -157,18 +168,18 @@ internal class SingletonStepSpecificationConverterTest :
         }
 
         // then
-        creationContext.createdStep!!.let {
-            assertNotNull(it.id)
-            assertThat(it).all {
+        creationContext.createdStep!!.let { step ->
+            assertNotNull(step.id)
+            assertThat(step).all {
                 isInstanceOf(SingletonProxyStep::class)
-                prop("subscriptionChannel").isSameAs(receiveChannel)
-                typedProp<Topic>("topic").all {
-                    transform { topic -> topic::class.simpleName }.isEqualTo("BroadcastFromBeginningTopic")
-                    typedProp<Collection<*>>("buffer").prop("maxSize").isEqualTo(123)
-                    prop("idleTimeout").isEqualTo(Duration.ofMillis(456))
-                }
+                typedProp<Topic<String>>("topic").isSameAs(buildTopic)
             }
         }
     }
+
+    inner class TestSingletonSpecification(
+            override val singletonConfiguration: SingletonConfiguration = SingletonConfiguration(SingletonType.UNICAST)
+    ) : AbstractStepSpecification<Int, Int, TestSingletonSpecification>(),
+        SingletonStepSpecification<Int, Int, TestSingletonSpecification>
 
 }

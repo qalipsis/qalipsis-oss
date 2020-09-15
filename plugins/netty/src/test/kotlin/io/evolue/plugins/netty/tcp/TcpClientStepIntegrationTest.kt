@@ -3,6 +3,7 @@ package io.evolue.plugins.netty.tcp
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isNotEmpty
+import io.evolue.api.sync.Latch
 import io.evolue.plugins.netty.ServerUtils
 import io.evolue.plugins.netty.configuration.ExecutionEventsConfiguration
 import io.evolue.plugins.netty.configuration.ExecutionMetricsConfiguration
@@ -20,6 +21,7 @@ import io.evolue.test.steps.StepTestHelper
 import io.evolue.test.utils.getProperty
 import io.evolue.test.utils.setProperty
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verifyOrder
 import kotlinx.coroutines.channels.Channel
@@ -69,13 +71,13 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should fail when connecting to an invalid port and connection timeout is reached`() {
             val step = TcpClientStep<String>("", null, { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration().also {
-                    it.connectTimeout = Duration.ofMillis(50)
-                    it.address("localhost", ServerUtils.availableTcpPort())
-                },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    TcpConnectionConfiguration().also {
+                        it.connectTimeout = Duration.ofMillis(50)
+                        it.address("localhost", ServerUtils.availableTcpPort())
+                    },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -117,17 +119,17 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should fail when connecting to a verified self-signed TCP server`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", tlsServer.port)
-                        config.tls {
-                            disableCertificateVerification = false
-                        }
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", tlsServer.port)
+                            config.tls {
+                                disableCertificateVerification = false
+                            }
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -150,18 +152,18 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should connect to a TCP server over a Socks4 proxy and receive the echo response`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", plainServer.port)
-                        config.proxy {
-                            type = TcpProxyType.SOCKS4
-                            address("localhost", socksProxyServer.port)
-                        }
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", plainServer.port)
+                            config.proxy {
+                                type = TcpProxyType.SOCKS4
+                                address("localhost", socksProxyServer.port)
+                            }
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -182,18 +184,18 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should connect to a TCP server over a Socks5 proxy and receive the echo response`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", plainServer.port)
-                        config.proxy {
-                            type = TcpProxyType.SOCKS5
-                            address("localhost", socksProxyServer.port)
-                        }
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", plainServer.port)
+                            config.proxy {
+                                type = TcpProxyType.SOCKS5
+                                address("localhost", socksProxyServer.port)
+                            }
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -214,21 +216,21 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should connect to a TCP server with TLS over a Socks4 proxy and receive the echo response`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", tlsServer.port)
-                        config.tls {
-                            disableCertificateVerification = true
-                        }
-                        config.proxy {
-                            type = TcpProxyType.SOCKS4
-                            address("localhost", socksProxyServer.port)
-                        }
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", tlsServer.port)
+                            config.tls {
+                                disableCertificateVerification = true
+                            }
+                            config.proxy {
+                                type = TcpProxyType.SOCKS4
+                                address("localhost", socksProxyServer.port)
+                            }
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -249,21 +251,21 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should connect to a TCP server with TLS over a Socks5 proxy and receive the echo response`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", tlsServer.port)
-                        config.tls {
-                            disableCertificateVerification = true
-                        }
-                        config.proxy {
-                            type = TcpProxyType.SOCKS5
-                            address("localhost", socksProxyServer.port)
-                        }
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", tlsServer.port)
+                            config.tls {
+                                disableCertificateVerification = true
+                            }
+                            config.proxy {
+                                type = TcpProxyType.SOCKS5
+                                address("localhost", socksProxyServer.port)
+                            }
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -284,18 +286,18 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should fail when connecting to an invalid Socks4 proxy`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", plainServer.port)
-                        config.proxy {
-                            type = TcpProxyType.SOCKS4
-                            address("localhost", ServerUtils.availableTcpPort())
-                        }
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", plainServer.port)
+                            config.proxy {
+                                type = TcpProxyType.SOCKS4
+                                address("localhost", ServerUtils.availableTcpPort())
+                            }
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -315,17 +317,17 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should fail when connecting to an invalid Socks5 proxy`() {
             val step = TcpClientStep<String>("", null,
-                { it.toByteArray(StandardCharsets.UTF_8) },
-                TcpConnectionConfiguration().also { config ->
-                    config.address("localhost", plainServer.port)
-                    config.proxy {
-                        type = TcpProxyType.SOCKS5
-                        address("localhost", ServerUtils.availableTcpPort())
-                    }
-                },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { it.toByteArray(StandardCharsets.UTF_8) },
+                    TcpConnectionConfiguration().also { config ->
+                        config.address("localhost", plainServer.port)
+                        config.proxy {
+                            type = TcpProxyType.SOCKS5
+                            address("localhost", ServerUtils.availableTcpPort())
+                        }
+                    },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
 
@@ -361,12 +363,12 @@ internal class TcpClientStepIntegrationTest {
 
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
                 val output = (ctx2.output as Channel).receive()
                 Assertions.assertEquals("This is another test", output.first)
                 Assertions.assertEquals("This is another testThis is another test",
-                    output.second.toString(StandardCharsets.UTF_8))
+                        output.second.toString(StandardCharsets.UTF_8))
             }
             Assertions.assertFalse((ctx2.output as Channel).isClosedForReceive)
             // Check that the client context was closed and not kept.
@@ -393,12 +395,12 @@ internal class TcpClientStepIntegrationTest {
 
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
                 val output = (ctx2.output as Channel).receive()
                 Assertions.assertEquals("This is another test", output.first)
                 Assertions.assertEquals("This is another testThis is another test",
-                    output.second.toString(StandardCharsets.UTF_8))
+                        output.second.toString(StandardCharsets.UTF_8))
             }
             Assertions.assertFalse((ctx2.output as Channel).isClosedForReceive)
             // Check that the client context was closed and not kept.
@@ -411,15 +413,15 @@ internal class TcpClientStepIntegrationTest {
         @Timeout(TIMEOUT)
         internal fun `should force the client to close after error despite expected next usage`() {
             val step = TcpClientStep<String>("", null,
-                { throw RuntimeException("") },
-                TcpConnectionConfiguration()
-                    .also { config ->
-                        config.address("localhost", plainServer.port)
-                        config.closeOnFailure = true
-                    },
-                TcpMetricsConfiguration(),
-                TcpEventsConfiguration(),
-                metricsRecorder, eventRecorder
+                    { throw RuntimeException("") },
+                    TcpConnectionConfiguration()
+                        .also { config ->
+                            config.address("localhost", plainServer.port)
+                            config.closeOnFailure = true
+                        },
+                    TcpMetricsConfiguration(),
+                    TcpEventsConfiguration(),
+                    metricsRecorder, eventRecorder
             )
             step.addUsage(true)
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "This is a test")
@@ -455,8 +457,8 @@ internal class TcpClientStepIntegrationTest {
             assertThrows<RuntimeException> {
                 runBlocking {
                     step.execute(ctx2, true, false,
-                        ExecutionMetricsConfiguration(),
-                        ExecutionEventsConfiguration()) { throw RuntimeException("") }
+                            ExecutionMetricsConfiguration(),
+                            ExecutionEventsConfiguration()) { throw RuntimeException("") }
                 }
             }
             Assertions.assertFalse((ctx2.output as Channel).isClosedForReceive)
@@ -484,12 +486,12 @@ internal class TcpClientStepIntegrationTest {
 
             runBlocking {
                 step.execute(ctx2, false, true,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
                 val output = (ctx2.output as Channel).receive()
                 Assertions.assertEquals("This is another test", output.first)
                 Assertions.assertEquals("This is another testThis is another test",
-                    output.second.toString(StandardCharsets.UTF_8))
+                        output.second.toString(StandardCharsets.UTF_8))
             }
             Assertions.assertFalse((ctx2.output as Channel).isClosedForReceive)
             // Check that the client context was closed and not kept.
@@ -507,9 +509,15 @@ internal class TcpClientStepIntegrationTest {
         internal fun `should record successful connection time only`() {
             val step = minimalPlainStep(TcpMetricsConfiguration(connectTime = true))
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
+            val latch = Latch(true)
+            every { metricsRecorder.recordSuccessfulConnectionTime(any(), any()) } coAnswers { latch.release() }
 
             runBlocking {
                 step.execute(ctx)
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOnce {
@@ -527,11 +535,17 @@ internal class TcpClientStepIntegrationTest {
                     .setProperty("port", ServerUtils.availableTcpPort())
             }
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
+            val latch = Latch(true)
+            every { metricsRecorder.recordFailedConnectionTime(any(), any()) } coAnswers { latch.release() }
 
             assertThrows<Throwable> {
                 runBlocking {
                     step.execute(ctx)
                 }
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOnce {
@@ -546,9 +560,15 @@ internal class TcpClientStepIntegrationTest {
         internal fun `should record successful connection event only`() {
             val step = minimalPlainStep(events = TcpEventsConfiguration(connection = true))
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
+            val latch = Latch(true)
+            every { eventRecorder.recordSuccessfulConnection(any()) } coAnswers { latch.release() }
 
             runBlocking {
                 step.execute(ctx)
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOrder {
@@ -567,11 +587,17 @@ internal class TcpClientStepIntegrationTest {
                     .setProperty("port", ServerUtils.availableTcpPort())
             }
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
+            val latch = Latch(true)
+            every { eventRecorder.recordFailedConnection(any()) } coAnswers { latch.release() }
 
             assertThrows<Throwable> {
                 runBlocking {
                     step.execute(ctx)
                 }
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOrder {
@@ -590,9 +616,15 @@ internal class TcpClientStepIntegrationTest {
         internal fun `should record successful TLS handshake time only`() {
             val step = minimalTlsStep(TcpMetricsConfiguration(tlsHandshakeTime = true))
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
+            val latch = Latch(true)
+            every { metricsRecorder.recordSuccessfulTlsHandshakeTime(any(), any()) } coAnswers { latch.release() }
 
             runBlocking {
                 step.execute(ctx)
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOnce {
@@ -607,14 +639,20 @@ internal class TcpClientStepIntegrationTest {
         internal fun `should record failed TLS handshake time only`() {
             val step = minimalTlsStep(TcpMetricsConfiguration(tlsHandshakeTime = true)).also {
                 it.getProperty<TcpConnectionConfiguration>(
-                    "connectionConfiguration").tlsConfiguration!!.disableCertificateVerification = false
+                        "connectionConfiguration").tlsConfiguration!!.disableCertificateVerification = false
             }
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
+            val latch = Latch(true)
+            every { metricsRecorder.recordFailedTlsHandshakeTime(any(), any()) } coAnswers { latch.release() }
 
             assertThrows<Throwable> {
                 runBlocking {
                     step.execute(ctx)
                 }
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOnce {
@@ -635,9 +673,15 @@ internal class TcpClientStepIntegrationTest {
             val output = input.reversed()
             val step = minimalTlsStep(metrics = TcpMetricsConfiguration().also { it.all() })
             val ctx = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = input)
+            val latch = Latch(true)
+            every { metricsRecorder.recordTimeToLastByte(any(), any()) } coAnswers { latch.release() }
 
             runBlocking {
                 step.execute(ctx)
+            }
+
+            runBlocking {
+                latch.await()
             }
 
             verifyOrder {
@@ -677,8 +721,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = input2)
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             confirmVerified(metricsRecorder, eventRecorder)
@@ -701,9 +745,9 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = input2)
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(
-                        dataSent = true),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(
+                                dataSent = true),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -733,8 +777,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             confirmVerified(metricsRecorder, eventRecorder)
@@ -755,9 +799,9 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(
-                        sending = true), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(
+                                sending = true), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -787,8 +831,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             confirmVerified(metricsRecorder, eventRecorder)
@@ -809,8 +853,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(sent = true), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(sent = true), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -851,8 +895,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = input2)
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             confirmVerified(metricsRecorder, eventRecorder)
@@ -875,8 +919,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = input2)
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(dataReceived = true),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(dataReceived = true),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -910,8 +954,8 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration()) { it.reversed().repeat(2).toByteArray(StandardCharsets.UTF_8) }
             }
 
             confirmVerified(metricsRecorder, eventRecorder)
@@ -933,9 +977,9 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(
-                        timeToLastByte = true),
-                    ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(
+                                timeToLastByte = true),
+                        ExecutionEventsConfiguration(), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -977,9 +1021,9 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(
-                        receiving = true), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(
+                                receiving = true), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -1023,9 +1067,9 @@ internal class TcpClientStepIntegrationTest {
             val ctx2 = StepTestHelper.createStepContext<String, Pair<String, ByteArray>>(input = "Any")
             runBlocking {
                 step.execute(ctx2, false, false,
-                    ExecutionMetricsConfiguration(),
-                    ExecutionEventsConfiguration(
-                        received = true), step.getProperty("requestBlock"))
+                        ExecutionMetricsConfiguration(),
+                        ExecutionEventsConfiguration(
+                                received = true), step.getProperty("requestBlock"))
             }
 
             verifyOnce {
@@ -1039,27 +1083,27 @@ internal class TcpClientStepIntegrationTest {
     private fun minimalPlainStep(metrics: TcpMetricsConfiguration = TcpMetricsConfiguration(),
                                  events: TcpEventsConfiguration = TcpEventsConfiguration()): TcpClientStep<String> {
         return TcpClientStep("", null, { it.toByteArray(StandardCharsets.UTF_8) },
-            TcpConnectionConfiguration()
-                .also { config ->
-                    config.address("localhost", plainServer.port)
-                },
-            metrics,
-            events,
-            metricsRecorder, eventRecorder
+                TcpConnectionConfiguration()
+                    .also { config ->
+                        config.address("localhost", plainServer.port)
+                    },
+                metrics,
+                events,
+                metricsRecorder, eventRecorder
         )
     }
 
     private fun minimalTlsStep(metrics: TcpMetricsConfiguration = TcpMetricsConfiguration(),
                                events: TcpEventsConfiguration = TcpEventsConfiguration()): TcpClientStep<String> {
         return TcpClientStep<String>("", null, { it.toByteArray(StandardCharsets.UTF_8) },
-            TcpConnectionConfiguration()
-                .also { config ->
-                    config.address("localhost", tlsServer.port)
-                    config.tls { disableCertificateVerification = true }
-                },
-            metrics,
-            events,
-            metricsRecorder, eventRecorder
+                TcpConnectionConfiguration()
+                    .also { config ->
+                        config.address("localhost", tlsServer.port)
+                        config.tls { disableCertificateVerification = true }
+                    },
+                metrics,
+                events,
+                metricsRecorder, eventRecorder
         )
     }
 

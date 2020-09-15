@@ -5,11 +5,6 @@ import io.evolue.api.context.StepId
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.messaging.Topic
 import io.evolue.api.steps.AbstractStep
-import io.evolue.core.exceptions.NotInitializedStepException
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.launch
 
 /**
  * Step to provide data from an output [io.evolue.api.steps.Step] running in a singleton [Minion] to a standard [Minion].
@@ -19,53 +14,31 @@ import kotlinx.coroutines.launch
  * @author Eric Jessé
  */
 internal class SingletonProxyStep<I>(
-    id: StepId,
+        id: StepId,
 
-    /**
-     * [ReceiveChannel] obtained from a [io.evolue.core.factory.steps.singleton.SingletonOutputDecorator] to forward the records.
-     */
-    private val subscriptionChannel: ReceiveChannel<I>,
+        /**
+         * Topic used to provide data to all the minions running the step.
+         */
+        private val topic: Topic<I>,
 
-    /**
-     * Topic used to provide data to all the minions running the step.
-     */
-    private val topic: Topic,
-
-    /**
-     * Specification to filter the record from the remote step.
-     *
-     * By default, all the records are accepted.
-     */
-    private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true }
+        /**
+         * Specification to filter the record from the remote step.
+         *
+         * By default, all the records are accepted.
+         */
+        private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true }
 
 ) : AbstractStep<I, I>(id, null) {
 
-    private lateinit var consumptionJob: Job
-
-    private var initialized = false
-
-    override suspend fun init() {
-        // Coroutine to buffer the data coming from the remote job into the local topic.
-        consumptionJob = GlobalScope.launch {
-            log.debug("Starting the coroutine to buffer remote records")
-            for (value in subscriptionChannel) {
-                if (filter(value)) {
-                    topic.produce(Topic.Record(value = value))
-                }
-            }
-            log.debug("Leaving the coroutine to buffer remote records")
-        }
-        initialized = true
-    }
-
     override suspend fun destroy() {
-        subscriptionChannel.cancel()
         topic.close()
     }
 
     override suspend fun execute(context: StepContext<I, I>) {
-        if (!initialized) throw NotInitializedStepException()
-        context.output.send(topic.subscribe(context.minionId).pollValue() as I)
+        val valueFromTopic = topic.subscribe("${context.minionId}-${context.stepId}").pollValue()
+        if (filter(valueFromTopic)) {
+            context.output.send(valueFromTopic)
+        }
     }
 
     companion object {

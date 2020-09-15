@@ -1,7 +1,11 @@
-package io.evolue.core.factory.steps.singleton
+package io.evolue.core.factory.steps.decorators
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import io.evolue.api.context.StepContext
+import io.evolue.api.messaging.unicastTopic
 import io.evolue.api.steps.Step
+import io.evolue.test.assertk.prop
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.steps.StepTestHelper
@@ -15,9 +19,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.assertThrows
 
 @WithMockk
-internal class SingletonOutputDecoratorTest {
+internal class OutputTopicStepDecoratorTest {
 
     @RelaxedMockK
     lateinit var decoratedStep: Step<Any, String>
@@ -26,6 +31,7 @@ internal class SingletonOutputDecoratorTest {
     @Timeout(3)
     fun shouldForwardDataOfDecoratedStep() {
         // given
+        val topic = unicastTopic<String>()
         coEvery { decoratedStep.execute(any()) } coAnswers {
             ((firstArg() as StepContext<Any, String>).output).apply {
                 send("my-value-1")
@@ -36,9 +42,12 @@ internal class SingletonOutputDecoratorTest {
         every { decoratedStep.id } answers { " " }
         every { decoratedStep.retryPolicy } returns null
         val ctx = StepTestHelper.createStepContext<Any, String>()
-        val step = spyk(SingletonOutputDecorator(decoratedStep))
-
-        val subscription = step.subscribe()
+        val step = spyk(
+                OutputTopicStepDecorator(decoratedStep,
+                        topic))
+        val topicSubscription = runBlocking {
+            topic.subscribe("any")
+        }
 
         // when
         runBlocking {
@@ -53,17 +62,39 @@ internal class SingletonOutputDecoratorTest {
             decoratedStep.execute(ctx)
         }
         runBlocking {
-            Assertions.assertEquals("my-value-1", subscription.receive())
-            Assertions.assertEquals("my-value-2", subscription.receive())
-            Assertions.assertEquals("my-value-3", subscription.receive())
+            Assertions.assertEquals("my-value-1", topicSubscription.pollValue())
+            Assertions.assertEquals("my-value-2", topicSubscription.pollValue())
+            Assertions.assertEquals("my-value-3", topicSubscription.pollValue())
+        }
+    }
+
+    @Test
+    internal fun shouldNotExecuteTwice() {
+        val topic = unicastTopic<String>()
+        val step = spyk(
+                OutputTopicStepDecorator(decoratedStep,
+                        topic))
+        val ctx = StepTestHelper.createStepContext<Any, String>()
+
+        // when
+        runBlocking {
+            step.execute(ctx)
+        }
+
+        assertThrows<IllegalStateException> {
+            runBlocking {
+                step.execute(ctx)
+            }
         }
     }
 
     @Test
     internal fun shouldCloseAllChannels() {
         // given
+        val topic = unicastTopic<String>()
         every { decoratedStep.id } answers { " " }
-        val step = SingletonOutputDecorator(decoratedStep)
+        val step =
+            OutputTopicStepDecorator(decoratedStep, topic)
 
         // when
         runBlocking {
@@ -72,6 +103,6 @@ internal class SingletonOutputDecoratorTest {
 
         // then
         coVerifyOnce { decoratedStep.destroy() }
-        Assertions.assertTrue(step.broadcastChannel.isClosedForSend)
+        assertThat(topic).prop("open").isEqualTo(false)
     }
 }
