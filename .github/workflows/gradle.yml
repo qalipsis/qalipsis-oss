@@ -45,7 +45,7 @@ jobs:
 
       - name: Report
         if: always()
-        run: ./gradlew testReport --continue
+        run: ./gradlew -DignoreUnitTestFailures=true -DignoreIntegrationTestFailures=true testReport --continue
 
       - name: Upload Tests report
         uses: actions/upload-artifact@v2
