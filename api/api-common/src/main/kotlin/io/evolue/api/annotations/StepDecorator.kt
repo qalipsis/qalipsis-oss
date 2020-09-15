@@ -5,4 +5,5 @@ package io.evolue.api.annotations
  *
  * @author Eric Jessé
  */
+@Retention(AnnotationRetention.RUNTIME)
 annotation class StepDecorator

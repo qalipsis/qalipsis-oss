@@ -1,0 +1,5 @@
+field1;field2;field3;field4
+1.0;value1-2-1,value1-2-2;"value with ; 1  ";E"escaped value 1
+2.0;value2-2-1,value2-2-2;"value with ; 2  ";E"escaped value 2
+# Comments to ignore
+3.0;value3-2-1,value3-2-2;"value with ; 3  ";E"escaped value 3

@@ -1,13 +1,8 @@
 package io.evolue.api.messaging
 
-import io.evolue.api.logging.LoggerHelper.logger
-import kotlinx.coroutines.GlobalScope
+import io.evolue.api.messaging.subscriptions.AbstractTopicSubscription
+import io.evolue.api.messaging.subscriptions.TopicSubscription
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.receiveOrNull
-import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 import java.time.Duration
 
 /**
@@ -19,7 +14,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-interface Topic {
+interface Topic<T> {
 
     /**
      * Create a subscription to the topic for the given subscriber.
@@ -28,35 +23,35 @@ interface Topic {
      * is returned.
      */
     @Throws(ClosedTopicException::class)
-    suspend fun subscribe(subscriberId: String): TopicSubscription
+    suspend fun subscribe(subscriberId: String): TopicSubscription<T>
 
     /**
      * Produce a value to the topic, which will be wrapped into a [Record].
      */
     @Throws(ClosedTopicException::class)
-    suspend fun produce(value: Any?)
+    suspend fun produceValue(value: T)
 
     /**
      * Produce a [Record] to the topic.
      */
     @Throws(ClosedTopicException::class)
-    suspend fun produce(record: Record)
+    suspend fun produce(record: Record<T>)
 
     /**
-     * Poll the next record from the [TopicSubscription] attached to [subscriberId].
+     * Poll the next record from the [AbstractTopicSubscription] attached to [subscriberId].
      *
      * @throws UnknownSubscriptionException if not subscription can be found for [subscriberId]
      */
     @Throws(UnknownSubscriptionException::class, ClosedTopicException::class)
-    suspend fun poll(subscriberId: String): Record
+    suspend fun poll(subscriberId: String): Record<T>
 
     /**
-     * Poll the value of the next record from the [TopicSubscription] attached to [subscriberId].
+     * Poll the value of the next record from the [AbstractTopicSubscription] attached to [subscriberId].
      *
      * @throws UnknownSubscriptionException if not subscription can be found for [subscriberId]
      */
     @Throws(UnknownSubscriptionException::class, ClosedTopicException::class)
-    suspend fun pollValue(subscriberId: String): Any?
+    suspend fun pollValue(subscriberId: String): T
 
     /**
      * Cancel the subscription for the given [subscriberId]. Any subsequent call to [poll] or [pollValue] will fail.
@@ -71,115 +66,42 @@ interface Topic {
      */
     fun close()
 
-    data class Record(
-        val headers: MutableMap<String, Any> = mutableMapOf(),
-        val value: Any?
-    )
-
-    class TopicSubscription(
-        internal val channel: ReceiveChannel<Record>,
-        private val idleTimeout: Duration,
-        private val cancellation: (() -> Unit)
-    ) {
-        private var active = true
-
-        private val activityChannel = Channel<Unit>(1)
-
-        private var timeout: ReceiveChannel<Unit> = buildTimeout()
-
-        init {
-            GlobalScope.launch {
-                while (active) {
-                    select<Unit> {
-                        activityChannel.onReceive { _ ->
-                            timeout.cancel()
-                            timeout = buildTimeout()
-                        }
-                        timeout.onReceive { _ ->
-                            cancel()
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun buildTimeout() = if (idleTimeout.toMillis() > 0) ticker(idleTimeout.toMillis()) else Channel(
-            Channel.RENDEZVOUS)
-
-        suspend fun poll(): Record {
-            if (!active) {
-                throw CancelledSubscriptionException()
-            }
-            activityChannel.send(Unit)
-            return channel.receive()
-        }
-
-        suspend fun pollValue(): Any? {
-            return poll().value
-        }
-
-        suspend fun <T> onReceiveValue(block: suspend (T) -> Unit) {
-            while (active) {
-                activityChannel.send(Unit)
-                val record = channel.receiveOrNull()
-                if (record == null) {
-                    active = false
-                } else {
-                    block(record.value as T)
-                }
-            }
-        }
-
-        fun isActive() = active
-
-        fun cancel() {
-            active = false
-            timeout.cancel()
-            activityChannel.close()
-            cancellation()
-        }
-
-        companion object {
-            @JvmStatic
-            private val log = logger()
-        }
-    }
-}
-
-enum class TopicMode {
     /**
-     * All the subscribers receive all the records.
+     * Notify the topic that no more value will be produced.
      */
-    BROADCAST,
+    suspend fun complete()
 
-    /**
-     * The subscribers receive unique records using a FIFO strategy.
-     */
-    UNICAST
 }
 
 /**
- * Creates a new topic.
+ * Creates a new [Topic] that loops on itself once [Topic.complete] is called.
  *
- * @param mode mode of the [topic] to create. See [TopicMode] for more details.
- * @param bufferSize size of the buffer to keep the received records. ({@code 1024} by default [mode] is [BROADCAST] and [fromBeginning] is {@code true}, {@code 1024} otherwise)
- * @param fromBeginning defines if new subscriptions start from the beginning of the buffer or only at present time.
- * @param subscriptionIdleTimeout duration of the idle subscriptions (subscriptions not receiving any record) before they are cancelled.
+ * @param subscriptionIdleTimeout duration of the idle subscriptions before they are cancelled, `Duration.ZERO` or less means infinite.
+ *
+ * @author Eric Jessé
  */
-fun topic(mode: TopicMode = TopicMode.BROADCAST, bufferSize: Int = -1, fromBeginning: Boolean = false,
-    subscriptionIdleTimeout: Duration = Duration.ZERO): Topic {
-    return when {
-        TopicMode.UNICAST == mode -> {
-            val actualBufferSize = if (bufferSize > 0) bufferSize else Channel.UNLIMITED
-            UnicastTopic(actualBufferSize, subscriptionIdleTimeout, fromBeginning)
-        }
-        fromBeginning -> {
-            val actualBufferSize = if (bufferSize > 0) bufferSize else 1024
-            BroadcastFromBeginningTopic(actualBufferSize, subscriptionIdleTimeout)
-        }
-        else -> {
-            val actualBufferSize = if (bufferSize > 0) bufferSize else Channel.UNLIMITED
-            BroadcastTopic(actualBufferSize, subscriptionIdleTimeout)
-        }
-    }
-}
+fun <T> loopTopic(subscriptionIdleTimeout: Duration = Duration.ZERO): Topic<T> = LoopTopic(subscriptionIdleTimeout)
+
+/**
+ * Creates a new [Topic] that forward each record to the first consumer that will poll it.
+ *
+ * @param bufferSize size of the buffer to keep the received records before they are consumed, unlimited by default.
+ * @param subscriptionIdleTimeout duration of the idle subscriptions (subscriptions not receiving any record) before they are cancelled.
+ *
+ * @author Eric Jessé
+ */
+fun <T> unicastTopic(bufferSize: Int = Channel.UNLIMITED, subscriptionIdleTimeout: Duration = Duration.ZERO): Topic<T> =
+    UnicastTopic(if (bufferSize > 0) bufferSize else Channel.UNLIMITED, subscriptionIdleTimeout)
+
+
+/**
+ * Creates a new [Topic] that forward each record to all the subscribers. New subscriptions receive the earliest
+ * available record at the time of subscription, considering the maximal buffer size.
+ *
+ * @param bufferSize size of the buffer to keep the received records before the subscriptions, unlimited by default.
+ * @param subscriptionIdleTimeout duration of the idle subscriptions (subscriptions not receiving any record) before they are cancelled.
+ *
+ * @author Eric Jessé
+ */
+fun <T> broadcastTopic(bufferSize: Int = -1, subscriptionIdleTimeout: Duration = Duration.ZERO): Topic<T> =
+    BroadcastTopic(bufferSize, subscriptionIdleTimeout)

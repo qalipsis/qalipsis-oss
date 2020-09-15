@@ -9,3 +9,13 @@ logging:
         core:
           factory:
             steps: info
+            orchestration:
+              directives:
+                processors:
+                  minions: trace
+          head:
+            campaign: debug
+          cross:
+            driving:
+              directives:
+                inmemory: debug

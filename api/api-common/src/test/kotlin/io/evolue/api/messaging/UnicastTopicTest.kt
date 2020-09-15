@@ -1,6 +1,8 @@
 package io.evolue.api.messaging
 
+import io.evolue.test.utils.getProperty
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -14,9 +16,9 @@ import java.time.Duration
 internal class UnicastTopicTest {
 
     @Test
-    internal fun shouldPreventFromUsingClosedTopic() {
+    internal fun `should prevent from using closed topic`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), false)
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
 
         // when
         topic.close()
@@ -29,7 +31,7 @@ internal class UnicastTopicTest {
         }
         assertThrows<ClosedTopicException> {
             runBlocking {
-                topic.produce(1)
+                topic.produceValue(1)
             }
         }
         assertThrows<ClosedTopicException> {
@@ -41,32 +43,29 @@ internal class UnicastTopicTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    internal fun shouldProvideSubscription() {
+    internal fun `should provide subscription`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), false)
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
-            // then
-            Assertions.assertTrue(subscription.channel.isEmpty)
-
-            // when
             val sameSubscription = topic.subscribe("any-1")
             // then
             Assertions.assertSame(subscription, sameSubscription)
 
             // when
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
+
             // then
-            for (i in 10 until 20) {
+            for (i in 0 until 20) {
                 Assertions.assertEquals(i, subscription.pollValue())
             }
         }
@@ -74,12 +73,12 @@ internal class UnicastTopicTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    internal fun shouldProvideSubscriptionFromBeginning() {
+    internal fun `should provide subscription from beginning`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), true)
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -87,7 +86,7 @@ internal class UnicastTopicTest {
             // when
             val subscription = topic.subscribe("any-1")
             // then
-            Assertions.assertFalse(subscription.channel.isEmpty)
+            Assertions.assertFalse((subscription.getProperty("channel") as Channel<Int>).isEmpty)
             for (i in 0 until 10) {
                 Assertions.assertEquals(i, subscription.pollValue())
             }
@@ -99,7 +98,7 @@ internal class UnicastTopicTest {
 
             // when
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
             // then
             for (i in 10 until 20) {
@@ -109,9 +108,9 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun shouldCancelSubscription() {
+    internal fun `should cancel subscription`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), false)
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
@@ -122,9 +121,9 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun shouldCancelIdleSubscription() {
+    internal fun `should cancel idle subscription`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofMillis(5), false)
+        val topic = UnicastTopic<Int>(100, Duration.ofMillis(5))
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
@@ -135,41 +134,12 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun shouldProvideTwoDifferentSubscriptions() {
+    internal fun `should provide two different subscriptions from beginning`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), false)
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
-            }
-        }
-
-        runBlocking {
-            // when
-            val subscription1 = topic.subscribe("any-1")
-            val subscription2 = topic.subscribe("any-2")
-            // then
-            Assertions.assertNotSame(subscription1, subscription2)
-
-            // when
-            for (i in 10 until 20) {
-                topic.produce(i)
-            }
-            // then
-            for (i in 10 until 20 step 2) {
-                Assertions.assertEquals(i, subscription1.pollValue())
-                Assertions.assertEquals(i + 1, subscription2.pollValue())
-            }
-        }
-    }
-
-    @Test
-    internal fun shouldProvideTwoDifferentSubscriptionsFromBeginning() {
-        // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), true)
-        runBlocking {
-            for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -178,7 +148,7 @@ internal class UnicastTopicTest {
             val subscription1 = topic.subscribe("any-1")
             val subscription2 = topic.subscribe("any-2")
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
 
             // then
@@ -191,12 +161,12 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun shouldStillProvideRecordsToOpenSubscriptions() {
+    internal fun `should provide records to open subscriptions only`() {
         // given
-        val topic = UnicastTopic(100, Duration.ofSeconds(1), false)
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -206,7 +176,7 @@ internal class UnicastTopicTest {
             val subscription2 = topic.subscribe("any-2")
             subscription1.cancel()
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
             // then
             assertThrows<CancelledSubscriptionException> {
@@ -214,7 +184,7 @@ internal class UnicastTopicTest {
                     subscription1.pollValue()
                 }
             }
-            for (i in 10 until 20) {
+            for (i in 0 until 20) {
                 Assertions.assertEquals(i, subscription2.pollValue())
             }
         }

@@ -2,7 +2,7 @@ package io.evolue.core.factory.events.elasticsearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.VisibleForTest
 import io.evolue.api.events.EventGeoPoint
 import io.evolue.api.events.EventRange
 import io.evolue.api.lang.durationSinceNanos
@@ -215,7 +215,7 @@ internal class ElasticsearchEventsLogger(
      * Any type can be used for value, but [Boolean]s, [Number]s, [String]s, [java.time.Duration]s, [java.time.temporal.Temporal]s,
      * [EventGeoPoint]s, [EventRange]s and [Throwable]s are interpreted.
      */
-    @VisibleForTesting
+    @VisibleForTest
     fun writeDocument(event: Event): String {
         val timestamp = generateTimestamp(event.timestamp)
         val sb = StringBuilder("{\"@timestamp\":\"").append(timestamp).append('"')
@@ -321,7 +321,7 @@ internal class ElasticsearchEventsLogger(
     /**
      * Proudly pasted from [io.micrometer.elastic.ElasticMeterRegistry.countCreatedItems].
      */
-    @VisibleForTesting
+    @VisibleForTest
     fun countCreatedItems(responseBody: String): Int {
         val matcher = STATUS_CREATED_PATTERN.matcher(responseBody)
         var count = 0

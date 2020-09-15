@@ -2,42 +2,29 @@ package io.evolue.core.factory.steps.singleton
 
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepName
+import io.evolue.api.messaging.Topic
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.scenario.MutableScenarioSpecification
-import io.evolue.api.steps.SingletonType
 import io.evolue.api.steps.StepSpecification
 import java.time.Duration
 
 /**
  * Specification for a [io.evolue.api.steps.Step] running behind a singleton.
  *
+ * @param T type ot of the output of the decorated step.
+ *
  * @author Eric Jessé
  */
-internal data class SingletonProxyStepSpecification<INPUT>(
+internal data class SingletonProxyStepSpecification<T>(
 
-    val next: StepSpecification<INPUT, *, *>,
-    /**
-     * Singleton step proving the data to this one.
-     */
-    internal val singletonOutputDecorator: SingletonOutputDecorator<*, INPUT>,
-    /**
-     * Kind of data providing: unicast or broadcast.
-     */
-    val singletonType: SingletonType,
-    /**
-     * Size of the buffer to keep the received records.
-     */
-    val bufferSize: Int,
-    /**
-     * Time to idle of a subscription. Once a idle subscription passed this duration, it is automatically cancelled.
-     */
-    val idleTimeout: Duration,
-    /**
-     * Defines if the first subscriber will receive all the records from the beginning or only from now on.
-     * When set to {@code false}, records before the first subscription are simply discarded.
-     */
-    val fromBeginning: Boolean
-) : StepSpecification<INPUT, INPUT, SingletonProxyStepSpecification<INPUT>> {
+        val next: StepSpecification<T, *, *>,
+
+        /**
+         * Configuration of the singleton.
+         */
+        val topic: Topic<T>
+
+) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
 
     override var name: StepName? = null
 
@@ -56,10 +43,9 @@ internal data class SingletonProxyStepSpecification<INPUT>(
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = mutableListOf(next)
 
-    override fun all(block: SingletonProxyStepSpecification<INPUT>.() -> Unit) {
+    override fun all(block: SingletonProxyStepSpecification<T>.() -> Unit) {
         // Nothing to do.
     }
-
 
     override fun add(step: StepSpecification<*, *, *>) {
         // Nothing to do.

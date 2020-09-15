@@ -12,11 +12,4 @@ abstract class AbstractStep<I, O>(override val id: StepId, override var retryPol
 
     override val next: MutableList<Step<O, *>> = mutableListOf()
 
-    override suspend fun init() {
-        // No-op.
-    }
-
-    override suspend fun destroy() {
-        // No-op.
-    }
 }

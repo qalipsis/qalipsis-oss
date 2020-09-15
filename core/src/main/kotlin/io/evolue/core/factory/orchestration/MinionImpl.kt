@@ -1,6 +1,6 @@
 package io.evolue.core.factory.orchestration
 
-import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.VisibleForTest
 import io.evolue.api.context.CampaignId
 import io.evolue.api.context.MinionId
 import io.evolue.api.events.EventsLogger
@@ -149,7 +149,7 @@ internal open class MinionImpl(
     /**
      * Returns {@code true} of the start flag was released.
      */
-    @VisibleForTesting
+    @VisibleForTest
     fun isStarted(): Boolean {
         return !startLatch.isSuspended()
     }

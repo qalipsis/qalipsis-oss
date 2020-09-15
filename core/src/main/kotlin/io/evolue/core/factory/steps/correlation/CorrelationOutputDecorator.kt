@@ -1,61 +1,26 @@
 package io.evolue.core.factory.steps.correlation
 
-import com.google.common.annotations.VisibleForTesting
 import io.evolue.api.annotations.StepDecorator
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepContext
-import io.evolue.api.context.StepId
-import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.messaging.Topic
 import io.evolue.api.steps.Step
-import io.evolue.api.steps.StepExecutor
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.BroadcastChannel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.launch
+import io.evolue.core.factory.steps.decorators.OutputTopicStepDecorator
 
 /**
- * Decorator for [Step]s considered to be "secondary" steps for [CorrelationStep]s.
+ * Decorator for [Step]s considered to be "secondary" steps for [CorrelationStep]s. Those steps provide records
+ * that have to be sent to teh correlation step, that put them into a cache for later use.
  *
  * @author Eric Jessé
  */
 @StepDecorator
-internal class CorrelationOutputDecorator<I : Any?, O : Any?>(private val decorated: Step<I, O>) : Step<I, O>,
-    StepExecutor {
+internal class CorrelationOutputDecorator<I : Any?, O : Any?>(
+        decorated: Step<I, O>,
+        topic: Topic<CorrelationRecord<O>>
+) : OutputTopicStepDecorator<I, O>(decorated, topic) {
 
-    @VisibleForTesting
-    internal val broadcastChannel = BroadcastChannel<CorrelationRecord<O>>(Channel.BUFFERED)
+    override fun shouldProduce(context: StepContext<I, O>, value: Any?) = value != null
 
-    override val id: StepId
-        get() = decorated.id
-
-    override var retryPolicy: RetryPolicy? = null
-
-    override var next = decorated.next
-
-    override suspend fun init() {
-        decorated.init()
-    }
-
-    override suspend fun destroy() {
-        decorated.destroy()
-        broadcastChannel.close()
-    }
-
-    override suspend fun execute(context: StepContext<I, O>) {
-        // Consume the data emitted by the decorated step to populate the broadcast channel for the correlation steps.
-        GlobalScope.launch {
-            for (record in context.output as Channel<O>) {
-                broadcastChannel.send(
-                    CorrelationRecord(context.minionId, id, record))
-            }
-        }
-        executeStep(decorated, context)
-    }
-
-    /**
-     * Open a subscription to the channel of data emitted by the decorated channel.
-     * All the subscribers should be registered before the step is executed for the first time.
-     */
-    fun subscribe(): ReceiveChannel<CorrelationRecord<O>> = broadcastChannel.openSubscription()
+    override fun wrap(context: StepContext<I, O>, value: Any?) =
+        CorrelationRecord(context.minionId, context.stepId, value as O)
 }

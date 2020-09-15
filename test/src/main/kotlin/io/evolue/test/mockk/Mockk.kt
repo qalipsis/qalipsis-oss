@@ -5,7 +5,9 @@ import io.mockk.clearAllMocks
 import io.mockk.coVerify
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
+import io.mockk.unmockkAll
 import io.mockk.verify
+import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -44,9 +46,13 @@ annotation class WithMockk
  *
  * @author Eric Jessé
  */
-class MockkCleanExtension : AfterEachCallback {
+class MockkCleanExtension : AfterEachCallback, AfterAllCallback {
 
     override fun afterEach(context: ExtensionContext?) {
         clearAllMocks()
+    }
+
+    override fun afterAll(context: ExtensionContext?) {
+        unmockkAll()
     }
 }

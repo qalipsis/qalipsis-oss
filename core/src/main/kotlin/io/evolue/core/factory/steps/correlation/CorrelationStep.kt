@@ -2,7 +2,7 @@ package io.evolue.core.factory.steps.correlation
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
-import com.google.common.annotations.VisibleForTesting
+import io.evolue.api.annotations.VisibleForTest
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepContext
 import io.evolue.api.context.StepId
@@ -33,25 +33,25 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class CorrelationStep<I, O>(
-    id: StepId,
+internal class CorrelationStep<I>(
+        id: StepId,
 
-    /**
-     * Specification of the key extractor based upon the value received from the primary parent.
-     */
-    private val correlationKeyExtractor: ((record: CorrelationRecord<I>) -> Any?),
+        /**
+         * Specification of the key extractor based upon the value received from the primary parent.
+         */
+        private val correlationKeyExtractor: ((record: CorrelationRecord<I>) -> Any?),
 
-    /**
-     * Configuration for the consumption and correlation from secondary parents.
-     */
-    private val secondaryCorrelations: Collection<SecondaryCorrelation>,
+        /**
+         * Configuration for the consumption and correlation from secondary parents.
+         */
+        private val secondaryCorrelations: Collection<SecondaryCorrelation<out Any>>,
 
-    /**
-     * Timeout, after which the values received but not forwarded are evicted from the cache.
-     */
-    cacheTimeout: Duration
+        /**
+         * Timeout, after which the values received but not forwarded are evicted from the cache.
+         */
+        cacheTimeout: Duration
 
-) : AbstractStep<I, O>(id, null) {
+) : AbstractStep<I, Array<Any>>(id, null) {
 
     private val consumptionJobs = mutableListOf<Job>()
 
@@ -63,12 +63,16 @@ internal class CorrelationStep<I, O>(
 
     override suspend fun init() {
         // Coroutines to buffer the data coming from the remote job into the local cache.
-        secondaryCorrelations.forEach {
+        val stepId = this.id
+        secondaryCorrelations.forEach { corr ->
+            val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
             consumptionJobs.add(GlobalScope.launch {
                 log.debug("Starting the coroutine to buffer remote records")
-                for (record in it.subscriptionChannel) {
+                val subscription = corr.topic.subscribe(stepId)
+                while (subscription.isActive()) {
+                    val record = subscription.pollValue()
                     log.trace("Received record $record")
-                    it.keyExtractor(record)?.let { key ->
+                    keyExtractor(record)?.let { key ->
                         log.trace("Adding record $record to cache with key $key")
                         cache.get(key)!!.addValue(record.stepId, record.value)
                     }
@@ -81,31 +85,31 @@ internal class CorrelationStep<I, O>(
 
     override suspend fun destroy() {
         consumptionJobs.forEach { it.cancel() }
-        secondaryCorrelations.forEach { it.subscriptionChannel.cancel() }
+        secondaryCorrelations.forEach { it.topic.close() }
     }
 
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(context: StepContext<I, Array<Any>>) {
         if (!initialized) throw NotInitializedStepException()
+
         val input = context.input.receive()
-        correlationKeyExtractor(
-            CorrelationRecord(context.minionId, context.parentStepId!!,
-                input))?.let { key ->
-            try {
-                val cachedSecondaryValues = cache.get(key)!!.receive()
-                val values =
-                    arrayListOf(input) + secondaryCorrelations.map { cachedSecondaryValues[it.sourceStepId] }
-                (context.output as Channel<Any?>).send(values.toTypedArray())
-            } finally {
-                log.trace("Invalidating cache with key $key")
-                cache.invalidate(key)
+        correlationKeyExtractor(CorrelationRecord(context.minionId, context.parentStepId!!, input))
+            ?.let { key ->
+                try {
+                    val cachedSecondaryValues = cache.get(key)!!.receive()
+                    val values =
+                        arrayListOf(input) + secondaryCorrelations.map { cachedSecondaryValues[it.sourceStepId] }
+                    (context.output as Channel<Any?>).send(values.toTypedArray())
+                } finally {
+                    log.trace("Invalidating cache with key $key")
+                    cache.invalidate(key)
+                }
             }
-        }
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     internal fun hasKeyInCache(key: Any?): Boolean = cache.asMap().containsKey(key)
 
-    @VisibleForTesting
+    @VisibleForTest
     internal fun isCacheEmpty(): Boolean = cache.asMap().isEmpty()
 
     companion object {
@@ -114,14 +118,14 @@ internal class CorrelationStep<I, O>(
     }
 
     private data class CacheEntry(
-        /**
-         * Common correlation key for all the values.
-         */
-        val correlationKey: Any,
-        /**
-         * Number of expected values from secondary steps.
-         */
-        val secondaryValuesCount: Int
+            /**
+             * Common correlation key for all the values.
+             */
+            val correlationKey: Any,
+            /**
+             * Number of expected values from secondary steps.
+             */
+            val secondaryValuesCount: Int
     ) {
         /**
          * Mutex to suspend the calls the received() until all the values are received.

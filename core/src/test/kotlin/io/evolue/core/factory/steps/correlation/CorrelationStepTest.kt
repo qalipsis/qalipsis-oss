@@ -1,8 +1,8 @@
 package io.evolue.core.factory.steps.correlation
 
 import io.evolue.api.context.CorrelationRecord
-import io.evolue.api.messaging.TopicMode
-import io.evolue.api.messaging.topic
+import io.evolue.api.messaging.broadcastTopic
+import io.evolue.api.messaging.unicastTopic
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.exceptions.NotInitializedStepException
 import io.evolue.test.steps.StepTestHelper
@@ -24,9 +24,9 @@ internal class CorrelationStepTest {
     @Timeout(1)
     internal fun shouldNotExecuteWhenNotInitialized() {
         val remoteChannel = Channel<Long>(100)
-        val topic = topic(TopicMode.UNICAST, fromBeginning = true)
-        val step = CorrelationStep<Long, Long>("corr", { record -> 1 }, emptyList(), Duration.ofSeconds(10))
-        val ctx = StepTestHelper.createStepContext<Long, Long>()
+        val topic = unicastTopic<Long>()
+        val step = CorrelationStep<Long>("corr", { record -> 1 }, emptyList(), Duration.ofSeconds(10))
+        val ctx = StepTestHelper.createStepContext<Long, Array<Any>>()
 
         // then
         assertThrows<NotInitializedStepException> {
@@ -40,23 +40,24 @@ internal class CorrelationStepTest {
     @Timeout(1)
     internal fun shouldSuspendUntilAllValuesAreReceived() {
         // given
-        val channel1 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
-        val channel2 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary2>>(1)
-        val step = CorrelationStep<TestCorrelationEntityFromPrimary, Array<Any?>>("corr",
-            { record -> (record.value as TestCorrelationEntityFromPrimary).key },
-            listOf(SecondaryCorrelation("secondary-1",
-                channel1) { record -> (record.value as TestCorrelationEntityFromSecondary1).key },
-                SecondaryCorrelation("secondary-2",
-                    channel2) { record -> (record.value as TestCorrelationEntityFromSecondary2).key }
-            ),
-            Duration.ofSeconds(10)
+        val topic1 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
+        val topic2 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary2>>(1)
+        val step = CorrelationStep<TestCorrelationEntityFromPrimary>("corr",
+                { record -> record.value.key },
+                listOf(
+                        SecondaryCorrelation("secondary-1",
+                                topic1) { record -> (record.value as TestCorrelationEntityFromSecondary1).key },
+                        SecondaryCorrelation("secondary-2",
+                                topic2) { record -> (record.value as TestCorrelationEntityFromSecondary2).key }
+                ),
+                Duration.ofSeconds(10)
         )
         runBlocking { step.init() }
         val entityFromPrimary = TestCorrelationEntityFromPrimary(123, "From Primary")
         val entityFromFromSecondary1 = TestCorrelationEntityFromSecondary1(123, "From Secondary 1")
         val entityFromFromSecondary2 = TestCorrelationEntityFromSecondary2(123, "From Secondary 2")
 
-        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any?>>(entityFromPrimary)
+        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any>>(entityFromPrimary)
 
         // when
         val execution = GlobalScope.launch {
@@ -65,11 +66,9 @@ internal class CorrelationStepTest {
         // Send with delay and in an order different from secondary correlations definitions.
         runBlocking {
             delay(50)
-            channel2.send(CorrelationRecord(ctx.minionId, "secondary-2",
-                entityFromFromSecondary2))
+            topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromSecondary2))
             delay(50)
-            channel1.send(CorrelationRecord(ctx.minionId, "secondary-1",
-                entityFromFromSecondary1))
+            topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromSecondary1))
 
             // Wait for the execution to complete.
             execution.join()
@@ -82,7 +81,7 @@ internal class CorrelationStepTest {
             (ctx.output as Channel).receive()
         }
         Assertions.assertArrayEquals(arrayOf(entityFromPrimary, entityFromFromSecondary1, entityFromFromSecondary2),
-            output)
+                output)
         Assertions.assertFalse(step.hasKeyInCache(123))
     }
 
@@ -90,31 +89,28 @@ internal class CorrelationStepTest {
     @Timeout(1)
     internal fun shouldNotSuspendWhenAllValuesAreAlreadyReceived() {
         // given
-        val channel1 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
-        val channel2 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary2>>(1)
-        val step = CorrelationStep<TestCorrelationEntityFromPrimary, Array<Any?>>("corr",
-            { record -> (record.value as TestCorrelationEntityFromPrimary).key },
-            listOf(SecondaryCorrelation("secondary-1",
-                channel1) { record -> (record.value as TestCorrelationEntityFromSecondary1).key },
-                SecondaryCorrelation("secondary-2",
-                    channel2) { record -> (record.value as TestCorrelationEntityFromSecondary2).key }
-            ),
-            Duration.ofSeconds(10)
+        val topic1 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
+        val topic2 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary2>>(1)
+        val step = CorrelationStep<TestCorrelationEntityFromPrimary>("corr",
+                { record -> record.value.key },
+                listOf(
+                        SecondaryCorrelation("secondary-1", topic1) { record -> record.value.key },
+                        SecondaryCorrelation("secondary-2", topic2) { record -> record.value.key }
+                ),
+                Duration.ofSeconds(10)
         )
         runBlocking { step.init() }
         val entityFromPrimary = TestCorrelationEntityFromPrimary(123, "From Primary")
         val entityFromFromSecondary1 = TestCorrelationEntityFromSecondary1(123, "From Secondary 1")
         val entityFromFromSecondary2 = TestCorrelationEntityFromSecondary2(123, "From Secondary 2")
 
-        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any?>>(entityFromPrimary)
+        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any>>(entityFromPrimary)
 
         // when
         // Send with in an order different from the secondary correlations definitions.
         runBlocking {
-            channel2.send(CorrelationRecord(ctx.minionId, "secondary-2",
-                entityFromFromSecondary2))
-            channel1.send(CorrelationRecord(ctx.minionId, "secondary-1",
-                entityFromFromSecondary1))
+            topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromSecondary2))
+            topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromSecondary1))
         }
         runBlocking {
             step.execute(ctx)
@@ -127,7 +123,7 @@ internal class CorrelationStepTest {
             (ctx.output as Channel).receive()
         }
         Assertions.assertArrayEquals(arrayOf(entityFromPrimary, entityFromFromSecondary1, entityFromFromSecondary2),
-            output)
+                output)
         Assertions.assertFalse(step.hasKeyInCache(123))
     }
 
@@ -138,35 +134,32 @@ internal class CorrelationStepTest {
     @RepeatedTest(100)
     internal fun shouldSucceedWhenSendingMessagesConcurrentlyBeforeTheExecution() {
         // given
-        val channel1 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
-        val channel2 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary2>>(1)
-        val step = CorrelationStep<TestCorrelationEntityFromPrimary, Array<Any?>>("corr",
-            { record -> (record.value as TestCorrelationEntityFromPrimary).key },
-            listOf(SecondaryCorrelation("secondary-1",
-                channel1) { record -> (record.value as TestCorrelationEntityFromSecondary1).key },
-                SecondaryCorrelation("secondary-2",
-                    channel2) { record -> (record.value as TestCorrelationEntityFromSecondary2).key }
-            ),
-            Duration.ofSeconds(10)
+        val topic1 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
+        val topic2 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary2>>(1)
+        val step = CorrelationStep<TestCorrelationEntityFromPrimary>("corr",
+                { record -> record.value.key },
+                listOf(
+                        SecondaryCorrelation("secondary-1", topic1) { record -> record.value.key },
+                        SecondaryCorrelation("secondary-2", topic2) { record -> record.value.key }
+                ),
+                Duration.ofSeconds(10)
         )
         runBlocking { step.init() }
         val entityFromPrimary = TestCorrelationEntityFromPrimary(123, "From Primary")
         val entityFromFromSecondary1 = TestCorrelationEntityFromSecondary1(123, "From Secondary 1")
         val entityFromFromSecondary2 = TestCorrelationEntityFromSecondary2(123, "From Secondary 2")
 
-        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any?>>(entityFromPrimary)
+        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any>>(entityFromPrimary)
 
         // when sending two messages concurrently
         val startLatch = SuspendedCountLatch(1)
         GlobalScope.launch {
             startLatch.await()
-            channel1.send(CorrelationRecord(ctx.minionId, "secondary-1",
-                entityFromFromSecondary1))
+            topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromSecondary1))
         }
         GlobalScope.launch {
             startLatch.await()
-            channel2.send(CorrelationRecord(ctx.minionId, "secondary-2",
-                entityFromFromSecondary2))
+            topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromSecondary2))
         }
         runBlocking {
             startLatch.release()
@@ -180,7 +173,7 @@ internal class CorrelationStepTest {
             (ctx.output as Channel).receive()
         }
         Assertions.assertArrayEquals(arrayOf(entityFromPrimary, entityFromFromSecondary1, entityFromFromSecondary2),
-            output)
+                output)
         Assertions.assertFalse(step.hasKeyInCache(123))
     }
 
@@ -188,22 +181,21 @@ internal class CorrelationStepTest {
     @Timeout(1)
     internal fun shouldNotCacheNullKey() {
         // given
-        val channel1 = Channel<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
-        val step = CorrelationStep<TestCorrelationEntityFromPrimary, Array<Any?>>("corr",
-            { record -> (record.value as TestCorrelationEntityFromPrimary).key },
-            listOf(SecondaryCorrelation("secondary-1",
-                // The conversion from record to key always returns null.
-                channel1) { record -> null }
-            ),
-            Duration.ofMillis(90)
+        val topic1 = broadcastTopic<CorrelationRecord<TestCorrelationEntityFromSecondary1>>(1)
+        val step = CorrelationStep<TestCorrelationEntityFromPrimary>("corr",
+                { record -> record.value.key },
+                listOf(SecondaryCorrelation("secondary-1",
+                        // The conversion from record to key always returns null.
+                        topic1) { record -> null }
+                ),
+                Duration.ofMillis(90)
         )
         val entityFromFromSecondary1 = TestCorrelationEntityFromSecondary1(123, "From Secondary 1")
 
         // when
         runBlocking {
             step.init()
-            channel1.send(CorrelationRecord("any", "secondary-1",
-                entityFromFromSecondary1))
+            topic1.produceValue(CorrelationRecord("any", "secondary-1", entityFromFromSecondary1))
             // Wait for the data to be consumed.
             delay(20)
         }
@@ -218,10 +210,10 @@ internal class CorrelationStepTest {
         // given
         // The conversion from record to key always returns null.
         val step =
-            CorrelationStep<TestCorrelationEntityFromPrimary, Array<Any?>>("corr", { record -> null }, emptyList(),
-                Duration.ofSeconds(10))
+            CorrelationStep<TestCorrelationEntityFromPrimary>("corr", { record -> null }, emptyList(),
+                    Duration.ofSeconds(10))
         val entityFromPrimary = TestCorrelationEntityFromPrimary(123, "From Primary")
-        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any?>>(entityFromPrimary)
+        val ctx = StepTestHelper.createStepContext<TestCorrelationEntityFromPrimary, Array<Any>>(entityFromPrimary)
         runBlocking {
             step.init()
         }

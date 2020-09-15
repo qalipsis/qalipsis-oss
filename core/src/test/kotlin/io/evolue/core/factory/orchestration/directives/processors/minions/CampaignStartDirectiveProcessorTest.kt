@@ -1,7 +1,7 @@
 package io.evolue.core.factory.orchestration.directives.processors.minions
 
 import io.evolue.core.cross.driving.TestDescriptiveDirective
-import io.evolue.core.cross.driving.directives.MinionsStartSingletonsDirective
+import io.evolue.core.cross.driving.directives.CampaignStartDirective
 import io.evolue.core.factory.orchestration.MinionsKeeper
 import io.evolue.core.factory.orchestration.ScenariosKeeper
 import io.evolue.test.mockk.WithMockk
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Timeout
  * @author Eric Jessé
  */
 @WithMockk
-internal class MinionsStartSingletonsDirectiveProcessorTest {
+internal class CampaignStartDirectiveProcessorTest {
 
     @RelaxedMockK
     lateinit var minionsKeeper: MinionsKeeper
@@ -29,32 +29,32 @@ internal class MinionsStartSingletonsDirectiveProcessorTest {
     lateinit var scenariosKeeper: ScenariosKeeper
 
     @InjectMockKs
-    lateinit var processor: MinionsStartSingletonsDirectiveProcessor
+    lateinit var processorStart: CampaignStartDirectiveProcessor
 
     @Test
     @Timeout(1)
     internal fun shouldAcceptMinionsStartDirective() {
         val directive =
-            MinionsStartSingletonsDirective("my-scenario")
+            CampaignStartDirective("my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns true
 
-        Assertions.assertTrue(processor.accept(directive))
+        Assertions.assertTrue(processorStart.accept(directive))
     }
 
     @Test
     @Timeout(1)
     internal fun shouldNotAcceptNotMinionsStartDirective() {
-        Assertions.assertFalse(processor.accept(TestDescriptiveDirective()))
+        Assertions.assertFalse(processorStart.accept(TestDescriptiveDirective()))
     }
 
     @Test
     @Timeout(1)
     internal fun shouldNotAcceptMinionsStartDirectiveForUnknownDag() {
         val directive =
-            MinionsStartSingletonsDirective("my-scenario")
+            CampaignStartDirective("my-campaign", "my-scenario")
         every { scenariosKeeper.hasScenario("my-scenario") } returns false
 
-        Assertions.assertFalse(processor.accept(directive))
+        Assertions.assertFalse(processorStart.accept(directive))
     }
 
     @Test
@@ -62,18 +62,18 @@ internal class MinionsStartSingletonsDirectiveProcessorTest {
     internal fun shouldStartSingletons() {
         // given
         val directive =
-            MinionsStartSingletonsDirective("my-scenario")
+            CampaignStartDirective("my-campaign", "my-scenario")
 
         // when
         runBlocking {
-            processor.process(directive)
+            processorStart.process(directive)
             // Wait for the directive to be fully completed.
             delay(5)
         }
 
         // then
         coVerify {
-            minionsKeeper.startSingletons("my-scenario")
+            minionsKeeper.startCampaign("my-campaign", "my-scenario")
         }
         confirmVerified(minionsKeeper)
     }

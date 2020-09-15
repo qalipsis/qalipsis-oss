@@ -1,5 +1,7 @@
 package io.evolue.core.factory.orchestration
 
+import io.evolue.api.context.DirectedAcyclicGraphId
+import io.evolue.api.context.ScenarioId
 import io.evolue.api.exceptions.InvalidSpecificationException
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
@@ -14,14 +16,17 @@ import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
+import io.evolue.core.cross.driving.feedback.CampaignStartedForDagFeedback
 import io.evolue.core.cross.driving.feedback.FactoryRegistrationFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackProducer
+import io.evolue.core.cross.driving.feedback.FeedbackStatus
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyExactly
 import io.evolue.test.mockk.coVerifyNever
 import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.mockk.verifyOnce
+import io.evolue.test.utils.getProperty
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -70,8 +75,9 @@ internal class ScenariosKeeperImplTest {
     @BeforeEach
     internal fun setUp() {
         scenariosKeeper = spyk(
-            ScenariosKeeperImpl(scenarioSpecificationsKeeper, feedbackProducer, listOf(stepConverter1, stepConverter2),
-                listOf(stepDecorator1, stepDecorator2)))
+                ScenariosKeeperImpl(scenarioSpecificationsKeeper, feedbackProducer,
+                        listOf(stepConverter1, stepConverter2),
+                        listOf(stepDecorator1, stepDecorator2)))
     }
 
     @AfterEach
@@ -174,10 +180,10 @@ internal class ScenariosKeeperImplTest {
     internal fun `should convert steps and followers`() {
         // given
         val scenarioSpecification: ReadableScenarioSpecification = relaxedMockk(
-            ScenarioSpecification::class, MutableScenarioSpecification::class
+                ScenarioSpecification::class, MutableScenarioSpecification::class
         )
         val scenario: Scenario = relaxedMockk { }
-        val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk() {
+        val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { directedAcyclicGraphId } returns "dag-1"
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
@@ -200,8 +206,8 @@ internal class ScenariosKeeperImplTest {
         // when
         runBlocking {
             scenariosKeeper.convertSteps(scenarioSpecification, scenario, dags, null,
-                // Only the root steps are passed.
-                listOf(stepSpecification1, stepSpecification3))
+                    // Only the root steps are passed.
+                    listOf(stepSpecification1, stepSpecification3))
         }
 
         // then
@@ -220,7 +226,7 @@ internal class ScenariosKeeperImplTest {
     internal fun `should not convert followers when step is not converted`() {
         // given
         val scenarioSpecification: ReadableScenarioSpecification = relaxedMockk(
-            ScenarioSpecification::class, MutableScenarioSpecification::class
+                ScenarioSpecification::class, MutableScenarioSpecification::class
         )
         val scenario: Scenario = relaxedMockk { }
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
@@ -251,8 +257,8 @@ internal class ScenariosKeeperImplTest {
         // when
         runBlocking {
             scenariosKeeper.convertSteps(scenarioSpecification, scenario, dags, null,
-                // Only the root steps are passed.
-                listOf(stepSpecification1, stepSpecification3))
+                    // Only the root steps are passed.
+                    listOf(stepSpecification1, stepSpecification3))
         }
 
         // then
@@ -296,7 +302,7 @@ internal class ScenariosKeeperImplTest {
 
         coVerifyOnce {
             scenariosKeeper.convertSteps(refEq(scenarioSpecification), refEq(scenario), not(isNull()), isNull(),
-                refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>))
+                    refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>))
         }
     }
 
@@ -329,8 +335,8 @@ internal class ScenariosKeeperImplTest {
         mockkObject(ServicesLoader)
         every { ServicesLoader.loadServices<Any?>(any()) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
-            "scenario-1" to scenarioSpecification1,
-            "scenario-2" to scenarioSpecification2
+                "scenario-1" to scenarioSpecification1,
+                "scenario-2" to scenarioSpecification2
         )
         val scenario1: Scenario = relaxedMockk { }
         val scenario2: Scenario = relaxedMockk { }
@@ -359,7 +365,6 @@ internal class ScenariosKeeperImplTest {
         }
     }
 
-
     @Test
     internal fun `should publish feedback for all scenarios`() {
         // given
@@ -367,30 +372,30 @@ internal class ScenariosKeeperImplTest {
             every { id } returns "scenario-1"
             every { minionsCount } returns 2
             every { dags } returns mutableListOf(
-                relaxedMockk {
-                    every { id } returns "dag-1"
-                    every { singleton } returns false
-                    every { scenarioStart } returns true
-                    every { stepsCount } returns 12
-                },
-                relaxedMockk {
-                    every { id } returns "dag-2"
-                    every { singleton } returns true
-                    every { scenarioStart } returns false
-                    every { stepsCount } returns 4
-                }
+                    relaxedMockk {
+                        every { id } returns "dag-1"
+                        every { singleton } returns false
+                        every { scenarioStart } returns true
+                        every { stepsCount } returns 12
+                    },
+                    relaxedMockk {
+                        every { id } returns "dag-2"
+                        every { singleton } returns true
+                        every { scenarioStart } returns false
+                        every { stepsCount } returns 4
+                    }
             )
         }
         val scenario2: Scenario = relaxedMockk {
             every { id } returns "scenario-2"
             every { minionsCount } returns 1
             every { dags } returns mutableListOf(
-                relaxedMockk {
-                    every { id } returns "dag-3"
-                    every { singleton } returns true
-                    every { scenarioStart } returns true
-                    every { stepsCount } returns 42
-                }
+                    relaxedMockk {
+                        every { id } returns "dag-3"
+                        every { singleton } returns true
+                        every { scenarioStart } returns true
+                        every { stepsCount } returns 42
+                    }
             )
         }
         val feedback = slot<FactoryRegistrationFeedback>()
@@ -439,4 +444,142 @@ internal class ScenariosKeeperImplTest {
             }
         }
     }
+
+    @Test
+    internal fun `should destroy all steps`() {
+        // given
+        val mockedSteps = mutableListOf<Step<*, *>>()
+        buildDagsByScenario(mockedSteps)
+
+        // when
+        scenariosKeeper.destroy()
+
+        // then
+        mockedSteps.forEach { step ->
+            coVerifyOnce {
+                step.destroy()
+            }
+        }
+    }
+
+    @Test
+    internal fun `should start all steps`() {
+        // given
+        val mockedSteps = mutableListOf<Step<*, *>>()
+        buildDagsByScenario(mockedSteps)
+        val calledStart = AtomicInteger(0)
+        mockedSteps.forEach {
+            coEvery { it.start() } answers {
+                calledStart.incrementAndGet()
+                Unit
+            }
+        }
+
+        // when
+        scenariosKeeper.startScenario("camp-1", "scen-1")
+
+        // then
+        val expectedCalls = mockedSteps.size - 1 // All but the one of scen-2
+        assertEquals(expectedCalls, calledStart.get())
+        coVerifyOnce {
+            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
+                    "camp-1", "scen-1", "dag-1", FeedbackStatus.IN_PROGRESS
+            )))
+            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
+                    "camp-1", "scen-1", "dag-2", FeedbackStatus.IN_PROGRESS
+            )))
+            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
+                    "camp-1", "scen-1", "dag-1", FeedbackStatus.COMPLETED
+            )))
+            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
+                    "camp-1", "scen-1", "dag-2", FeedbackStatus.COMPLETED
+            )))
+        }
+
+        // when
+        scenariosKeeper.startScenario("camp-1", "scen-2")
+
+        // then
+        assertEquals(mockedSteps.size, calledStart.get())
+        coVerifyOnce {
+            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
+                    "camp-1", "scen-2", "dag-1", FeedbackStatus.IN_PROGRESS
+            )))
+            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
+                    "camp-1", "scen-2", "dag-1", FeedbackStatus.COMPLETED
+            )))
+        }
+    }
+
+    @Test
+    internal fun `should stop all steps`() {
+        // given
+        val mockedSteps = mutableListOf<Step<*, *>>()
+        buildDagsByScenario(mockedSteps)
+        val calledStop = AtomicInteger(0)
+        mockedSteps.forEach {
+            coEvery { it.stop() } answers {
+                calledStop.incrementAndGet()
+                Unit
+            }
+        }
+
+        // when
+        scenariosKeeper.stopScenario("camp-1", "scen-1")
+
+        // then
+        val expectedCalls = mockedSteps.size - 1 // All but the one of scen-2
+        assertEquals(expectedCalls, calledStop.get())
+
+        // when
+        scenariosKeeper.stopScenario("camp-1", "scen-2")
+
+        // then
+        assertEquals(mockedSteps.size, calledStop.get())
+    }
+
+    private fun buildDagsByScenario(mockedSteps: MutableList<Step<*, *>>) {
+        val dagsByScenario =
+            scenariosKeeper.getProperty<MutableMap<ScenarioId, MutableMap<DirectedAcyclicGraphId, DirectedAcyclicGraph>>>(
+                    "dagsByScenario")
+        dagsByScenario.clear()
+        dagsByScenario["scen-1"] = mutableMapOf(
+                "dag-1" to relaxedMockk {
+                    every { id } returns "dag-1"
+                    every { rootSteps } returns mutableListOf(
+                            relaxedMockk {
+                                mockedSteps.add(this)
+                                every { next } returns mutableListOf(
+                                        relaxedMockk { mockedSteps.add(this) },
+                                        relaxedMockk {
+                                            mockedSteps.add(this)
+                                            every { next } returns mutableListOf(
+                                                    relaxedMockk {
+                                                        mockedSteps.add(this)
+                                                    }
+                                            )
+                                        }
+                                )
+                            },
+                            relaxedMockk { mockedSteps.add(this) }
+                    )
+                },
+                "dag-2" to relaxedMockk {
+                    every { id } returns "dag-2"
+                    every { rootSteps } returns mutableListOf(
+                            relaxedMockk { mockedSteps.add(this) }
+                    )
+                }
+        )
+        dagsByScenario["scen-2"] = mutableMapOf(
+                "dag-1" to relaxedMockk {
+                    every { id } returns "dag-1"
+                    every { rootSteps } returns mutableListOf(
+                            relaxedMockk { mockedSteps.add(this) }
+                    )
+                }
+        )
+    }
+
+
 }

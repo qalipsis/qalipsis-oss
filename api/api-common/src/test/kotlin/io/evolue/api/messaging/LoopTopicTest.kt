@@ -11,12 +11,13 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
-internal class BroadcastFromBeginningTopicTest {
+internal class LoopTopicTest {
+
 
     @Test
-    internal fun shouldPreventFromUsingClosedTopic() {
+    internal fun `should prevent from using closed topic`() {
         // given
-        val topic = BroadcastFromBeginningTopic(100, Duration.ofSeconds(1))
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
 
         // when
         topic.close()
@@ -29,7 +30,7 @@ internal class BroadcastFromBeginningTopicTest {
         }
         assertThrows<ClosedTopicException> {
             runBlocking {
-                topic.produce(1)
+                topic.produceValue(1)
             }
         }
         assertThrows<ClosedTopicException> {
@@ -41,12 +42,12 @@ internal class BroadcastFromBeginningTopicTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    internal fun shouldProvideSubscription() {
+    internal fun `should provide subscription`() {
         // given
-        val topic = BroadcastFromBeginningTopic(100, Duration.ofSeconds(1))
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -54,7 +55,6 @@ internal class BroadcastFromBeginningTopicTest {
             // when
             val subscription = topic.subscribe("any-1")
             // then
-            Assertions.assertFalse(subscription.channel.isEmpty)
             for (i in 0 until 10) {
                 Assertions.assertEquals(i, subscription.pollValue())
             }
@@ -66,7 +66,7 @@ internal class BroadcastFromBeginningTopicTest {
 
             // when
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
             // then
             for (i in 10 until 20) {
@@ -76,9 +76,9 @@ internal class BroadcastFromBeginningTopicTest {
     }
 
     @Test
-    internal fun shouldCancelSubscription() {
+    internal fun `should cancel subscription`() {
         // given
-        val topic = BroadcastFromBeginningTopic(100, Duration.ofSeconds(1))
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
@@ -89,9 +89,9 @@ internal class BroadcastFromBeginningTopicTest {
     }
 
     @Test
-    internal fun shouldCancelIdleSubscription() {
+    internal fun `should cancel idle subscription`() {
         // given
-        val topic = BroadcastFromBeginningTopic(100, Duration.ofMillis(5))
+        val topic = LoopTopic<Int>(Duration.ofMillis(5))
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
@@ -102,12 +102,12 @@ internal class BroadcastFromBeginningTopicTest {
     }
 
     @Test
-    internal fun shouldProvideTwoDifferentSubscriptions() {
+    internal fun `should provide two different subscriptions`() {
         // given
-        val topic = BroadcastFromBeginningTopic(100, Duration.ofSeconds(1))
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -116,7 +116,7 @@ internal class BroadcastFromBeginningTopicTest {
             val subscription1 = topic.subscribe("any-1")
             val subscription2 = topic.subscribe("any-2")
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
 
             // then
@@ -129,32 +129,56 @@ internal class BroadcastFromBeginningTopicTest {
     }
 
     @Test
-    internal fun shouldStillProvideRecordsToOpenSubscriptions() {
+    internal fun `should provide records to open subscriptions only`() {
         // given
-        val topic = BroadcastFromBeginningTopic(100, Duration.ofSeconds(1))
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
         runBlocking {
             // when
             val subscription1 = topic.subscribe("any-1")
-            val subscription2 = topic.subscribe("any-2")
             subscription1.cancel()
-            for (i in 10 until 20) {
-                topic.produce(i)
-            }
+            val subscription2 = topic.subscribe("any-2")
+
             // then
             assertThrows<CancelledSubscriptionException> {
                 runBlocking {
                     subscription1.pollValue()
                 }
             }
-            for (i in 0 until 20) {
+            for (i in 0 until 10) {
                 Assertions.assertEquals(i, subscription2.pollValue())
             }
         }
     }
+
+
+    @Test
+    internal fun `should provide infinite data once completed`() {
+        // given
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
+        runBlocking {
+            for (i in 0 until 20) {
+                topic.produceValue(i)
+            }
+            topic.complete()
+        }
+
+        runBlocking {
+            // when
+            val subscription = topic.subscribe("any-1")
+
+            // then
+            repeat(10) {
+                for (i in 0 until 20) {
+                    Assertions.assertEquals(i, subscription.pollValue())
+                }
+            }
+        }
+    }
+
 }

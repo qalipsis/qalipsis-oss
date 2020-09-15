@@ -1,5 +1,6 @@
 package io.evolue.core.cross.driving.directives.inmemory
 
+import io.evolue.core.annotations.LogInput
 import io.evolue.core.cross.configuration.ENV_STANDALONE
 import io.evolue.core.cross.driving.directives.Directive
 import io.evolue.core.cross.driving.directives.DirectiveProducer
@@ -7,6 +8,7 @@ import io.evolue.core.cross.driving.directives.DirectiveRegistry
 import io.evolue.core.cross.driving.directives.ReferencableDirective
 import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.channels.Channel
+import org.slf4j.event.Level
 import javax.inject.Singleton
 
 /**
@@ -18,11 +20,12 @@ import javax.inject.Singleton
 @Singleton
 @Requires(env = [ENV_STANDALONE])
 internal class InMemoryDirectiveProducer(
-    private val registry: DirectiveRegistry
+        private val registry: DirectiveRegistry
 ) : DirectiveProducer {
 
     val channel = Channel<Directive>(Channel.BUFFERED)
 
+    @LogInput(level = Level.DEBUG)
     override suspend fun publish(directive: Directive) {
         when (directive) {
             is ReferencableDirective<*> -> {

@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-internal class DatasourceStepSpecificationTest {
+internal class FlowDatasourceStepSpecificationTest {
 
     @Test
     internal fun `should add datasource to the scenario`() {
         val scenario = scenario(
-            "my-scenario") as ScenarioSpecificationImplementation
+                "my-scenario") as ScenarioSpecificationImplementation
 
         val specification: suspend () -> Flow<Int> = { -> (1..10).asFlow() }
         scenario.datasource(specification)

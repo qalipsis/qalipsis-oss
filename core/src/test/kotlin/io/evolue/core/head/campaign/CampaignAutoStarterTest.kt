@@ -12,6 +12,8 @@ import io.evolue.test.mockk.relaxedMockk
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.CountDownLatch
@@ -41,16 +43,18 @@ internal class CampaignAutoStarterTest {
         // given
         val countDown = CountDownLatch(1)
         val scenarios: List<FactoryRegistrationFeedbackScenario> = listOf(
-            relaxedMockk {
-                io.mockk.every { id } returns "scen-1"
-            },
-            relaxedMockk {
-                io.mockk.every { id } returns "scen-2"
-            }
+                relaxedMockk {
+                    io.mockk.every { id } returns "scen-1"
+                },
+                relaxedMockk {
+                    io.mockk.every { id } returns "scen-2"
+                }
         )
         coEvery { feedbackConsumer.onReceive(any()) } coAnswers {
-            (firstArg() as suspend (Feedback) -> Unit).invoke(FactoryRegistrationFeedback(scenarios))
-            countDown.countDown()
+            GlobalScope.launch {
+                (firstArg() as suspend (Feedback) -> Unit).invoke(FactoryRegistrationFeedback(scenarios))
+                countDown.countDown()
+            }
         }
 
         // when
@@ -67,8 +71,10 @@ internal class CampaignAutoStarterTest {
         // given
         val countDown = CountDownLatch(1)
         coEvery { feedbackConsumer.onReceive(any()) } coAnswers {
-            (firstArg() as suspend (Feedback) -> Unit).invoke(relaxedMockk())
-            countDown.countDown()
+            GlobalScope.launch {
+                (firstArg() as suspend (Feedback) -> Unit).invoke(relaxedMockk())
+                countDown.countDown()
+            }
         }
 
         // when

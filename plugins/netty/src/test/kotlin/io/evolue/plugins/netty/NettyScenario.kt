@@ -14,21 +14,21 @@ import java.nio.charset.StandardCharsets
  */
 object NettyScenario {
 
-    val minions = 20
+    const val minions = 20
 
-    val repeatTcp = 2000L
+    const val repeatTcp = 2000L
 
-    val repeatUdp = 5L
+    const val repeatUdp = 5L
 
     val availableTcpPort = ServerUtils.availableTcpPort()
 
     val availableUdpPort = ServerUtils.availableUdpPort()
 
-    val tcpRequest1 = "My first TCP request".toByteArray(StandardCharsets.UTF_8)
+    private val tcpRequest1 = "My first TCP request".toByteArray(StandardCharsets.UTF_8)
 
-    val tcpRequest2 = "My second TCP request".toByteArray(StandardCharsets.UTF_8)
+    private val tcpRequest2 = "My second TCP request".toByteArray(StandardCharsets.UTF_8)
 
-    val udpRequest = "My UDP request".toByteArray(StandardCharsets.UTF_8)
+    private val udpRequest = "My UDP request".toByteArray(StandardCharsets.UTF_8)
 
     @Scenario
     fun myTcpScenario() {

@@ -1,5 +1,6 @@
 package io.evolue.core.factory.orchestration
 
+import io.evolue.api.context.CampaignId
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
 import io.evolue.api.orchestration.DirectedAcyclicGraph
@@ -28,4 +29,8 @@ internal interface ScenariosKeeper {
     fun hasDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): Boolean
 
     fun getDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph?
+
+    fun startScenario(campaignId: CampaignId, scenarioId: ScenarioId)
+
+    fun stopScenario(campaignId: CampaignId, scenarioId: ScenarioId)
 }

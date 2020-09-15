@@ -1,5 +1,11 @@
 package io.evolue.core.head.campaign
 
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.any
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.prop
 import com.natpryce.hamkrest.allOf
 import com.natpryce.hamkrest.anyElement
 import com.natpryce.hamkrest.assertion.assertThat
@@ -10,11 +16,14 @@ import com.natpryce.hamkrest.isA
 import com.natpryce.hamkrest.sameInstance
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
+import io.evolue.api.lang.concurrentSet
+import io.evolue.core.cross.driving.directives.CampaignStartDirective
 import io.evolue.core.cross.driving.directives.DirectiveKey
 import io.evolue.core.cross.driving.directives.DirectiveProducer
 import io.evolue.core.cross.driving.directives.MinionsCreationDirectiveReference
 import io.evolue.core.cross.driving.directives.MinionsCreationPreparationDirective
 import io.evolue.core.cross.driving.directives.MinionsRampUpPreparationDirective
+import io.evolue.core.cross.driving.feedback.CampaignStartedForDagFeedback
 import io.evolue.core.cross.driving.feedback.DirectiveFeedback
 import io.evolue.core.cross.driving.feedback.FeedbackConsumer
 import io.evolue.core.cross.driving.feedback.FeedbackStatus
@@ -55,8 +64,8 @@ internal class DefaultCampaignManagerTest {
     internal fun `should start minions creation with same minions total when campaign a starts and minionsCountPerScenario is specified`() {
         // given
         val campaignManager = DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
         val scenario1 = HeadScenario("scen-1", 4, listOf())
         val scenario2 = HeadScenario("scen-2", 17, listOf())
@@ -77,21 +86,21 @@ internal class DefaultCampaignManagerTest {
             directiveProducer.publish(any())
         }
         assertThat(directives, allOf(
-            hasSize(equalTo(2)),
-            anyElement(allOf(
-                isA<MinionsCreationPreparationDirective>(),
-                has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-1")),
-                has(MinionsCreationPreparationDirective::value, equalTo(10))
-            )),
-            anyElement(allOf(
-                isA<MinionsCreationPreparationDirective>(),
-                has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-2")),
-                has(MinionsCreationPreparationDirective::value, equalTo(10))
-            ))
+                hasSize(equalTo(2)),
+                anyElement(allOf(
+                        isA<MinionsCreationPreparationDirective>(),
+                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-1")),
+                        has(MinionsCreationPreparationDirective::value, equalTo(10))
+                )),
+                anyElement(allOf(
+                        isA<MinionsCreationPreparationDirective>(),
+                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-2")),
+                        has(MinionsCreationPreparationDirective::value, equalTo(10))
+                ))
         ))
         val scenarios = campaignManager.getProperty<Map<ScenarioId, HeadScenario>>("scenarios")
         assertThat(scenarios, allOf(
-            equalTo(mapOf("scen-1" to scenario1, "scen-2" to scenario2))
+                equalTo(mapOf("scen-1" to scenario1, "scen-2" to scenario2))
         ))
         val usedOnCriticalFailure = campaignManager.getProperty<(String) -> Unit>("onCriticalFailure")
         assertThat(usedOnCriticalFailure, sameInstance(onCriticalFailure))
@@ -102,8 +111,8 @@ internal class DefaultCampaignManagerTest {
     internal fun `should start minions creation with same minions total when campaign a starts and minionsCountFactor is specified`() {
         // given
         val campaignManager = DefaultCampaignManager(
-            minionsCountFactor = 2.0, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                minionsCountFactor = 2.0, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
         val scenario1 = HeadScenario("scen-1", 4, listOf())
         val scenario2 = HeadScenario("scen-2", 17, listOf())
@@ -124,21 +133,21 @@ internal class DefaultCampaignManagerTest {
             directiveProducer.publish(any())
         }
         assertThat(directives, allOf(
-            hasSize(equalTo(2)),
-            anyElement(allOf(
-                isA<MinionsCreationPreparationDirective>(),
-                has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-1")),
-                has(MinionsCreationPreparationDirective::value, equalTo(8))
-            )),
-            anyElement(allOf(
-                isA<MinionsCreationPreparationDirective>(),
-                has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-2")),
-                has(MinionsCreationPreparationDirective::value, equalTo(34))
-            ))
+                hasSize(equalTo(2)),
+                anyElement(allOf(
+                        isA<MinionsCreationPreparationDirective>(),
+                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-1")),
+                        has(MinionsCreationPreparationDirective::value, equalTo(8))
+                )),
+                anyElement(allOf(
+                        isA<MinionsCreationPreparationDirective>(),
+                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-2")),
+                        has(MinionsCreationPreparationDirective::value, equalTo(34))
+                ))
         ))
         val scenarios = campaignManager.getProperty<Map<ScenarioId, HeadScenario>>("scenarios")
         assertThat(scenarios, allOf(
-            equalTo(mapOf("scen-1" to scenario1, "scen-2" to scenario2))
+                equalTo(mapOf("scen-1" to scenario1, "scen-2" to scenario2))
         ))
         val usedOnCriticalFailure = campaignManager.getProperty<(String) -> Unit>("onCriticalFailure")
         assertThat(usedOnCriticalFailure, sameInstance(onCriticalFailure))
@@ -149,8 +158,8 @@ internal class DefaultCampaignManagerTest {
     internal fun `should accept MinionsCreationDirectiveReference`() {
         // given
         val campaignManager = DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
 
         // when
@@ -162,8 +171,8 @@ internal class DefaultCampaignManagerTest {
     internal fun `should not accept other directives`() {
         // given
         val campaignManager = DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
 
         // when
@@ -175,8 +184,8 @@ internal class DefaultCampaignManagerTest {
     internal fun `should store the directives`() {
         // given
         val campaignManager = DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
 
@@ -187,7 +196,7 @@ internal class DefaultCampaignManagerTest {
 
         val directivesInProgress =
             campaignManager.getProperty<MutableMap<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
-                "directivesInProgress")
+                    "directivesInProgress")
         Assertions.assertSame(directive, directivesInProgress["directive"]!!.directive)
     }
 
@@ -198,8 +207,8 @@ internal class DefaultCampaignManagerTest {
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationPreparationDirective("directive", "", 123)
         val campaignManager = spyk(DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )) {
             coEvery {
                 receivedMinionsCreationPreparationFeedback(any(), any())
@@ -207,7 +216,7 @@ internal class DefaultCampaignManagerTest {
         }
         val directivesInProgress =
             campaignManager.getProperty<MutableMap<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
-                "directivesInProgress")
+                    "directivesInProgress")
         directivesInProgress[directive.key] = DefaultCampaignManager.DirectiveInProgress(directive)
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.IN_PROGRESS)
 
@@ -232,8 +241,8 @@ internal class DefaultCampaignManagerTest {
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationPreparationDirective("directive", "", 123)
         val campaignManager = spyk(DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )) {
             coEvery {
                 receivedMinionsCreationPreparationFeedback(any(), any())
@@ -241,7 +250,7 @@ internal class DefaultCampaignManagerTest {
         }
         val directivesInProgress =
             campaignManager.getProperty<MutableMap<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
-                "directivesInProgress")
+                    "directivesInProgress")
         directivesInProgress[directive.key] = DefaultCampaignManager.DirectiveInProgress(directive)
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.COMPLETED)
 
@@ -255,8 +264,6 @@ internal class DefaultCampaignManagerTest {
         coVerifyOnce {
             campaignManager.receivedMinionsCreationPreparationFeedback(directiveFeedback, directive)
         }
-        // The directive is removed from the cache.
-        Assertions.assertFalse(directivesInProgress.containsKey(directive.key))
     }
 
     @Test
@@ -265,8 +272,8 @@ internal class DefaultCampaignManagerTest {
         // given
         val countDownLatch = CountDownLatch(1)
         val campaignManager = spyk(DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )) {
             coEvery {
                 receivedMinionsCreationPreparationFeedback(any(), any())
@@ -293,8 +300,8 @@ internal class DefaultCampaignManagerTest {
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
         val campaignManager = spyk(DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )) {
             coEvery {
                 receiveMinionsCreationDirectiveFeedback(any(), any())
@@ -302,7 +309,7 @@ internal class DefaultCampaignManagerTest {
         }
         val directivesInProgress =
             campaignManager.getProperty<MutableMap<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
-                "directivesInProgress")
+                    "directivesInProgress")
         directivesInProgress[directive.key] = DefaultCampaignManager.DirectiveInProgress(directive)
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.IN_PROGRESS)
 
@@ -327,8 +334,8 @@ internal class DefaultCampaignManagerTest {
         val countDownLatch = CountDownLatch(1)
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
         val campaignManager = spyk(DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )) {
             coEvery {
                 receiveMinionsCreationDirectiveFeedback(any(), any())
@@ -336,7 +343,7 @@ internal class DefaultCampaignManagerTest {
         }
         val directivesInProgress =
             campaignManager.getProperty<MutableMap<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
-                "directivesInProgress")
+                    "directivesInProgress")
         directivesInProgress[directive.key] = DefaultCampaignManager.DirectiveInProgress(directive)
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.COMPLETED)
 
@@ -350,8 +357,6 @@ internal class DefaultCampaignManagerTest {
         coVerifyOnce {
             campaignManager.receiveMinionsCreationDirectiveFeedback(directiveFeedback, directive)
         }
-        // The directive is removed from the cache.
-        Assertions.assertFalse(directivesInProgress.containsKey(directive.key))
     }
 
     @Test
@@ -360,8 +365,8 @@ internal class DefaultCampaignManagerTest {
         // given
         val countDownLatch = CountDownLatch(1)
         val campaignManager = spyk(DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )) {
             coEvery {
                 receiveMinionsCreationDirectiveFeedback(any(), any())
@@ -389,8 +394,8 @@ internal class DefaultCampaignManagerTest {
         val onCriticalFailure: (String) -> Unit = { _ -> countDownLatch.countDown() }
         val directive = MinionsCreationPreparationDirective("directive", "", 123)
         val campaignManager = DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
         campaignManager.setProperty("onCriticalFailure", onCriticalFailure)
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.FAILED)
@@ -413,8 +418,8 @@ internal class DefaultCampaignManagerTest {
         val onCriticalFailure: (String) -> Unit = { _ -> countDownLatch.countDown() }
         val directive = MinionsCreationDirectiveReference("directive", "", "", "")
         val campaignManager = DefaultCampaignManager(
-            10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
         campaignManager.setProperty("onCriticalFailure", onCriticalFailure)
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.FAILED)
@@ -431,12 +436,12 @@ internal class DefaultCampaignManagerTest {
 
     @Test
     @Timeout(3)
-    internal fun `should trigger ramp-up when all the scenarios are ready`() {
+    internal fun `should trigger campaign start when all the scenarios are ready`() {
         // given
         val campaignManager = DefaultCampaignManager(
-            10, speedFactor = 2.87, startOffsetMs = 876, feedbackConsumer = feedbackConsumer,
-            scenarioRepository = scenarioRepository,
-            directiveProducer = directiveProducer
+                10, speedFactor = 2.87, startOffsetMs = 876, feedbackConsumer = feedbackConsumer,
+                scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
         )
 
         val directive1 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-1", "dag-1")
@@ -451,61 +456,127 @@ internal class DefaultCampaignManagerTest {
         val scenarios = campaignManager.getProperty<MutableMap<ScenarioId, HeadScenario>>("scenarios")
         scenarios[scenario1.id] = scenario1
         scenarios[scenario2.id] = scenario2
+        val publishedDirectives = mutableListOf<CampaignStartDirective>()
+        coEvery { directiveProducer.publish(capture(publishedDirectives)) } answers {}
+        val readyDagsByScenario =
+            campaignManager.getProperty<MutableMap<ScenarioId, MutableCollection<DirectedAcyclicGraphId>>>(
+                    "readyDagsByScenario")
+        readyDagsByScenario["scen-1"] = concurrentSet()
+        readyDagsByScenario["scen-2"] = concurrentSet()
+
+        // when
+        runBlocking {
+            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
+                    directive1)
+            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
+                    directive2)
+            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
+                    directive3)
+        }
+
+        // then
+        val readyScenarios = campaignManager.getProperty<Set<ScenarioId>>("readyScenarios")
+
+        // Only one scenario is ready.
+        Assertions.assertEquals(setOf("scen-1"), readyScenarios)
+
+        // when
+        runBlocking {
+            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
+                    directive4)
+        }
+
+        assertThat(publishedDirectives).all {
+            hasSize(equalTo(2))
+            any {
+                isInstanceOf(MinionsRampUpPreparationDirective::class)
+                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
+                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-1")
+            }
+            any {
+                isInstanceOf(MinionsRampUpPreparationDirective::class)
+                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
+                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-2")
+            }
+        }
+
+        val directivesInProgress =
+            campaignManager.getProperty<Map<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
+                    "directivesInProgress")
+        Assertions.assertEquals(2, directivesInProgress.size)
+    }
+
+    @Test
+    @Timeout(3)
+    internal fun `should trigger ramp-up when all the DAGs are started`() {
+        // given
+        val campaignManager = DefaultCampaignManager(
+                10, speedFactor = 2.87, startOffsetMs = 876, feedbackConsumer = feedbackConsumer,
+                scenarioRepository = scenarioRepository,
+                directiveProducer = directiveProducer
+        )
+
+        val feedback1 = CampaignStartedForDagFeedback("camp-1", "scen-1", "dag-1", FeedbackStatus.COMPLETED)
+        val feedback2 = CampaignStartedForDagFeedback("camp-1", "scen-1", "dag-2", FeedbackStatus.COMPLETED)
+        val feedback3 = CampaignStartedForDagFeedback("camp-1", "scen-2", "dag-1", FeedbackStatus.COMPLETED)
+        val feedback4 = CampaignStartedForDagFeedback("camp-1", "scen-2", "dag-2", FeedbackStatus.COMPLETED)
+
+        val scenario1 =
+            HeadScenario("scen-1", 4, listOf(HeadDirectedAcyclicGraph("dag-1"), HeadDirectedAcyclicGraph("dag-2")))
+        val scenario2 =
+            HeadScenario("scen-2", 17, listOf(HeadDirectedAcyclicGraph("dag-1"), HeadDirectedAcyclicGraph("dag-2")))
+        val startedDagsByScenario =
+            campaignManager.getProperty<MutableMap<ScenarioId, MutableCollection<DirectedAcyclicGraphId>>>(
+                    "startedDagsByScenario")
+        startedDagsByScenario["scen-1"] = concurrentSet()
+        startedDagsByScenario["scen-2"] = concurrentSet()
+
+        val scenarios = campaignManager.getProperty<MutableMap<ScenarioId, HeadScenario>>("scenarios")
+        scenarios[scenario1.id] = scenario1
+        scenarios[scenario2.id] = scenario2
         val publishedDirectives = mutableListOf<MinionsRampUpPreparationDirective>()
         coEvery { directiveProducer.publish(capture(publishedDirectives)) } answers {}
 
         // when
         runBlocking {
-            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
-                directive1)
-            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
-                directive2)
-            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
-                directive3)
+            campaignManager.processFeedBack(feedback1)
+            campaignManager.processFeedBack(feedback2)
+            campaignManager.processFeedBack(feedback3)
         }
 
         // then
-        val readyDagsByScenario =
-            campaignManager.getProperty<MutableMap<ScenarioId, MutableCollection<DirectedAcyclicGraphId>>>(
-                "readyDagsByScenario")
-        val readyScenario = campaignManager.getProperty<Set<ScenarioId>>("readyScenario")
+        val startedScenarios = campaignManager.getProperty<Set<ScenarioId>>("startedScenarios")
 
-        Assertions.assertEquals(mapOf(
-            "scen-1" to setOf("dag-1", "dag-2"),
-            "scen-2" to setOf("dag-1")
-        ), readyDagsByScenario)
         // Only one scenario is ready.
-        Assertions.assertEquals(readyScenario, setOf("scen-1"))
-        Assertions.assertTrue(publishedDirectives.isEmpty())
+        Assertions.assertEquals(setOf("scen-1"), startedScenarios)
 
         // when
         runBlocking {
-            campaignManager.receiveMinionsCreationDirectiveFeedback(DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
-                directive4)
+            campaignManager.processFeedBack(feedback4)
         }
-        Assertions.assertEquals(mapOf(
-            "scen-1" to setOf("dag-1", "dag-2"),
-            "scen-2" to setOf("dag-1", "dag-2")
-        ), readyDagsByScenario)
-        Assertions.assertEquals(readyScenario, setOf("scen-1", "scen-2"))
 
-        assertThat(publishedDirectives, allOf(
-            hasSize(equalTo(2)),
-            anyElement(allOf(
-                isA<MinionsRampUpPreparationDirective>(),
-                has(MinionsRampUpPreparationDirective::campaignId, equalTo("camp-1")),
-                has(MinionsRampUpPreparationDirective::scenarioId, equalTo("scen-1")),
-                has(MinionsRampUpPreparationDirective::startOffsetMs, equalTo(876L)),
-                has(MinionsRampUpPreparationDirective::speedFactor, equalTo(2.87))
-            )),
-            anyElement(allOf(
-                isA<MinionsRampUpPreparationDirective>(),
-                has(MinionsRampUpPreparationDirective::campaignId, equalTo("camp-1")),
-                has(MinionsRampUpPreparationDirective::scenarioId, equalTo("scen-2")),
-                has(MinionsRampUpPreparationDirective::startOffsetMs, equalTo(876L)),
-                has(MinionsRampUpPreparationDirective::speedFactor, equalTo(2.87))
-            ))
-        ))
+        assertThat(publishedDirectives).all {
+            hasSize(equalTo(2))
+            any {
+                isInstanceOf(MinionsRampUpPreparationDirective::class)
+                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
+                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-1")
+                prop(MinionsRampUpPreparationDirective::startOffsetMs).isEqualTo(876L)
+                prop(MinionsRampUpPreparationDirective::speedFactor).isEqualTo(2.87)
+            }
+            any {
+                isInstanceOf(MinionsRampUpPreparationDirective::class)
+                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
+                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-2")
+                prop(MinionsRampUpPreparationDirective::startOffsetMs).isEqualTo(876L)
+                prop(MinionsRampUpPreparationDirective::speedFactor).isEqualTo(2.87)
+            }
+        }
+
+        val directivesInProgress =
+            campaignManager.getProperty<Map<DirectiveKey, DefaultCampaignManager.DirectiveInProgress<*>>>(
+                    "directivesInProgress")
+        Assertions.assertEquals(2, directivesInProgress.size)
     }
 
 

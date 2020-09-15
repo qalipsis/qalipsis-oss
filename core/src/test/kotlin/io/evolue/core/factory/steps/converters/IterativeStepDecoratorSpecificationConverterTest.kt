@@ -66,7 +66,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         assertThat(creationContext.createdStep!!).all {
             isInstanceOf(IterativeStepDecorator::class)
             prop("iterations").isEqualTo(123L)
-            prop("delay").isEqualTo(Duration.ZERO)
+            prop("delayMillis").isEqualTo(0L)
             prop("decorated").isSameAs(decoratedStep)
         }
     }
@@ -88,7 +88,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         assertThat(creationContext.createdStep!!).all {
             isInstanceOf(IterativeStepDecorator::class)
             prop("iterations").isEqualTo(123L)
-            prop("delay").isEqualTo(Duration.ZERO)
+            prop("delayMillis").isEqualTo(0L)
             prop("decorated").isSameAs(decoratedStep)
         }
     }

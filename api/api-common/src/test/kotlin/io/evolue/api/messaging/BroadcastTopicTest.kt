@@ -14,9 +14,9 @@ import java.time.Duration
 internal class BroadcastTopicTest {
 
     @Test
-    internal fun shouldPreventFromUsingClosedTopic() {
+    internal fun `should prevent from using closed topic`() {
         // given
-        val topic = BroadcastTopic(100, Duration.ofSeconds(1))
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
 
         // when
         topic.close()
@@ -29,7 +29,7 @@ internal class BroadcastTopicTest {
         }
         assertThrows<ClosedTopicException> {
             runBlocking {
-                topic.produce(1)
+                topic.produceValue(1)
             }
         }
         assertThrows<ClosedTopicException> {
@@ -41,12 +41,12 @@ internal class BroadcastTopicTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    internal fun shouldProvideSubscription() {
+    internal fun `should provide subscription`() {
         // given
-        val topic = BroadcastTopic(100, Duration.ofSeconds(1))
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -54,7 +54,9 @@ internal class BroadcastTopicTest {
             // when
             val subscription = topic.subscribe("any-1")
             // then
-            Assertions.assertTrue(subscription.channel.isEmpty)
+            for (i in 0 until 10) {
+                Assertions.assertEquals(i, subscription.pollValue())
+            }
 
             // when
             val sameSubscription = topic.subscribe("any-1")
@@ -63,7 +65,7 @@ internal class BroadcastTopicTest {
 
             // when
             for (i in 10 until 20) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
             // then
             for (i in 10 until 20) {
@@ -73,9 +75,9 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun shouldCancelSubscription() {
+    internal fun `should cancel subscription`() {
         // given
-        val topic = BroadcastTopic(100, Duration.ofSeconds(1))
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
@@ -86,9 +88,9 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun shouldCancelIdleSubscription() {
+    internal fun `should cancel idle subscription`() {
         // given
-        val topic = BroadcastTopic(100, Duration.ofMillis(5))
+        val topic = BroadcastTopic<Int>(100, Duration.ofMillis(5))
         runBlocking {
             // when
             val subscription = topic.subscribe("any-1")
@@ -99,12 +101,12 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun shouldProvideTwoDifferentSubscriptions() {
+    internal fun `should provide two different subscriptions`() {
         // given
-        val topic = BroadcastTopic(100, Duration.ofSeconds(1))
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
@@ -112,15 +114,13 @@ internal class BroadcastTopicTest {
             // when
             val subscription1 = topic.subscribe("any-1")
             val subscription2 = topic.subscribe("any-2")
+            for (i in 10 until 20) {
+                topic.produceValue(i)
+            }
+
             // then
             Assertions.assertNotSame(subscription1, subscription2)
-
-            // when
-            for (i in 10 until 20) {
-                topic.produce(i)
-            }
-            // then
-            for (i in 10 until 20) {
+            for (i in 0 until 20) {
                 Assertions.assertEquals(i, subscription1.pollValue())
                 Assertions.assertEquals(i, subscription2.pollValue())
             }
@@ -128,32 +128,81 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun shouldStillProvideRecordsToOpenSubscriptions() {
+    internal fun `should provide records to open subscriptions only`() {
         // given
-        val topic = BroadcastTopic(100, Duration.ofSeconds(1))
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         runBlocking {
             for (i in 0 until 10) {
-                topic.produce(i)
+                topic.produceValue(i)
             }
         }
 
         runBlocking {
             // when
             val subscription1 = topic.subscribe("any-1")
-            val subscription2 = topic.subscribe("any-2")
             subscription1.cancel()
-            for (i in 10 until 20) {
-                topic.produce(i)
-            }
+            val subscription2 = topic.subscribe("any-2")
+
             // then
             assertThrows<CancelledSubscriptionException> {
                 runBlocking {
                     subscription1.pollValue()
                 }
             }
-            for (i in 10 until 20) {
+            for (i in 0 until 10) {
                 Assertions.assertEquals(i, subscription2.pollValue())
             }
         }
     }
+
+    @Test
+    internal fun `should only keep the maximum number of values`() {
+        // given
+        val topic = BroadcastTopic<Int>(10, Duration.ofSeconds(1))
+        runBlocking {
+            for (i in 0 until 20) {
+                topic.produceValue(i)
+            }
+        }
+
+        runBlocking {
+            // when
+            val subscription = topic.subscribe("any-1")
+
+            for (i in 20 until 30) {
+                topic.produceValue(i)
+            }
+
+            // then
+            for (i in 10 until 30) {
+                Assertions.assertEquals(i, subscription.pollValue())
+            }
+        }
+    }
+
+    @Test
+    internal fun `should only subscribe from next available value`() {
+        // given
+        val topic = BroadcastTopic<Int>(0, Duration.ofSeconds(1))
+        runBlocking {
+            for (i in 0 until 20) {
+                topic.produceValue(i)
+            }
+        }
+
+        runBlocking {
+            // when
+            val subscription = topic.subscribe("any-1")
+
+            for (i in 20 until 30) {
+                topic.produceValue(i)
+            }
+
+            // then
+            for (i in 20 until 30) {
+                Assertions.assertEquals(i, subscription.pollValue())
+            }
+        }
+    }
+
 }
