@@ -36,7 +36,7 @@ class HelloWorldScenario {
             }.configure {
                 name = "entry"
             }
-            .shelve { input -> mapOf("started at" to System.currentTimeMillis()) }
+            .shelve { mapOf("started at" to System.currentTimeMillis()) }
             .map { str -> str!!.toUpperCase() }.configure {
                 name = "map-1"
             }
