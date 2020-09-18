@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
-    id("java-test-fixtures")
+    `java-test-fixtures`
 }
 
 description = "Evolue API Kotlin DSL"

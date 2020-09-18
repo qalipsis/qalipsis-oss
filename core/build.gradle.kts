@@ -23,7 +23,10 @@ kapt {
 allOpen {
     annotations(
         "io.micronaut.aop.Around",
-        "javax.inject.Singleton"
+        "javax.inject.Singleton",
+        "io.evolue.api.annotations.StepConverter",
+        "io.evolue.api.annotations.StepDecorator",
+        "io.evolue.api.annotations.PluginComponent"
     )
 }
 

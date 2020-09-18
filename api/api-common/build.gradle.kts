@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     kotlin("plugin.allopen")
-    id("java-test-fixtures")
+    `java-test-fixtures`
 }
 
 description = "Evolue API - Common module"
