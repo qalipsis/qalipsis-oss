@@ -258,7 +258,7 @@ internal class MinionImplTest {
     }
 
     @Test
-    @Timeout(8)
+    @Timeout(15)
     internal fun shouldSupportALotOfMinionsWithALotOfJobs() {
         // given
         // Reduces the logs which affect the performances significantly.

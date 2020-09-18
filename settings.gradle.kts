@@ -11,13 +11,5 @@ include(
         "core",
         "runtime",
 
-        "developer-documentation",
-
-        "samples",
-        "samples:simple",
-
-        "plugins",
-        "plugins:netty",
-        "plugins:jackson"
+        "developer-documentation"
 )
-

@@ -21,20 +21,23 @@ allOpen {
     )
 }
 
+val micronautVersion: String by project
+val kotlinCoroutinesVersion: String by project
+
 dependencies {
     implementation(kotlin("stdlib"))
     api(project(":api:api-dsl"))
     api("org.slf4j:slf4j-api:1.7.30")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${properties["kotlinCoroutinesVersion"]}")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     // Libraries relevant for the development of plugins.
-    api(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    api(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("javax.annotation:javax.annotation-api")
     api("io.micronaut:micronaut-validation")
     api("cool.graph:cuid-java:0.1.1")
 
-    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micrometer:micrometer-core")
     implementation("com.google.guava:guava:28.2-jre")
 
