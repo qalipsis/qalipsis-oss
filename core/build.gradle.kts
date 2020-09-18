@@ -27,10 +27,13 @@ allOpen {
     )
 }
 
+val micronautVersion: String by project
+val kotlinCoroutinesVersion: String by project
+
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${properties["kotlinCoroutinesVersion"]}")
-    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
+    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
 
     implementation(project(":api:api-common"))
     implementation(project(":api:api-dsl"))
@@ -48,7 +51,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
 
-    kapt(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    kapt(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt(project(":api:api-processors"))
@@ -61,7 +64,7 @@ dependencies {
     testImplementation(testFixtures(project(":api:api-dsl")))
     testImplementation(testFixtures(project(":api:api-common")))
 
-    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest(project(":api:api-processors"))
 }

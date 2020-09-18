@@ -24,6 +24,8 @@ kapt {
     generateStubs = true
 }
 
+val micronautVersion: String by project
+
 dependencies {
     implementation(kotlin("stdlib"))
 
@@ -32,7 +34,7 @@ dependencies {
     implementation(project(":api:api-processors"))
     implementation(project(":core"))
 
-    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("org.slf4j:slf4j-api")
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("info.picocli:picocli")
@@ -46,7 +48,7 @@ dependencies {
     implementation("io.micronaut:micronaut-runtime")
     implementation("io.micronaut.cache:micronaut-cache-core")
 
-    kapt(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    kapt(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
 
@@ -56,7 +58,7 @@ dependencies {
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
 
-    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${properties["micronautVersion"]}"))
+    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest(project(":api:api-processors"))
 }

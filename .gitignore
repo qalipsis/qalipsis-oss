@@ -37,3 +37,6 @@ hs_err_pid*
 .idea/**
 /core/docker/kibana/
 /core/docker/elasticsearch/
+
+# Maven Central publication
+sonatype.properties
