@@ -1,7 +1,7 @@
 package io.evolue.api.steps
 
 /**
- * Specification for a [io.evolue.core.factory.steps.UnshelveStep].
+ * Specification for a [io.evolue.core.factories.steps.UnshelveStep].
  *
  * @author Eric Jessé
  */

@@ -5,7 +5,7 @@ import io.evolue.api.context.ScenarioId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.steps.StepSpecification
-import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
+import io.evolue.core.factories.orchestration.rampup.RampUpStrategy
 
 /**
  *

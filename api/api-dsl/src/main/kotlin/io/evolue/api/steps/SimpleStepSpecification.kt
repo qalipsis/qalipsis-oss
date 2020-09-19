@@ -5,7 +5,7 @@ import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecification
 
 /**
- * Specification for a [io.evolue.core.factory.steps.SimpleStep].
+ * Specification for a [io.evolue.core.factories.steps.SimpleStep].
  *
  * @author Eric Jessé
  */

@@ -1,8 +1,8 @@
 package io.evolue.api.rampup
 
 import io.evolue.api.scenario.RampUpSpecification
-import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
-import io.evolue.core.factory.orchestration.rampup.RampUpStrategyIterator
+import io.evolue.core.factories.orchestration.rampup.RampUpStrategy
+import io.evolue.core.factories.orchestration.rampup.RampUpStrategyIterator
 
 /**
  * Ramp-up Strategy to start a constant number of minions at a constant pace.

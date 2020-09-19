@@ -3,7 +3,7 @@ package io.evolue.api.steps
 import io.evolue.api.context.StepError
 
 /**
- * Specification for a [io.evolue.core.factory.steps.ValidationStep].
+ * Specification for a [io.evolue.core.factories.steps.ValidationStep].
  *
  * @author Eric Jessé
  */

@@ -4,9 +4,9 @@ import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.core.cross.configuration.ENV_AUTOSTART
 import io.evolue.core.cross.configuration.ENV_STANDALONE
 import io.evolue.core.cross.configuration.ENV_VOLATILE
-import io.evolue.core.factory.StartupFactoryComponent
-import io.evolue.core.head.StartupHeadComponent
-import io.evolue.core.head.lifetime.ProcessBlocker
+import io.evolue.api.factories.StartupFactoryComponent
+import io.evolue.api.heads.StartupHeadComponent
+import io.evolue.core.heads.lifetime.ProcessBlocker
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.Environment
 import io.micronaut.runtime.Micronaut

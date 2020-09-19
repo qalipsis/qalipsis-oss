@@ -7,7 +7,7 @@ import io.evolue.api.scenario.ScenarioSpecification
 import java.time.Duration
 
 /**
- * Specification for a [io.evolue.core.factory.steps.CorrelationStep].
+ * Specification for a [io.evolue.core.factories.steps.CorrelationStep].
  *
  * @author Eric Jessé
  */

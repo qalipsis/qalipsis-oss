@@ -3,7 +3,7 @@ package io.evolue.api.steps
 import io.evolue.api.context.StepError
 
 /**
- * Specification for a [io.evolue.core.factory.steps.CatchErrorStep].
+ * Specification for a [io.evolue.core.factories.steps.CatchErrorStep].
  *
  * @author Eric Jessé
  */

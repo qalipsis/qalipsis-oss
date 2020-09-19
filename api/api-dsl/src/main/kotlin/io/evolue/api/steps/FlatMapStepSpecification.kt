@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 
 /**
- * Specification for a [io.evolue.core.factory.steps.FlatMapStep].
+ * Specification for a [io.evolue.core.factories.steps.FlatMapStep].
  *
  * @author Eric Jessé
  */

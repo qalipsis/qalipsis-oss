@@ -4,7 +4,7 @@ import io.evolue.api.scenario.ScenarioSpecificationImplementation
 import io.evolue.api.scenario.scenario
 import io.evolue.api.scenario.scenariosSpecifications
 import io.evolue.api.steps.AbstractStepSpecification
-import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
+import io.evolue.core.factories.orchestration.rampup.RampUpStrategy
 import io.evolue.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue

@@ -3,7 +3,7 @@ package io.evolue.api.steps
 import io.evolue.api.context.StepContext
 
 /**
- * Specification for a [io.evolue.core.factory.steps.CatchExhaustedContextStep].
+ * Specification for a [io.evolue.core.factories.steps.CatchExhaustedContextStep].
  *
  * @author Eric Jessé
  */

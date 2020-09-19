@@ -4,7 +4,7 @@ import io.evolue.api.exceptions.InvalidSpecificationException
 import java.time.Duration
 
 /**
- * Specification for a [io.evolue.core.factory.steps.DelayedStep].
+ * Specification for a [io.evolue.core.factories.steps.DelayedStep].
  *
  * @author Eric Jessé
  */

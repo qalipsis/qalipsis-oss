@@ -3,7 +3,7 @@ package io.evolue.api.steps
 import java.time.Duration
 
 /**
- * Specification for a [io.evolue.core.factory.steps.PaceStep].
+ * Specification for a [io.evolue.core.factories.steps.PaceStep].
  *
  * @author Eric Jessé
  */

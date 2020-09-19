@@ -5,7 +5,7 @@ import io.evolue.api.context.StepId
 import io.evolue.api.retry.NoRetryPolicy
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.steps.Step
-import io.evolue.core.factory.orchestration.rampup.RampUpStrategy
+import io.evolue.core.factories.orchestration.rampup.RampUpStrategy
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeoutOrNull
 

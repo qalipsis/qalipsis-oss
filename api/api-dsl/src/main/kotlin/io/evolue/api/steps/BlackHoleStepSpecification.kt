@@ -1,7 +1,7 @@
 package io.evolue.api.steps
 
 /**
- * Specification for a [io.evolue.core.factory.steps.BlackHoleStep].
+ * Specification for a [io.evolue.core.factories.steps.BlackHoleStep].
  *
  * @author Eric Jessé
  */
