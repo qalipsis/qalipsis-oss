@@ -120,8 +120,9 @@ allprojects {
             dependsOn(integrationTest.get())
         }
 
-        if (!project.file("src/main").isDirectory) {
-            named<Task>("publish") {
+        if (!project.file("src/main/kotlin").isDirectory) {
+            project.logger.lifecycle("Disabling publish for ${project.name}")
+            withType<AbstractPublishToMaven> {
                 enabled = false
             }
         }
@@ -152,6 +153,7 @@ allprojects {
             }
         }
     }
+
 }
 
 
