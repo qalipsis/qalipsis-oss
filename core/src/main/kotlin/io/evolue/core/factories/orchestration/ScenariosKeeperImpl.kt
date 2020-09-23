@@ -9,6 +9,8 @@ import io.evolue.api.factories.StartupFactoryComponent
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
+import io.evolue.api.orchestration.feedbacks.FeedbackProducer
+import io.evolue.api.orchestration.feedbacks.FeedbackStatus
 import io.evolue.api.processors.ServicesLoader
 import io.evolue.api.retry.NoRetryPolicy
 import io.evolue.api.scenario.MutableScenarioSpecification
@@ -26,8 +28,7 @@ import io.evolue.core.cross.feedbacks.CampaignStartedForDagFeedback
 import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedbackDirectedAcyclicGraph
 import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
-import io.evolue.api.orchestration.feedbacks.FeedbackProducer
-import io.evolue.api.orchestration.feedbacks.FeedbackStatus
+import io.micronaut.context.ApplicationContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -44,10 +45,11 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class ScenariosKeeperImpl(
-    private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
-    private val feedbackProducer: FeedbackProducer,
-    private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
-    stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
+        private val applicationContext: ApplicationContext,
+        private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
+        private val feedbackProducer: FeedbackProducer,
+        private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
+        stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
 ) : ScenariosKeeper, StartupFactoryComponent {
 
     /**
@@ -64,7 +66,7 @@ internal class ScenariosKeeperImpl(
     @PostConstruct
     fun init() {
         // Load all the scenarios specifications into memory.
-        ServicesLoader.loadServices<Any>("scenarios")
+        ServicesLoader.loadServices<Any>("scenarios", applicationContext)
         // Fetch and convert them.
         scenarioSpecificationsKeeper.asMap().forEach { (scenarioId, scenarioSpecification) ->
             try {

@@ -1,8 +1,16 @@
 package io.evolue.api.processors
 
 import io.evolue.test.io.readFile
+import io.evolue.test.mockk.relaxedMockk
+import io.evolue.test.mockk.verifyExactly
+import io.evolue.test.mockk.verifyOnce
+import io.micronaut.context.ApplicationContext
+import io.micronaut.context.env.Environment
+import io.mockk.every
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.time.Duration
+import java.util.Optional
 
 /**
  * @author Eric Jessé
@@ -20,16 +28,25 @@ internal class ScenarioAnnotationProcessorTest {
         val scenarios = readFile(scenarioResources[0].openStream(), true, "#").toSet()
 
         val expected = setOf(
-            "io.evolue.api.scenariosloader.ScenarioLoader22ef3757d76e36c8b1e006887edd5a49",
-            "io.evolue.api.scenariosloader.ScenarioLoader56b4c7f6efe23ad99435b8f4dec3c4c5",
-            "io.evolue.api.scenariosloader.ScenarioLoadera9da7f4b826e382385e921526b0325b9"
+            "io.evolue.api.scenariosloader.ScenarioClassKt\$aMethodOutsideAClass",
+            "io.evolue.api.scenariosloader.ScenarioDeclaration\$aMethodInsideAnObject",
+            "io.evolue.api.scenariosloader.ScenarioClass\$aMethodInsideAClass"
         )
         Assertions.assertEquals(expected, scenarios)
     }
 
     @Test
     internal fun `should load the annotated scenarios`() {
-        ServicesLoader.loadServices<Any>("scenarios")
+        val environment: Environment = relaxedMockk {
+            every { getProperty(eq("this-is-a-test"), Duration::class.java) } returns Optional.of(Duration.ZERO)
+        }
+        val applicationContext: ApplicationContext = relaxedMockk {
+            every { getBean(ClassToInject::class.java) } returns relaxedMockk()
+            every { getBean(OtherClassToInject::class.java) } returns relaxedMockk()
+            every { getEnvironment() } returns environment
+        }
+
+        ServicesLoader.loadServices<Any>("scenarios", applicationContext)
 
         val expected = setOf(
             "aMethodOutsideAClass was loaded",
@@ -37,5 +54,11 @@ internal class ScenarioAnnotationProcessorTest {
             "aMethodInsideAClass was loaded"
         )
         Assertions.assertEquals(expected, executedScenarios)
+
+        verifyExactly(4) {
+            applicationContext.getBean(ClassToInject::class.java)
+            applicationContext.getBean(OtherClassToInject::class.java)
+        }
+        verifyOnce { environment.getProperty(eq("this-is-a-test"), Duration::class.java) }
     }
 }

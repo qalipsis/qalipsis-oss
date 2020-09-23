@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
  */
 
 inline fun <reified T : Any> relaxedMockk(vararg moreInterfaces: KClass<*> = emptyArray(), block: T.() -> Unit = {}) =
-    mockk<T>(moreInterfaces = *moreInterfaces, relaxed = true, block = block)
+    mockk<T>(moreInterfaces = moreInterfaces, relaxed = true, block = block)
 
 fun verifyOnce(verifyBlock: MockKVerificationScope.() -> Unit) = verify(exactly = 1, verifyBlock = verifyBlock)
 

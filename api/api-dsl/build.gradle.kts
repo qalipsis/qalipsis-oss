@@ -20,7 +20,10 @@ allOpen {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_11.majorVersion
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11.majorVersion
+        javaParameters = true
+    }
 }
 
 val micronautVersion: String by project
@@ -30,12 +33,16 @@ dependencies {
     implementation(
         kotlin("stdlib")
     )
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("cool.graph:cuid-java:0.1.1")
     implementation("javax.annotation:javax.annotation-api")
     implementation(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micronaut:micronaut-inject-java")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
+
+    // Required to make the scenario projects build.
+    api(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    api("io.micronaut:micronaut-runtime")
 
     kapt(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")

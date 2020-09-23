@@ -27,6 +27,7 @@ import io.evolue.test.mockk.coVerifyOnce
 import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.mockk.verifyOnce
 import io.evolue.test.utils.getProperty
+import io.micronaut.context.ApplicationContext
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -70,12 +71,15 @@ internal class ScenariosKeeperImplTest {
     @RelaxedMockK
     lateinit var stepDecorator2: StepSpecificationDecoratorConverter<StepSpecification<Any?, Any?, *>>
 
+    @RelaxedMockK
+    lateinit var applicationContext: ApplicationContext
+
     lateinit var scenariosKeeper: ScenariosKeeperImpl
 
     @BeforeEach
     internal fun setUp() {
         scenariosKeeper = spyk(
-                ScenariosKeeperImpl(scenarioSpecificationsKeeper, feedbackProducer,
+                ScenariosKeeperImpl(applicationContext, scenarioSpecificationsKeeper, feedbackProducer,
                         listOf(stepConverter1, stepConverter2),
                         listOf(stepDecorator1, stepDecorator2)))
     }
@@ -333,7 +337,7 @@ internal class ScenariosKeeperImplTest {
         val scenarioSpecification1: ReadableScenarioSpecification = relaxedMockk { }
         val scenarioSpecification2: ReadableScenarioSpecification = relaxedMockk { }
         mockkObject(ServicesLoader)
-        every { ServicesLoader.loadServices<Any?>(any()) } returns relaxedMockk()
+        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
                 "scenario-1" to scenarioSpecification1,
                 "scenario-2" to scenarioSpecification2
@@ -350,7 +354,7 @@ internal class ScenariosKeeperImplTest {
 
         // then
         verifyOrder {
-            ServicesLoader.loadServices<Any>("scenarios")
+            ServicesLoader.loadServices<Any>("scenarios", refEq(applicationContext))
             scenarioSpecificationsKeeper.asMap()
         }
         verifyOnce {
