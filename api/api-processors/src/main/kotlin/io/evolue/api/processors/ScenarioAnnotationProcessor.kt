@@ -1,6 +1,12 @@
 package io.evolue.api.processors
 
+import com.squareup.javapoet.JavaFile
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterSpec
+import com.squareup.javapoet.TypeSpec
+import io.evolue.api.annotations.Property
 import io.evolue.api.annotations.Scenario
+import io.micronaut.context.ApplicationContext
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
@@ -11,11 +17,10 @@ import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
+import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.lang.model.type.ExecutableType
 import javax.tools.Diagnostic
 import javax.tools.StandardLocation
 
@@ -23,6 +28,8 @@ import javax.tools.StandardLocation
 /**
  *
  * Processor to register the methods creating scenario specifications, in order to load them at startup.
+ *
+ * If the enclosing class or the method itself expects parameters, they are injected from the Micronaut runtime.
  *
  * @author Eric Jessé
  */
@@ -54,7 +61,7 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
         val oldScenarios = try {
             ServicesFiles.readFile(existingFile.openInputStream())
         } catch (e: IOException) {
-            emptySet<String>()
+            emptySet()
         }
 
         val allScenarios = mutableSetOf<String>()
@@ -63,15 +70,7 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
         val newScenarios = annotatedElements
             .filter { it.kind == ElementKind.METHOD }
             .map { method ->
-                val className = processingEnv.elementUtils.getBinaryName((method.enclosingElement as TypeElement))
-                val fullName = "${className}.${method.simpleName}"
-                val executableType = method.asType() as ExecutableType;
-                if (executableType.parameterTypes.isNotEmpty()) {
-                    processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
-                        "Function ${fullName} should have no parameter to declare a scenario")
-                    return false
-                }
-                val executableMethod = ExecutableScenarioMethod(method, processingEnv)
+                val executableMethod = ExecutableScenarioMethod(method as ExecutableElement, processingEnv)
                 executableMethod.loaderFullClassName to executableMethod
             }
             .toMap()
@@ -85,40 +84,50 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
             reallyNewScenarios.removeAll(oldScenarios)
 
             reallyNewScenarios
-                .map { newScenarios[it]!! }
+                .map { newScenarios[it] ?: error("The scenarios for key $it should exist") }
                 .forEach { executableMethod ->
-                    // Create the source to execute the method.
+                    // Create the source to execute the method with the injection of the relevant runtime beans.
                     try {
-                        val loader =
-                            filer.createSourceFile("${executableMethod.loaderFullClassName}")
                         val scenarioCall =
                             when {
                                 Modifier.STATIC in executableMethod.scenarioMethod.modifiers -> {
-                                    "${executableMethod.scenarioClass.qualifiedName}.${executableMethod.scenarioMethod.simpleName}()"
+                                    """
+${executableMethod.scenarioClass.qualifiedName}
+    .${executableMethod.scenarioMethod.simpleName}(${addParameters(executableMethod.scenarioMethod)})
+                                    """.trimIndent()
                                 }
                                 isAKotlinObject(executableMethod.scenarioClass) -> {
                                     // Kotlin objects.
-                                    "${executableMethod.scenarioClass.qualifiedName}.INSTANCE.${executableMethod.scenarioMethod.simpleName}()"
+                                    """
+${executableMethod.scenarioClass.qualifiedName}.INSTANCE
+    .${executableMethod.scenarioMethod.simpleName}(${addParameters(executableMethod.scenarioMethod)})
+                                    """.trimIndent()
                                 }
                                 else -> {
                                     // Normal class.
-                                    "new ${executableMethod.scenarioClass.qualifiedName}().${executableMethod.scenarioMethod.simpleName}()"
+                                    """
+new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(executableMethod.scenarioClass)})
+    .${executableMethod.scenarioMethod.simpleName}(${addParameters(executableMethod.scenarioMethod)})
+                                    """.trimIndent()
                                 }
                             }
 
-                        val sourceCode = """
-                            package io.evolue.api.scenariosloader;
-                            public class ${executableMethod.loaderClassName}{
-                            
-                            public ${executableMethod.loaderClassName}(){
-                                ${scenarioCall};
-                            }
-                            
-                            }
-                        """.trimIndent()
+                        val constructor = MethodSpec.constructorBuilder()
+                            .addModifiers(Modifier.PUBLIC)
+                            .addParameter(ParameterSpec.builder(ApplicationContext::class.java, "applicationContext",
+                                    Modifier.FINAL).build())
+                            .addStatement(scenarioCall)
+                            .build()
 
+                        val loaderSpec = TypeSpec.classBuilder(executableMethod.loaderClassName)
+                            .addModifiers(Modifier.PUBLIC)
+                            .addMethod(constructor)
+                            .build()
+
+                        val javaFile = JavaFile.builder("io.evolue.api.scenariosloader", loaderSpec).build()
+                        val loader = filer.createSourceFile("${executableMethod.loaderFullClassName}")
                         OutputStreamWriter(loader.openOutputStream(), StandardCharsets.UTF_8).use { writer ->
-                            writer.write(sourceCode)
+                            javaFile.writeTo(writer)
                             writer.flush()
                         }
                     } catch (e: Exception) {
@@ -134,18 +143,40 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
         return true
     }
 
+    /**
+     * Extracts the parameters for the constructor and generates the injection of related bean.
+     */
+    private fun addConstructorParameters(type: TypeElement): String {
+        return (type.enclosedElements.firstOrNull { it.kind == ElementKind.CONSTRUCTOR } as ExecutableElement?)?.let {
+            addParameters(it)
+        } ?: ""
+    }
+
+    /**
+     * Extracts the parameters for a method and generates the injection of related bean.
+     */
+    private fun addParameters(method: ExecutableElement): String {
+        return method.parameters.joinToString(", ") { param ->
+            val valueAnnotations = param.getAnnotationsByType(Property::class.java)
+            if (valueAnnotations.isNotEmpty()) {
+                val annotation = valueAnnotations.first()
+                "applicationContext.getEnvironment().getProperty(\"${annotation.value}\", ${param.asType()}.class).orElse(null)"
+            } else {
+                "applicationContext.getBean(${param.asType()}.class)"
+            }
+        }
+    }
+
     private fun isAKotlinObject(typeElement: TypeElement) =
         processingEnv.elementUtils.getAllMembers(typeElement)
             .any { it.kind == ElementKind.FIELD && it.simpleName.toString() == "INSTANCE" }
 
     private data class ExecutableScenarioMethod(
-        val scenarioMethod: Element,
-        private val processingEnv: ProcessingEnvironment
+            val scenarioMethod: ExecutableElement,
+            private val processingEnv: ProcessingEnvironment
     ) {
         val scenarioClass = this.scenarioMethod.enclosingElement as TypeElement
-        val fullName: String = "${scenarioClass.qualifiedName}.${this.scenarioMethod.simpleName}"
-        val loaderUuid: String = "${UUID.nameUUIDFromBytes(this.fullName.toByteArray())}".replace("-", "")
-        val loaderClassName: String = "ScenarioLoader${this.loaderUuid}"
-        val loaderFullClassName: String = "io.evolue.api.scenariosloader.ScenarioLoader${this.loaderUuid}"
+        val loaderClassName: String = "${scenarioClass.simpleName}\$${this.scenarioMethod.simpleName}"
+        val loaderFullClassName: String = "io.evolue.api.scenariosloader.${loaderClassName}"
     }
 }
