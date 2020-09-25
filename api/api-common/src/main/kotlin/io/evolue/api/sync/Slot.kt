@@ -29,12 +29,27 @@ class Slot<T>(private var value: T? = null) {
     fun isEmpty() = !isPresent()
 
     /**
+     * Non-blocking operation returning the value if present or an error otherwise.
+     */
+    fun forceGet() = requireNotNull(value)
+
+    /**
      * Sets the value into the slot and release all the current caller to [get] or [remove].
      */
     suspend fun set(value: T) {
         writeLock.withLock {
             this.value = value
             latch.release()
+        }
+    }
+
+    /**
+     * Clears the content of the slot.
+     */
+    suspend fun clear() {
+        writeLock.withLock {
+            latch.lock()
+            this.value = null
         }
     }
 
@@ -50,13 +65,13 @@ class Slot<T>(private var value: T? = null) {
      * Returns and removes the value if it exists or suspend the call otherwise.
      */
     suspend fun remove(): T {
-        return writeLock.withLock {
-            await()
-            val result = value!!
+        await()
+        val result = value!!
+        writeLock.withLock {
             latch.lock()
             value = null
-            result
         }
+        return result
     }
 
     /**
