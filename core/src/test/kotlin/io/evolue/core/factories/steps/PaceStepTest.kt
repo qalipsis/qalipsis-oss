@@ -17,7 +17,7 @@ import java.time.Duration
 internal class PaceStepTest {
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun addIsolatedPaceForDifferentMinions() {
         // Short warm-up to obtain finer precision.
         val warmUpStep = PaceStep<Long>("") { (it + 1).coerceAtMost(1) }
@@ -27,11 +27,11 @@ internal class PaceStepTest {
             (ctx.output as Channel<Any?>).receive()
         }
 
-        // Period increases of 50 seconds until 300 ms is reached.
-        val paceStep = 50L
-        val paceMax = 300L
+        // Period increases of 100 seconds until 600 ms is reached.
+        val paceStep = 100L
+        val paceMax = 600L
         val step = PaceStep<Long>("") { (it + paceStep).coerceAtMost(paceMax) }
-        val errorMargin = Duration.ofMillis(10L)
+        val errorMargin = Duration.ofMillis(20L)
         var pastExecutionEnd: Long? = null
 
         runBlocking {

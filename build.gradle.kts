@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 
 plugins {
+    idea
     java
     kotlin("jvm") version "1.4.0"
     kotlin("kapt") version "1.4.0"

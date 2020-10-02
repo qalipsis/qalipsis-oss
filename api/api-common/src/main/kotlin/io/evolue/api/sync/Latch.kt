@@ -10,7 +10,7 @@ import kotlinx.coroutines.sync.withLock
  * a condition is matched.
  *
  * A [Latch] is initialized with a given position.
- * The [await] methods block until a call to [release], after which
+ * The [await] methods statement until a call to [release], after which
  * all waiting coroutines are released and any subsequent invocations of
  * [await] return immediately.
  *

@@ -16,17 +16,14 @@ tasks.withType<KotlinCompile>().configureEach {
     }
 }
 
-kapt {
-    generateStubs = true
-}
-
 allOpen {
     annotations(
-        "io.micronaut.aop.Around",
-        "javax.inject.Singleton",
-        "io.evolue.api.annotations.StepConverter",
-        "io.evolue.api.annotations.StepDecorator",
-        "io.evolue.api.annotations.PluginComponent"
+            "io.micronaut.aop.Around",
+            "javax.inject.Singleton",
+            "io.evolue.api.annotations.StepConverter",
+            "io.evolue.api.annotations.StepDecorator",
+            "io.evolue.api.annotations.PluginComponent",
+            "io.micronaut.validation.Validated"
     )
 }
 
@@ -36,7 +33,7 @@ val kotlinCoroutinesVersion: String by project
 dependencies {
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    implementation(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
 
     implementation(project(":api:api-common"))
     implementation(project(":api:api-dsl"))
@@ -54,7 +51,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
 
-    kapt(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt(project(":api:api-processors"))
@@ -67,7 +64,7 @@ dependencies {
     testImplementation(testFixtures(project(":api:api-dsl")))
     testImplementation(testFixtures(project(":api:api-common")))
 
-    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest(project(":api:api-processors"))
 }

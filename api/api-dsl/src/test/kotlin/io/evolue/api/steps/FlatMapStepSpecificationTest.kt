@@ -22,8 +22,8 @@ internal class FlatMapStepSpecificationTest {
 
     @Test
     internal fun `should add default flat map step as next`() {
-        val previousStep = DummyStepSpecification()
-        previousStep.flatten<Int, Int>()
+        val previousStep = DummyStepSpecification().map { listOf(it) }
+        previousStep.flatten()
 
         assertTrue(previousStep.nextSteps[0] is FlatMapStepSpecification)
     }

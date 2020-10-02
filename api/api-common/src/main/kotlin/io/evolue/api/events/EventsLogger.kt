@@ -14,7 +14,7 @@ interface EventsLogger {
      * @param name the name of the event. They are always kebab-cased (dash-separated lowercase words) and in the form of
      * "object-state", e.g: step-started, minion-completed.
      * @param value the potential value. Any type can be used, its interpretation is let to the implementation.
-     * @param tagsSupplier block to generate the map of tags, if the event ever has to be logged.
+     * @param tagsSupplier statement to generate the map of tags, if the event ever has to be logged.
      */
     fun log(level: EventLevel, name: String, value: Any? = null,
         tagsSupplier: (() -> Map<String, String>))

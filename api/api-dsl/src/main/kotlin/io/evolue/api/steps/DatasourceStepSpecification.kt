@@ -2,6 +2,7 @@ package io.evolue.api.steps
 
 import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecification
+import io.micronaut.core.annotation.Introspected
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
  *
  * @author Eric Jessé
  */
+@Introspected
 data class DatasourceStepSpecification<OUTPUT>(
         val specification: suspend () -> Flow<OUTPUT>
 ) : AbstractStepSpecification<Unit, OUTPUT?, DatasourceStepSpecification<OUTPUT>>()

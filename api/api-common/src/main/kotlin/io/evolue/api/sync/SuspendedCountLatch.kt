@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong
  *
  *
  * A [SuspendedCountLatch] is initialized with a given _count_.
- * The [await] methods block until the current count reaches
+ * The [await] methods statement until the current count reaches
  * zero due to invocations of the [decrement] method, after which
  * all waiting coroutines are released and any subsequent invocations of
  * [await] return immediately. The count can be reset.

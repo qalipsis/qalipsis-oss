@@ -1,12 +1,15 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
+
 /**
  * Specification for a [io.evolue.core.factories.steps.AssertionStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class AssertionStepSpecification<INPUT, OUTPUT>(
-    val assertionBlock: suspend (input: INPUT) -> OUTPUT
+        val assertionBlock: suspend (input: INPUT) -> OUTPUT
 ) : AbstractStepSpecification<INPUT, OUTPUT, AssertionStepSpecification<INPUT, OUTPUT>>()
 
 /**

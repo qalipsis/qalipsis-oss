@@ -16,9 +16,9 @@ import java.time.Duration
  * @author Eric Jessé
  */
 class IterativeStepDecorator<I, O>(
-    private val iterations: Long = 1,
-    delay: Duration = Duration.ZERO,
-    private val decorated: Step<I, O>
+        private val iterations: Long = 1,
+        delay: Duration = Duration.ZERO,
+        private val decorated: Step<I, O>
 ) : Step<I, O>, StepExecutor {
 
     override val id: StepId
@@ -26,9 +26,13 @@ class IterativeStepDecorator<I, O>(
 
     override var retryPolicy: RetryPolicy? = null
 
-    override var next = decorated.next
+    override val next = decorated.next
 
     var delayMillis = delay.toMillis()
+
+    override fun addNext(nextStep: Step<O, *>) {
+        decorated.addNext(nextStep)
+    }
 
     override suspend fun init() {
         decorated.init()
@@ -39,38 +43,33 @@ class IterativeStepDecorator<I, O>(
     }
 
     override suspend fun execute(context: StepContext<I, O>) {
-        val internalContext = StepContext(
-            input = Channel<I>(Channel.CONFLATED),
-            output = context.output,
-            scenarioId = context.scenarioId,
-            campaignId = context.campaignId,
-            directedAcyclicGraphId = context.directedAcyclicGraphId,
-            errors = context.errors, // Really share the same instance.
-            exhausted = context.exhausted,
-            minionId = context.minionId,
-            parentStepId = context.parentStepId,
-            stepId = context.stepId
-        )
+        val inputValue = context.input.receive()
+        // Create a conflated channel to allow next iteration even if the channel was not consumed.
+        val internalInputChannel = Channel<I>(Channel.CONFLATED)
+        val internalContext = context.duplicate(internalInputChannel, context.output)
         var remainingIterations = iterations
-        val input = context.input.receive()
         while (remainingIterations > 0) {
+            // Provide the input value again for each iteration.
+            internalInputChannel.send(inputValue)
             val currentIteration = internalContext.stepIterationIndex
-            (internalContext.input as Channel<I>).send(input)
-            log.trace("Executing iteration ${currentIteration} for context ${context}")
+            log.trace("Executing iteration $currentIteration for context $context")
             executeStep(decorated, internalContext)
+
             internalContext.stepIterationIndex = internalContext.stepIterationIndex + 1
             remainingIterations--
-            log.trace("Executed iteration ${currentIteration} for context ${context}, remaining ${remainingIterations}")
+            log.trace("Executed iteration $currentIteration for context ${context}, remaining $remainingIterations")
+
             if (delayMillis > 0 && remainingIterations > 0) {
-                log.trace("Applying delay of ${delayMillis} ms before next iteration")
+                log.trace("Applying delay of $delayMillis ms before next iteration")
                 delay(delayMillis)
             }
         }
-        log.trace("End of the iterations for context ${context}")
+        log.trace("End of the iterations for context $context")
     }
 
     companion object {
         @JvmStatic
         private val log = logger()
     }
+
 }

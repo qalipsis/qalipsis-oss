@@ -35,8 +35,8 @@ hs_err_pid*
 
 # Intellij
 .idea/**
+*.ipr
+*.iws
 /core/docker/kibana/
 /core/docker/elasticsearch/
 
-# Maven Central publication
-sonatype.properties

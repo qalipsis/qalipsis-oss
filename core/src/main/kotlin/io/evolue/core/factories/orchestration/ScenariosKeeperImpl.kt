@@ -29,6 +29,7 @@ import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedbackDirectedAcyclicGraph
 import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.micronaut.context.ApplicationContext
+import io.micronaut.validation.Validated
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -37,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.inject.Singleton
+import javax.validation.Valid
 
 /**
  * Default implementation of [ScenariosKeeper].
@@ -44,6 +46,7 @@ import javax.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
+@Validated
 internal class ScenariosKeeperImpl(
         private val applicationContext: ApplicationContext,
         private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
@@ -181,7 +184,7 @@ internal class ScenariosKeeperImpl(
         context.createdStep?.let { step ->
             step.init()
             dag.addStep(step)
-            parentStep?.let { ps -> (ps as Step<*, Any?>).next.add(step as Step<Any?, *>) }
+            parentStep?.let { ps -> (ps as Step<*, Any?>).addNext(step as Step<Any?, *>) }
 
             convertSteps(scenarioSpecification, scenario, dags, step,
                     stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
@@ -189,7 +192,7 @@ internal class ScenariosKeeperImpl(
     }
 
     @VisibleForTest
-    internal suspend fun convertSingleStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
+    internal suspend fun convertSingleStep(@Valid context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         stepSpecificationConverters
             .firstOrNull { it.support(context.stepSpecification) }
             ?.let { converter ->

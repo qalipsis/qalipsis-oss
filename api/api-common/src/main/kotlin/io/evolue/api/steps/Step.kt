@@ -20,7 +20,12 @@ interface Step<I : Any?, O : Any?> {
     /**
      * Returns the list of next steps or an empty list if there is none.
      */
-    val next: MutableList<Step<O, *>>
+    val next: List<Step<O, *>>
+
+    /**
+     * Add a step to the collection of next ones.
+     */
+    fun addNext(nextStep: Step<O, *>)
 
     /**
      * Operation to execute just after the creation of the step.

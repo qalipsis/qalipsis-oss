@@ -7,7 +7,7 @@ import io.evolue.api.steps.datasource.DatasourceObjectProcessor
  *
  * @author Eric Jessé
  */
-class NoopDatasourceObjectProcessor<O> : DatasourceObjectProcessor<O, O> {
+class IdentityDatasourceObjectProcessor<O> : DatasourceObjectProcessor<O, O> {
 
     override fun process(offset: Long, readObject: O) = readObject
 

@@ -2,3 +2,4 @@ io.evolue.api.processors.StepConverterAnnotationMapper
 io.evolue.api.processors.StepDecoratorAnnotationMapper
 io.evolue.api.processors.PluginComponentAnnotationMapper
 io.evolue.api.processors.NoReflectionMapper
+io.evolue.api.processors.Spec

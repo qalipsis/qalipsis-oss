@@ -1,5 +1,6 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
 import java.time.Duration
 
 /**
@@ -7,6 +8,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
+@Introspected
 data class PaceStepSpecification<INPUT>(
         val specification: (pastPeriodMs: Long) -> Long
 ) : AbstractStepSpecification<INPUT, INPUT, PaceStepSpecification<INPUT>>()

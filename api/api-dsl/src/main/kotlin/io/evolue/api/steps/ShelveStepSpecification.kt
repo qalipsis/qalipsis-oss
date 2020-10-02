@@ -1,12 +1,16 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
+import javax.validation.constraints.NotBlank
+
 /**
  * Specification for a [io.evolue.core.factories.steps.ShelveStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class ShelveStepSpecification<INPUT>(
-        val specification: (input: INPUT) -> Map<String, Any?>
+        val specification: (input: INPUT) -> Map<@NotBlank String, Any?>
 ) : AbstractStepSpecification<INPUT, INPUT, ShelveStepSpecification<INPUT>>()
 
 /**

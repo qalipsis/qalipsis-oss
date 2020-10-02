@@ -1,12 +1,14 @@
 package io.evolue.api.steps
 
 import io.evolue.api.context.StepError
+import io.micronaut.core.annotation.Introspected
 
 /**
  * Specification for a [io.evolue.core.factories.steps.ValidationStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class ValidationStepSpecification<INPUT>(
     val specification: (input: INPUT) -> List<StepError>
 ) : AbstractStepSpecification<INPUT, INPUT, ValidationStepSpecification<INPUT>>()

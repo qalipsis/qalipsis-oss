@@ -1,10 +1,13 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
+
 /**
  * Specification for a [io.evolue.core.factories.steps.MapStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class MapStepSpecification<INPUT, OUTPUT>(
         val block: (input: INPUT) -> OUTPUT
 ) : AbstractStepSpecification<INPUT, OUTPUT, MapStepSpecification<INPUT, OUTPUT>>()

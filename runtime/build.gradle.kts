@@ -18,10 +18,14 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 allOpen {
-    annotation("io.micronaut.aop.Around")
-}
-kapt {
-    generateStubs = true
+    annotations(
+            "io.micronaut.aop.Around",
+            "javax.inject.Singleton",
+            "io.evolue.api.annotations.StepConverter",
+            "io.evolue.api.annotations.StepDecorator",
+            "io.evolue.api.annotations.PluginComponent",
+            "io.micronaut.validation.Validated"
+    )
 }
 
 val micronautVersion: String by project
@@ -34,7 +38,7 @@ dependencies {
     api(project(":api:api-processors"))
     api(project(":core"))
 
-    api(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("org.slf4j:slf4j-api")
     api("ch.qos.logback:logback-classic:1.2.3")
     api("info.picocli:picocli")
@@ -48,7 +52,7 @@ dependencies {
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
 
-    kapt(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
 
@@ -58,7 +62,7 @@ dependencies {
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
 
-    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest(project(":api:api-processors"))
 }

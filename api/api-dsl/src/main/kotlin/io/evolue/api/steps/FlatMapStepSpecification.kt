@@ -1,15 +1,15 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 
 /**
  * Specification for a [io.evolue.core.factories.steps.FlatMapStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class FlatMapStepSpecification<INPUT, OUTPUT>(
         val block: (input: INPUT) -> Flow<OUTPUT>
 ) : AbstractStepSpecification<INPUT, OUTPUT, FlatMapStepSpecification<INPUT, OUTPUT>>()
@@ -30,29 +30,41 @@ fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatMap(
 }
 
 /**
- * Converts any input of type [Collection], [Array], [Sequence], [Map] into a [Flow] of records provided one by one
- * to the next step.
+ * Converts a [Iterable] into a [Flow] of values provided one by one to the next step.
  *
  * @author Eric Jessé
  */
-fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatten(): FlatMapStepSpecification<INPUT, OUTPUT> {
-    return flatMap { input ->
-        when (input) {
-            null -> emptyFlow()
-            is Collection<*> ->
-                input.asFlow() as Flow<OUTPUT>
+@JvmName("flattenIterable")
+fun <INPUT> StepSpecification<*, out Iterable<INPUT>, *>.flatten(): FlatMapStepSpecification<out Iterable<INPUT>, INPUT> {
+    return flatMap { it.asFlow() }
+}
 
-            is Array<*> ->
-                input.asFlow() as Flow<OUTPUT>
+/**
+ * Converts a [Array] into a [Flow] of values provided one by one to the next step.
+ *
+ * @author Eric Jessé
+ */
+@JvmName("flattenArray")
+fun <INPUT> StepSpecification<*, out Array<INPUT>, *>.flatten(): FlatMapStepSpecification<out Array<INPUT>, INPUT> {
+    return flatMap { it.asFlow() }
+}
 
-            is Sequence<*> ->
-                input.asFlow() as Flow<OUTPUT>
+/**
+ * Converts a [Sequence] into a [Flow] of values provided one by one to the next step.
+ *
+ * @author Eric Jessé
+ */
+@JvmName("flattenSequence")
+fun <INPUT> StepSpecification<*, out Sequence<INPUT>, *>.flatten(): FlatMapStepSpecification<out Sequence<INPUT>, INPUT> {
+    return flatMap { it.asFlow() }
+}
 
-            is Map<*, *> ->
-                input.entries.map { e -> e.key to e.value }.asFlow() as Flow<OUTPUT>
-
-            else ->
-                flowOf(input) as Flow<OUTPUT>
-        }
-    }
+/**
+ * Converts a [Map] into a [Flow] of its entries provided one by one to the next step.
+ *
+ * @author Eric Jessé
+ */
+@JvmName("flattenMap")
+fun <K, V> StepSpecification<*, out Map<K, V>, *>.flatten(): FlatMapStepSpecification<out Map<K, V>, Pair<K, V>> {
+    return flatMap { it.entries.map { e -> e.key to e.value }.asFlow() }
 }
