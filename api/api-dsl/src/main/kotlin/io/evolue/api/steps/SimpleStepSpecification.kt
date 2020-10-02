@@ -3,12 +3,14 @@ package io.evolue.api.steps
 import io.evolue.api.context.StepContext
 import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ScenarioSpecification
+import io.micronaut.core.annotation.Introspected
 
 /**
  * Specification for a [io.evolue.core.factories.steps.SimpleStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class SimpleStepSpecification<INPUT, OUTPUT>(
         val specification: suspend (context: StepContext<INPUT, OUTPUT>) -> Unit
 ) : AbstractStepSpecification<INPUT?, OUTPUT?, SimpleStepSpecification<INPUT, OUTPUT>>()

@@ -7,10 +7,19 @@ package io.evolue.api.steps.datasource
  *
  * @author Eric Jessé
  */
-interface DatasourceIterativeReader<R> : Iterator<R> {
+interface DatasourceIterativeReader<R> {
 
     fun start() = Unit
 
     fun stop() = Unit
 
+    /**
+     * Returns `true` if the iteration has more elements.
+     */
+    suspend operator fun hasNext(): Boolean
+
+    /**
+     * Returns the next element in the iteration.
+     */
+    suspend operator fun next(): R
 }

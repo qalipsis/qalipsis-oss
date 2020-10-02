@@ -1,12 +1,16 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
+import javax.validation.constraints.NotBlank
+
 /**
  * Specification for a [io.evolue.core.factories.steps.UnshelveStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class UnshelveStepSpecification<INPUT, OUTPUT>(
-        val names: List<String>,
+        val names: List<@NotBlank String>,
         val delete: Boolean,
         val singular: Boolean
 ) : AbstractStepSpecification<INPUT, Pair<INPUT, OUTPUT?>, UnshelveStepSpecification<INPUT, OUTPUT>>()

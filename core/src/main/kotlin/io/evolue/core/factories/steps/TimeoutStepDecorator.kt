@@ -17,9 +17,9 @@ import java.time.Duration
  * @author Eric Jessé
  */
 class TimeoutStepDecorator<I, O>(
-    private val timeout: Duration,
-    private val decorated: Step<I, O>,
-    private val meterRegistry: MeterRegistry
+        private val timeout: Duration,
+        private val decorated: Step<I, O>,
+        private val meterRegistry: MeterRegistry
 ) : Step<I, O>, StepExecutor {
 
     override val id: StepId
@@ -28,6 +28,10 @@ class TimeoutStepDecorator<I, O>(
     override var retryPolicy: RetryPolicy? = null
 
     override var next = decorated.next
+
+    override fun addNext(nextStep: Step<O, *>) {
+        decorated.addNext(nextStep)
+    }
 
     override suspend fun init() {
         decorated.init()
@@ -53,5 +57,6 @@ class TimeoutStepDecorator<I, O>(
         @JvmStatic
         private val log = logger()
     }
+
 
 }

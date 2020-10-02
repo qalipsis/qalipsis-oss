@@ -1,6 +1,8 @@
 package io.evolue.api.steps
 
+import io.evolue.api.constraints.PositiveDuration
 import io.evolue.api.exceptions.InvalidSpecificationException
+import io.micronaut.core.annotation.Introspected
 import java.time.Duration
 
 /**
@@ -8,8 +10,9 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
+@Introspected
 data class DelayStepSpecification<INPUT>(
-        val duration: Duration
+        @PositiveDuration val duration: Duration
 ) : AbstractStepSpecification<INPUT, INPUT, DelayStepSpecification<INPUT>>()
 
 /**

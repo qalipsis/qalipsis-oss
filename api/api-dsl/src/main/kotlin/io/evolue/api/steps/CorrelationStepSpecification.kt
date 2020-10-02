@@ -4,17 +4,20 @@ import cool.graph.cuid.Cuid
 import io.evolue.api.context.CorrelationRecord
 import io.evolue.api.context.StepName
 import io.evolue.api.scenario.ScenarioSpecification
+import io.micronaut.core.annotation.Introspected
 import java.time.Duration
+import javax.validation.constraints.NotBlank
 
 /**
  * Specification for a [io.evolue.core.factories.steps.CorrelationStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class CorrelationStepSpecification<INPUT, OUTPUT>(
         val primaryKeyExtractor: CorrelationRecord<INPUT>.() -> Any?,
         val secondaryKeyExtractor: CorrelationRecord<out Any?>.() -> Any?,
-        val secondaryStepName: StepName
+        val secondaryStepName: @NotBlank StepName
 ) : AbstractStepSpecification<INPUT?, OUTPUT?, CorrelationStepSpecification<INPUT, OUTPUT>>() {
 
     var cacheTimeout: Duration = Duration.ofMinutes(1)

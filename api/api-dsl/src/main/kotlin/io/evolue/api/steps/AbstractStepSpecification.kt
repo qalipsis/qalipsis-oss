@@ -5,24 +5,30 @@ import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.scenario.MutableScenarioSpecification
 import java.time.Duration
+import javax.validation.constraints.NotNull
+import javax.validation.constraints.Positive
 
 /**
  * Generic specification for the step specifications. The actual operations are added by extensions.
  *
+ * @param INPUT type of the data to process as input
+ * @param OUTPUT type of the result forwarder to the output
+ * @param SELF type of the step as visible to the scenario developer, it can be a concrete implementation or an interface, which will inherits from [ConfigurableStepSpecification].
+ *
  * @author Eric Jessé
  */
-abstract class AbstractStepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
+abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
     ConfigurableStepSpecification<INPUT, OUTPUT, SELF> {
 
     override var name: StepName? = null
 
-    override var scenario: MutableScenarioSpecification? = null
+    override var scenario: @NotNull MutableScenarioSpecification? = null
 
-    override var directedAcyclicGraphId: DirectedAcyclicGraphId? = null
+    override var directedAcyclicGraphId: @NotNull DirectedAcyclicGraphId? = null
 
     override var timeout: Duration? = null
 
-    override var iterations: Long = 1
+    override var iterations: @Positive Long = 1
 
     override var iterationPeriods: Duration = Duration.ZERO
 

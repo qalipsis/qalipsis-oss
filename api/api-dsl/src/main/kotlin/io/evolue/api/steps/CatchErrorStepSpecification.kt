@@ -1,12 +1,14 @@
 package io.evolue.api.steps
 
 import io.evolue.api.context.StepError
+import io.micronaut.core.annotation.Introspected
 
 /**
  * Specification for a [io.evolue.core.factories.steps.CatchErrorStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class CatchErrorStepSpecification<INPUT>(
     val block: (error: Collection<StepError>) -> Unit
 ) : AbstractStepSpecification<INPUT, INPUT, CatchErrorStepSpecification<INPUT>>()

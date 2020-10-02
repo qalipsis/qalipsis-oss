@@ -6,9 +6,13 @@ import java.time.Duration
 /**
  * Specification to configure a step specification.
  *
+ * @param INPUT type of the data to process as input
+ * @param OUTPUT type of the result forwarder to the output
+ * @param SELF type of the step as visible to the scenario developer, it can be a concrete implementation or an interface, which will inherits from [ConfigurableStepSpecification].
+ *
  * @author Eric Jessé
  */
-interface ConfigurableStepSpecification<INPUT : Any?, OUTPUT : Any?, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
+interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
     StepSpecification<INPUT, OUTPUT, SELF> {
 
     fun configure(specification: SELF.() -> Unit): StepSpecification<INPUT, OUTPUT, *>

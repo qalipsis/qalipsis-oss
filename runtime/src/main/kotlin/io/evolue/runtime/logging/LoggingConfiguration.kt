@@ -64,7 +64,7 @@ open class LoggingConfiguration {
         var includeCallerData = false
 
         /**
-         * If false (the default) the appender will block on appending to a full queue rather than losing the message. Set to true and the appender will just drop the message and will not block your application.
+         * If false (the default) the appender will statement on appending to a full queue rather than losing the message. Set to true and the appender will just drop the message and will not statement your application.
          */
         var neverBlock = false
     }

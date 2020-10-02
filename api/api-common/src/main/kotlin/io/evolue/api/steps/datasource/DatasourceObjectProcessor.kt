@@ -3,7 +3,8 @@ package io.evolue.api.steps.datasource
 /**
  * Validates and/or transform an object read from a datasource.
  *
- * @param R the type of the object read and returned
+ * @param R type of the object to process
+ * @param O type of the result
  *
  * @author Eric Jessé
  */

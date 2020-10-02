@@ -14,6 +14,7 @@ class BlackHoleStep<I, O>(
 ) : AbstractStep<I, O>(id, null) {
 
     override suspend fun execute(context: StepContext<I, O>) {
+        context.output.close()
         context.input.receive()
     }
 }

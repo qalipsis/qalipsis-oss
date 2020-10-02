@@ -56,3 +56,22 @@ class MockkCleanExtension : AfterEachCallback, AfterAllCallback {
         unmockkAll()
     }
 }
+
+/**
+ * JUnit 5 extension in charge of cleaning the recorded calls only.
+ *
+ * @author Eric Jessé
+ */
+class MockkCleanRecordedCallsExtension : AfterEachCallback, AfterAllCallback {
+
+    override fun afterEach(context: ExtensionContext?) {
+        clearAllMocks(answers = false)
+    }
+
+    override fun afterAll(context: ExtensionContext?) {
+        unmockkAll()
+    }
+}
+
+@ExtendWith(MockkCleanRecordedCallsExtension::class)
+annotation class CleanMockkRecordedCalls

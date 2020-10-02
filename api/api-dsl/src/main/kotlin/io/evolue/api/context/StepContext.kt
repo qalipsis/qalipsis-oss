@@ -14,75 +14,75 @@ import java.time.Instant
  */
 data class StepContext<IN : Any?, OUT : Any?>(
 
-    /**
-     * Channel providing the source.
-     */
-    val input: ReceiveChannel<IN> = Channel(1),
+        /**
+         * Channel providing the source.
+         */
+        val input: ReceiveChannel<IN> = Channel(1),
 
-    /**
-     * Channel to push the result.
-     */
-    val output: SendChannel<OUT> = Channel(1),
+        /**
+         * Channel to push the result.
+         */
+        val output: SendChannel<OUT> = Channel(1),
 
-    /**
-     * List of the generated errors so far.
-     */
-    val errors: MutableList<StepError> = mutableListOf(),
+        /**
+         * List of the generated errors so far.
+         */
+        val errors: MutableList<StepError> = mutableListOf(),
 
-    /**
-     * Identifier of the test campaign owning the context.
-     */
-    val campaignId: CampaignId = "",
+        /**
+         * Identifier of the test campaign owning the context.
+         */
+        val campaignId: CampaignId = "",
 
-    /**
-     * Identifier of the Minion owning the context.
-     */
-    val minionId: MinionId,
+        /**
+         * Identifier of the Minion owning the context.
+         */
+        val minionId: MinionId,
 
-    /**
-     * Identifier of the Scenario being executed.
-     */
-    val scenarioId: ScenarioId,
+        /**
+         * Identifier of the Scenario being executed.
+         */
+        val scenarioId: ScenarioId,
 
-    /**
-     * Identifier of the DirectedAcyclicGraph being executed.
-     */
-    val directedAcyclicGraphId: DirectedAcyclicGraphId,
+        /**
+         * Identifier of the DirectedAcyclicGraph being executed.
+         */
+        val directedAcyclicGraphId: DirectedAcyclicGraphId,
 
-    /**
-     * Step which generated the source.
-     */
-    val parentStepId: StepId? = null,
+        /**
+         * Step which generated the source.
+         */
+        val parentStepId: StepId? = null,
 
-    /**
-     * Step executing the context (it should be set by the step itself).
-     */
-    var stepId: StepId,
+        /**
+         * Step executing the context (it should be set by the step itself).
+         */
+        var stepId: StepId,
 
-    /**
-     * Index of the current iteration for the same step and context.
-     */
-    var stepIterationIndex: Long = 0,
+        /**
+         * Index of the current iteration for the same step and context.
+         */
+        var stepIterationIndex: Long = 0,
 
-    /**
-     * Number of successive execution attempts with failures for the same step and context.
-     */
-    var attemptsAfterFailure: Long = 0,
+        /**
+         * Number of successive execution attempts with failures for the same step and context.
+         */
+        var attemptsAfterFailure: Long = 0,
 
-    /**
-     * Creation timestamp of the context.
-     */
-    var creation: Long = System.currentTimeMillis(),
+        /**
+         * Creation timestamp of the context.
+         */
+        var creation: Long = System.currentTimeMillis(),
 
-    /**
-     * When set to true, the context can neither be used for a new iteration nor propagated.
-     */
-    var exhausted: Boolean = false,
+        /**
+         * When set to true, the context can neither be used for a new iteration nor propagated.
+         */
+        var exhausted: Boolean = false,
 
-    /**
-     * When set to true, this means that no more data will be provided to the workflow.
-     */
-    var completed: Boolean = false
+        /**
+         * When set to true, this means that no more data will be provided to the workflow.
+         */
+        var completed: Boolean = false
 ) {
 
     private var immutableEventTags: Map<String, String>? = null
@@ -97,7 +97,7 @@ data class StepContext<IN : Any?, OUT : Any?>(
     /**
      * Metrics of a single step execution for later use (assertion, aggregation...).
      */
-    private val metrics = mutableMapOf<String, Metric>()
+    private var metrics = mutableMapOf<String, Metric>()
 
     fun recordTimer(name: String, duration: Duration) {
         metrics[name] = Timer(name, duration)
@@ -122,19 +122,45 @@ data class StepContext<IN : Any?, OUT : Any?>(
         }
     }
 
+    fun duplicate(newInput: ReceiveChannel<IN> = Channel(1),
+                  newOutput: SendChannel<OUT> = Channel(1)): StepContext<IN, OUT> {
+        return StepContext(
+                input = newInput,
+                output = newOutput,
+                errors = errors,
+                campaignId = campaignId,
+                minionId = minionId,
+                scenarioId = scenarioId,
+                directedAcyclicGraphId = directedAcyclicGraphId,
+                parentStepId = this.stepId,
+                stepId = stepId,
+                exhausted = exhausted,
+                completed = completed,
+                creation = creation
+        ).also {
+            it.metrics = metrics
+            if (!input.isEmpty) {
+                // The input value should be in both input channels.
+                val inputValue = input.poll()!!
+                (newInput as Channel<IN>).offer(inputValue)
+                (input as Channel<IN>).offer(inputValue)
+            }
+        }
+    }
+
     fun <T : Any?> next(stepId: StepId): StepContext<OUT, T> {
         return StepContext<OUT, T>(
-            input = Channel(1),
-            errors = errors,
-            campaignId = campaignId,
-            minionId = minionId,
-            scenarioId = scenarioId,
-            directedAcyclicGraphId = directedAcyclicGraphId,
-            parentStepId = this.stepId,
-            stepId = stepId,
-            exhausted = exhausted,
-            completed = completed,
-            creation = creation
+                input = Channel(1),
+                errors = errors,
+                campaignId = campaignId,
+                minionId = minionId,
+                scenarioId = scenarioId,
+                directedAcyclicGraphId = directedAcyclicGraphId,
+                parentStepId = this.stepId,
+                stepId = stepId,
+                exhausted = exhausted,
+                completed = completed,
+                creation = creation
         ).also {
             it.inheritedMetrics.putAll(it.metrics)
         }
@@ -146,21 +172,21 @@ data class StepContext<IN : Any?, OUT : Any?>(
     fun toEventTags(): Map<String, String> {
         if (immutableEventTags == null) {
             val tags = mutableMapOf(
-                "campaign" to campaignId,
-                "minion" to minionId,
-                "scenario" to scenarioId,
-                "dag" to directedAcyclicGraphId,
-                "step" to stepId,
-                "context-creation" to Instant.ofEpochMilli(creation).toString()
+                    "campaign" to campaignId,
+                    "minion" to minionId,
+                    "scenario" to scenarioId,
+                    "dag" to directedAcyclicGraphId,
+                    "step" to stepId,
+                    "context-creation" to Instant.ofEpochMilli(creation).toString()
             )
             parentStepId?.let { tags["parent-step"] = it }
             immutableEventTags = tags
         }
         return immutableEventTags!!.plus(mutableMapOf(
-            "iteration" to stepIterationIndex.toString(),
-            "attempts-after-failure" to attemptsAfterFailure.toString(),
-            "exhausted" to exhausted.toString(),
-            "completed" to completed.toString()
+                "iteration" to stepIterationIndex.toString(),
+                "attempts-after-failure" to attemptsAfterFailure.toString(),
+                "exhausted" to exhausted.toString(),
+                "completed" to completed.toString()
         ))
     }
 
@@ -170,11 +196,11 @@ data class StepContext<IN : Any?, OUT : Any?>(
     fun toMetersTags(): Tags {
         if (immutableMetersTags == null) {
             var tags = Tags.of(
-                "campaign", campaignId,
-                "minion", minionId,
-                "scenario", scenarioId,
-                "dag", directedAcyclicGraphId,
-                "step", stepId
+                    "campaign", campaignId,
+                    "minion", minionId,
+                    "scenario", scenarioId,
+                    "dag", directedAcyclicGraphId,
+                    "step", stepId
             )
             parentStepId?.let { tags = tags.and("parent-step", it) }
             immutableMetersTags = tags
@@ -187,13 +213,13 @@ data class StepContext<IN : Any?, OUT : Any?>(
     }
 
     data class Timer(
-        override val name: String,
-        val duration: Duration
+            override val name: String,
+            val duration: Duration
     ) : Metric
 
     data class Counter(
-        override val name: String,
-        val count: Double
+            override val name: String,
+            val count: Double
     ) : Metric
 }
 

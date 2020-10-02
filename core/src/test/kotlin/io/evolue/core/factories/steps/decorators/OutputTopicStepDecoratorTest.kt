@@ -1,6 +1,7 @@
 package io.evolue.core.factories.steps.decorators
 
 import assertk.assertThat
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import io.evolue.api.context.StepContext
 import io.evolue.api.messaging.unicastTopic
@@ -8,6 +9,7 @@ import io.evolue.api.steps.Step
 import io.evolue.test.assertk.prop
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
+import io.evolue.test.mockk.relaxedMockk
 import io.evolue.test.steps.StepTestHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -104,5 +106,20 @@ internal class OutputTopicStepDecoratorTest {
         // then
         coVerifyOnce { decoratedStep.destroy() }
         assertThat(topic).prop("open").isEqualTo(false)
+    }
+
+    @Test
+    internal fun shouldNotAddNextStep() {
+        // given
+        val topic = unicastTopic<String>()
+        every { decoratedStep.id } answers { " " }
+        val step =
+            OutputTopicStepDecorator(decoratedStep, topic)
+
+        // when
+        step.addNext(relaxedMockk { })
+
+        // then
+        assertThat(step.next).hasSize(0)
     }
 }

@@ -1,5 +1,6 @@
 package io.evolue.api.steps
 
+import io.evolue.api.constraints.PositiveOrZeroDuration
 import java.time.Duration
 
 /**
@@ -37,7 +38,7 @@ data class SingletonConfiguration(
          * Time to idle of a subscription. Once idle a subscription passed this duration, it is automatically cancelled.
          * When set to `Duration.ZERO` (default) or less, there is no timeout.
          */
-        var idleTimeout: Duration = Duration.ZERO
+        var idleTimeout: @PositiveOrZeroDuration Duration = Duration.ZERO
 )
 
 /**

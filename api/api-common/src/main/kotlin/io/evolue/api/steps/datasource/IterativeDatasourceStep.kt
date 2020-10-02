@@ -42,7 +42,8 @@ class IterativeDatasourceStep<R, T, O>(
         while (reader.hasNext()) {
             try {
                 val value = processor.process(rowIndex, reader.next())
-                context.output.send(converter.supply(rowIndex, value))
+                log.trace("Received one record")
+                converter.supply(rowIndex, value, context.output)
             } catch (e: Exception) {
                 context.errors.add(StepError(DatasourceException(rowIndex, e.message)))
             } finally {

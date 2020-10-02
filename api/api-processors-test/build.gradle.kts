@@ -19,12 +19,12 @@ dependencies {
         kotlin("stdlib")
     )
 
-    kaptTest(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest(project(":api:api-processors"))
     kaptTest("javax.annotation:javax.annotation-api")
     kaptTest("io.micronaut:micronaut-runtime")
 
-    testImplementation(enforcedPlatform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    testImplementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     testImplementation(project(":api:api-processors"))
     testImplementation(project(":test"))
     testImplementation(project(":api:api-dsl"))

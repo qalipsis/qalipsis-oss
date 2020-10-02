@@ -1,12 +1,14 @@
 package io.evolue.api.steps
 
 import io.evolue.api.context.StepContext
+import io.micronaut.core.annotation.Introspected
 
 /**
  * Specification for a [io.evolue.core.factories.steps.CatchExhaustedContextStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 data class CatchExhaustedContextStepSpecification<INPUT, OUTPUT>(
     val block: suspend (context: StepContext<INPUT, OUTPUT>) -> Unit
 ) : AbstractStepSpecification<INPUT, OUTPUT, CatchExhaustedContextStepSpecification<INPUT, OUTPUT>>()

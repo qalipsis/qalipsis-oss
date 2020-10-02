@@ -1,10 +1,13 @@
 package io.evolue.api.steps
 
+import io.micronaut.core.annotation.Introspected
+
 /**
  * Specification for a [io.evolue.core.factories.steps.BlackHoleStep].
  *
  * @author Eric Jessé
  */
+@Introspected
 class BlackHoleStepSpecification<INPUT> : AbstractStepSpecification<INPUT, Unit, BlackHoleStepSpecification<INPUT>>()
 
 /**
@@ -12,7 +15,7 @@ class BlackHoleStepSpecification<INPUT> : AbstractStepSpecification<INPUT, Unit,
  *
  * @author Eric Jessé
  */
-fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.blackHole(): BlackHoleStepSpecification<INPUT> {
+fun <INPUT> StepSpecification<*, INPUT, *>.blackHole(): BlackHoleStepSpecification<INPUT> {
     val step = BlackHoleStepSpecification<INPUT>()
     this.add(step)
     return step
