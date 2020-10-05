@@ -14,6 +14,7 @@ import java.time.Instant
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class DelayStepTest {
 
     @Test

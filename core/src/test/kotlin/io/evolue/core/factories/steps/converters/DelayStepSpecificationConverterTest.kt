@@ -21,6 +21,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 internal class DelayStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<DelayedStepSpecificationConverter>() {
 

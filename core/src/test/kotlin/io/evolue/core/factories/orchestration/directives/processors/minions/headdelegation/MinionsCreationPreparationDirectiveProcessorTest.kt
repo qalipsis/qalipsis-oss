@@ -5,14 +5,14 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
-import io.evolue.core.cross.directives.TestDescriptiveDirective
 import io.evolue.api.orchestration.directives.DirectiveProducer
 import io.evolue.api.orchestration.directives.DirectiveRegistry
-import io.evolue.core.cross.directives.MinionsCreationDirective
-import io.evolue.core.cross.directives.MinionsCreationPreparationDirectiveReference
 import io.evolue.api.orchestration.feedbacks.DirectiveFeedback
 import io.evolue.api.orchestration.feedbacks.FeedbackProducer
 import io.evolue.api.orchestration.feedbacks.FeedbackStatus
+import io.evolue.core.cross.directives.MinionsCreationDirective
+import io.evolue.core.cross.directives.MinionsCreationPreparationDirectiveReference
+import io.evolue.core.cross.directives.TestDescriptiveDirective
 import io.evolue.core.factories.orchestration.ScenariosKeeper
 import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
@@ -103,14 +103,14 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { scenariosKeeper.getScenario("my-scenario") } returns
                 Scenario(
-                    "my-scenario",
-                    mutableListOf(
-                        DirectedAcyclicGraph("my-dag-1", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
-                            mutableListOf(), false, false),
-                        DirectedAcyclicGraph("my-dag-2", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
-                            mutableListOf(), false, false)
-                    ),
-                    relaxedMockk()
+                        "my-scenario",
+                        mutableListOf(
+                                DirectedAcyclicGraph("my-dag-1",
+                                        Scenario("my-scenario", rampUpStrategy = relaxedMockk()), false, false),
+                                DirectedAcyclicGraph("my-dag-2",
+                                        Scenario("my-scenario", rampUpStrategy = relaxedMockk()), false, false)
+                        ),
+                        relaxedMockk()
                 )
         coEvery { feedbackProducer.publish(capture(feedbacks)) } answers {}
         coEvery { directiveProducer.publish(capture(createdDirectives)) } answers {}

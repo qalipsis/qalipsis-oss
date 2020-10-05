@@ -1,4 +1,4 @@
-package io.evolue.core.factories.steps.decorators
+package io.evolue.core.factories.steps.topicmirror
 
 import assertk.all
 import assertk.assertThat
@@ -27,6 +27,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 @WithMockk
 internal class TimeoutStepDecoratorSpecificationConverterTest {
 

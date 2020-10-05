@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_PARAMETER")
+
 package io.evolue.api.processors
 
 import io.evolue.api.annotations.Property

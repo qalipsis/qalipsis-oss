@@ -36,49 +36,15 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
 
     override val nextSteps = mutableListOf<StepSpecification<*, *, *>>()
 
-    override fun configure(specification: SELF.() -> Unit): StepSpecification<INPUT, OUTPUT, *> {
-        (this as SELF).specification()
-        return this
-    }
-
-    override fun add(step: StepSpecification<*, *, *>) {
-        scenario!!.register(step)
-        // If either the current or next step is a singleton but not the other, a new DAG is built.
-        if ((this is SingletonStepSpecification<*, *, *> && step !is SingletonStepSpecification<*, *, *>)
-            || (this !is SingletonStepSpecification<*, *, *> && step is SingletonStepSpecification<*, *, *>)
-        ) {
-            step.directedAcyclicGraphId = scenario!!.getDagId()
-        } else {
-            step.directedAcyclicGraphId = this.directedAcyclicGraphId
-        }
-        nextSteps.add(step)
-    }
-
     /**
-     * Add several next steps to run concurrently.
-     *
-     * Example:
-     *
-     * myStep.all{
-     *   assert{...}.filter{}
-     *   map{...}.validate{}.all {
-     *      ...
-     *   }
-     * }
-     */
-    override fun all(block: SELF.() -> Unit) {
-        (this as SELF).block()
-    }
-
-    /**
-     * Define the timeout of the step execution on a single context, in milliseconds.
+     * Defines the timeout of the step execution on a single context, in milliseconds.
      */
     override fun timeout(duration: Long) {
         timeout = Duration.ofMillis(duration)
     }
 
     /**
-     * Define the individual retry strategy on the step. When none is set, the default one of the scenario is used.
+     * Defines the individual retry strategy on the step. When none is set, the default one of the scenario is used.
      */
     override fun retry(retryPolicy: RetryPolicy) {
         this.retryPolicy = retryPolicy
@@ -89,4 +55,8 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
         this.iterationPeriods = period
     }
 
+    override fun add(step: StepSpecification<*, *, *>) {
+        nextSteps.add(step)
+        scenario!!.registerNext(this, step)
+    }
 }

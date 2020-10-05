@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class FlatMapStepTest {
 
     @Test
@@ -20,7 +21,7 @@ internal class FlatMapStepTest {
     fun shouldConvertArrayWithDefaultStep() {
         val step = FlatMapStep<Array<Int>, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Array<Int>, Int>(
-            input = IntArray(10) { it }.toTypedArray(), outputChannel = Channel(Channel.UNLIMITED)
+                input = IntArray(10) { it }.toTypedArray(), outputChannel = Channel(Channel.UNLIMITED)
         )
 
         runBlocking {
@@ -42,7 +43,7 @@ internal class FlatMapStepTest {
     fun shouldConvertCollectionWithDefaultStep() {
         val step = FlatMapStep<Collection<Int>, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Collection<Int>, Int>(
-            input = IntArray(10) { it }.toList(), outputChannel = Channel(Channel.UNLIMITED)
+                input = IntArray(10) { it }.toList(), outputChannel = Channel(Channel.UNLIMITED)
         )
 
         runBlocking {
@@ -64,7 +65,7 @@ internal class FlatMapStepTest {
     fun shouldConvertMapWithDefaultStep() {
         val step = FlatMapStep<Map<Int, String>, Pair<Int, String>>("", null)
         val ctx = StepTestHelper.createStepContext<Map<Int, String>, Pair<Int, String>>(
-            input = mapOf(1 to "1", 2 to "2", 3 to "3"), outputChannel = Channel(Channel.UNLIMITED)
+                input = mapOf(1 to "1", 2 to "2", 3 to "3"), outputChannel = Channel(Channel.UNLIMITED)
         )
 
         runBlocking {
@@ -126,7 +127,7 @@ internal class FlatMapStepTest {
     @Test
     @Timeout(1)
     fun shouldConvertInputToSequence() {
-        val step = FlatMapStep<Int, Int>("", null) { value -> IntArray(10) { it }.asFlow() }
+        val step = FlatMapStep<Int, Int>("", null) { IntArray(10) { it }.asFlow() }
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1, outputChannel = Channel(Channel.UNLIMITED))
 
         runBlocking {

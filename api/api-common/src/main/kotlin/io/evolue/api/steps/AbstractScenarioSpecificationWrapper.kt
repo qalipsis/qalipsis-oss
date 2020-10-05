@@ -32,7 +32,11 @@ abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecificat
         wrappedScenario.register(step)
     }
 
-    override fun <O> find(stepName: StepName): StepSpecification<*, O, *>? {
+    override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
+        wrappedScenario.registerNext(previousStep, nextStep)
+    }
+
+    override suspend fun <O> find(stepName: StepName): StepSpecification<*, O, *>? {
         return wrappedScenario.find(stepName)
     }
 
@@ -40,7 +44,7 @@ abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecificat
         return wrappedScenario.exists(stepName)
     }
 
-    override fun getDagId(): DirectedAcyclicGraphId {
-        return wrappedScenario.getDagId()
+    override fun buildDagId(): DirectedAcyclicGraphId {
+        return wrappedScenario.buildDagId()
     }
 }

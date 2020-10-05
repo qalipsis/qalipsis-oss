@@ -26,6 +26,7 @@ internal class AssertionStepSpecificationConverter(
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<AssertionStepSpecification<*, *>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as AssertionStepSpecification<I, O>
         val step = AssertionStep(spec.name ?: Cuid.createCuid(), eventsLogger, meterRegistry, spec.assertionBlock)
         creationContext.createdStep(step)

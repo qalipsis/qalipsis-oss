@@ -24,6 +24,7 @@ internal class ShelveStepSpecificationConverter(
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<ShelveStepSpecification<*>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as ShelveStepSpecification<I>
         val step = ShelveStep(spec.name ?: Cuid.createCuid(), sharedStateRegistry, spec.specification)
         creationContext.createdStep(step)

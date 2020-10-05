@@ -27,6 +27,7 @@ val kotlinCoroutinesVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib"))
+    api(project(":api:api-dev"))
     api(project(":api:api-dsl"))
     api("org.slf4j:slf4j-api:1.7.30")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")

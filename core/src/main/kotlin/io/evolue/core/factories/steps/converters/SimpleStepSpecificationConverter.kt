@@ -21,6 +21,7 @@ internal class SimpleStepSpecificationConverter : StepSpecificationConverter<Sim
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<SimpleStepSpecification<*, *>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as SimpleStepSpecification<I, O>
         val step = SimpleStep(spec.name ?: Cuid.createCuid(),
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,

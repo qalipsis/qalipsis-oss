@@ -30,7 +30,7 @@ class IterativeStepDecorator<I, O>(
 
     var delayMillis = delay.toMillis()
 
-    override fun addNext(nextStep: Step<O, *>) {
+    override fun addNext(nextStep: Step<*, *>) {
         decorated.addNext(nextStep)
     }
 
@@ -71,5 +71,6 @@ class IterativeStepDecorator<I, O>(
         @JvmStatic
         private val log = logger()
     }
+
 
 }

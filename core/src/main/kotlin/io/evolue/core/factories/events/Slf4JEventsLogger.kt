@@ -35,6 +35,8 @@ class Slf4JEventsLogger : EventsLogger {
             EventLevel.INFO -> logInfo(name, value, tags)
             EventLevel.DEBUG -> logDebug(name, value, tags)
             EventLevel.TRACE -> logTrace(name, value, tags)
+            else -> { /* Nothing to do */
+            }
         }
     }
 

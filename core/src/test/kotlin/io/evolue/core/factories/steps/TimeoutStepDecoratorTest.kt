@@ -28,6 +28,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 @WithMockk
 internal class TimeoutStepDecoratorTest {
 
@@ -60,7 +61,7 @@ internal class TimeoutStepDecoratorTest {
             }
         }
         coVerifyOnce { step.executeStep(refEq(decoratedStep), refEq(ctx)) }
-        Assertions.assertFalse(ctx.exhausted)
+        Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
         confirmVerified(meterRegistry, counter)
@@ -85,7 +86,7 @@ internal class TimeoutStepDecoratorTest {
             }
         }
         coVerifyOnce { step.executeStep(refEq(decoratedStep), refEq(ctx)) }
-        Assertions.assertTrue(ctx.exhausted)
+        Assertions.assertTrue(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
         verifyOnce { meterRegistry.counter("step-my-step-timeout", "minion", "my-minion") }

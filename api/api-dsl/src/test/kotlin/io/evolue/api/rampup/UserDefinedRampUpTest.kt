@@ -13,7 +13,7 @@ internal class UserDefinedRampUpTest {
     @Test
     internal fun `should define the strategy on the scenario`() {
         val specification: (Long, Int, Double) -> MinionsStartingLine =
-            { pastPeriodMs, totalMinionsCount, speedFactor -> MinionsStartingLine(10, 10) }
+            { _, _, _ -> MinionsStartingLine(10, 10) }
 
         val scenario = scenario("my-scenario") {
             rampUp {

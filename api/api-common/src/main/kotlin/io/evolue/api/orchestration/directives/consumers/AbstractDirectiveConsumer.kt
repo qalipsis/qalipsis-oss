@@ -21,6 +21,7 @@ import io.evolue.api.orchestration.directives.DirectiveProcessor
     /**
      * Pass the directive to all the known processors supporting it.
      */
+    @Suppress("UNCHECKED_CAST")
     protected suspend fun process(directive: Directive) {
         orderedDirectiveProcessors.filter { it.accept(directive) }
             .map { it as DirectiveProcessor<Directive> }

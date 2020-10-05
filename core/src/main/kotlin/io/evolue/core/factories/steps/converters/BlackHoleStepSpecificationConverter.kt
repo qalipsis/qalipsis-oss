@@ -21,6 +21,7 @@ internal class BlackHoleStepSpecificationConverter : StepSpecificationConverter<
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<BlackHoleStepSpecification<*>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as BlackHoleStepSpecification<I>
         val step = BlackHoleStep<I, O>(spec.name ?: Cuid.createCuid())
         creationContext.createdStep(step)

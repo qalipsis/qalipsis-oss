@@ -11,6 +11,7 @@ object ServicesLoader {
     /**
      * Load the services passing the application context as parameter.
      */
+    @Suppress("UNCHECKED_CAST")
     fun <T> loadServices(name: String, context: ApplicationContext): Collection<T> {
         return this.javaClass.classLoader.getResources("META-INF/evolue/${name}")
             .toList()

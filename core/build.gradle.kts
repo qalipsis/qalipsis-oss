@@ -13,6 +13,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.majorVersion
         javaParameters = true
+        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn,kotlinx.coroutines.ObsoleteCoroutinesApi"
     }
 }
 
@@ -29,8 +30,10 @@ allOpen {
 
 val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
+val testContainersVersion: String by project
 
 dependencies {
+    compileOnly(kotlin("reflect"))
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
@@ -55,12 +58,15 @@ dependencies {
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt(project(":api:api-processors"))
+    kapt(kotlin("stdlib"))
+    kapt(kotlin("reflect"))
 
     testImplementation(project(":test"))
     testImplementation("io.ktor:ktor-client-mock:1.3.1")
     testImplementation("io.ktor:ktor-client-mock-jvm:1.3.1")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
+    testImplementation("org.testcontainers:elasticsearch:$testContainersVersion")
     testImplementation(testFixtures(project(":api:api-dsl")))
     testImplementation(testFixtures(project(":api:api-common")))
 

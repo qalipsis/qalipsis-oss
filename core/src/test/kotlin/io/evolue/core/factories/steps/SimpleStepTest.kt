@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class SimpleStepTest {
 
     @Test
@@ -20,10 +21,10 @@ internal class SimpleStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, 123L)
+            assertEquals(123L, output)
         }
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-        Assertions.assertFalse(ctx.exhausted)
+        Assertions.assertFalse(ctx.isExhausted)
     }
 
     @Test
@@ -38,6 +39,6 @@ internal class SimpleStepTest {
             }
         }
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-        Assertions.assertFalse(ctx.exhausted)
+        Assertions.assertFalse(ctx.isExhausted)
     }
 }

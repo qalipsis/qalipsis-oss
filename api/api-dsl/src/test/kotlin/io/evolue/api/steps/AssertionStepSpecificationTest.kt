@@ -12,7 +12,7 @@ internal class AssertionStepSpecificationTest {
     @Test
     internal fun `should add simple assert as next`() {
         val previousStep = DummyStepSpecification()
-        val specification: (suspend (input: Int) -> Unit) = { input: Int -> throw RuntimeException() }
+        val specification: (suspend (input: Int) -> Unit) = { throw RuntimeException() }
         previousStep.assert(specification)
 
         assertTrue(previousStep.nextSteps[0] is AssertionStepSpecification)

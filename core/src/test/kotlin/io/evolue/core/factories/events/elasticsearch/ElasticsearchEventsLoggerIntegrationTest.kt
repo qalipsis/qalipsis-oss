@@ -22,12 +22,11 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
+import org.testcontainers.elasticsearch.ElasticsearchContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.io.PrintWriter
-import java.net.HttpURLConnection
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -57,11 +56,10 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("provideContainers")
-    internal fun `should export data`(version: String, containerAndFormatter: EsContainerContext) {
-
+    internal fun `should export data`(containerAndFormatter: EsContainerContext) {
         val configuration = ElasticsearchEventLoggerConfiguration(
-            urls = listOf(containerAndFormatter.url),
-            batchSize = 100, lingerPeriod = Duration.ofMinutes(1), publishers = 1
+                urls = listOf(containerAndFormatter.url),
+                batchSize = 100, lingerPeriod = Duration.ofMinutes(1), publishers = 1
         )
         val logger = ElasticsearchEventsLogger(configuration, meterRegistry)
         logger.start()
@@ -127,87 +125,87 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
      * Create the test data set with the value to log as key and the condition to match when asserting the data as value.
      */
     private fun createTestData(
-        instantNow: Instant, zdtNow: ZonedDateTime,
-        ldtNow: LocalDateTime,
-        formatter: DateTimeFormatter
+            instantNow: Instant, zdtNow: ZonedDateTime,
+            ldtNow: LocalDateTime,
+            formatter: DateTimeFormatter
     ): Map<Any, (json: ObjectNode) -> Boolean> {
         val values = mapOf<Any, ((json: ObjectNode) -> Boolean)>(
-            "my-message" to { json -> json.withArray("message")[0].asText() == "my-message" },
-            true to { json -> json.withArray("boolean")[0].asBoolean() },
-            123.65 to { json -> json.withArray("number")[0].asDouble() == 123.65 },
-            Double.POSITIVE_INFINITY to { json ->
-                json.withArray("non-finite-decimal")[0].asText() == "Infinity"
-            },
-            Double.NEGATIVE_INFINITY to { json ->
-                json.withArray("non-finite-decimal")[0].asText() == "-Infinity"
-            },
-            Double.NaN to { json ->
-                json.withArray("non-finite-decimal")[0].asText() == "NaN"
-            },
-            123.65.toFloat() to { json -> json.withArray("number")[0].asDouble() == 123.65 },
-            123.65.toBigDecimal() to { json -> json.withArray("number")[0].asDouble() == 123.65 },
-            123 to { json -> json.withArray("number")[0].asInt() == 123 },
-            123.toBigInteger() to { json -> json.withArray("number")[0].asInt() == 123 },
-            123.toLong() to { json -> json.withArray("number")[0].asInt() == 123 },
-            instantNow to { json ->
-                formatter.parse(
-                    json.withArray("instant")[0].asText()
-                ) { temporal: TemporalAccessor ->
-                    Instant.from(temporal)
-                } == instantNow.truncatedTo(ChronoUnit.MILLIS)
-            },
-            zdtNow to { json ->
-                formatter.parse(
-                    json.withArray("instant")[0].asText()
-                ) { temporal: TemporalAccessor ->
-                    Instant.from(temporal)
-                } == zdtNow.toInstant().truncatedTo(ChronoUnit.MILLIS)
-            },
-            ldtNow to { json ->
-                formatter.parse(
-                    json.withArray("instant")[0].asText()
-                ) { temporal: TemporalAccessor ->
-                    Instant.from(temporal)
-                } == ldtNow.atZone(ZoneId.systemDefault()).toInstant().truncatedTo(ChronoUnit.MILLIS)
-            },
-            relaxedMockk<Throwable> {
-                every { message } returns "my-error"
-                every { printStackTrace(any<PrintWriter>()) } answers {
-                    (firstArg() as PrintWriter).write("this is the stack")
+                "my-message" to { json -> json.withArray("message")[0].asText() == "my-message" },
+                true to { json -> json.withArray("boolean")[0].asBoolean() },
+                123.65 to { json -> json.withArray("number")[0].asDouble() == 123.65 },
+                Double.POSITIVE_INFINITY to { json ->
+                    json.withArray("non-finite-decimal")[0].asText() == "Infinity"
+                },
+                Double.NEGATIVE_INFINITY to { json ->
+                    json.withArray("non-finite-decimal")[0].asText() == "-Infinity"
+                },
+                Double.NaN to { json ->
+                    json.withArray("non-finite-decimal")[0].asText() == "NaN"
+                },
+                123.65.toFloat() to { json -> json.withArray("number")[0].asDouble() == 123.65 },
+                123.65.toBigDecimal() to { json -> json.withArray("number")[0].asDouble() == 123.65 },
+                123 to { json -> json.withArray("number")[0].asInt() == 123 },
+                123.toBigInteger() to { json -> json.withArray("number")[0].asInt() == 123 },
+                123.toLong() to { json -> json.withArray("number")[0].asInt() == 123 },
+                instantNow to { json ->
+                    formatter.parse(
+                            json.withArray("instant")[0].asText()
+                    ) { temporal: TemporalAccessor ->
+                        Instant.from(temporal)
+                    } == instantNow.truncatedTo(ChronoUnit.MILLIS)
+                },
+                zdtNow to { json ->
+                    formatter.parse(
+                            json.withArray("instant")[0].asText()
+                    ) { temporal: TemporalAccessor ->
+                        Instant.from(temporal)
+                    } == zdtNow.toInstant().truncatedTo(ChronoUnit.MILLIS)
+                },
+                ldtNow to { json ->
+                    formatter.parse(
+                            json.withArray("instant")[0].asText()
+                    ) { temporal: TemporalAccessor ->
+                        Instant.from(temporal)
+                    } == ldtNow.atZone(ZoneId.systemDefault()).toInstant().truncatedTo(ChronoUnit.MILLIS)
+                },
+                relaxedMockk<Throwable> {
+                    every { message } returns "my-error"
+                    every { printStackTrace(any<PrintWriter>()) } answers {
+                        (firstArg() as PrintWriter).write("this is the stack")
+                    }
+                } to { json ->
+                    json.withArray("error")[0].asText() == "my-error" && json.withArray(
+                            "stack-trace"
+                    )[0].asText() == "this is the stack"
+                },
+                Duration.ofSeconds(12) to { json ->
+                    json.withArray("duration")[0].asInt() == 12000 && json.withArray(
+                            "unit"
+                    )[0].asText() == "milliseconds"
+                },
+                EventGeoPoint(12.34, 34.76) to { json ->
+                    json.withArray("latitude")[0].asDouble() == 12.34 && json.withArray(
+                            "longitude"
+                    )[0].asDouble() == 34.76
+                },
+                EventRange(12.34, 34.76) to { json ->
+                    json.withArray("lower-bound")[0].asDouble() == 12.34 && json.withArray(
+                            "upper-bound"
+                    )[0].asDouble() == 34.76
+                },
+                arrayOf(12.34, "here is the test") to { json ->
+                    json.withArray("values").let {
+                        it[0].asText() == "12.34" && it[1].asText() == "here is the test"
+                    }
+                },
+                listOf(12.34, "here is the test") to { json ->
+                    json.withArray("values").let {
+                        it[0].asText() == "12.34" && it[1].asText() == "here is the test"
+                    }
+                },
+                ElasticsearchEventsLoggerTest.MyTestObject() to { json ->
+                    json.withArray("value")[0].asText() == "{\"property1\":1243.65,\"property2\":\"here is the test\"}"
                 }
-            } to { json ->
-                json.withArray("error")[0].asText() == "my-error" && json.withArray(
-                    "stack-trace"
-                )[0].asText() == "this is the stack"
-            },
-            Duration.ofSeconds(12) to { json ->
-                json.withArray("duration")[0].asInt() == 12000 && json.withArray(
-                    "unit"
-                )[0].asText() == "milliseconds"
-            },
-            EventGeoPoint(12.34, 34.76) to { json ->
-                json.withArray("latitude")[0].asDouble() == 12.34 && json.withArray(
-                    "longitude"
-                )[0].asDouble() == 34.76
-            },
-            EventRange(12.34, 34.76) to { json ->
-                json.withArray("lower-bound")[0].asDouble() == 12.34 && json.withArray(
-                    "upper-bound"
-                )[0].asDouble() == 34.76
-            },
-            arrayOf(12.34, "here is the test") to { json ->
-                json.withArray("values").let {
-                    it[0].asText() == "12.34" && it[1].asText() == "here is the test"
-                }
-            },
-            listOf(12.34, "here is the test") to { json ->
-                json.withArray("values").let {
-                    it[0].asText() == "12.34" && it[1].asText() == "here is the test"
-                }
-            },
-            ElasticsearchEventsLoggerTest.MyTestObject() to { json ->
-                json.withArray("value")[0].asText() == "{\"property1\":1243.65,\"property2\":\"here is the test\"}"
-            }
         )
         return values
     }
@@ -233,8 +231,8 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
 
             httpClient.get<String>(url + "/evolue-events-*/_search") {
                 body = TextContent(
-                    "{\"size\":100,\"query\":{\"bool\":{\"must\":[{\"match_all\":{}}]}},\"stored_fields\":[\"*\"]}",
-                    contentType = ContentType.Application.Json
+                        "{\"size\":100,\"query\":{\"bool\":{\"must\":[{\"match_all\":{}}]}},\"stored_fields\":[\"*\"]}",
+                        contentType = ContentType.Application.Json
                 )
             }
         }
@@ -242,37 +240,17 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
         return ObjectMapper().readTree(response)["hits"] as ObjectNode
     }
 
-    class ElasticsearchContainer constructor(val version: String) :
-        GenericContainer<ElasticsearchContainer>("docker.elastic.co/elasticsearch/elasticsearch:$version") {
-
-        val url: String
-            get() = "http://${getContainerIpAddress()}:${getMappedPort(PORT)}"
-
-        override fun configure() {
-            addExposedPorts(PORT)
-            withEnv("discovery.type", "single-node")
-            waitingFor(
-                HttpWaitStrategy()
-                    .forPort(9200)
-                    .forStatusCode(HttpURLConnection.HTTP_OK)
-                    .withStartupTimeout(Duration.ofMinutes(3))
-            )
-        }
-
-        companion object {
-            private const val PORT = 9200
-        }
-    }
-
     companion object {
 
         @Container
         @JvmStatic
-        val es6 = ElasticsearchContainer("6.5.4")
+        val es6 = ElasticsearchContainer(
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss").withTag("6.5.4"))
 
         @Container
         @JvmStatic
-        val es7 = ElasticsearchContainer("7.8.0")
+        val es7 = ElasticsearchContainer(
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss").withTag("7.8.0"))
 
         /**
          * Provide the data for the parameterized test. The first side of the pair is the Docker container
@@ -280,13 +258,14 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
          */
         @JvmStatic
         fun provideContainers() = Stream.of(
-            Arguments.of(es6.version, EsContainerContext(es6.url, DateTimeFormatter.ISO_OFFSET_DATE_TIME)),
-            Arguments.of(es7.version, EsContainerContext(es7.url, DateTimeFormatter.ISO_INSTANT))
+                Arguments.of(
+                        EsContainerContext("http://${es6.httpHostAddress}", DateTimeFormatter.ISO_OFFSET_DATE_TIME)),
+                Arguments.of(EsContainerContext("http://${es7.httpHostAddress}", DateTimeFormatter.ISO_INSTANT))
         )
     }
 
     class EsContainerContext(
-        val url: String,
-        val dateTimeFormatter: DateTimeFormatter
+            val url: String,
+            val dateTimeFormatter: DateTimeFormatter
     )
 }

@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class IterativeStepDecoratorTest {
 
     @Test
@@ -41,7 +42,7 @@ internal class IterativeStepDecoratorTest {
         }
 
         coVerifyExactly(10) { step.executeStep(refEq(decoratedStep), nrefEq(ctx)) }
-        Assertions.assertFalse(ctx.exhausted)
+        Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertEquals(10, capturedInputs.size)
         // The same input is always reused.
         capturedInputs.forEach {
@@ -73,7 +74,7 @@ internal class IterativeStepDecoratorTest {
         }
 
         coVerifyExactly(10) { step.executeStep(refEq(decoratedStep), nrefEq(ctx)) }
-        Assertions.assertFalse(ctx.exhausted)
+        Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertEquals(10, executionTimestamps.size)
         // The delay between each step should be at least 10.
         for (i in 1 until executionTimestamps.size) {
@@ -102,7 +103,7 @@ internal class IterativeStepDecoratorTest {
 
         coVerifyOnce { step.executeStep(refEq(decoratedStep), nrefEq(ctx)) }
         // We let the runner take care of the error management.
-        Assertions.assertFalse(ctx.exhausted)
+        Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertEquals(1, executionCount.get())
         Assertions.assertTrue(ctx.errors.isEmpty())
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)

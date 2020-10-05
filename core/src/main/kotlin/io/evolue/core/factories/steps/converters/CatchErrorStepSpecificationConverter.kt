@@ -21,6 +21,7 @@ internal class CatchErrorStepSpecificationConverter : StepSpecificationConverter
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<CatchErrorStepSpecification<*>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as CatchErrorStepSpecification<I>
         val step = CatchErrorStep<I>(spec.name ?: Cuid.createCuid(), spec.block)
         creationContext.createdStep(step)

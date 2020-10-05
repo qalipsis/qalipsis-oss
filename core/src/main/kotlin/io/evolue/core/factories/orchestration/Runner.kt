@@ -31,15 +31,18 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class Runner(
-    private val eventsLogger: EventsLogger,
-    private val meterRegistry: MeterRegistry
+        private val eventsLogger: EventsLogger,
+        private val meterRegistry: MeterRegistry
 ) : StepExecutor {
 
-    private val idleMinionsGauge = meterRegistry.gauge("idle-minions", AtomicInteger(0))
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    private val idleMinionsGauge: AtomicInteger = meterRegistry.gauge("idle-minions", AtomicInteger(0))
 
-    private val runningMinionsGauge = meterRegistry.gauge("running-minions", AtomicInteger(0))
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    private val runningMinionsGauge: AtomicInteger = meterRegistry.gauge("running-minions", AtomicInteger(0))
 
-    private val runningStepsGauge = meterRegistry.gauge("running-steps", AtomicInteger(0))
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    private val runningStepsGauge: AtomicInteger = meterRegistry.gauge("running-steps", AtomicInteger(0))
 
     private val executedStepCounter = meterRegistry.counter("executed-steps")
 
@@ -56,23 +59,23 @@ internal class Runner(
         log.trace("Running minion ${minionImpl.id} for DAG ${dag.id}")
 
         val creationTimestamp = System.currentTimeMillis()
-        dag.rootSteps.forEach { step ->
-            val ctx =
-                StepContext<Unit, Any>(campaignId = minionImpl.campaignId, minionId = minionImpl.id,
+        val step = dag.rootStep.get()
+        val ctx =
+            StepContext<Unit, Any>(campaignId = minionImpl.campaignId, minionId = minionImpl.id,
                     scenarioId = dag.scenario.id,
                     directedAcyclicGraphId = dag.id, stepId = step.id, creation = creationTimestamp)
-            (ctx.input as Channel<Unit>).send(Unit)
-            minionImpl.attach(GlobalScope.launch {
-                executeStepRecursively(minionImpl, step as Step<Any?, Any?>, ctx as StepContext<Any?, Any?>)
-            })
-        }
+        (ctx.input as Channel<Unit>).send(Unit)
+        minionImpl.attach(GlobalScope.launch {
+            @Suppress("UNCHECKED_CAST")
+            executeStepRecursively(minionImpl, step as Step<Any?, Any?>, ctx as StepContext<Any?, Any?>)
+        })
     }
 
     /**
      * Execute a single step onto the specified context and triggers the next steps asynchronously in different coroutines.
      */
     private suspend fun executeStepRecursively(minionImpl: MinionImpl, step: Step<Any?, Any?>,
-        ctx: StepContext<Any?, Any?>) {
+                                               ctx: StepContext<Any?, Any?>) {
         log.trace("Executing step ${step.id} with minion ${minionImpl.id} on context $ctx")
         // Asynchronously read the output to trigger the next steps.
         if (step.next.isNotEmpty()) {
@@ -81,37 +84,39 @@ internal class Runner(
                 var errorOfContextProcessed = false
                 for (outputRecord in ctx.output as Channel) {
                     step.next.forEach { nextStep ->
-                        if (ctx.exhausted) {
+                        if (ctx.isExhausted) {
                             errorOfContextProcessed = true
                         }
 
                         // Each next step is executed in its individual coroutine and with a dedicated context.
                         val nextContext = StepContextBuilder.next<Any?, Any?, Any?>(outputRecord, ctx, nextStep.id)
                         minionImpl.attach(launch {
+                            @Suppress("UNCHECKED_CAST")
                             executeStepRecursively(minionImpl, nextStep as Step<Any?, Any?>, nextContext)
                         })
                     }
                 }
                 // If the context is exhausted, it only ensures that the error processing steps are executed.
-                if (!errorOfContextProcessed && ctx.exhausted) {
+                if (!errorOfContextProcessed && ctx.isExhausted) {
                     step.next.forEach { nextStep ->
                         val nextContext = StepContextBuilder.next(ctx, nextStep.id)
                         minionImpl.attach(launch {
+                            @Suppress("UNCHECKED_CAST")
                             executeStepRecursively(minionImpl, nextStep as Step<Any?, Any?>,
-                                nextContext as StepContext<Any?, Any?>)
+                                    nextContext as StepContext<Any?, Any?>)
                         })
                     }
                 }
             })
         } else {
-            ctx.completed = true
+            ctx.isCompleted = true
         }
 
         executeSingleStep(step, ctx)
     }
 
     private suspend fun executeSingleStep(step: Step<Any?, Any?>, ctx: StepContext<Any?, Any?>) {
-        if (!ctx.exhausted || step is ErrorProcessingStep) {
+        if (!ctx.isExhausted || step is ErrorProcessingStep) {
             eventsLogger.info("step-${step.id}-started", tagsSupplier = { ctx.toEventTags() })
 
             runningStepsGauge.incrementAndGet()
@@ -129,10 +134,10 @@ internal class Runner(
                 }
                 ctx.errors.add(StepError(t))
                 log.warn(
-                    "step ${step} completed with an exception for the minion ${ctx.minionId}, the context is marked as exhausted",
-                    t
+                        "step ${step} completed with an exception for the minion ${ctx.minionId}, the context is marked as exhausted",
+                        t
                 )
-                ctx.exhausted = true
+                ctx.isExhausted = true
             }
             runningStepsGauge.decrementAndGet()
             executedStepCounter.increment()

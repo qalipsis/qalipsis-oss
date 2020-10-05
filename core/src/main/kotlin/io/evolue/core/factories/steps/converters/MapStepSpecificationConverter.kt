@@ -24,6 +24,7 @@ internal class MapStepSpecificationConverter :
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<MapStepSpecification<*, *>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as MapStepSpecification<I, O>
         val step = MapStep(spec.name ?: Cuid.createCuid(),
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy, spec.block)

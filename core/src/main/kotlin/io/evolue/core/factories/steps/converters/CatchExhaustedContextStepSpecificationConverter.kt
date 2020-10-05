@@ -23,6 +23,7 @@ internal class CatchExhaustedContextStepSpecificationConverter :
 
     override suspend fun <I, O> convert(
         creationContext: StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as CatchExhaustedContextStepSpecification<I, O>
         val step = CatchExhaustedContextStep(spec.name ?: Cuid.createCuid(), spec.block)
         creationContext.createdStep(step)

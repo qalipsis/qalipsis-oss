@@ -6,21 +6,21 @@ import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
 import io.evolue.api.lang.concurrentSet
 import io.evolue.api.logging.LoggerHelper.logger
-import io.evolue.core.annotations.LogInput
-import io.evolue.core.annotations.LogInputAndOutput
-import io.evolue.core.cross.directives.CampaignStartDirective
 import io.evolue.api.orchestration.directives.Directive
 import io.evolue.api.orchestration.directives.DirectiveKey
+import io.evolue.api.orchestration.directives.DirectiveProcessor
 import io.evolue.api.orchestration.directives.DirectiveProducer
-import io.evolue.core.cross.directives.MinionsCreationDirectiveReference
-import io.evolue.core.cross.directives.MinionsCreationPreparationDirective
-import io.evolue.core.cross.directives.MinionsRampUpPreparationDirective
-import io.evolue.core.cross.feedbacks.CampaignStartedForDagFeedback
 import io.evolue.api.orchestration.feedbacks.DirectiveFeedback
 import io.evolue.api.orchestration.feedbacks.Feedback
 import io.evolue.api.orchestration.feedbacks.FeedbackConsumer
 import io.evolue.api.orchestration.feedbacks.FeedbackStatus
-import io.evolue.api.orchestration.directives.DirectiveProcessor
+import io.evolue.core.annotations.LogInput
+import io.evolue.core.annotations.LogInputAndOutput
+import io.evolue.core.cross.directives.CampaignStartDirective
+import io.evolue.core.cross.directives.MinionsCreationDirectiveReference
+import io.evolue.core.cross.directives.MinionsCreationPreparationDirective
+import io.evolue.core.cross.directives.MinionsRampUpPreparationDirective
+import io.evolue.core.cross.feedbacks.CampaignStartedForDagFeedback
 import io.micronaut.context.annotation.Value
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -346,6 +346,7 @@ internal class DefaultCampaignManager(
         fun isA(directiveClass: KClass<out Directive>) = directiveClass.isInstance(directive)
 
         fun <U> get(): U {
+            @Suppress("UNCHECKED_CAST")
             return directive as U
         }
     }

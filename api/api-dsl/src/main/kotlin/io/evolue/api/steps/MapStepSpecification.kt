@@ -20,7 +20,8 @@ data class MapStepSpecification<INPUT, OUTPUT>(
  * @author Eric Jessé
  */
 fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.map(
-        block: (input: INPUT) -> OUTPUT = { value -> value as OUTPUT }): MapStepSpecification<INPUT, OUTPUT> {
+        @Suppress(
+                "UNCHECKED_CAST") block: (input: INPUT) -> OUTPUT = { value -> value as OUTPUT }): MapStepSpecification<INPUT, OUTPUT> {
     val step = MapStepSpecification(block)
     this.add(step)
     return step

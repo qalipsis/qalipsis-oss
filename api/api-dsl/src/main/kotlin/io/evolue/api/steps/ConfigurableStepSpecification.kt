@@ -15,7 +15,20 @@ import java.time.Duration
 interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
     StepSpecification<INPUT, OUTPUT, SELF> {
 
-    fun configure(specification: SELF.() -> Unit): StepSpecification<INPUT, OUTPUT, *>
+    /**
+     * Configure the step with type-specific settings.
+     */
+    fun configure(specification: SELF.() -> Unit): StepSpecification<INPUT, OUTPUT, *> {
+        val nameBeforeConfiguration = name
+        @Suppress("UNCHECKED_CAST")
+        (this as SELF).specification()
+
+        // If the name was changed, the step has to be declared again in the scenario with its new name.
+        if (name != nameBeforeConfiguration && scenario != null) {
+            scenario!!.register(this)
+        }
+        return this
+    }
 
     /**
      * Define the timeout of the step execution on a single context, in milliseconds.

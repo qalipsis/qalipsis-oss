@@ -52,7 +52,7 @@ internal class BufferedEventsLoggerTest {
         Assertions.assertEquals(EventLevel.DEBUG, logger.bufferedData[index++].level)
         Assertions.assertEquals(EventLevel.INFO, logger.bufferedData[index++].level)
         Assertions.assertEquals(EventLevel.WARN, logger.bufferedData[index++].level)
-        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index++].level)
+        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index].level)
     }
 
     @Test
@@ -70,7 +70,7 @@ internal class BufferedEventsLoggerTest {
         Assertions.assertEquals(EventLevel.DEBUG, logger.bufferedData[index++].level)
         Assertions.assertEquals(EventLevel.INFO, logger.bufferedData[index++].level)
         Assertions.assertEquals(EventLevel.WARN, logger.bufferedData[index++].level)
-        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index++].level)
+        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index].level)
     }
 
     @Test
@@ -87,7 +87,7 @@ internal class BufferedEventsLoggerTest {
         var index = 0
         Assertions.assertEquals(EventLevel.INFO, logger.bufferedData[index++].level)
         Assertions.assertEquals(EventLevel.WARN, logger.bufferedData[index++].level)
-        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index++].level)
+        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index].level)
     }
 
     @Test
@@ -103,7 +103,7 @@ internal class BufferedEventsLoggerTest {
         Assertions.assertEquals(2, logger.bufferedData.size)
         var index = 0
         Assertions.assertEquals(EventLevel.WARN, logger.bufferedData[index++].level)
-        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index++].level)
+        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index].level)
     }
 
     @Test
@@ -118,7 +118,7 @@ internal class BufferedEventsLoggerTest {
 
         Assertions.assertEquals(1, logger.bufferedData.size)
         var index = 0
-        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index++].level)
+        Assertions.assertEquals(EventLevel.ERROR, logger.bufferedData[index].level)
     }
 
     @Test

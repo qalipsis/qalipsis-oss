@@ -24,6 +24,7 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.majorVersion
         javaParameters = true
+        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
 }
 
@@ -34,6 +35,7 @@ dependencies {
     implementation(
             kotlin("stdlib")
     )
+    implementation(project(":api:api-dev"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("cool.graph:cuid-java:0.1.1")
     implementation("javax.annotation:javax.annotation-api")

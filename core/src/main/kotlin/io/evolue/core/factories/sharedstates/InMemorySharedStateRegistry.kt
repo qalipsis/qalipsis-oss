@@ -39,6 +39,7 @@ class InMemorySharedStateRegistry(
     }
 
     override fun <T> get(definition: SharedStateDefinition): T? {
+        @Suppress("UNCHECKED_CAST")
         return cache.getIfPresent(definition) as T
     }
 

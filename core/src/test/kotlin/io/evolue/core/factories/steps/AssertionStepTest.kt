@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 @WithMockk
 internal class AssertionStepTest {
 
@@ -48,10 +49,10 @@ internal class AssertionStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, 1)
+            assertEquals(1, output)
         }
         assertFalse((ctx.output as Channel).isClosedForReceive)
-        assertFalse(ctx.exhausted)
+        assertFalse(ctx.isExhausted)
 
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "success", "minion", "my-minion")
@@ -71,10 +72,10 @@ internal class AssertionStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, "1")
+            assertEquals("1", output)
         }
         assertFalse((ctx.output as Channel).isClosedForReceive)
-        assertFalse(ctx.exhausted)
+        assertFalse(ctx.isExhausted)
 
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "success", "minion", "my-minion")
@@ -99,7 +100,7 @@ internal class AssertionStepTest {
         }
 
         assertFalse((ctx.output as Channel).isClosedForReceive)
-        assertTrue(ctx.exhausted)
+        assertTrue(ctx.isExhausted)
 
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "failure", "minion", "my-minion")
@@ -113,9 +114,8 @@ internal class AssertionStepTest {
     @Test
     @Timeout(1)
     fun shouldNotForwardDataWhenAssertionThrowingException() {
-        val step = AssertionStep<Int, String>("my-step", eventsLogger, meterRegistry) { value ->
+        val step = AssertionStep<Int, String>("my-step", eventsLogger, meterRegistry) {
             throw RuntimeException("The error")
-            value.toString()
         }
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
@@ -125,7 +125,7 @@ internal class AssertionStepTest {
         }
 
         assertFalse((ctx.output as Channel).isClosedForReceive)
-        assertTrue(ctx.exhausted)
+        assertTrue(ctx.isExhausted)
 
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "error", "minion", "my-minion")

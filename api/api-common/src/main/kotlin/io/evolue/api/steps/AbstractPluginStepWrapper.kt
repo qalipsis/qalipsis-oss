@@ -26,7 +26,7 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
     override var name: StepName?
         get() = wrappedStepSpec.name
         set(value) {
-            wrappedStepSpec.name = name
+            wrappedStepSpec.name = value
         }
 
     override var scenario: MutableScenarioSpecification?
@@ -60,8 +60,8 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
         wrappedStepSpec.add(step)
     }
 
-    override fun all(block: AbstractPluginStepWrapper<I, O>.() -> Unit) {
+    override fun split(block: AbstractPluginStepWrapper<I, O>.() -> Unit) {
         throw InvalidSpecificationException(
-            "The all operation is not supported on a wrapped step, call it directly on the source step")
+                "The all operation is not supported on a wrapped step, call it directly on the source step")
     }
 }

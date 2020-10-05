@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class UnshelveStepTest {
 
     @Test

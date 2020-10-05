@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class ValidationStepTest {
 
     @Test
@@ -28,7 +29,7 @@ internal class ValidationStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, 123L)
+            assertEquals(123L, output)
         }
 
         assertEquals(123L, processedValue.get())
