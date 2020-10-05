@@ -14,6 +14,7 @@ fun Any.setProperty(propertyName: String, value: Any?) {
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 fun <T> Any.getProperty(propertyName: String): T {
     val property = this::class.memberProperties.find { it.name == propertyName }
     return if (property is KProperty<*>) {

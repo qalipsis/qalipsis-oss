@@ -21,6 +21,6 @@ abstract class FlowDatasourceStep<O>(
 
     override suspend fun execute(context: StepContext<Unit, O>) {
         dataSupplier().collect { value -> context.output.send(value) }
-        context.completed = true
+        context.isCompleted = true
     }
 }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class ShelveStepTest {
 
     @Test
@@ -33,7 +34,7 @@ internal class ShelveStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, 123L)
+            assertEquals(123L, output)
         }
 
         assertEquals(mapOf(

@@ -22,6 +22,7 @@ internal class ValidationStepSpecificationConverter :
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<ValidationStepSpecification<*>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as ValidationStepSpecification<I>
         val step = ValidationStep(spec.name ?: Cuid.createCuid(),
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,

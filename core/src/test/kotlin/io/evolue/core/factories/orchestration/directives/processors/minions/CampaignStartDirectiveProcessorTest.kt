@@ -1,7 +1,7 @@
 package io.evolue.core.factories.orchestration.directives.processors.minions
 
-import io.evolue.core.cross.directives.TestDescriptiveDirective
 import io.evolue.core.cross.directives.CampaignStartDirective
+import io.evolue.core.cross.directives.TestDescriptiveDirective
 import io.evolue.core.factories.orchestration.MinionsKeeper
 import io.evolue.core.factories.orchestration.ScenariosKeeper
 import io.evolue.test.mockk.WithMockk

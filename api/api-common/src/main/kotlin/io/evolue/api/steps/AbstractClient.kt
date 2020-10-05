@@ -60,6 +60,7 @@ abstract class AbstractClient<RQ, RS, START_CTX : Any, CTX : Any, STOP_CTX : Any
     /**
      * Execution method for a client.
      */
+    @Suppress("UNCHECKED_CAST")
     open suspend fun <I, O> execute(stepContext: StepContext<I, Pair<I, O>>, clientContext: CTX,
                                requestBuilder: suspend (I) -> RQ = { it as RQ },
                                responseBuilder: suspend (RS) -> O = { it as O }) {

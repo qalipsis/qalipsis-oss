@@ -100,7 +100,7 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any?> {
                     outputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
                     exceptionLevel?.let { level ->
                         { t, message ->
-                            exceptionLoggingCalls[exceptionLevel]?.invoke(logger, t, message)
+                            exceptionLoggingCalls[level]?.invoke(logger, t, message)
                         }
                     },
 

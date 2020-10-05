@@ -9,6 +9,7 @@ import io.evolue.api.steps.AbstractStep
 import io.evolue.api.steps.ErrorProcessingStep
 import io.evolue.test.mockk.relaxedMockk
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import java.util.concurrent.atomic.AtomicReference
 
@@ -19,38 +20,42 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal fun dag(configure: DirectedAcyclicGraph.() -> Unit = {}): DirectedAcyclicGraph {
     val dag = DirectedAcyclicGraph("my-dag", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
-        scenarioStart = false, singleton = false)
+            scenarioStart = false, singleton = false)
     dag.configure()
     return dag
 }
 
 internal fun <O> DirectedAcyclicGraph.step(id: String, output: O? = null,
-    retryPolicy: RetryPolicy? = null,
-    generateException: Boolean = false): TestStep<Unit, O> {
+                                           retryPolicy: RetryPolicy? = null,
+                                           generateException: Boolean = false): TestStep<Unit, O> {
     val step = TestStep<Unit, O>(id, retryPolicy, output, generateException = generateException)
-    this.rootSteps.add(step)
+    val self = this
+    runBlocking {
+        self.addStep(step)
+    }
     return step
 }
 
 internal fun <O> DirectedAcyclicGraph.delayedStep(id: String, output: O, delay: Long): TestStep<Unit, O> {
     val step = TestStep<Unit, O>(id, output = output, delay = delay)
-    this.rootSteps.add(step)
+    val self = this
+    runBlocking {
+        self.addStep(step)
+    }
     return step
 }
 
 internal fun DirectedAcyclicGraph.steps(): Map<StepId, TestStep<*, *>> {
     val steps = mutableMapOf<StepId, TestStep<*, *>>()
-    rootSteps.forEach {
-        val step = it as TestStep<*, *>
-        steps[it.id] = step
-        step.collectChildren(steps)
-    }
+    val rootStep = this.rootStep.forceGet() as TestStep<*, *>
+    steps[rootStep.id] = rootStep
+    rootStep.collectChildren(steps)
     return steps
 }
 
 internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null, private val output: O? = null,
-    private val delay: Long? = null,
-    private val generateException: Boolean = false) :
+                                   private val delay: Long? = null,
+                                   private val generateException: Boolean = false) :
     AbstractStep<I, O>(id, retryPolicy) {
 
     var received: I? = null
@@ -82,7 +87,16 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun step(id: String): TestStep<O, O> {
         val step = ForwarderTestStep<O>(id)
-        this.next.add(step)
+        this.addNext(step)
+        return step
+    }
+
+    /**
+     * Create a delayed forwarder step as next.
+     */
+    fun delayedStep(id: String, output: O, delay: Long): TestStep<Unit, O> {
+        val step = TestStep<Unit, O>(id, output = output, delay = delay)
+        this.addNext(step)
         return step
     }
 
@@ -91,7 +105,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun <O2> errorGenerator(id: String): TestStep<O, O> {
         val step = TestStep<O, O>(id, generateException = true)
-        this.next.add(step)
+        this.addNext(step)
         return step
     }
 
@@ -100,7 +114,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun processError(id: String): TestStep<O, O> {
         val step = ErrorProcessingTestStep<O>(id)
-        this.next.add(step)
+        this.addNext(step)
         return step
     }
 
@@ -109,7 +123,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
      */
     fun <O2> recoverError(id: String, output: O2): TestStep<O, O2> {
         val step = RecoveryTestStep<O, O2>(id, output)
-        this.next.add(step)
+        this.addNext(step)
         return step
     }
 
@@ -133,11 +147,12 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
     }
 
     fun assertExhaustedContext() {
-        Assertions.assertTrue(singleCaptured.get().exhausted, "step $id should have received an exhausted context")
+        Assertions.assertTrue(singleCaptured.get().isExhausted, "step $id should have received an exhausted context")
     }
 
     fun assertNotExhaustedContext() {
-        Assertions.assertFalse(singleCaptured.get().exhausted, "step $id should have not received an exhausted context")
+        Assertions.assertFalse(singleCaptured.get().isExhausted,
+                "step $id should have not received an exhausted context")
     }
 
     fun collectChildren(steps: MutableMap<StepId, TestStep<*, *>>) {
@@ -170,7 +185,7 @@ internal class RecoveryTestStep<I, O>(id: String, output: O) : TestStep<I, O>(id
      * Recover the context additionally to what [ErrorProcessingTestStep] does.
      */
     override suspend fun execute(context: StepContext<I, O>) {
-        context.exhausted = false
+        context.isExhausted = false
         super.execute(context)
     }
 }

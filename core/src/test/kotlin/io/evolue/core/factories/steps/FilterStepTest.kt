@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class FilterStepTest {
 
     @Test
@@ -21,7 +22,7 @@ internal class FilterStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            Assertions.assertEquals(output, 1L)
+            Assertions.assertEquals(1L, output)
         }
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }

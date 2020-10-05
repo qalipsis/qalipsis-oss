@@ -7,10 +7,10 @@ import io.evolue.api.context.ScenarioId
 import io.evolue.api.events.EventsLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.orchestration.factories.MinionsRegistry
+import io.evolue.api.orchestration.feedbacks.FeedbackProducer
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.annotations.LogInput
 import io.evolue.core.cross.feedbacks.EndOfCampaignFeedback
-import io.evolue.api.orchestration.feedbacks.FeedbackProducer
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Singleton
 
 /**
@@ -34,7 +35,7 @@ internal class MinionsKeeper(
         private val feedbackProducer: FeedbackProducer
 ) : MinionsRegistry {
 
-    private val minions: MutableMap<MinionId, MinionImpl> = ConcurrentHashMap()
+    private val minions: MutableMap<MinionId, MutableList<MinionImpl>> = ConcurrentHashMap()
 
     private val readySingletonsMinions: MutableMap<ScenarioId, MutableList<MinionImpl>> = ConcurrentHashMap()
 
@@ -42,7 +43,7 @@ internal class MinionsKeeper(
 
     override fun has(minionId: MinionId) = minions.containsKey(minionId)
 
-    override fun get(minionId: MinionId) = minions[minionId]
+    override fun get(minionId: MinionId) = minions[minionId] ?: emptyList()
 
     /**
      * Create a new Minion for the given scenario and directed acyclic graph.
@@ -65,17 +66,19 @@ internal class MinionsKeeper(
                 }
             }
 
-            log.trace("Creating minion ${minionId} for DAG ${dagId} of scenario ${scenarioId}")
-            val minion = MinionImpl(campaignId, minionId, true, eventsLogger, meterRegistry)
+            log.trace("Creating minion $minionId for DAG $dagId of scenario $scenarioId")
+            val minion = MinionImpl(minionId, campaignId, dagId, true, eventsLogger, meterRegistry)
             if (dag.singleton) {
-                // All singletons are started at the time time, but before the "real" minions.
+                // All singletons are started at the same time, prior to the "real" minions.
                 readySingletonsMinions.computeIfAbsent(scenarioId) { mutableListOf() }.add(minion)
             } else {
                 runningMinionsLatch.blockingIncrement()
-                minions[minionId] = minion
+                // There can be the same minion on several DAGs, each "instance" of the same
+                // minion is considered separately.
+                minions.computeIfAbsent(minionId) { CopyOnWriteArrayList() }.add(minion)
             }
 
-            // Runs the minion, which will be idle until it is called to start.
+            // Runs the minion, which will be idle until it the call to startCampaign().
             GlobalScope.launch {
                 runner.run(minion, dag)
             }
@@ -107,19 +110,26 @@ internal class MinionsKeeper(
      */
     @LogInput
     suspend fun startMinionAt(minionId: MinionId, instant: Instant) {
-        minions[minionId]?.let { minion ->
+        minions[minionId]?.let { minionsWithId ->
             val waitingDelay = instant.toEpochMilli() - System.currentTimeMillis()
             log.trace("Starting minion $minionId")
-            val runningMinionsLatch = minionsCountLatchesByCampaign[minion.campaignId]!!
-            minion.onComplete {
-                runningMinionsLatch.decrement()
-                minions.remove(minionId)
+            val runningMinionsLatch = minionsCountLatchesByCampaign[minionsWithId.first().campaignId]!!
+            minionsWithId.forEach { minion ->
+                minion.onComplete {
+                    runningMinionsLatch.decrement()
+                    minionsWithId.remove(minion)
+                    if (minionsWithId.isEmpty()) {
+                        minions.remove(minionId)
+                    }
+                }
             }
             if (waitingDelay > 0) {
                 log.trace("Waiting for $waitingDelay ms until start of minion $minionId")
                 delay(waitingDelay)
             }
-            minion.start()
+            minionsWithId.forEach {
+                it.start()
+            }
         }
     }
 

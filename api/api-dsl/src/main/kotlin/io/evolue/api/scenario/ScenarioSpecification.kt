@@ -4,15 +4,18 @@ import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.ScenarioId
 import io.evolue.api.context.StepName
 import io.evolue.api.retry.RetryPolicy
+import io.evolue.api.steps.SingletonStepSpecification
 import io.evolue.api.steps.StepSpecification
+import io.evolue.api.sync.ImmutableSlot
 import io.evolue.core.factories.orchestration.rampup.RampUpStrategy
+import kotlinx.coroutines.runBlocking
 
 /**
  *
  * @author Eric Jessé
  */
 class ScenarioSpecificationImplementation(
-    internal val name: String
+        internal val name: String
 ) : MutableScenarioSpecification, ConfigurableScenarioSpecification, ReadableScenarioSpecification,
     RampUpSpecification {
 
@@ -21,28 +24,48 @@ class ScenarioSpecificationImplementation(
     override val rootSteps = mutableListOf<StepSpecification<*, *, *>>()
 
     // Visible for test only.
-    internal val registeredSteps = mutableMapOf<String, StepSpecification<*, *, *>>()
+    internal val registeredSteps = mutableMapOf<String, ImmutableSlot<StepSpecification<*, *, *>>>()
 
     override var rampUpStrategy: RampUpStrategy? = null
 
     override var retryPolicy: RetryPolicy? = null
 
-    private var dagCount = 0
+    override var dagsCount = 0
 
     override fun add(step: StepSpecification<*, *, *>) {
         rootSteps.add(step)
         register(step)
-        step.directedAcyclicGraphId = this.getDagId()
+        step.directedAcyclicGraphId = this.buildDagId()
+    }
+
+    override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
+        register(nextStep)
+        // If any step is a singleton, a new DAG is built.
+        if (nextStep.directedAcyclicGraphId.isNullOrBlank()) {
+            if (previousStep is SingletonStepSpecification<*, *, *> || nextStep is SingletonStepSpecification<*, *, *>) {
+                nextStep.directedAcyclicGraphId = buildDagId()
+            } else {
+                nextStep.directedAcyclicGraphId = previousStep.directedAcyclicGraphId
+            }
+        }
     }
 
     override fun register(step: StepSpecification<*, *, *>) {
         step.scenario = this
-        if (step.name?.isNotBlank() == true) {
-            registeredSteps[step.name!!] = step
+        if (!step.name.isNullOrBlank()) {
+            runBlocking {
+                registeredSteps.computeIfAbsent(step.name!!) { ImmutableSlot() }.also {
+                    if (it.isEmpty()) {
+                        it.set(step)
+                    }
+                }
+            }
         }
     }
 
-    override fun <O> find(stepName: StepName) = registeredSteps[stepName] as StepSpecification<*, O, *>?
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun <O> find(stepName: StepName) =
+        registeredSteps.computeIfAbsent(stepName) { ImmutableSlot() }.get() as StepSpecification<*, O, *>?
 
     override fun exists(stepName: StepName) = registeredSteps.containsKey(stepName)
 
@@ -58,8 +81,8 @@ class ScenarioSpecificationImplementation(
         this.retryPolicy = retryPolicy
     }
 
-    override fun getDagId(): DirectedAcyclicGraphId {
-        return "dag-${++dagCount}"
+    override fun buildDagId(): DirectedAcyclicGraphId {
+        return "dag-${++dagsCount}"
     }
 }
 
@@ -75,6 +98,8 @@ interface ReadableScenarioSpecification {
     val retryPolicy: RetryPolicy?
 
     val rootSteps: List<StepSpecification<*, *, *>>
+
+    val dagsCount: Int
 }
 
 interface ConfigurableScenarioSpecification : RetrySpecification {
@@ -90,7 +115,7 @@ interface ConfigurableScenarioSpecification : RetrySpecification {
 interface RampUpSpecification {
 
     /**
-     * Define the ramp-up strategy to start all the minions on a scenario.
+     * Defines the ramp-up strategy to start all the minions on a scenario.
      */
     fun strategy(rampUpStrategy: RampUpStrategy)
 }
@@ -98,7 +123,7 @@ interface RampUpSpecification {
 interface RetrySpecification {
 
     /**
-     * Define the default retry strategy for all the steps of the scenario.
+     * Defines the default retry strategy for all the steps of the scenario.
      * The strategy can be redefined individually for each step.
      */
     fun retryPolicy(retryPolicy: RetryPolicy)
@@ -109,21 +134,31 @@ interface RetrySpecification {
  */
 interface MutableScenarioSpecification : ScenarioSpecification {
 
-    /**
-     * Add the step as root of the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
-     */
-    fun add(step: StepSpecification<*, *, *>)
-
-    fun register(step: StepSpecification<*, *, *>)
-
-    fun <O> find(stepName: StepName): StepSpecification<*, O, *>?
+    suspend fun <O> find(stepName: StepName): StepSpecification<*, O, *>?
 
     fun exists(stepName: StepName): Boolean
 
     /**
-     * Provide a predictive unique [DirectedAcyclicGraphId].
+     * Provides a predictive unique [DirectedAcyclicGraphId].
      */
-    fun getDagId(): DirectedAcyclicGraphId
+    fun buildDagId(): DirectedAcyclicGraphId
+
+    /**
+     * Adds the step as root of the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
+     */
+    fun add(step: StepSpecification<*, *, *>)
+
+    /**
+     * [register] [nextStep] in the scenario and assigns it a relevant [StepSpecification.directedAcyclicGraphId].
+     *
+     * This does not add [nextStep] to the list of [previousStep]'s next steps.
+     */
+    fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>)
+
+    /**
+     * Adds the step to the scenario registry for later use.
+     */
+    fun register(step: StepSpecification<*, *, *>)
 }
 
 /**
@@ -134,7 +169,7 @@ interface ScenarioSpecification
 internal val scenariosSpecifications = mutableMapOf<ScenarioId, ReadableScenarioSpecification>()
 
 fun scenario(name: ScenarioId,
-    configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }): ScenarioSpecification {
+             configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }): ScenarioSpecification {
     val scenario = ScenarioSpecificationImplementation(name)
     scenario.configuration()
     scenariosSpecifications[name] = scenario

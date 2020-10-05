@@ -7,8 +7,8 @@ import io.evolue.api.events.EventsLogger
 import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
-import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.api.orchestration.feedbacks.FeedbackProducer
+import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyOnce
@@ -221,14 +221,22 @@ internal class MinionsKeeperTest {
         val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventsLogger, meterRegistry, feedbackProducer)
         val startTime = AtomicLong()
         val latch = SuspendedCountLatch(1)
-        val minion: MinionImpl = mockk(relaxed = true) {
+        val minion1: MinionImpl = mockk(relaxed = true) {
             coEvery { start() } coAnswers {
                 startTime.set(System.currentTimeMillis())
                 latch.release()
             }
             every { campaignId } returns "my-campaign"
         }
-        minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")["my-minion"] = minion
+        val minion2: MinionImpl = mockk(relaxed = true) {
+            coEvery { start() } coAnswers {
+                startTime.set(System.currentTimeMillis())
+                latch.release()
+            }
+            every { campaignId } returns "my-campaign"
+        }
+        minionsKeeper.getProperty<MutableMap<MinionId, MutableList<MinionImpl>>>("minions")["my-minion"] =
+            mutableListOf(minion1, minion2)
         minionsKeeper.getProperty<MutableMap<CampaignId, SuspendedCountLatch>>(
                 "minionsCountLatchesByCampaign")["my-campaign"] = runningMinionsLatch
 
@@ -240,9 +248,10 @@ internal class MinionsKeeperTest {
 
         // then
         coVerifyOnce {
-            minion.start()
+            minion1.start()
+            minion2.start()
         }
-        EvolueTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(2), duration)
+        EvolueTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(10), duration)
         confirmVerified(eventsLogger, meterRegistry)
     }
 
@@ -271,27 +280,38 @@ internal class MinionsKeeperTest {
     internal fun shouldStartMinionLater() {
         // given
         val minionsKeeper = MinionsKeeper(scenariosKeeper, runner, eventsLogger, meterRegistry, feedbackProducer)
-        val latch = SuspendedCountLatch(1)
-        val minion: MinionImpl = mockk(relaxed = true) {
+        val latch = SuspendedCountLatch(2)
+        val minion1: MinionImpl = mockk(relaxed = true) {
             coEvery { start() } coAnswers {
                 latch.release()
-                logger().debug("Minion was started.")
+                logger().debug("Minion 1 was started.")
             }
             every { campaignId } returns "my-campaign"
         }
-        minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")["my-minion"] = minion
+        val minion2: MinionImpl = mockk(relaxed = true) {
+            coEvery { start() } coAnswers {
+                latch.release()
+                logger().debug("Minion 2 was started.")
+            }
+            every { campaignId } returns "my-campaign"
+        }
+        minionsKeeper.getProperty<MutableMap<MinionId, MutableList<MinionImpl>>>("minions")["my-minion"] =
+            mutableListOf(minion1, minion2)
         minionsKeeper.getProperty<MutableMap<CampaignId, SuspendedCountLatch>>(
                 "minionsCountLatchesByCampaign")["my-campaign"] = runningMinionsLatch
 
         // when
         val duration = coMeasureTime {
-            minionsKeeper.startMinionAt("my-minion", Instant.now().plusMillis(50))
+            minionsKeeper.startMinionAt("my-minion", Instant.now().plusMillis(100))
             latch.await()
         }
 
         // then
-        coVerifyOnce { minion.start() }
-        EvolueTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(50), duration)
+        coVerifyOnce {
+            minion1.start()
+            minion2.start()
+        }
+        EvolueTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(100), duration)
         confirmVerified(eventsLogger, meterRegistry)
     }
 }

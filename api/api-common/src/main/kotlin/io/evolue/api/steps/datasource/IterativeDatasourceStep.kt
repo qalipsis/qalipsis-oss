@@ -37,6 +37,7 @@ class IterativeDatasourceStep<R, T, O>(
     }
 
     override suspend fun execute(context: StepContext<Unit, O>) {
+        context.isTail = false
         log.trace("Iterating datasource reader for step $id")
         var rowIndex = 0L
         while (reader.hasNext()) {
@@ -50,7 +51,7 @@ class IterativeDatasourceStep<R, T, O>(
                 rowIndex++
             }
         }
-        context.completed = true
+        context.isTail = true
     }
 
     companion object {

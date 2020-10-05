@@ -28,7 +28,7 @@ internal class StepSpecificationTest {
     @Test
     internal fun `should add the steps as next at once`() {
         val previousStep = DummyStepSpecification()
-        previousStep.all {
+        previousStep.split {
             dummy().add(relaxedMockk {
                 every { name } returns "last-step"
             })

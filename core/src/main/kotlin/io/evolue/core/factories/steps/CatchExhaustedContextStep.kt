@@ -18,7 +18,7 @@ class CatchExhaustedContextStep<I, O>(
 ) : AbstractStep<I, O>(id, null) {
 
     override suspend fun execute(context: StepContext<I, O>) {
-        if (context.exhausted) {
+        if (context.isExhausted) {
             log.trace("Catching exhausted context")
             this.block(context)
         } else {

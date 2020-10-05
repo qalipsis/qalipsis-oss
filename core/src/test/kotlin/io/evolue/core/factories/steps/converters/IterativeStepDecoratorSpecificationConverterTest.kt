@@ -25,6 +25,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 @WithMockk
 internal class IterativeStepDecoratorSpecificationConverterTest {
 

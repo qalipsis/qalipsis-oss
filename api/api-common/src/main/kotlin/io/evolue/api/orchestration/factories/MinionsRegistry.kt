@@ -8,7 +8,7 @@ import io.evolue.api.context.MinionId
  */
 interface MinionsRegistry {
 
-    operator fun get(minionId: MinionId): Minion?
+    operator fun get(minionId: MinionId): Collection<Minion>
 
     fun has(minionId: MinionId): Boolean
 }

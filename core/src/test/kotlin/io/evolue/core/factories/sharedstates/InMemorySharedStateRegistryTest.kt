@@ -202,7 +202,7 @@ internal class InMemorySharedStateRegistryTest {
         Thread.sleep(80)
 
         // The value is read, the expiration should be updated.
-        val value: String? = registry[definition]
+        registry.get<String>(definition)
 
         // Wait just before the time to live.
         Thread.sleep(80)

@@ -15,16 +15,16 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal data class SingletonProxyStepSpecification<T>(
+internal open class SingletonProxyStepSpecification<T>(
 
         val next: StepSpecification<T, *, *>,
 
         /**
          * Configuration of the singleton.
          */
-        val topic: Topic<T>
+        val topic: Topic<T>,
 
-) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
+        ) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
 
     override var name: StepName? = null
 
@@ -43,7 +43,7 @@ internal data class SingletonProxyStepSpecification<T>(
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = mutableListOf(next)
 
-    override fun all(block: SingletonProxyStepSpecification<T>.() -> Unit) {
+    override fun split(block: SingletonProxyStepSpecification<T>.() -> Unit) {
         // Nothing to do.
     }
 

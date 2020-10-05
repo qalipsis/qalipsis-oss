@@ -18,10 +18,9 @@ import org.junit.jupiter.api.Timeout
  */
 internal class SingletonProxyStepTest {
 
-
     @Test
     @Timeout(3)
-    internal fun shouldUseRecordFromTopic() {
+    internal fun `should use record from topic`() {
         val subscription = mockk<TopicSubscription<Long>> {
             coEvery { pollValue() } returns 123L
         }

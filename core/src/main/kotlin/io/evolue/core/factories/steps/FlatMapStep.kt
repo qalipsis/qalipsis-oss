@@ -20,27 +20,27 @@ import kotlinx.coroutines.flow.flowOf
  * @author Eric Jessé
  */
 class FlatMapStep<I, O>(
-    id: StepId,
-    retryPolicy: RetryPolicy?,
-    private val block: ((input: I) -> Flow<O>) = { input ->
-        when (input) {
-            null -> emptyFlow()
-            is Collection<*> ->
-                input.asFlow() as Flow<O>
+        id: StepId,
+        retryPolicy: RetryPolicy?,
+        @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> Flow<O>) = { input ->
+            when (input) {
+                null -> emptyFlow()
+                is Collection<*> ->
+                    input.asFlow() as Flow<O>
 
-            is Array<*> ->
-                input.asFlow() as Flow<O>
+                is Array<*> ->
+                    input.asFlow() as Flow<O>
 
-            is Sequence<*> ->
-                input.asFlow() as Flow<O>
+                is Sequence<*> ->
+                    input.asFlow() as Flow<O>
 
-            is Map<*, *> ->
-                input.entries.map { e -> e.key to e.value }.asFlow() as Flow<O>
+                is Map<*, *> ->
+                    input.entries.map { e -> e.key to e.value }.asFlow() as Flow<O>
 
-            else ->
-                flowOf(input) as Flow<O>
+                else ->
+                    flowOf(input) as Flow<O>
+            }
         }
-    }
 ) : AbstractStep<I, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, O>) {

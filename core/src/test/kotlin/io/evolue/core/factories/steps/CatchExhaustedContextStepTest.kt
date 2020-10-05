@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class CatchExhaustedContextStepTest {
 
     @Test

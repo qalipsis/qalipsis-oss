@@ -5,8 +5,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
 import io.evolue.api.lang.concurrentSet
 import io.evolue.api.logging.LoggerHelper.logger
-import io.evolue.core.annotations.LogInputAndOutput
-import io.evolue.core.cross.configuration.ENV_STANDALONE
 import io.evolue.api.orchestration.directives.Directive
 import io.evolue.api.orchestration.directives.DirectiveKey
 import io.evolue.api.orchestration.directives.DirectiveRegistry
@@ -19,6 +17,8 @@ import io.evolue.api.orchestration.directives.SingleUseDirectiveReference
 import io.evolue.api.orchestration.feedbacks.DirectiveFeedback
 import io.evolue.api.orchestration.feedbacks.FeedbackProducer
 import io.evolue.api.orchestration.feedbacks.FeedbackStatus
+import io.evolue.core.annotations.LogInputAndOutput
+import io.evolue.core.cross.configuration.ENV_STANDALONE
 import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -64,7 +64,7 @@ internal class InMemoryDirectiveRegistry(
      * Map of mutexes to access the synchronized directives. There are evicted quite fast to avoid useless memory usage.
      */
     private val mutexesCache: LoadingCache<DirectiveKey, Mutex> =
-        Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build { key -> Mutex(false) }
+        Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build { Mutex(false) }
 
     @LogInputAndOutput
     override suspend fun save(key: DirectiveKey, directive: Directive) {
@@ -92,7 +92,7 @@ internal class InMemoryDirectiveRegistry(
                         DirectiveFeedback(directiveKey = reference.key, status = FeedbackStatus.IN_PROGRESS))
                 }
 
-                val value = it.removeFirst() as T?
+                @Suppress("UNCHECKED_CAST") val value = it.removeFirst() as T?
                 if (it.isEmpty()) {
                     log.trace("Evicting the empty queue directive ${reference.key}")
                     // Once the last value has been consumed, the directive is removed from the cache.
@@ -107,6 +107,7 @@ internal class InMemoryDirectiveRegistry(
 
     @LogInputAndOutput
     override suspend fun <T> list(reference: ListDirectiveReference<T>): List<T> {
+        @Suppress("UNCHECKED_CAST")
         return listDirectives.getIfPresent(reference.key)?.set as List<T>? ?: emptyList()
     }
 
@@ -116,6 +117,7 @@ internal class InMemoryDirectiveRegistry(
             singleUseDirectives.getIfPresent(reference.key)?.let {
                 log.trace("Evicting the read once directive ${reference.key}")
                 singleUseDirectives.invalidate(reference.key)
+                @Suppress("UNCHECKED_CAST")
                 it.value as T?
             }
         }

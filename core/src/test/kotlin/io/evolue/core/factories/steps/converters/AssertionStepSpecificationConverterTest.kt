@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 internal class AssertionStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<AssertionStepSpecificationConverter>() {
 

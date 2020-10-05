@@ -25,6 +25,7 @@ internal class UnshelveStepSpecificationConverter(
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<UnshelveStepSpecification<*, *>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as UnshelveStepSpecification<I, O>
         val step = if (spec.singular) {
             SingularUnshelveStep<I, O>(spec.name ?: Cuid.createCuid(), sharedStateRegistry, spec.names.first(),

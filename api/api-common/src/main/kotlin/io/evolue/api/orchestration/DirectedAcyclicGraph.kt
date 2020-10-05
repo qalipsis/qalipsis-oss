@@ -3,6 +3,7 @@ package io.evolue.api.orchestration
 import io.evolue.api.context.DirectedAcyclicGraphId
 import io.evolue.api.context.StepId
 import io.evolue.api.steps.Step
+import io.evolue.api.sync.Slot
 
 /**
  * <p>
@@ -20,32 +21,36 @@ import io.evolue.api.steps.Step
  */
 data class DirectedAcyclicGraph(
 
-    /**
-     * ID of the Directed Acyclic Graph.
-     */
-    val id: DirectedAcyclicGraphId,
+        /**
+         * ID of the Directed Acyclic Graph.
+         */
+        val id: DirectedAcyclicGraphId,
 
-    /**
-     * Scenario to which the DAG owns.
-     */
-    val scenario: Scenario,
+        /**
+         * Scenario to which the DAG owns.
+         */
+        val scenario: Scenario,
 
-    /**
-     * First steps to execute in parallel when running the DAG onto a minion.
-     */
-    val rootSteps: MutableList<Step<Unit, *>> = mutableListOf(),
+        /**
+         * Defines if the DAG is the start of scenario, in which case it has to wait for directive to be started.
+         */
+        val scenarioStart: Boolean,
 
-    /**
-     * Defines if the DAG is the start of scenario, in which case it has to wait for directive to be started.
-     */
-    val scenarioStart: Boolean,
-
-    /**
-     * Defines if the DAG runs for a singleton minion, in which case it is not driven by start directive.
-     */
-    val singleton: Boolean
+        /**
+         * Defines if the DAG runs for a singleton minion, in which case it is not driven by start directive.
+         */
+        val singleton: Boolean
 ) {
-    private val steps = mutableMapOf<StepId, Step<*, *>>()
+
+    /**
+     * First step to execute when running the DAG onto a minion.
+     */
+    var rootStep: Slot<Step<*, *>> = Slot()
+
+    /**
+     * Steps are stored into slots, because they might be decorated or wrapped during the initialization process.
+     */
+    private val steps = mutableMapOf<StepId, Slot<Step<*, *>>>()
 
     val stepsCount: Int
         get() = steps.size
@@ -54,12 +59,20 @@ data class DirectedAcyclicGraph(
         scenario.dags.add(this)
     }
 
-    fun addStep(step: Step<*, *>) {
-        steps[step.id] = step
-        scenario.addStep(step)
-        if (rootSteps.isEmpty()) {
-            rootSteps.add(step as Step<Unit, *>)
-        }
+    /**
+     * Verifies if the step belongs to the DAG.
+     */
+    fun hasStep(stepId: StepId) = steps.containsKey(stepId)
+
+    suspend fun addStep(step: Step<*, *>) {
+        if (rootStep.isEmpty()) {
+            rootStep.also {
+                steps[step.id] = it
+            }
+        } else {
+            steps.computeIfAbsent(step.id) { Slot() }
+        }.set(step)
+        scenario.addStep(this, step)
     }
 
     suspend fun findStep(stepId: StepId) = scenario.findStep(stepId)

@@ -6,6 +6,7 @@ import io.evolue.api.scenario.scenariosSpecifications
 import io.evolue.api.steps.AbstractStepSpecification
 import io.evolue.core.factories.orchestration.rampup.RampUpStrategy
 import io.evolue.test.mockk.relaxedMockk
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -38,7 +39,7 @@ internal class ScenarioSpecificationImplementationTest {
     @Test
     internal fun `should register step with a name`() {
         val scenario = scenario(
-            "my-scenario") as ScenarioSpecificationImplementation
+                "my-scenario") as ScenarioSpecificationImplementation
         val step = TestStep()
         step.name = "my-name"
 
@@ -47,13 +48,13 @@ internal class ScenarioSpecificationImplementationTest {
         assertTrue(scenario.rootSteps.isNotEmpty())
         assertSame(step, scenario.rootSteps[0])
 
-        assertSame(step, scenario.find<Unit>("my-name"))
+        assertSame(step, runBlocking { scenario.find<Unit>("my-name") })
     }
 
     @Test
     internal fun `should not register step with an empty name`() {
         val scenario = scenario(
-            "my-scenario") as ScenarioSpecificationImplementation
+                "my-scenario") as ScenarioSpecificationImplementation
         val step = TestStep()
         step.name = ""
 
@@ -68,7 +69,7 @@ internal class ScenarioSpecificationImplementationTest {
     @Test
     internal fun `should not register step with a null name`() {
         val scenario = scenario(
-            "my-scenario") as ScenarioSpecificationImplementation
+                "my-scenario") as ScenarioSpecificationImplementation
         val step = TestStep()
         step.name = null
 

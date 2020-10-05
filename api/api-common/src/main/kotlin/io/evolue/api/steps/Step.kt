@@ -9,9 +9,12 @@ import io.evolue.api.retry.RetryPolicy
  *
  * A step can convert the record, use is as a source for requests, consume messages to provide records.
  *
+ * @param I type of the data input
+ * @param O type of the data output
+ *
  * @author Eric Jessé
  */
-interface Step<I : Any?, O : Any?> {
+interface Step<I, O> {
 
     val id: StepId
 
@@ -23,9 +26,9 @@ interface Step<I : Any?, O : Any?> {
     val next: List<Step<O, *>>
 
     /**
-     * Add a step to the collection of next ones.
+     * Adds a step to the collection of next ones.
      */
-    fun addNext(nextStep: Step<O, *>)
+    fun addNext(nextStep: Step<*, *>)
 
     /**
      * Operation to execute just after the creation of the step.
@@ -39,7 +42,7 @@ interface Step<I : Any?, O : Any?> {
     suspend fun start() = Unit
 
     /**
-     * Execute the operation implies by the step.
+     * Executes the operation implies by the step.
      */
     @Throws(Exception::class)
     suspend fun execute(context: StepContext<I, O>)

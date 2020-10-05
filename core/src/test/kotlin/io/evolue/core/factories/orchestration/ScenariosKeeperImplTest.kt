@@ -5,6 +5,8 @@ import io.evolue.api.context.ScenarioId
 import io.evolue.api.exceptions.InvalidSpecificationException
 import io.evolue.api.orchestration.DirectedAcyclicGraph
 import io.evolue.api.orchestration.Scenario
+import io.evolue.api.orchestration.feedbacks.FeedbackProducer
+import io.evolue.api.orchestration.feedbacks.FeedbackStatus
 import io.evolue.api.processors.ServicesLoader
 import io.evolue.api.scenario.MutableScenarioSpecification
 import io.evolue.api.scenario.ReadableScenarioSpecification
@@ -16,10 +18,9 @@ import io.evolue.api.steps.StepCreationContextImpl
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
+import io.evolue.api.sync.Slot
 import io.evolue.core.cross.feedbacks.CampaignStartedForDagFeedback
 import io.evolue.core.cross.feedbacks.FactoryRegistrationFeedback
-import io.evolue.api.orchestration.feedbacks.FeedbackProducer
-import io.evolue.api.orchestration.feedbacks.FeedbackStatus
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.coVerifyExactly
 import io.evolue.test.mockk.coVerifyNever
@@ -50,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 @WithMockk
 internal class ScenariosKeeperImplTest {
 
@@ -220,7 +222,7 @@ internal class ScenariosKeeperImplTest {
         assertEquals(2, dags["dag-2"]!!.stepsCount)
         coVerifyExactly(3) {
             // 3 steps were created.
-            scenario.addStep(any())
+            scenario.addStep(any(), any())
             (scenariosKeeper).convertSingleStep(any())
             (scenariosKeeper).decorateStep(any())
         }
@@ -277,7 +279,7 @@ internal class ScenariosKeeperImplTest {
         }
         coVerifyOnce {
             // 1 step only succeeded.
-            scenario.addStep(any())
+            scenario.addStep(any(), any())
         }
     }
 
@@ -550,40 +552,32 @@ internal class ScenariosKeeperImplTest {
         dagsByScenario["scen-1"] = mutableMapOf(
                 "dag-1" to relaxedMockk {
                     every { id } returns "dag-1"
-                    every { rootSteps } returns mutableListOf(
-                            relaxedMockk {
-                                mockedSteps.add(this)
-                                every { next } returns mutableListOf(
-                                        relaxedMockk { mockedSteps.add(this) },
-                                        relaxedMockk {
-                                            mockedSteps.add(this)
-                                            every { next } returns mutableListOf(
-                                                    relaxedMockk {
-                                                        mockedSteps.add(this)
-                                                    }
-                                            )
-                                        }
-                                )
-                            },
-                            relaxedMockk { mockedSteps.add(this) }
-                    )
+                    every { rootStep } returns Slot(relaxedMockk {
+                        mockedSteps.add(this)
+                        every { next } returns mutableListOf(
+                                relaxedMockk { mockedSteps.add(this) },
+                                relaxedMockk {
+                                    mockedSteps.add(this)
+                                    every { next } returns mutableListOf(
+                                            relaxedMockk {
+                                                mockedSteps.add(this)
+                                            }
+                                    )
+                                }
+                        )
+                    })
                 },
                 "dag-2" to relaxedMockk {
                     every { id } returns "dag-2"
-                    every { rootSteps } returns mutableListOf(
-                            relaxedMockk { mockedSteps.add(this) }
-                    )
+                    every { rootStep } returns Slot(relaxedMockk { mockedSteps.add(this) })
                 }
         )
+
         dagsByScenario["scen-2"] = mutableMapOf(
                 "dag-1" to relaxedMockk {
                     every { id } returns "dag-1"
-                    every { rootSteps } returns mutableListOf(
-                            relaxedMockk { mockedSteps.add(this) }
-                    )
+                    every { rootStep } returns Slot(relaxedMockk { mockedSteps.add(this) })
                 }
         )
     }
-
-
 }

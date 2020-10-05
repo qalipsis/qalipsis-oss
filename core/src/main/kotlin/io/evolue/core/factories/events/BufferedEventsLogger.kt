@@ -7,6 +7,7 @@ import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.factories.events.Event
 import io.evolue.core.factories.events.toTags
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.launch
@@ -20,9 +21,9 @@ import java.util.concurrent.ConcurrentLinkedDeque
  * @author Eric Jessé
  */
 abstract class BufferedEventsLogger(
-    private val loggableLevel: EventLevel,
-    private val lingerPeriod: Duration = Duration.ofSeconds(10),
-    private val batchSize: Int = 2000
+        private val loggableLevel: EventLevel,
+        private val lingerPeriod: Duration = Duration.ofSeconds(10),
+        private val batchSize: Int = 2000
 ) : EventsLogger {
 
     /**
@@ -45,6 +46,7 @@ abstract class BufferedEventsLogger(
      */
     private val publicationLatch = SuspendedCountLatch(1)
 
+    @OptIn(ObsoleteCoroutinesApi::class)
     override fun start() {
         if (loggableLevel != EventLevel.OFF) {
             running = true
@@ -86,7 +88,7 @@ abstract class BufferedEventsLogger(
     }
 
     override fun log(level: EventLevel, name: String, value: Any?,
-        tagsSupplier: () -> Map<String, String>) {
+                     tagsSupplier: () -> Map<String, String>) {
         logMethodWithSupplier(level, name, value, tagsSupplier)
     }
 
@@ -109,14 +111,14 @@ abstract class BufferedEventsLogger(
     abstract fun publish()
 
     private fun checkLevelAndLogWithSupplier(level: EventLevel, name: String, value: Any?,
-        tagsSupplier: () -> Map<String, String>) {
+                                             tagsSupplier: () -> Map<String, String>) {
         if (level.ordinal >= loggableLevel.ordinal) {
             checkLevelAndLog(level, name, value, tagsSupplier())
         }
     }
 
     private fun checkLevelAndLog(level: EventLevel, name: String, value: Any?,
-        tags: Map<String, String>) {
+                                 tags: Map<String, String>) {
         if (level.ordinal >= loggableLevel.ordinal) {
             buffer.add(Event(name, level, tags.toTags(), value))
             if (buffer.size >= batchSize && publicationLatch.isSuspended()) {
@@ -131,11 +133,15 @@ abstract class BufferedEventsLogger(
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
+    @SuppressWarnings("kotlin:S1172")
     private fun noopLogWithSupplier(level: EventLevel, name: String, value: Any?,
-        tagsSupplier: () -> Map<String, String>) {
+                                    tagsSupplier: () -> Map<String, String>) {
         // NO-OP.
     }
 
+    @Suppress("UNUSED_PARAMETER")
+    @SuppressWarnings("kotlin:S1172")
     private fun noopLog(level: EventLevel, name: String, value: Any?, tags: Map<String, String>) {
         // NO-OP.
     }

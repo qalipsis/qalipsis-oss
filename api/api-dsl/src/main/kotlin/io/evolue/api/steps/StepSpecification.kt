@@ -70,13 +70,16 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
      *
      * Example:
      *
-     * myStep.all{
+     * myStep.split{
      *   assert{...}.filter{}
      *   map{...}.validate{}.all {
      *      ...
      *   }
      * }
      */
-    fun all(block: SELF.() -> Unit)
+    fun split(block: SELF.() -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        (this as SELF).block()
+    }
 
 }

@@ -21,6 +21,7 @@ internal class OnEachStepSpecificationConverter : StepSpecificationConverter<OnE
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<OnEachStepSpecification<*>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as OnEachStepSpecification<I>
         val step = OnEachStep(spec.name ?: Cuid.createCuid(),
                 spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,

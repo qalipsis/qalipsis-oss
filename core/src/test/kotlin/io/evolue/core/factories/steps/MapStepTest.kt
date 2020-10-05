@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@Suppress("EXPERIMENTAL_API_USAGE")
 internal class MapStepTest {
 
     @Test
@@ -22,7 +23,7 @@ internal class MapStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, 1)
+            assertEquals(1, output)
         }
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
@@ -37,7 +38,7 @@ internal class MapStepTest {
         runBlocking {
             step.execute(ctx)
             val output = (ctx.output as Channel).receive()
-            assertEquals(output, "1")
+            assertEquals("1", output)
         }
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }

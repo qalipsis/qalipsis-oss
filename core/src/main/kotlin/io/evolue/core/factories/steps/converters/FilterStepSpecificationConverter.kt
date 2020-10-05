@@ -22,6 +22,7 @@ internal class FilterStepSpecificationConverter :
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<FilterStepSpecification<*>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as FilterStepSpecification<I>
         val step = FilterStep(spec.name ?: Cuid.createCuid(),
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,

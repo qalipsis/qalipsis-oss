@@ -6,7 +6,6 @@ import io.evolue.api.logging.LoggerHelper.logger
 import io.evolue.api.retry.RetryPolicy
 import io.evolue.api.sync.SuspendedCountLatch
 import io.evolue.core.factories.dag
-import io.evolue.core.factories.delayedStep
 import io.evolue.core.factories.step
 import io.evolue.core.factories.steps
 import io.evolue.test.coroutines.CleanCoroutines
@@ -83,14 +82,16 @@ internal class RunnerTest {
         } returnsArgument 2
 
         val dag = dag {
-            this.step("step-1", 1).step("step-2").processError("step-3")
-            this.delayedStep("step-4", 2, 200).all {
-                step("step-5")
-                processError("step-6")
+            this.step("step-1", 1).all {
+                step("step-2").processError("step-3")
+                delayedStep("step-4", 2, 200).all {
+                    step("step-5")
+                    processError("step-6")
+                }
             }
         }
         val runner = Runner(eventsLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
         val executionDuration = coMeasureTime {
@@ -123,8 +124,8 @@ internal class RunnerTest {
             it.assertHasParent("step-2")
         }
         steps["step-4"]!!.let {
-            Assertions.assertEquals(Unit, it.received)
-            it.assertHasParent(null)
+            Assertions.assertEquals(1, it.received)
+            it.assertHasParent("step-1")
         }
         steps["step-5"]!!.let {
             Assertions.assertEquals(2, it.received)
@@ -162,7 +163,7 @@ internal class RunnerTest {
             this.step<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
         }
         val runner = Runner(eventsLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -186,7 +187,7 @@ internal class RunnerTest {
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
         val runner = Runner(eventsLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -215,7 +216,7 @@ internal class RunnerTest {
             }
         }
         val runner = Runner(eventsLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {
@@ -253,7 +254,7 @@ internal class RunnerTest {
                 .step("step-2")
         }
         val runner = Runner(eventsLogger, meterRegistry)
-        val minion = MinionImpl("my-campaign", "my-minion", false, eventsLogger, meterRegistry)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
         runBlocking {

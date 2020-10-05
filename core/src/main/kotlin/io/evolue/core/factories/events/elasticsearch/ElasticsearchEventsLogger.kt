@@ -25,10 +25,12 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.readText
 import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
+import io.ktor.util.KtorExperimentalAPI
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.util.StringEscapeUtils
 import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
@@ -72,9 +74,11 @@ internal class ElasticsearchEventsLogger(
 
     private val urls = configuration.urls.map { u -> if (u.endsWith("/")) "$u" else "$u/" }
 
+    @OptIn(ObsoleteCoroutinesApi::class)
     private val publicationContext =
         newFixedThreadPoolContext(configuration.publishers, "Elasticsearch-Events-Publisher")
 
+    @OptIn(KtorExperimentalAPI::class)
     private val httpClient = providedHttpClient ?: HttpClient(Apache) {
         install(UserAgent) {
             agent = "evolue-event-reporter"

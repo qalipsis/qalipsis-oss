@@ -10,13 +10,13 @@ import io.evolue.api.steps.StepCreationContext
 import io.evolue.api.steps.StepSpecification
 import io.evolue.api.steps.StepSpecificationConverter
 import io.evolue.api.steps.StepSpecificationDecoratorConverter
-import io.evolue.core.factories.steps.decorators.OutputTopicStepDecorator
-import io.evolue.core.factories.steps.decorators.TopicBuilder
-import io.evolue.core.factories.steps.decorators.TopicConfiguration
-import io.evolue.core.factories.steps.decorators.TopicType
+import io.evolue.core.factories.steps.topicmirror.TopicBuilder
+import io.evolue.core.factories.steps.topicmirror.TopicConfiguration
+import io.evolue.core.factories.steps.topicmirror.TopicMirrorStep
+import io.evolue.core.factories.steps.topicmirror.TopicType
 
 /**
- * Decorator of [SingletonStepSpecification] by [OutputTopicStepDecorator] and converter from
+ * Decorator of [SingletonStepSpecification] by adding it a [TopicMirrorStep] as next and converter from
  * [SingletonProxyStepSpecification] to [SingletonProxyStep].
  *
  * @author Eric Jessé
@@ -31,7 +31,8 @@ internal class SingletonStepSpecificationConverter :
 
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
-        if (spec is SingletonStepSpecification<*, *, *>) {
+        if (spec is SingletonStepSpecification<*, *, *> && spec.nextSteps.isNotEmpty()) {
+            @Suppress("UNCHECKED_CAST")
             val decoratedStep = creationContext.createdStep as Step<Any?, Any?>
 
             // In order to match all the distribution use cases, a topic is used, which is fed with the data coming
@@ -43,15 +44,23 @@ internal class SingletonStepSpecificationConverter :
                 SingletonType.LOOP -> TopicType.LOOP
             }
             val topicConfig = TopicConfiguration(topicType, singletonConfig.bufferSize, singletonConfig.idleTimeout)
+
+            // Topic to transport the data from the singleton step to the [SingletonProxyStep], via a [TopicMirrorStep].
             val topic: Topic<Any?> = TopicBuilder.build(topicConfig)
 
-            // The actual step is decorated with a SingletonOutputDecorator.
-            val outputStep = OutputTopicStepDecorator(decoratedStep, topic)
+            // A step is added as output to forward the data to the topic.
+            val consumer = TopicMirrorStep<Any?, Any?>(Cuid.createCuid(), topic)
+            decoratedStep.addNext(consumer)
+            // No other next step can be added to a singleton step.
+            creationContext.createdStep(NoMoreNextStepDecorator(decoratedStep))
+
             // All the next step specifications have to be decorated by [SingletonProxyStepSpecification].
             spec.nextSteps.replaceAll {
+                // If the wrapped step is itself a singleton, the SingletonProxyStep should loop endless on the first execution
+                // to make sure that all the available data from the topic are consumed.
+                @Suppress("UNCHECKED_CAST")
                 SingletonProxyStepSpecification(it as StepSpecification<Any?, *, *>, topic)
             }
-            creationContext.createdStep(outputStep)
         }
     }
 

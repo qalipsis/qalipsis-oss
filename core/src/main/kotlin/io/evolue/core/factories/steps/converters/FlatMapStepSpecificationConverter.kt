@@ -22,6 +22,7 @@ internal class FlatMapStepSpecificationConverter :
     }
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<FlatMapStepSpecification<*, *>>) {
+        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as FlatMapStepSpecification<I, O>
         val step = FlatMapStep(spec.name ?: Cuid.createCuid(),
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy, spec.block)

@@ -1,8 +1,8 @@
 package io.evolue.core.factories.orchestration.directives.consumers
 
-import io.evolue.core.cross.directives.TestDescriptiveDirective
 import io.evolue.api.orchestration.directives.Directive
 import io.evolue.api.orchestration.directives.DirectiveProcessor
+import io.evolue.core.cross.directives.TestDescriptiveDirective
 import io.evolue.test.coroutines.CleanCoroutines
 import io.evolue.test.mockk.WithMockk
 import io.evolue.test.mockk.relaxedMockk
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 @WithMockk
 @CleanCoroutines
 internal class ChannelBasedDirectiveConsumerTest {

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@Suppress("UNCHECKED_CAST")
 internal class ShelveStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<ShelveStepSpecificationConverter>() {
 
@@ -44,7 +45,7 @@ internal class ShelveStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec with name to step`() {
         // given
-        val blockSpecification: (input: String) -> Map<String, Any?> = { value -> mapOf() }
+        val blockSpecification: (input: String) -> Map<String, Any?> = { mapOf() }
         val spec = ShelveStepSpecification(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
@@ -66,7 +67,7 @@ internal class ShelveStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec without name to step`() {
         // given
-        val blockSpecification: (input: String) -> Map<String, Any?> = { value -> mapOf() }
+        val blockSpecification: (input: String) -> Map<String, Any?> = { mapOf() }
         val spec = ShelveStepSpecification(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)

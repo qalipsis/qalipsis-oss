@@ -1,6 +1,7 @@
 package io.evolue.api.context
 
 import io.micrometer.core.instrument.Tags
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -77,12 +78,20 @@ data class StepContext<IN : Any?, OUT : Any?>(
         /**
          * When set to true, the context can neither be used for a new iteration nor propagated.
          */
-        var exhausted: Boolean = false,
+        var isExhausted: Boolean = false,
 
         /**
-         * When set to true, this means that no more data will be provided to the workflow.
+         * When set to true, this means that no more data will be provided to the workflow after this context.
          */
-        var completed: Boolean = false
+        var isCompleted: Boolean = true,
+
+        /**
+         * Specifies that this context is the last in the convoy for the relate minion.
+         *
+         * It is initialized to true, because at the beginning, minion's convoys are made of a single context.
+         * More contexts come when reaching an iterative step, a data source...
+         */
+        var isTail: Boolean = true
 ) {
 
     private var immutableEventTags: Map<String, String>? = null
@@ -122,6 +131,7 @@ data class StepContext<IN : Any?, OUT : Any?>(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun duplicate(newInput: ReceiveChannel<IN> = Channel(1),
                   newOutput: SendChannel<OUT> = Channel(1)): StepContext<IN, OUT> {
         return StepContext(
@@ -134,8 +144,9 @@ data class StepContext<IN : Any?, OUT : Any?>(
                 directedAcyclicGraphId = directedAcyclicGraphId,
                 parentStepId = this.stepId,
                 stepId = stepId,
-                exhausted = exhausted,
-                completed = completed,
+                isExhausted = isExhausted,
+                isCompleted = isCompleted,
+                isTail = isTail,
                 creation = creation
         ).also {
             it.metrics = metrics
@@ -158,8 +169,9 @@ data class StepContext<IN : Any?, OUT : Any?>(
                 directedAcyclicGraphId = directedAcyclicGraphId,
                 parentStepId = this.stepId,
                 stepId = stepId,
-                exhausted = exhausted,
-                completed = completed,
+                isExhausted = isExhausted,
+                isCompleted = isCompleted,
+                isTail = isTail,
                 creation = creation
         ).also {
             it.inheritedMetrics.putAll(it.metrics)
@@ -185,8 +197,9 @@ data class StepContext<IN : Any?, OUT : Any?>(
         return immutableEventTags!!.plus(mutableMapOf(
                 "iteration" to stepIterationIndex.toString(),
                 "attempts-after-failure" to attemptsAfterFailure.toString(),
-                "exhausted" to exhausted.toString(),
-                "completed" to completed.toString()
+                "isExhausted" to isExhausted.toString(),
+                "isTail" to isTail.toString(),
+                "isCompleted" to isCompleted.toString()
         ))
     }
 

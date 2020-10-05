@@ -29,7 +29,7 @@ class TimeoutStepDecorator<I, O>(
 
     override var next = decorated.next
 
-    override fun addNext(nextStep: Step<O, *>) {
+    override fun addNext(nextStep: Step<*, *>) {
         decorated.addNext(nextStep)
     }
 
@@ -48,7 +48,7 @@ class TimeoutStepDecorator<I, O>(
             }
         } catch (e: TimeoutCancellationException) {
             meterRegistry.counter("step-${id}-timeout", "minion", context.minionId).increment()
-            context.exhausted = true
+            context.isExhausted = true
             throw e
         }
     }

@@ -90,7 +90,7 @@ internal class ScenariosKeeperImpl(
     @PreDestroy
     fun destroy() {
         runBlocking {
-            dagsByScenario.values.flatMap { it.values }.flatMap { it.rootSteps }.forEach {
+            dagsByScenario.values.flatMap { it.values }.map { it.rootStep.get() }.forEach {
                 destroyStepRecursively(it)
             }
         }
@@ -128,7 +128,7 @@ internal class ScenariosKeeperImpl(
     internal fun convertScenario(scenarioId: ScenarioId,
                                  scenarioSpecification: ReadableScenarioSpecification): Scenario {
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
-                "The scenario ${scenarioId} requires a ramp-up strategy")
+                "The scenario $scenarioId requires a ramp-up strategy")
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario = Scenario(scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
                 minionsCount = scenarioSpecification.minionsCount)
@@ -139,6 +139,11 @@ internal class ScenariosKeeperImpl(
             convertSteps(scenarioSpecification, scenario, dags, null,
                     scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
         }
+        require(scenario.dags.size >= scenarioSpecification.dagsCount) {
+            "Not all the DAGs were created, only ${
+                scenario.dags.joinToString(", ") { it.id }
+            } were found"
+        }
         return scenario
     }
 
@@ -148,18 +153,13 @@ internal class ScenariosKeeperImpl(
                                       dags: MutableMap<String, DirectedAcyclicGraph>,
                                       parentStep: Step<*, *>?,
                                       stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
-        if (stepsSpecifications.size == 1) {
-            runBlocking {
-                convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepsSpecifications[0])
+
+        stepsSpecifications.map { stepSpecification ->
+            GlobalScope.launch {
+                convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepSpecification)
             }
-        } else {
-            stepsSpecifications.map { stepSpecification ->
-                GlobalScope.launch {
-                    convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepSpecification)
-                }
-            }.forEach { job ->
-                job.join()
-            }
+        }.forEach { job ->
+            job.join()
         }
     }
 
@@ -169,10 +169,12 @@ internal class ScenariosKeeperImpl(
             dags: MutableMap<String, DirectedAcyclicGraph>,
             parentStep: Step<*, *>?,
             stepSpecification: StepSpecification<Any?, Any?, *>) {
+        log.debug(
+                "Creating step ${stepSpecification.name ?: "<undefined>"} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<root>"} in DAG ${stepSpecification.directedAcyclicGraphId}")
 
         // Get or create the DAG to attach the step.
         val dag = dags.computeIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->
-            DirectedAcyclicGraph(dagId, scenario, scenarioStart = false,
+            DirectedAcyclicGraph(dagId, scenario, scenarioStart = (parentStep == null),
                     singleton = stepSpecification is SingletonStepSpecification)
         }
 
@@ -184,8 +186,12 @@ internal class ScenariosKeeperImpl(
         context.createdStep?.let { step ->
             step.init()
             dag.addStep(step)
-            parentStep?.let { ps -> (ps as Step<*, Any?>).addNext(step as Step<Any?, *>) }
+            parentStep?.let { ps ->
+                @Suppress("UNCHECKED_CAST")
+                (ps as Step<*, Any?>).addNext(step as Step<Any?, *>)
+            }
 
+            @Suppress("UNCHECKED_CAST")
             convertSteps(scenarioSpecification, scenario, dags, step,
                     stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
         }
@@ -196,6 +202,7 @@ internal class ScenariosKeeperImpl(
         stepSpecificationConverters
             .firstOrNull { it.support(context.stepSpecification) }
             ?.let { converter ->
+                @Suppress("UNCHECKED_CAST")
                 (converter as StepSpecificationConverter<StepSpecification<Any?, Any?, *>>).convert<Any?, Any?>(context)
             }
     }
@@ -204,7 +211,10 @@ internal class ScenariosKeeperImpl(
     internal suspend fun decorateStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         context.createdStep?.let {
             stepSpecificationDecoratorConverters
-                .map { converter -> converter as StepSpecificationDecoratorConverter<StepSpecification<Any?, Any?, *>> }
+                .map { converter ->
+                    @Suppress("UNCHECKED_CAST")
+                    converter as StepSpecificationDecoratorConverter<StepSpecification<Any?, Any?, *>>
+                }
                 .forEach { converter -> converter.decorate(context) }
         }
     }
@@ -236,9 +246,8 @@ internal class ScenariosKeeperImpl(
                 log.trace("Sending feedback: $feedback")
                 feedbackProducer.publish(feedback)
 
-                dag.rootSteps.forEach {
-                    startStepRecursively(it)
-                }
+                startStepRecursively(dag.rootStep.get())
+
                 val completionFeedback = CampaignStartedForDagFeedback(
                         scenarioId = scenarioId,
                         dagId = dag.id,
@@ -261,7 +270,7 @@ internal class ScenariosKeeperImpl(
     @LogInput(level = Level.DEBUG)
     override fun stopScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
         runBlocking {
-            dagsByScenario[scenarioId]!!.values.flatMap { it.rootSteps }.forEach {
+            dagsByScenario[scenarioId]!!.values.map { it.rootStep.get() }.forEach {
                 stopStepRecursively(it)
             }
         }

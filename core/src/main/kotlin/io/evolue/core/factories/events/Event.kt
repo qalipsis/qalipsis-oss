@@ -9,27 +9,27 @@ import io.evolue.api.events.EventLevel
  */
 class Event(
 
-    /**
-     * Name of the event. They are always kebab-cased (dash-separated lowercase words) and in the form of
-     * "object-state", e.g: step-started, minion-completed.
-     */
-    val name: String,
+        /**
+         * Name of the event. They are always kebab-cased (dash-separated lowercase words) and in the form of
+         * "object-state", e.g: step-started, minion-completed.
+         */
+        val name: String,
 
-    /**
-     * Level of the event, by analogy to the logging libraries. Events with a level lower
-     * than the one configured for the reporter are ignored
-     */
-    val level: EventLevel,
+        /**
+         * Level of the event, by analogy to the logging libraries. Events with a level lower
+         * than the one configured for the reporter are ignored
+         */
+        val level: EventLevel,
 
-    /**
-     * Tags to customize the event.
-     */
-    val tags: Collection<EventTag> = emptyList(),
+        /**
+         * Tags to customize the event.
+         */
+        val tags: Collection<EventTag> = emptyList(),
 
-    /**
-     * Value associated with the event.
-     */
-    val value: Any?
+        /**
+         * Value associated with the event.
+         */
+        val value: Any?
 ) {
     /**
      * Instant when the event occurred.
