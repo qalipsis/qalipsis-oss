@@ -6,6 +6,7 @@ import io.evolue.api.messaging.subscriptions.TopicSubscription
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  *  Abstract implementation of [topic] for the ones that are based upon native capabilities of
@@ -25,7 +26,7 @@ internal abstract class AbstractChannelBasedTopic<T>(
 
     protected abstract val channel: SendChannel<Record<T>>
 
-    protected val subscriptions: MutableMap<String, ChannelBasedTopicSubscription<T>> = mutableMapOf()
+    protected val subscriptions: MutableMap<String, ChannelBasedTopicSubscription<T>> = ConcurrentHashMap()
 
     private val log = logger()
 
