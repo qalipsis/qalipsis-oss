@@ -1,4 +1,4 @@
-rootProject.name = "evolue"
+rootProject.name = "qalipsis"
 
 include(
         "api",

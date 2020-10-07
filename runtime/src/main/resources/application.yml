@@ -6,14 +6,14 @@ monitoring:
     hosts: http://localhost:9200
     enabled: false
     step: PT1M
-    index: evolue-metrics
+    index: qalipsis-metrics
     indexDateFormat: yyyy-MM-dd
     autoCreateIndex: true
 logging:
   console: true
   pattern: "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t] %logger.%M.%L : %m%n"
   file:
-    path: evolue.log
+    path: qalipsis.log
     max-size: 30MB
     max-history: 3
     total-capacity: 100MB
@@ -22,7 +22,7 @@ logging:
     include-caller-data: true
     never-block: false
   events:
-    path: evolue-events.log
+    path: qalipsis-events.log
     max-size: 30MB
     max-history: 3
     total-capacity: 100MB
@@ -33,10 +33,10 @@ logging:
     never-block: false
   root: warn
   level:
-    io.evolue.core.head: info
+    io.qalipsis.core.head: info
     io.micronaut: warn
     io.netty: warn
-    io.evolue: warn
+    io.qalipsis: warn
     events: info
 
 shared-registry:

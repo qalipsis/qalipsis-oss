@@ -7,7 +7,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Evolue API - Common module"
+description = "Qalipsis API - Common module"
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {

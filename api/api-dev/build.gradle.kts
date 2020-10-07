@@ -6,7 +6,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Components to support Evolue API development"
+description = "Components to support Qalipsis API development"
 
 kapt {
     useBuildCache = false

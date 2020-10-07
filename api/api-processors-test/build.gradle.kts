@@ -5,7 +5,7 @@ plugins {
     kotlin("kapt")
 }
 
-description = "Evolue - Tests for the compile time processors"
+description = "Qalipsis - Tests for the compile time processors"
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.majorVersion

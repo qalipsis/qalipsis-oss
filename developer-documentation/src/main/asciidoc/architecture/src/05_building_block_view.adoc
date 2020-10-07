@@ -4,7 +4,7 @@
 === Whitebox Overall System
 
 .Whitebox overall system
-[plantuml,evolue-whitebox-overall-system,png]
+[plantuml,qalipsis-whitebox-overall-system,png]
 ----
 skinparam componentStyle uml2
 
@@ -14,7 +14,7 @@ actor Tester as tester
 component "CI/CD-Tool" as ci
 component "Reporting-Tool" as reporting
 
-rectangle "Evolue" as evolue {
+rectangle "Qalipsis" as qalipsis {
   interface "HTTP API / Website" as http
 
   component "Head(s)" as head
@@ -45,13 +45,13 @@ rectangle "Evolue" as evolue {
 tester -down-> http
 ci -down-> http
 reporting -up-> ts
-evolue -down-> monitoring
+qalipsis -down-> monitoring
 
 ----
 
 ==== Motivation
 
-Evolue addresses a lot of problematics of the distributed systems and we used functional decomposition to split the responsibilities and design the relevant components.
+Qalipsis addresses a lot of problematics of the distributed systems and we used functional decomposition to split the responsibilities and design the relevant components.
 
 ==== Contained Building Blocks
 
@@ -99,8 +99,8 @@ The aspect will be discussed in detail below, when the partitioning component wi
 ===== Proxy (Blackbox)
 
 Responsibility::
-It is considered as an instrumentation tool installed within the tested platform in order to increase the grip of Evolue on the tested systems:
-- Provides a man-in-the-middle interceptor for the plug-ins supported by Evolue, in order to keep track of the information transferred in the target system and make them available for Evolue with a (not too) big impact of the system performances.
+It is considered as an instrumentation tool installed within the tested platform in order to increase the grip of Qalipsis on the tested systems:
+- Provides a man-in-the-middle interceptor for the plug-ins supported by Qalipsis, in order to keep track of the information transferred in the target system and make them available for Qalipsis with a (not too) big impact of the system performances.
 - Shares the captured data in the messaging platform or in the cache.
 - Interprets the requests and responses when relevant in order to allow the address or port translation when the observed protocol does not support it natively.
 
@@ -130,7 +130,7 @@ Form::
 ** https://www.elastic.co[Elasticsearch], which also comes with the reporting GUI https://www.elastic.co/products/kibana[Kibana] to provide advanced analysis capability
 ** https://www.influxdata.com/products/influxdb-overview/[InfluxDB], which can be connected to Grafana
 
-Further systems might be supported in the future to better integrate Evolue into the existing IT landscapes.
+Further systems might be supported in the future to better integrate Qalipsis into the existing IT landscapes.
 
 ===== Cache (Blackbox)
 
@@ -139,7 +139,7 @@ Responsibility::
 - Stores information accessible to all the factories.
 
 Performance::
-The cache shall provide a very high throughput and very low latency to avoid discarding Evolue as a load test platform.
+The cache shall provide a very high throughput and very low latency to avoid discarding Qalipsis as a load test platform.
 
 Form::
 * When using the standalone deployment, the cache is provided by https://github.com/ben-manes/caffeine[Caffeine], wwhich we consider the fastest cache implementation on the Java Virtual Machine.
@@ -157,9 +157,9 @@ Form::
 * When using the standalone deployment, Kotlin channels are used.
 * When using the distributed deployment, either http://redis.io[Redis] (for low to medium load) or https://kafka.apache.org[Apache Kafka] are supported, which requires more effort to operate but better suits to Cloud infrastructures.
 
-===== Other Evolue building blocks
+===== Other Qalipsis building blocks
 
-.Other Evolue building blocks
+.Other Qalipsis building blocks
 [options="header",cols="1,4"]
 |===
 | Name | Responsibility
@@ -169,13 +169,13 @@ Form::
 
 ==== Important Interfaces
 
-.Important interfaces of Evolue
+.Important interfaces of Qalipsis
 [options="",cols="1,4"]
 |===
-| External systems | Evolue factories are in charge of executing the load test scenarios, which consist of actions performed on external systems and assertions based upon on data those systems also provide.
-| Reporting tool | Evolue provides reporting capabilities to analyze the results and drill-down to the details. However, one might prefer to use other dedicated tools able to interface with the time-series platforms supported by Evolue.
-| CI/CD tool | Evolue is used in a context of quality validation of software and is very keen on being triggered by third-parties CI tools to integrate it into a continuous integration / delivery / deployment pipeline.
-| Monitoring | As a load-test tool, Evolue is an intensive user of CPU, memory and network resources and is required to be monitored for mid to large-scale deployments, in order to verify that the expected load can be generated on the target system.
+| External systems | Qalipsis factories are in charge of executing the load test scenarios, which consist of actions performed on external systems and assertions based upon on data those systems also provide.
+| Reporting tool | Qalipsis provides reporting capabilities to analyze the results and drill-down to the details. However, one might prefer to use other dedicated tools able to interface with the time-series platforms supported by Qalipsis.
+| CI/CD tool | Qalipsis is used in a context of quality validation of software and is very keen on being triggered by third-parties CI tools to integrate it into a continuous integration / delivery / deployment pipeline.
+| Monitoring | As a load-test tool, Qalipsis is an intensive user of CPU, memory and network resources and is required to be monitored for mid to large-scale deployments, in order to verify that the expected load can be generated on the target system.
 |===
 
 === Level 2
@@ -183,7 +183,7 @@ Form::
 ==== Factory (Whitebox)
 
 .Whitebox Factory
-[plantuml,evolue-whitebox-factory-factory,png]
+[plantuml,qalipsis-whitebox-factory-factory,png]
 ----
 skinparam componentStyle uml2
 
@@ -305,7 +305,7 @@ The metrics reporter is a singleton for each factory.
 ==== Head (Whitebox)
 
 .Whitebox Head
-[plantuml,evolue-whitebox-head,png]
+[plantuml,qalipsis-whitebox-head,png]
 ----
 skinparam componentStyle uml2
 
@@ -378,7 +378,7 @@ Provides all actions to persist the metrics and report the results of past and c
 
 Administration API::
 Responsibility:::
-Provides all actions to manage structural configuration of Evolue.
+Provides all actions to manage structural configuration of Qalipsis.
 
 Directives producer::
 Responsibility:::
@@ -397,7 +397,7 @@ Consumes the metrics coming from all the factories to push them into the reporti
 ==== Factory - Orchestration (Whitebox)
 
 .Whitebox Factory - Orchestration
-[plantuml,evolue-whitebox-factory-orchestration,png]
+[plantuml,qalipsis-whitebox-factory-orchestration,png]
 ----
 skinparam componentStyle uml2
 
@@ -448,7 +448,7 @@ The DAGs generally have input and output which are connected via messaging to th
 ==== Factory - Scenarios (Whitebox)
 
 .Whitebox Factory - Executing scenarios
-[plantuml,evolue-whitebox-scenario-execution,png]
+[plantuml,qalipsis-whitebox-scenario-execution,png]
 ----
 skinparam componentStyle uml2
 
@@ -489,7 +489,7 @@ The Minion reports the execution flow metrics and results of the steps to the Me
 ==== Factory - Correlation Processor (Whitebox)
 
 .Whitebox Factory - Correlation Processor
-[plantuml,evolue-whitebox-factory-correlation-processor,png]
+[plantuml,qalipsis-whitebox-factory-correlation-processor,png]
 ----
 skinparam componentStyle uml2
 

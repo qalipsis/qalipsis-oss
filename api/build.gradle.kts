@@ -1,1 +1,1 @@
-description = "Evolue - API Parent library"
+description = "Qalipsis - API Parent library"

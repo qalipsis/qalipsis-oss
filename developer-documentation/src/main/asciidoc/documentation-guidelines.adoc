@@ -1,9 +1,9 @@
-:title: Evolue - Documentation guidelines
+:title: Qalipsis - Documentation guidelines
 :imagesdir: ./images
-:favicon: ./images/evolue.ico
+:favicon: ./images/qalipsis.ico
 :stylesheet: {includedir}/stylesheets/colony.css
 
-= image:evolue-big-no-headline.png[evolue-big-no-headline,100] Documentation guidelines
+= image:qalipsis-big-no-headline.png[qalipsis-big-no-headline,100] Documentation guidelines
 
 ifdef::backend-html5[]
 link:./index.html[Homepage]
@@ -11,7 +11,7 @@ endif::backend-html5[]
 
 == General considerations
 
-The present document is written using https://asciidoctor.org/docs/user-manual/[Asciidoctor] and https://asciidoctor.org/docs/asciidoctor-diagram/[Asciidoctor diagram] and describes the overall guidelines to write documentation for Evolue.
+The present document is written using https://asciidoctor.org/docs/user-manual/[Asciidoctor] and https://asciidoctor.org/docs/asciidoctor-diagram/[Asciidoctor diagram] and describes the overall guidelines to write documentation for Qalipsis.
 
 == Guidelines
 
@@ -33,11 +33,11 @@ You will have to install the following executables:
 In order to make the document both consistent and easier to later update, please use the following template as first lines of any Asciidoc file.
 
 ```
-:title: Evolue - Your title
+:title: Qalipsis - Your title
 :imagesdir: ./images // Adapt the path to folder.
-:favicon: ./images/evolue.ico // Adapt the path to folder.
+:favicon: ./images/qalipsis.ico // Adapt the path to folder.
 :stylesheet: {includedir}/stylesheets/colony.css
-= image:evolue-big-no-headline.png[evolue-big-no-headline,100] Your title
+= image:qalipsis-big-no-headline.png[qalipsis-big-no-headline,100] Your title
 
 ifdef::backend-html5[]
 link:../index.html[Homepage] // Adapt the path to the root.

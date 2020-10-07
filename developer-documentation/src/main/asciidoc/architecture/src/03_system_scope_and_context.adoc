@@ -16,18 +16,18 @@ component "CI-Tool" as CI
 actor "Operations team" as op
 file Scenario
 database Results
-component Evolue
+component Qalipsis
 frame Report
 component "Target system" as system
 
 Developer .down.> Scenario: develops
-Tester .down.> Evolue: drives
-CI .down.> Evolue: triggers
-Evolue .up.> Scenario: executes
-Evolue .right.> system: generates load
+Tester .down.> Qalipsis: drives
+CI .down.> Qalipsis: triggers
+Qalipsis .up.> Scenario: executes
+Qalipsis .right.> system: generates load
 op .down.> system: monitors \nand operates
-op .down.> Evolue: monitors \nand operates
-Evolue .down.> Results: saves data and metrics
+op .down.> Qalipsis: monitors \nand operates
+Qalipsis .down.> Results: saves data and metrics
 Report .down.> Results: references
 Tester .down.> Report: analyzes
 CI .down.> Report: shares
@@ -40,9 +40,9 @@ CI .down.> Report: shares
 | Neighbour | Description
 | _Developer_ | Develops scenario in order to describe the actions to perform and the related verifications
 | _Tester_ | Sets up, configures and triggers a test campaign, then analyzes the results
-| _Operations team_ | Sets up and operates the infrastructure to execute both Evolue and the system to test
-| _CI Tool_ | Triggers the execution of a scenario in Evolue, either on a time or an event basis, then shares the generated reports and display indicators in its own GUI
-| _Target system_ | System to test, on which Evolue generates load and then fetches data for the verifications
+| _Operations team_ | Sets up and operates the infrastructure to execute both Qalipsis and the system to test
+| _CI Tool_ | Triggers the execution of a scenario in Qalipsis, either on a time or an event basis, then shares the generated reports and display indicators in its own GUI
+| _Target system_ | System to test, on which Qalipsis generates load and then fetches data for the verifications
 | _Scenario_ | Describes the complete sequence of actions and verifications to perform on the target system
 | _Results_ | Metric or literal information to be used for the analyzes and decision making either by humans or automated systems
 | _Report_ | Interactive GUI or file describing the results in a way it can be interpreted and shared either by humans or automated systems
@@ -50,8 +50,8 @@ CI .down.> Report: shares
 
 === Technical Context
 
-The deployment diagram below describes the interactions between Evolue and its environment.
-Since Evolue aims at targeting different interfaces using plug-ins, we focus the description here on the most essential or common tools, mainly for example purpose.
+The deployment diagram below describes the interactions between Qalipsis and its environment.
+Since Qalipsis aims at targeting different interfaces using plug-ins, we focus the description here on the most essential or common tools, mainly for example purpose.
 
 Please note that the protocols and technologies listed here are not exhaustive.
 
@@ -85,9 +85,9 @@ node "Target system" as target {
    any -down-> any_system
 }
 
-package "Evolue" {
+package "Qalipsis" {
 
-  component "Evolue" as evo
+  component "Qalipsis" as evo
   component "Reverse-proxy" as proxy
 
   evo .right.> proxy
@@ -114,12 +114,12 @@ package "Evolue" {
 [options="header",cols="1,4"]
 |===
 | Neighbour | Description
-| _Reverse-proxy_ | A man-in-the-middle reverse proxy in charge of recording TCP and UDP data transfers in a way Evolue can use them. It is not absolutely required but might help in some cases.
+| _Reverse-proxy_ | A man-in-the-middle reverse proxy in charge of recording TCP and UDP data transfers in a way Qalipsis can use them. It is not absolutely required but might help in some cases.
 | _Web site_ | A standard use for load testing is the verification of web site loading pages and resources download, using different versions of the HTTP protocol.
 | _REST/SOAP API_ | As an extension of the use case above, REST and SOAP API are also very keen on being tested, since they are a standard way of data transport in heterogeneous environments.
-| _File system_ | Log files as well as images, binaries or so on are often persisted by applications in the file system but still relevant for Evolue to perform actions or verifications.
+| _File system_ | Log files as well as images, binaries or so on are often persisted by applications in the file system but still relevant for Qalipsis to perform actions or verifications.
 | _Database_ | Databases of different kinds allow storing and requesting data with different strategies. While JDBC API provides a common way to address SQL systems, other require a specific protocol and thus connector.
-| _Messaging platform_ | Rarely a distributed system work without data distribution between its components. Evolue aims at producing and consuming messages using the standard AMQP interface or the specific protocols for the most common platforms.
-| _..._ | Evolue provides extension capabilities using plug-ins, allowing to work with any kind of third-party system.
+| _Messaging platform_ | Rarely a distributed system work without data distribution between its components. Qalipsis aims at producing and consuming messages using the standard AMQP interface or the specific protocols for the most common platforms.
+| _..._ | Qalipsis provides extension capabilities using plug-ins, allowing to work with any kind of third-party system.
 
 |===

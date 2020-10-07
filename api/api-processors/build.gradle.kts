@@ -5,7 +5,7 @@ plugins {
     kotlin("kapt")
 }
 
-description = "Evolue compile time processors"
+description = "Qalipsis compile time processors"
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {

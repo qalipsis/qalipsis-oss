@@ -45,7 +45,7 @@ The following sequence diagram describes the relevant actions.
 The entity `Factory` is used when the factory is individually considered, while `Factories` is messages are broadcasted.
 
 .Initialization steps
-[plantuml,evolue-initialization-steps,png]
+[plantuml,qalipsis-initialization-steps,png]
 ----
 @startuml
 skinparam componentStyle uml2
@@ -163,7 +163,7 @@ When the minion has to be started, the channel is closed to release the executio
 === States of a minion
 
 .States of a minion
-[plantuml,evolue-minion-states,png]
+[plantuml,qalipsis-minion-states,png]
 ----
 @startuml
 hide empty description
@@ -208,7 +208,7 @@ digraph simpledag {
 The correlator keeps the records of each incoming step in a local cache as they are being provided and pushes them to the next step when they are complete.
 
 .Local correlation of records from different sources
-[plantuml,evolue-local-correlation-from-different-sources,png]
+[plantuml,qalipsis-local-correlation-from-different-sources,png]
 ----
 @startuml
 
@@ -245,7 +245,7 @@ The message is sent to the topics related to the selectors of the DAG containing
 To calculate the correction keys in a deterministic way, the source and target steps will be specified with a lambda function.
 
 .Targeted remote correlation of records from different sources
-[plantuml,evolue-targeted-remote-correlation-from-different-sources,png]
+[plantuml,qalipsis-targeted-remote-correlation-from-different-sources,png]
 ----
 @startuml
 
@@ -289,7 +289,7 @@ In that case, the API key of the message is `fuzzy data forwarding` and the payl
 The message is sent to the topics related to the selectors of the DAG containing the target step.
 
 .Fuzzy remote correlation of records from different sources
-[plantuml,evolue-fuzzy-remote-correlation-from-different-sources,png]
+[plantuml,qalipsis-fuzzy-remote-correlation-from-different-sources,png]
 ----
 @startuml
 

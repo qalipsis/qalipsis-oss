@@ -3,12 +3,12 @@
 
 === Top-level components
 
-Evolue contains six components, responsible for the different aspects of the application:
+Qalipsis contains six components, responsible for the different aspects of the application:
 
 . Head: Web server for testers to drive the test campaigns and browse the metrics and dashboards.
 It also orchestrates the factory to coordinate the overall execution.
 . Factory: Daemon in charge of analyzing, preparing and running the scenarios steps, generating the load by simulating the users or devices using the targeted system to test.
-. Messaging platform: Used only when Evolue is deployed as a cluster, in order to transport data between heads and factories as well as between the factories themselves.
+. Messaging platform: Used only when Qalipsis is deployed as a cluster, in order to transport data between heads and factories as well as between the factories themselves.
 . Time-Series storage: One or more servers to manage and host the metrics.
 . Configuration database: One or more RDMS server to host the configuration.
 . Cache: One or more servers to share the cached data among all the factories.
@@ -27,7 +27,7 @@ Finally, the database is an embedded persistent Apache Derby.
 
 ==== Cluster
 
-To simulate middle to heavy load and make Evolue resilient to failures, it is encouraged to deploy it as a cluster, in which all the components are distinct processes deployed on distinct servers.
+To simulate middle to heavy load and make Qalipsis resilient to failures, it is encouraged to deploy it as a cluster, in which all the components are distinct processes deployed on distinct servers.
 Factories and head can be added to increase computing capabilities.
 Servers can be virtual machines or even containers.
 It is not necessary to use physical machines.
@@ -73,7 +73,7 @@ While some platforms support mirroring and geographical redundancy, it might be 
 
 === API and Communication
 
-Communications in Evolue use the https://kafka.apache.org/protocol[Apache Kafka protocol] as a model:
+Communications in Qalipsis use the https://kafka.apache.org/protocol[Apache Kafka protocol] as a model:
 
 * Each feature is described as an API.
 * Each API is versioned and several versions are supported by heads and factories to allow backward compatibility.
@@ -105,5 +105,5 @@ Head branch is nightly built and analyzed by SonarQube standard rules.
 New releases are made public every three months, except for critical fixes, which can happen anytime on decision of the team.
 Source code of each release is tagged with the number of the version.
 
-Release notes are published on the website https://evolue.io and in the README.md file to make it accessible to Github users.
+Release notes are published on the website https://qalipsis.io and in the README.md file to make it accessible to Github users.
 Breaking changes are listed first if any.

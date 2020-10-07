@@ -7,7 +7,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Evolue API Kotlin DSL"
+description = "Qalipsis API Kotlin DSL"
 
 kapt {
     useBuildCache = false
@@ -16,7 +16,7 @@ kapt {
 allOpen {
     annotations(
             "io.micronaut.aop.Around",
-            "io.evolue.api.annotations.Spec"
+            "io.qalipsis.api.annotations.Spec"
     )
 }
 

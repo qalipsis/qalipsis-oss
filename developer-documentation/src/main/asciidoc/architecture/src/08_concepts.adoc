@@ -13,7 +13,7 @@ The DSL is a reactive like builder, made to reduce the code verbosity while keep
 
 === Plugins
 
-Evolue is designed to be extremely extensible.
+Qalipsis is designed to be extremely extensible.
 Thus, most of the supported technologies to generate load are provided using dedicated plugins.
 When developing a scenario, the developer only has to include the relevant plugin as classpath dependencies.
 
@@ -78,7 +78,7 @@ digraph distributeddag {
 }
 ....
 
-The distributed aspects of Evolue implies some drawbacks to tackle.
+The distributed aspects of Qalipsis implies some drawbacks to tackle.
 Let's consider the example of figure <<distributed-split-dag>> where step 1 is a unique data source reading data from a non public PostgreSQL database and acts as a single data source will feed all the minions being part of this scenario.
 Otherwise, we would have to massively duplicate the execution of same queries and overload the database to often fetch the same data.
 Step 2 is a transformation block.
@@ -204,7 +204,7 @@ Common examples of cross-minion steps are data sources and messaging consumers.
 The attack surface of the factories is limited to the integrated technologies and their weaknesses.
 Apart from that, there is no direct way to attach them, because they have no network entry (REST API, TCP/UDP listener).
 
-In the contrary, the head provides a much wider surface with its REST APIs and GUI. While securing them might be done in a lot of different ways, Evolue does not aim to address all of them.
+In the contrary, the head provides a much wider surface with its REST APIs and GUI. While securing them might be done in a lot of different ways, Qalipsis does not aim to address all of them.
 However, the following will be provided:
 
 * Basic authentication (enabled by default),
@@ -228,9 +228,9 @@ Waiting operations, either for IO purpose or simply delay, will be implemented u
 
 At the matter of fact, all the core of the factories will be made of suspended functions.
 
-=== Evolue messaging protocol
+=== Qalipsis messaging protocol
 
-Evolue strongly relies on messaging to exchange data to and from heads and factories.
+Qalipsis strongly relies on messaging to exchange data to and from heads and factories.
 The way records are exchanged was already described above, in the section <<API and Communication>>.
 
 The payload will be transported as a JSON string in the first version, and will migrate to https://developers.google.com/protocol-buffers/docs/overview[protobuf] in the future to improve performance and reduce CPU and memory overhead, by translating from string to bytes manipulation.
@@ -259,7 +259,7 @@ IDs of minions cannot be reused neither, thus the value of last minion has to be
 
 === GUI / no GUI
 
-Evolue can be run as a service in CI/CD workflow, for which no graphical user interface is required.
+Qalipsis can be run as a service in CI/CD workflow, for which no graphical user interface is required.
 In that case, the head is started with the following flags:
 
 * `--no-gui`: disables the graphical user interface
@@ -270,5 +270,5 @@ In that case, the head is started with the following flags:
 
 === Test results compatibility
 
-In order to make the integration with CI tools easier, Evolue generates on demand (using the API or CLI flag `--junit-results` at startup) the set of files in the https://llg.cubic.org/docs/junit/[JUnit format].
+In order to make the integration with CI tools easier, Qalipsis generates on demand (using the API or CLI flag `--junit-results` at startup) the set of files in the https://llg.cubic.org/docs/junit/[JUnit format].
 Unofficial XSD Schema can be found http://windyroad.com.au/dl/Open%20Source/JUnit.xsd[here].

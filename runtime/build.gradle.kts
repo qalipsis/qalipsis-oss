@@ -7,7 +7,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Evolue Runtime"
+description = "Qalipsis Runtime"
 
 // Configure both compileKotlin and compileTestKotlin.
 tasks.withType<KotlinCompile>().configureEach {
@@ -21,9 +21,9 @@ allOpen {
     annotations(
             "io.micronaut.aop.Around",
             "javax.inject.Singleton",
-            "io.evolue.api.annotations.StepConverter",
-            "io.evolue.api.annotations.StepDecorator",
-            "io.evolue.api.annotations.PluginComponent",
+            "io.qalipsis.api.annotations.StepConverter",
+            "io.qalipsis.api.annotations.StepDecorator",
+            "io.qalipsis.api.annotations.PluginComponent",
             "io.micronaut.validation.Validated"
     )
 }

@@ -3,16 +3,16 @@
 
 === Requirements Overview
 
-==== What is evolue?
+==== What is qalipsis?
 
-Evolue is a load and performance testing tool for distributed systems.
+Qalipsis is a load and performance testing tool for distributed systems.
 From many aspects, it can be compared to existing tools like JMeter, Gatlin or Locust, but aims at tackling some of their pitfalls:
 
 * None of them is natively designed for distributed platforms: running a test and combine its output with other data sources to perform assertions is from complex to impossible.
 * Existing commercial solutions do not use the latest technologies to scale concurrent simulated users and are either less powerful or very expensive due to the required physical resources (CPU and memory).
 * Most of the solutions “shifted to the right”, meaning they do target testers with no development skills, which drastically reduces the scope of the supported protocols and platforms due to the required GUI or simplifications to implement tests.
 
-Evolue is platform-agnostic, highly-configurable and supports any protocol or target system, either with the existing plugins or by user-developed modules.
+Qalipsis is platform-agnostic, highly-configurable and supports any protocol or target system, either with the existing plugins or by user-developed modules.
 
 The users, which are IT-developers, can create tests in a couple of minutes for any kind of targeted system and with few hardware resources (and subsequently save a significant amount of time and money).
 
@@ -29,11 +29,11 @@ It integrates into your continuous deployment pipeline to make build fail/pass b
 
 There are three main use cases:
 
-. evolue is deployed to load-test an infrastructure or software before it is deployed to production, to make sure it can address the normal demands as well as peaks (for instance for online shops in period of seasonal sale or registration systems for conferences, for which the demand increase can really be sudden).
-. evolue is integrated in the continuous deployment pipeline to be run automatically on schedule or when code changes.
+. qalipsis is deployed to load-test an infrastructure or software before it is deployed to production, to make sure it can address the normal demands as well as peaks (for instance for online shops in period of seasonal sale or registration systems for conferences, for which the demand increase can really be sudden).
+. qalipsis is integrated in the continuous deployment pipeline to be run automatically on schedule or when code changes.
 Hence, it periodically checks that the performance of last developments did not negatively affect the performance of the software you are building, comparing to past results and expectations specified by either developers, operations, users or stakeholders.
 If the results overreach configured threshold, the build will fail, preventing the software to be delivered and forcing the developers to fix the issue.
-. evolue acts as a constant monitoring tool for operation teams, and provides constant insights on the behavior of the application to detect deviations, trends and correlates them with resources consumption.
+. qalipsis acts as a constant monitoring tool for operation teams, and provides constant insights on the behavior of the application to detect deviations, trends and correlates them with resources consumption.
 
 === Quality Goals
 
@@ -44,22 +44,22 @@ If the results overreach configured threshold, the build will fail, preventing t
 | 1 | _Reliability_ |
 In its most advanced deployment configuration, there is no single point of failure: heads are redundant, messaging platform is a cluster and if a factory fails, its minions are rebalanced on other ones until it gets back to life.
 
-Evolue should be able to run endless.
+Qalipsis should be able to run endless.
 | 2 | _Performance_ |
 Messages should be transported between factories/heads with less of 10ms latency on the same geographical continent.
 
-A single factory of Evolue can simulate 5000 users on a web site with 2 GB RAM and 4 CPU.
+A single factory of Qalipsis can simulate 5000 users on a web site with 2 GB RAM and 4 CPU.
 | 3 | _Correctness_ |
 All test successes, failures and errors are reported.
 
 | 4 | _Compliance_ |
-Each major version of Evolue is backward compliant with the previous major version.
+Each major version of Qalipsis is backward compliant with the previous major version.
 
-Evolue can run on the current JVM LTS version.
+Qalipsis can run on the current JVM LTS version.
 
-Any Java library compliant with the current JVM LTS version can be used in Evolue.
+Any Java library compliant with the current JVM LTS version can be used in Qalipsis.
 | 5 | _Maintainability_ |
-Sonarqube rates Evolue as A for all aspects with default configuration.
+Sonarqube rates Qalipsis as A for all aspects with default configuration.
 
 There is neither blocking, nor major issues according to Sonarqube with default configuration.
 

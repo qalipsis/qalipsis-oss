@@ -53,6 +53,6 @@ While Javascript is still evolving and provides always new fancy features, we co
 Keeping in mind our requirements for clean safe code and development velocity, we consider that Typescript is the good tool to meet them.
 
 | Alternative technologies                   | GraalVM, Golang, Rust, Javascript?                |
-Decoupling the head from the factories also aims at later integrating other technologies in Evolue. If GraalVM is first prospective to improve resources consumption of existing Kotlin code, the Evolue ecosystem is not constrained to only use JVM based technologies. We could absolutely think of creating factories in different languages to support more technical use cases and even reimplement the head to improve it.
+Decoupling the head from the factories also aims at later integrating other technologies in Qalipsis. If GraalVM is first prospective to improve resources consumption of existing Kotlin code, the Qalipsis ecosystem is not constrained to only use JVM based technologies. We could absolutely think of creating factories in different languages to support more technical use cases and even reimplement the head to improve it.
 
 |===

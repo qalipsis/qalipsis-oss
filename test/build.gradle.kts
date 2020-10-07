@@ -5,7 +5,7 @@ plugins {
     kotlin("kapt")
 }
 
-description = "Evolue Test Utils"
+description = "Qalipsis Test Utils"
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {

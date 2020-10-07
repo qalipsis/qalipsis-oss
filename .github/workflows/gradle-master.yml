@@ -27,18 +27,18 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.gradle/caches
-          key: ${{ runner.os }}-evolue-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-evolue-gradle-
+          key: ${{ runner.os }}-qalipsis-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-qalipsis-gradle-
 
       - name: Cache Gradle wrapper
         uses: actions/cache@v2
         with:
           path: ~/.gradle/wrapper
-          key: ${{ runner.os }}-evolue-gradle-wrapper-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-evolue-gradle-wrapper-
+          key: ${{ runner.os }}-qalipsis-gradle-wrapper-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
 
       - name: Tests
-        run: ./gradlew clean test integrationTest  --continue
+        run: ./gradlew clean check --continue
 
       - name: Report
         if: always()

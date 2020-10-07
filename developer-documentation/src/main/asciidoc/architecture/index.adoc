@@ -1,9 +1,9 @@
-:title: Evolue - Architecture
+:title: Qalipsis - Architecture
 :imagesdir: ../images
-:favicon: ../images/evolue.ico
+:favicon: ../images/qalipsis.ico
 :stylesheet: {includedir}/stylesheets/colony.css
 
-= image:evolue-big-no-headline.png[evolue-big-no-headline,100] Architecture
+= image:qalipsis-big-no-headline.png[qalipsis-big-no-headline,100] Architecture
 
 ifdef::backend-html5[]
 link:../index.html[Homepage]
@@ -26,7 +26,7 @@ ifdef::basebackend-html[]
 
 endif::basebackend-html[]
 
-include::{includedir}/architecture/src/about-evolue.adoc[]
+include::{includedir}/architecture/src/about-qalipsis.adoc[]
 
 include::{includedir}/architecture/src/about-arc42.adoc[]
 
@@ -35,7 +35,7 @@ include::{includedir}/architecture/src/about-arc42.adoc[]
 
 == Goal of this documentation
 
-This documentation describes the architecture and driving decisions made to develop evolue.
+This documentation describes the architecture and driving decisions made to develop qalipsis.
 
 // numbering from here on
 :numbered:

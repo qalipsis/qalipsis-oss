@@ -1,5 +1,5 @@
-io.evolue.api.processors.StepConverterAnnotationMapper
-io.evolue.api.processors.StepDecoratorAnnotationMapper
-io.evolue.api.processors.PluginComponentAnnotationMapper
-io.evolue.api.processors.NoReflectionMapper
-io.evolue.api.processors.Spec
+io.qalipsis.api.processors.StepConverterAnnotationMapper
+io.qalipsis.api.processors.StepDecoratorAnnotationMapper
+io.qalipsis.api.processors.PluginComponentAnnotationMapper
+io.qalipsis.api.processors.NoReflectionMapper
+io.qalipsis.api.processors.Spec

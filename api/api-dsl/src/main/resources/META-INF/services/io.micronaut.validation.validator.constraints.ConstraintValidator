@@ -1,2 +1,2 @@
-io.evolue.api.constraints.PositiveDurationValidator
-io.evolue.api.constraints.PositiveOrZeroDurationValidator
+io.qalipsis.api.constraints.PositiveDurationValidator
+io.qalipsis.api.constraints.PositiveOrZeroDurationValidator
