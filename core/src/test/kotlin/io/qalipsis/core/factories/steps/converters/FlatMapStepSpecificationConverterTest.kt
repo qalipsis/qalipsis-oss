@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import io.mockk.every
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.FlatMapStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -14,7 +15,6 @@ import io.qalipsis.core.factories.steps.FlatMapStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import io.mockk.every
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
@@ -56,8 +56,7 @@ internal class FlatMapStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(FlatMapStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("retryPolicy").isSameAs(spec.retryPolicy)
             prop("block").isSameAs(blockSpecification)
@@ -81,8 +80,7 @@ internal class FlatMapStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(FlatMapStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
             prop("id").isNotNull()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)

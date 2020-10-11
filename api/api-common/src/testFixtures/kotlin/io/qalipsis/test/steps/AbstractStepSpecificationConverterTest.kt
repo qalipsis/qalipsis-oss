@@ -1,14 +1,14 @@
 package io.qalipsis.test.steps
 
-import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.scenario.MutableScenarioSpecification
-import io.qalipsis.api.steps.StepSpecificationConverter
-import io.qalipsis.test.mockk.WithMockk
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.orchestration.DirectedAcyclicGraph
+import io.qalipsis.api.retry.RetryPolicy
+import io.qalipsis.api.scenario.StepSpecificationRegistry
+import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.Test
 
 @WithMockk
@@ -21,7 +21,7 @@ abstract class AbstractStepSpecificationConverterTest<T : StepSpecificationConve
     lateinit var eventsLogger: EventsLogger
 
     @RelaxedMockK
-    lateinit var scenarioSpecification: MutableScenarioSpecification
+    lateinit var scenarioSpecification: StepSpecificationRegistry
 
     @RelaxedMockK
     lateinit var directedAcyclicGraph: DirectedAcyclicGraph

@@ -6,10 +6,10 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import io.mockk.every
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.test.mockk.relaxedMockk
-import io.mockk.every
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Duration

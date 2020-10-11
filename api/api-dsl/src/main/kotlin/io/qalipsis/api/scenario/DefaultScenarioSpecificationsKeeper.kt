@@ -11,7 +11,7 @@ import javax.inject.Singleton
 @Singleton
 internal class DefaultScenarioSpecificationsKeeper : ScenarioSpecificationsKeeper {
 
-    override fun asMap(): Map<ScenarioId, ReadableScenarioSpecification> {
+    override fun asMap(): Map<ScenarioId, ConfiguredScenarioSpecification> {
         return scenariosSpecifications
     }
 

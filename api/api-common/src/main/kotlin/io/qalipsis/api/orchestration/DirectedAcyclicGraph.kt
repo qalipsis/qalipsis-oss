@@ -32,14 +32,19 @@ data class DirectedAcyclicGraph(
         val scenario: Scenario,
 
         /**
-         * Defines if the DAG is the start of scenario, in which case it has to wait for directive to be started.
+         * Defines if the DAG is the root of scenario, in which case it has to wait for directive to be started.
          */
-        val scenarioStart: Boolean,
+        val isRoot: Boolean,
+
+        /**
+         * Defines if the DAG is part of the tree receiving the load of all the minions.
+         */
+        val isUnderLoad: Boolean,
 
         /**
          * Defines if the DAG runs for a singleton minion, in which case it is not driven by start directive.
          */
-        val singleton: Boolean
+        val isSingleton: Boolean
 ) {
 
     /**
@@ -54,10 +59,6 @@ data class DirectedAcyclicGraph(
 
     val stepsCount: Int
         get() = steps.size
-
-    init {
-        scenario.dags.add(this)
-    }
 
     /**
      * Verifies if the step belongs to the DAG.

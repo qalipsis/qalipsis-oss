@@ -3,6 +3,7 @@ package io.qalipsis.core.cross.directives.inmemory
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.Directive
@@ -19,7 +20,6 @@ import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
-import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit

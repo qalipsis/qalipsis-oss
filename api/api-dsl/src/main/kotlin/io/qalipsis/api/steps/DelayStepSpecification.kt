@@ -1,8 +1,8 @@
 package io.qalipsis.api.steps
 
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.exceptions.InvalidSpecificationException
-import io.micronaut.core.annotation.Introspected
 import java.time.Duration
 
 /**

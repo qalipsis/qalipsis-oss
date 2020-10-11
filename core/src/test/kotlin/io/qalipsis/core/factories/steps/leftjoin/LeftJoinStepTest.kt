@@ -47,7 +47,7 @@ internal class LeftJoinStepTest {
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val step = buildLeftJoinStep(topic1, topic2)
-        runBlocking { step.start() }
+        runBlocking { step.start(relaxedMockk()) }
         val entityFromLeft = TestLeftJoinEntity(123, "From Left")
         val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
         val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
@@ -86,7 +86,7 @@ internal class LeftJoinStepTest {
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val step = buildLeftJoinStep(topic1, topic2)
-        runBlocking { step.start() }
+        runBlocking { step.start(relaxedMockk()) }
         val entityFromLeft = TestLeftJoinEntity(123, "From Left")
         val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
         val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
@@ -123,7 +123,7 @@ internal class LeftJoinStepTest {
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val step = buildLeftJoinStep(topic1, topic2)
-        runBlocking { step.start() }
+        runBlocking { step.start(relaxedMockk()) }
         val entityFromLeft = TestLeftJoinEntity(123, "From Left")
         val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
         val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
@@ -177,7 +177,7 @@ internal class LeftJoinStepTest {
 
         // when
         runBlocking {
-            step.start()
+            step.start(relaxedMockk())
             topic1.produceValue(CorrelationRecord("any", "secondary-1", entityFromFromRight1))
             // Wait for the data to be consumed.
             delay(20)
@@ -202,7 +202,7 @@ internal class LeftJoinStepTest {
         }
         val ctx = buildStepContext(relaxedMockk { })
         runBlocking {
-            step.start()
+            step.start(relaxedMockk())
         }
 
         // when

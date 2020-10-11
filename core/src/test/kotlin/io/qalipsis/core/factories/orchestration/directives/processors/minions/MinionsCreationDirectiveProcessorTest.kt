@@ -1,20 +1,20 @@
 package io.qalipsis.core.factories.orchestration.directives.processors.minions
 
-import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
-import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
-import io.qalipsis.core.cross.directives.TestDescriptiveDirective
-import io.qalipsis.core.factories.orchestration.MinionsKeeper
-import io.qalipsis.core.factories.orchestration.ScenariosKeeper
-import io.qalipsis.test.coroutines.CleanCoroutines
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.coVerifyExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.context.MinionId
+import io.qalipsis.api.orchestration.directives.DirectiveRegistry
+import io.qalipsis.api.orchestration.factories.MinionsKeeper
+import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
+import io.qalipsis.core.cross.directives.TestDescriptiveDirective
+import io.qalipsis.core.factories.orchestration.ScenariosRegistry
+import io.qalipsis.test.coroutines.CleanCoroutines
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyExactly
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -36,7 +36,7 @@ internal class MinionsCreationDirectiveProcessorTest {
     lateinit var minionsKeeper: MinionsKeeper
 
     @RelaxedMockK
-    lateinit var scenariosKeeper: ScenariosKeeper
+    lateinit var scenariosRegistry: ScenariosRegistry
 
     @InjectMockKs
     lateinit var processor: MinionsCreationDirectiveProcessor
@@ -49,7 +49,7 @@ internal class MinionsCreationDirectiveProcessorTest {
                 "my-directive",
                 "my-campaign", "my-scenario", "my-dag"
             )
-        every { scenariosKeeper.hasDag("my-scenario", "my-dag") } returns true
+        every { scenariosRegistry["my-scenario"]?.contains("my-dag") } returns true
 
         Assertions.assertTrue(processor.accept(directive))
     }
@@ -68,7 +68,7 @@ internal class MinionsCreationDirectiveProcessorTest {
                 "my-directive",
                 "my-campaign", "my-scenario", "my-dag"
             )
-        every { scenariosKeeper.hasDag("my-scenario", "my-dag") } returns false
+        every { scenariosRegistry["my-scenario"]?.contains("my-dag") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
     }

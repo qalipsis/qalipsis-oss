@@ -3,6 +3,7 @@ package io.qalipsis.api.steps.datasource
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 
@@ -25,12 +26,12 @@ class IterativeDatasourceStep<R, T, O>(
         private val converter: DatasourceObjectConverter<T, O>
 ) : AbstractStep<Unit, O>(id, null) {
 
-    override suspend fun start() {
+    override suspend fun start(context: StepStartStopContext) {
         log.trace("Starting datasource reader for step $id")
         reader.start()
     }
 
-    override suspend fun stop() {
+    override suspend fun stop(context: StepStartStopContext) {
         log.trace("Stopping datasource reader for step $id")
         reader.stop()
         log.trace("Datasource reader stopped for step $id")

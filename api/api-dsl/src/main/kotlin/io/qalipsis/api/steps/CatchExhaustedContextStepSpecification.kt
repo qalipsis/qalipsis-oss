@@ -1,7 +1,7 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.StepContext
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.context.StepContext
 
 /**
  * Specification for a [io.qalipsis.core.factories.steps.CatchExhaustedContextStep].

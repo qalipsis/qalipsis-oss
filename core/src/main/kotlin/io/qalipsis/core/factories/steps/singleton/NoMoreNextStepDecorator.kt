@@ -2,6 +2,7 @@ package io.qalipsis.core.factories.steps.singleton
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.Step
 
 /**
@@ -28,12 +29,12 @@ class NoMoreNextStepDecorator<I, O>(
         decorated.init()
     }
 
-    override suspend fun start() {
-        decorated.start()
+    override suspend fun start(context: StepStartStopContext) {
+        decorated.start(context)
     }
 
-    override suspend fun stop() {
-        decorated.stop()
+    override suspend fun stop(context: StepStartStopContext) {
+        decorated.stop(context)
     }
 
     override suspend fun destroy() {

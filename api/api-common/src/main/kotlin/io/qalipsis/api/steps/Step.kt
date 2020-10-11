@@ -2,6 +2,7 @@ package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.retry.RetryPolicy
 
 /**
@@ -39,7 +40,7 @@ interface Step<I, O> {
      * Operation to execute when a campaign starts.
      */
     @Throws(Exception::class)
-    suspend fun start() = Unit
+    suspend fun start(context: StepStartStopContext) = Unit
 
     /**
      * Executes the operation implies by the step.
@@ -50,7 +51,7 @@ interface Step<I, O> {
     /**
      * Operation to execute when a campaign ends.
      */
-    suspend fun stop() = Unit
+    suspend fun stop(context: StepStartStopContext) = Unit
 
     /**
      * Operation to execute just before the destruction of the step.

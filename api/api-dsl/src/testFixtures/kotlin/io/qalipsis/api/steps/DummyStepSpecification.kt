@@ -1,6 +1,6 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.scenario.scenario
 
 /**
@@ -11,7 +11,7 @@ import io.qalipsis.api.scenario.scenario
 class DummyStepSpecification : AbstractStepSpecification<Unit, Int, DummyStepSpecification>() {
 
     init {
-        scenario = scenario("my-scenario") as MutableScenarioSpecification
+        scenario = scenario("my-scenario") as StepSpecificationRegistry
     }
 }
 

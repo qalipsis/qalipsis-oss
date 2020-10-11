@@ -1,15 +1,15 @@
 package io.qalipsis.core.cross.directives.inmemory
 
+import io.mockk.confirmVerified
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.orchestration.directives.DirectiveRegistry
 import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.core.cross.directives.TestListDirective
 import io.qalipsis.core.cross.directives.TestQueueDirective
 import io.qalipsis.core.cross.directives.TestSingleUseDirective
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
-import io.mockk.confirmVerified
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

@@ -7,27 +7,27 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.slot
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.LeftJoinStepSpecification
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.singleton.NoMoreNextStepDecorator
-import io.qalipsis.core.factories.steps.topicmirror.TopicMirrorStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -67,7 +67,7 @@ internal class LeftJoinStepSpecificationConverterTest :
         val otherStep: Step<*, *> = relaxedMockk {
             every { id } returns "the-other-step"
         }
-        val scenarioSpec: MutableScenarioSpecification = relaxedMockk {
+        val scenarioSpec: StepSpecificationRegistry = relaxedMockk {
             every { exists("other-step") } returns true
         }
         val scen: Scenario = relaxedMockk {
@@ -96,8 +96,7 @@ internal class LeftJoinStepSpecificationConverterTest :
 
         creationContext.createdStep!!.let {
             assertEquals("my-step", it.id)
-            assertThat(it).all {
-                isInstanceOf(LeftJoinStep::class)
+            assertThat(it).isInstanceOf(LeftJoinStep::class).all {
                 prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)
@@ -126,7 +125,7 @@ internal class LeftJoinStepSpecificationConverterTest :
             every { id } returns "the-other-step"
             every { decorated } returns otherDecoratedStep
         }
-        val scenarioSpec: MutableScenarioSpecification = relaxedMockk {
+        val scenarioSpec: StepSpecificationRegistry = relaxedMockk {
             every { exists("other-step") } returns true
         }
         val scen: Scenario = relaxedMockk {
@@ -159,8 +158,7 @@ internal class LeftJoinStepSpecificationConverterTest :
 
         creationContext.createdStep!!.let {
             assertNotNull(it.id)
-            assertThat(it).all {
-                isInstanceOf(LeftJoinStep::class)
+            assertThat(it).isInstanceOf(LeftJoinStep::class).all {
                 prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)

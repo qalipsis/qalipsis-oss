@@ -1,15 +1,15 @@
 package io.qalipsis.core.heads.campaigns
 
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.annotations.VisibleForTest
+import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
 import io.qalipsis.core.cross.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
-import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.core.heads.lifetime.ProcessBlocker
-import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import javax.annotation.PostConstruct

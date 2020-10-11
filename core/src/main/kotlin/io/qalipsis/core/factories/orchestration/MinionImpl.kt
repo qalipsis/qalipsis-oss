@@ -1,6 +1,7 @@
 package io.qalipsis.core.factories.orchestration
 
-import io.qalipsis.api.annotations.VisibleForTest
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
@@ -8,8 +9,6 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.sync.SuspendedCountLatch
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -33,9 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * </p>
  */
 internal open class MinionImpl(
-        val id: MinionId,
-        val campaignId: CampaignId,
-        val dagId: DirectedAcyclicGraphId,
+        override val id: MinionId,
+        override val campaignId: CampaignId,
+        override val dagId: DirectedAcyclicGraphId,
         pauseAtStart: Boolean = true,
         private val eventsLogger: EventsLogger,
         meterRegistry: MeterRegistry,
@@ -76,7 +75,7 @@ internal open class MinionImpl(
     /**
      * Latch suspending until all the jobs are complete.
      */
-    private val jobsCompletion = SuspendedCountLatch(0) {
+    private val jobsCompletion = SuspendedCountLatch {
         onCompleteHooks.forEach { it() }
         eventsLogger.info("minion-completed", tags = mapOf("campaign" to campaignId, "minion" to id))
     }
@@ -91,7 +90,7 @@ internal open class MinionImpl(
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private val executingStepsGauge: AtomicInteger =
         meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("campaign", campaignId), Tag.of("minion", id)),
-                AtomicInteger(0))
+                AtomicInteger())
 
     private val maintenancePeriodTimer = meterRegistry.timer("minion-maintenance", "campaign", campaignId, "minion", id)
 
@@ -141,28 +140,19 @@ internal open class MinionImpl(
         onCompleteHooks.add(block)
     }
 
-    /**
-     * Releases the start flag to resume the callers waiting for the minion to start.
-     */
-    suspend fun start() {
-        startLatch.release()
-        eventsLogger.info("minion-started", tags = mapOf("campaign" to campaignId, "minion" to id))
+    override suspend fun start() {
+        if (!isStarted()) {
+            startLatch.release()
+            eventsLogger.info("minion-started", tags = mapOf("campaign" to campaignId, "minion" to id))
+        }
     }
 
-    /**
-     * Returns {@code true} of the start flag was released.
-     */
-    @VisibleForTest
-    fun isStarted(): Boolean {
+
+    override fun isStarted(): Boolean {
         return !startLatch.isSuspended()
     }
 
-    /**
-     * Attaches a coroutine to the corresponding minion in order to monitor the activity state.
-     * When the job is completed, the counter is decreased and the completion flag is closed to release the
-     * [join][MinionImpl.join] function.
-     */
-    suspend fun attach(job: Job) {
+    override suspend fun attach(job: Job) {
         if (cancelled) {
             logger.trace("Minion $id was cancelled, received job is cancelled")
             job.cancel()
@@ -193,10 +183,7 @@ internal open class MinionImpl(
         }
     }
 
-    /**
-     * Cancels all running coroutines of the current minion.
-     */
-    suspend fun cancel() {
+    override suspend fun cancel() {
         logger.trace("Cancelling minion $id")
         cancelled = true
         startLatch.release()
@@ -217,23 +204,36 @@ internal open class MinionImpl(
         jobsCompletion.release()
     }
 
-    /**
-     * Suspend the caller until the minion has started.
-     */
     override suspend fun waitForStart() {
         startLatch.await()
     }
 
-    /**
-     * Waits for the minion to have all its jobs started and completed.
-     */
-    suspend fun join() {
+    override suspend fun join() {
         logger.trace("Joining minion $id")
         startLatch.await()
         executingLatch.await()
         jobsCompletion.await()
         logger.trace("Minion $id completed")
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MinionImpl) return false
+
+        if (id != other.id) return false
+        if (campaignId != other.campaignId) return false
+        if (dagId != other.dagId) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + campaignId.hashCode()
+        result = 31 * result + dagId.hashCode()
+        return result
+    }
+
 
     companion object {
         @JvmStatic

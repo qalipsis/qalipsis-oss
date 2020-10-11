@@ -1,15 +1,15 @@
 package io.qalipsis.core.factories.orchestration.directives.processors.minions
 
-import io.qalipsis.core.cross.directives.CampaignStartDirective
-import io.qalipsis.core.cross.directives.TestDescriptiveDirective
-import io.qalipsis.core.factories.orchestration.MinionsKeeper
-import io.qalipsis.core.factories.orchestration.ScenariosKeeper
-import io.qalipsis.test.mockk.WithMockk
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.orchestration.factories.MinionsKeeper
+import io.qalipsis.core.cross.directives.CampaignStartDirective
+import io.qalipsis.core.cross.directives.TestDescriptiveDirective
+import io.qalipsis.core.factories.orchestration.ScenariosRegistry
+import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -26,7 +26,7 @@ internal class CampaignStartDirectiveProcessorTest {
     lateinit var minionsKeeper: MinionsKeeper
 
     @RelaxedMockK
-    lateinit var scenariosKeeper: ScenariosKeeper
+    lateinit var scenariosRegistry: ScenariosRegistry
 
     @InjectMockKs
     lateinit var processorStart: CampaignStartDirectiveProcessor
@@ -36,7 +36,7 @@ internal class CampaignStartDirectiveProcessorTest {
     internal fun shouldAcceptMinionsStartDirective() {
         val directive =
             CampaignStartDirective("my-campaign", "my-scenario")
-        every { scenariosKeeper.hasScenario("my-scenario") } returns true
+        every { scenariosRegistry.contains("my-scenario") } returns true
 
         Assertions.assertTrue(processorStart.accept(directive))
     }
@@ -52,7 +52,7 @@ internal class CampaignStartDirectiveProcessorTest {
     internal fun shouldNotAcceptMinionsStartDirectiveForUnknownDag() {
         val directive =
             CampaignStartDirective("my-campaign", "my-scenario")
-        every { scenariosKeeper.hasScenario("my-scenario") } returns false
+        every { scenariosRegistry.contains("my-scenario") } returns false
 
         Assertions.assertFalse(processorStart.accept(directive))
     }

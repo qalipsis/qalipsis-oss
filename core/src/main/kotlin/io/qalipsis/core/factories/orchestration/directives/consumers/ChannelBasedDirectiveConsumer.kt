@@ -1,10 +1,10 @@
 package io.qalipsis.core.factories.orchestration.directives.consumers
 
-import io.qalipsis.core.cross.configuration.ENV_STANDALONE
-import io.qalipsis.core.cross.directives.inmemory.InMemoryDirectiveProducer
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.api.orchestration.directives.consumers.AbstractDirectiveConsumer
-import io.micronaut.context.annotation.Requires
+import io.qalipsis.core.cross.configuration.ENV_STANDALONE
+import io.qalipsis.core.cross.directives.inmemory.InMemoryDirectiveProducer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import javax.annotation.PostConstruct

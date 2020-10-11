@@ -1,11 +1,11 @@
 package io.qalipsis.core.interceptors
 
-import io.qalipsis.core.annotations.LogInput
-import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.annotations.LogOutput
 import io.micronaut.aop.MethodInterceptor
 import io.micronaut.aop.MethodInvocationContext
 import io.micronaut.inject.ExecutableMethod
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.annotations.LogOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level

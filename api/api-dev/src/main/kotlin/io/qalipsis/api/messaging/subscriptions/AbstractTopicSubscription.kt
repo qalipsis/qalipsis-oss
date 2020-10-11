@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.launch
@@ -48,11 +49,11 @@ internal abstract class AbstractTopicSubscription<T>(
             GlobalScope.launch {
                 while (active) {
                     select<Unit> {
-                        pollNotificationChannel.onReceive { _ ->
+                        pollNotificationChannel.onReceive {
                             timeout!!.cancel()
                             timeout = buildTimeout()
                         }
-                        timeout!!.onReceive { _ ->
+                        timeout!!.onReceive {
                             cancel()
                         }
                     }

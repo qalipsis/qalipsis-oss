@@ -1,8 +1,8 @@
 package io.qalipsis.core.factories.events
 
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventsLogger
-import io.micronaut.context.annotation.Requires
 import org.slf4j.LoggerFactory
 import javax.inject.Singleton
 

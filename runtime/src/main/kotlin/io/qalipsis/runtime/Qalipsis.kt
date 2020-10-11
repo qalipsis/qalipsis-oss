@@ -1,15 +1,15 @@
 package io.qalipsis.runtime
 
+import io.micronaut.context.ApplicationContext
+import io.micronaut.context.env.Environment
+import io.micronaut.runtime.Micronaut
+import io.qalipsis.api.factories.StartupFactoryComponent
+import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
 import io.qalipsis.core.cross.configuration.ENV_VOLATILE
-import io.qalipsis.api.factories.StartupFactoryComponent
-import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.core.heads.lifetime.ProcessBlocker
-import io.micronaut.context.ApplicationContext
-import io.micronaut.context.env.Environment
-import io.micronaut.runtime.Micronaut
 import kotlinx.coroutines.runBlocking
 import picocli.CommandLine
 import picocli.CommandLine.Command

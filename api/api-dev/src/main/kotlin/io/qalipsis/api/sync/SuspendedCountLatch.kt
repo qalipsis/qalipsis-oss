@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 class SuspendedCountLatch(
-    private var initialCount: Long,
+    private var initialCount: Long = 0,
     private val allowsNegative: Boolean = false,
     private val onReleaseAction: suspend (() -> Unit) = {}) {
 

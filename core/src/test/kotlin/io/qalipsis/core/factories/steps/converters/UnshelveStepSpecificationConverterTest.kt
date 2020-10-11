@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
@@ -15,7 +16,6 @@ import io.qalipsis.core.factories.steps.UnshelveStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -60,8 +60,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
         // then
         creationContext.createdStep!!.let {
             assertEquals("my-step", it.id)
-            assertThat(it).all {
-                isInstanceOf(UnshelveStep::class)
+            assertThat(it).isInstanceOf(UnshelveStep::class).all {
                 prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
                 prop("names").isSameAs(keys)
                 prop("delete").isEqualTo(true)
@@ -82,8 +81,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(UnshelveStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(UnshelveStep::class).all {
             prop("id").isNotNull()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("names").isSameAs(keys)
@@ -107,8 +105,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(SingularUnshelveStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(SingularUnshelveStep::class).all {
             prop("id").isNotNull()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("name").isEqualTo("value-1")

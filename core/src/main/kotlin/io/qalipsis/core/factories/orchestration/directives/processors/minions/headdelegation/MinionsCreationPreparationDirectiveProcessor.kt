@@ -4,17 +4,17 @@ import cool.graph.cuid.Cuid
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.api.orchestration.directives.Directive
+import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.api.orchestration.directives.DirectiveProducer
 import io.qalipsis.api.orchestration.directives.DirectiveRegistry
-import io.qalipsis.core.cross.directives.MinionsCreationDirective
-import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirectiveReference
 import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
-import io.qalipsis.api.orchestration.directives.DirectiveProcessor
-import io.qalipsis.core.factories.orchestration.ScenariosKeeper
+import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.cross.directives.MinionsCreationDirective
+import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirectiveReference
+import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Singleton
 
@@ -27,10 +27,10 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class MinionsCreationPreparationDirectiveProcessor(
-    private val scenariosKeeper: ScenariosKeeper,
-    private val directiveRegistry: DirectiveRegistry,
-    private val directiveProducer: DirectiveProducer,
-    private val feedbackProducer: FeedbackProducer
+        private val scenariosRegistry: ScenariosRegistry,
+        private val directiveRegistry: DirectiveRegistry,
+        private val directiveProducer: DirectiveProducer,
+        private val feedbackProducer: FeedbackProducer
 ) : DirectiveProcessor<MinionsCreationPreparationDirectiveReference> {
 
     val minions: MutableMap<ScenarioId, List<MinionId>> = ConcurrentHashMap()
@@ -38,17 +38,17 @@ internal class MinionsCreationPreparationDirectiveProcessor(
     @LogInputAndOutput
     override fun accept(directive: Directive): Boolean {
         if (directive is MinionsCreationPreparationDirectiveReference) {
-            return scenariosKeeper.hasScenario(directive.scenarioId)
+            return directive.scenarioId in scenariosRegistry
         }
         return false
     }
 
     override suspend fun process(directive: MinionsCreationPreparationDirectiveReference) {
-        scenariosKeeper.getScenario(directive.scenarioId)?.let { scenario ->
+        scenariosRegistry[directive.scenarioId]?.let { scenario ->
             directiveRegistry.read(directive)?.let { minionsCount ->
                 log.debug("Creating $minionsCount minions IDs for the scenario ${directive.scenarioId}")
                 feedbackProducer.publish(
-                    DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.IN_PROGRESS)
+                        DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.IN_PROGRESS)
                 )
                 val allMinions = mutableListOf<MinionId>()
                 for (i in 0 until minionsCount) {
@@ -58,8 +58,8 @@ internal class MinionsCreationPreparationDirectiveProcessor(
 
                 scenario.dags.forEach { dag ->
                     val minions = mutableListOf<MinionId>()
-                    if (dag.singleton) {
-                        // Singleton DAGs receive their own minion each.
+                    if (dag.isSingleton || !dag.isUnderLoad) {
+                        // DAGs not under load receive a unique minion.
                         minions.add(scenario.id + "-singleton-" + Cuid.createCuid())
                     } else {
                         minions.addAll(allMinions)
@@ -69,7 +69,7 @@ internal class MinionsCreationPreparationDirectiveProcessor(
                     directiveProducer.publish(minionsCreationDirective)
                 }
                 feedbackProducer.publish(
-                    DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.COMPLETED)
+                        DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.COMPLETED)
                 )
             }
         }

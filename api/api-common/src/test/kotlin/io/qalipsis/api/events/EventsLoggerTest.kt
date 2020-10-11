@@ -1,11 +1,11 @@
 package io.qalipsis.api.events
 
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.verifyOnce
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.verifyOnce
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

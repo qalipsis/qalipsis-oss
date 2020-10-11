@@ -3,8 +3,8 @@ package io.qalipsis.api.steps
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.scenario.MutableScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import java.time.Duration
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
@@ -28,7 +28,7 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     /**
      * The parent [ScenarioSpecification] to which the [StepSpecification] belongs.
      */
-    var scenario: @NotNull MutableScenarioSpecification?
+    var scenario: @NotNull StepSpecificationRegistry?
 
     /**
      * ID of the directed acyclic graph attached to the step.

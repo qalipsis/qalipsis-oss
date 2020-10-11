@@ -1,8 +1,8 @@
 package io.qalipsis.core.annotations
 
-import io.qalipsis.core.interceptors.LoggingInterceptor
 import io.micronaut.aop.Around
 import io.micronaut.context.annotation.Type
+import io.qalipsis.core.interceptors.LoggingInterceptor
 import org.slf4j.event.Level
 import java.lang.annotation.Inherited
 

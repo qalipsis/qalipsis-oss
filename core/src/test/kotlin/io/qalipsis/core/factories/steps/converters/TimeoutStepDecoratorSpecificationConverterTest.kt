@@ -1,12 +1,16 @@
-package io.qalipsis.core.factories.steps.topicmirror
+package io.qalipsis.core.factories.steps.topicrelatedsteps
 
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
+import io.micrometer.core.instrument.MeterRegistry
+import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
@@ -15,10 +19,6 @@ import io.qalipsis.core.factories.steps.TimeoutStepDecorator
 import io.qalipsis.core.factories.steps.converters.TimeoutStepDecoratorSpecificationConverter
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
-import io.micrometer.core.instrument.MeterRegistry
-import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -35,7 +35,7 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     lateinit var meterRegistry: MeterRegistry
 
     @RelaxedMockK
-    lateinit var scenarioSpecification: MutableScenarioSpecification
+    lateinit var scenarioSpecification: StepSpecificationRegistry
 
     @RelaxedMockK
     lateinit var directedAcyclicGraph: DirectedAcyclicGraph
@@ -68,8 +68,7 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(TimeoutStepDecorator::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(TimeoutStepDecorator::class).all {
             prop("timeout").isEqualTo(Duration.ofMillis(123))
             prop("decorated").isSameAs(decoratedStep)
             prop("meterRegistry").isSameAs(meterRegistry)

@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import io.mockk.every
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.SimpleStepSpecification
@@ -15,7 +16,6 @@ import io.qalipsis.core.factories.steps.SimpleStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import io.mockk.every
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -55,8 +55,7 @@ internal class SimpleStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(SimpleStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(SimpleStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("retryPolicy").isSameAs(spec.retryPolicy)
             prop("specification").isSameAs(blockSpecification)
@@ -80,8 +79,7 @@ internal class SimpleStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(SimpleStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(SimpleStep::class).all {
             prop("id").isNotNull()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("specification").isSameAs(blockSpecification)

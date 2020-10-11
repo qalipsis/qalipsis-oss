@@ -50,12 +50,11 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // when
         runBlocking {
             converter.convert<String, Int>(
-                creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>)
+                    creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>)
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(CatchExhaustedContextStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("block").isSameAs(blockSpecification)
         }
@@ -72,12 +71,11 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // when
         runBlocking {
             converter.convert<String, Int>(
-                creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>)
+                    creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>)
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(CatchExhaustedContextStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
             prop("id").isNotNull()
             prop("block").isSameAs(blockSpecification)
         }

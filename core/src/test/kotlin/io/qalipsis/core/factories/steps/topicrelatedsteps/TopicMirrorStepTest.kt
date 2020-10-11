@@ -1,10 +1,10 @@
-package io.qalipsis.core.factories.steps.topicmirror
+package io.qalipsis.core.factories.steps.topicrelatedsteps
 
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals

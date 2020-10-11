@@ -1,10 +1,10 @@
 package io.qalipsis.api.steps
 
 import cool.graph.cuid.Cuid
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.scenario.ScenarioSpecification
-import io.micronaut.core.annotation.Introspected
 import java.time.Duration
 import javax.validation.constraints.NotBlank
 

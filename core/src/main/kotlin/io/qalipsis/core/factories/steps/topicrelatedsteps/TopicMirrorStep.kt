@@ -1,4 +1,4 @@
-package io.qalipsis.core.factories.steps.topicmirror
+package io.qalipsis.core.factories.steps.topicrelatedsteps
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
@@ -40,11 +40,11 @@ internal open class TopicMirrorStep<I, T>(
         if (context.isTail) {
             topic.complete()
         } else {
-            // Consume the data emitted by the decorated step to populate the broadcast channel to the proxy steps.
+            // Consumes the data emitted by the previous step to populate the broadcast channel to the proxy steps.
             val value = context.input.receive()
             if (predicate(context, value)) {
-                log.trace("Forwarding one record")
-                topic.produceValue(wrap(context, value))
+                val record = wrap(context, value)
+                topic.produceValue(record)
             }
             context.output.send(value)
         }

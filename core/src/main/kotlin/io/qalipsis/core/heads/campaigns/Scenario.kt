@@ -19,8 +19,9 @@ data class HeadScenario(
  * Entity to provide metadata of a directed acyclic graph for the head.
  */
 data class HeadDirectedAcyclicGraph(
-    val id: DirectedAcyclicGraphId,
-    val singleton: Boolean = false,
-    val scenarioStart: Boolean = false,
-    val numberOfSteps: Int = 0
+        val id: DirectedAcyclicGraphId,
+        val isSingleton: Boolean = false,
+        val isRoot: Boolean = false,
+        val isUnderLoad: Boolean = false,
+        val numberOfSteps: Int = 0
 )

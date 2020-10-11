@@ -1,10 +1,5 @@
 package io.qalipsis.core.factories.steps
 
-import io.qalipsis.api.steps.Step
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.coVerifyOnce
-import io.qalipsis.test.mockk.verifyOnce
-import io.qalipsis.test.steps.StepTestHelper
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.coEvery
@@ -13,6 +8,11 @@ import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
+import io.qalipsis.api.steps.Step
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.verifyOnce
+import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay

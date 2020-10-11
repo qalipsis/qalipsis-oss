@@ -1,14 +1,14 @@
 package io.qalipsis.core.factories.steps
 
-import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.verifyOnce
-import io.qalipsis.test.steps.StepTestHelper
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.verifyOnce
+import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals

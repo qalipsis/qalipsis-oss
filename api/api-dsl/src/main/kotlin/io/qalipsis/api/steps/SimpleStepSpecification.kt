@@ -1,9 +1,9 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.scenario.MutableScenarioSpecification
-import io.qalipsis.api.scenario.ScenarioSpecification
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.scenario.ScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 
 /**
  * Specification for a [io.qalipsis.core.factories.steps.SimpleStep].
@@ -25,7 +25,7 @@ data class SimpleStepSpecification<INPUT, OUTPUT>(
 fun <OUTPUT> ScenarioSpecification.execute(
         specification: suspend (context: StepContext<Unit, OUTPUT>) -> Unit): SimpleStepSpecification<Unit, OUTPUT> {
     val step = SimpleStepSpecification(specification)
-    (this as MutableScenarioSpecification).add(step)
+    (this as StepSpecificationRegistry).add(step)
     return step
 }
 
@@ -40,7 +40,7 @@ fun <OUTPUT> ScenarioSpecification.returns(value: OUTPUT): SimpleStepSpecificati
     val step = SimpleStepSpecification<Unit, OUTPUT> {
         it.output.send(value)
     }
-    (this as MutableScenarioSpecification).add(step)
+    (this as StepSpecificationRegistry).add(step)
     return step
 }
 
@@ -56,7 +56,7 @@ fun <OUTPUT> ScenarioSpecification.returns(
     val step = SimpleStepSpecification<Unit, OUTPUT> {
         it.output.send(specification(it))
     }
-    (this as MutableScenarioSpecification).add(step)
+    (this as StepSpecificationRegistry).add(step)
     return step
 }
 

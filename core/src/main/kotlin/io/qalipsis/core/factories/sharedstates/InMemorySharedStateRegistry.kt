@@ -3,11 +3,11 @@ package io.qalipsis.core.factories.sharedstates
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
+import io.micronaut.context.annotation.Requires
+import io.micronaut.context.annotation.Value
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
-import io.micronaut.context.annotation.Requires
-import io.micronaut.context.annotation.Value
 import java.time.Duration
 import javax.inject.Singleton
 

@@ -1,12 +1,12 @@
 package io.qalipsis.core.factories.steps
 
+import io.mockk.confirmVerified
+import io.mockk.every
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
-import io.mockk.confirmVerified
-import io.mockk.every
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -1,7 +1,7 @@
 package io.qalipsis.runtime
 
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.micronaut.context.annotation.Context
+import io.qalipsis.api.logging.LoggerHelper.logger
 
 /**
  *

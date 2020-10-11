@@ -1,34 +1,32 @@
 package io.qalipsis.core.factories.steps.singleton
 
 import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.StepId
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.StepSpecification
 import java.time.Duration
 
 /**
  * Specification for a [io.qalipsis.api.steps.Step] running behind a singleton.
  *
+ *
+ * @property topic topic to transport the data from the singleton step to another one
  * @param T type ot of the output of the decorated step.
  *
  * @author Eric Jessé
  */
 internal open class SingletonProxyStepSpecification<T>(
-
+        val singletonStepId: StepId,
         val next: StepSpecification<T, *, *>,
-
-        /**
-         * Configuration of the singleton.
-         */
-        val topic: Topic<T>,
-
-        ) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
+        val topic: Topic<T>
+) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
 
     override var name: StepName? = null
 
-    override var scenario: MutableScenarioSpecification? = next.scenario
+    override var scenario: StepSpecificationRegistry? = next.scenario
 
     override var timeout: Duration? = null
 

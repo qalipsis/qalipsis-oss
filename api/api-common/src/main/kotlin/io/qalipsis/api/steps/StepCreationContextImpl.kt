@@ -1,8 +1,8 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.scenario.MutableScenarioSpecification
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.orchestration.DirectedAcyclicGraph
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import javax.validation.Valid
 
 /**
@@ -13,7 +13,7 @@ import javax.validation.Valid
 @Introspected
 class StepCreationContextImpl<SPEC : StepSpecification<*, *, *>>(
 
-        override val scenarioSpecification: MutableScenarioSpecification,
+        override val scenarioSpecification: StepSpecificationRegistry,
 
         override val directedAcyclicGraph: DirectedAcyclicGraph,
 

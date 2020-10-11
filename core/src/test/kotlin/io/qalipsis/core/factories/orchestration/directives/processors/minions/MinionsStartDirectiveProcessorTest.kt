@@ -1,18 +1,18 @@
 package io.qalipsis.core.factories.orchestration.directives.processors.minions
 
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
-import io.qalipsis.core.cross.directives.MinionStartDefinition
-import io.qalipsis.core.cross.directives.MinionsStartDirectiveReference
-import io.qalipsis.core.cross.directives.TestDescriptiveDirective
-import io.qalipsis.core.factories.orchestration.MinionsKeeper
-import io.qalipsis.core.factories.orchestration.ScenariosKeeper
-import io.qalipsis.test.mockk.WithMockk
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.orchestration.directives.DirectiveRegistry
+import io.qalipsis.api.orchestration.factories.MinionsKeeper
+import io.qalipsis.core.cross.directives.MinionStartDefinition
+import io.qalipsis.core.cross.directives.MinionsStartDirectiveReference
+import io.qalipsis.core.cross.directives.TestDescriptiveDirective
+import io.qalipsis.core.factories.orchestration.ScenariosRegistry
+import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -33,7 +33,7 @@ internal class MinionsStartDirectiveProcessorTest {
     lateinit var minionsKeeper: MinionsKeeper
 
     @RelaxedMockK
-    lateinit var scenariosKeeper: ScenariosKeeper
+    lateinit var scenariosRegistry: ScenariosRegistry
 
     @InjectMockKs
     lateinit var processor: MinionsStartDirectiveProcessor
@@ -44,7 +44,7 @@ internal class MinionsStartDirectiveProcessorTest {
         val directive =
             MinionsStartDirectiveReference("my-directive",
                 "my-scenario")
-        every { scenariosKeeper.hasScenario("my-scenario") } returns true
+        every { scenariosRegistry.contains("my-scenario") } returns true
 
         Assertions.assertTrue(processor.accept(directive))
     }
@@ -61,7 +61,7 @@ internal class MinionsStartDirectiveProcessorTest {
         val directive =
             MinionsStartDirectiveReference("my-directive",
                 "my-scenario")
-        every { scenariosKeeper.hasScenario("my-scenario") } returns false
+        every { scenariosRegistry.contains("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
     }

@@ -51,8 +51,7 @@ internal class PaceStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(PaceStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(PaceStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("specification").isSameAs(blockSpecification)
         }
@@ -72,8 +71,7 @@ internal class PaceStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(PaceStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(PaceStep::class).all {
             prop("id").isNotNull()
             prop("specification").isSameAs(blockSpecification)
         }

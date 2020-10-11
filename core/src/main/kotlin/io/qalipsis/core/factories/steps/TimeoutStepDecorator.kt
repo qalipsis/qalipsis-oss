@@ -1,12 +1,12 @@
 package io.qalipsis.core.factories.steps
 
+import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepExecutor
-import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import java.time.Duration

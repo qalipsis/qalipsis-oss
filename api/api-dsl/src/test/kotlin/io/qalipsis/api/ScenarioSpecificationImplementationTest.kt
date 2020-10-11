@@ -1,15 +1,26 @@
 package io.qalipsis.api
 
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.containsAll
+import assertk.assertions.isNotEqualTo
+import assertk.assertions.isNotNull
+import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.scenario.scenariosSpecifications
 import io.qalipsis.api.steps.AbstractStepSpecification
+import io.qalipsis.api.steps.SingletonConfiguration
+import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /**
  * @author Eric Jessé
@@ -30,7 +41,7 @@ internal class ScenarioSpecificationImplementationTest {
             rampUp {
                 strategy(rampUpStrategy)
             }
-        } as ScenarioSpecificationImplementation
+        } as ConfiguredScenarioSpecification
 
         assertSame(rampUpStrategy, scenario.rampUpStrategy)
         assertSame(scenario, scenariosSpecifications["my-scenario"])
@@ -38,8 +49,7 @@ internal class ScenarioSpecificationImplementationTest {
 
     @Test
     internal fun `should register step with a name`() {
-        val scenario = scenario(
-                "my-scenario") as ScenarioSpecificationImplementation
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
         val step = TestStep()
         step.name = "my-name"
 
@@ -53,8 +63,7 @@ internal class ScenarioSpecificationImplementationTest {
 
     @Test
     internal fun `should not register step with an empty name`() {
-        val scenario = scenario(
-                "my-scenario") as ScenarioSpecificationImplementation
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
         val step = TestStep()
         step.name = ""
 
@@ -68,8 +77,7 @@ internal class ScenarioSpecificationImplementationTest {
 
     @Test
     internal fun `should not register step with a null name`() {
-        val scenario = scenario(
-                "my-scenario") as ScenarioSpecificationImplementation
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
         val step = TestStep()
         step.name = null
 
@@ -81,6 +89,41 @@ internal class ScenarioSpecificationImplementationTest {
         assertTrue(scenario.registeredSteps.isEmpty())
     }
 
-    inner class TestStep : AbstractStepSpecification<Unit, Unit, TestStep>()
+    @Test
+    internal fun `should not accept start() twice`() {
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
 
+        scenario.start()
+
+        assertThrows<IllegalArgumentException> { scenario.start() }
+    }
+
+    @Test
+    internal fun `should mark all dags after start under load`() {
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val step = TestStep()
+        step.name = null
+        val scenarioWithStart = scenario.start() as StepSpecificationRegistry
+
+        scenarioWithStart.add(step)
+        assertNotNull(step.directedAcyclicGraphId)
+
+        val singletonStep = SingletonTestStep()
+        step.add(singletonStep)
+        assertThat(singletonStep.directedAcyclicGraphId).all {
+            isNotNull()
+            isNotEqualTo(step.directedAcyclicGraphId)
+        }
+        assertThat(scenario.dagsUnderLoad).containsAll(step.directedAcyclicGraphId,
+                singletonStep.directedAcyclicGraphId)
+    }
+
+    private inner class TestStep : AbstractStepSpecification<Unit, Unit, TestStep>()
+
+    private inner class SingletonTestStep : AbstractStepSpecification<Unit, Unit, SingletonTestStep>(),
+        SingletonStepSpecification<Unit, Unit, SingletonTestStep> {
+
+        override val singletonConfiguration: SingletonConfiguration
+            get() = relaxedMockk { }
+    }
 }

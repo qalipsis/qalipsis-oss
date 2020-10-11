@@ -1,12 +1,12 @@
 package io.qalipsis.api.processors
 
+import io.micronaut.context.ApplicationContext
+import io.micronaut.context.env.Environment
+import io.mockk.every
 import io.qalipsis.test.io.readFile
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.mockk.verifyOnce
-import io.micronaut.context.ApplicationContext
-import io.micronaut.context.env.Environment
-import io.mockk.every
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.time.Duration

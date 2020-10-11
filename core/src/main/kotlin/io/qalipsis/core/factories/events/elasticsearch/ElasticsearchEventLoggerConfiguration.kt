@@ -1,7 +1,7 @@
 package io.qalipsis.core.factories.events.elasticsearch
 
-import io.qalipsis.api.events.EventLevel
 import io.micronaut.context.annotation.ConfigurationProperties
+import io.qalipsis.api.events.EventLevel
 import java.time.Duration
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank

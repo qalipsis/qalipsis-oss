@@ -2,13 +2,6 @@ package io.qalipsis.core.factories.events.elasticsearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.qalipsis.api.annotations.VisibleForTest
-import io.qalipsis.api.events.EventGeoPoint
-import io.qalipsis.api.events.EventRange
-import io.qalipsis.api.lang.durationSinceNanos
-import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.core.factories.events.Event
-import io.qalipsis.core.factories.eventslogger.BufferedEventsLogger
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.ProxyBuilder
 import io.ktor.client.engine.apache.Apache
@@ -29,6 +22,13 @@ import io.ktor.util.KtorExperimentalAPI
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.util.StringEscapeUtils
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.annotations.VisibleForTest
+import io.qalipsis.api.events.EventGeoPoint
+import io.qalipsis.api.events.EventRange
+import io.qalipsis.api.lang.durationSinceNanos
+import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.factories.events.Event
+import io.qalipsis.core.factories.eventslogger.BufferedEventsLogger
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch

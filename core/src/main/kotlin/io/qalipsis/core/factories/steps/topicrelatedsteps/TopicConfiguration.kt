@@ -1,35 +1,27 @@
-package io.qalipsis.core.factories.steps.topicmirror
+package io.qalipsis.core.factories.steps.topicrelatedsteps
 
 import java.time.Duration
 
 /**
  *
+ * @property type type of the topic to create
+ * @property bufferSize size of the buffer to keep data before the minions are ready to read them
+ * @property idleTimeout time to idle of a subscription: once idle a subscription passed this duration, it is automatically cancelled, when set to `Duration.ZERO` (default) or less, there is no timeout.
+ *
  * @author Eric Jessé
  */
 internal class TopicConfiguration(
-        /**
-         * Nature of the topic to create.
-         */
         var type: TopicType = TopicType.UNICAST,
-
-        /**
-         * Size of the buffer to keep data before the minions are ready to read them.
-         */
         var bufferSize: Int = 0,
-
-        /**
-         * Time to idle of a subscription. Once idle a subscription passed this duration, it is automatically cancelled.
-         * When set to `Duration.ZERO` (default) or less, there is no timeout.
-         */
         var idleTimeout: Duration = Duration.ZERO
 )
 
 /**
- * Defines how a [OutputTopicStepDecorator] will distribute the data to its siblings.
+ * Defines how the [io.qalipsis.api.steps.Step] feeding the topic will distribute the data to its descendants.
  *
  * @author Eric Jessé
  */
-internal enum class TopicType() {
+internal enum class TopicType {
     /**
      * Each record is provided only once to a unique minion. The topic acts as a FIFO-Provider.
      */

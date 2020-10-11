@@ -10,10 +10,11 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
-import io.qalipsis.core.factories.steps.topicmirror.TopicBuilder
-import io.qalipsis.core.factories.steps.topicmirror.TopicConfiguration
-import io.qalipsis.core.factories.steps.topicmirror.TopicMirrorStep
-import io.qalipsis.core.factories.steps.topicmirror.TopicType
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicBuilder
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicConfiguration
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicDataPushStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicType
 
 /**
  * Decorator of [SingletonStepSpecification] by adding it a [TopicMirrorStep] as next and converter from
@@ -59,7 +60,7 @@ internal class SingletonStepSpecificationConverter :
                 // If the wrapped step is itself a singleton, the SingletonProxyStep should loop endless on the first execution
                 // to make sure that all the available data from the topic are consumed.
                 @Suppress("UNCHECKED_CAST")
-                SingletonProxyStepSpecification(it as StepSpecification<Any?, *, *>, topic)
+                SingletonProxyStepSpecification(decoratedStep.id, it as StepSpecification<Any?, *, *>, topic)
             }
         }
     }
@@ -71,9 +72,13 @@ internal class SingletonStepSpecificationConverter :
     override suspend fun <I, O> convert(creationContext: StepCreationContext<SingletonProxyStepSpecification<*>>) {
         val spec = creationContext.stepSpecification
 
-        // The singleton step will makes the link between the data source step `outputStep` and the next steps
-        // using the topic and subscriptions for each minion.
-        val step = SingletonProxyStep(spec.name ?: Cuid.createCuid(), spec.topic)
+        val step = if (creationContext.directedAcyclicGraph.isUnderLoad) {
+            // When a minion is executing the SingletonProxyStep, a record will be polled from the topic if any.
+            SingletonProxyStep(spec.name ?: Cuid.createCuid(), spec.topic)
+        } else {
+            // This DAG is not receiving any minion, so the next step has to be .
+            TopicDataPushStep(spec.name ?: Cuid.createCuid(), spec.singletonStepId, spec.topic)
+        }
         creationContext.createdStep(step)
     }
 

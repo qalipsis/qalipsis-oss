@@ -2,8 +2,8 @@ package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
-import io.qalipsis.api.scenario.MutableScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 
 /**
  * Wrapper designed to call the steps of a plugin only on typed scenarios.
@@ -19,10 +19,16 @@ import io.qalipsis.api.scenario.ScenarioSpecification
  *
  * @author Eric Jessé
  */
-abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecification) : MutableScenarioSpecification,
+abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecification) : StepSpecificationRegistry,
     ScenarioSpecification {
 
-    private val wrappedScenario = scenario as MutableScenarioSpecification
+    private val wrappedScenario = scenario as StepSpecificationRegistry
+
+    override val rootSteps: List<StepSpecification<*, *, *>>
+        get() = wrappedScenario.rootSteps
+
+    override val dagsUnderLoad: Collection<DirectedAcyclicGraphId>
+        get() = wrappedScenario.dagsUnderLoad
 
     override fun add(step: StepSpecification<*, *, *>) {
         wrappedScenario.add(step)
@@ -44,7 +50,7 @@ abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecificat
         return wrappedScenario.exists(stepName)
     }
 
-    override fun buildDagId(): DirectedAcyclicGraphId {
+    override fun buildDagId(parent: DirectedAcyclicGraphId?): DirectedAcyclicGraphId {
         return wrappedScenario.buildDagId()
     }
 }

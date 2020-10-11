@@ -1,12 +1,12 @@
 package io.qalipsis.core.factories.steps.converters
 
+import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.core.factories.steps.TimeoutStepDecorator
-import io.micrometer.core.instrument.MeterRegistry
 
 /**
  * [StepSpecificationDecoratorConverter] from any [AbstractStepSpecification] to [TimeoutStepDecorator].
