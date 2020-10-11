@@ -4,7 +4,7 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import java.time.Duration
 
 /**
@@ -29,7 +29,7 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
             wrappedStepSpec.name = value
         }
 
-    override var scenario: MutableScenarioSpecification?
+    override var scenario: StepSpecificationRegistry?
         get() = wrappedStepSpec.scenario
         set(value) {
             wrappedStepSpec.scenario = value

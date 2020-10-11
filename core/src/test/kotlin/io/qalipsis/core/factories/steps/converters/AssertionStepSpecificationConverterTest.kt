@@ -51,8 +51,7 @@ internal class AssertionStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(AssertionStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(AssertionStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
@@ -73,8 +72,7 @@ internal class AssertionStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(AssertionStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(AssertionStep::class).all {
             prop("id").isNotNull()
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)

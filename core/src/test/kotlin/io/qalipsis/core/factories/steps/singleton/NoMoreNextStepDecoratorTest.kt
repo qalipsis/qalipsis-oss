@@ -1,15 +1,16 @@
 package io.qalipsis.core.factories.steps.singleton
 
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.Step
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -97,12 +98,13 @@ internal class NoMoreNextStepDecoratorTest {
     @Timeout(1)
     internal fun `should start decorated`() {
         val step = NoMoreNextStepDecorator(decoratedStep)
+        val startStopContext = relaxedMockk<StepStartStopContext>()
 
         runBlocking {
-            step.start()
+            step.start(startStopContext)
         }
         coVerifyOnce {
-            decoratedStep.start()
+            decoratedStep.start(refEq(startStopContext))
         }
     }
 
@@ -110,12 +112,13 @@ internal class NoMoreNextStepDecoratorTest {
     @Timeout(1)
     internal fun `should stop decorated`() {
         val step = NoMoreNextStepDecorator(decoratedStep)
+        val startStopContext = relaxedMockk<StepStartStopContext>()
 
         runBlocking {
-            step.stop()
+            step.stop(startStopContext)
         }
         coVerifyOnce {
-            decoratedStep.stop()
+            decoratedStep.stop(refEq(startStopContext))
         }
     }
 

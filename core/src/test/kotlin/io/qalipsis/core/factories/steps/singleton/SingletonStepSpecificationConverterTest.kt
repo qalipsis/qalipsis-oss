@@ -7,8 +7,14 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
+import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockkObject
+import io.mockk.slot
+import io.mockk.unmockkObject
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.messaging.Topic
+import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
 import io.qalipsis.api.steps.SingletonStepSpecification
@@ -17,25 +23,22 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.StepSpecification
-import io.qalipsis.core.factories.steps.topicmirror.TopicBuilder
-import io.qalipsis.core.factories.steps.topicmirror.TopicConfiguration
-import io.qalipsis.core.factories.steps.topicmirror.TopicMirrorStep
-import io.qalipsis.core.factories.steps.topicmirror.TopicType
+import io.qalipsis.core.factories.orchestration.Runner
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicBuilder
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicConfiguration
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicDataPushStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicType
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.mockkObject
-import io.mockk.slot
-import io.mockk.unmockkObject
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -59,15 +62,11 @@ internal class SingletonStepSpecificationConverterTest :
     @RelaxedMockK
     lateinit var dataTransferTopic: Topic<String>
 
-    @BeforeAll
-    internal fun setUpAll() {
-        mockkObject(TopicBuilder)
-    }
+    @RelaxedMockK
+    lateinit var minionsKeeper: MinionsKeeper
 
-    @AfterAll
-    internal fun tearDownAll() {
-        unmockkObject(TopicBuilder)
-    }
+    @RelaxedMockK
+    lateinit var runner: Runner
 
     @Test
     internal fun `should have order 100`() {
@@ -164,24 +163,26 @@ internal class SingletonStepSpecificationConverterTest :
     @Test
     override fun `should support expected spec`() {
         // when+then
-        Assertions.assertTrue(converter.support(relaxedMockk<SingletonProxyStepSpecification<*>>()))
+        assertTrue(converter.support(relaxedMockk<SingletonProxyStepSpecification<*>>()))
     }
 
     @Test
     override fun `should not support unexpected spec`() {
         // when+then
-        Assertions.assertFalse(converter.support(relaxedMockk()))
+        assertFalse(converter.support(relaxedMockk()))
     }
 
     @Test
-    internal fun `should convert spec without name`() {
+    internal fun `should convert spec without name into a SingletonProxyStep`() {
         // given
         every { TopicBuilder.build<String>(any()) } returns dataTransferTopic
         val nextStep: StepSpecification<String, *, *> = relaxedMockk()
         val spec = SingletonProxyStepSpecification(
+                "my-singleton",
                 nextStep,
                 dataTransferTopic
         )
+        every { directedAcyclicGraph.isUnderLoad } returns true
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -192,11 +193,54 @@ internal class SingletonStepSpecificationConverterTest :
         // then
         creationContext.createdStep!!.let { step ->
             assertNotNull(step.id)
-            assertThat(step).all {
-                isInstanceOf(SingletonProxyStep::class)
+            assertThat(step).isInstanceOf(SingletonProxyStep::class).all {
                 typedProp<Topic<String>>("topic").isSameAs(dataTransferTopic)
             }
         }
+    }
+
+    @Test
+    internal fun `should convert spec without name into a TopicDataPushStep`() {
+        // given
+        every { TopicBuilder.build<String>(any()) } returns dataTransferTopic
+        val nextStep: StepSpecification<String, *, *> = relaxedMockk()
+        val spec = SingletonProxyStepSpecification(
+                "my-singleton",
+                nextStep,
+                dataTransferTopic
+        )
+        every { directedAcyclicGraph.isUnderLoad } returns false
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
+
+        // when
+        runBlocking {
+            converter.convert<String, Int>(creationContext as StepCreationContext<SingletonProxyStepSpecification<*>>)
+        }
+
+        // then
+        creationContext.createdStep!!.let { step ->
+            assertNotNull(step.id)
+            assertThat(step).isInstanceOf(TopicDataPushStep::class).all {
+                typedProp<Topic<String>>("parentStepId").isEqualTo("my-singleton")
+                typedProp<Topic<String>>("topic").isSameAs(dataTransferTopic)
+            }
+        }
+    }
+
+    companion object {
+
+        @BeforeAll
+        @JvmStatic
+        fun setUpAll() {
+            mockkObject(TopicBuilder)
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun tearDownAll() {
+            unmockkObject(TopicBuilder)
+        }
+
     }
 
     inner class TestSingletonSpecification(

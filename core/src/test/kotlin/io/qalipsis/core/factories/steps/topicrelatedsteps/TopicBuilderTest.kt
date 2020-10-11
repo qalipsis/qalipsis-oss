@@ -1,4 +1,4 @@
-package io.qalipsis.core.factories.steps.topicmirror
+package io.qalipsis.core.factories.steps.topicrelatedsteps
 
 import assertk.all
 import assertk.assertThat

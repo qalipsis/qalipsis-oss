@@ -5,8 +5,11 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
+import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
@@ -14,9 +17,6 @@ import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.core.factories.steps.IterativeStepDecorator
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
-import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -30,7 +30,7 @@ import java.time.Duration
 internal class IterativeStepDecoratorSpecificationConverterTest {
 
     @RelaxedMockK
-    lateinit var scenarioSpecification: MutableScenarioSpecification
+    lateinit var scenarioSpecification: StepSpecificationRegistry
 
     @RelaxedMockK
     lateinit var directedAcyclicGraph: DirectedAcyclicGraph
@@ -64,8 +64,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(IterativeStepDecorator::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(IterativeStepDecorator::class).all {
             prop("iterations").isEqualTo(123L)
             prop("delayMillis").isEqualTo(0L)
             prop("decorated").isSameAs(decoratedStep)
@@ -86,8 +85,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(IterativeStepDecorator::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(IterativeStepDecorator::class).all {
             prop("iterations").isEqualTo(123L)
             prop("delayMillis").isEqualTo(0L)
             prop("decorated").isSameAs(decoratedStep)

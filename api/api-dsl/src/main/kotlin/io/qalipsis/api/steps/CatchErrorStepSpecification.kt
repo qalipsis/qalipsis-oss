@@ -1,7 +1,7 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.StepError
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.context.StepError
 
 /**
  * Specification for a [io.qalipsis.core.factories.steps.CatchErrorStep].

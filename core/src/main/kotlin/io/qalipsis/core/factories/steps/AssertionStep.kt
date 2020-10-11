@@ -1,12 +1,12 @@
 package io.qalipsis.core.factories.steps
 
+import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
-import io.micrometer.core.instrument.MeterRegistry
 
 /**
  * Step to assert data.

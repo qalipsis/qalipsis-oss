@@ -2,6 +2,11 @@ package io.qalipsis.core.factories.orchestration
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
+import io.mockk.confirmVerified
+import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -12,11 +17,6 @@ import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.time.QalipsisTimeAssertions.assertLongerOrEqualTo
 import io.qalipsis.test.time.coMeasureTime
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
-import io.mockk.confirmVerified
-import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay

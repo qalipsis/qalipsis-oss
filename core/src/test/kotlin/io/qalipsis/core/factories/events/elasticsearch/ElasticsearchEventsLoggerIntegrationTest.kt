@@ -2,11 +2,6 @@ package io.qalipsis.core.factories.events.elasticsearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.qalipsis.api.events.EventGeoPoint
-import io.qalipsis.api.events.EventRange
-import io.qalipsis.core.factories.eventslogger.elasticsearch.ElasticsearchEventsLoggerTest
-import io.qalipsis.test.coroutines.CleanCoroutines
-import io.qalipsis.test.mockk.relaxedMockk
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.Charsets
@@ -16,6 +11,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.every
+import io.qalipsis.api.events.EventGeoPoint
+import io.qalipsis.api.events.EventRange
+import io.qalipsis.core.factories.eventslogger.elasticsearch.ElasticsearchEventsLoggerTest
+import io.qalipsis.test.coroutines.CleanCoroutines
+import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.assertDoesNotThrow

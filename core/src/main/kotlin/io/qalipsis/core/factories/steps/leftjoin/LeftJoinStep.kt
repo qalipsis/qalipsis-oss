@@ -6,6 +6,7 @@ import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.sync.Latch
@@ -72,7 +73,7 @@ internal class LeftJoinStep<I, O>(
 
     private var running = false
 
-    override suspend fun start() {
+    override suspend fun start(context: StepStartStopContext) {
         // Starts the coroutines to buffer the data coming from the right steps into the local cache.
         val stepId = this.id
         rightCorrelations.forEach { corr ->
@@ -98,7 +99,7 @@ internal class LeftJoinStep<I, O>(
         running = true
     }
 
-    override suspend fun stop() {
+    override suspend fun stop(context: StepStartStopContext) {
         running = false
         consumptionJobs.forEach { it.cancel() }
         rightCorrelations.forEach { it.topic.close() }

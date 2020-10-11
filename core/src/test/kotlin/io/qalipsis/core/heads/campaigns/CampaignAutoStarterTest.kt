@@ -1,17 +1,17 @@
 package io.qalipsis.core.heads.campaigns
 
-import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
-import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
+import io.mockk.coEvery
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
+import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
+import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.mockk.coEvery
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.junit.jupiter.api.Test

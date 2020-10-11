@@ -3,7 +3,7 @@ package io.qalipsis.api.steps
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.scenario.MutableScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import java.time.Duration
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
@@ -22,7 +22,7 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
 
     override var name: StepName? = null
 
-    override var scenario: @NotNull MutableScenarioSpecification? = null
+    override var scenario: @NotNull StepSpecificationRegistry? = null
 
     override var directedAcyclicGraphId: @NotNull DirectedAcyclicGraphId? = null
 

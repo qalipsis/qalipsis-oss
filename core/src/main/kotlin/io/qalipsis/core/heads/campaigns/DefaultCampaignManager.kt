@@ -1,5 +1,6 @@
 package io.qalipsis.core.heads.campaigns
 
+import io.micronaut.context.annotation.Value
 import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
@@ -21,7 +22,6 @@ import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
 import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirective
 import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
-import io.micronaut.context.annotation.Value
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -311,7 +311,7 @@ internal class DefaultCampaignManager(
      * Mark the scenario ready and triggers [onAllScenariosReady] if all the others are ready.
      */
     private suspend fun onScenarioStarted(campaignId: CampaignId, scenarioId: ScenarioId) {
-        log.debug("Campaign ${campaignId}, scenario ${scenarioId} - All minions were created")
+        log.debug("Campaign $campaignId, scenario $scenarioId - All minions were created")
         startedScenarios.add(scenarioId)
         if (startedScenarios.size == scenarios.keys.size) {
             onAllScenariosStarted(campaignId)

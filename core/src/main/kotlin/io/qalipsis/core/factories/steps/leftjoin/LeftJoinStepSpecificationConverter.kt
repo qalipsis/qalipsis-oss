@@ -12,7 +12,7 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.core.factories.steps.singleton.NoMoreNextStepDecorator
-import io.qalipsis.core.factories.steps.topicmirror.TopicMirrorStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
 
 /**
  * [StepSpecificationConverter] from [LeftJoinStepSpecification] to [LeftJoinStep].

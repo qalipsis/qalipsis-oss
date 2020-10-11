@@ -1,7 +1,8 @@
 package io.qalipsis.core.factories.orchestration
 
+import io.micronaut.context.ApplicationContext
+import io.micronaut.validation.Validated
 import io.qalipsis.api.annotations.VisibleForTest
-import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.exceptions.InvalidSpecificationException
@@ -9,31 +10,27 @@ import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
+import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.retry.NoRetryPolicy
-import io.qalipsis.api.scenario.MutableScenarioSpecification
-import io.qalipsis.api.scenario.ReadableScenarioSpecification
+import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
-import io.qalipsis.core.annotations.LogInput
-import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackDirectedAcyclicGraph
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
-import io.micronaut.context.ApplicationContext
-import io.micronaut.validation.Validated
+import io.qalipsis.core.factories.steps.MinionsKeeperAware
+import io.qalipsis.core.factories.steps.RunnerAware
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -41,27 +38,28 @@ import javax.inject.Singleton
 import javax.validation.Valid
 
 /**
- * Default implementation of [ScenariosKeeper].
+ * Default implementation of [ScenariosInitializer].
  *
  * @author Eric Jessé
  */
 @Singleton
 @Validated
-internal class ScenariosKeeperImpl(
+internal class ScenariosInitializerImpl(
         private val applicationContext: ApplicationContext,
+        private val scenariosRegistry: ScenariosRegistry,
         private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
         private val feedbackProducer: FeedbackProducer,
         private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
+        private val runner: Runner,
+        private val minionsKeeper: MinionsKeeper,
         stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
-) : ScenariosKeeper, StartupFactoryComponent {
+) : ScenariosInitializer, StartupFactoryComponent {
 
     /**
      * Collection of DAGs accessible by scenario and DAG ID.
      */
     private val dagsByScenario: MutableMap<ScenarioId, MutableMap<DirectedAcyclicGraphId, DirectedAcyclicGraph>> =
         ConcurrentHashMap()
-
-    private val scenarios: MutableMap<ScenarioId, Scenario> = ConcurrentHashMap()
 
     // Sort the decorator converters in the expected order.
     private val stepSpecificationDecoratorConverters = stepSpecificationDecoratorConverters.sortedBy { it.order }
@@ -70,11 +68,13 @@ internal class ScenariosKeeperImpl(
     fun init() {
         // Load all the scenarios specifications into memory.
         ServicesLoader.loadServices<Any>("scenarios", applicationContext)
+
         // Fetch and convert them.
+        val allScenarios = mutableListOf<Scenario>()
         scenarioSpecificationsKeeper.asMap().forEach { (scenarioId, scenarioSpecification) ->
             try {
                 val scenario = convertScenario(scenarioId, scenarioSpecification)
-                scenarios[scenarioId] = scenario
+                allScenarios.add(scenario)
                 scenario.dags.forEach { dag ->
                     dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
                 }
@@ -84,22 +84,13 @@ internal class ScenariosKeeperImpl(
             }
         }
 
-        publishScenarioCreationFeedback(scenarios.values)
+        publishScenarioCreationFeedback(allScenarios)
     }
 
     @PreDestroy
     fun destroy() {
         runBlocking {
-            dagsByScenario.values.flatMap { it.values }.map { it.rootStep.get() }.forEach {
-                destroyStepRecursively(it)
-            }
-        }
-    }
-
-    private suspend fun destroyStepRecursively(step: Step<*, *>) {
-        step.destroy()
-        step.next.forEach {
-            destroyStepRecursively(it)
+            dagsByScenario.keys.mapNotNull(scenariosRegistry::get).forEach(Scenario::destroy)
         }
     }
 
@@ -108,7 +99,7 @@ internal class ScenariosKeeperImpl(
         val feedbackScenarios = scenarios.map { scenario ->
             val feedbackDags = scenario.dags.map {
                 FactoryRegistrationFeedbackDirectedAcyclicGraph(
-                        it.id, it.singleton, it.scenarioStart, it.stepsCount
+                        it.id, it.isSingleton, it.isRoot, it.isUnderLoad, it.stepsCount
                 )
             }
             FactoryRegistrationFeedbackScenario(
@@ -126,17 +117,23 @@ internal class ScenariosKeeperImpl(
 
     @VisibleForTest
     internal fun convertScenario(scenarioId: ScenarioId,
-                                 scenarioSpecification: ReadableScenarioSpecification): Scenario {
+                                 scenarioSpecification: ConfiguredScenarioSpecification): Scenario {
+        if (scenarioSpecification.dagsUnderLoad.isEmpty()) {
+            throw InvalidSpecificationException(
+                    "There is no main branch defined in scenario $scenarioId, please prefix at least one root branch with 'start()'")
+        }
+
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
                 "The scenario $scenarioId requires a ramp-up strategy")
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
-        val scenario = Scenario(scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
-                minionsCount = scenarioSpecification.minionsCount)
+        val scenario =
+            ScenarioImpl(scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
+                    minionsCount = scenarioSpecification.minionsCount, feedbackProducer)
+        scenariosRegistry.add(scenario)
 
-        val dags = ConcurrentHashMap(mutableMapOf<String, DirectedAcyclicGraph>())
         runBlocking {
             @Suppress("UNCHECKED_CAST")
-            convertSteps(scenarioSpecification, scenario, dags, null,
+            convertSteps(scenarioSpecification, scenario, null,
                     scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
         }
         require(scenario.dags.size >= scenarioSpecification.dagsCount) {
@@ -148,15 +145,14 @@ internal class ScenariosKeeperImpl(
     }
 
     @VisibleForTest
-    internal suspend fun convertSteps(scenarioSpecification: ReadableScenarioSpecification,
+    internal suspend fun convertSteps(scenarioSpecification: ConfiguredScenarioSpecification,
                                       scenario: Scenario,
-                                      dags: MutableMap<String, DirectedAcyclicGraph>,
                                       parentStep: Step<*, *>?,
                                       stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
 
         stepsSpecifications.map { stepSpecification ->
             GlobalScope.launch {
-                convertStepRecursively(scenarioSpecification, scenario, dags, parentStep, stepSpecification)
+                convertStepRecursively(scenarioSpecification, scenario, parentStep, stepSpecification)
             }
         }.forEach { job ->
             job.join()
@@ -164,26 +160,30 @@ internal class ScenariosKeeperImpl(
     }
 
     private suspend fun convertStepRecursively(
-            scenarioSpecification: ReadableScenarioSpecification,
+            scenarioSpecification: ConfiguredScenarioSpecification,
             scenario: Scenario,
-            dags: MutableMap<String, DirectedAcyclicGraph>,
             parentStep: Step<*, *>?,
             stepSpecification: StepSpecification<Any?, Any?, *>) {
         log.debug(
-                "Creating step ${stepSpecification.name ?: "<undefined>"} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<root>"} in DAG ${stepSpecification.directedAcyclicGraphId}")
+                "Creating step ${stepSpecification.name ?: "<undefined>"} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<isRoot>"} in DAG ${stepSpecification.directedAcyclicGraphId}")
 
         // Get or create the DAG to attach the step.
-        val dag = dags.computeIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->
-            DirectedAcyclicGraph(dagId, scenario, scenarioStart = (parentStep == null),
-                    singleton = stepSpecification is SingletonStepSpecification)
+        val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->
+            DirectedAcyclicGraph(
+                    dagId, scenario,
+                    isRoot = (parentStep == null),
+                    isSingleton = stepSpecification is SingletonStepSpecification,
+                    isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad)
+            )
         }
 
         val context =
-            StepCreationContextImpl(scenarioSpecification as MutableScenarioSpecification, dag, stepSpecification)
+            StepCreationContextImpl(scenarioSpecification as StepSpecificationRegistry, dag, stepSpecification)
         convertSingleStep(context)
         decorateStep(context)
 
         context.createdStep?.let { step ->
+            injectDependencies(step)
             step.init()
             dag.addStep(step)
             parentStep?.let { ps ->
@@ -192,8 +192,21 @@ internal class ScenariosKeeperImpl(
             }
 
             @Suppress("UNCHECKED_CAST")
-            convertSteps(scenarioSpecification, scenario, dags, step,
+            convertSteps(scenarioSpecification, scenario, step,
                     stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
+        }
+    }
+
+    /**
+     * Inject relevant dependencies in the step.
+     */
+    @VisibleForTest
+    fun injectDependencies(step: Step<*, *>) {
+        if (step is MinionsKeeperAware) {
+            step.minionsKeeper = minionsKeeper
+        }
+        if (step is RunnerAware) {
+            step.runner = runner
         }
     }
 
@@ -219,69 +232,6 @@ internal class ScenariosKeeperImpl(
         }
     }
 
-    @LogInputAndOutput
-    override fun hasScenario(scenarioId: ScenarioId): Boolean = scenarios.containsKey(scenarioId)
-
-    @LogInputAndOutput
-    override fun getScenario(scenarioId: ScenarioId): Scenario? = scenarios[scenarioId]
-
-    @LogInputAndOutput
-    override fun hasDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): Boolean =
-        dagsByScenario[scenarioId]?.containsKey(dagId) ?: false
-
-    @LogInputAndOutput
-    override fun getDag(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph? =
-        dagsByScenario[scenarioId]?.get(dagId)
-
-    @LogInput(level = Level.DEBUG)
-    override fun startScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
-        runBlocking {
-            dagsByScenario[scenarioId]!!.values.forEach { dag ->
-                val feedback = CampaignStartedForDagFeedback(
-                        scenarioId = scenarioId,
-                        dagId = dag.id,
-                        campaignId = campaignId,
-                        status = FeedbackStatus.IN_PROGRESS
-                )
-                log.trace("Sending feedback: $feedback")
-                feedbackProducer.publish(feedback)
-
-                startStepRecursively(dag.rootStep.get())
-
-                val completionFeedback = CampaignStartedForDagFeedback(
-                        scenarioId = scenarioId,
-                        dagId = dag.id,
-                        campaignId = campaignId,
-                        status = FeedbackStatus.COMPLETED
-                )
-                log.trace("Sending feedback: $completionFeedback")
-                feedbackProducer.publish(completionFeedback)
-            }
-        }
-    }
-
-    private suspend fun startStepRecursively(step: Step<*, *>) {
-        step.start()
-        step.next.forEach {
-            startStepRecursively(it)
-        }
-    }
-
-    @LogInput(level = Level.DEBUG)
-    override fun stopScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
-        runBlocking {
-            dagsByScenario[scenarioId]!!.values.map { it.rootStep.get() }.forEach {
-                stopStepRecursively(it)
-            }
-        }
-    }
-
-    private suspend fun stopStepRecursively(step: Step<*, *>) {
-        step.stop()
-        step.next.forEach {
-            stopStepRecursively(it)
-        }
-    }
 
     companion object {
 

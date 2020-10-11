@@ -1,21 +1,5 @@
 package io.qalipsis.core.factories.orchestration
 
-import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.sync.SuspendedCountLatch
-import io.qalipsis.core.factories.dag
-import io.qalipsis.core.factories.step
-import io.qalipsis.core.factories.steps
-import io.qalipsis.test.coroutines.CleanCoroutines
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.coVerifyExactly
-import io.qalipsis.test.mockk.coVerifyOnce
-import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
-import io.qalipsis.test.time.QalipsisTimeAssertions
-import io.qalipsis.test.time.coMeasureTime
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
@@ -25,6 +9,22 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
+import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.retry.RetryPolicy
+import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.factories.steps
+import io.qalipsis.core.factories.testDag
+import io.qalipsis.core.factories.testStep
+import io.qalipsis.test.coroutines.CleanCoroutines
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyExactly
+import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.relaxedMockk
+import io.qalipsis.test.mockk.verifyOnce
+import io.qalipsis.test.time.QalipsisTimeAssertions
+import io.qalipsis.test.time.coMeasureTime
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions
@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 @CleanCoroutines
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
-internal class RunnerTest {
+internal class RunnerImplTest {
 
     @RelaxedMockK("eventReporter")
     lateinit private var eventsLogger: EventsLogger
@@ -81,8 +81,8 @@ internal class RunnerTest {
             meterRegistry.gauge("minion-executing-steps", any<List<Tag>>(), any<AtomicInteger>())
         } returnsArgument 2
 
-        val dag = dag {
-            this.step("step-1", 1).all {
+        val dag = testDag {
+            this.testStep("step-1", 1).all {
                 step("step-2").processError("step-3")
                 delayedStep("step-4", 2, 200).all {
                     step("step-5")
@@ -90,7 +90,7 @@ internal class RunnerTest {
                 }
             }
         }
-        val runner = Runner(eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -159,10 +159,10 @@ internal class RunnerTest {
     @Timeout(1)
     internal fun `should execute the error processing only`() {
         // given
-        val dag = dag {
-            this.step<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
+        val dag = testDag {
+            this.testStep<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
         }
-        val runner = Runner(eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -182,11 +182,11 @@ internal class RunnerTest {
     @Timeout(1)
     internal fun `should execute the normal steps after recovery`() {
         // given
-        val dag = dag {
-            this.step<Int>("step-1", generateException = true)
+        val dag = testDag {
+            this.testStep<Int>("step-1", generateException = true)
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
-        val runner = Runner(eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -209,13 +209,13 @@ internal class RunnerTest {
     @Timeout(1)
     internal fun `should suspend next steps when there is no output`() {
         // given
-        val dag = dag {
-            this.step<Int>("step-1").all {
+        val dag = testDag {
+            this.testStep<Int>("step-1").all {
                 this.step("step-2").processError("step-3")
                 this.step("step-4")
             }
         }
-        val runner = Runner(eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -249,11 +249,11 @@ internal class RunnerTest {
                 context.output.send(123)
             }
         }
-        val dag = dag {
-            this.step("step-1", output = 12, retryPolicy = retryPolicy)
+        val dag = testDag {
+            this.testStep("step-1", output = 12, retryPolicy = retryPolicy)
                 .step("step-2")
         }
-        val runner = Runner(eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when

@@ -50,8 +50,7 @@ internal class DelayStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(DelayStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(DelayStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("delay").isEqualTo(Duration.ofMillis(123))
         }
@@ -70,8 +69,7 @@ internal class DelayStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(DelayStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(DelayStep::class).all {
             prop("id").isNotNull()
             prop("delay").isEqualTo(Duration.ofMillis(123))
         }

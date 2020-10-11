@@ -3,40 +3,37 @@ package io.qalipsis.core.heads.campaigns
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.any
+import assertk.assertions.each
+import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isSameAs
+import assertk.assertions.key
 import assertk.assertions.prop
-import com.natpryce.hamkrest.allOf
-import com.natpryce.hamkrest.anyElement
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.has
-import com.natpryce.hamkrest.hasSize
-import com.natpryce.hamkrest.isA
-import com.natpryce.hamkrest.sameInstance
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.lang.concurrentSet
-import io.qalipsis.core.cross.directives.CampaignStartDirective
-import io.qalipsis.api.orchestration.directives.DirectiveKey
-import io.qalipsis.api.orchestration.directives.DirectiveProducer
-import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
-import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirective
-import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
-import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.coVerifyNever
-import io.qalipsis.test.mockk.coVerifyOnce
-import io.qalipsis.test.utils.getProperty
-import io.qalipsis.test.utils.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
+import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.orchestration.directives.DirectiveKey
+import io.qalipsis.api.orchestration.directives.DirectiveProducer
+import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
+import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
+import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
+import io.qalipsis.core.cross.directives.CampaignStartDirective
+import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
+import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirective
+import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
+import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.utils.getProperty
+import io.qalipsis.test.utils.setProperty
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -85,25 +82,25 @@ internal class DefaultCampaignManagerTest {
             directiveProducer.publish(any())
             directiveProducer.publish(any())
         }
-        assertThat(directives, allOf(
-                hasSize(equalTo(2)),
-                anyElement(allOf(
-                        isA<MinionsCreationPreparationDirective>(),
-                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-1")),
-                        has(MinionsCreationPreparationDirective::value, equalTo(10))
-                )),
-                anyElement(allOf(
-                        isA<MinionsCreationPreparationDirective>(),
-                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-2")),
-                        has(MinionsCreationPreparationDirective::value, equalTo(10))
-                ))
-        ))
+        assertThat(directives).all {
+            hasSize(2)
+            each {
+                it.prop(MinionsCreationPreparationDirective::value).isEqualTo(10)
+            }
+            any {
+                it.prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-1")
+            }
+            any {
+                it.prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-2")
+            }
+        }
         val scenarios = campaignManager.getProperty<Map<ScenarioId, HeadScenario>>("scenarios")
-        assertThat(scenarios, allOf(
-                equalTo(mapOf("scen-1" to scenario1, "scen-2" to scenario2))
-        ))
+        assertThat(scenarios).all {
+            key("scen-1").isSameAs(scenario1)
+            key("scen-2").isSameAs(scenario2)
+        }
         val usedOnCriticalFailure = campaignManager.getProperty<(String) -> Unit>("onCriticalFailure")
-        assertThat(usedOnCriticalFailure, sameInstance(onCriticalFailure))
+        assertThat(usedOnCriticalFailure).isSameAs(onCriticalFailure)
     }
 
     @Test
@@ -132,25 +129,24 @@ internal class DefaultCampaignManagerTest {
             directiveProducer.publish(any())
             directiveProducer.publish(any())
         }
-        assertThat(directives, allOf(
-                hasSize(equalTo(2)),
-                anyElement(allOf(
-                        isA<MinionsCreationPreparationDirective>(),
-                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-1")),
-                        has(MinionsCreationPreparationDirective::value, equalTo(8))
-                )),
-                anyElement(allOf(
-                        isA<MinionsCreationPreparationDirective>(),
-                        has(MinionsCreationPreparationDirective::scenarioId, equalTo("scen-2")),
-                        has(MinionsCreationPreparationDirective::value, equalTo(34))
-                ))
-        ))
+        assertThat(directives.sortedBy(MinionsCreationPreparationDirective::scenarioId)).all {
+            hasSize(2)
+            index(0).all {
+                prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-1")
+                prop(MinionsCreationPreparationDirective::value).isEqualTo(8)
+            }
+            index(1).all {
+                prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-2")
+                prop(MinionsCreationPreparationDirective::value).isEqualTo(34)
+            }
+        }
         val scenarios = campaignManager.getProperty<Map<ScenarioId, HeadScenario>>("scenarios")
-        assertThat(scenarios, allOf(
-                equalTo(mapOf("scen-1" to scenario1, "scen-2" to scenario2))
-        ))
+        assertThat(scenarios).all {
+            key("scen-1").isSameAs(scenario1)
+            key("scen-2").isSameAs(scenario2)
+        }
         val usedOnCriticalFailure = campaignManager.getProperty<(String) -> Unit>("onCriticalFailure")
-        assertThat(usedOnCriticalFailure, sameInstance(onCriticalFailure))
+        assertThat(usedOnCriticalFailure).isSameAs(onCriticalFailure)
     }
 
     @Test
@@ -487,16 +483,18 @@ internal class DefaultCampaignManagerTest {
         }
 
         assertThat(publishedDirectives).all {
-            hasSize(equalTo(2))
+            hasSize(2)
             any {
-                isInstanceOf(MinionsRampUpPreparationDirective::class)
-                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
-                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-1")
+                it.isInstanceOf(CampaignStartDirective::class).all {
+                    prop(CampaignStartDirective::campaignId).isEqualTo("camp-1")
+                    prop(CampaignStartDirective::scenarioId).isEqualTo("scen-1")
+                }
             }
             any {
-                isInstanceOf(MinionsRampUpPreparationDirective::class)
-                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
-                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-2")
+                it.isInstanceOf(CampaignStartDirective::class).all {
+                    prop(CampaignStartDirective::campaignId).isEqualTo("camp-1")
+                    prop(CampaignStartDirective::scenarioId).isEqualTo("scen-2")
+                }
             }
         }
 
@@ -556,20 +554,20 @@ internal class DefaultCampaignManagerTest {
         }
 
         assertThat(publishedDirectives).all {
-            hasSize(equalTo(2))
+            hasSize(2)
             any {
-                isInstanceOf(MinionsRampUpPreparationDirective::class)
-                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
-                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-1")
-                prop(MinionsRampUpPreparationDirective::startOffsetMs).isEqualTo(876L)
-                prop(MinionsRampUpPreparationDirective::speedFactor).isEqualTo(2.87)
+                it.isInstanceOf(MinionsRampUpPreparationDirective::class)
+                it.prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
+                it.prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-1")
+                it.prop(MinionsRampUpPreparationDirective::startOffsetMs).isEqualTo(876L)
+                it.prop(MinionsRampUpPreparationDirective::speedFactor).isEqualTo(2.87)
             }
             any {
-                isInstanceOf(MinionsRampUpPreparationDirective::class)
-                prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
-                prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-2")
-                prop(MinionsRampUpPreparationDirective::startOffsetMs).isEqualTo(876L)
-                prop(MinionsRampUpPreparationDirective::speedFactor).isEqualTo(2.87)
+                it.isInstanceOf(MinionsRampUpPreparationDirective::class)
+                it.prop(MinionsRampUpPreparationDirective::campaignId).isEqualTo("camp-1")
+                it.prop(MinionsRampUpPreparationDirective::scenarioId).isEqualTo("scen-2")
+                it.prop(MinionsRampUpPreparationDirective::startOffsetMs).isEqualTo(876L)
+                it.prop(MinionsRampUpPreparationDirective::speedFactor).isEqualTo(2.87)
             }
         }
 

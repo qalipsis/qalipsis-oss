@@ -1,8 +1,8 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.scenario.MutableScenarioSpecification
-import io.qalipsis.api.scenario.ScenarioSpecification
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.scenario.ScenarioSpecification
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -23,6 +23,6 @@ data class DatasourceStepSpecification<OUTPUT>(
 fun <OUTPUT> ScenarioSpecification.datasource(
         specification: (suspend () -> Flow<OUTPUT>)): DatasourceStepSpecification<OUTPUT> {
     val step = DatasourceStepSpecification(specification)
-    (this as MutableScenarioSpecification).add(step)
+    (this as StepSpecificationRegistry).add(step)
     return step
 }

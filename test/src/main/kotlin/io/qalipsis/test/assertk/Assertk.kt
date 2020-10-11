@@ -45,7 +45,8 @@ fun Assert<*>.prop(name: String): Assert<*> {
 }
 
 internal fun collectProperties(instanceClass: KClass<*>): Collection<KProperty1<*, *>> {
-    val properties = instanceClass.memberProperties.map { it.name to it }.toMap().toMutableMap()
+    val properties = instanceClass.memberProperties
+        .associateBy { it.name }.toMutableMap()
     var parentClasses = instanceClass.superclasses
     while (parentClasses.isNotEmpty()) {
         val nextLevelParentClasses = mutableListOf<KClass<*>>()

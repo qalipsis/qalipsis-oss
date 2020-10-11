@@ -13,7 +13,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-data class StepContext<IN : Any?, OUT : Any?>(
+data class StepContext<IN, OUT>(
 
         /**
          * Channel providing the source.

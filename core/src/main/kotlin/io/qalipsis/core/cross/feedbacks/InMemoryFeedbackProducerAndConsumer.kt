@@ -1,12 +1,12 @@
 package io.qalipsis.core.cross.feedbacks
 
 import cool.graph.cuid.Cuid
+import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.messaging.broadcastTopic
 import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
-import io.qalipsis.api.messaging.broadcastTopic
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
-import io.micronaut.context.annotation.Requires
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import javax.inject.Singleton

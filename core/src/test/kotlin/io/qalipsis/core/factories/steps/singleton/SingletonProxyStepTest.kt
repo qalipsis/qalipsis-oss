@@ -1,12 +1,12 @@
 package io.qalipsis.core.factories.steps.singleton
 
-import io.qalipsis.api.messaging.Topic
-import io.qalipsis.api.messaging.subscriptions.TopicSubscription
-import io.qalipsis.test.steps.StepTestHelper
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.mockk
+import io.qalipsis.api.messaging.Topic
+import io.qalipsis.api.messaging.subscriptions.TopicSubscription
+import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions

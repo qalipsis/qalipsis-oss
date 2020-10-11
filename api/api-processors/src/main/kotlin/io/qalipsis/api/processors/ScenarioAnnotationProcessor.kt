@@ -4,13 +4,12 @@ import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterSpec
 import com.squareup.javapoet.TypeSpec
+import io.micronaut.context.ApplicationContext
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
-import io.micronaut.context.ApplicationContext
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
-import java.util.UUID
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment

@@ -1,9 +1,9 @@
 package io.qalipsis.core.heads.campaigns
 
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.cross.configuration.ENV_VOLATILE
 import io.qalipsis.core.heads.persistence.inmemory.InMemoryRepository
-import io.micronaut.context.annotation.Requires
 import javax.inject.Singleton
 
 /**

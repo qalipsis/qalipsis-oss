@@ -1,5 +1,7 @@
 package io.qalipsis.core.factories
 
+import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
@@ -7,6 +9,8 @@ import io.qalipsis.api.orchestration.Scenario
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.ErrorProcessingStep
+import io.qalipsis.core.factories.orchestration.ScenarioImpl
+import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -18,16 +22,36 @@ import java.util.concurrent.atomic.AtomicReference
  * @author Eric Jessé
  */
 
-internal fun dag(configure: DirectedAcyclicGraph.() -> Unit = {}): DirectedAcyclicGraph {
-    val dag = DirectedAcyclicGraph("my-dag", Scenario("my-scenario", rampUpStrategy = relaxedMockk()),
-            scenarioStart = false, singleton = false)
-    dag.configure()
+internal fun testScenario(
+        id: ScenarioId = "my-scenario",
+        rampUpStrategy: RampUpStrategy = relaxedMockk(),
+        minionsCount: Int = 1,
+        configure: suspend Scenario.() -> Unit = {}): Scenario {
+    val scenario = ScenarioImpl(id, rampUpStrategy = rampUpStrategy, minionsCount = minionsCount,
+            feedbackProducer = relaxedMockk())
+    runBlocking {
+        scenario.configure()
+    }
+    return scenario
+}
+
+internal fun testDag(
+        id: DirectedAcyclicGraphId = "my-dag",
+        scenario: Scenario = testScenario(),
+        root: Boolean = false,
+        isSingleton: Boolean = false,
+        isUnderLoad: Boolean = false,
+        configure: suspend DirectedAcyclicGraph.() -> Unit = {}): DirectedAcyclicGraph {
+    val dag = DirectedAcyclicGraph(id, scenario, isRoot = root, isSingleton = isSingleton, isUnderLoad = isUnderLoad)
+    runBlocking {
+        dag.configure()
+    }
     return dag
 }
 
-internal fun <O> DirectedAcyclicGraph.step(id: String, output: O? = null,
-                                           retryPolicy: RetryPolicy? = null,
-                                           generateException: Boolean = false): TestStep<Unit, O> {
+internal fun <O> DirectedAcyclicGraph.testStep(id: String, output: O? = null,
+                                               retryPolicy: RetryPolicy? = null,
+                                               generateException: Boolean = false): TestStep<Unit, O> {
     val step = TestStep<Unit, O>(id, retryPolicy, output, generateException = generateException)
     val self = this
     runBlocking {

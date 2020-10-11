@@ -1,14 +1,14 @@
 package io.qalipsis.core.factories.orchestration.directives.consumers
 
+import io.mockk.coVerifyOrder
+import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
-import io.mockk.coVerifyOrder
-import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

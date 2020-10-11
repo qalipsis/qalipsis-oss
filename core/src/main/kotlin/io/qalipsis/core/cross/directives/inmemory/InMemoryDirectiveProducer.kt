@@ -1,12 +1,12 @@
 package io.qalipsis.core.cross.directives.inmemory
 
-import io.qalipsis.core.annotations.LogInput
-import io.qalipsis.core.cross.configuration.ENV_STANDALONE
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProducer
 import io.qalipsis.api.orchestration.directives.DirectiveRegistry
 import io.qalipsis.api.orchestration.directives.ReferencableDirective
-import io.micronaut.context.annotation.Requires
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.cross.configuration.ENV_STANDALONE
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.event.Level
 import javax.inject.Singleton

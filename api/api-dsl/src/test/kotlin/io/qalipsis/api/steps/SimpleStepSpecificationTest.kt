@@ -1,7 +1,7 @@
 package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
+import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.scenario.scenario
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -23,7 +23,7 @@ internal class SimpleStepSpecificationTest {
     @Test
     internal fun `should add simple step to scenario`() {
         val scenario = scenario(
-            "my-scenario") as ScenarioSpecificationImplementation
+            "my-scenario") as StepSpecificationRegistry
         val specification: suspend (context: StepContext<Unit, String>) -> Unit = { _ -> }
         scenario.execute(specification)
 

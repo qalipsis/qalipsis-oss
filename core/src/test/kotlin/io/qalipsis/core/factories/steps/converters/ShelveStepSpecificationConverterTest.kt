@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.steps.ShelveStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -14,7 +15,6 @@ import io.qalipsis.core.factories.steps.ShelveStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -56,8 +56,7 @@ internal class ShelveStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(ShelveStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("specification").isSameAs(blockSpecification)
@@ -78,8 +77,7 @@ internal class ShelveStepSpecificationConverterTest :
         }
 
         // then
-        assertThat(creationContext.createdStep!!).all {
-            isInstanceOf(ShelveStep::class)
+        assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
             prop("id").isNotNull()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("specification").isSameAs(blockSpecification)

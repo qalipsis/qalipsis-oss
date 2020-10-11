@@ -6,6 +6,12 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
+import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
+import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.cross.directives.TestListDirective
 import io.qalipsis.core.cross.directives.TestListDirectiveReference
@@ -13,14 +19,8 @@ import io.qalipsis.core.cross.directives.TestQueueDirective
 import io.qalipsis.core.cross.directives.TestQueueDirectiveReference
 import io.qalipsis.core.cross.directives.TestSingleUseDirective
 import io.qalipsis.core.cross.directives.TestSingleUseDirectiveReference
-import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
