@@ -26,10 +26,12 @@ val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
 
 dependencies {
+    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly("org.graalvm.nativeimage:svm")
+
     implementation(kotlin("stdlib"))
     api(project(":api:api-dev"))
     api(project(":api:api-dsl"))
-    api("org.slf4j:slf4j-api:1.7.30")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     // Libraries relevant for the development of plugins.
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
@@ -42,6 +44,7 @@ dependencies {
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
+    kapt("io.micronaut:micronaut-graal")
 
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micrometer:micrometer-core")

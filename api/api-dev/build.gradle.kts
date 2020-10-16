@@ -27,8 +27,9 @@ dependencies {
     implementation(
             kotlin("stdlib")
     )
-    implementation("org.slf4j:slf4j-api:1.7.30")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
+    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly("org.slf4j:slf4j-api")
 
     testImplementation(project(":test"))
 }

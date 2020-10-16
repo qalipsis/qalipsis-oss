@@ -22,7 +22,6 @@ val mockkVersion: String by project
 dependencies {
     implementation(kotlin("stdlib"))
     api(kotlin("reflect"))
-    api("ch.qos.logback:logback-classic:1.2.3")
     implementation(project(":api:api-common"))
     api(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     api("org.junit.jupiter:junit-jupiter")
@@ -34,5 +33,5 @@ dependencies {
     api("org.testcontainers:junit-jupiter:$testContainersVersion") {
         exclude("junit", "junit")
     }
-
+    api("ch.qos.logback:logback-classic")
 }

@@ -33,14 +33,16 @@ val micronautVersion: String by project
 dependencies {
     implementation(kotlin("stdlib"))
 
+    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly("org.graalvm.nativeimage:svm")
+
     api(project(":api:api-common"))
     api(project(":api:api-dsl"))
     api(project(":api:api-processors"))
     api(project(":core"))
 
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
-    api("org.slf4j:slf4j-api")
-    api("ch.qos.logback:logback-classic:1.2.3")
+    api("ch.qos.logback:logback-classic")
     api("info.picocli:picocli")
     api("io.micronaut.picocli:micronaut-picocli")
     api("javax.annotation:javax.annotation-api")
@@ -55,6 +57,7 @@ dependencies {
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
+    kapt("io.micronaut:micronaut-graal")
 
     testFixturesImplementation(kotlin("stdlib"))
 

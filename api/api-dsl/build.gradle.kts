@@ -32,9 +32,10 @@ val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
 
 dependencies {
-    implementation(
-            kotlin("stdlib")
-    )
+    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly("org.graalvm.nativeimage:svm")
+
+    implementation(kotlin("stdlib"))
     implementation(project(":api:api-dev"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("cool.graph:cuid-java:0.1.1")
@@ -51,6 +52,7 @@ dependencies {
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
+    kapt("io.micronaut:micronaut-graal")
 
     testImplementation(project(":test"))
 }

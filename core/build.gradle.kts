@@ -34,6 +34,9 @@ val testContainersVersion: String by project
 
 dependencies {
     compileOnly(kotlin("reflect"))
+    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly("org.graalvm.nativeimage:svm")
+
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
@@ -57,9 +60,8 @@ dependencies {
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
+    kapt("io.micronaut:micronaut-graal")
     kapt(project(":api:api-processors"))
-    kapt(kotlin("stdlib"))
-    kapt(kotlin("reflect"))
 
     testImplementation(project(":test"))
     testImplementation("io.ktor:ktor-client-mock:1.3.1")
