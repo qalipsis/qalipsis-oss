@@ -1,4 +1,4 @@
-package io.qalipsis.core.factories.orchestration.rampup
+package io.qalipsis.api.rampup
 
 import io.qalipsis.api.rampup.MinionsStartingLine
 

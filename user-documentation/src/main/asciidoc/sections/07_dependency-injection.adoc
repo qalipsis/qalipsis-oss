@@ -1,0 +1,34 @@
+== Dependencies injection
+
+It is also possible to inject a bean, declared with `@javax.inject.Singleton`:
+
+[source,kotlin]
+----
+import javax.inject.Singleton
+import io.qalipsis.api.retry.RetryPolicy
+
+@Singleton
+class NoRetry : RetryPolicy {
+
+    suspend fun <I, O> execute(context: StepContext<I, O>, executable: suspend (StepContext<I, O>) -> Unit){
+        executable(context)
+    }
+}
+----
+
+[source,kotlin]
+----
+class EcommercePurchase(private val noRetryPolicy: NoRetry) {
+
+    @Scenario
+    fun fromLoginToCheckout(@Property("ecommerce-purchase.action-pace") actionPaceDuration: Duration) {
+        scenario("login-select-and-checkout"){
+            retryPolicy(noRetryPolicy)
+        }
+        .constantPace(actionPaceDuration.toMillis())
+        // ...
+    }
+}
+----
+
+WARNING: Ensure you have the following dependency in the project where your singleton is compiled: `kapt("io.qalipsis:api-processors:{revnumber}")`

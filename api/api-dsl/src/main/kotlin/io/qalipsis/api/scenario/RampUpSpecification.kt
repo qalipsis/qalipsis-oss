@@ -1,6 +1,7 @@
 package io.qalipsis.api.scenario
 
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
+import io.qalipsis.api.rampup.RampUpStrategy
+
 
 /**
  * Interface of a specification supporting the configuration of a ramp-up to start minions.

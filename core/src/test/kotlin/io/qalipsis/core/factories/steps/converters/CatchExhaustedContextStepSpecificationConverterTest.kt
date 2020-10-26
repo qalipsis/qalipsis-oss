@@ -29,7 +29,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
     @Test
     override fun `should support expected spec`() {
         // when+then
-        assertTrue(converter.support(relaxedMockk<CatchExhaustedContextStepSpecification<*, *>>()))
+        assertTrue(converter.support(relaxedMockk<CatchExhaustedContextStepSpecification<*>>()))
     }
 
     @Test
@@ -42,7 +42,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec with name to step`() {
         // given
-        val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = {}
+        val blockSpecification: suspend (context: StepContext<*, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
@@ -50,7 +50,8 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // when
         runBlocking {
             converter.convert<String, Int>(
-                    creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>)
+                creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*>>
+            )
         }
 
         // then
@@ -63,7 +64,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec without name to step`() {
         // given
-        val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = {}
+        val blockSpecification: suspend (context: StepContext<*, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
@@ -71,7 +72,8 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // when
         runBlocking {
             converter.convert<String, Int>(
-                    creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>)
+                creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*>>
+            )
         }
 
         // then

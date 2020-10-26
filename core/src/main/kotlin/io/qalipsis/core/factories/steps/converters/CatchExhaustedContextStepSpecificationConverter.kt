@@ -15,16 +15,16 @@ import io.qalipsis.core.factories.steps.CatchExhaustedContextStep
  */
 @StepConverter
 internal class CatchExhaustedContextStepSpecificationConverter :
-    StepSpecificationConverter<CatchExhaustedContextStepSpecification<*, *>> {
+    StepSpecificationConverter<CatchExhaustedContextStepSpecification< *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is CatchExhaustedContextStepSpecification
     }
 
     override suspend fun <I, O> convert(
-        creationContext: StepCreationContext<CatchExhaustedContextStepSpecification<*, *>>) {
+        creationContext: StepCreationContext<CatchExhaustedContextStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
-        val spec = creationContext.stepSpecification as CatchExhaustedContextStepSpecification<I, O>
+        val spec = creationContext.stepSpecification as CatchExhaustedContextStepSpecification<O>
         val step = CatchExhaustedContextStep(spec.name ?: Cuid.createCuid(), spec.block)
         creationContext.createdStep(step)
     }

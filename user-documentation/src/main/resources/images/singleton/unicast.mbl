@@ -1,0 +1,10 @@
+marble unicast
+{
+   source datasource: +-ABCDEFG-|
+   operator "unicast(buffer = 2)":
+    {
+        ....+B-->
+        .....+CD-F>
+        .......+E-G>
+    }
+}

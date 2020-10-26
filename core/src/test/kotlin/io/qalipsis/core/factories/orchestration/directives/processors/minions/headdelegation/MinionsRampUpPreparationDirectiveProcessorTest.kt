@@ -17,11 +17,11 @@ import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.api.rampup.MinionsStartingLine
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.cross.directives.MinionsStartDirective
 import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions

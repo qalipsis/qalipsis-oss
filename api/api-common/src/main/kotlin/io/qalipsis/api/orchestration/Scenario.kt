@@ -4,9 +4,9 @@ import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepId
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 
 /**
  * A [Scenario] represents a full chain of [DirectedAcyclicGraph]s containing all the steps to perform.

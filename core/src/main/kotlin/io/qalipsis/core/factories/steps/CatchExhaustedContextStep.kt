@@ -12,12 +12,12 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class CatchExhaustedContextStep<I, O>(
+class CatchExhaustedContextStep<O>(
     id: StepId,
-    private val block: (suspend (context: StepContext<I, O>) -> Unit)
-) : AbstractStep<I, O>(id, null) {
+    private val block: (suspend (context: StepContext<*, O>) -> Unit)
+) : AbstractStep<Any?, O>(id, null) {
 
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(context: StepContext<Any?, O>) {
         if (context.isExhausted) {
             log.trace("Catching exhausted context")
             this.block(context)

@@ -72,7 +72,7 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
      *
      * myStep.split{
      *   assert{...}.filter{}
-     *   map{...}.validate{}.all {
+     *   map{...}.validate{}.split {
      *      ...
      *   }
      * }

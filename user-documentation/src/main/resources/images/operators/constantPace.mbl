@@ -1,0 +1,5 @@
+marble constantPace
+{
+    source input:              +-A-BC-------DE-->
+    operator "constantPace": +-A--B--C----D--E-->
+}

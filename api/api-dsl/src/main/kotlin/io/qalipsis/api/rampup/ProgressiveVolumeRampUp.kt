@@ -1,8 +1,6 @@
 package io.qalipsis.api.rampup
 
 import io.qalipsis.api.scenario.RampUpSpecification
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategyIterator
 
 /**
  *

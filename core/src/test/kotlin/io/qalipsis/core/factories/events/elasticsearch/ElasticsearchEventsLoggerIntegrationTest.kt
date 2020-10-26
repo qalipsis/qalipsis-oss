@@ -245,7 +245,7 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
         @Container
         @JvmStatic
         val es6 = ElasticsearchContainer(
-                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss").withTag("6.5.4"))
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss").withTag("6.8.3"))
 
         @Container
         @JvmStatic

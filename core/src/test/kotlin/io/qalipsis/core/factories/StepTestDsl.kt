@@ -6,11 +6,11 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.ErrorProcessingStep
 import io.qalipsis.core.factories.orchestration.ScenarioImpl
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

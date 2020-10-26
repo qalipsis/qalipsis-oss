@@ -15,7 +15,7 @@ internal class CatchErrorStepSpecificationTest {
         val specification: (error: Collection<StepError>) -> Unit = { _ -> }
         previousStep.catchError(specification)
 
-        assertEquals(CatchErrorStepSpecification<Int>(specification), previousStep.nextSteps[0])
+        assertEquals(CatchErrorStepSpecification(specification), previousStep.nextSteps[0])
     }
 
 }

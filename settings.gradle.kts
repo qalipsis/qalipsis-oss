@@ -12,5 +12,6 @@ include(
         "core",
         "runtime",
 
-        "developer-documentation"
+        "developer-documentation",
+        "user-documentation"
 )

@@ -1,10 +1,10 @@
 package io.qalipsis.api.steps.datasource
 
 /**
- * Record from generated from a line of a CSV file, containing the values as a POJO.
+ * Record issued from the extraction of a file or database table, representing a single value / item.
  *
- * @property ordinal the ordinal of the record in the whole file.
- * @property value POJO containing the value of a line.
+ * @property ordinal the ordinal of the record in the whole set.
+ * @property value record or value.
  *
  * @author Eric Jessé
  */
