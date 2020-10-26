@@ -1,7 +1,7 @@
 package io.qalipsis.api.scenario
 
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 
 /**
  * Interface for an implementation of [ScenarioSpecification], on which the configuration can be read.

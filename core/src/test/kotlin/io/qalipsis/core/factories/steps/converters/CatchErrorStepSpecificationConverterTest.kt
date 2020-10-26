@@ -29,7 +29,7 @@ internal class CatchErrorStepSpecificationConverterTest :
     @Test
     override fun `should support expected spec`() {
         // when+then
-        assertTrue(converter.support(relaxedMockk<CatchErrorStepSpecification<*>>()))
+        assertTrue(converter.support(relaxedMockk<CatchErrorStepSpecification>()))
     }
 
     @Test
@@ -42,13 +42,13 @@ internal class CatchErrorStepSpecificationConverterTest :
     internal fun `should convert spec with name to step`() {
         // given
         val blockSpecification: (error: Collection<StepError>) -> Unit = {}
-        val spec = CatchErrorStepSpecification<Int>(blockSpecification)
+        val spec = CatchErrorStepSpecification(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorStepSpecification<*>>)
+            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorStepSpecification>)
         }
 
         // then
@@ -62,13 +62,13 @@ internal class CatchErrorStepSpecificationConverterTest :
     internal fun `should convert spec without name to step`() {
         // given
         val blockSpecification: (error: Collection<StepError>) -> Unit = {}
-        val spec = CatchErrorStepSpecification<Int>(blockSpecification)
+        val spec = CatchErrorStepSpecification(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorStepSpecification<*>>)
+            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorStepSpecification>)
         }
 
         // then

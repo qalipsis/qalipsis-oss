@@ -1,0 +1,10 @@
+marble loop
+{
+   source datasource: +-AB-------|
+   operator "loop":
+    {
+        +-ABABAB--->
+        ....+-ABABAB--->
+        ........+-ABABAB--->
+    }
+}

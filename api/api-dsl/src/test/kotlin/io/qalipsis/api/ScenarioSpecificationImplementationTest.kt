@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -13,7 +14,6 @@ import io.qalipsis.api.scenario.scenariosSpecifications
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
 import io.qalipsis.api.steps.SingletonStepSpecification
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertNotNull

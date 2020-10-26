@@ -9,9 +9,9 @@ import io.qalipsis.api.context.StepError
  * @author Eric Jessé
  */
 @Introspected
-data class CatchErrorStepSpecification<INPUT>(
+data class CatchErrorStepSpecification(
     val block: (error: Collection<StepError>) -> Unit
-) : AbstractStepSpecification<INPUT, INPUT, CatchErrorStepSpecification<INPUT>>()
+) : AbstractStepSpecification<Any?, Any?, CatchErrorStepSpecification>()
 
 /**
  * Processes the errors previously generated on the execution context.
@@ -20,9 +20,10 @@ data class CatchErrorStepSpecification<INPUT>(
  *
  * @author Eric Jessé
  */
-fun <INPUT> StepSpecification<*, INPUT, *>.catchError(
-        block: (error: Collection<StepError>) -> Unit): CatchErrorStepSpecification<INPUT> {
-    val step = CatchErrorStepSpecification<INPUT>(block)
+fun StepSpecification<*, *, *>.catchError(
+    block: (error: Collection<StepError>) -> Unit
+): CatchErrorStepSpecification {
+    val step = CatchErrorStepSpecification(block)
     this.add(step)
     return step
 }

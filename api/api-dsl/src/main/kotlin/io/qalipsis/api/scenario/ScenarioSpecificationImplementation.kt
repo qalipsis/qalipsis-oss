@@ -3,11 +3,11 @@ package io.qalipsis.api.scenario
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.sync.ImmutableSlot
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import kotlinx.coroutines.runBlocking
 
 /**

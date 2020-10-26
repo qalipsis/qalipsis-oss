@@ -1,0 +1,9 @@
+marble split
+{
+    source input:     +--A---B-----C---D----->
+    operator "split":
+    {
+        +--A---B-----C---D>
+        .+-A---B-----C---D>
+    }
+}

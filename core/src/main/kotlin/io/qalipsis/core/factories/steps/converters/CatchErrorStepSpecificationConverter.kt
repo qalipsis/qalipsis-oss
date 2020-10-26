@@ -14,15 +14,15 @@ import io.qalipsis.core.factories.steps.CatchErrorStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class CatchErrorStepSpecificationConverter : StepSpecificationConverter<CatchErrorStepSpecification<*>> {
+internal class CatchErrorStepSpecificationConverter : StepSpecificationConverter<CatchErrorStepSpecification> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is CatchErrorStepSpecification
     }
 
-    override suspend fun <I, O> convert(creationContext: StepCreationContext<CatchErrorStepSpecification<*>>) {
+    override suspend fun <I, O> convert(creationContext: StepCreationContext<CatchErrorStepSpecification>) {
         @Suppress("UNCHECKED_CAST")
-        val spec = creationContext.stepSpecification as CatchErrorStepSpecification<I>
+        val spec = creationContext.stepSpecification
         val step = CatchErrorStep<I>(spec.name ?: Cuid.createCuid(), spec.block)
         creationContext.createdStep(step)
     }

@@ -10,13 +10,13 @@ import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
+import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
-import io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
 import kotlinx.coroutines.runBlocking
 import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
