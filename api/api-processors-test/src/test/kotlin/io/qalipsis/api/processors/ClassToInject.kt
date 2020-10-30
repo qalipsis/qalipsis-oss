@@ -2,12 +2,10 @@ package io.qalipsis.api.processors
 
 import javax.inject.Singleton
 
-/**
- *
- * @author Eric Jessé
- */
-@Singleton
-class ClassToInject
+interface InterfaceToInject
 
 @Singleton
-class OtherClassToInject
+class ClassToInject : InterfaceToInject
+
+@Singleton
+class OtherClassToInject : InterfaceToInject

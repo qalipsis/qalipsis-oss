@@ -140,12 +140,10 @@ internal class InMemorySharedStateRegistryTest {
 
         registry[definition] = "My value"
 
-        // Wait just before the time to live.
-        Thread.sleep(40)
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
         // Wait after the time to live.
-        Thread.sleep(60)
+        Thread.sleep(100)
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
 
@@ -182,11 +180,11 @@ internal class InMemorySharedStateRegistryTest {
         registry[SharedStateDefinition("minion-1", "state", Duration.ofMillis(200))] = "My value"
 
         // Wait just before the time to live.
-        Thread.sleep(180)
+        Thread.sleep(100)
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
         // Wait after the time to live.
-        Thread.sleep(40)
+        Thread.sleep(100)
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
 

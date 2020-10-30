@@ -30,4 +30,5 @@ dependencies {
     testImplementation(project(":api:api-dsl"))
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
+    testImplementation("io.micronaut:micronaut-inject")
 }

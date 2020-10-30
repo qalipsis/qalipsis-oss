@@ -1,29 +1,100 @@
 == Dependencies injection
 
-It is also possible to inject a bean, declared with `@javax.inject.Singleton`:
+QALIPSIS relies on the https://docs.micronaut.io/latest/guide/index.html#ioc[dependency injection framework from Micronaut] and supports the injection of dependencies in the constructors of the scenario declaring classes as well as in the methods annotated with `@Scenario`.
 
+WARNING: Ensure you have the following dependency in the project where your beans or factories are compiled: `kapt("io.qalipsis:api-processors:{revnumber}")`
+
+=== Injection of a singleton bean
+
+You can declare a singleton bean using the annotation `@javax.inject.Singleton` on a type, or https://docs.micronaut.io/latest/guide/index.html#factories[use a Micronaut factory].
+
+.Creation of beans
 [source,kotlin]
 ----
 import javax.inject.Singleton
-import io.qalipsis.api.retry.RetryPolicy
 
-@Singleton
+@Singleton // <1>
 class NoRetry : RetryPolicy {
 
     suspend fun <I, O> execute(context: StepContext<I, O>, executable: suspend (StepContext<I, O>) -> Unit){
         executable(context)
     }
 }
-----
 
+@Factory
+class ExecutorFactory {
+
+    @Singleton // <2>
+    fun simpleExecutor(retryPolicy: RetryPolicy): Executor { // <3>
+        return SimpleExecutor(retryPolicy)
+    }
+}
+
+----
+<1> The annotation `@javax.inject.Singleton` can be added to a class to automatically create a bean and declare it as singleton
+<2> The annotation `@javax.inject.Singleton` added to a method declares the returned bean as a singleton
+<3> The retry policy is automatically injected into the factory method
+
+Once beans are created, you can inject them in the constructor or the scenario method:
+
+.Injection of beans
 [source,kotlin]
 ----
-class EcommercePurchase(private val noRetryPolicy: NoRetry) {
+class EcommercePurchase(private val retryPolicy: RetryPolicy) { // <1>
 
     @Scenario
-    fun fromLoginToCheckout(@Property("ecommerce-purchase.action-pace") actionPaceDuration: Duration) {
+    fun fromLoginToCheckout(executor: Executor) {  // <2>
         scenario("login-select-and-checkout"){
-            retryPolicy(noRetryPolicy)
+            retryPolicy(retryPolicy)
+        }
+        // ...
+    }
+}
+----
+<1> The previously created bean of type `RetryPolicy` is injected in the constructor of the scenario declaring class.
+<1> The previously created bean of type `Executor` is injected in the scenario declaring method.
+
+=== Qualifying the bean to inject
+
+When several beans exist for the same type, you might want to select the one to inject.
+QALIPSIS supports named injection:
+
+.Injection of a named bean
+[source,kotlin]
+----
+import javax.inject.Named
+
+class EcommercePurchase(@param:Named("default") private val retryPolicy: RetryPolicy) {  // <1>
+
+    @Scenario
+    fun fromLoginToCheckout(@Named("simple") executor: Executor) { // <2>
+        scenario("login-select-and-checkout"){
+            retryPolicy(retryPolicy)
+        }
+        // ...
+    }
+}
+----
+<1> When the constructor parameter is a property, precise the target of the annotation.
+<2> The annotation `@Named` selects the bean of type `Executor` qualified by the name "simple" for the injection.
+
+While QALIPSIS only supports name qualifiers, you can read more about other qualifiers on https://docs.micronaut.io/latest/guide/index.html#qualifiers[Micronaut documentation].
+
+=== Inject a property value
+
+Properties for the runtime property sources are also injectable in scenario declaring classes constructors and methods.
+
+.Injection of a property
+[source,kotlin]
+----
+import io.qalipsis.api.annotations.Property
+
+class EcommercePurchase {
+
+    @Scenario
+    fun fromLoginToCheckout(@Property(name = "ecommerce-purchase.action-pace", orElse = "10s") actionPaceDuration: Duration) { // <1>
+        scenario("login-select-and-checkout"){
+            // ...
         }
         .constantPace(actionPaceDuration.toMillis())
         // ...
@@ -31,4 +102,55 @@ class EcommercePurchase(private val noRetryPolicy: NoRetry) {
 }
 ----
 
-WARNING: Ensure you have the following dependency in the project where your singleton is compiled: `kapt("io.qalipsis:api-processors:{revnumber}")`
+The default value set in `orElse` is optional.
+
+More about the property sources on https://docs.micronaut.io/latest/guide/index.html#propertySource[Micronaut documentation].
+
+=== Injectable container types
+
+QALIPSIS supports the injection of a single instance of beans as shown above, as well as an `Iterable` or any of its subtypes - `Collection`, `List`, `Set` and their derivatives and `Optional` - also for properties.
+
+.Injection of `Iterable` and `Optional`
+[source,kotlin]
+----
+class EcommercePurchase(private val retryPolicies: List<RetryPolicy>) {
+
+    @Scenario
+    fun fromLoginToCheckout(@Property("startDelay") executor: Optional<Duration>) {
+
+        // ...
+    }
+}
+----
+
+=== Summary
+
+The following sample of code shows all the supported methods of injection for beans and properties.
+
+The example only shows for a scenario method, but this can only be used for the constructor of a class declaring scenarios.
+
+.All supported injection mechanisms
+[source,kotlin]
+----
+    @Scenario
+    fun fromLoginToCheckout(
+        classToInject: ClassToInject, // <1>
+        mayBeOtherClassToInject: Optional<OtherClassToInject>,  // <2>
+        @Named("myInjectable") namedInterfaceToInject: InterfaceToInject, // <3>
+        injectables: List<InterfaceToInject>, // <4>
+        @Named("myInjectable") namedInjectables: List<InterfaceToInject>, // <5>
+        @Property(name = "this-is-a-test") property: Duration, // <6>
+        @Property(name = "this-is-another-test", orElse = "10") propertyWithDefaultValue: Int, // <7>
+        @Property(name = "this-is-yet-another-test") mayBeProperty: Optional<String> // <8>
+    ) {
+
+    }
+----
+<1> An instance of `ClassToInject` is injected, failing if missing
+<2> An instance of `Optional<OtherClassToInject>` is injected, replaced by an empty optional if missing
+<3> An instance of `InterfaceToInject` qualified by the name `myInjectable` is injected, failing if missing
+<4> A `List` of all the instances of classes inheriting from `InterfaceToInject` is injected
+<5> A `List` of all the instances of classes inheriting from `InterfaceToInject` and qualified by the name `myInjectable` is injected
+<6> The value of the property `this-is-a-test` is injected after its conversion to a `Duration`, failing if missing
+<7> The value of the property `this-is-another-test` is injected after its conversion to a `Int`, replace by 10 as Int if missing
+<8> The value of the property `this-is-yet-another-test` is injected after its conversion to a `String`, replaced by an empty optional if missing

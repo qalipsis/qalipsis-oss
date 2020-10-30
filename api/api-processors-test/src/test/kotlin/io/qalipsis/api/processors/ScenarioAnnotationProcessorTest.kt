@@ -1,12 +1,18 @@
 package io.qalipsis.api.processors
 
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
+import assertk.assertions.isSameAs
+import assertk.assertions.key
 import io.micronaut.context.ApplicationContext
-import io.micronaut.context.env.Environment
+import io.micronaut.core.convert.ConversionService
+import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
 import io.qalipsis.test.io.readFile
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyExactly
-import io.qalipsis.test.mockk.verifyOnce
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -37,28 +43,96 @@ internal class ScenarioAnnotationProcessorTest {
 
     @Test
     internal fun `should load the annotated scenarios`() {
-        val environment: Environment = relaxedMockk {
-            every { getProperty(eq("this-is-a-test"), Duration::class.java) } returns Optional.of(Duration.ZERO)
+        val classToInject: ClassToInject = relaxedMockk()
+        val otherClassToInject: OtherClassToInject = relaxedMockk()
+        val interfaceToInject: InterfaceToInject = relaxedMockk()
+        val injectablesAsList = listOf(classToInject, otherClassToInject)
+        val namedInjectablesAsList = listOf(otherClassToInject)
+        val conversionService: ConversionService<*> = relaxedMockk {
+            every { convertRequired(eq("10"), eq(Integer.TYPE)) } returns 10
+            every {
+                convertRequired(
+                    setOf(classToInject, otherClassToInject),
+                    eq(List::class.java)
+                )
+            } returns injectablesAsList
+            every { convertRequired(setOf(otherClassToInject), eq(List::class.java)) } returns namedInjectablesAsList
         }
+
         val applicationContext: ApplicationContext = relaxedMockk {
-            every { getBean(ClassToInject::class.java) } returns relaxedMockk()
-            every { getBean(OtherClassToInject::class.java) } returns relaxedMockk()
-            every { getEnvironment() } returns environment
+            every { getConversionService() } returns conversionService
+
+            every { getBean(ClassToInject::class.java) } returns classToInject
+            every { getBean(OtherClassToInject::class.java) } returns otherClassToInject
+            every { findBean(eq(OtherClassToInject::class.java)) } returns Optional.of(otherClassToInject)
+            every {
+                getBean(
+                    InterfaceToInject::class.java,
+                    Qualifiers.byName("myInjectable")
+                )
+            } returns interfaceToInject
+            every { getBeansOfType(InterfaceToInject::class.java) } returns setOf(classToInject, otherClassToInject)
+            every { getBeansOfType(InterfaceToInject::class.java, Qualifiers.byName("myInjectable")) } returns setOf(
+                otherClassToInject
+            )
+            every { getRequiredProperty(eq("this-is-a-test"), eq(Duration::class.java)) } returns Duration.ofMillis(123)
+            every { getProperty(eq("this-is-another-test"), eq(Integer.TYPE), eq(10)) } returns 5
+            every {
+                getProperty(
+                    eq("this-is-yet-another-test"),
+                    eq(String::class.java)
+                )
+            } returns Optional.of("No value")
         }
 
         ServicesLoader.loadServices<Any>("scenarios", applicationContext)
 
-        val expected = setOf(
-            "aMethodOutsideAClass was loaded",
-            "aMethodInsideAnObject was loaded",
-            "aMethodInsideAClass was loaded"
-        )
-        Assertions.assertEquals(expected, executedScenarios)
-
-        verifyExactly(4) {
-            applicationContext.getBean(ClassToInject::class.java)
-            applicationContext.getBean(OtherClassToInject::class.java)
+        assertThat(injectedForMethodOutsideAClass).all {
+            key("classToInject").isSameAs(classToInject)
+            key("mayBeOtherClassToInject").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isSameAs(otherClassToInject)
+            key("injectables").isSameAs(injectablesAsList)
+            key("namedInjectables").isSameAs(namedInjectablesAsList)
+            key("property").isEqualTo(Duration.ofMillis(123))
+            key("propertyWithDefaultValue").isEqualTo(5)
+            key("mayBeProperty").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isEqualTo("No value")
         }
-        verifyOnce { environment.getProperty(eq("this-is-a-test"), Duration::class.java) }
+
+        assertThat(injectedIntoConstructor).all {
+            key("classToInject").isSameAs(classToInject)
+            key("mayBeOtherClassToInject").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isSameAs(otherClassToInject)
+            key("injectables").isSameAs(injectablesAsList)
+            key("namedInjectables").isSameAs(namedInjectablesAsList)
+            key("property").isEqualTo(Duration.ofMillis(123))
+            key("propertyWithDefaultValue").isEqualTo(5)
+            key("mayBeProperty").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isEqualTo("No value")
+        }
+
+        assertThat(injectedIntoScenarioOfClass).all {
+            key("classToInject").isSameAs(classToInject)
+            key("mayBeOtherClassToInject").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isSameAs(otherClassToInject)
+            key("injectables").isSameAs(injectablesAsList)
+            key("namedInjectables").isSameAs(namedInjectablesAsList)
+            key("property").isEqualTo(Duration.ofMillis(123))
+            key("propertyWithDefaultValue").isEqualTo(5)
+            key("mayBeProperty").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isEqualTo("No value")
+        }
+
+        assertThat(injectedIntoScenarioOfObject).all {
+            key("classToInject").isSameAs(classToInject)
+            key("mayBeOtherClassToInject").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isSameAs(otherClassToInject)
+            key("injectables").isSameAs(injectablesAsList)
+            key("namedInjectables").isSameAs(namedInjectablesAsList)
+            key("property").isEqualTo(Duration.ofMillis(123))
+            key("propertyWithDefaultValue").isEqualTo(5)
+            key("mayBeProperty").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
+                .isEqualTo("No value")
+        }
     }
 }
