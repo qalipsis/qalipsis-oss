@@ -25,26 +25,37 @@ import kotlin.system.exitProcess
  *
  * @author Eric Jessé
  */
-@Command(name = "qalipsis",
+@Command(
+    name = "qalipsis",
     description = ["Load test software for monolithic and distributed systems"],
     mixinStandardHelpOptions = true,
     versionProvider = Qalipsis.VersionProviderWithVariables::class
 )
 object Qalipsis : Callable<Unit> {
 
-    @Option(names = ["-p", "--prompt"], description = ["Prompt for campaign configuration"],
-        defaultValue = "false")
+    @Option(
+        names = ["-p", "--prompt"], description = ["Prompt for campaign configuration"],
+        defaultValue = "false"
+    )
     var prompt: Boolean = false
 
     @Option(names = ["-e", "--environments"], description = ["Environments to enable further configuration"])
     var environments: Array<String> = arrayOf()
 
-    @Parameters(description = [
-        "Role of the started process:",
-        "   - standalone (default)",
-        "   - head",
-        "   - factory"
-    ], defaultValue = "standalone", arity = "0..1")
+    @Option(
+        names = ["-s", "--scenarios"],
+        description = ["Comma-separated list of scenarios to include, wildcard such as * or ? are supported, default to all the scenarios"]
+    )
+    var scenariosSelectors: String = ""
+
+    @Parameters(
+        description = [
+            "Role of the started process:",
+            "   - standalone (default)",
+            "   - head",
+            "   - factory"
+        ], defaultValue = "standalone", arity = "0..1"
+    )
     var role: Role = Role.STANDALONE
 
     private lateinit var args: Array<String>
@@ -76,40 +87,13 @@ object Qalipsis : Callable<Unit> {
         val properties = mutableMapOf<String, Any>()
         if (role == Role.STANDALONE) {
             if (prompt) {
-                var choice: Int = promptAndValidate(
-                    "Do you want to enter [1] a minion count by scenario or [2] a minion count multiplier?",
-                    "Please select 1 or 2",
-                    { this.toInt() },
-                    { it == 1 || it == 2 }
-                )
-                if (choice == 1) {
-                    promptAndValidate(
-                        "Enter the expected number of minions by scenario:",
-                        "Please enter a positive integer value",
-                        { this.toInt() },
-                        { it > 0 }
-                    ).apply {
-                        properties["campaign.minions-count-per-scenario"] = this
-                    }
-                } else {
-                    promptAndValidate(
-                        "Enter the minions count multiplier (< 1 will reduce the default, > 1 will augment the default):",
-                        "Please enter a positive decimal value",
-                        { this.toDouble() },
-                        { it > 0 }
-                    ).apply {
-                        properties["campaign.minions-factor"] = this
-                    }
-                }
-                promptAndValidate(
-                    "Enter the ramp-up speed multiplier (< 1 will slow down, > 1 will accelerate):",
-                    "Please enter a positive decimal value",
-                    { this.toDouble() },
-                    { it > 0 }
-                ).apply {
-                    properties["campaign.speed-factor"] = this
-                }
+                promptForConfiguration(properties)
             }
+
+            if (scenariosSelectors.isNotBlank()) {
+                properties["scenarios-selectors"] = scenariosSelectors
+            }
+
             // Start the campaigns when everything is ready.
             environments.add(ENV_AUTOSTART)
             // Do not persist configuration of factories and scenarios.
@@ -148,8 +132,46 @@ object Qalipsis : Callable<Unit> {
         }
     }
 
-    private fun <T> promptAndValidate(message: String, errorMessage: String, conversion: String.() -> T,
-        validation: (T) -> Boolean): T {
+    private fun promptForConfiguration(properties: MutableMap<String, Any>) {
+        val loadSelectionStrategy: Int = promptAndValidate(
+            "Do you want to enter [1] a minion count by scenario or [2] a minion count multiplier?",
+            "Please select 1 or 2",
+            { this.toInt() },
+            { it == 1 || it == 2 }
+        )
+        if (loadSelectionStrategy == 1) {
+            promptAndValidate(
+                "Enter the expected number of minions by scenario:",
+                "Please enter a positive integer value",
+                { this.toInt() },
+                { it > 0 }
+            ).apply {
+                properties["campaign.minions-count-per-scenario"] = this
+            }
+        } else {
+            promptAndValidate(
+                "Enter the minions count multiplier (< 1 will reduce the default, > 1 will augment the default):",
+                "Please enter a positive decimal value",
+                { this.toDouble() },
+                { it > 0 }
+            ).apply {
+                properties["campaign.minions-factor"] = this
+            }
+        }
+        promptAndValidate(
+            "Enter the ramp-up speed multiplier (< 1 will slow down, > 1 will accelerate):",
+            "Please enter a positive decimal value",
+            { this.toDouble() },
+            { it > 0 }
+        ).apply {
+            properties["campaign.speed-factor"] = this
+        }
+    }
+
+    private fun <T> promptAndValidate(
+        message: String, errorMessage: String, conversion: String.() -> T,
+        validation: (T) -> Boolean
+    ): T {
         var choice: T? = null
         while (choice == null) {
             print("${message} ")

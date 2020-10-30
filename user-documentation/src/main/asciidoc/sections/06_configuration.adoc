@@ -8,12 +8,25 @@ Only few modes are supported for now, where head and factories are starting in t
 
 Execute QALIPSIS with the option `--prompt` or `-p` to be prompted to enter the main configuration:
 
+.Starting QALIPSIS in interactive mode
 [source,bash]
 ----
 java -jar my-scenario-qalipsis.jar --prompt
 ----
 
 You will be asked to enter the load factor, speed factor and so on.
+
+==== Select the scenarios to execute
+
+You can pass selectors for the scenarios to execute, using the option `--scenarios` or `-s`.
+The value is a comma-separated list of exact values or patterns of the scenarios to include.
+The pattern can contain the wildcards `*` to match zero or more signs or `?` to match exactly one sign.
+
+.Select the scenarios to run
+[source,bash]
+----
+java -jar my-scenario-qalipsis.jar --scenarios "my-first-scenario, ?y-*-s*n?rio"
+----
 
 === Runtime configuration
 
@@ -43,6 +56,8 @@ All the command-line arguments can also be provided in a file, as explained in n
 
 QALIPSIS uses Micronaut's runtime underneath.
 Hence, you can use its mechanism of https://docs.micronaut.io/latest/guide/index.html#propertySource[externalized configuration with property sources].
+
+You can overwrite the default configuration and add your own properties creating a file `application-config.yml` either in the class path or in the working directory.
 
 For your convenience, you can also specified additional environments using the parameter `--environments` (shorthand `-e`) and the required list:
 
