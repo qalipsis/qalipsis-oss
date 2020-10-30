@@ -9,5 +9,13 @@ package io.qalipsis.api.annotations
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Property(
-        val value: String = ""
+    /**
+     * Name of the property to map onto the parameter.
+     */
+    val name: String = "",
+
+    /**
+     * Default value if the property is absent.
+     */
+    val orElse: String = ""
 )

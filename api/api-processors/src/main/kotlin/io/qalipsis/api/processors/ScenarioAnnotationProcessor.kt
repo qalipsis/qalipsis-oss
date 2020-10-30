@@ -15,6 +15,7 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
+import javax.inject.Named
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
@@ -46,6 +47,16 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
 
         // Property pointing to the folder where Kapt generates sources.
         const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
+    }
+
+    private lateinit var typeUtils: TypeUtils
+
+    private lateinit var injectionResolutionUtils: InjectionResolutionUtils
+
+    override fun init(processingEnv: ProcessingEnvironment) {
+        super.init(processingEnv)
+        typeUtils = TypeUtils(processingEnv.elementUtils, processingEnv.typeUtils)
+        injectionResolutionUtils = InjectionResolutionUtils(typeUtils)
     }
 
     override fun process(annotations: MutableSet<out TypeElement>?, roundEnv: RoundEnvironment): Boolean {
@@ -95,7 +106,7 @@ ${executableMethod.scenarioClass.qualifiedName}
     .${executableMethod.scenarioMethod.simpleName}(${addParameters(executableMethod.scenarioMethod)})
                                     """.trimIndent()
                                 }
-                                isAKotlinObject(executableMethod.scenarioClass) -> {
+                                typeUtils.isAKotlinObject(executableMethod.scenarioClass) -> {
                                     // Kotlin objects.
                                     """
 ${executableMethod.scenarioClass.qualifiedName}.INSTANCE
@@ -113,8 +124,12 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
 
                         val constructor = MethodSpec.constructorBuilder()
                             .addModifiers(Modifier.PUBLIC)
-                            .addParameter(ParameterSpec.builder(ApplicationContext::class.java, "applicationContext",
-                                    Modifier.FINAL).build())
+                            .addParameter(
+                                ParameterSpec.builder(
+                                    ApplicationContext::class.java, "applicationContext",
+                                    Modifier.FINAL
+                                ).build()
+                            )
                             .addStatement(scenarioCall)
                             .build()
 
@@ -155,24 +170,29 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
      * Extracts the parameters for a method and generates the injection of related bean.
      */
     private fun addParameters(method: ExecutableElement): String {
-        return method.parameters.joinToString(", ") { param ->
-            val valueAnnotations = param.getAnnotationsByType(Property::class.java)
-            if (valueAnnotations.isNotEmpty()) {
-                val annotation = valueAnnotations.first()
-                "applicationContext.getEnvironment().getProperty(\"${annotation.value}\", ${param.asType()}.class).orElse(null)"
-            } else {
-                "applicationContext.getBean(${param.asType()}.class)"
+        return method.parameters.joinToString(",\n\t\t", prefix = "\n\t\t", postfix = "\n") { param ->
+            val propertyAnnotations = param.getAnnotationsByType(Property::class.java)
+            val namedAnnotations = param.getAnnotationsByType(Named::class.java)
+            val paramType = param.asType()
+            when {
+                propertyAnnotations.isNotEmpty() -> {
+                    injectionResolutionUtils.buildPropertyResolution(propertyAnnotations.first(), paramType)
+                }
+                namedAnnotations.isNotEmpty() -> {
+                    injectionResolutionUtils.buildNamedQualifierResolution(namedAnnotations.first(), paramType)
+                }
+                else -> injectionResolutionUtils.buildUnqualifiedResolution(paramType)
             }
         }
     }
 
-    private fun isAKotlinObject(typeElement: TypeElement) =
-        processingEnv.elementUtils.getAllMembers(typeElement)
-            .any { it.kind == ElementKind.FIELD && it.simpleName.toString() == "INSTANCE" }
 
+    /**
+     * Wrapping class to transport metadata about the scenario to declare.
+     */
     private data class ExecutableScenarioMethod(
-            val scenarioMethod: ExecutableElement,
-            private val processingEnv: ProcessingEnvironment
+        val scenarioMethod: ExecutableElement,
+        private val processingEnv: ProcessingEnvironment
     ) {
         val scenarioClass = this.scenarioMethod.enclosingElement as TypeElement
         val loaderClassName: String = "${scenarioClass.simpleName}\$${this.scenarioMethod.simpleName}"

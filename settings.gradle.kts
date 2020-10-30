@@ -1,4 +1,4 @@
-rootProject.name = "qalipsis"
+rootProject.name = "qalipsis-core"
 
 include(
         "api",

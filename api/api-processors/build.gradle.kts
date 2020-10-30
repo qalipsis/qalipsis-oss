@@ -24,5 +24,6 @@ dependencies {
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut:micronaut-validation")
+    api("io.micronaut:micronaut-inject")
     api("io.micronaut:micronaut-graal")
 }
