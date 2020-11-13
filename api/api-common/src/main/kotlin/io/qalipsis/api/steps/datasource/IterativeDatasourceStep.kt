@@ -6,6 +6,7 @@ import io.qalipsis.api.context.StepId
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * General purpose step to read data from a source, transform and forward.
@@ -40,18 +41,17 @@ class IterativeDatasourceStep<R, T, O>(
     override suspend fun execute(context: StepContext<Unit, O>) {
         context.isTail = false
         log.trace("Iterating datasource reader for step $id")
-        var rowIndex = 0L
+        val rowIndex = AtomicLong()
         while (reader.hasNext()) {
             try {
                 val value = processor.process(rowIndex, reader.next())
                 log.trace("Received one record")
                 converter.supply(rowIndex, value, context.output)
             } catch (e: Exception) {
-                context.errors.add(StepError(DatasourceException(rowIndex, e.message)))
-            } finally {
-                rowIndex++
+                context.errors.add(StepError(DatasourceException(rowIndex.get() - 1, e.message)))
             }
         }
+
         context.isTail = true
     }
 

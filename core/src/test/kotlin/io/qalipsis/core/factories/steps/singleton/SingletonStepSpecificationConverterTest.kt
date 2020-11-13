@@ -245,7 +245,6 @@ internal class SingletonStepSpecificationConverterTest :
 
     inner class TestSingletonSpecification(
             override val singletonConfiguration: SingletonConfiguration = SingletonConfiguration(SingletonType.UNICAST)
-    ) : AbstractStepSpecification<Int, Int, TestSingletonSpecification>(),
-        SingletonStepSpecification<Int, Int, TestSingletonSpecification>
+    ) : AbstractStepSpecification<Int, Int, TestSingletonSpecification>(), SingletonStepSpecification
 
 }

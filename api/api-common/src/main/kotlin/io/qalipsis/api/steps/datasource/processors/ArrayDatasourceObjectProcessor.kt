@@ -3,6 +3,7 @@ package io.qalipsis.api.steps.datasource.processors
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.datasource.DatasourceException
 import io.qalipsis.api.steps.datasource.DatasourceObjectProcessor
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Converts each value of an array using the provided rules.
@@ -14,7 +15,7 @@ class ArrayDatasourceObjectProcessor(
         private val conversionsRules: Array<((Any?) -> Any?)?>
 ) : DatasourceObjectProcessor<Array<Any?>, Array<Any?>> {
 
-    override fun process(offset: Long, readObject: Array<Any?>): Array<Any?> {
+    override fun process(offset: AtomicLong, readObject: Array<Any?>): Array<Any?> {
         val errors = mutableListOf<String>()
         val result = arrayOfNulls<Any?>(readObject.size)
         readObject.forEachIndexed { columnIndex, value ->
