@@ -121,7 +121,7 @@ internal class ScenarioSpecificationImplementationTest {
     private inner class TestStep : AbstractStepSpecification<Unit, Unit, TestStep>()
 
     private inner class SingletonTestStep : AbstractStepSpecification<Unit, Unit, SingletonTestStep>(),
-        SingletonStepSpecification<Unit, Unit, SingletonTestStep> {
+        SingletonStepSpecification {
 
         override val singletonConfiguration: SingletonConfiguration
             get() = relaxedMockk { }

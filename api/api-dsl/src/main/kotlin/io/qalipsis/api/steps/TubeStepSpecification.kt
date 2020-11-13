@@ -43,7 +43,7 @@ fun <INPUT> ScenarioSpecification.tube(): TubeStepSpecification<INPUT> {
  */
 @Introspected
 class SingletonTubeStepSpecification<INPUT> :
-    SingletonStepSpecification<INPUT, INPUT, SingletonTubeStepSpecification<INPUT>>,
+    SingletonStepSpecification,
     AbstractStepSpecification<INPUT, INPUT, SingletonTubeStepSpecification<INPUT>>() {
 
     override val singletonConfiguration = SingletonConfiguration(SingletonType.UNICAST)

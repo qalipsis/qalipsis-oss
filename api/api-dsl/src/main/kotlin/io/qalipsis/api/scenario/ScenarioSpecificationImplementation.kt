@@ -47,7 +47,7 @@ internal class ScenarioSpecificationImplementation(
         register(nextStep)
         // If any step is a singleton, a new DAG is built.
         if (nextStep.directedAcyclicGraphId.isNullOrBlank()) {
-            if (previousStep is SingletonStepSpecification<*, *, *> || nextStep is SingletonStepSpecification<*, *, *>) {
+            if (previousStep is SingletonStepSpecification || nextStep is SingletonStepSpecification) {
                 nextStep.directedAcyclicGraphId = buildDagId(previousStep.directedAcyclicGraphId)
             } else {
                 nextStep.directedAcyclicGraphId = previousStep.directedAcyclicGraphId

@@ -1,6 +1,7 @@
 package io.qalipsis.api.steps.datasource
 
 import kotlinx.coroutines.channels.SendChannel
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Converts a value read from a datasource into a data that can be forwarded to next steps and sends it to the output channel.
@@ -12,6 +13,13 @@ import kotlinx.coroutines.channels.SendChannel
  */
 interface DatasourceObjectConverter<R, O> {
 
-    suspend fun supply(offset: Long, value: R, output: SendChannel<O>)
+    /**
+     * Sends [value] to the [output] channel in any form.
+     *
+     * @param offset an reference to the offset, it is up to the implementation to increment it
+     * @param value input value to send after any conversion to the output
+     * @param output channel to received the data after conversion
+     */
+    suspend fun supply(offset: AtomicLong, value: R, output: SendChannel<O>)
 
 }

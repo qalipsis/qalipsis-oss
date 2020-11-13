@@ -32,7 +32,7 @@ internal class SingletonStepSpecificationConverter :
 
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
-        if (spec is SingletonStepSpecification<*, *, *> && spec.nextSteps.isNotEmpty()) {
+        if (spec is SingletonStepSpecification && spec.nextSteps.isNotEmpty()) {
             @Suppress("UNCHECKED_CAST")
             val decoratedStep = creationContext.createdStep as Step<Any?, Any?>
 
