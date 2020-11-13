@@ -36,16 +36,20 @@ fun <INPUT, OTHER_INPUT> StepSpecification<*, INPUT, *>.innerJoin(using: (Correl
                                                                   on: (scenario: ScenarioSpecification) -> StepSpecification<*, OTHER_INPUT, *>,
                                                                   having: (CorrelationRecord<OTHER_INPUT>) -> Any?): InnerJoinStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>> {
 
-    // In order to connect to a right step, we add a tube to it, which will serve as connection to the left join step.
+    // Since the relationship is performed in the step name, we generate one in case it is not specified by the user.
     val secondaryStep = on(scenario!!)
     if (secondaryStep.name.isNullOrBlank()) {
         secondaryStep.name = Cuid.createCuid()
     }
+    // We force the step to be known by the scenario.
+    scenario!!.register(secondaryStep)
 
     @Suppress("UNCHECKED_CAST")
-    val step =
-        InnerJoinStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>>(using, having as CorrelationRecord<*>.() -> Any?,
-                secondaryStep.name!!)
+    val step = InnerJoinStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>>(
+            using,
+            having as CorrelationRecord<*>.() -> Any?,
+            secondaryStep.name!!
+    )
     this.add(step)
     return step
 }
@@ -64,8 +68,11 @@ fun <INPUT, OTHER_INPUT> StepSpecification<*, INPUT, *>.innerJoin(using: (Correl
                                                                   having: (CorrelationRecord<OTHER_INPUT>) -> Any?): InnerJoinStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>> {
 
     @Suppress("UNCHECKED_CAST")
-    val step = InnerJoinStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>>(using,
-            having as CorrelationRecord<out Any?>.() -> Any?, on)
+    val step = InnerJoinStepSpecification<INPUT, Pair<INPUT, OTHER_INPUT>>(
+            using,
+            having as CorrelationRecord<out Any?>.() -> Any?,
+            on
+    )
     this.add(step)
     return step
 }

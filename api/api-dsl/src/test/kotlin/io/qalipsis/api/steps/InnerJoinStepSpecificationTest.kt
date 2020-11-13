@@ -5,11 +5,10 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import assertk.assertions.isTrue
 import assertk.assertions.prop
-import io.mockk.every
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.scenario.ScenarioSpecification
-import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -24,10 +23,11 @@ internal class InnerJoinStepSpecificationTest {
     internal fun `should add left join step with defined secondary step with a name as next and register it`() {
         val previousStep = DummyStepSpecification()
         val primaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { it.value * 2 }
-        val secondaryStep: AbstractStepSpecification<*, Long, *> = relaxedMockk {
-            every { name } returns "my-other-step"
+        val specification: (ScenarioSpecification) -> StepSpecification<Unit, Long, *> = {
+            it.returns(123L).configure {
+                name = "my-other-step"
+            }
         }
-        val specification: (ScenarioSpecification) -> AbstractStepSpecification<*, Long, *> = { secondaryStep }
         val secondaryKeyExtractor: (CorrelationRecord<Long>) -> Any? = { it.value.toInt() * 3 }
         previousStep.innerJoin(using = primaryKeyExtractor, on = specification, having = secondaryKeyExtractor)
             .configure {
@@ -39,14 +39,16 @@ internal class InnerJoinStepSpecificationTest {
                 secondaryKeyExtractor as (CorrelationRecord<out Any?>) -> Any?, "my-other-step")
         expected.cacheTimeout = Duration.ofMillis(Long.MAX_VALUE)
         assertEquals(expected, previousStep.nextSteps[0])
+        assertThat(previousStep.scenario!!.exists("my-other-step")).isTrue()
     }
 
     @Test
     internal fun `should add left join step with defined secondary step and generated name as next and register it`() {
         val previousStep = DummyStepSpecification()
         val primaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { it.value * 2 }
-        val secondaryStep = DummyStepSpecification()
-        val specification: (ScenarioSpecification) -> AbstractStepSpecification<*, Int, *> = { secondaryStep }
+        val specification: (ScenarioSpecification) -> StepSpecification<Unit, Int, *> = {
+            it.returns(123)
+        }
         val secondaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { it.value * 3 }
         previousStep.innerJoin(using = primaryKeyExtractor, on = specification, having = secondaryKeyExtractor)
             .configure {
@@ -60,6 +62,8 @@ internal class InnerJoinStepSpecificationTest {
             prop(InnerJoinStepSpecification<*, *>::cacheTimeout).isEqualTo(Duration.ofMillis(Long.MAX_VALUE))
             prop(InnerJoinStepSpecification<*, *>::secondaryStepName).isNotNull()
         }
+        assertThat(previousStep.scenario!!.exists(
+                (nextStep as InnerJoinStepSpecification<*, *>).secondaryStepName)).isTrue()
     }
 
     @Test

@@ -21,6 +21,12 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
     ConfigurableStepSpecification<INPUT, OUTPUT, SELF> {
 
     override var name: StepName? = null
+        set(value) {
+            field = value
+            // When the name is muted after the step was added to the scenario, the step has to be registered
+            // on the scenario once again.
+            scenario?.register(this)
+        }
 
     override var scenario: @NotNull StepSpecificationRegistry? = null
 

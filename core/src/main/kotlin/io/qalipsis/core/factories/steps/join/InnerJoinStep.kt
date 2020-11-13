@@ -35,24 +35,24 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 internal class InnerJoinStep<I, O>(
-    id: StepId,
+        id: StepId,
 
-    /**
+        /**
          * Specification of the key extractor based upon the value received from the left step.
          */
         private val leftKeyExtractor: (record: CorrelationRecord<I>) -> Any?,
 
-    /**
+        /**
          * Configuration for the consumption and correlation from right steps.
          */
         private val rightCorrelations: Collection<RightCorrelation<out Any>>,
 
-    /**
+        /**
          * Timeout, after which the values received but not forwarded are evicted from the cache.
          */
         cacheTimeout: Duration,
 
-    /**
+        /**
          * Statement to convert the list of values into the output.
          */
         private val outputSupplier: (I, Map<StepId, Any?>) -> O
@@ -80,7 +80,7 @@ internal class InnerJoinStep<I, O>(
             @Suppress("UNCHECKED_CAST")
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
             consumptionJobs.add(GlobalScope.launch {
-                log.debug("Starting the coroutine to buffer right records from step ${corr.sourceStepId}")
+                log.debug("Starting the coroutine buffering right records from step ${corr.sourceStepId}")
                 val subscription = corr.topic.subscribe(stepId)
                 while (subscription.isActive()) {
                     val record = subscription.pollValue()
@@ -93,7 +93,7 @@ internal class InnerJoinStep<I, O>(
                         }
                     }
                 }
-                log.debug("Leaving the coroutine to buffer right records")
+                log.debug("Leaving the coroutine buffering right records")
             })
         }
         running = true
