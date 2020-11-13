@@ -44,28 +44,31 @@ internal class TopicDataPushStep<I>(
     override suspend fun start(context: StepStartStopContext) {
         running = true
         val nextStep = next.first()
-        val stepId = this.id
+        val stepId = nextStep.id
         val minion = minionsKeeper.getSingletonMinion(context.dagId)
         log.debug("Starting to push data with the minion $minion")
 
-        // Starts the coroutines that consumes the topic to trigger the step after.
+        // Starts the coroutines that consumes the topic and pass the values to the step after.
         GlobalScope.launch {
             topicSubscription = topic.subscribe(nextStep.id)
             try {
-                val valueFromTopic = topicSubscription.pollValue()
-                if (filter(valueFromTopic)) {
-                    val input = Channel<I>(1)
-                    val ctx = StepContext<I, I>(
-                            input = input,
-                            campaignId = context.campaignId,
-                            scenarioId = context.scenarioId,
-                            parentStepId = parentStepId,
-                            stepId = stepId,
-                            directedAcyclicGraphId = context.dagId,
-                            minionId = minion.id
-                    )
-                    input.offer(valueFromTopic)
-                    runner.launch(minion, nextStep, ctx)
+                while (running) {
+                    val valueFromTopic = topicSubscription.pollValue()
+                    if (filter(valueFromTopic)) {
+                        val input = Channel<I>(1)
+                        val ctx = StepContext<I, I>(
+                                input = input,
+                                campaignId = context.campaignId,
+                                scenarioId = context.scenarioId,
+                                parentStepId = parentStepId,
+                                stepId = stepId,
+                                directedAcyclicGraphId = context.dagId,
+                                minionId = minion.id,
+                                isTail = false // We actually never know when the tail will come.
+                        )
+                        input.offer(valueFromTopic)
+                        runner.launch(minion, nextStep, ctx)
+                    }
                 }
             } catch (e: Exception) {
                 log.warn(e.message, e)
@@ -87,7 +90,7 @@ internal class TopicDataPushStep<I>(
     }
 
     override suspend fun execute(context: StepContext<I, I>) {
-        throw IllegalAccessException("This method should never be called")
+        // Ignore the execution.
     }
 
     companion object {

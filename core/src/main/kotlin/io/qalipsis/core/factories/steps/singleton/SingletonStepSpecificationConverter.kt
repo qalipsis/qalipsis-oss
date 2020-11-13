@@ -57,10 +57,13 @@ internal class SingletonStepSpecificationConverter :
 
             // All the next step specifications have to be decorated by [SingletonProxyStepSpecification].
             spec.nextSteps.replaceAll {
-                // If the wrapped step is itself a singleton, the SingletonProxyStep should loop endless on the first execution
-                // to make sure that all the available data from the topic are consumed.
+                // All the next steps are wrapped so that they can receive the data from the topic.
+                if (it.name.isNullOrBlank()) {
+                    // Create a name here to
+                    it.name = Cuid.createCuid()
+                }
                 @Suppress("UNCHECKED_CAST")
-                SingletonProxyStepSpecification(decoratedStep.id, it as StepSpecification<Any?, *, *>, topic)
+                SingletonProxyStepSpecification(it.name!!, it as StepSpecification<Any?, *, *>, topic)
             }
         }
     }
@@ -74,10 +77,10 @@ internal class SingletonStepSpecificationConverter :
 
         val step = if (creationContext.directedAcyclicGraph.isUnderLoad) {
             // When a minion is executing the SingletonProxyStep, a record will be polled from the topic if any.
-            SingletonProxyStep(spec.name ?: Cuid.createCuid(), spec.topic)
+            SingletonProxyStep("${spec.name}-singleton-proxy-${Cuid.createCuid()}", spec.topic)
         } else {
-            // This DAG is not receiving any minion, so the next step has to be .
-            TopicDataPushStep(spec.name ?: Cuid.createCuid(), spec.singletonStepId, spec.topic)
+            // This DAG is not receiving any minion, so the next step has to be forced to be executed.
+            TopicDataPushStep("${spec.name}-topic-data-push-${Cuid.createCuid()}", spec.singletonStepId, spec.topic)
         }
         creationContext.createdStep(step)
     }

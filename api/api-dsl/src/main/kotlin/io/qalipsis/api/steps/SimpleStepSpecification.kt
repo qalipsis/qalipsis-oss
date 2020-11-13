@@ -13,7 +13,7 @@ import io.qalipsis.api.scenario.StepSpecificationRegistry
 @Introspected
 data class SimpleStepSpecification<INPUT, OUTPUT>(
         val specification: suspend (context: StepContext<INPUT, OUTPUT>) -> Unit
-) : AbstractStepSpecification<INPUT?, OUTPUT?, SimpleStepSpecification<INPUT, OUTPUT>>()
+) : AbstractStepSpecification<INPUT, OUTPUT, SimpleStepSpecification<INPUT, OUTPUT>>()
 
 /**
  * Executes [specification] on the provided context.

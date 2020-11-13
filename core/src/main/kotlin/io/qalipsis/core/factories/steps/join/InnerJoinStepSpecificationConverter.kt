@@ -41,8 +41,11 @@ internal class InnerJoinStepSpecificationConverter : StepSpecificationConverter<
         val topic = broadcastTopic<CorrelationRecord<*>>()
 
         // A step is added as output to forward the data to the topic.
-        val consumer = TopicMirrorStep<O, CorrelationRecord<*>>(Cuid.createCuid(), topic, { _, value -> value != null },
-                { context, value -> CorrelationRecord(context.minionId, context.stepId, value) })
+        val consumer = TopicMirrorStep<O, CorrelationRecord<*>>(
+                "${secondaryStep.id}-topic-mirror-step-${Cuid.createCuid()}",
+                topic, { _, value -> value != null },
+                { context, value -> CorrelationRecord(context.minionId, context.stepId, value) }
+        )
 
         if (secondaryStep is NoMoreNextStepDecorator<*, *>) {
             secondaryStep.decorated.addNext(consumer)

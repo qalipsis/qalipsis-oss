@@ -8,7 +8,7 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.Step
 
 /**
- * Step forwarding the input to a topic and the output.
+ * Step forwarding the input to a topic as well as the output channel.
  *
  * @property topic topic to forward the data to
  * @property predicate predicate to match to forward the data to the topic, default to always true
