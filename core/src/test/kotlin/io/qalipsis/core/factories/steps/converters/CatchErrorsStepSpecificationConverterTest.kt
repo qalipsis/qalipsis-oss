@@ -7,10 +7,10 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.steps.CatchErrorStepSpecification
+import io.qalipsis.api.steps.CatchErrorsStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
-import io.qalipsis.core.factories.steps.CatchErrorStep
+import io.qalipsis.core.factories.steps.CatchErrorsStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
@@ -23,13 +23,13 @@ import org.junit.jupiter.api.Test
  * @author Eric Jessé
  */
 @Suppress("UNCHECKED_CAST")
-internal class CatchErrorStepSpecificationConverterTest :
-    AbstractStepSpecificationConverterTest<CatchErrorStepSpecificationConverter>() {
+internal class CatchErrorsStepSpecificationConverterTest :
+    AbstractStepSpecificationConverterTest<CatchErrorsStepSpecificationConverter>() {
 
     @Test
     override fun `should support expected spec`() {
         // when+then
-        assertTrue(converter.support(relaxedMockk<CatchErrorStepSpecification>()))
+        assertTrue(converter.support(relaxedMockk<CatchErrorsStepSpecification<*>>()))
     }
 
     @Test
@@ -42,17 +42,17 @@ internal class CatchErrorStepSpecificationConverterTest :
     internal fun `should convert spec with name to step`() {
         // given
         val blockSpecification: (error: Collection<StepError>) -> Unit = {}
-        val spec = CatchErrorStepSpecification(blockSpecification)
+        val spec = CatchErrorsStepSpecification<Int>(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorStepSpecification>)
+            converter.convert<Int, Int>(creationContext as StepCreationContext<CatchErrorsStepSpecification<*>>)
         }
 
         // then
-        assertThat(creationContext.createdStep!!).isInstanceOf(CatchErrorStep::class).all {
+        assertThat(creationContext.createdStep!!).isInstanceOf(CatchErrorsStep::class).all {
             prop("id").isEqualTo("my-step")
             prop("block").isSameAs(blockSpecification)
         }
@@ -62,17 +62,17 @@ internal class CatchErrorStepSpecificationConverterTest :
     internal fun `should convert spec without name to step`() {
         // given
         val blockSpecification: (error: Collection<StepError>) -> Unit = {}
-        val spec = CatchErrorStepSpecification(blockSpecification)
+        val spec = CatchErrorsStepSpecification<Int>(blockSpecification)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorStepSpecification>)
+            converter.convert<String, Int>(creationContext as StepCreationContext<CatchErrorsStepSpecification<*>>)
         }
 
         // then
-        assertThat(creationContext.createdStep!!).isInstanceOf(CatchErrorStep::class).all {
+        assertThat(creationContext.createdStep!!).isInstanceOf(CatchErrorsStep::class).all {
             prop("id").isNotNull()
             prop("block").isSameAs(blockSpecification)
         }

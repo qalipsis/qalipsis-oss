@@ -14,33 +14,38 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 @Suppress("EXPERIMENTAL_API_USAGE")
-internal class CatchErrorStepTest {
+internal class CatchErrorsStepTest {
 
     @Test
-    @Timeout(1)
-    fun shouldIgnoreStepWhenNoError() {
+    @Timeout(3)
+    fun shouldIgnoreBlockWhenNoError() {
         val reference = AtomicInteger(0)
-        val step = CatchErrorStep<Any>("") { _ -> reference.incrementAndGet() }
-        val ctx = createStepContext<Any, Any>()
+        val step = CatchErrorsStep<Int>("") { _ -> reference.incrementAndGet() }
+        val ctx = createStepContext<Int, Int>(input = 123)
 
-        runBlocking {
+        val result = runBlocking {
             step.execute(ctx)
+            (ctx.output as Channel<Int>).receive()
         }
         Assertions.assertEquals(0, reference.get())
+        Assertions.assertEquals(123, result)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }
 
     @Test
-    @Timeout(1)
-    fun shouldExecuteStepWhenErrors() {
+    @Timeout(3)
+    fun shouldExecuteBlockWhenErrors() {
         val reference = AtomicInteger(0)
-        val step = CatchErrorStep<Any>("") { _ -> reference.incrementAndGet() }
-        val ctx = createStepContext<Any, Any>(errors = mutableListOf(StepError(RuntimeException(""))))
+        val step = CatchErrorsStep<Int>("") { _ -> reference.incrementAndGet() }
+        val ctx = createStepContext<Int, Int>(input = 456, errors = mutableListOf(StepError(RuntimeException(""))))
 
-        runBlocking {
+        val result = runBlocking {
             step.execute(ctx)
+            (ctx.output as Channel<Int>).receive()
         }
         Assertions.assertEquals(1, reference.get())
+        Assertions.assertEquals(456, result)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }
+
 }
