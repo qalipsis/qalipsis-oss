@@ -16,15 +16,17 @@ internal class CatchExhaustedContextStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldIgnoreStepWhenContextIsNotExhausted() {
+    fun shouldIgnoreBlockWhenContextIsNotExhausted() {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
-        val ctx = StepTestHelper.createStepContext<Any?, Int>()
+        val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 123)
 
-        runBlocking {
+        val result = runBlocking {
             step.execute(ctx)
+            (ctx.output as Channel<Int>).receive()
         }
         Assertions.assertEquals(0, reference.get())
+        Assertions.assertEquals(123, result)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
     }
@@ -34,12 +36,13 @@ internal class CatchExhaustedContextStepTest {
     fun shouldExecuteStepWhenContextIsExhausted() {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
-        val ctx = StepTestHelper.createStepContext<Any?, Int>(exhausted = true)
+        val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 456, exhausted = true)
 
         runBlocking {
             step.execute(ctx)
         }
         Assertions.assertEquals(1, reference.get())
+        Assertions.assertTrue((ctx.output as Channel).isEmpty)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }
 }

@@ -15,8 +15,9 @@ data class CatchExhaustedContextStepSpecification<OUTPUT>(
 
 /**
  * Executes user-defined operations on an exhausted context. The context can be updated to declare it as non exhausted.
- *
  * An exhausted context is any execution context that had an error in an earlier step.
+ *
+ * If the context is not exhausted, the potential value in the input is forwarded to the output.
  *
  * @param block operations to execute on the exhausted context to analyze and update it
  *
