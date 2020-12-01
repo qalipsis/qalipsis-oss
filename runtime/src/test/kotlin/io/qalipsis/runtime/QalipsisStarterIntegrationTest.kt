@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Timeout
 internal class QalipsisStarterIntegrationTest {
 
     @Test
-    @Timeout(4)
+    @Timeout(8)
     internal fun `should start as default`() {
         val exitCode = Qalipsis.start(arrayOf())
 

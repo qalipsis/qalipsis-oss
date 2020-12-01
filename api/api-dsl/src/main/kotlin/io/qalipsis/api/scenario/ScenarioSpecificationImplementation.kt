@@ -2,6 +2,7 @@ package io.qalipsis.api.scenario
 
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
@@ -9,6 +10,7 @@ import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.sync.ImmutableSlot
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Concrete implementation of all the interfaces relevant to define and use a scenario specification.
@@ -22,10 +24,10 @@ internal class ScenarioSpecificationImplementation(
 
     override var minionsCount = 1
 
-    override val rootSteps = mutableListOf<StepSpecification<*, *, *>>()
+    override val rootSteps = concurrentList<StepSpecification<*, *, *>>()
 
     // Visible for test only.
-    internal val registeredSteps = mutableMapOf<String, ImmutableSlot<StepSpecification<*, *, *>>>()
+    internal val registeredSteps = ConcurrentHashMap<String, ImmutableSlot<StepSpecification<*, *, *>>>()
 
     override var rampUpStrategy: RampUpStrategy? = null
 
@@ -33,7 +35,7 @@ internal class ScenarioSpecificationImplementation(
 
     override var dagsCount = 0
 
-    override var dagsUnderLoad: MutableSet<DirectedAcyclicGraphId> = concurrentSet()
+    override var dagsUnderLoad = concurrentSet<DirectedAcyclicGraphId>()
 
     override fun add(step: StepSpecification<*, *, *>) {
         rootSteps.add(step)
