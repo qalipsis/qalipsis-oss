@@ -1,13 +1,21 @@
 package io.qalipsis.api.sync
 
+import assertk.assertThat
+import assertk.assertions.isBetween
+import assertk.assertions.isGreaterThan
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.lang.millis
+import io.qalipsis.api.lang.seconds
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
 /**
@@ -113,6 +121,37 @@ internal class SlotTest {
 
     @Test
     @Timeout(3)
+    internal fun `should block removal until value is offered`() {
+        // given
+        val slot = Slot<Unit>()
+
+        val releaseTimes = concurrentSet<Instant>()
+        val suspendedCountLatch = SuspendedCountLatch(1)
+
+        repeat(3) {
+            GlobalScope.launch {
+                slot.remove()
+                releaseTimes.add(Instant.now())
+                suspendedCountLatch.decrement()
+            }
+        }
+
+        // when
+        Thread.sleep(50)
+        val now = Instant.now()
+        slot.offer(Unit)
+        runBlocking {
+            suspendedCountLatch.await()
+        }
+
+        // then
+        Assertions.assertTrue(slot.isEmpty())
+        Assertions.assertFalse(slot.isPresent())
+        releaseTimes.forEach { releaseTime -> QalipsisTimeAssertions.assertAfter(now, releaseTime) }
+    }
+
+    @Test
+    @Timeout(3)
     internal fun `should remove and set and remove again`() {
         // given
         val slot = Slot(Unit)
@@ -178,5 +217,41 @@ internal class SlotTest {
         Assertions.assertFalse(slot.isEmpty())
         Assertions.assertTrue(slot.isPresent())
         releaseTimes.forEach { releaseTime -> QalipsisTimeAssertions.assertAfterOrEqual(now, releaseTime) }
+    }
+
+
+    @Test
+    @Timeout(3)
+    internal fun `should throw a timeout exception`() {
+        // given
+        val slot = Slot<Unit>()
+
+        // when + then
+        assertThrows<TimeoutCancellationException> {
+            runBlocking {
+                slot.get(100.millis())
+            }
+        }
+    }
+
+    @Test
+    @Timeout(3)
+    internal fun `should return a result`() {
+        // given
+        val slot = Slot<Unit>()
+        val start = System.currentTimeMillis()
+        GlobalScope.launch {
+            delay(200)
+            slot.set(Unit)
+        }
+
+        // when
+        val result = runBlocking {
+            slot.get(50.seconds())
+        }
+
+        // then
+        Assertions.assertSame(Unit, result)
+        assertThat(System.currentTimeMillis() - start).isGreaterThan(150)
     }
 }

@@ -1,7 +1,10 @@
 package io.qalipsis.api.sync
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
+import java.time.Duration
 
 /**
  *
@@ -53,11 +56,32 @@ class Slot<T>(private var value: T? = null) {
         }
     }
 
+
+    /**
+     * Blocking implementation of [set].
+     */
+    fun offer(value: T) {
+        runBlocking {
+            set(value)
+        }
+    }
+
     /**
      * Returns the value if it exists or suspend the call otherwise.
      */
     suspend fun get(): T {
         await()
+        return value!!
+    }
+
+    /**
+     * Returns the value if it exists or suspends until the timeout is reached otherwise.
+     * If the timeout is reached before a value is set, a [kotlinx.coroutines.TimeoutCancellationException] is thrown.
+     */
+    suspend fun get(timeout: Duration): T {
+        withTimeout(timeout.toMillis()) {
+            await()
+        }
         return value!!
     }
 
@@ -72,6 +96,16 @@ class Slot<T>(private var value: T? = null) {
             value = null
         }
         return result
+    }
+
+    /**
+     * Returns and removes the value if it exists or suspends until the timeout is reached otherwise.
+     * If the timeout is reached before a value is available, a [kotlinx.coroutines.TimeoutCancellationException] is thrown.
+     */
+    suspend fun remove(timeout: Duration): T {
+        return withTimeout(timeout.toMillis()) {
+            remove()
+        }
     }
 
     /**

@@ -19,3 +19,8 @@ fun Duration.isShorterThan(duration: Duration) = this < duration
 fun Duration.isShorterThan(duration: Long) = this.toMillis() < duration
 fun Duration.isShorterOrEqualTo(duration: Duration) = this <= duration
 fun Duration.isShorterOrEqualTo(duration: Long) = this.toMillis() <= duration
+
+fun Long.millis() = Duration.ofMillis(this)
+fun Long.seconds() = Duration.ofSeconds(this)
+fun Int.millis() = Duration.ofMillis(this.toLong())
+fun Int.seconds() = Duration.ofSeconds(this.toLong())
