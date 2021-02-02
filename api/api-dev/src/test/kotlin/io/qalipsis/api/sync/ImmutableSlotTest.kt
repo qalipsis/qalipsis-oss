@@ -1,14 +1,23 @@
 package io.qalipsis.api.sync
 
+import assertk.assertThat
+import assertk.assertions.isBetween
+import assertk.assertions.isGreaterThan
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.lang.millis
+import io.qalipsis.api.lang.seconds
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
@@ -18,6 +27,7 @@ import java.time.Instant
 internal class ImmutableSlotTest {
 
     @Test
+    @Timeout(3)
     internal fun `should block calls at start until a value is set`() {
         // given
         val slot = ImmutableSlot<Unit>()
@@ -50,6 +60,7 @@ internal class ImmutableSlotTest {
     }
 
     @Test
+    @Timeout(3)
     internal fun `should not block calls at start until a value is set`() {
         // given
         val slot = ImmutableSlot<Unit>(Unit)
@@ -81,6 +92,7 @@ internal class ImmutableSlotTest {
     }
 
     @Test
+    @Timeout(3)
     internal fun `should throw an error when setting a value and one is already present`() {
         // given
         val slot = ImmutableSlot(Unit)
@@ -95,6 +107,7 @@ internal class ImmutableSlotTest {
     }
 
     @Test
+    @Timeout(3)
     internal fun `should throw an error when setting the value twice`() {
         // given
         val slot = ImmutableSlot<Unit>()
@@ -111,4 +124,55 @@ internal class ImmutableSlotTest {
             }
         }
     }
+
+    @Test
+    @Timeout(3)
+    internal fun `should throw an error when offering the value twice`() {
+        // given
+        val slot = ImmutableSlot<Unit>()
+
+        // when
+        slot.offer(Unit)
+
+        // then
+        assertThrows<IllegalStateException> {
+            slot.offer(Unit)
+        }
+    }
+
+    @Test
+    @Timeout(3)
+    internal fun `should throw a timeout exception`() {
+        // given
+        val slot = ImmutableSlot<Unit>()
+
+        // when + then
+        assertThrows<TimeoutCancellationException> {
+            runBlocking {
+                slot.get(100.millis())
+            }
+        }
+    }
+
+    @Test
+    @Timeout(3)
+    internal fun `should return a result`() {
+        // given
+        val slot = ImmutableSlot<Unit>()
+        val start = System.currentTimeMillis()
+        GlobalScope.launch {
+            delay(200)
+            slot.set(Unit)
+        }
+
+        // when
+        val result = runBlocking {
+            slot.get(50.seconds())
+        }
+
+        // then
+        assertSame(Unit, result)
+        assertThat(System.currentTimeMillis() - start).isGreaterThan(150)
+    }
+
 }
