@@ -6,9 +6,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 plugins {
     idea
     java
-    kotlin("jvm") version "1.4.0"
-    kotlin("kapt") version "1.4.0"
-    kotlin("plugin.allopen") version "1.4.0"
+    kotlin("jvm") version "1.4.30"
+    kotlin("kapt") version "1.4.30"
+    kotlin("plugin.allopen") version "1.4.30"
     id("net.ltgt.apt") version "0.21" apply false
 
     id("nebula.contacts") version "5.1.0"
