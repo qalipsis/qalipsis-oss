@@ -1,6 +1,7 @@
 package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.orchestration.factories.Minion
 
 /**
  * Default interface for the components executing a step either directly or with its retry policy.
@@ -10,15 +11,15 @@ import io.qalipsis.api.context.StepContext
 interface StepExecutor {
 
     /**
-     * Execute a step either using its retry policy if defined or directly otherwise.
+     * Executes a step either using its retry policy if defined or directly otherwise.
      */
-    suspend fun <I, O> executeStep(step: Step<I, O>, context: StepContext<I, O>) {
+    suspend fun <I, O> executeStep(minion: Minion, step: Step<I, O>, context: StepContext<I, O>) {
         if (step.retryPolicy != null) {
             step.retryPolicy!!.execute(context) { stepContext ->
-                step.execute(stepContext)
+                step.execute(minion, stepContext)
             }
         } else {
-            step.execute(context)
+            step.execute(minion, context)
         }
     }
 

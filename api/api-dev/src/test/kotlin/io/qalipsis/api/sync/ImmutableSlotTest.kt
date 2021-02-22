@@ -1,7 +1,6 @@
 package io.qalipsis.api.sync
 
 import assertk.assertThat
-import assertk.assertions.isBetween
 import assertk.assertions.isGreaterThan
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.millis

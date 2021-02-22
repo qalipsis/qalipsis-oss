@@ -4,10 +4,10 @@ import cool.graph.cuid.Cuid
 import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.steps.VerificationStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.api.steps.VerificationStepSpecification
 import io.qalipsis.core.factories.steps.VerificationStep
 
 /**

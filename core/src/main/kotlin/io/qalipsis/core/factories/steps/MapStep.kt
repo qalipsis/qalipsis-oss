@@ -11,10 +11,10 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class MapStep<I, O>(
-        id: StepId,
-        retryPolicy: RetryPolicy?,
-        @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> O) = { value -> value as O }
+internal class MapStep<I, O>(
+    id: StepId,
+    retryPolicy: RetryPolicy?,
+    @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> O) = { value -> value as O }
 ) : AbstractStep<I, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, O>) {

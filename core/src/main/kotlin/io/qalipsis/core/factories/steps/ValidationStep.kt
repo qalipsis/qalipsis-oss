@@ -16,7 +16,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class ValidationStep<I>(
+internal class ValidationStep<I>(
     id: StepId,
     retryPolicy: RetryPolicy?,
     private val specification: ((input: I) -> List<StepError>)

@@ -35,6 +35,8 @@ class SuspendedCountLatch(
     private val allowsNegative: Boolean = false,
     private val onReleaseAction: suspend (() -> Unit) = {}) {
 
+    private var activityFlag = Channel<Unit>(1)
+
     private var syncFlag = Channel<Unit>(1)
 
     private val mutex = Mutex()
@@ -46,13 +48,23 @@ class SuspendedCountLatch(
         get() = syncFlag.onReceiveOrNull()
 
     init {
-        require(initialCount >= 0) { "count < 0" }
         // If the count is already 0, the sync flag is released.
         if (initialCount == 0L) {
             syncFlag.close()
         }
     }
 
+    /**
+     * Awaits for [increment] or [decrement] to be called at least once.
+     */
+    suspend fun awaitActivity(): SuspendedCountLatch {
+        activityFlag.receiveOrNull()
+        return this
+    }
+
+    /**
+     * Awaits for the counter to be 0.
+     */
     suspend fun await() {
         syncFlag.receiveOrNull()
     }
@@ -64,11 +76,13 @@ class SuspendedCountLatch(
         }
     }
 
-    suspend fun reset() {
-        mutex.withLock {
-            logger().trace("Resetting...")
-            count.set(initialCount)
-            resetSyncFlag()
+    fun reset() {
+        runBlocking {
+            mutex.withLock {
+                logger().trace("Resetting...")
+                count.set(initialCount)
+                resetFlags()
+            }
         }
     }
 
@@ -76,9 +90,10 @@ class SuspendedCountLatch(
         mutex.withLock {
             count.addAndGet(value)
             logger().trace("Count is now $count")
+            activityFlag.close()
             // When the count gets from 0 to 1, the sync flag is recreated.
             if (count.get() == 1L) {
-                resetSyncFlag()
+                resetFlags()
             }
         }
     }
@@ -94,6 +109,7 @@ class SuspendedCountLatch(
             require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
             count.addAndGet(-value)
             logger().trace("Count is now $count")
+            activityFlag.close()
             if (count.get() == 0L) {
                 onReleaseAction()
                 syncFlag.close()
@@ -114,9 +130,12 @@ class SuspendedCountLatch(
         return count.get() > 0
     }
 
-    private fun resetSyncFlag() {
+    private fun resetFlags() {
         if (syncFlag.isClosedForReceive) {
             syncFlag = Channel(1)
+        }
+        if (activityFlag.isClosedForReceive) {
+            activityFlag = Channel(1)
         }
     }
 

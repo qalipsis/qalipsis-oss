@@ -13,13 +13,13 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class VerificationStep<I, O>(
-        id: StepId,
-        private val eventsLogger: EventsLogger,
-        private val meterRegistry: MeterRegistry,
-        @Suppress("UNCHECKED_CAST") private val assertionBlock: (suspend (input: I) -> O) = { value ->
-            value as O
-        }
+internal class VerificationStep<I, O>(
+    id: StepId,
+    private val eventsLogger: EventsLogger,
+    private val meterRegistry: MeterRegistry,
+    @Suppress("UNCHECKED_CAST") private val assertionBlock: (suspend (input: I) -> O) = { value ->
+        value as O
+    }
 ) : AbstractStep<I, O>(id, null) {
 
     override suspend fun execute(context: StepContext<I, O>) {

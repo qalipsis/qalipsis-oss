@@ -19,17 +19,17 @@ import kotlinx.coroutines.flow.flowOf
  *
  * @author Eric Jessé
  */
-class FlatMapStep<I, O>(
-        id: StepId,
-        retryPolicy: RetryPolicy?,
-        @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> Flow<O>) = { input ->
-            when (input) {
-                null -> emptyFlow()
-                is Collection<*> ->
-                    input.asFlow() as Flow<O>
+internal class FlatMapStep<I, O>(
+    id: StepId,
+    retryPolicy: RetryPolicy?,
+    @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> Flow<O>) = { input ->
+        when (input) {
+            null -> emptyFlow()
+            is Collection<*> ->
+                input.asFlow() as Flow<O>
 
-                is Array<*> ->
-                    input.asFlow() as Flow<O>
+            is Array<*> ->
+                input.asFlow() as Flow<O>
 
                 is Sequence<*> ->
                     input.asFlow() as Flow<O>

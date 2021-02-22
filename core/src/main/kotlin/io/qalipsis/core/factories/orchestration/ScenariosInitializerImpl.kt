@@ -45,14 +45,14 @@ import javax.validation.Valid
 @Singleton
 @Validated
 internal class ScenariosInitializerImpl(
-        private val applicationContext: ApplicationContext,
-        private val scenariosRegistry: ScenariosRegistry,
-        private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
-        private val feedbackProducer: FeedbackProducer,
-        private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
-        private val runner: Runner,
-        private val minionsKeeper: MinionsKeeper,
-        stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
+    private val applicationContext: ApplicationContext,
+    private val scenariosRegistry: ScenariosRegistry,
+    private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
+    private val feedbackProducer: FeedbackProducer,
+    private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
+    private val runner: Runner,
+    private val minionsKeeper: MinionsKeeper,
+    stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
 ) : ScenariosInitializer, StartupFactoryComponent {
 
     /**
@@ -99,13 +99,13 @@ internal class ScenariosInitializerImpl(
         val feedbackScenarios = scenarios.map { scenario ->
             val feedbackDags = scenario.dags.map {
                 FactoryRegistrationFeedbackDirectedAcyclicGraph(
-                        it.id, it.isSingleton, it.isRoot, it.isUnderLoad, it.stepsCount
+                    it.id, it.isSingleton, it.isRoot, it.isUnderLoad, it.stepsCount
                 )
             }
             FactoryRegistrationFeedbackScenario(
-                    scenario.id,
-                    scenario.minionsCount,
-                    feedbackDags
+                scenario.id,
+                scenario.minionsCount,
+                feedbackDags
             )
         }
 
@@ -120,21 +120,21 @@ internal class ScenariosInitializerImpl(
                                  scenarioSpecification: ConfiguredScenarioSpecification): Scenario {
         if (scenarioSpecification.dagsUnderLoad.isEmpty()) {
             throw InvalidSpecificationException(
-                    "There is no main branch defined in scenario $scenarioId, please prefix at least one root branch with 'start()'")
+                "There is no main branch defined in scenario $scenarioId, please prefix at least one root branch with 'start()'")
         }
 
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
-                "The scenario $scenarioId requires a ramp-up strategy")
+            "The scenario $scenarioId requires a ramp-up strategy")
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario =
             ScenarioImpl(scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
-                    minionsCount = scenarioSpecification.minionsCount, feedbackProducer)
+                minionsCount = scenarioSpecification.minionsCount, feedbackProducer)
         scenariosRegistry.add(scenario)
 
         runBlocking {
             @Suppress("UNCHECKED_CAST")
             convertSteps(scenarioSpecification, scenario, null,
-                    scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
+                scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
         }
         require(scenario.dags.size >= scenarioSpecification.dagsCount) {
             "Not all the DAGs were created, only ${
@@ -160,28 +160,29 @@ internal class ScenariosInitializerImpl(
     }
 
     private suspend fun convertStepRecursively(
-            scenarioSpecification: ConfiguredScenarioSpecification,
-            scenario: Scenario,
-            parentStep: Step<*, *>?,
-            stepSpecification: StepSpecification<Any?, Any?, *>) {
+        scenarioSpecification: ConfiguredScenarioSpecification,
+        scenario: Scenario,
+        parentStep: Step<*, *>?,
+        stepSpecification: StepSpecification<Any?, Any?, *>) {
         log.debug(
-                "Creating step ${stepSpecification.name ?: "<undefined>"} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<isRoot>"} in DAG ${stepSpecification.directedAcyclicGraphId}")
+            "Creating step ${stepSpecification.name ?: "<undefined>"} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<isRoot>"} in DAG ${stepSpecification.directedAcyclicGraphId}")
 
         // Get or create the DAG to attach the step.
         val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->
             DirectedAcyclicGraph(
-                    dagId, scenario,
-                    isRoot = (parentStep == null),
-                    isSingleton = stepSpecification is SingletonStepSpecification,
-                    isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad)
+                dagId, scenario,
+                isRoot = (parentStep == null),
+                isSingleton = stepSpecification is SingletonStepSpecification,
+                isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad)
             )
         }
 
         val context =
             StepCreationContextImpl(scenarioSpecification as StepSpecificationRegistry, dag, stepSpecification)
         convertSingleStep(context)
-        decorateStep(context)
+        context.createdStep?.let(this::injectDependencies)
 
+        decorateStep(context)
         context.createdStep?.let { step ->
             injectDependencies(step)
             step.init()
@@ -193,7 +194,7 @@ internal class ScenariosInitializerImpl(
 
             @Suppress("UNCHECKED_CAST")
             convertSteps(scenarioSpecification, scenario, step,
-                    stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
+                stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
         }
     }
 

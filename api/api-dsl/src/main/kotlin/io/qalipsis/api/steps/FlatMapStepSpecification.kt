@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asFlow
  */
 @Introspected
 data class FlatMapStepSpecification<INPUT, OUTPUT>(
-        val block: (input: INPUT) -> Flow<OUTPUT>
+    val block: (input: INPUT) -> Flow<OUTPUT>
 ) : AbstractStepSpecification<INPUT, OUTPUT, FlatMapStepSpecification<INPUT, OUTPUT>>()
 
 /**
@@ -23,7 +23,7 @@ data class FlatMapStepSpecification<INPUT, OUTPUT>(
  * @author Eric Jessé
  */
 fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatMap(
-        block: (input: INPUT) -> Flow<OUTPUT>): FlatMapStepSpecification<INPUT, OUTPUT> {
+    block: (input: INPUT) -> Flow<OUTPUT>): FlatMapStepSpecification<INPUT, OUTPUT> {
     val step = FlatMapStepSpecification(block)
     this.add(step)
     return step
@@ -34,8 +34,8 @@ fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatMap(
  *
  * @author Eric Jessé
  */
-@JvmName("flattenIterable")
-fun <INPUT> StepSpecification<*, out Iterable<INPUT>, *>.flatten(): FlatMapStepSpecification<out Iterable<INPUT>, INPUT> {
+@JvmName("flattenCollection")
+fun <INPUT> StepSpecification<*, Collection<INPUT>, *>.flatten(): FlatMapStepSpecification<out Iterable<INPUT>, INPUT> {
     return flatMap { it.asFlow() }
 }
 

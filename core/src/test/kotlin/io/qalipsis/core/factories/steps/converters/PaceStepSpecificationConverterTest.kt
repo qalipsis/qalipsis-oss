@@ -38,7 +38,7 @@ internal class PaceStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name and retry policy to step`() {
+    internal fun `should convert spec with name to step`() {
         // given
         val blockSpecification: (pastPeriodMs: Long) -> Long = { _ -> 1 }
         val spec = PaceStepSpecification<Int>(blockSpecification)
@@ -58,7 +58,7 @@ internal class PaceStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() {
+    internal fun `should convert spec without name to step`() {
         // given
         val blockSpecification: (pastPeriodMs: Long) -> Long = { _ -> 1 }
         val spec = PaceStepSpecification<Int>(blockSpecification)

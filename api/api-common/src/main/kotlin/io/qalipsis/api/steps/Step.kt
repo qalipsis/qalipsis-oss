@@ -3,6 +3,7 @@ package io.qalipsis.api.steps
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.context.StepStartStopContext
+import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
 
 /**
@@ -43,7 +44,13 @@ interface Step<I, O> {
     suspend fun start(context: StepStartStopContext) = Unit
 
     /**
-     * Executes the operation implies by the step.
+     * Executes the operation wrapped by the step, passing the minion to it.
+     */
+    @Throws(Exception::class)
+    suspend fun execute(minion: Minion, context: StepContext<I, O>) = execute(context)
+
+    /**
+     * Executes the operation wrapped by the step.
      */
     @Throws(Exception::class)
     suspend fun execute(context: StepContext<I, O>)

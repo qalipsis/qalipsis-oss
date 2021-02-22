@@ -15,7 +15,7 @@ import io.qalipsis.api.steps.AbstractStep
  * @property sharedStateRegistry the bean to keep and retrieve shared states
  * @property specification the closure generating a map of values to push to the shared registry from the context input
  */
-class ShelveStep<I>(
+internal class ShelveStep<I>(
     id: StepId,
     private val sharedStateRegistry: SharedStateRegistry,
     private val specification: (input: I) -> Map<String, Any?>

@@ -95,10 +95,10 @@ internal class ScenariosInitializerImplTest {
     @BeforeEach
     internal fun setUp() {
         scenariosInitializer = spyk(
-                ScenariosInitializerImpl(applicationContext, scenariosRegistry, scenarioSpecificationsKeeper,
-                        feedbackProducer,
-                        listOf(stepConverter1, stepConverter2), runner, minionsKeeper,
-                        listOf(stepDecorator1, stepDecorator2)))
+            ScenariosInitializerImpl(applicationContext, scenariosRegistry, scenarioSpecificationsKeeper,
+                feedbackProducer,
+                listOf(stepConverter1, stepConverter2), runner, minionsKeeper,
+                listOf(stepDecorator1, stepDecorator2)))
     }
 
     @AfterEach
@@ -201,7 +201,7 @@ internal class ScenariosInitializerImplTest {
     internal fun `should convert steps and followers`() {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
-                ScenarioSpecification::class, StepSpecificationRegistry::class
+            ScenarioSpecification::class, StepSpecificationRegistry::class
         )
         val scenario = testScenario()
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
@@ -226,18 +226,20 @@ internal class ScenariosInitializerImplTest {
         // when
         runBlocking {
             scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
-                    // Only the root steps are passed.
-                    listOf(stepSpecification1, stepSpecification3))
+                // Only the root steps are passed.
+                listOf(stepSpecification1, stepSpecification3))
         }
 
         // then
         // Only two dags were created.
         assertEquals(1, scenario["dag-1"]!!.stepsCount)
         assertEquals(2, scenario["dag-2"]!!.stepsCount)
+        // 3 steps were created.
         coVerifyExactly(3) {
-            // 3 steps were created.
             (scenariosInitializer).convertSingleStep(any())
             (scenariosInitializer).decorateStep(any())
+        }
+        coVerifyExactly(6) {
             (scenariosInitializer).injectDependencies(any())
         }
     }
@@ -246,7 +248,7 @@ internal class ScenariosInitializerImplTest {
     internal fun `should not convert followers when step is not converted`() {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
-                ScenarioSpecification::class, StepSpecificationRegistry::class
+            ScenarioSpecification::class, StepSpecificationRegistry::class
         )
         val scenario = spyk(testScenario())
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
@@ -276,8 +278,8 @@ internal class ScenariosInitializerImplTest {
         // when
         runBlocking {
             scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
-                    // Only the root steps are passed.
-                    listOf(stepSpecification1, stepSpecification3))
+                // Only the root steps are passed.
+                listOf(stepSpecification1, stepSpecification3))
         }
 
         // then
@@ -287,8 +289,6 @@ internal class ScenariosInitializerImplTest {
             // 2 steps were tried.
             (scenariosInitializer).convertSingleStep(any())
             (scenariosInitializer).decorateStep(any())
-        }
-        coVerifyOnce {
             (scenariosInitializer).injectDependencies(any())
         }
     }
@@ -319,7 +319,7 @@ internal class ScenariosInitializerImplTest {
 
         coVerifyOnce {
             scenariosInitializer.convertSteps(refEq(scenarioSpecification), refEq(scenario), isNull(),
-                    refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>))
+                refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>))
         }
     }
 
@@ -352,8 +352,8 @@ internal class ScenariosInitializerImplTest {
         mockkObject(ServicesLoader)
         every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
-                "scenario-1" to scenarioSpecification1,
-                "scenario-2" to scenarioSpecification2
+            "scenario-1" to scenarioSpecification1,
+            "scenario-2" to scenarioSpecification2
         )
         val scenario1: Scenario = relaxedMockk { }
         val scenario2: Scenario = relaxedMockk { }
@@ -393,31 +393,31 @@ internal class ScenariosInitializerImplTest {
             every { id } returns "scenario-1"
             every { minionsCount } returns 2
             every { dags } returns mutableListOf(
-                    relaxedMockk {
-                        every { id } returns "dag-1"
-                        every { isSingleton } returns false
-                        every { isRoot } returns true
-                        every { stepsCount } returns 12
-                    },
-                    relaxedMockk {
-                        every { id } returns "dag-2"
-                        every { isSingleton } returns true
-                        every { isRoot } returns false
-                        every { stepsCount } returns 4
-                    }
+                relaxedMockk {
+                    every { id } returns "dag-1"
+                    every { isSingleton } returns false
+                    every { isRoot } returns true
+                    every { stepsCount } returns 12
+                },
+                relaxedMockk {
+                    every { id } returns "dag-2"
+                    every { isSingleton } returns true
+                    every { isRoot } returns false
+                    every { stepsCount } returns 4
+                }
             )
         }
         val scenario2: Scenario = relaxedMockk {
             every { id } returns "scenario-2"
             every { minionsCount } returns 1
             every { dags } returns mutableListOf(
-                    relaxedMockk {
-                        every { id } returns "dag-3"
-                        every { isSingleton } returns false
-                        every { isRoot } returns true
-                        every { isUnderLoad } returns true
-                        every { stepsCount } returns 42
-                    }
+                relaxedMockk {
+                    every { id } returns "dag-3"
+                    every { isSingleton } returns false
+                    every { isRoot } returns true
+                    every { isUnderLoad } returns true
+                    every { stepsCount } returns 42
+                }
             )
         }
         val feedback = slot<FactoryRegistrationFeedback>()
@@ -475,7 +475,7 @@ internal class ScenariosInitializerImplTest {
     internal fun `should generate an error when converting a scenario without dag under load`() {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
-                ScenarioSpecification::class, StepSpecificationRegistry::class
+            ScenarioSpecification::class, StepSpecificationRegistry::class
         ) {
             every { dagsUnderLoad } returns emptyList()
         }

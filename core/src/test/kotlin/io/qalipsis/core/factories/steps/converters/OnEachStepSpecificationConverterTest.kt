@@ -45,7 +45,7 @@ internal class OnEachStepSpecificationConverterTest :
         val blockSpecification: (input: Int) -> Unit = { println(it) }
         val spec = OnEachStepSpecification(blockSpecification)
         spec.name = "my-step"
-        spec.retryPolicy = relaxedMockk()
+        spec.retryPolicy = mockedRetryPolicy
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -56,7 +56,7 @@ internal class OnEachStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(OnEachStep::class).all {
             prop("id").isEqualTo("my-step")
-            prop("retryPolicy").isSameAs(spec.retryPolicy)
+            prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("statement").isSameAs(blockSpecification)
         }
     }
@@ -68,9 +68,8 @@ internal class OnEachStepSpecificationConverterTest :
         val spec = OnEachStepSpecification(blockSpecification)
 
         val mockedRetryPolicy: RetryPolicy = relaxedMockk()
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk {
-            every { scenario.defaultRetryPolicy } returns mockedRetryPolicy
-        }, spec)
+        every { directedAcyclicGraph.scenario.defaultRetryPolicy } returns mockedRetryPolicy
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {

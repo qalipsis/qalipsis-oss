@@ -3,6 +3,7 @@ package io.qalipsis.core.factories.steps
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepExecutor
@@ -15,10 +16,10 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-class IterativeStepDecorator<I, O>(
-        private val iterations: Long = 1,
-        delay: Duration = Duration.ZERO,
-        private val decorated: Step<I, O>
+internal class IterativeStepDecorator<I, O>(
+    private val iterations: Long = 1,
+    delay: Duration = Duration.ZERO,
+    private val decorated: Step<I, O>
 ) : Step<I, O>, StepExecutor {
 
     override val id: StepId
@@ -42,7 +43,8 @@ class IterativeStepDecorator<I, O>(
         decorated.destroy()
     }
 
-    override suspend fun execute(context: StepContext<I, O>) {
+
+    override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         val inputValue = context.input.receive()
         // Create a conflated channel to allow next iteration even if the channel was not consumed.
         val internalInputChannel = Channel<I>(Channel.CONFLATED)
@@ -53,7 +55,7 @@ class IterativeStepDecorator<I, O>(
             internalInputChannel.send(inputValue)
             val currentIteration = internalContext.stepIterationIndex
             log.trace("Executing iteration $currentIteration for context $context")
-            executeStep(decorated, internalContext)
+            executeStep(minion, decorated, internalContext)
 
             internalContext.stepIterationIndex = internalContext.stepIterationIndex + 1
             remainingIterations--
@@ -65,6 +67,11 @@ class IterativeStepDecorator<I, O>(
             }
         }
         log.trace("End of the iterations for context $context")
+    }
+
+    override suspend fun execute(context: StepContext<I, O>) {
+        // This method should never be called.
+        throw NotImplementedError()
     }
 
     companion object {

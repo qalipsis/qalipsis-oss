@@ -6,6 +6,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
+import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
@@ -206,10 +207,10 @@ internal class RecoveryTestStep<I, O>(id: String, output: O) : TestStep<I, O>(id
     ErrorProcessingStep<I, O> {
 
     /**
-     * Recover the context additionally to what [ErrorProcessingTestStep] does.
+     * Recovers the context additionally to what [ErrorProcessingTestStep] does.
      */
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         context.isExhausted = false
-        super.execute(context)
+        super<ErrorProcessingStep>.execute(minion, context)
     }
 }

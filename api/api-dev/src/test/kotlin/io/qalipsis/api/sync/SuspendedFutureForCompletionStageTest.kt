@@ -1,7 +1,6 @@
 package io.qalipsis.api.sync
 
 import assertk.assertThat
-import assertk.assertions.isBetween
 import assertk.assertions.isGreaterThan
 import io.qalipsis.api.lang.millis
 import io.qalipsis.api.lang.seconds
@@ -46,7 +45,6 @@ internal class SuspendedFutureForCompletionStageTest {
         // given
         val completionStage = CompletableFuture<Unit>()
         val suspendedFuture = SuspendedFutureForCompletionStage(completionStage)
-        val start = System.currentTimeMillis()
         GlobalScope.launch {
             delay(200)
             completionStage.completeExceptionally(RuntimeException("This is an error"))
