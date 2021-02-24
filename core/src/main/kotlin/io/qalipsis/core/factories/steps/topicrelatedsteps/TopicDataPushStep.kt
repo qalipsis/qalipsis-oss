@@ -11,7 +11,10 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.factories.orchestration.Runner
 import io.qalipsis.core.factories.steps.MinionsKeeperAware
 import io.qalipsis.core.factories.steps.RunnerAware
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
@@ -27,10 +30,11 @@ import kotlinx.coroutines.launch
  * @author Eric Jessé
  */
 internal class TopicDataPushStep<I>(
-        id: StepId,
-        private val parentStepId: StepId,
-        private val topic: Topic<I>,
-        private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true }
+    id: StepId,
+    private val parentStepId: StepId,
+    private val topic: Topic<I>,
+    private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true },
+    private val coroutineScope: CoroutineScope = GlobalScope
 ) : AbstractStep<I, I>(id, null), RunnerAware, MinionsKeeperAware {
 
     override lateinit var minionsKeeper: MinionsKeeper
@@ -41,6 +45,8 @@ internal class TopicDataPushStep<I>(
 
     private lateinit var topicSubscription: TopicSubscription<I>
 
+    private lateinit var consumingJob: Job
+
     override suspend fun start(context: StepStartStopContext) {
         running = true
         val nextStep = next.first()
@@ -49,7 +55,7 @@ internal class TopicDataPushStep<I>(
         log.debug("Starting to push data with the minion $minion")
 
         // Starts the coroutines that consumes the topic and pass the values to the step after.
-        GlobalScope.launch {
+        consumingJob = coroutineScope.launch {
             topicSubscription = topic.subscribe(nextStep.id)
             try {
                 while (running) {
@@ -57,14 +63,14 @@ internal class TopicDataPushStep<I>(
                     if (filter(valueFromTopic)) {
                         val input = Channel<I>(1)
                         val ctx = StepContext<I, I>(
-                                input = input,
-                                campaignId = context.campaignId,
-                                scenarioId = context.scenarioId,
-                                parentStepId = parentStepId,
-                                stepId = stepId,
-                                directedAcyclicGraphId = context.dagId,
-                                minionId = minion.id,
-                                isTail = false // We actually never know when the tail will come.
+                            input = input,
+                            campaignId = context.campaignId,
+                            scenarioId = context.scenarioId,
+                            parentStepId = parentStepId,
+                            stepId = stepId,
+                            directedAcyclicGraphId = context.dagId,
+                            minionId = minion.id,
+                            isTail = false // We actually never know when the tail will come.
                         )
                         input.offer(valueFromTopic)
                         runner.launch(minion, nextStep, ctx)
@@ -82,6 +88,7 @@ internal class TopicDataPushStep<I>(
     override suspend fun stop(context: StepStartStopContext) {
         running = false
         topicSubscription.cancel()
+        consumingJob.cancelAndJoin()
         super.stop(context)
     }
 

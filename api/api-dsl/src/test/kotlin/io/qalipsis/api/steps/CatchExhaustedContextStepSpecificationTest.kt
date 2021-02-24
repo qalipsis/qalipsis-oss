@@ -3,7 +3,8 @@ package io.qalipsis.api.steps
 import assertk.assertThat
 import assertk.assertions.isInstanceOf
 import io.qalipsis.api.context.StepContext
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 internal class CatchExhaustedContextStepSpecificationTest {
 
     @Test
@@ -23,7 +25,7 @@ internal class CatchExhaustedContextStepSpecificationTest {
     }
 
     @Test
-    internal fun `should add recover step as next`() {
+    internal fun `should add recover step as next`() = runBlockingTest {
         val previousStep = DummyStepSpecification()
         previousStep.recover()
 
@@ -38,9 +40,8 @@ internal class CatchExhaustedContextStepSpecificationTest {
             stepId = "",
             isExhausted = true
         )
-        runBlocking {
-            stepSpecification(stepContext as StepContext<*, Unit>)
-        }
+        stepSpecification(stepContext as StepContext<*, Unit>)
+
         assertFalse(stepContext.isExhausted)
     }
 }

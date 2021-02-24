@@ -56,7 +56,6 @@ abstract class AbstractClient<RQ, RS, START_CTX : Any, CTX : Any, STOP_CTX : Any
      */
     abstract suspend fun close(stopContext: STOP_CTX)
 
-
     /**
      * Execution method for a client.
      */
@@ -68,7 +67,8 @@ abstract class AbstractClient<RQ, RS, START_CTX : Any, CTX : Any, STOP_CTX : Any
             context.set(clientContext)
             val input = stepContext.input.receive()
             request.set(requestBuilder(input))
-            stepContext.output.send(Pair(input, responseBuilder(response.get())))
+            val response = response.get()
+            stepContext.output.send(input to responseBuilder(response))
         } finally {
             request.clear()
             context.clear()

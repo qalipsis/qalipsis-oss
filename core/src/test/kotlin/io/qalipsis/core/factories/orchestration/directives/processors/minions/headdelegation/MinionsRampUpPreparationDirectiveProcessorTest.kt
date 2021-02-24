@@ -25,7 +25,9 @@ import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.assertThrows
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @WithMockk
 internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
@@ -53,7 +56,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     lateinit var processor: MinionsRampUpPreparationDirectiveProcessor
 
     @Test
-    @Timeout(1)
+    @Timeout(2)
     internal fun shouldAcceptMinionsRampUpPreparationDirective() {
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosRegistry.contains("my-scenario") } returns true
@@ -65,13 +68,13 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(2)
     internal fun shouldNotAcceptNotMinionsRampUpPreparationDirective() {
         Assertions.assertFalse(processor.accept(TestDescriptiveDirective()))
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(2)
     internal fun shouldNotAcceptMinionsRampUpPreparationDirectiveForUnknownScenario() {
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosRegistry.contains("my-scenario") } returns false
@@ -80,7 +83,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(2)
     internal fun shouldNotAcceptMinionsRampUpPreparationDirectiveWhenMinionsWereNotCreatedLocally() {
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosRegistry.contains("my-scenario") } returns true
@@ -90,15 +93,13 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun shouldNotProcessWhenScenarioNotFound() {
+    @Timeout(2)
+    internal fun shouldNotProcessWhenScenarioNotFound() = runBlocking {
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosRegistry.get("my-scenario") } returns null
 
         // when
-        runBlocking {
-            processor.process(directive)
-        }
+        processor.process(directive)
 
         // then
         coVerifyOrder {
@@ -114,14 +115,14 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun shouldThrowExceptionWhenMinionsToStartIsZero() {
+    @Timeout(2)
+    internal fun shouldThrowExceptionWhenMinionsToStartIsZero() = runBlockingTest {
         // given
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 3.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
-                directive.scenarioId to (0..27).map { "minion-$it" }.toList()
+            directive.scenarioId to (0..27).map { "minion-$it" }.toList()
         )
 
         every { scenariosRegistry.get("my-scenario") } returns relaxedMockk { }
@@ -131,9 +132,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
         // when
         assertThrows<IllegalArgumentException> {
-            runBlocking {
                 processor.process(directive)
-            }
         }
 
         // then
@@ -159,14 +158,14 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun shouldThrowExceptionWhenStartOffsetIsZero() {
+    @Timeout(2)
+    internal fun shouldThrowExceptionWhenStartOffsetIsZero() = runBlockingTest {
         // given
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
-                directive.scenarioId to (0..27).map { "minion-$it" }.toList()
+            directive.scenarioId to (0..27).map { "minion-$it" }.toList()
         )
 
         val mockedRampupStrategy: RampUpStrategy = relaxedMockk {
@@ -183,9 +182,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
         // when
         assertThrows<IllegalArgumentException> {
-            runBlocking {
                 processor.process(directive)
-            }
         }
 
         // then
@@ -212,14 +209,14 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun shouldCreateOneDirectiveWithAllTheStarts() {
+    @Timeout(2)
+    internal fun shouldCreateOneDirectiveWithAllTheStarts() = runBlockingTest {
         // given
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0)
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
-                directive.scenarioId to (0..27).toList().map { "minion-$it" }
+            directive.scenarioId to (0..27).toList().map { "minion-$it" }
         )
 
         // Scenario with a ramp-up to start 3 minions every 500 ms.
@@ -238,9 +235,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
         // when
         val start = System.currentTimeMillis() + 2000
-        runBlocking {
             processor.process(directive)
-        }
 
         // then
         coVerifyOrder {
@@ -257,8 +252,6 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         }
         assertThat(feedbacks[0]::status).isEqualTo(FeedbackStatus.IN_PROGRESS)
         assertThat(feedbacks[1]::status).isEqualTo(FeedbackStatus.COMPLETED)
-
-
 
         createdDirective.captured.apply {
             assertThat(this).isInstanceOf(MinionsStartDirective::class)

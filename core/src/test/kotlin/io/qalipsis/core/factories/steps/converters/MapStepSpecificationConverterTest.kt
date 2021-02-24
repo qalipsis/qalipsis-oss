@@ -14,7 +14,8 @@ import io.qalipsis.core.factories.steps.MapStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class MapStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<MapStepSpecificationConverter>() {
@@ -39,7 +41,7 @@ internal class MapStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name and retry policy to step`() {
+    internal fun `should convert spec with name and retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: ((input: Int) -> String) = { value -> value.toString() }
         val spec = MapStepSpecification(blockSpecification)
@@ -48,9 +50,7 @@ internal class MapStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<MapStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<MapStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapStep::class).all {
@@ -61,7 +61,7 @@ internal class MapStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() {
+    internal fun `should convert spec without name nor retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: ((input: Int) -> String) = { value -> value.toString() }
         val spec = MapStepSpecification(blockSpecification)
@@ -69,9 +69,7 @@ internal class MapStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(relaxedMockk(), directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<MapStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<MapStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapStep::class).all {

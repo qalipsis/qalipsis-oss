@@ -14,9 +14,10 @@ import io.qalipsis.core.factories.steps.FlatMapStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class FlatMapStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<FlatMapStepSpecificationConverter>() {
@@ -41,7 +43,7 @@ internal class FlatMapStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name and retry policy to step`() {
+    internal fun `should convert spec with name and retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: (input: Int) -> Flow<String> = { _ -> emptyFlow() }
         val spec = FlatMapStepSpecification(blockSpecification)
@@ -50,9 +52,7 @@ internal class FlatMapStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<FlatMapStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<FlatMapStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
@@ -63,7 +63,7 @@ internal class FlatMapStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() {
+    internal fun `should convert spec without name nor retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: (input: Int) -> Flow<String> = { _ -> emptyFlow() }
         val spec = FlatMapStepSpecification(blockSpecification)
@@ -72,9 +72,7 @@ internal class FlatMapStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<FlatMapStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<FlatMapStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {

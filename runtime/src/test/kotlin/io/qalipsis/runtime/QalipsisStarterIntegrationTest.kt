@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Timeout
 internal class QalipsisStarterIntegrationTest {
 
     @Test
-    @Timeout(8)
+    @Timeout(20)
     internal fun `should start as default`() {
         val exitCode = Qalipsis.start(arrayOf())
 
@@ -23,7 +23,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(8)
+    @Timeout(20)
     internal fun `should start with additional environments`() {
         val exitCode =
             Qalipsis.start(arrayOf("-e", "these", "-e", "are", "-e", "my", "-e", "additional", "-e", "environments"))

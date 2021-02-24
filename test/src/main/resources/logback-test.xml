@@ -15,7 +15,7 @@
     </filter>
   </appender>
 
-  <logger additivity="false" level="${QALIPSIS_LOGGING_LEVEL:-INFO}" name="io.qalipsis">
+  <logger additivity="false" level="${QALIPSIS_LOGGING_LEVEL:-DEBUG}" name="io.qalipsis">
     <appender-ref ref="console"/>
   </logger>
 

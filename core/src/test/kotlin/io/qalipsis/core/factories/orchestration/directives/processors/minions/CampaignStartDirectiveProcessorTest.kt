@@ -59,17 +59,15 @@ internal class CampaignStartDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldStartSingletons() {
+    internal fun shouldStartSingletons() = runBlocking {
         // given
         val directive =
             CampaignStartDirective("my-campaign", "my-scenario")
 
         // when
-        runBlocking {
-            processorStart.process(directive)
-            // Wait for the directive to be fully completed.
-            delay(5)
-        }
+        processorStart.process(directive)
+        // Wait for the directive to be fully completed.
+        delay(5)
 
         // then
         coVerify {

@@ -7,7 +7,7 @@ import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -22,16 +22,14 @@ internal class OnEachStepTest {
 
     @Test
     @Timeout(1)
-    fun `should execute statement`() {
+    fun `should execute statement`() = runBlockingTest {
         val collected = mutableListOf<Int>()
         val step = OnEachStep<Int>("", null) { collected.add(it) }
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 123)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals(output, 123)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals(output, 123)
         assertThat(collected).all {
             hasSize(1)
             index(0).isEqualTo(123)

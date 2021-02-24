@@ -3,7 +3,7 @@ package io.qalipsis.core.factories.steps
 import io.qalipsis.api.context.StepError
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -18,7 +18,7 @@ internal class ValidationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldReturnsTheValidationErrors() {
+    fun shouldReturnsTheValidationErrors() = runBlockingTest {
         val processedValue = AtomicLong()
         val step = ValidationStep<Long>("", null) {
             processedValue.set(it)
@@ -26,11 +26,9 @@ internal class ValidationStepTest {
         }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 123L)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals(123L, output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals(123L, output)
 
         assertEquals(123L, processedValue.get())
         assertEquals(listOf("Error 1", "Error 2"), ctx.errors.map { error -> error.cause.message })

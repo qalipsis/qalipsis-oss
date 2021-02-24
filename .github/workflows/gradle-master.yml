@@ -38,7 +38,7 @@ jobs:
           restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
 
       - name: Tests
-        run: ./gradlew clean check --continue
+        run: ./gradlew clean check --continue --refresh-dependencies
 
       - name: Report
         if: always()

@@ -13,7 +13,8 @@ import io.qalipsis.core.factories.steps.VerificationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class VerificationStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<VerificationStepSpecificationConverter>() {
@@ -38,7 +40,7 @@ internal class VerificationStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name to step`() {
+    internal fun `should convert spec with name to step`() = runBlockingTest {
         // given
         val blockSpecification: suspend (input: String) -> Int = { value -> value.toInt() }
         val spec = VerificationStepSpecification(blockSpecification)
@@ -46,9 +48,7 @@ internal class VerificationStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<VerificationStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<VerificationStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
@@ -60,16 +60,14 @@ internal class VerificationStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name to step`() {
+    internal fun `should convert spec without name to step`() = runBlockingTest {
         // given
         val blockSpecification: suspend (input: String) -> Int = { value -> value.toInt() }
         val spec = VerificationStepSpecification(blockSpecification)
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<VerificationStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<VerificationStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {

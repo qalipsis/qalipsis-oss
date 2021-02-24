@@ -1,28 +1,29 @@
 package io.qalipsis.core.heads.campaigns
 
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
+import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.util.concurrent.CountDownLatch
 
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @WithMockk
-@CleanCoroutines
 internal class CampaignAutoStarterTest {
 
     @RelaxedMockK
@@ -39,21 +40,21 @@ internal class CampaignAutoStarterTest {
 
     @Test
     @Timeout(3)
-    internal fun `should start a campaign when factory registers`() {
+    internal fun `should start a campaign when factory registers`() = runBlockingTest {
         // given
-        val countDown = CountDownLatch(1)
+        val countDown = SuspendedCountLatch(1)
         val scenarios: List<FactoryRegistrationFeedbackScenario> = listOf(
-                relaxedMockk {
-                    io.mockk.every { id } returns "scen-1"
-                },
-                relaxedMockk {
-                    io.mockk.every { id } returns "scen-2"
-                }
+            relaxedMockk {
+                every { id } returns "scen-1"
+            },
+            relaxedMockk {
+                every { id } returns "scen-2"
+            }
         )
         coEvery { feedbackConsumer.onReceive(any()) } coAnswers {
-            GlobalScope.launch {
+            launch {
                 (firstArg() as suspend (Feedback) -> Unit).invoke(FactoryRegistrationFeedback(scenarios))
-                countDown.countDown()
+                countDown.decrement()
             }
         }
 
@@ -67,13 +68,13 @@ internal class CampaignAutoStarterTest {
 
     @Test
     @Timeout(1)
-    internal fun `should not start a campaign when other feedback is received`() {
+    internal fun `should not start a campaign when other feedback is received`() = runBlockingTest {
         // given
-        val countDown = CountDownLatch(1)
+        val countDown = SuspendedCountLatch(1)
         coEvery { feedbackConsumer.onReceive(any()) } coAnswers {
-            GlobalScope.launch {
+            launch {
                 (firstArg() as suspend (Feedback) -> Unit).invoke(relaxedMockk())
-                countDown.countDown()
+                countDown.decrement()
             }
         }
 

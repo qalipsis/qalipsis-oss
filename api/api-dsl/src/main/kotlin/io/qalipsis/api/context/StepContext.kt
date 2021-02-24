@@ -131,7 +131,7 @@ data class StepContext<IN, OUT>(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @ExperimentalCoroutinesApi
     fun duplicate(newInput: ReceiveChannel<IN> = Channel(1),
                   newOutput: SendChannel<OUT> = Channel(1)): StepContext<IN, OUT> {
         return StepContext(

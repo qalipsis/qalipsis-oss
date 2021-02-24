@@ -18,8 +18,9 @@ import kotlin.reflect.KClass
  * @author Eric Jessé
  */
 
+@Suppress("CHANGING_ARGUMENTS_EXECUTION_ORDER_FOR_NAMED_VARARGS")
 inline fun <reified T : Any> relaxedMockk(vararg moreInterfaces: KClass<*> = emptyArray(), block: T.() -> Unit = {}) =
-    mockk<T>(moreInterfaces = moreInterfaces, relaxed = true, block = block)
+    mockk<T>(relaxed = true, moreInterfaces = moreInterfaces, block = block)
 
 fun verifyOnce(verifyBlock: MockKVerificationScope.() -> Unit) = verify(exactly = 1, verifyBlock = verifyBlock)
 

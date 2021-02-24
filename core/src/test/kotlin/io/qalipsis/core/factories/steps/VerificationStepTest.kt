@@ -10,7 +10,7 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -42,15 +42,13 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldSimplyForwardWithDefaultStep() {
+    fun shouldSimplyForwardWithDefaultStep() = runBlockingTest {
         val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals(1, output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals(1, output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertFalse(ctx.isExhausted)
 
@@ -65,15 +63,13 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(2)
-    fun shouldApplyMapping() {
+    fun shouldApplyMapping() = runBlockingTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry) { value -> value.toString() }
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals("1", output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals("1", output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertFalse(ctx.isExhausted)
 
@@ -87,17 +83,15 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldNotForwardDataWhenAssertionThrowingError() {
+    fun shouldNotForwardDataWhenAssertionThrowingError() = runBlockingTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry) { value ->
             fail<Any>("This is an error")
             value.toString()
         }
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
-        runBlocking {
-            step.execute(ctx)
-            assertTrue((ctx.output as Channel).isEmpty)
-        }
+        step.execute(ctx)
+        assertTrue((ctx.output as Channel).isEmpty)
 
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertTrue(ctx.isExhausted)
@@ -113,16 +107,14 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldNotForwardDataWhenAssertionThrowingException() {
+    fun shouldNotForwardDataWhenAssertionThrowingException() = runBlockingTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry) {
             throw RuntimeException("The error")
         }
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
-        runBlocking {
-            step.execute(ctx)
-            assertTrue((ctx.output as Channel).isEmpty)
-        }
+        step.execute(ctx)
+        assertTrue((ctx.output as Channel).isEmpty)
 
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertTrue(ctx.isExhausted)

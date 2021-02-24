@@ -7,8 +7,9 @@ import io.mockk.mockk
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import io.qalipsis.test.steps.StepTestHelper
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -16,11 +17,12 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 internal class SingletonProxyStepTest {
 
     @Test
     @Timeout(3)
-    internal fun `should use record from topic`() {
+    internal fun `should use record from topic`() = runBlockingTest {
         val subscription = mockk<TopicSubscription<Long>> {
             coEvery { pollValue() } returns 123L
         }
@@ -31,18 +33,14 @@ internal class SingletonProxyStepTest {
         val step = SingletonProxyStep("", topic)
 
         // when
-        runBlocking {
-            step.execute(ctx)
-        }
+        step.execute(ctx)
 
         // then
-        runBlocking {
-            Assertions.assertEquals(123L, (ctx.output as Channel).receive())
-            coVerifyOrder {
-                topic.subscribe("${ctx.minionId}-${ctx.stepId}")
-                subscription.pollValue()
-            }
-            confirmVerified(topic, subscription)
+        Assertions.assertEquals(123L, (ctx.output as Channel).receive())
+        coVerifyOrder {
+            topic.subscribe("${ctx.minionId}-${ctx.stepId}")
+            subscription.pollValue()
         }
+        confirmVerified(topic, subscription)
     }
 }

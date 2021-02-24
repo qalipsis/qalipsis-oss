@@ -28,7 +28,8 @@ import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -39,6 +40,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class InnerJoinStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<InnerJoinStepSpecificationConverter>() {
@@ -56,7 +58,7 @@ internal class InnerJoinStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name to step`() {
+    internal fun `should convert spec with name to step`() = runBlockingTest {
         // given
         val primaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { }
         val rightKeyExtractor: (CorrelationRecord<out Any?>) -> Any? = { }
@@ -79,9 +81,7 @@ internal class InnerJoinStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpec, dag, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<InnerJoinStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<InnerJoinStepSpecification<*, *>>)
 
         // then
         val consumer = slot<Step<Int, *>>()
@@ -111,7 +111,7 @@ internal class InnerJoinStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name to a NoMoreNextStepDecorator`() {
+    internal fun `should convert spec without name to a NoMoreNextStepDecorator`() = runBlockingTest {
         // given
         val primaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { }
         val rightKeyExtractor: (CorrelationRecord<out Any?>) -> Any? = { }
@@ -137,9 +137,7 @@ internal class InnerJoinStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpec, dag, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<InnerJoinStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<InnerJoinStepSpecification<*, *>>)
 
         // then
         // The consumer step is directly added to the decorated when the step after is a NoMoreNextStepDecorator.

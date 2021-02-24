@@ -22,7 +22,8 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 internal class GroupStepStartSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<GroupStepSpecificationConverter>() {
 
@@ -53,17 +55,15 @@ internal class GroupStepStartSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert group spec without name nor retry policy to step`() {
+    internal fun `should convert group spec without name nor retry policy to step`() = runBlockingTest {
         // given
         val spec = GroupStepStartSpecification<Int>()
         every { directedAcyclicGraph.scenario.defaultRetryPolicy } returns mockedRetryPolicy
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            @Suppress("UNCHECKED_CAST")
-            converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
-        }
+        @Suppress("UNCHECKED_CAST")
+        converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(GroupStep::class).all {
@@ -79,7 +79,7 @@ internal class GroupStepStartSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert group spec with name and retry policy to step`() {
+    internal fun `should convert group spec with name and retry policy to step`() = runBlockingTest {
         // given
         val spec = GroupStepStartSpecification<Int>()
         spec.name = "my-step"
@@ -87,10 +87,8 @@ internal class GroupStepStartSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            @Suppress("UNCHECKED_CAST")
-            converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
-        }
+        @Suppress("UNCHECKED_CAST")
+        converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(GroupStep::class).all {
@@ -105,7 +103,7 @@ internal class GroupStepStartSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert end group spec without name to step`() {
+    internal fun `should convert end group spec without name to step`() = runBlockingTest {
         // given
         val startSpec = GroupStepStartSpecification<Int>()
         startSpec.name = "the-group-start-spec"
@@ -117,10 +115,8 @@ internal class GroupStepStartSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            @Suppress("UNCHECKED_CAST")
-            converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
-        }
+        @Suppress("UNCHECKED_CAST")
+        converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(GroupStepSpecificationConverter.GroupEndProxy::class)
@@ -133,7 +129,7 @@ internal class GroupStepStartSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert end group spec with name to step`() {
+    internal fun `should convert end group spec with name to step`() = runBlockingTest {
         // given
         val startSpec = GroupStepStartSpecification<Int>()
         startSpec.name = "the-group-start-spec"
@@ -147,10 +143,8 @@ internal class GroupStepStartSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            @Suppress("UNCHECKED_CAST")
-            converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
-        }
+        @Suppress("UNCHECKED_CAST")
+        converter.convert<Int, String>(creationContext as StepCreationContext<GroupStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(GroupStepSpecificationConverter.GroupEndProxy::class)

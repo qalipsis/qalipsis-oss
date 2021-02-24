@@ -13,11 +13,13 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.every
 import io.qalipsis.api.events.EventGeoPoint
 import io.qalipsis.api.events.EventRange
-import io.qalipsis.core.factories.eventslogger.elasticsearch.ElasticsearchEventsLoggerTest
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -43,8 +45,9 @@ import java.util.stream.Stream
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Testcontainers(disabledWithoutDocker = true)
-@CleanCoroutines
+@Disabled("The concept of event logging has to be reviewed")
 internal class ElasticsearchEventsLoggerIntegrationTest {
 
     // The meter registry should provide a timer that execute the expressions to record.
@@ -54,8 +57,9 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}")
+    @ParameterizedTest(name = "should export data with {0}")
     @MethodSource("provideContainers")
+    @Timeout(30)
     internal fun `should export data`(containerAndFormatter: EsContainerContext) {
         val configuration = ElasticsearchEventLoggerConfiguration(
             urls = listOf(containerAndFormatter.url),
@@ -79,6 +83,9 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
         logger.publish()
 
         // Wait for the publication to be done.
+        Thread.sleep(1000)
+
+        refreshEvents(containerAndFormatter.url)
         Thread.sleep(1000)
 
         val hitsJson = requestEvents(containerAndFormatter.url)
@@ -223,11 +230,17 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
         }
     }
 
+    private fun refreshEvents(url: String) = runBlockingTest {
+        val httpClient = createHttpClient()
+        // Force the refresh of the index to make the documents available.
+        httpClient.post<String>(url + "/_refresh")
+    }
+
     private fun requestEvents(url: String): ObjectNode {
         val response = runBlocking {
             val httpClient = createHttpClient()
             // Force the refresh of the index to make the documents available.
-            httpClient.post<String>(url + "/qalipsis-events-*/_refresh")
+            httpClient.post<String>(url + "/_refresh")
 
             httpClient.get<String>(url + "/qalipsis-events-*/_search") {
                 body = TextContent(
@@ -250,16 +263,20 @@ internal class ElasticsearchEventsLoggerIntegrationTest {
         @JvmStatic
         val es6 = ElasticsearchContainer(
             DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss").withTag(ES_6_VERSION)
-        )
+        ).withCreateContainerCmdModifier {
+            it.hostConfig!!.withMemory(2e30.toLong()).withCpuCount(2)
+        } // 2 CPUs and 1GB Max Memory
 
         @Container
         @JvmStatic
         val es7 = ElasticsearchContainer(
             DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss").withTag(ES_7_VERSION)
-        )
+        ).withCreateContainerCmdModifier {
+            it.hostConfig!!.withMemory(2e30.toLong()).withCpuCount(2)
+        } // 2 CPUs and 1GB Max Memory
 
         /**
-         * Provide the data for the parameterized test. The first side of the pair is the Docker container
+         * Provides the data for the parameterized test. The first side of the pair is the Docker container
          * to use and the second is the formatter used by the related version of ES to format the dates.
          */
         @JvmStatic

@@ -19,7 +19,8 @@ import io.qalipsis.core.factories.steps.TimeoutStepDecorator
 import io.qalipsis.core.factories.steps.converters.TimeoutStepDecoratorSpecificationConverter
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -27,6 +28,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 @WithMockk
 internal class TimeoutStepDecoratorSpecificationConverterTest {
@@ -56,16 +58,14 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     }
 
     @Test
-    internal fun `should decorate step with timeout`() {
+    internal fun `should decorate step with timeout`() = runBlockingTest {
         // given
         every { stepSpecification.timeout } returns Duration.ofMillis(123)
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, stepSpecification)
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(TimeoutStepDecorator::class).all {
@@ -76,16 +76,14 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     }
 
     @Test
-    internal fun `should not decorate step without timeout`() {
+    internal fun `should not decorate step without timeout`() = runBlockingTest {
         // given
         every { stepSpecification.timeout } returns null
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, stepSpecification)
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep).isSameAs(decoratedStep)

@@ -1,4 +1,4 @@
-package io.qalipsis.core.factories.eventslogger.elasticsearch
+package io.qalipsis.core.factories.events.elasticsearch
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
@@ -17,16 +17,15 @@ import io.mockk.every
 import io.qalipsis.api.events.EventGeoPoint
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventRange
+import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.events.Event
 import io.qalipsis.core.factories.events.EventTag
-import io.qalipsis.core.factories.events.elasticsearch.ElasticsearchEventLoggerConfiguration
-import io.qalipsis.core.factories.events.elasticsearch.ElasticsearchEventsLogger
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -48,7 +47,8 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @author Eric Jessé
  */
-@CleanCoroutines
+@ExperimentalCoroutinesApi
+@Disabled("The concept of event logging has to be reviewed")
 internal class ElasticsearchEventsLoggerTest {
 
     // The meter registry should provide a timer that execute the expressions to record.
@@ -76,9 +76,9 @@ internal class ElasticsearchEventsLoggerTest {
 
         @Test
         @Timeout(5)
-        internal fun `should support concurrent publication`() {
+        internal fun `should support concurrent publication`() = runBlockingTest {
             val receivedDocuments = AtomicInteger(0)
-            val latch = CountDownLatch(9)
+            val latch = SuspendedCountLatch(9)
             val client = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -87,7 +87,7 @@ internal class ElasticsearchEventsLoggerTest {
                             receivedDocuments.addAndGet(body.text.count { it == '\n' } / 2)
                             val responseHeaders =
                                 headersOf("Content-Type" to listOf(ContentType.Application.Json.toString()))
-                            latch.countDown()
+                            latch.decrement()
                             respond("""
                         {
                            "took": 30,
@@ -110,31 +110,29 @@ internal class ElasticsearchEventsLoggerTest {
             val logger = ElasticsearchEventsLogger(configuration, meterRegistry, client)
             logger.start()
 
-            val job1 = GlobalScope.launch {
+            val job1 = launch {
                 repeat(300) {
                     logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
                 }
             }
-            val job2 = GlobalScope.launch {
+            val job2 = launch {
                 repeat(300) {
                     logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
                 }
             }
 
-            runBlocking {
                 repeat(300) {
                     logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
                 }
                 job1.join()
                 job2.join()
-            }
 
             latch.await()
             Assertions.assertEquals(900, receivedDocuments.get())
         }
 
         @Test
-        @Timeout(1)
+        @Timeout(3)
         internal fun `should balance the publications on all the nodes`() {
             val receivedUrls = Sets.newConcurrentHashSet<String>()
             val latch = CountDownLatch(20)

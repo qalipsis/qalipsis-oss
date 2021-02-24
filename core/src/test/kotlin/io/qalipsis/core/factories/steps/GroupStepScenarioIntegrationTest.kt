@@ -22,13 +22,13 @@ import java.util.concurrent.atomic.AtomicInteger
 internal class GroupStepScenarioIntegrationTest {
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should call all the steps of the group several times`() {
         val exitCode = QalipsisTestRunner.withScenarios("group-scenario-test").execute()
 
         assertThat(exitCode).isEqualTo(0)
         assertThat(GroupStepScenario.capturedValues).all {
-            hasSize(1000)
+            hasSize(GroupStepScenario.minionsNumber * 10)
         }
         println(GroupStepScenario.capturedValues)
     }
@@ -36,7 +36,7 @@ internal class GroupStepScenarioIntegrationTest {
 
 object GroupStepScenario {
 
-    val minionsNumber = 100
+    val minionsNumber = 20
 
     private val initialCounter = AtomicInteger(1)
 

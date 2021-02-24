@@ -15,7 +15,8 @@ import io.qalipsis.core.factories.steps.ValidationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class ValidationStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<ValidationStepSpecificationConverter>() {
@@ -40,7 +42,7 @@ internal class ValidationStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name and retry policy to step`() {
+    internal fun `should convert spec with name and retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: (input: Int) -> List<StepError> = { _ -> emptyList() }
         val spec = ValidationStepSpecification(blockSpecification)
@@ -49,9 +51,7 @@ internal class ValidationStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<ValidationStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<ValidationStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ValidationStep::class).all {
@@ -62,7 +62,7 @@ internal class ValidationStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() {
+    internal fun `should convert spec without name nor retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: (input: Int) -> List<StepError> = { _ -> emptyList() }
         val spec = ValidationStepSpecification(blockSpecification)
@@ -71,9 +71,7 @@ internal class ValidationStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<ValidationStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<ValidationStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ValidationStep::class).all {

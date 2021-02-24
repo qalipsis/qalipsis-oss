@@ -38,16 +38,14 @@ internal class DelayStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name to step`() {
+    internal fun `should convert spec with name to step`() = runBlocking {
         // given
         val spec = DelayStepSpecification<Int>(Duration.ofMillis(123))
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<DelayStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<DelayStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(DelayStep::class).all {
@@ -57,16 +55,14 @@ internal class DelayStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name to step`() {
+    internal fun `should convert spec without name to step`() = runBlocking {
         // given
         val spec = DelayStepSpecification<Int>(Duration.ofMillis(123))
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<DelayStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<DelayStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(DelayStep::class).all {

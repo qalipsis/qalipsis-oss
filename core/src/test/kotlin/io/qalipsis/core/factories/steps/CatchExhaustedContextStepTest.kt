@@ -2,7 +2,7 @@ package io.qalipsis.core.factories.steps
 
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -16,15 +16,14 @@ internal class CatchExhaustedContextStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldIgnoreBlockWhenContextIsNotExhausted() {
+    fun shouldIgnoreBlockWhenContextIsNotExhausted() = runBlockingTest {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
         val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 123)
 
-        val result = runBlocking {
-            step.execute(ctx)
-            (ctx.output as Channel<Int>).receive()
-        }
+        step.execute(ctx)
+        val result = (ctx.output as Channel<Int>).receive()
+
         Assertions.assertEquals(0, reference.get())
         Assertions.assertEquals(123, result)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
@@ -33,14 +32,13 @@ internal class CatchExhaustedContextStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldExecuteStepWhenContextIsExhausted() {
+    fun shouldExecuteStepWhenContextIsExhausted() = runBlockingTest {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
         val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 456, exhausted = true)
 
-        runBlocking {
-            step.execute(ctx)
-        }
+        step.execute(ctx)
+
         Assertions.assertEquals(1, reference.get())
         Assertions.assertTrue((ctx.output as Channel).isEmpty)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)

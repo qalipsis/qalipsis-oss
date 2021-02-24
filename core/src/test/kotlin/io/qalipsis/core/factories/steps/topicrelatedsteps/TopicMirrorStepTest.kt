@@ -6,7 +6,7 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -25,17 +25,15 @@ internal class TopicMirrorStepTest {
 
     @Test
     @Timeout(3)
-    fun `should forward data to channel and topic`() {
+    fun `should forward data to channel and topic`() = runBlockingTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
         val ctx = StepTestHelper.createStepContext<String, String>("This is a test")
 
         // when
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals("This is a test", output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals("This is a test", output)
 
         // then
         coVerifyOnce { dataTransferTopic.produceValue(eq("This is a test")) }
@@ -44,16 +42,14 @@ internal class TopicMirrorStepTest {
     }
 
     @Test
-    internal fun `should complete the topic`() {
+    internal fun `should complete the topic`() = runBlockingTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
         val ctx = StepTestHelper.createStepContext<String, String>()
         ctx.isTail = true
 
         // when
-        runBlocking {
-            step.execute(ctx)
-        }
+        step.execute(ctx)
 
         // then
         coVerifyOnce { dataTransferTopic.complete() }

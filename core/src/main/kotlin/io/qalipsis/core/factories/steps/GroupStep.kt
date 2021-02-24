@@ -9,6 +9,7 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.orchestration.Runner
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 
@@ -18,6 +19,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 internal class GroupStep<I, O>(
     id: StepId,
     retryPolicy: RetryPolicy?,

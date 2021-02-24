@@ -6,11 +6,11 @@ import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.millis
 import io.qalipsis.api.lang.seconds
 import io.qalipsis.test.time.QalipsisTimeAssertions
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -27,7 +27,7 @@ internal class ImmutableSlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should block calls at start until a value is set`() {
+    internal fun `should block calls at start until a value is set`() = runBlockingTest {
         // given
         val slot = ImmutableSlot<Unit>()
         assertTrue(slot.isEmpty())
@@ -37,7 +37,7 @@ internal class ImmutableSlotTest {
         val suspendedCountLatch = SuspendedCountLatch(3)
 
         repeat(3) {
-            GlobalScope.launch {
+            launch {
                 Assertions.assertEquals(Unit, slot.get())
                 releaseTimes.add(Instant.now())
                 suspendedCountLatch.decrement()
@@ -47,10 +47,8 @@ internal class ImmutableSlotTest {
         // when
         Thread.sleep(50)
         val now = Instant.now()
-        runBlocking {
-            slot.set(Unit)
-            suspendedCountLatch.await()
-        }
+        slot.set(Unit)
+        suspendedCountLatch.await()
 
         // then
         assertFalse(slot.isEmpty())
@@ -60,7 +58,7 @@ internal class ImmutableSlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should not block calls at start until a value is set`() {
+    internal fun `should not block calls at start until a value is set`() = runBlockingTest {
         // given
         val slot = ImmutableSlot<Unit>(Unit)
         assertFalse(slot.isEmpty())
@@ -70,7 +68,7 @@ internal class ImmutableSlotTest {
         val suspendedCountLatch = SuspendedCountLatch(3)
 
         repeat(3) {
-            GlobalScope.launch {
+            launch {
                 Assertions.assertEquals(Unit, slot.get())
                 releaseTimes.add(Instant.now())
                 suspendedCountLatch.decrement()
@@ -80,9 +78,7 @@ internal class ImmutableSlotTest {
         // when
         Thread.sleep(50)
         val now = Instant.now()
-        runBlocking {
-            suspendedCountLatch.await()
-        }
+        suspendedCountLatch.await()
 
         // then
         assertFalse(slot.isEmpty())
@@ -92,35 +88,29 @@ internal class ImmutableSlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should throw an error when setting a value and one is already present`() {
+    internal fun `should throw an error when setting a value and one is already present`() = runBlockingTest {
         // given
         val slot = ImmutableSlot(Unit)
 
         // when + then
         assertThrows<IllegalStateException> {
-            runBlocking {
-                slot.set(Unit)
-            }
+            slot.set(Unit)
         }
 
     }
 
     @Test
     @Timeout(3)
-    internal fun `should throw an error when setting the value twice`() {
+    internal fun `should throw an error when setting the value twice`() = runBlockingTest {
         // given
         val slot = ImmutableSlot<Unit>()
 
         // when
-        runBlocking {
-            slot.set(Unit)
-        }
+        slot.set(Unit)
 
         // then
         assertThrows<IllegalStateException> {
-            runBlocking {
-                slot.set(Unit)
-            }
+            slot.set(Unit)
         }
     }
 
@@ -141,33 +131,29 @@ internal class ImmutableSlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should throw a timeout exception`() {
+    internal fun `should throw a timeout exception`() = runBlockingTest {
         // given
         val slot = ImmutableSlot<Unit>()
 
         // when + then
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
-                slot.get(100.millis())
-            }
+            slot.get(100.millis())
         }
     }
 
     @Test
     @Timeout(3)
-    internal fun `should return a result`() {
+    internal fun `should return a result`() = runBlocking {
         // given
         val slot = ImmutableSlot<Unit>()
         val start = System.currentTimeMillis()
-        GlobalScope.launch {
+        launch {
             delay(200)
             slot.set(Unit)
         }
 
         // when
-        val result = runBlocking {
-            slot.get(50.seconds())
-        }
+        val result = slot.get(50.seconds())
 
         // then
         assertSame(Unit, result)

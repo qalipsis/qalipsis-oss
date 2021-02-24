@@ -25,9 +25,9 @@ import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import io.qalipsis.core.factories.testDag
 import io.qalipsis.core.factories.testScenario
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -35,8 +35,8 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @WithMockk
-@CleanCoroutines
 internal class MinionsCreationPreparationDirectiveProcessorTest {
 
     @RelaxedMockK
@@ -80,14 +80,12 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldNotProcessWhenScenarioNotFound() {
+    internal fun shouldNotProcessWhenScenarioNotFound() = runBlockingTest {
         val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
         every { scenariosRegistry.get("my-scenario") } returns null
 
         // when
-        runBlocking {
-            processor.process(directive)
-        }
+        processor.process(directive)
 
         // then
         coVerifyOrder {
@@ -99,7 +97,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldCreateDirectivesForEachDag() {
+    internal fun shouldCreateDirectivesForEachDag() = runBlockingTest {
         // given
         val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
         coEvery { directiveRegistry.read(refEq(directive)) } returns 123
@@ -119,9 +117,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
         coEvery { directiveProducer.publish(capture(createdDirectives)) } returns Unit
 
         // when
-        runBlocking {
             processor.process(directive)
-        }
 
         // then
         coVerifyOrder {

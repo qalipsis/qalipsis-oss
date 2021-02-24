@@ -2,7 +2,7 @@ package io.qalipsis.core.factories.steps
 
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -13,16 +13,14 @@ internal class SimpleStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldJustExecuteTheClosure() {
+    fun shouldJustExecuteTheClosure() = runBlockingTest {
         val step =
             SimpleStep<Long, Long>("", null) { context -> (context.output as Channel).send(context.input.receive()) }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 123L)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals(123L, output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals(123L, output)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
         Assertions.assertFalse(ctx.isExhausted)
     }
@@ -34,7 +32,7 @@ internal class SimpleStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = -1L)
 
         Assertions.assertThrows(RuntimeException::class.java) {
-            runBlocking {
+            runBlockingTest {
                 step.execute(ctx)
             }
         }

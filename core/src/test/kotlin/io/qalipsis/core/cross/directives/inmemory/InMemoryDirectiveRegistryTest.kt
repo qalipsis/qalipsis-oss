@@ -19,23 +19,21 @@ import io.qalipsis.core.cross.directives.TestQueueDirective
 import io.qalipsis.core.cross.directives.TestQueueDirectiveReference
 import io.qalipsis.core.cross.directives.TestSingleUseDirective
 import io.qalipsis.core.cross.directives.TestSingleUseDirectiveReference
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.Collections
-import java.util.concurrent.CountDownLatch
 
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @WithMockk
-@CleanCoroutines
 internal class InMemoryDirectiveRegistryTest {
 
     @RelaxedMockK
@@ -43,7 +41,7 @@ internal class InMemoryDirectiveRegistryTest {
 
     @Test
     @Timeout(1)
-    internal fun saveAndPopQueueDirective() {
+    internal fun saveAndPopQueueDirective() = runBlockingTest {
         // given
         val registry = InMemoryDirectiveRegistry(feedbackProducer)
         val directive = TestQueueDirective((0 until 20).toList())
@@ -51,21 +49,15 @@ internal class InMemoryDirectiveRegistryTest {
         coEvery { feedbackProducer.publish(capture(capturedDirectiveFeedBacks)) } returns Unit
 
         // when
-        runBlocking {
-            registry.save(directive.toReference().key, directive)
-        }
+        registry.save(directive.toReference().key, directive)
 
         // then
-        val notExistingDirective = runBlocking {
-            registry.pop(TestQueueDirectiveReference("other-key"))
-        }
+        val notExistingDirective = registry.pop(TestQueueDirectiveReference("other-key"))
         assertNull(notExistingDirective)
 
         // then
-        runBlocking {
-            repeat(20) { index ->
-                assertEquals(index, registry.pop(directive.toReference()))
-            }
+        repeat(20) { index ->
+            assertEquals(index, registry.pop(directive.toReference()))
         }
 
         // then
@@ -82,109 +74,87 @@ internal class InMemoryDirectiveRegistryTest {
             prop(DirectiveFeedback::status).isEqualTo(FeedbackStatus.COMPLETED)
             prop(DirectiveFeedback::error).isNull()
         }
-        val emptyQueue = runBlocking {
-            registry.pop(directive.toReference())
-        }
+        val emptyQueue = registry.pop(directive.toReference())
         assertNull(emptyQueue)
 
     }
 
     @Test
     @Timeout(5)
-    internal fun massiveConcurrentPopQueueDirective() {
+    internal fun massiveConcurrentPopQueueDirective() = runBlockingTest {
         // given
         val registry = InMemoryDirectiveRegistry(feedbackProducer)
         val directive = TestQueueDirective((0 until 20000).toList())
         val startLatch = SuspendedCountLatch(1)
         val retrievedValues = Collections.synchronizedSet(mutableSetOf<Int>())
-        val countDownLatch = CountDownLatch(200)
+        val countDownLatch = SuspendedCountLatch(200)
 
-        runBlocking {
-            registry.save(directive.toReference().key, directive)
-        }
+        registry.save(directive.toReference().key, directive)
+
         for (i in 0 until 200) {
-            GlobalScope.launch {
+            launch {
                 // Block the coroutines until the flag is closed.
                 startLatch.await()
                 repeat(100) {
                     val value = registry.pop(directive.toReference())
                     retrievedValues.add(value)
                 }
-                countDownLatch.countDown()
+                countDownLatch.decrement()
             }
         }
 
         // when
-        runBlocking {
-            startLatch.release()
-        }
+        startLatch.release()
         countDownLatch.await()
 
         // then all the unique values are listed.
         assertEquals(20000, retrievedValues.size)
 
         // then
-        val emptyQueue = runBlocking {
-            registry.pop(directive.toReference())
-        }
+        val emptyQueue = registry.pop(directive.toReference())
         assertNull(emptyQueue)
     }
 
     @Test
     @Timeout(1)
-    internal fun saveAndReadListDirective() {
+    internal fun saveAndReadListDirective() = runBlockingTest {
         // given
         val registry = InMemoryDirectiveRegistry(feedbackProducer)
         val directive = TestListDirective((0 until 20).toList())
 
         // when
-        runBlocking {
-            registry.save(directive.toReference().key, directive)
-        }
+        registry.save(directive.toReference().key, directive)
 
         // then
-        val notExistingDirective = runBlocking {
-            registry.list(TestListDirectiveReference("other-key"))
-        }
+        val notExistingDirective = registry.list(TestListDirectiveReference("other-key"))
         assertEquals(emptyList<Int>(), notExistingDirective)
 
         // then all the calls return the same set.
-        runBlocking {
-            repeat(20) {
-                assertEquals((0 until 20).toList(), registry.list(directive.toReference()))
-            }
+        repeat(20) {
+            assertEquals((0 until 20).toList(), registry.list(directive.toReference()))
         }
     }
 
     @Test
     @Timeout(1)
-    internal fun saveAndReadSingleUseDirective() {
+    internal fun saveAndReadSingleUseDirective() = runBlockingTest {
         // given
         val registry = InMemoryDirectiveRegistry(feedbackProducer)
         val directive = TestSingleUseDirective(100)
 
         // when
-        runBlocking {
-            registry.save(directive.toReference().key, directive)
-        }
+        registry.save(directive.toReference().key, directive)
 
         // then
-        val notExistingDirective = runBlocking {
-            registry.read(TestSingleUseDirectiveReference("other-key"))
-        }
+        val notExistingDirective = registry.read(TestSingleUseDirectiveReference("other-key"))
         assertNull(notExistingDirective)
 
         // then
-        val existingValue = runBlocking {
-            registry.read(directive.toReference())
-        }
+        val existingValue = registry.read(directive.toReference())
         assertEquals(100, existingValue)
 
         // then
-        val emptyValue = runBlocking {
-            registry.read(directive.toReference())
-        }
+        val emptyValue = registry.read(directive.toReference())
         assertNull(emptyValue)
-
     }
 }

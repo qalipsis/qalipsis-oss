@@ -2,23 +2,17 @@ package io.qalipsis.core.factories.events.elasticsearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.ProxyBuilder
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.engine.http
-import io.ktor.client.features.Charsets
-import io.ktor.client.features.UserAgent
-import io.ktor.client.features.auth.Auth
-import io.ktor.client.features.auth.providers.basic
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.put
-import io.ktor.client.request.url
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.readText
+import io.ktor.client.*
+import io.ktor.client.engine.*
+import io.ktor.client.engine.apache.*
+import io.ktor.client.features.*
+import io.ktor.client.features.auth.*
+import io.ktor.client.features.auth.providers.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.ContentType
-import io.ktor.http.content.TextContent
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.http.content.*
+import io.ktor.util.*
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.util.StringEscapeUtils
 import io.micronaut.context.annotation.Requires
@@ -29,24 +23,14 @@ import io.qalipsis.api.lang.durationSinceNanos
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.factories.events.Event
 import io.qalipsis.core.factories.eventslogger.BufferedEventsLogger
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newFixedThreadPoolContext
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.io.IOException
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
-import java.util.Random
-import java.util.UUID
+import java.util.*
 import java.util.regex.Pattern
 import javax.annotation.Nullable
 import javax.inject.Singleton
@@ -58,6 +42,7 @@ import javax.inject.Singleton
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Singleton
 @Requires(property = "events.export.elasticsearch.enabled", value = "true")
 internal class ElasticsearchEventsLogger(
@@ -72,9 +57,9 @@ internal class ElasticsearchEventsLogger(
 
     private val random = Random()
 
-    private val urls = configuration.urls.map { u -> if (u.endsWith("/")) "$u" else "$u/" }
+    private val urls = configuration.urls.map { u -> if (u.endsWith("/")) u else "$u/" }
 
-    @OptIn(ObsoleteCoroutinesApi::class)
+    @ExperimentalCoroutinesApi
     private val publicationContext =
         newFixedThreadPoolContext(configuration.publishers, "Elasticsearch-Events-Publisher")
 

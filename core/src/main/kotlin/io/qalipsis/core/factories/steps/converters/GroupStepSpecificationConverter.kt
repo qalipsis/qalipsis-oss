@@ -4,15 +4,9 @@ import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.retry.RetryPolicy
-import io.qalipsis.api.steps.AbstractStep
-import io.qalipsis.api.steps.GroupStepEndSpecification
-import io.qalipsis.api.steps.GroupStepSpecification
-import io.qalipsis.api.steps.GroupStepStartSpecification
-import io.qalipsis.api.steps.Step
-import io.qalipsis.api.steps.StepCreationContext
-import io.qalipsis.api.steps.StepSpecification
-import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.api.steps.*
 import io.qalipsis.core.factories.steps.GroupStep
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -20,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @StepConverter
 internal class GroupStepSpecificationConverter : StepSpecificationConverter<GroupStepSpecification<*, *>> {
 

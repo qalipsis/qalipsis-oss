@@ -2,12 +2,15 @@ package io.qalipsis.api.sync
 
 import io.qalipsis.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onReceiveOrNull
 import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -43,7 +46,7 @@ class SuspendedCountLatch(
 
     private var count = AtomicLong(initialCount)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @ExperimentalCoroutinesApi
     val onRelease
         get() = syncFlag.onReceiveOrNull()
 
@@ -67,6 +70,22 @@ class SuspendedCountLatch(
      */
     suspend fun await() {
         syncFlag.receiveOrNull()
+    }
+
+    /**
+     * Awaits for the counter to be 0, until the timeout.
+     *
+     * @return false if the timeout was reached, true otherwise.
+     */
+    suspend fun await(timeout: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): Boolean {
+        return try {
+            withTimeout(unit.toMillis(timeout)) {
+                await()
+                true
+            }
+        } catch (e: TimeoutCancellationException) {
+            false
+        }
     }
 
     suspend fun release() {

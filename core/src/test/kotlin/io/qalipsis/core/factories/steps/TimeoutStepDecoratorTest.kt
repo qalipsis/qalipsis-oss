@@ -17,7 +17,7 @@ import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -60,9 +60,7 @@ internal class TimeoutStepDecoratorTest {
         val step = spyk(TimeoutStepDecorator(Duration.ofMillis(10L), decoratedStep, meterRegistry))
 
         assertDoesNotThrow {
-            runBlocking {
-                step.execute(minion, ctx)
-            }
+            runBlockingTest { step.execute(minion, ctx) }
         }
         coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), refEq(ctx)) }
         Assertions.assertFalse(ctx.isExhausted)
@@ -73,7 +71,7 @@ internal class TimeoutStepDecoratorTest {
 
     @Test
     @Timeout(5)
-    fun shouldFailWhenDecoratedStepIsLongerThanTimeout() {
+    fun shouldFailWhenDecoratedStepIsLongerThanTimeout() = runBlockingTest {
         val timeout = 10L
         val decoratedStep: Step<Any, Any> = mockk {
             coEvery { execute(any(), any()) } coAnswers { delay(timeout + 10) }
@@ -85,9 +83,7 @@ internal class TimeoutStepDecoratorTest {
         val step = spyk(TimeoutStepDecorator(Duration.ofMillis(timeout), decoratedStep, meterRegistry))
 
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
-                step.execute(minion, ctx)
-            }
+            step.execute(minion, ctx)
         }
         coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), refEq(ctx)) }
         Assertions.assertTrue(ctx.isExhausted)

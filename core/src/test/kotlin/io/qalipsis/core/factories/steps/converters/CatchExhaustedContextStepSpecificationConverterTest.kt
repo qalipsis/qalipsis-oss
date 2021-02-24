@@ -14,7 +14,8 @@ import io.qalipsis.core.factories.steps.CatchExhaustedContextStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class CatchExhaustedContextStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<CatchExhaustedContextStepSpecificationConverter>() {
@@ -38,9 +40,8 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         Assertions.assertFalse(converter.support(relaxedMockk()))
     }
 
-
     @Test
-    internal fun `should convert spec with name to step`() {
+    internal fun `should convert spec with name to step`() = runBlockingTest {
         // given
         val blockSpecification: suspend (context: StepContext<*, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
@@ -48,11 +49,9 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(
-                creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*>>
-            )
-        }
+        converter.convert<String, Int>(
+            creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*>>
+        )
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
@@ -62,7 +61,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name to step`() {
+    internal fun `should convert spec without name to step`() = runBlockingTest {
         // given
         val blockSpecification: suspend (context: StepContext<*, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
@@ -70,11 +69,9 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(
-                creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*>>
-            )
-        }
+        converter.convert<String, Int>(
+            creationContext as StepCreationContext<CatchExhaustedContextStepSpecification<*>>
+        )
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {

@@ -6,12 +6,9 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.events.Event
 import io.qalipsis.core.factories.events.toTags
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.selects.select
 import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -20,6 +17,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 abstract class BufferedEventsLogger(
         private val loggableLevel: EventLevel,
         private val lingerPeriod: Duration = Duration.ofSeconds(10),

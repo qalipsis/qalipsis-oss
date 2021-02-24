@@ -1,7 +1,4 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
     idea
@@ -19,16 +16,23 @@ plugins {
     signing
 }
 
+/**
+ * Target version of the generated JVM bytecode.
+ */
+val target = JavaVersion.VERSION_11
+
 configure<JavaPluginConvention> {
     description = "Qalipsis"
 
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = target
+    targetCompatibility = target
 }
 
 tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.ALL
 }
+
+val testNumCpuCore: String? by project
 
 allprojects {
     group = "io.qalipsis"
@@ -50,7 +54,7 @@ allprojects {
     }
 
     infoBroker {
-        excludedManifestProperties =listOf("Module-Owner", "Module-Email", "Module-Source")
+        excludedManifestProperties = listOf("Module-Owner", "Module-Email", "Module-Source")
     }
 
     contacts {
@@ -106,6 +110,11 @@ allprojects {
             archiveBaseName.set(project.name)
         }
 
+        withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            kotlinOptions.useIR = true
+            kotlinOptions.jvmTarget = target.majorVersion
+        }
+
         named<Test>("test") {
             ignoreFailures = System.getProperty("ignoreUnitTestFailures", "false").toBoolean()
             this.exclude("**/*IntegrationTest.*", "**/*IntegrationTest$*")
@@ -129,10 +138,15 @@ allprojects {
         }
 
         withType<Test> {
+            // Simulates the execution of the tests with a given number of CPUs.
+            if (!testNumCpuCore.isNullOrBlank()) {
+                project.logger.lifecycle("Running tests of ${project.name} with $testNumCpuCore cores")
+                jvmArgs("-XX:ActiveProcessorCount=$testNumCpuCore")
+            }
             useJUnitPlatform()
             testLogging {
                 events(FAILED, STANDARD_ERROR)
-                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
                 debug {
                     events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())

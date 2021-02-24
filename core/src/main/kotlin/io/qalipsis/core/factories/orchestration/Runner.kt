@@ -37,8 +37,8 @@ interface Runner {
      * @param minion the minion to launch
      * @param step the first step of the chain to execute
      * @param ctx the initial step context
-     * @param onComplete action to execute on the output of the last steps of the chain, it is started asynchronously before the last step execute: the channel will provide the execution status (open or closed)
+     * @param consumer action to execute on the output of the last steps of the chain, it is started asynchronously before the last step execute: the channel will provide the execution status (open or closed)
      */
     suspend fun execute(minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
-                        onComplete: (suspend (ctx: StepContext<*, *>) -> Unit)?)
+                        consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?)
 }

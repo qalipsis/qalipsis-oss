@@ -9,7 +9,7 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test
 internal class ShelveStepTest {
 
     @Test
-    internal fun `should push all the values to the shared state registry`() {
+    internal fun `should push all the values to the shared state registry`() = runBlockingTest {
         val capturedValues = slot<Map<SharedStateDefinition, Any?>>()
         val sharedStateRegistry: SharedStateRegistry = relaxedMockk {
             every { set(capture(capturedValues)) } returns Unit
@@ -31,11 +31,9 @@ internal class ShelveStepTest {
         }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 123L)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals(123L, output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals(123L, output)
 
         assertEquals(mapOf(
             SharedStateDefinition("my-minion", "value-1") to 124L,

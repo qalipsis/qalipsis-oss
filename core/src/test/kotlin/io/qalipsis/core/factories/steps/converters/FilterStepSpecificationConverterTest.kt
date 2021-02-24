@@ -14,7 +14,8 @@ import io.qalipsis.core.factories.steps.FilterStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class FilterStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<FilterStepSpecificationConverter>() {
@@ -39,7 +41,7 @@ internal class FilterStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name and retry policy to step`() {
+    internal fun `should convert spec with name and retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: (input: Int) -> Boolean = { _ -> true }
         val spec = FilterStepSpecification(blockSpecification)
@@ -48,9 +50,7 @@ internal class FilterStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<FilterStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<FilterStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {
@@ -61,7 +61,7 @@ internal class FilterStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() {
+    internal fun `should convert spec without name nor retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: (input: Int) -> Boolean = { _ -> true }
         val spec = FilterStepSpecification(blockSpecification)
@@ -70,9 +70,7 @@ internal class FilterStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<FilterStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<FilterStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {

@@ -44,7 +44,9 @@ import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -58,6 +60,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 @Suppress("UNCHECKED_CAST")
 @WithMockk
+@ExperimentalCoroutinesApi
 internal class ScenariosInitializerImplTest {
 
     @RelaxedMockK
@@ -107,7 +110,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should decorate converted step`() {
+    internal fun `should decorate converted step`() = runBlockingTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -117,9 +120,7 @@ internal class ScenariosInitializerImplTest {
         context.createdStep(createdStep)
 
         // when
-        runBlocking {
-            scenariosInitializer.decorateStep(context)
-        }
+        scenariosInitializer.decorateStep(context)
 
         // then
         coVerifyOnce {
@@ -129,7 +130,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should not decorate unconverted step`() {
+    internal fun `should not decorate unconverted step`() = runBlockingTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -137,9 +138,7 @@ internal class ScenariosInitializerImplTest {
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
 
         // when
-        runBlocking {
-            scenariosInitializer.decorateStep(context)
-        }
+        scenariosInitializer.decorateStep(context)
 
         // then
         coVerifyNever {
@@ -149,7 +148,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should convert single step`() {
+    internal fun `should convert single step`() = runBlockingTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -158,9 +157,7 @@ internal class ScenariosInitializerImplTest {
         coEvery { stepConverter2.support(stepSpecification) } returns true
 
         // when
-        runBlocking {
-            scenariosInitializer.convertSingleStep(context)
-        }
+        scenariosInitializer.convertSingleStep(context)
 
         // then
         coVerifyOnce {
@@ -174,7 +171,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should not convert single step when no converter is found`() {
+    internal fun `should not convert single step when no converter is found`() = runBlockingTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -182,9 +179,7 @@ internal class ScenariosInitializerImplTest {
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
 
         // when
-        runBlocking {
-            scenariosInitializer.convertSingleStep(context)
-        }
+        scenariosInitializer.convertSingleStep(context)
 
         // then
         coVerifyOnce {
@@ -198,7 +193,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should convert steps and followers`() {
+    internal fun `should convert steps and followers`() = runBlocking {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
             ScenarioSpecification::class, StepSpecificationRegistry::class
@@ -224,11 +219,9 @@ internal class ScenariosInitializerImplTest {
         coEvery { scenariosInitializer.decorateStep(any()) } answers {}
 
         // when
-        runBlocking {
-            scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
-                // Only the root steps are passed.
-                listOf(stepSpecification1, stepSpecification3))
-        }
+        scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
+            // Only the root steps are passed.
+            listOf(stepSpecification1, stepSpecification3))
 
         // then
         // Only two dags were created.
@@ -245,7 +238,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should not convert followers when step is not converted`() {
+    internal fun `should not convert followers when step is not converted`() = runBlocking {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
             ScenarioSpecification::class, StepSpecificationRegistry::class
@@ -276,11 +269,9 @@ internal class ScenariosInitializerImplTest {
         coEvery { scenariosInitializer.decorateStep(any()) } answers {}
 
         // when
-        runBlocking {
-            scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
-                // Only the root steps are passed.
-                listOf(stepSpecification1, stepSpecification3))
-        }
+        scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
+            // Only the root steps are passed.
+            listOf(stepSpecification1, stepSpecification3))
 
         // then
         assertEquals(1, scenario["dag-1"]!!.stepsCount)

@@ -2,11 +2,11 @@ package io.qalipsis.api.sync
 
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -22,14 +22,14 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should await until zero and execute onDone action`() {
+    internal fun `should await until zero and execute onDone action`() = runBlocking {
         // given
         val doneFlag = AtomicBoolean(false)
         val rendezVousFlag = Channel<Unit>(Channel.RENDEZVOUS)
         val countLatch = SuspendedCountLatch(5) { doneFlag.set(true) }
         val delayMs = 100L
 
-        GlobalScope.launch {
+        launch {
             rendezVousFlag.send(Unit)
             delay(delayMs)
             countLatch.decrement(3)
@@ -56,13 +56,13 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should reset then await until zero and execute onDone action`() {
+    internal fun `should reset then await until zero and execute onDone action`() = runBlocking {
         // given
         val doneFlag = AtomicInteger()
         val rendezVousFlag = Channel<Unit>(Channel.RENDEZVOUS)
         val countLatch = SuspendedCountLatch(1) { doneFlag.incrementAndGet() }
 
-        GlobalScope.launch {
+        launch {
             rendezVousFlag.send(Unit)
             delay(50)
             countLatch.decrement()
@@ -73,33 +73,30 @@ internal class SuspendedCountLatchTest {
         }
 
         // when
-        runBlocking {
-            rendezVousFlag.receive()
-            Assertions.assertTrue(countLatch.isSuspended())
-            countLatch.await()
-            Assertions.assertFalse(countLatch.isSuspended())
-            // Wait until reset.
-            delay(60)
-            Assertions.assertTrue(countLatch.isSuspended())
-            countLatch.await()
-            Assertions.assertFalse(countLatch.isSuspended())
-        }
+        rendezVousFlag.receive()
+        Assertions.assertTrue(countLatch.isSuspended())
+        countLatch.await()
+        Assertions.assertFalse(countLatch.isSuspended())
+        // Wait until reset.
+        delay(60)
+        Assertions.assertTrue(countLatch.isSuspended())
+        countLatch.await()
+        Assertions.assertFalse(countLatch.isSuspended())
+
         // then
         Assertions.assertEquals(2, doneFlag.get())
     }
 
     @Test
     @Timeout(1)
-    internal fun `should not suspend when initial value is zero and not execute onDone Action`() {
+    internal fun `should not suspend when initial value is zero and not execute onDone Action`() = runBlocking {
         // given
         val doneFlag = AtomicBoolean(false)
         val countLatch = SuspendedCountLatch(0) { doneFlag.set(true) }
 
         // when
         Assertions.assertFalse(countLatch.isSuspended())
-        runBlocking {
-            countLatch.await()
-        }
+        countLatch.await()
 
         // then
         Assertions.assertFalse(doneFlag.get())
@@ -107,14 +104,14 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should await until activity`() {
+    internal fun `should await until activity`() = runBlocking {
         // given
         val countLatch = SuspendedCountLatch()
         val delayMs = 200L
 
         // when
         Assertions.assertFalse(countLatch.isSuspended())
-        GlobalScope.launch {
+        launch {
             delay(delayMs)
             countLatch.increment()
         }
@@ -129,21 +126,20 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should release but not execute onDone action`() {
+    internal fun `should release but not execute onDone action`() = runBlocking {
         // given
         val doneFlag = AtomicBoolean(false)
         val countLatch = SuspendedCountLatch(20) { doneFlag.set(true) }
 
-        GlobalScope.launch {
+        launch {
             delay(50)
             countLatch.release()
         }
 
         // when
         Assertions.assertTrue(countLatch.isSuspended())
-        runBlocking {
-            countLatch.await()
-        }
+        countLatch.await()
+
 
         // then
         Assertions.assertFalse(doneFlag.get())
@@ -151,15 +147,13 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should throw exception when decrementing to negative`() {
+    internal fun `should throw exception when decrementing to negative`() = runBlockingTest {
         // given
         val countLatch = SuspendedCountLatch(0)
 
         // when
         assertThrows<IllegalArgumentException> {
-            runBlocking {
-                countLatch.decrement()
-            }
+            countLatch.decrement()
         }
     }
 }

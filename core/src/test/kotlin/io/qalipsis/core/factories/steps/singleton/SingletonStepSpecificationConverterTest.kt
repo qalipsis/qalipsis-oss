@@ -35,7 +35,8 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -49,6 +50,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class SingletonStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<SingletonStepSpecificationConverter>() {
@@ -75,7 +77,7 @@ internal class SingletonStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should decorate step singleton specifications`() {
+    internal fun `should decorate step singleton specifications`() = runBlockingTest {
         mockkObject(TopicBuilder)
         val topicConfiguration = slot<TopicConfiguration>()
         every { TopicBuilder.build<String>(capture(topicConfiguration)) } returns dataTransferTopic
@@ -93,9 +95,7 @@ internal class SingletonStepSpecificationConverterTest :
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).all {
@@ -146,14 +146,13 @@ internal class SingletonStepSpecificationConverterTest :
 
 
     @Test
-    internal fun `should not decorate non singleton step`() {
+    internal fun `should not decorate non singleton step`() = runBlockingTest {
         // given
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, stepSpecification)
         creationContext.createdStep(decoratedStep)
+
         // when
-        runBlocking {
-            converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isSameAs(decoratedStep)
@@ -173,22 +172,20 @@ internal class SingletonStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name into a SingletonProxyStep`() {
+    internal fun `should convert spec without name into a SingletonProxyStep`() = runBlockingTest {
         // given
         every { TopicBuilder.build<String>(any()) } returns dataTransferTopic
         val nextStep: StepSpecification<String, *, *> = relaxedMockk()
         val spec = SingletonProxyStepSpecification(
-                "my-singleton",
-                nextStep,
-                dataTransferTopic
+            "my-singleton",
+            nextStep,
+            dataTransferTopic
         )
         every { directedAcyclicGraph.isUnderLoad } returns true
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<SingletonProxyStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<SingletonProxyStepSpecification<*>>)
 
         // then
         creationContext.createdStep!!.let { step ->
@@ -200,22 +197,20 @@ internal class SingletonStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name into a TopicDataPushStep`() {
+    internal fun `should convert spec without name into a TopicDataPushStep`() = runBlockingTest {
         // given
         every { TopicBuilder.build<String>(any()) } returns dataTransferTopic
         val nextStep: StepSpecification<String, *, *> = relaxedMockk()
         val spec = SingletonProxyStepSpecification(
-                "my-singleton",
-                nextStep,
-                dataTransferTopic
+            "my-singleton",
+            nextStep,
+            dataTransferTopic
         )
         every { directedAcyclicGraph.isUnderLoad } returns false
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<SingletonProxyStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<SingletonProxyStepSpecification<*>>)
 
         // then
         creationContext.createdStep!!.let { step ->
@@ -244,7 +239,7 @@ internal class SingletonStepSpecificationConverterTest :
     }
 
     inner class TestSingletonSpecification(
-            override val singletonConfiguration: SingletonConfiguration = SingletonConfiguration(SingletonType.UNICAST)
+        override val singletonConfiguration: SingletonConfiguration = SingletonConfiguration(SingletonType.UNICAST)
     ) : AbstractStepSpecification<Int, Int, TestSingletonSpecification>(), SingletonStepSpecification
 
 }

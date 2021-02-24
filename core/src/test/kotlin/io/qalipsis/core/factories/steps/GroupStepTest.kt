@@ -21,13 +21,15 @@ import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
+@ExperimentalCoroutinesApi
 @WithMockk
 internal class GroupStepTest {
 
@@ -67,8 +69,8 @@ internal class GroupStepTest {
     }
 
     @Test
-    @Timeout(3)
-    internal fun `should execute all steps and forward the output`() {
+    @Timeout(10)
+    internal fun `should execute all steps and forward the output`() = runBlockingTest {
         val tailStep: Step<Int, String> = relaxedMockk {
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
@@ -96,18 +98,19 @@ internal class GroupStepTest {
         val step = GroupStep<Double, String>("", null)
         step.addNext(headStep)
 
-        step.runner = RunnerImpl(relaxedMockk(), relaxedMockk {
+        val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
             every { gauge(any(), any()) } returnsArgument 1
         })
+        runner.coroutineScope = this
+        step.runner = runner
 
         val ctx = StepTestHelper.createStepContext<Double, String>(input = 3.0)
 
         val results = mutableListOf<String>()
-        runBlocking {
-            step.execute(minion, ctx)
-            repeat(6) {
-                results.add((ctx.output as Channel).receive())
-            }
+
+        step.execute(minion, ctx)
+        repeat(6) {
+            results.add((ctx.output as Channel).receive())
         }
 
         assertTrue((ctx.output as Channel).isEmpty)
@@ -121,7 +124,7 @@ internal class GroupStepTest {
 
     @Test
     @Timeout(3)
-    internal fun `should mark the context as exhausted when a wrapped step is in error`() {
+    internal fun `should mark the context as exhausted when a wrapped step is in error`() = runBlockingTest {
         val exception = RuntimeException("This is an error")
         val secondStep: Step<Int, String> = relaxedMockk {
             coEvery { execute(refEq(minion), any()) } coAnswers {
@@ -142,14 +145,14 @@ internal class GroupStepTest {
         val step = GroupStep<Int, String>("", null)
         step.addNext(headStep)
 
-        step.runner = RunnerImpl(relaxedMockk(), relaxedMockk {
+        val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
             every { gauge(any(), any()) } returnsArgument 1
         })
+        runner.coroutineScope = this
+        step.runner = runner
 
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 3)
-        runBlocking {
-            step.execute(minion, ctx)
-        }
+        step.execute(minion, ctx)
 
         assertTrue((ctx.output as Channel).isEmpty)
         assertFalse((ctx.output as Channel).isClosedForReceive)

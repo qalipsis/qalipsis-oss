@@ -1,14 +1,15 @@
 package io.qalipsis.core.factories.events
 
 import io.qalipsis.api.events.EventLevel
+import io.qalipsis.core.factories.events.elasticsearch.ElasticsearchEventsLoggerTest
 import io.qalipsis.core.factories.eventslogger.BufferedEventsLogger
-import io.qalipsis.core.factories.eventslogger.elasticsearch.ElasticsearchEventsLoggerTest
-import io.qalipsis.test.coroutines.CleanCoroutines
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Duration
@@ -20,7 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
-@CleanCoroutines
+@ExperimentalCoroutinesApi
+@Disabled("The concept of event logging has to be reviewed")
 internal class BufferedEventsLoggerTest {
 
     @Test
@@ -137,16 +139,14 @@ internal class BufferedEventsLoggerTest {
     }
 
     @Test
-    @Timeout(3)
-    internal fun `should publish when linger time is over`() {
-        val logger = TestBufferedEventsLogger(EventLevel.INFO, Duration.ofMillis(80), 100, 2)
+    @Timeout(5)
+    internal fun `should publish when linger time is over`() = runBlocking {
+        val logger = TestBufferedEventsLogger(EventLevel.INFO, Duration.ofMillis(400), 100, 2)
         logger.start()
 
-        runBlocking {
-            repeat(3) {
-                delay(60)
-                logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
-            }
+        repeat(3) {
+            delay(300)
+            logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
         }
 
         logger.publicationCountDownLatch.await()
@@ -175,27 +175,25 @@ internal class BufferedEventsLoggerTest {
 
     @Test
     @Timeout(1)
-    internal fun `should support concurrent logs`() {
+    internal fun `should support concurrent logs`() = runBlockingTest {
         val logger = TestBufferedEventsLogger(EventLevel.INFO, Duration.ofMinutes(1), 1000)
         logger.start()
+        val job1 = launch {
+            repeat(300) {
+                logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
+            }
+        }
+        val job2 = launch {
+            repeat(300) {
+                logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
+            }
+        }
 
-        val job1 = GlobalScope.launch {
-            repeat(300) {
-                logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
-            }
+        repeat(300) {
+            logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
         }
-        val job2 = GlobalScope.launch {
-            repeat(300) {
-                logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
-            }
-        }
-        runBlocking {
-            repeat(300) {
-                logger.warn(EVENT_NAME, EVENT_VALUE, EVENT_TAGS_MAP)
-            }
-            job1.join()
-            job2.join()
-        }
+        job1.join()
+        job2.join()
 
         Assertions.assertEquals(900, logger.bufferedData.size)
     }

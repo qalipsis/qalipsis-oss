@@ -6,7 +6,6 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.core.cross.directives.TestDescriptiveDirective
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.channels.Channel
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.Timeout
  */
 @Suppress("UNCHECKED_CAST")
 @WithMockk
-@CleanCoroutines
 internal class ChannelBasedDirectiveConsumerTest {
 
     @RelaxedMockK
@@ -30,8 +28,8 @@ internal class ChannelBasedDirectiveConsumerTest {
     lateinit var processor2: DirectiveProcessor<*>
 
     @Test
-    @Timeout(1)
-    internal fun shouldConsumeAndProcessDirective() {
+    @Timeout(2)
+    internal fun shouldConsumeAndProcessDirective() = runBlocking {
         // given
         val directive1 = TestDescriptiveDirective()
         val directive2 = TestDescriptiveDirective()
@@ -43,12 +41,11 @@ internal class ChannelBasedDirectiveConsumerTest {
         ChannelBasedDirectiveConsumer(relaxedMockk {
             every { channel } returns directiveChannel
         }, listOf(processor1, processor2)).init()
-        runBlocking {
-            directiveChannel.send(directive1)
-            directiveChannel.send(directive2)
-            // Wait for the data to be consumed.
-            delay(5)
-        }
+
+        directiveChannel.send(directive1)
+        directiveChannel.send(directive2)
+        // Wait for the data to be consumed.
+        delay(50)
 
         // then
         coVerifyOrder {

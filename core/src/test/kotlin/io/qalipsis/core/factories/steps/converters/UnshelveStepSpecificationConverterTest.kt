@@ -16,7 +16,8 @@ import io.qalipsis.core.factories.steps.UnshelveStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class UnUnshelveStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<UnshelveStepSpecificationConverter>() {
@@ -45,7 +47,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name to step`() {
+    internal fun `should convert spec with name to step`() = runBlockingTest {
         // given
         val keys = listOf("value-1", "value-2")
         val spec = UnshelveStepSpecification<String, Map<String, Any?>>(keys, true, false)
@@ -53,9 +55,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
 
         // when
-        runBlocking {
-            converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
-        }
+        converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
 
         // then
         creationContext.createdStep!!.let {
@@ -69,16 +69,14 @@ internal class UnUnshelveStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name to step`() {
+    internal fun `should convert spec without name to step`() = runBlockingTest {
         // given
         val keys = listOf("value-1", "value-2")
         val spec = UnshelveStepSpecification<String, Map<String, Any?>>(keys, false, false)
         val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk(), spec)
 
         // when
-        runBlocking {
-            converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
-        }
+        converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(UnshelveStep::class).all {
@@ -90,7 +88,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert singular spec without name to step`() {
+    internal fun `should convert singular spec without name to step`() = runBlockingTest {
         // given
         val keys = listOf("value-1")
         val spec = UnshelveStepSpecification<String, Map<String, Any?>>(keys, true, true)
@@ -100,9 +98,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
         val converter = UnshelveStepSpecificationConverter(sharedStateRegistry)
 
         // when
-        runBlocking {
-            converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
-        }
+        converter.convert<String, String>(creationContext as StepCreationContext<UnshelveStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SingularUnshelveStep::class).all {

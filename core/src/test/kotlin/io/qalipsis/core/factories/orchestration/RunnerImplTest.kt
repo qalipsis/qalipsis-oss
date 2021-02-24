@@ -11,13 +11,11 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.steps
 import io.qalipsis.core.factories.testDag
 import io.qalipsis.core.factories.testStep
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -25,7 +23,9 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
-import kotlinx.coroutines.runBlocking
+import io.qalipsis.test.utils.setProperty
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -38,8 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @WithMockk
-@CleanCoroutines
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RunnerImplTest {
 
@@ -62,8 +62,8 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should execute the full dag asynchronously and update meters`() {
+    @Timeout(3)
+    internal fun `should execute the full dag asynchronously and update meters`() = runBlockingTest {
         // given
         val runningStepsGauge: AtomicInteger = relaxedMockk()
         val idleMinionsGauge: AtomicInteger = relaxedMockk()
@@ -91,15 +91,14 @@ internal class RunnerImplTest {
             }
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry)
+        runner.setProperty("coroutineScope", this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
         val executionDuration = coMeasureTime {
             runner.run(minion, dag)
         }
-        runBlocking {
-            minion.join()
-        }
+        minion.join()
 
         // then
         // The execution of the runner operation should return before the complete DAG is complete.
@@ -156,20 +155,19 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should execute the error processing only`() {
+    @Timeout(3)
+    internal fun `should execute the error processing only`() = runBlockingTest {
         // given
         val dag = testDag {
             this.testStep<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry)
+        runner.setProperty("coroutineScope", this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
-        runBlocking {
-            runner.run(minion, dag)
-            minion.join()
-        }
+        runner.run(minion, dag)
+        minion.join()
 
         // then
         val steps = dag.steps()
@@ -179,21 +177,20 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should execute the normal steps after recovery`() {
+    @Timeout(3)
+    internal fun `should execute the normal steps after recovery`() = runBlockingTest {
         // given
         val dag = testDag {
             this.testStep<Int>("step-1", generateException = true)
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry)
+        runner.setProperty("coroutineScope", this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
-        runBlocking {
-            runner.run(minion, dag)
-            minion.join()
-        }
+        runner.run(minion, dag)
+        minion.join()
 
         // then
         val steps = dag.steps()
@@ -206,8 +203,8 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should suspend next steps when there is no output`() {
+    @Timeout(3)
+    internal fun `should suspend next steps when there is no output`() = runBlockingTest {
         // given
         val dag = testDag {
             this.testStep<Int>("step-1").all {
@@ -216,14 +213,13 @@ internal class RunnerImplTest {
             }
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry)
+        runner.setProperty("coroutineScope", this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
-        runBlocking {
-            runner.run(minion, dag)
-            withTimeout(500) {
-                minion.join()
-            }
+        runner.run(minion, dag)
+        withTimeout(500) {
+            minion.join()
         }
 
         // then
@@ -234,8 +230,8 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should use retry policy instead of executing the step directly`() {
+    @Timeout(3)
+    internal fun `should use retry policy instead of executing the step directly`() = runBlockingTest {
         // given
         val contextSlot = slot<StepContext<Unit, Int>>()
         val retryableFunctionSlot = slot<suspend (StepContext<Unit, Int>) -> Unit>()
@@ -254,13 +250,12 @@ internal class RunnerImplTest {
                 .step("step-2")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry)
+        runner.setProperty("coroutineScope", this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
-        runBlocking {
-            runner.run(minion, dag)
-            step1Latch.await()
-        }
+        runner.run(minion, dag)
+        step1Latch.await()
 
         // then
         coVerifyOnce { retryPolicy.execute<Int, Int>(any(), any()) }
@@ -270,12 +265,5 @@ internal class RunnerImplTest {
             step.assertExecuted()
             Assertions.assertEquals(123, step.received)
         }
-
-
-    }
-
-    companion object {
-        @JvmStatic
-        private val log = logger()
     }
 }

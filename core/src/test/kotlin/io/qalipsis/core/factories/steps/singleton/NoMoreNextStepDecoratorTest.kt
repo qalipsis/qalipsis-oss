@@ -12,7 +12,7 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -32,7 +32,7 @@ internal class NoMoreNextStepDecoratorTest {
 
     @Test
     @Timeout(1)
-    internal fun `should execute decorated`() {
+    internal fun `should execute decorated`() = runBlockingTest {
         coEvery { decoratedStep.execute(any()) } coAnswers {
             (firstArg() as StepContext<Int, Int>).also {
                 it.output.send(it.input.receive())
@@ -41,11 +41,10 @@ internal class NoMoreNextStepDecoratorTest {
         val step = NoMoreNextStepDecorator(decoratedStep)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
-        runBlocking {
-            step.execute(ctx)
-            val output = (ctx.output as Channel).receive()
-            assertEquals(1, output)
-        }
+        step.execute(ctx)
+        val output = (ctx.output as Channel).receive()
+        assertEquals(1, output)
+
         coVerifyOnce {
             decoratedStep.execute(refEq(ctx))
         }
@@ -70,12 +69,11 @@ internal class NoMoreNextStepDecoratorTest {
 
     @Test
     @Timeout(1)
-    internal fun `should init decorated`() {
+    internal fun `should init decorated`() = runBlockingTest {
         val step = NoMoreNextStepDecorator(decoratedStep)
 
-        runBlocking {
-            step.init()
-        }
+        step.init()
+
         coVerifyOnce {
             decoratedStep.init()
         }
@@ -83,12 +81,10 @@ internal class NoMoreNextStepDecoratorTest {
 
     @Test
     @Timeout(1)
-    internal fun `should destroy decorated`() {
+    internal fun `should destroy decorated`() = runBlockingTest {
         val step = NoMoreNextStepDecorator(decoratedStep)
 
-        runBlocking {
-            step.destroy()
-        }
+        step.destroy()
         coVerifyOnce {
             decoratedStep.destroy()
         }
@@ -96,13 +92,11 @@ internal class NoMoreNextStepDecoratorTest {
 
     @Test
     @Timeout(1)
-    internal fun `should start decorated`() {
+    internal fun `should start decorated`() = runBlockingTest {
         val step = NoMoreNextStepDecorator(decoratedStep)
         val startStopContext = relaxedMockk<StepStartStopContext>()
 
-        runBlocking {
-            step.start(startStopContext)
-        }
+        step.start(startStopContext)
         coVerifyOnce {
             decoratedStep.start(refEq(startStopContext))
         }
@@ -110,13 +104,11 @@ internal class NoMoreNextStepDecoratorTest {
 
     @Test
     @Timeout(1)
-    internal fun `should stop decorated`() {
+    internal fun `should stop decorated`() = runBlockingTest {
         val step = NoMoreNextStepDecorator(decoratedStep)
         val startStopContext = relaxedMockk<StepStartStopContext>()
 
-        runBlocking {
-            step.stop(startStopContext)
-        }
+        step.stop(startStopContext)
         coVerifyOnce {
             decoratedStep.stop(refEq(startStopContext))
         }
@@ -124,11 +116,9 @@ internal class NoMoreNextStepDecoratorTest {
 
     @Test
     @Timeout(1)
-    internal fun `should not add next decorated`() {
+    internal fun `should not add next decorated`() = runBlockingTest {
         val step = NoMoreNextStepDecorator(decoratedStep)
 
-        runBlocking {
-            step.addNext(relaxedMockk { })
-        }
+        step.addNext(relaxedMockk { })
     }
 }

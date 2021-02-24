@@ -4,11 +4,11 @@ import assertk.assertThat
 import assertk.assertions.isGreaterThan
 import io.qalipsis.api.lang.millis
 import io.qalipsis.api.lang.seconds
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -19,20 +19,18 @@ internal class SuspendedFutureForCompletionStageTest {
 
     @Test
     @Timeout(3)
-    internal fun `should return the expected result`() {
+    internal fun `should return the expected result`() = runBlocking {
         // given
         val completionStage = CompletableFuture<Unit>()
         val suspendedFuture = SuspendedFutureForCompletionStage(completionStage)
         val start = System.currentTimeMillis()
-        GlobalScope.launch {
+        launch {
             delay(200)
             completionStage.complete(Unit)
         }
 
         // when
-        val result = runBlocking {
-            suspendedFuture.get()
-        }
+        val result = suspendedFuture.get()
 
         // then
         assertSame(Unit, result)
@@ -41,53 +39,47 @@ internal class SuspendedFutureForCompletionStageTest {
 
     @Test
     @Timeout(3)
-    internal fun `should return the exception`() {
+    internal fun `should return the exception`() = runBlockingTest {
         // given
         val completionStage = CompletableFuture<Unit>()
         val suspendedFuture = SuspendedFutureForCompletionStage(completionStage)
-        GlobalScope.launch {
+        launch {
             delay(200)
             completionStage.completeExceptionally(RuntimeException("This is an error"))
         }
 
         // when + get
         assertThrows<RuntimeException> {
-            runBlocking {
-                suspendedFuture.get(100.millis())
-            }
+            suspendedFuture.get(100.millis())
         }
     }
 
     @Test
     @Timeout(3)
-    internal fun `should return a timeout exception`() {
+    internal fun `should return a timeout exception`() = runBlockingTest {
         // given
         val suspendedFuture = SuspendedFutureForCompletionStage(CompletableFuture<Unit>())
 
         // when + then
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
-                suspendedFuture.get(100.millis())
-            }
+            suspendedFuture.get(100.millis())
         }
     }
 
     @Test
     @Timeout(3)
-    internal fun `should return the result before the timeout`() {
+    internal fun `should return the result before the timeout`() = runBlocking {
         // given
         val completionStage = CompletableFuture<Unit>()
         val suspendedFuture = SuspendedFutureForCompletionStage(completionStage)
         val start = System.currentTimeMillis()
-        GlobalScope.launch {
+        launch {
             delay(200)
             completionStage.complete(Unit)
         }
 
         // when
-        val result = runBlocking {
-            suspendedFuture.get(50.seconds())
-        }
+        val result = suspendedFuture.get(50.seconds())
 
         // then
         assertSame(Unit, result)
@@ -96,21 +88,19 @@ internal class SuspendedFutureForCompletionStageTest {
 
     @Test
     @Timeout(3)
-    internal fun `should throw the exception before the timeout`() {
+    internal fun `should throw the exception before the timeout`() = runBlocking {
         // given
         val completionStage = CompletableFuture<Unit>()
         val suspendedFuture = SuspendedFutureForCompletionStage(completionStage)
         val start = System.currentTimeMillis()
-        GlobalScope.launch {
+        launch {
             delay(200)
             completionStage.completeExceptionally(RuntimeException("This is an error"))
         }
 
         // when + get
         assertThrows<RuntimeException> {
-            runBlocking {
-                suspendedFuture.get(50.seconds())
-            }
+            suspendedFuture.get(50.seconds())
         }
         assertThat(System.currentTimeMillis() - start).isGreaterThan(150)
     }

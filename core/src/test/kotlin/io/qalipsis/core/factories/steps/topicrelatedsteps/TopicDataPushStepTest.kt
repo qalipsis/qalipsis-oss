@@ -17,14 +17,15 @@ import io.qalipsis.api.messaging.unicastTopic
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.steps.Step
+import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.orchestration.Runner
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
-import kotlinx.coroutines.runBlocking
+import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -49,10 +50,10 @@ internal class TopicDataPushStepTest {
 
     @Test
     @Timeout(5)
-    fun `should read all the data from topic and pass it to next step`() {
+    fun `should read all the data from topic and pass it to next step`() = runBlockingTest {
         // given
         val dataTransferTopic: Topic<String> = unicastTopic()
-        val step = TopicDataPushStep("my-step", "my-parent-step", dataTransferTopic)
+        val step = TopicDataPushStep("my-step", "my-parent-step", dataTransferTopic, coroutineScope = this)
         step.next.add(nextStep)
         step.minionsKeeper = minionsKeeper
         step.runner = runner
@@ -60,19 +61,18 @@ internal class TopicDataPushStepTest {
         every { nextStep.id } returns "my-next-step"
         every { minionsKeeper.getSingletonMinion(eq("my-dag")) } returns minion
         every { minion.id } returns "my-minion"
-        val countDownLatch = CountDownLatch(3)
-        coEvery { runner.launch(any(), any(), any()) } answers { countDownLatch.countDown() }
+        val countDownLatch = SuspendedCountLatch(3)
+        coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
 
         // when
-        runBlocking {
-            step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag"))
-            dataTransferTopic.produceValue("value-1")
-            dataTransferTopic.produceValue("value-2")
-            dataTransferTopic.produceValue("value-3")
-        }
+        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag"))
+        dataTransferTopic.produceValue("value-1")
+        dataTransferTopic.produceValue("value-2")
+        dataTransferTopic.produceValue("value-3")
 
         // then
         countDownLatch.await()
+        step.stop(relaxedMockk())
         val contexts = mutableListOf<StepContext<String, String>>()
         coVerifyExactly(3) {
             runner.launch(refEq(minion), nextStep, capture(contexts))
@@ -93,18 +93,16 @@ internal class TopicDataPushStepTest {
             }
         }
         // Verifies the values sent into the context for the next step.
-        val emittedValues = runBlocking {
-            contexts.map { it.input.receive() }
-        }
+        val emittedValues = contexts.map { it.input.receive() }
         assertThat(emittedValues).containsExactly("value-1", "value-2", "value-3")
     }
 
     @Test
     @Timeout(5)
-    internal fun `should only push data when running`() {
+    internal fun `should only push data when running`() = runBlockingTest {
         // given
         val dataTransferTopic: Topic<String> = unicastTopic()
-        val step = TopicDataPushStep("my-step", "my-parent-step", dataTransferTopic)
+        val step = TopicDataPushStep("my-step", "my-parent-step", dataTransferTopic, coroutineScope = this)
         step.next.add(nextStep)
         step.minionsKeeper = minionsKeeper
         step.runner = runner
@@ -112,31 +110,28 @@ internal class TopicDataPushStepTest {
         every { nextStep.id } returns "my-next-step"
         every { minionsKeeper.getSingletonMinion(eq("my-dag")) } returns minion
         every { minion.id } returns "my-minion"
-        val countDownLatch = CountDownLatch(3)
-        coEvery { runner.launch(any(), any(), any()) } answers { countDownLatch.countDown() }
+        val countDownLatch = SuspendedCountLatch(3)
+        coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
 
         // when
-        runBlocking {
-            dataTransferTopic.produceValue("value-1")
-            dataTransferTopic.produceValue("value-2")
-            dataTransferTopic.produceValue("value-3")
-        }
+        dataTransferTopic.produceValue("value-1")
+        dataTransferTopic.produceValue("value-2")
+        dataTransferTopic.produceValue("value-3")
 
         // then
         // Should not have sent any data.
         assertThat(countDownLatch.await(500, TimeUnit.MILLISECONDS)).isFalse()
-        assertThat(countDownLatch.count).isEqualTo(3)
+        assertThat(countDownLatch.get()).isEqualTo(3L)
         coVerifyNever {
             runner.launch(any(), any(), any())
         }
 
         // when
-        runBlocking {
-            step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag"))
-        }
+        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag"))
 
         // then
         countDownLatch.await()
+        step.stop(relaxedMockk())
         val contexts = mutableListOf<StepContext<String, String>>()
         coVerifyExactly(3) {
             runner.launch(refEq(minion), nextStep, capture(contexts))

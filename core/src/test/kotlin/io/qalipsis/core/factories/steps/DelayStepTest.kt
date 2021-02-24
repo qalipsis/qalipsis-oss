@@ -19,17 +19,15 @@ internal class DelayStepTest {
 
     @Test
     @Timeout(3)
-    fun shouldExecuteTheDecoratedStepAfterTheDelay() {
+    fun shouldExecuteTheDecoratedStepAfterTheDelay() = runBlocking {
         val delay = 20L
         val step = DelayStep<Int>("", Duration.ofMillis(delay))
         val ctx = StepTestHelper.createStepContext<Int, Int>(123)
 
         val start = Instant.now()
-        runBlocking {
-            step.execute(ctx)
+        step.execute(ctx)
 
-            Assertions.assertEquals(123, (ctx.output as Channel).receive())
-        }
+        Assertions.assertEquals(123, (ctx.output as Channel).receive())
         QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delay), start.durationSince())
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }

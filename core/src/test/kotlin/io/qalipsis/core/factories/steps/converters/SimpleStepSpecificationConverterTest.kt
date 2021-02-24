@@ -15,7 +15,8 @@ import io.qalipsis.core.factories.steps.SimpleStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class SimpleStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<SimpleStepSpecificationConverter>() {
@@ -40,7 +42,7 @@ internal class SimpleStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name and retry policy to step`() {
+    internal fun `should convert spec with name and retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = { _ -> }
         val spec = SimpleStepSpecification(blockSpecification)
@@ -49,9 +51,7 @@ internal class SimpleStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<SimpleStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<SimpleStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SimpleStep::class).all {
@@ -62,7 +62,7 @@ internal class SimpleStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() {
+    internal fun `should convert spec without name nor retry policy to step`() = runBlockingTest {
         // given
         val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = { _ -> }
         val spec = SimpleStepSpecification(blockSpecification)
@@ -70,9 +70,7 @@ internal class SimpleStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<SimpleStepSpecification<*, *>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<SimpleStepSpecification<*, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SimpleStep::class).all {

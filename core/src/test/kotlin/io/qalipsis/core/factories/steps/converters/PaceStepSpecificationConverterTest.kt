@@ -13,7 +13,8 @@ import io.qalipsis.core.factories.steps.PaceStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class PaceStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<PaceStepSpecificationConverter>() {
@@ -38,7 +40,7 @@ internal class PaceStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name to step`() {
+    internal fun `should convert spec with name to step`() = runBlockingTest {
         // given
         val blockSpecification: (pastPeriodMs: Long) -> Long = { _ -> 1 }
         val spec = PaceStepSpecification<Int>(blockSpecification)
@@ -46,9 +48,7 @@ internal class PaceStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<PaceStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<PaceStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(PaceStep::class).all {
@@ -58,7 +58,7 @@ internal class PaceStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name to step`() {
+    internal fun `should convert spec without name to step`() = runBlockingTest {
         // given
         val blockSpecification: (pastPeriodMs: Long) -> Long = { _ -> 1 }
         val spec = PaceStepSpecification<Int>(blockSpecification)
@@ -66,9 +66,7 @@ internal class PaceStepSpecificationConverterTest :
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
-        runBlocking {
-            converter.convert<String, Int>(creationContext as StepCreationContext<PaceStepSpecification<*>>)
-        }
+        converter.convert<String, Int>(creationContext as StepCreationContext<PaceStepSpecification<*>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(PaceStep::class).all {

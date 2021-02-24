@@ -6,17 +6,16 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.orchestration.directives.DirectiveRegistry
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
 import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
-import io.qalipsis.test.coroutines.CleanCoroutines
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -25,8 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @WithMockk
-@CleanCoroutines
 internal class MinionsCreationDirectiveProcessorTest {
 
     @RelaxedMockK
@@ -75,7 +74,7 @@ internal class MinionsCreationDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldPopNextMinionToCreateFromQueue() {
+    internal fun shouldPopNextMinionToCreateFromQueue() = runBlockingTest {
         // given
         val directive =
             MinionsCreationDirectiveReference(
@@ -90,11 +89,9 @@ internal class MinionsCreationDirectiveProcessorTest {
         }
 
         // when
-        runBlocking {
             processor.process(directive)
             // Wait for the directive to be fully processed.
             delay(20)
-        }
 
         // then
         coVerifyExactly(11) {
@@ -108,7 +105,7 @@ internal class MinionsCreationDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldPopNextMinionButDoNothingWhereThereIsNone() {
+    internal fun shouldPopNextMinionButDoNothingWhereThereIsNone() = runBlockingTest {
         // given
         val directive =
             MinionsCreationDirectiveReference(
@@ -116,15 +113,13 @@ internal class MinionsCreationDirectiveProcessorTest {
                 "my-campaign", "my-scenario", "my-dag"
             )
         coEvery {
-            registry.pop<MinionId>(refEq(directive))
+            registry.pop(refEq(directive))
         } returns null
 
         // when
-        runBlocking {
             processor.process(directive)
             // Wait for the directive to be fully completed.
             delay(20)
-        }
 
         // then
         coVerify {

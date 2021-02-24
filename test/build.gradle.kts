@@ -18,12 +18,14 @@ val micronautVersion: String by project
 val testContainersVersion: String by project
 val assertkVersion: String by project
 val mockkVersion: String by project
+val kotlinCoroutinesVersion: String by project
 
 dependencies {
     implementation(kotlin("stdlib"))
     api(kotlin("reflect"))
     implementation(project(":api:api-common"))
     api(platform("io.micronaut:micronaut-bom:$micronautVersion"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${kotlinCoroutinesVersion}")
     api("org.junit.jupiter:junit-jupiter")
     api("io.mockk:mockk:$mockkVersion")
     api("org.skyscreamer:jsonassert:1.5.0")

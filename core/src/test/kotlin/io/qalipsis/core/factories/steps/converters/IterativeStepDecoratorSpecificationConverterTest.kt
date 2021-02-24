@@ -17,7 +17,8 @@ import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.core.factories.steps.IterativeStepDecorator
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -25,6 +26,7 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 @WithMockk
 internal class IterativeStepDecoratorSpecificationConverterTest {
@@ -51,7 +53,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
     }
 
     @Test
-    internal fun `should decorate step with iterations and zero period`() {
+    internal fun `should decorate step with iterations and zero period`() = runBlockingTest {
         // given
         every { stepSpecification.iterations } returns 123
         every { stepSpecification.iterationPeriods } returns Duration.ZERO
@@ -59,9 +61,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(IterativeStepDecorator::class).all {
@@ -72,7 +72,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
     }
 
     @Test
-    internal fun `should decorate step with iterations and negative period`() {
+    internal fun `should decorate step with iterations and negative period`() = runBlockingTest {
         // given
         every { stepSpecification.iterations } returns 123
         every { stepSpecification.iterationPeriods } returns Duration.ofMillis(-12)
@@ -80,9 +80,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(IterativeStepDecorator::class).all {
@@ -93,7 +91,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
     }
 
     @Test
-    internal fun `should not decorate step without iterations`() {
+    internal fun `should not decorate step without iterations`() = runBlockingTest {
         // given
         every { stepSpecification.iterations } returns 0
         every { stepSpecification.iterationPeriods } returns Duration.ZERO
@@ -101,9 +99,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep).isSameAs(decoratedStep)
@@ -111,7 +107,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
 
 
     @Test
-    internal fun `should not decorate step with negative iterations`() {
+    internal fun `should not decorate step with negative iterations`() = runBlockingTest {
         // given
         every { stepSpecification.iterations } returns -1
         every { stepSpecification.iterationPeriods } returns Duration.ZERO
@@ -119,9 +115,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         creationContext.createdStep(decoratedStep)
 
         // when
-        runBlocking {
-            decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
-        }
+        decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
         assertThat(creationContext.createdStep).isSameAs(decoratedStep)

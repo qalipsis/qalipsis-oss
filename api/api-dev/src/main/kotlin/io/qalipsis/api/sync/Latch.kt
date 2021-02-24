@@ -31,7 +31,7 @@ class Latch(var isLocked: Boolean) {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @ExperimentalCoroutinesApi
     suspend fun await() {
         if (isLocked) {
             syncFlag?.receiveOrNull()

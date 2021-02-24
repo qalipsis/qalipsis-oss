@@ -6,11 +6,11 @@ import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.millis
 import io.qalipsis.api.lang.seconds
 import io.qalipsis.test.time.QalipsisTimeAssertions
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -24,9 +24,9 @@ internal class SlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should block calls at start until a value is set`() {
+    internal fun `should block calls at start until a value is set`() = runBlocking {
         // given
-        val slot = Slot<Unit>()
+        val slot = Slot<String>()
         Assertions.assertTrue(slot.isEmpty())
         Assertions.assertFalse(slot.isPresent())
 
@@ -34,32 +34,31 @@ internal class SlotTest {
         val suspendedCountLatch = SuspendedCountLatch(3)
 
         repeat(3) {
-            GlobalScope.launch {
-                Assertions.assertEquals(Unit, slot.get())
+            launch {
+                Assertions.assertEquals("Test value", slot.get())
                 releaseTimes.add(Instant.now())
                 suspendedCountLatch.decrement()
             }
         }
 
         // when
-        Thread.sleep(50)
+        delay(50)
         val now = Instant.now()
-        runBlocking {
-            slot.set(Unit)
-            suspendedCountLatch.await()
-        }
+        slot.set("Test value")
+        suspendedCountLatch.await()
 
         // then
         Assertions.assertFalse(slot.isEmpty())
         Assertions.assertTrue(slot.isPresent())
+        Assertions.assertEquals("Test value", slot.get())
         releaseTimes.forEach { releaseTime -> QalipsisTimeAssertions.assertAfterOrEqual(now, releaseTime) }
     }
 
     @Test
     @Timeout(3)
-    internal fun `should not block calls at start until a value is set`() {
+    internal fun `should not block calls at start when a value is set`() = runBlocking {
         // given
-        val slot = Slot(Unit)
+        val slot = Slot("Test value")
         Assertions.assertFalse(slot.isEmpty())
         Assertions.assertTrue(slot.isPresent())
 
@@ -67,50 +66,45 @@ internal class SlotTest {
         val suspendedCountLatch = SuspendedCountLatch(3)
 
         repeat(3) {
-            GlobalScope.launch {
-                Assertions.assertEquals(Unit, slot.get())
+            launch {
+                Assertions.assertEquals("Test value", slot.get())
                 releaseTimes.add(Instant.now())
                 suspendedCountLatch.decrement()
             }
         }
 
         // when
-        Thread.sleep(50)
+        delay(50)
         val now = Instant.now()
-        runBlocking {
-            suspendedCountLatch.await()
-        }
+        suspendedCountLatch.await()
 
         // then
         Assertions.assertFalse(slot.isEmpty())
         Assertions.assertTrue(slot.isPresent())
+        Assertions.assertEquals("Test value", slot.get())
         releaseTimes.forEach { releaseTime -> QalipsisTimeAssertions.assertBefore(now, releaseTime) }
     }
 
     @Test
     @Timeout(3)
-    internal fun `should block removal until value is set`() {
+    internal fun `should block removal until value is set`() = runBlocking {
         // given
-        val slot = Slot<Unit>()
+        val slot = Slot<String>()
 
         val releaseTimes = concurrentSet<Instant>()
-        val suspendedCountLatch = SuspendedCountLatch(1)
+        val suspendedCountLatch = Latch(true)
 
-        repeat(3) {
-            GlobalScope.launch {
-                slot.remove()
-                releaseTimes.add(Instant.now())
-                suspendedCountLatch.decrement()
-            }
+        launch {
+            Assertions.assertEquals("Test value", slot.remove())
+            releaseTimes.add(Instant.now())
+            suspendedCountLatch.release()
         }
 
         // when
-        Thread.sleep(50)
+        delay(50)
         val now = Instant.now()
-        runBlocking {
-            slot.set(Unit)
-            suspendedCountLatch.await()
-        }
+        slot.set("Test value")
+        suspendedCountLatch.await()
 
         // then
         Assertions.assertTrue(slot.isEmpty())
@@ -120,28 +114,24 @@ internal class SlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should block removal until value is offered`() {
+    internal fun `should block removal until value is offered`() = runBlocking {
         // given
-        val slot = Slot<Unit>()
+        val slot = Slot<String>()
 
         val releaseTimes = concurrentSet<Instant>()
-        val suspendedCountLatch = SuspendedCountLatch(1)
+        val suspendedCountLatch = Latch(true)
 
-        repeat(3) {
-            GlobalScope.launch {
-                slot.remove()
-                releaseTimes.add(Instant.now())
-                suspendedCountLatch.decrement()
-            }
+        launch {
+            Assertions.assertEquals("Test value", slot.remove())
+            releaseTimes.add(Instant.now())
+            suspendedCountLatch.release()
         }
 
         // when
-        Thread.sleep(50)
+        delay(50)
         val now = Instant.now()
-        slot.offer(Unit)
-        runBlocking {
-            suspendedCountLatch.await()
-        }
+        slot.offer("Test value")
+        suspendedCountLatch.await()
 
         // then
         Assertions.assertTrue(slot.isEmpty())
@@ -151,16 +141,14 @@ internal class SlotTest {
 
     @Test
     @Timeout(3)
-    internal fun `should remove and set and remove again`() {
+    internal fun `should remove and set and remove again`() = runBlocking {
         // given
-        val slot = Slot(Unit)
+        val slot = Slot("Test value")
         val releaseTimes = concurrentSet<Instant>()
         val suspendedCountLatch = SuspendedCountLatch(3)
 
         // when
-        runBlocking {
-            slot.remove()
-        }
+        Assertions.assertEquals("Test value", slot.remove())
 
         // then
         Assertions.assertTrue(slot.isEmpty())
@@ -168,18 +156,16 @@ internal class SlotTest {
 
         // when
         repeat(3) {
-            GlobalScope.launch {
-                Assertions.assertEquals(Unit, slot.get())
+            launch {
+                Assertions.assertEquals("Test value", slot.get())
                 releaseTimes.add(Instant.now())
                 suspendedCountLatch.decrement()
             }
         }
         Thread.sleep(50)
         var now = Instant.now()
-        runBlocking {
-            slot.set(Unit)
-            suspendedCountLatch.await()
-        }
+        slot.set("Test value")
+        suspendedCountLatch.await()
 
         // then
         Assertions.assertFalse(slot.isEmpty())
@@ -189,9 +175,7 @@ internal class SlotTest {
 
         // when
         suspendedCountLatch.reset()
-        runBlocking {
-            slot.remove()
-        }
+        Assertions.assertEquals("Test value", slot.remove())
 
         // then
         Assertions.assertTrue(slot.isEmpty())
@@ -199,58 +183,53 @@ internal class SlotTest {
 
         // when
         repeat(3) {
-            GlobalScope.launch {
-                Assertions.assertEquals(Unit, slot.get())
+            launch {
+                Assertions.assertEquals("Other test value", slot.get())
                 releaseTimes.add(Instant.now())
                 suspendedCountLatch.decrement()
             }
         }
-        Thread.sleep(50)
+        delay(50)
         now = Instant.now()
-        runBlocking {
-            slot.set(Unit)
-            suspendedCountLatch.await()
-        }
+        slot.set("Other test value")
+        suspendedCountLatch.await()
 
         // then
         Assertions.assertFalse(slot.isEmpty())
         Assertions.assertTrue(slot.isPresent())
+        Assertions.assertEquals("Other test value", slot.get())
         releaseTimes.forEach { releaseTime -> QalipsisTimeAssertions.assertAfterOrEqual(now, releaseTime) }
     }
 
 
     @Test
     @Timeout(3)
-    internal fun `should throw a timeout exception`() {
+    internal fun `should throw a timeout exception`() = runBlockingTest {
         // given
-        val slot = Slot<Unit>()
+        val slot = Slot<String>()
 
         // when + then
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
-                slot.get(100.millis())
-            }
+            slot.get(100.millis())
         }
     }
 
     @Test
     @Timeout(3)
-    internal fun `should return a result`() {
+    internal fun `should return a result`() = runBlocking {
         // given
-        val slot = Slot<Unit>()
+        val slot = Slot<String>()
         val start = System.currentTimeMillis()
-        GlobalScope.launch {
+        launch {
             delay(200)
-            slot.set(Unit)
+            slot.set("Test value")
         }
 
         // when
-        val result = runBlocking {
-            slot.get(50.seconds())
-        }
+        val result = slot.get(50.seconds())
 
         // then
-        Assertions.assertSame(Unit, result)
+        Assertions.assertEquals("Test value", result)
         assertThat(System.currentTimeMillis() - start).isGreaterThan(150)
     }
 }

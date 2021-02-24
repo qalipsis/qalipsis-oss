@@ -12,10 +12,7 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.exceptions.NotInitializedStepException
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -34,28 +31,29 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 internal class InnerJoinStep<I, O>(
-        id: StepId,
+    id: StepId,
 
-        /**
-         * Specification of the key extractor based upon the value received from the left step.
-         */
-        private val leftKeyExtractor: (record: CorrelationRecord<I>) -> Any?,
+    /**
+     * Specification of the key extractor based upon the value received from the left step.
+     */
+    private val leftKeyExtractor: (record: CorrelationRecord<I>) -> Any?,
 
-        /**
-         * Configuration for the consumption and correlation from right steps.
-         */
-        private val rightCorrelations: Collection<RightCorrelation<out Any>>,
+    /**
+     * Configuration for the consumption and correlation from right steps.
+     */
+    private val rightCorrelations: Collection<RightCorrelation<out Any>>,
 
-        /**
-         * Timeout, after which the values received but not forwarded are evicted from the cache.
-         */
-        cacheTimeout: Duration,
+    /**
+     * Timeout, after which the values received but not forwarded are evicted from the cache.
+     */
+    cacheTimeout: Duration,
 
-        /**
-         * Statement to convert the list of values into the output.
-         */
-        private val outputSupplier: (I, Map<StepId, Any?>) -> O
+    /**
+     * Statement to convert the list of values into the output.
+     */
+    private val outputSupplier: (I, Map<StepId, Any?>) -> O
 
 ) : AbstractStep<I, O>(id, null) {
 
@@ -132,7 +130,7 @@ internal class InnerJoinStep<I, O>(
     }
 
     @VisibleForTest
-    internal fun hasKeyInCache(key: Any?): Boolean = cache.asMap().containsKey(key)
+    internal fun hasKeyInCache(key: Any?): Boolean = key?.let { cache.asMap().containsKey(it) } ?: false
 
     @VisibleForTest
     internal fun isCacheEmpty(): Boolean = cache.asMap().isEmpty()
@@ -143,14 +141,14 @@ internal class InnerJoinStep<I, O>(
     }
 
     private data class CacheEntry(
-            /**
-             * Common correlation key for all the values.
-             */
-            val correlationKey: Any,
-            /**
-             * Number of expected values from secondary steps.
-             */
-            val secondaryValuesCount: Int
+        /**
+         * Common correlation key for all the values.
+         */
+        val correlationKey: Any,
+        /**
+         * Number of expected values from secondary steps.
+         */
+        val secondaryValuesCount: Int
     ) {
         /**
          * Mutex to suspend the calls the received() until all the values are received.

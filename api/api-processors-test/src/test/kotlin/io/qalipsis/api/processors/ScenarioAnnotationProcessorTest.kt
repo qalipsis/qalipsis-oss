@@ -11,7 +11,7 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.core.convert.ConversionService
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
-import io.qalipsis.test.io.readFile
+import io.qalipsis.test.io.readFileLines
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -31,7 +31,7 @@ internal class ScenarioAnnotationProcessorTest {
         val scenarioResources = this.javaClass.classLoader.getResources("META-INF/qalipsis/scenarios").toList()
 
         Assertions.assertEquals(1, scenarioResources.size)
-        val scenarios = readFile(scenarioResources[0].openStream(), true, "#").toSet()
+        val scenarios = readFileLines(scenarioResources[0].openStream(), true, "#").toSet()
 
         val expected = setOf(
             "io.qalipsis.api.scenariosloader.ScenarioClassKt\$aMethodOutsideAClass",

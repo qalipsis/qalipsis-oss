@@ -68,7 +68,7 @@ internal class MinionsStartDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldListMinionsAndStartThem() {
+    internal fun shouldListMinionsAndStartThem() = runBlocking {
         // given
         val directive =
             MinionsStartDirectiveReference("my-directive",
@@ -80,11 +80,9 @@ internal class MinionsStartDirectiveProcessorTest {
             MinionStartDefinition("my-minion-2", 456L))
 
         // when
-        runBlocking {
             processor.process(directive)
             // Wait for the directive to be fully completed.
             delay(5)
-        }
 
         // then
         coVerify {
@@ -97,7 +95,7 @@ internal class MinionsStartDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldListMinionsToStartButDoNothingWhereThereIsNone() {
+    internal fun shouldListMinionsToStartButDoNothingWhereThereIsNone() = runBlocking {
         // given
         val directive =
             MinionsStartDirectiveReference("my-directive",
@@ -107,11 +105,9 @@ internal class MinionsStartDirectiveProcessorTest {
         } returns emptyList()
 
         // when
-        runBlocking {
-            processor.process(directive)
+        processor.process(directive)
             // Wait for the directive to be fully completed.
             delay(5)
-        }
 
         // then
         coVerify {

@@ -1,6 +1,7 @@
 package io.qalipsis.core.factories.orchestration
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.coroutines.launch
@@ -14,6 +15,7 @@ import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.factories.context.StepContextBuilder
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -41,7 +43,8 @@ internal class RunnerImpl(
     /**
      * Scope to launch the coroutines for the steps.
      */
-    private val coroutineScope = GlobalScope
+    @VisibleForTest
+    var coroutineScope: CoroutineScope = GlobalScope
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private val idleMinionsGauge: AtomicInteger = meterRegistry.gauge("idle-minions", AtomicInteger())
