@@ -2,10 +2,13 @@ package io.qalipsis.core.factories.steps
 
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.steps.Step
+import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper
@@ -22,7 +25,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 @Suppress("EXPERIMENTAL_API_USAGE")
+@WithMockk
 internal class IterativeStepDecoratorTest {
+
+    @RelaxedMockK
+    lateinit var minion: Minion
 
     @Test
     @Timeout(3)
@@ -38,10 +45,10 @@ internal class IterativeStepDecoratorTest {
         val ctx = StepTestHelper.createStepContext<TestEntity, Any>(input = testEntity)
 
         runBlocking {
-            step.execute(ctx)
+            step.execute(minion, ctx)
         }
 
-        coVerifyExactly(10) { step.executeStep(refEq(decoratedStep), nrefEq(ctx)) }
+        coVerifyExactly(10) { step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx)) }
         Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertEquals(10, capturedInputs.size)
         // The same input is always reused.
@@ -62,7 +69,7 @@ internal class IterativeStepDecoratorTest {
     fun shouldIterateOnDecoratedStepWithDelay() {
         val executionTimestamps = mutableListOf<Long>()
         val decoratedStep: Step<Any, Any> = mockk {
-            coEvery { execute(any()) } answers { executionTimestamps.add(System.currentTimeMillis()) }
+            coEvery { execute(any(), any()) } answers { executionTimestamps.add(System.currentTimeMillis()) }
             every { retryPolicy } returns null
             every { next } returns mutableListOf()
         }
@@ -70,10 +77,10 @@ internal class IterativeStepDecoratorTest {
         val ctx = StepTestHelper.createStepContext<Any, Any>(TestEntity())
 
         runBlocking {
-            step.execute(ctx)
+            step.execute(minion, ctx)
         }
 
-        coVerifyExactly(10) { step.executeStep(refEq(decoratedStep), nrefEq(ctx)) }
+        coVerifyExactly(10) { step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx)) }
         Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertEquals(10, executionTimestamps.size)
         // The delay between each step should be at least 10.
@@ -87,7 +94,7 @@ internal class IterativeStepDecoratorTest {
     fun shouldForwardFailure() {
         val executionCount = AtomicInteger(0)
         val decoratedStep: Step<Any, Any> = mockk {
-            coEvery { execute(any()) } answers {
+            coEvery { execute(any(), any()) } answers {
                 throw RuntimeException("Error ${executionCount.incrementAndGet()}")
             }
             every { retryPolicy } returns null
@@ -97,11 +104,11 @@ internal class IterativeStepDecoratorTest {
         val ctx = StepTestHelper.createStepContext<Any, Any>(TestEntity())
         assertThrows<RuntimeException> {
             runBlocking {
-                step.execute(ctx)
+                step.execute(minion, ctx)
             }
         }
 
-        coVerifyOnce { step.executeStep(refEq(decoratedStep), nrefEq(ctx)) }
+        coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx)) }
         // We let the runner take care of the error management.
         Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertEquals(1, executionCount.get())

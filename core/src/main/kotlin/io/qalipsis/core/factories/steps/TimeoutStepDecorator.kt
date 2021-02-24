@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepExecutor
@@ -16,10 +17,10 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-class TimeoutStepDecorator<I, O>(
-        private val timeout: Duration,
-        private val decorated: Step<I, O>,
-        private val meterRegistry: MeterRegistry
+internal class TimeoutStepDecorator<I, O>(
+    private val timeout: Duration,
+    private val decorated: Step<I, O>,
+    private val meterRegistry: MeterRegistry
 ) : Step<I, O>, StepExecutor {
 
     override val id: StepId
@@ -41,16 +42,21 @@ class TimeoutStepDecorator<I, O>(
         decorated.destroy()
     }
 
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         try {
             withTimeout(timeout.toMillis()) {
-                executeStep(decorated, context)
+                executeStep(minion, decorated, context)
             }
         } catch (e: TimeoutCancellationException) {
             meterRegistry.counter("step-${id}-timeout", "minion", context.minionId).increment()
             context.isExhausted = true
             throw e
         }
+    }
+
+    override suspend fun execute(context: StepContext<I, O>) {
+        // This method should never be called.
+        throw NotImplementedError()
     }
 
     companion object {

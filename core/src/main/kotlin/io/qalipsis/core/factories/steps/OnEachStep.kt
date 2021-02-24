@@ -10,10 +10,10 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class OnEachStep<I>(
-        id: StepId,
-        retryPolicy: RetryPolicy?,
-        private val statement: (input: I) -> Unit
+internal class OnEachStep<I>(
+    id: StepId,
+    retryPolicy: RetryPolicy?,
+    private val statement: (input: I) -> Unit
 ) : AbstractStep<I, I>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, I>) {

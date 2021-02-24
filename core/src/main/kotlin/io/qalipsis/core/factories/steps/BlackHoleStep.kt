@@ -9,7 +9,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class BlackHoleStep<I, O>(
+internal class BlackHoleStep<I, O>(
     id: StepId
 ) : AbstractStep<I, O>(id, null) {
 

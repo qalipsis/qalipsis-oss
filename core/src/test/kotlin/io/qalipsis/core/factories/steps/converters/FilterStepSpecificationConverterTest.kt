@@ -7,7 +7,6 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import io.mockk.every
-import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.FilterStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
@@ -45,7 +44,7 @@ internal class FilterStepSpecificationConverterTest :
         val blockSpecification: (input: Int) -> Boolean = { _ -> true }
         val spec = FilterStepSpecification(blockSpecification)
         spec.name = "my-step"
-        spec.retryPolicy = relaxedMockk()
+        spec.retryPolicy = mockedRetryPolicy
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -56,7 +55,7 @@ internal class FilterStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {
             prop("id").isEqualTo("my-step")
-            prop("retryPolicy").isSameAs(spec.retryPolicy)
+            prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }
     }
@@ -67,10 +66,8 @@ internal class FilterStepSpecificationConverterTest :
         val blockSpecification: (input: Int) -> Boolean = { _ -> true }
         val spec = FilterStepSpecification(blockSpecification)
 
-        val mockedRetryPolicy: RetryPolicy = relaxedMockk()
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk {
-            every { scenario.defaultRetryPolicy } returns mockedRetryPolicy
-        }, spec)
+        every { directedAcyclicGraph.scenario.defaultRetryPolicy } returns mockedRetryPolicy
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {

@@ -108,8 +108,8 @@ internal class LatchTest {
         releaseTimes.clear()
 
         // when
+        suspendedCountLatch.reset()
         runBlocking {
-            suspendedCountLatch.reset()
             latch.lock()
         }
 

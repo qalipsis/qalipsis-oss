@@ -16,7 +16,7 @@ interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<
     StepSpecification<INPUT, OUTPUT, SELF> {
 
     /**
-     * Configure the step with type-specific settings.
+     * Configures the step with type-specific settings.
      */
     fun configure(specification: SELF.() -> Unit): StepSpecification<INPUT, OUTPUT, *> {
         val nameBeforeConfiguration = name
@@ -31,17 +31,17 @@ interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<
     }
 
     /**
-     * Define the timeout of the step execution on a single context, in milliseconds.
+     * Defines the timeout of the step execution on a single context, in milliseconds.
      */
     fun timeout(duration: Long)
 
     /**
-     * Define the individual retry strategy on the step. When none is set, the default one of the scenario is used.
+     * Defines the individual retry strategy on the step. When none is set, the default one of the scenario is used.
      */
     fun retry(retryPolicy: RetryPolicy)
 
     /**
-     * Define how many times and how often the step execution has to be repeated.
+     * Defines how many times and how often the step execution has to be repeated.
      */
-    fun iterate(iterations: Long, period: Duration)
+    fun iterate(iterations: Long, period: Duration = Duration.ZERO)
 }

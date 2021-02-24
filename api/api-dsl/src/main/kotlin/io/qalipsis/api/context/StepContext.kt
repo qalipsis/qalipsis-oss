@@ -15,83 +15,83 @@ import java.time.Instant
  */
 data class StepContext<IN, OUT>(
 
-        /**
-         * Channel providing the source.
-         */
-        val input: ReceiveChannel<IN> = Channel(1),
+    /**
+     * Channel providing the source.
+     */
+    val input: ReceiveChannel<IN> = Channel(1),
 
-        /**
-         * Channel to push the result.
-         */
-        val output: SendChannel<OUT> = Channel(1),
+    /**
+     * Channel to push the result.
+     */
+    val output: SendChannel<OUT> = Channel(1),
 
-        /**
-         * List of the generated errors so far.
-         */
-        val errors: MutableList<StepError> = mutableListOf(),
+    /**
+     * List of the generated errors so far.
+     */
+    val errors: MutableList<StepError> = mutableListOf(),
 
-        /**
-         * Identifier of the test campaign owning the context.
-         */
-        val campaignId: CampaignId = "",
+    /**
+     * Identifier of the test campaign owning the context.
+     */
+    val campaignId: CampaignId = "",
 
-        /**
-         * Identifier of the Minion owning the context.
-         */
-        val minionId: MinionId,
+    /**
+     * Identifier of the Minion owning the context.
+     */
+    val minionId: MinionId,
 
-        /**
-         * Identifier of the Scenario being executed.
-         */
-        val scenarioId: ScenarioId,
+    /**
+     * Identifier of the Scenario being executed.
+     */
+    val scenarioId: ScenarioId,
 
-        /**
-         * Identifier of the DirectedAcyclicGraph being executed.
-         */
-        val directedAcyclicGraphId: DirectedAcyclicGraphId,
+    /**
+     * Identifier of the DirectedAcyclicGraph being executed.
+     */
+    val directedAcyclicGraphId: DirectedAcyclicGraphId,
 
-        /**
-         * Step which generated the source.
-         */
-        val parentStepId: StepId? = null,
+    /**
+     * Step which generated the source.
+     */
+    val parentStepId: StepId? = null,
 
-        /**
-         * Step executing the context (it should be set by the step itself).
-         */
-        var stepId: StepId,
+    /**
+     * Step executing the context (it should be set by the step itself).
+     */
+    var stepId: StepId,
 
-        /**
-         * Index of the current iteration for the same step and context.
-         */
-        var stepIterationIndex: Long = 0,
+    /**
+     * Index of the current iteration for the same step and context.
+     */
+    var stepIterationIndex: Long = 0,
 
-        /**
-         * Number of successive execution attempts with failures for the same step and context.
-         */
-        var attemptsAfterFailure: Long = 0,
+    /**
+     * Number of successive execution attempts with failures for the same step and context.
+     */
+    var attemptsAfterFailure: Long = 0,
 
-        /**
-         * Creation timestamp of the context.
-         */
-        var creation: Long = System.currentTimeMillis(),
+    /**
+     * Creation timestamp of the context.
+     */
+    var creation: Long = System.currentTimeMillis(),
 
-        /**
-         * When set to true, the context can neither be used for a new iteration nor propagated.
-         */
-        var isExhausted: Boolean = false,
+    /**
+     * When set to true, the context can neither be used for a new iteration nor propagated.
+     */
+    var isExhausted: Boolean = false,
 
-        /**
-         * When set to true, this means that no more data will be provided to the workflow after this context.
-         */
-        var isCompleted: Boolean = true,
+    /**
+     * When set to true, this means that no more data will be provided to the workflow after this context.
+     */
+    var isCompleted: Boolean = true,
 
-        /**
-         * Specifies that this context is the last in the convoy for the relate minion.
-         *
-         * It is initialized to true, because at the beginning, minion's convoys are made of a single context.
-         * More contexts come when reaching an iterative step, a data source...
-         */
-        var isTail: Boolean = true
+    /**
+     * Specifies that this context is the last in the convoy for the relate minion.
+     *
+     * It is initialized to true, because at the beginning, minion's convoys are made of a single context.
+     * More contexts come when reaching an iterative step, a data source...
+     */
+    var isTail: Boolean = true
 ) {
 
     private var immutableEventTags: Map<String, String>? = null
@@ -135,21 +135,21 @@ data class StepContext<IN, OUT>(
     fun duplicate(newInput: ReceiveChannel<IN> = Channel(1),
                   newOutput: SendChannel<OUT> = Channel(1)): StepContext<IN, OUT> {
         return StepContext(
-                input = newInput,
-                output = newOutput,
-                errors = errors,
-                campaignId = campaignId,
-                minionId = minionId,
-                scenarioId = scenarioId,
-                directedAcyclicGraphId = directedAcyclicGraphId,
-                parentStepId = this.stepId,
-                stepId = stepId,
-                isExhausted = isExhausted,
-                isCompleted = isCompleted,
-                isTail = isTail,
-                creation = creation
+            input = newInput,
+            output = newOutput,
+            campaignId = campaignId,
+            minionId = minionId,
+            scenarioId = scenarioId,
+            directedAcyclicGraphId = directedAcyclicGraphId,
+            parentStepId = this.stepId,
+            stepId = stepId,
+            isExhausted = isExhausted,
+            isCompleted = isCompleted,
+            isTail = isTail,
+            creation = creation
         ).also {
             it.metrics = metrics
+            it.errors.addAll(this.errors)
             if (!input.isEmpty) {
                 // The input value should be in both input channels.
                 val inputValue = input.poll()!!
@@ -161,18 +161,18 @@ data class StepContext<IN, OUT>(
 
     fun <T : Any?> next(stepId: StepId): StepContext<OUT, T> {
         return StepContext<OUT, T>(
-                input = Channel(1),
-                errors = errors,
-                campaignId = campaignId,
-                minionId = minionId,
-                scenarioId = scenarioId,
-                directedAcyclicGraphId = directedAcyclicGraphId,
-                parentStepId = this.stepId,
-                stepId = stepId,
-                isExhausted = isExhausted,
-                isCompleted = isCompleted,
-                isTail = isTail,
-                creation = creation
+            input = Channel(1),
+            errors = errors,
+            campaignId = campaignId,
+            minionId = minionId,
+            scenarioId = scenarioId,
+            directedAcyclicGraphId = directedAcyclicGraphId,
+            parentStepId = this.stepId,
+            stepId = stepId,
+            isExhausted = isExhausted,
+            isCompleted = isCompleted,
+            isTail = isTail,
+            creation = creation
         ).also {
             it.inheritedMetrics.putAll(it.metrics)
         }
@@ -184,22 +184,22 @@ data class StepContext<IN, OUT>(
     fun toEventTags(): Map<String, String> {
         if (immutableEventTags == null) {
             val tags = mutableMapOf(
-                    "campaign" to campaignId,
-                    "minion" to minionId,
-                    "scenario" to scenarioId,
-                    "dag" to directedAcyclicGraphId,
-                    "step" to stepId,
-                    "context-creation" to Instant.ofEpochMilli(creation).toString()
+                "campaign" to campaignId,
+                "minion" to minionId,
+                "scenario" to scenarioId,
+                "dag" to directedAcyclicGraphId,
+                "step" to stepId,
+                "context-creation" to Instant.ofEpochMilli(creation).toString()
             )
             parentStepId?.let { tags["parent-step"] = it }
             immutableEventTags = tags
         }
         return immutableEventTags!!.plus(mutableMapOf(
-                "iteration" to stepIterationIndex.toString(),
-                "attempts-after-failure" to attemptsAfterFailure.toString(),
-                "isExhausted" to isExhausted.toString(),
-                "isTail" to isTail.toString(),
-                "isCompleted" to isCompleted.toString()
+            "iteration" to stepIterationIndex.toString(),
+            "attempts-after-failure" to attemptsAfterFailure.toString(),
+            "isExhausted" to isExhausted.toString(),
+            "isTail" to isTail.toString(),
+            "isCompleted" to isCompleted.toString()
         ))
     }
 
@@ -209,11 +209,11 @@ data class StepContext<IN, OUT>(
     fun toMetersTags(): Tags {
         if (immutableMetersTags == null) {
             var tags = Tags.of(
-                    "campaign", campaignId,
-                    "minion", minionId,
-                    "scenario", scenarioId,
-                    "dag", directedAcyclicGraphId,
-                    "step", stepId
+                "campaign", campaignId,
+                "minion", minionId,
+                "scenario", scenarioId,
+                "dag", directedAcyclicGraphId,
+                "step", stepId
             )
             parentStepId?.let { tags = tags.and("parent-step", it) }
             immutableMetersTags = tags
@@ -226,13 +226,13 @@ data class StepContext<IN, OUT>(
     }
 
     data class Timer(
-            override val name: String,
-            val duration: Duration
+        override val name: String,
+        val duration: Duration
     ) : Metric
 
     data class Counter(
-            override val name: String,
-            val count: Double
+        override val name: String,
+        val count: Double
     ) : Metric
 }
 

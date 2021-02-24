@@ -15,9 +15,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
  *
  * @author Eric Jessé
  */
-class CatchErrorsStep<I>(
-        id: StepId,
-        private val block: ((errors: Collection<StepError>) -> Unit)
+internal class CatchErrorsStep<I>(
+    id: StepId,
+    private val block: ((errors: Collection<StepError>) -> Unit)
 ) : AbstractStep<I, I>(id, null), ErrorProcessingStep<I, I> {
 
     @ExperimentalCoroutinesApi

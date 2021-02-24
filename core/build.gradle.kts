@@ -71,6 +71,7 @@ dependencies {
     testImplementation("org.testcontainers:elasticsearch:$testContainersVersion")
     testImplementation(testFixtures(project(":api:api-dsl")))
     testImplementation(testFixtures(project(":api:api-common")))
+    testImplementation(testFixtures(project(":runtime")))
 
     kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")

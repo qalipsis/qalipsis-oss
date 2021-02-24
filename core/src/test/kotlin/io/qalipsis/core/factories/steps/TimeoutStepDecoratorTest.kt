@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
+import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -38,6 +39,9 @@ internal class TimeoutStepDecoratorTest {
     @RelaxedMockK
     lateinit var counter: Counter
 
+    @RelaxedMockK
+    lateinit var minion: Minion
+
     @BeforeEach
     internal fun setUp() {
         every { meterRegistry.counter(any(), *anyVararg()) } returns counter
@@ -47,7 +51,7 @@ internal class TimeoutStepDecoratorTest {
     @Timeout(5)
     fun shouldSucceedWhenDecoratedStepIsFasterThanTimeout() {
         val decoratedStep: Step<Any, Any> = mockk {
-            coEvery { execute(any()) } answers { }
+            coEvery { execute(any(), any()) } answers { }
             every { id } answers { "my-step" }
             every { retryPolicy } returns null
             every { next } returns mutableListOf()
@@ -57,10 +61,10 @@ internal class TimeoutStepDecoratorTest {
 
         assertDoesNotThrow {
             runBlocking {
-                step.execute(ctx)
+                step.execute(minion, ctx)
             }
         }
-        coVerifyOnce { step.executeStep(refEq(decoratedStep), refEq(ctx)) }
+        coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), refEq(ctx)) }
         Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
@@ -72,7 +76,7 @@ internal class TimeoutStepDecoratorTest {
     fun shouldFailWhenDecoratedStepIsLongerThanTimeout() {
         val timeout = 10L
         val decoratedStep: Step<Any, Any> = mockk {
-            coEvery { execute(any()) } coAnswers { delay(timeout + 10) }
+            coEvery { execute(any(), any()) } coAnswers { delay(timeout + 10) }
             every { id } answers { "my-step" }
             every { retryPolicy } returns null
             every { next } returns mutableListOf()
@@ -82,10 +86,10 @@ internal class TimeoutStepDecoratorTest {
 
         assertThrows<TimeoutCancellationException> {
             runBlocking {
-                step.execute(ctx)
+                step.execute(minion, ctx)
             }
         }
-        coVerifyOnce { step.executeStep(refEq(decoratedStep), refEq(ctx)) }
+        coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), refEq(ctx)) }
         Assertions.assertTrue(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 

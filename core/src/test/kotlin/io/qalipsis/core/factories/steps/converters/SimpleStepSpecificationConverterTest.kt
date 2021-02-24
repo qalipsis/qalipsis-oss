@@ -8,7 +8,6 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import io.mockk.every
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.SimpleStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
@@ -46,7 +45,7 @@ internal class SimpleStepSpecificationConverterTest :
         val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = { _ -> }
         val spec = SimpleStepSpecification(blockSpecification)
         spec.name = "my-step"
-        spec.retryPolicy = relaxedMockk()
+        spec.retryPolicy = mockedRetryPolicy
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -67,11 +66,8 @@ internal class SimpleStepSpecificationConverterTest :
         // given
         val blockSpecification: suspend (context: StepContext<Int, String>) -> Unit = { _ -> }
         val spec = SimpleStepSpecification(blockSpecification)
-
-        val mockedRetryPolicy: RetryPolicy = relaxedMockk()
-        val creationContext = StepCreationContextImpl(relaxedMockk(), relaxedMockk {
-            every { scenario.defaultRetryPolicy } returns mockedRetryPolicy
-        }, spec)
+        every { directedAcyclicGraph.scenario.defaultRetryPolicy } returns mockedRetryPolicy
+        val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         runBlocking {

@@ -90,7 +90,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should not suspend when initial value is zero but not execute onDone Action`() {
+    internal fun `should not suspend when initial value is zero and not execute onDone Action`() {
         // given
         val doneFlag = AtomicBoolean(false)
         val countLatch = SuspendedCountLatch(0) { doneFlag.set(true) }
@@ -103,6 +103,28 @@ internal class SuspendedCountLatchTest {
 
         // then
         Assertions.assertFalse(doneFlag.get())
+    }
+
+    @Test
+    @Timeout(1)
+    internal fun `should await until activity`() {
+        // given
+        val countLatch = SuspendedCountLatch()
+        val delayMs = 200L
+
+        // when
+        Assertions.assertFalse(countLatch.isSuspended())
+        GlobalScope.launch {
+            delay(delayMs)
+            countLatch.increment()
+        }
+        val executionDuration = coMeasureTime {
+            countLatch.awaitActivity()
+        }
+
+        // then
+        Assertions.assertTrue(countLatch.isSuspended())
+        QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delayMs), executionDuration)
     }
 
     @Test
@@ -138,14 +160,6 @@ internal class SuspendedCountLatchTest {
             runBlocking {
                 countLatch.decrement()
             }
-        }
-    }
-
-    @Test
-    @Timeout(1)
-    internal fun `should throw exception when initial value is negative`() {
-        assertThrows<IllegalArgumentException> {
-            SuspendedCountLatch(-1)
         }
     }
 }

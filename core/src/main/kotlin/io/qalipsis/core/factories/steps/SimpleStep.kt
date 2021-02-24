@@ -11,7 +11,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-class SimpleStep<I, O>(
+internal class SimpleStep<I, O>(
     id: StepId,
     retryPolicy: RetryPolicy?,
     private val specification: (suspend (context: StepContext<I, O>) -> Unit)

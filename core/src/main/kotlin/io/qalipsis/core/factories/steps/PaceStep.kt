@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-class PaceStep<I>(
+internal class PaceStep<I>(
     id: StepId,
     private val specification: (pastPeriodMs: Long) -> Long
 ) : AbstractStep<I, I>(id, null) {

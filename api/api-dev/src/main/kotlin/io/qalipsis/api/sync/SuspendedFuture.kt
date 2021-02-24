@@ -1,7 +1,6 @@
 package io.qalipsis.api.sync
 
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 /**

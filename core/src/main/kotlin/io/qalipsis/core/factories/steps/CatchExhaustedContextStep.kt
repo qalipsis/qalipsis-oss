@@ -13,9 +13,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
  *
  * @author Eric Jessé
  */
-class CatchExhaustedContextStep<O>(
-        id: StepId,
-        private val block: (suspend (context: StepContext<*, O>) -> Unit)
+internal class CatchExhaustedContextStep<O>(
+    id: StepId,
+    private val block: (suspend (context: StepContext<*, O>) -> Unit)
 ) : AbstractStep<Any?, O>(id, null) {
 
     @ExperimentalCoroutinesApi

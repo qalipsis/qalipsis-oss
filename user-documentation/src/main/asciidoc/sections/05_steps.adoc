@@ -179,6 +179,7 @@ QALIPSIS provides default operators to tweak the execution of your scenario, tha
 While you already know some of them described just above, others are available to let you transform, filter, verify the data, alter the behavior...
 
 ==== Timing operators
+
 ===== delay
 Adds a constant delay before executing the next step, keeping the same execution pace as previous step.
 
@@ -242,8 +243,8 @@ image:operators/onEach.svg[operators-onEach]
 ==== Caching operators
 
 ===== shelve
-Caches the provided values in a shared cache. When using a distributed architecture, make sure the cached value
-can be serialized by the used implementation of shared state registry. The ID of the minion is automatically added to
+Caches the provided values in a shared cache.When using a distributed architecture, make sure the cached value
+can be serialized by the used implementation of shared state registry.The ID of the minion is automatically added to
 the key to avoid collusion.
 
 ===== unshelve
@@ -251,13 +252,31 @@ Fetches one or more record from the shared state registry, previously shelved wi
 
 ==== Utility operators
 
-
 ===== tube
+
 Simply forwards the input to the output.
 
 image:operators/tube.svg[operators-tube]
 
 ===== blackHole
+
 Consumes the input and provides no output.
 
 image:operators/blackHole.svg[operators-blackHole]
+
+===== group
+
+Groups a complete sub-graph of steps.
+This provides a convenient way to iterate, waiting for the last step to be completed before starting again.
+
+[source,kotlin,linenumbers]
+----
+
+    group { // <1>
+        map { it * 3 }.map { arrayOf(it, it + 100) }.flatten()
+    }.configure { // <2>
+        iterate(5)
+    }
+----
+<1> Create a chain of steps, where no `split()` is allowed.
+<2> You can configure the whole group to repeat from its beginning only once the tail step is completed

@@ -12,7 +12,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-class DelayStep<I>(
+internal class DelayStep<I>(
     id: StepId,
     private val delay: Duration
 ) : AbstractStep<I, I>(id, null) {
