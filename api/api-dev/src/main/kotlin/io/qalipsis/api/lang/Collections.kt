@@ -11,7 +11,6 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 fun <T> concurrentSet(): MutableSet<T> = Collections.newSetFromMap(ConcurrentHashMap())
 
-
 /**
  * Creates a thread-safe [MutableSet] with the providing contents.
  *
@@ -30,14 +29,12 @@ fun <T> concurrentSet(values: Collection<T>): MutableSet<T> {
     return result
 }
 
-
 /**
  * Creates a thread-safe [MutableList].
  *
  * @author Eric Jessé
  */
 fun <T> concurrentList(): MutableList<T> = CopyOnWriteArrayList()
-
 
 /**
  * Creates a thread-safe [MutableList] with the providing contents.
