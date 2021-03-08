@@ -74,6 +74,14 @@ class Slot<T>(private var value: T? = null) {
         return value!!
     }
 
+
+    /**
+     * Returns the value if it exists or null otherwise.
+     */
+    fun getOrNull(): T? {
+        return value
+    }
+
     /**
      * Returns the value if it exists or suspends until the timeout is reached otherwise.
      * If the timeout is reached before a value is set, a [kotlinx.coroutines.TimeoutCancellationException] is thrown.

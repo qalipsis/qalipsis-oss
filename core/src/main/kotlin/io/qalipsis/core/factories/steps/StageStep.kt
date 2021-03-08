@@ -20,7 +20,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
  * @author Eric Jessé
  */
 @ExperimentalCoroutinesApi
-internal class GroupStep<I, O>(
+internal class StageStep<I, O>(
     id: StepId,
     retryPolicy: RetryPolicy?,
 ) : AbstractStep<I, O>(id, retryPolicy), RunnerAware {

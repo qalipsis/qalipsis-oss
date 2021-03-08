@@ -9,17 +9,17 @@ import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.flatten
-import io.qalipsis.api.steps.group
 import io.qalipsis.api.steps.map
 import io.qalipsis.api.steps.onEach
 import io.qalipsis.api.steps.returns
+import io.qalipsis.api.steps.stage
 import io.qalipsis.runtime.test.QalipsisTestRunner
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.atomic.AtomicInteger
 
 
-internal class GroupStepScenarioIntegrationTest {
+internal class StageStepScenarioIntegrationTest {
 
     @Test
     @Timeout(20)
@@ -52,7 +52,7 @@ object GroupStepScenario {
         }
             .start()
             .returns(initialCounter.getAndIncrement())
-            .group {
+            .stage {
                 map { it + repetitionMultiplicationFactor.getAndIncrement() }
                     .map { arrayOf(it, it + 1000) }.flatten().map { it.toString() }
             }.configure {

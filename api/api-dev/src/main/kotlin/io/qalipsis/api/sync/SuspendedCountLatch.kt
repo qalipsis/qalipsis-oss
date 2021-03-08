@@ -88,58 +88,60 @@ class SuspendedCountLatch(
         }
     }
 
-    suspend fun release() {
-        mutex.withLock {
-            count.set(0)
+    /**
+     * Releases all current and future calls to [await] and sets the counter to 0.
+     */
+    fun release() {
+        count.set(0)
+        syncFlag.close()
+    }
+
+    /**
+     * Resets the counter to its initial count provided in the constructor.
+     *
+     * @return the value of the counter after the reset.
+     */
+    suspend fun reset(): Long = mutex.withLock {
+        logger().trace("Resetting...")
+        count.set(initialCount)
+        resetFlags()
+        count.get()
+    }
+
+    /**
+     * Blocking implementation of [reset].
+     */
+    fun blockingReset(): Long = runBlocking { reset() }
+
+    suspend fun increment(value: Long = 1): Long = mutex.withLock {
+        count.addAndGet(value)
+        logger().trace("Count is now $count")
+        activityFlag.close()
+        // When the count gets from 0 to 1, the sync flag is recreated.
+        if (count.get() == 1L) {
+            resetFlags()
+        }
+        count.get()
+    }
+
+    fun blockingIncrement(value: Long = 1): Long = runBlocking {
+        increment(value)
+    }
+
+    suspend fun decrement(value: Long = 1): Long = mutex.withLock {
+        require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
+        count.addAndGet(-value)
+        logger().trace("Count is now $count")
+        activityFlag.close()
+        if (count.get() == 0L) {
+            onReleaseAction()
             syncFlag.close()
         }
+        count.get()
     }
 
-    fun reset() {
-        runBlocking {
-            mutex.withLock {
-                logger().trace("Resetting...")
-                count.set(initialCount)
-                resetFlags()
-            }
-        }
-    }
-
-    suspend fun increment(value: Long = 1) {
-        mutex.withLock {
-            count.addAndGet(value)
-            logger().trace("Count is now $count")
-            activityFlag.close()
-            // When the count gets from 0 to 1, the sync flag is recreated.
-            if (count.get() == 1L) {
-                resetFlags()
-            }
-        }
-    }
-
-    fun blockingIncrement(value: Long = 1) {
-        runBlocking {
-            increment(value)
-        }
-    }
-
-    suspend fun decrement(value: Long = 1) {
-        mutex.withLock {
-            require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
-            count.addAndGet(-value)
-            logger().trace("Count is now $count")
-            activityFlag.close()
-            if (count.get() == 0L) {
-                onReleaseAction()
-                syncFlag.close()
-            }
-        }
-    }
-
-    fun blockingDecrement(value: Long = 1) {
-        runBlocking {
-            decrement(value)
-        }
+    fun blockingDecrement(value: Long = 1): Long = runBlocking {
+        decrement(value)
     }
 
     fun get() = count.get()

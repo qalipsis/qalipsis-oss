@@ -1,6 +1,7 @@
 package io.qalipsis.api.context
 
 import io.micrometer.core.instrument.Tags
+import io.qalipsis.api.sync.Latch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -13,6 +14,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
+@ExperimentalCoroutinesApi
 data class StepContext<IN, OUT>(
 
     /**
@@ -94,6 +96,11 @@ data class StepContext<IN, OUT>(
     var isTail: Boolean = true
 ) {
 
+    /**
+     * Latch belonging to the step context, used to synchronize it.
+     */
+    private var latch: Latch? = null
+
     private var immutableEventTags: Map<String, String>? = null
 
     private var immutableMetersTags: Tags? = null
@@ -107,6 +114,28 @@ data class StepContext<IN, OUT>(
      * Metrics of a single step execution for later use (assertion, aggregation...).
      */
     private var metrics = mutableMapOf<String, Metric>()
+
+    /**
+     * Locks the internal latch of the context.
+     */
+    suspend fun lock() {
+        latch = latch ?: Latch()
+        latch!!.lock()
+    }
+
+    /**
+     * Waits for the internal latch of the context to be released.
+     */
+    suspend fun await() {
+        latch?.await()
+    }
+
+    /**
+     * Releases the internal latch of the context.
+     */
+    suspend fun release() {
+        latch?.release()
+    }
 
     fun recordTimer(name: String, duration: Duration) {
         metrics[name] = Timer(name, duration)
