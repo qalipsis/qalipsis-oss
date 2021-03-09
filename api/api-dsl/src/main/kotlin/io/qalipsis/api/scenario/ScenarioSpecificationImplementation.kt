@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 internal class ScenarioSpecificationImplementation(
-        internal val name: String
+    internal val name: String
 ) : StepSpecificationRegistry, ConfigurableScenarioSpecification, ConfiguredScenarioSpecification,
     RampUpSpecification, StartScenarioSpecification {
 
@@ -38,11 +38,19 @@ internal class ScenarioSpecificationImplementation(
     override var dagsUnderLoad = concurrentSet<DirectedAcyclicGraphId>()
 
     override fun add(step: StepSpecification<*, *, *>) {
+        step.scenario = this
         rootSteps.add(step)
         register(step)
         if (step.directedAcyclicGraphId.isNullOrBlank()) {
             step.directedAcyclicGraphId = this.buildDagId()
         }
+    }
+
+    override fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>) {
+        rootSteps.removeIf { it === rootToShift }
+        newRoot.directedAcyclicGraphId = rootToShift.directedAcyclicGraphId
+        add(newRoot)
+        newRoot.add(rootToShift)
     }
 
     override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {

@@ -264,19 +264,30 @@ Consumes the input and provides no output.
 
 image:operators/blackHole.svg[operators-blackHole]
 
-===== group
+===== stage
 
-Groups a complete sub-graph of steps.
-This provides a convenient way to iterate, waiting for the last step to be completed before starting again.
+Groups a linear graph of steps.
+Stages are not mandatory in a scenario, but provide a convenient way to iterate, waiting for the last step to be completed before looping back.
 
 [source,kotlin,linenumbers]
 ----
 
-    group { // <1>
-        map { it * 3 }.map { arrayOf(it, it + 100) }.flatten()
+    stage("my-stage") {
+        map { it * 3 }.map { arrayOf(it, it + 100) }.flatten() // <1>
     }.configure { // <2>
         iterate(5)
     }
 ----
 <1> Create a chain of steps, where no `split()` is allowed.
-<2> You can configure the whole group to repeat from its beginning only once the tail step is completed
+<2> You can configure the whole stage to repeat from its beginning only once the tail step is completed
+
+==== Combining operators
+
+===== collect
+
+Collects inputs across all the minions and releases them as a list, within the latest received step context.
+This operator can be seen as the opposite of the `flatten`.
+
+image:operators/collect.svg[operators-collect]
+
+

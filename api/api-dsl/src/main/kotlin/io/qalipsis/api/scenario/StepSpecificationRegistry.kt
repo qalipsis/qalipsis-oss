@@ -46,6 +46,11 @@ interface StepSpecificationRegistry : ScenarioSpecification {
     fun add(step: StepSpecification<*, *, *>)
 
     /**
+     * Inserts the [newRoot] at the position of [rootToShift], making the later a next of the former.
+     */
+    fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>)
+
+    /**
      * [register] [nextStep] in the scenario and assigns it a relevant [StepSpecification.directedAcyclicGraphId].
      *
      * This does not add [nextStep] to the list of [previousStep]'s next steps.

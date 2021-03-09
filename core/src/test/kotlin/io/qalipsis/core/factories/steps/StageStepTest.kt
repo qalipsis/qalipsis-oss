@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Timeout
 
 @ExperimentalCoroutinesApi
 @WithMockk
-internal class GroupStepTest {
+internal class StageStepTest {
 
     @RelaxedMockK
     lateinit var minion: Minion
@@ -39,7 +39,7 @@ internal class GroupStepTest {
     @Test
     internal fun `should first add a head, then a next`() {
         // given
-        val groupStep = GroupStep<Double, String>("", null)
+        val groupStep = StageStep<Double, String>("", null)
         val tailStep: Step<Double, String> = relaxedMockk()
         val stepAfter1: Step<String, Double> = relaxedMockk()
         val stepAfter2: Step<String, Unit> = relaxedMockk()
@@ -50,7 +50,7 @@ internal class GroupStepTest {
         // then
         assertThat(groupStep).all {
             prop("head").isSameAs(tailStep)
-            prop(GroupStep<Double, String>::next).isEmpty()
+            prop(StageStep<Double, String>::next).isEmpty()
         }
 
         // when
@@ -60,7 +60,7 @@ internal class GroupStepTest {
         // then
         assertThat(groupStep).all {
             prop("head").isSameAs(tailStep)
-            prop(GroupStep<Double, String>::next).all {
+            prop(StageStep<Double, String>::next).all {
                 hasSize(2)
                 index(0).isSameAs(stepAfter1)
                 index(1).isSameAs(stepAfter2)
@@ -95,7 +95,7 @@ internal class GroupStepTest {
             every { retryPolicy } returns null
         }
 
-        val step = GroupStep<Double, String>("", null)
+        val step = StageStep<Double, String>("", null)
         step.addNext(headStep)
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
@@ -142,7 +142,7 @@ internal class GroupStepTest {
         val headStep = TubeStep<Int>("")
         headStep.addNext(secondStep)
 
-        val step = GroupStep<Int, String>("", null)
+        val step = StageStep<Int, String>("", null)
         step.addNext(headStep)
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {

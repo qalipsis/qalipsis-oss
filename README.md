@@ -1,6 +1,9 @@
 # QALIPSIS
 
-To build the project in a Docker image:
+
+![CI](https://github.com/aeris-consulting/qalipsis/actions/workflows/gradle-master.yml/badge.svg)
+
+## Build the project in a prepared Docker image
 
 1. Start at the root of the project
 1. Create the builder image: `docker build ./docker/builder -t aerisconsulting/openjdk:11`

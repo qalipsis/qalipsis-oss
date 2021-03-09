@@ -5,14 +5,15 @@ import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.StepSpecification
 
 /**
- * Wrapper of a scenario to introduce the beginning of the "loaded tree", the subpart of the scenario, which will
+ * Wrapper of a scenario to introduce the beginning of the "loaded tree": the subpart of the scenario, which will
  * received the load of the minions.
  *
  * @author Eric Jessé
  */
-internal class StartScenarioSpecificationWrapper(private val delegated: StepSpecificationRegistry,
-                                                 private val dagId: DirectedAcyclicGraphId) :
-    StepSpecificationRegistry {
+internal class StartScenarioSpecificationWrapper(
+    private val delegated: StepSpecificationRegistry,
+    private val dagId: DirectedAcyclicGraphId
+) : StepSpecificationRegistry {
 
     override val rootSteps: List<StepSpecification<*, *, *>>
         get() = delegated.rootSteps
@@ -35,6 +36,11 @@ internal class StartScenarioSpecificationWrapper(private val delegated: StepSpec
     override fun add(step: StepSpecification<*, *, *>) {
         step.directedAcyclicGraphId = dagId
         delegated.add(step)
+    }
+
+    override fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>) {
+        newRoot.directedAcyclicGraphId = dagId
+        delegated.insertRoot(newRoot, rootToShift)
     }
 
     override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {

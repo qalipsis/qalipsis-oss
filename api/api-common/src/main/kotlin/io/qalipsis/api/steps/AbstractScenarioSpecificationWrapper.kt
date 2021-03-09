@@ -53,4 +53,8 @@ abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecificat
     override fun buildDagId(parent: DirectedAcyclicGraphId?): DirectedAcyclicGraphId {
         return wrappedScenario.buildDagId()
     }
+
+    override fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>) {
+        return wrappedScenario.insertRoot(newRoot, rootToShift)
+    }
 }
