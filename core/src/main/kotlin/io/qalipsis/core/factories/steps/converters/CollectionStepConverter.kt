@@ -7,14 +7,12 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.core.factories.steps.CollectionStep
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * [StepSpecificationConverter] from [CollectionStepSpecification] to [CollectionStep].
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @StepConverter
 internal class CollectionStepSpecificationConverter :
     StepSpecificationConverter<CollectionStepSpecification<*>> {

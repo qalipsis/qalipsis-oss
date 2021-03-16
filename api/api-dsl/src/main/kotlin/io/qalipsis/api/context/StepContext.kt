@@ -1,8 +1,8 @@
 package io.qalipsis.api.context
 
 import io.micrometer.core.instrument.Tags
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.Latch
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -14,7 +14,6 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 data class StepContext<IN, OUT>(
 
     /**
@@ -160,7 +159,7 @@ data class StepContext<IN, OUT>(
         }
     }
 
-    @ExperimentalCoroutinesApi
+
     fun duplicate(newInput: ReceiveChannel<IN> = Channel(1),
                   newOutput: SendChannel<OUT> = Channel(1)): StepContext<IN, OUT> {
         return StepContext(
@@ -263,5 +262,12 @@ data class StepContext<IN, OUT>(
         override val name: String,
         val count: Double
     ) : Metric
+
+    companion object {
+
+        @JvmStatic
+        private val log = logger()
+
+    }
 }
 

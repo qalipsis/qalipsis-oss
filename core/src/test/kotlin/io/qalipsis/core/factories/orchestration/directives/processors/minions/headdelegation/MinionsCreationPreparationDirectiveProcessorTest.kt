@@ -2,12 +2,7 @@ package io.qalipsis.core.factories.orchestration.directives.processors.minions.h
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.each
-import assertk.assertions.hasSize
-import assertk.assertions.index
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -26,16 +21,15 @@ import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import io.qalipsis.core.factories.testDag
 import io.qalipsis.core.factories.testScenario
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import assertk.assertions.hasSize as hasSize1
 
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @WithMockk
 internal class MinionsCreationPreparationDirectiveProcessorTest {
 
@@ -147,15 +141,15 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
             }
             index(0).all {
                 prop(MinionsCreationDirective::dagId).isEqualTo("my-dag-1")
-                prop(MinionsCreationDirective::queue).hasSize(123)
+                prop(MinionsCreationDirective::queue).hasSize1(123)
             }
             index(1).all {
                 prop(MinionsCreationDirective::dagId).isEqualTo("my-dag-2")
-                prop(MinionsCreationDirective::queue).hasSize(1)
+                prop(MinionsCreationDirective::queue).hasSize1(1)
             }
             index(2).all {
                 prop(MinionsCreationDirective::dagId).isEqualTo("my-dag-3")
-                prop(MinionsCreationDirective::queue).hasSize(1)
+                prop(MinionsCreationDirective::queue).hasSize1(1)
             }
         }
 

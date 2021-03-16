@@ -1,6 +1,5 @@
 package io.qalipsis.api.messaging
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
@@ -36,7 +35,7 @@ internal class LoopTopicTest {
     }
 
     @Test
-    @ExperimentalCoroutinesApi
+
     internal fun `should provide subscription`() = runBlockingTest {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))

@@ -10,7 +10,6 @@ import io.qalipsis.core.cross.directives.TestQueueDirective
 import io.qalipsis.core.cross.directives.TestSingleUseDirective
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Test
  * @author Eric Jessé
  */
 @WithMockk
-@ExperimentalCoroutinesApi
 internal class InMemoryDirectiveProducerTest {
 
     @RelaxedMockK

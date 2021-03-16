@@ -44,7 +44,6 @@ import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
@@ -60,7 +59,6 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 @Suppress("UNCHECKED_CAST")
 @WithMockk
-@ExperimentalCoroutinesApi
 internal class ScenariosInitializerImplTest {
 
     @RelaxedMockK

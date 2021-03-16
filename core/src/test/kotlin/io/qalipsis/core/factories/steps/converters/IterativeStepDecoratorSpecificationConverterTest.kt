@@ -17,7 +17,6 @@ import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.core.factories.steps.IterativeStepDecorator
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -26,7 +25,6 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 @WithMockk
 internal class IterativeStepDecoratorSpecificationConverterTest {

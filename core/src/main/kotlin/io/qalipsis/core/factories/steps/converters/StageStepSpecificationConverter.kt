@@ -13,7 +13,6 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.core.factories.steps.StageStep
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -21,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @StepConverter
 internal class StageStepSpecificationConverter : StepSpecificationConverter<StageStepSpecification<*, *>> {
 

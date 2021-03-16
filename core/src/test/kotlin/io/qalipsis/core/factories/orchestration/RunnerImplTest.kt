@@ -24,7 +24,6 @@ import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
 import io.qalipsis.test.utils.setProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions
@@ -38,7 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @WithMockk
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RunnerImplTest {
@@ -78,7 +76,7 @@ internal class RunnerImplTest {
         every { meterRegistry.timer("step-execution", *anyVararg()) } returns stepExecutionTimer
 
         every {
-            meterRegistry.gauge("minion-executing-steps", any<List<Tag>>(), any<AtomicInteger>())
+            meterRegistry.gauge("minion-running-steps", any<List<Tag>>(), any<AtomicInteger>())
         } returnsArgument 2
 
         val dag = testDag {
@@ -145,8 +143,8 @@ internal class RunnerImplTest {
             runningStepsGauge.incrementAndGet()
             runningStepsGauge.decrementAndGet()
             executedStepCounter.increment()
-            eventsLogger.info(match { it.startsWith("step-") && it.endsWith("-started") }, tagsSupplier = any())
-            eventsLogger.info(match { it.startsWith("step-") && it.endsWith("-completed") }, tagsSupplier = any())
+            eventsLogger.info(eq("step.execution.started"), timestamp = any(), tagsSupplier = any())
+            eventsLogger.info(eq("step.execution.complete"), timestamp = any(), tagsSupplier = any())
             meterRegistry.timer("step-execution", "step", any(), "status", "completed")
             stepExecutionTimer.record(any<Duration>())
         }

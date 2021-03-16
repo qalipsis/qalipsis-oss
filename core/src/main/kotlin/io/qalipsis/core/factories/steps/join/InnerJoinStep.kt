@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 internal class InnerJoinStep<I, O>(
     id: StepId,
 

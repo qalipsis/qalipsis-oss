@@ -47,7 +47,6 @@ dependencies {
     api("io.micronaut.picocli:micronaut-picocli")
     api("javax.annotation:javax.annotation-api")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
-    api("io.micronaut.micrometer:micronaut-micrometer-registry-elastic")
     api("io.micronaut:micronaut-management")
     api("io.micronaut:micronaut-validation")
     api("io.micronaut:micronaut-http-server-netty")
@@ -62,6 +61,7 @@ dependencies {
     testFixturesImplementation(kotlin("stdlib"))
 
     testImplementation(project(":test"))
+    testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
 

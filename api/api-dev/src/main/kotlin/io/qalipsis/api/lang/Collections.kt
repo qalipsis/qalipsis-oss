@@ -58,10 +58,10 @@ fun <T> concurrentList(values: Collection<T>): MutableList<T> {
 /**
  * Polls the first [count] items in a new [LinkedList]. If [count] is 0, a new empty [LinkedList] is returned.
  */
-fun <T> LinkedList<T>.pollFirst(count: Int): LinkedList<T> {
-    val result = LinkedList<T>()
+fun <T> MutableList<T>.pollFirst(count: Int): List<T> {
+    val result = mutableListOf<T>()
     repeat(count) {
-        result.add(this.pollFirst())
+        result.add(this.removeAt(0))
     }
     return result
 }

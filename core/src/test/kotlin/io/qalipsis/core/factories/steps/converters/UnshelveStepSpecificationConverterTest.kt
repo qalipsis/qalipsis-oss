@@ -16,7 +16,6 @@ import io.qalipsis.core.factories.steps.UnshelveStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -26,7 +25,6 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class UnUnshelveStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<UnshelveStepSpecificationConverter>() {

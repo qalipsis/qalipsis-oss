@@ -25,7 +25,6 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
@@ -42,7 +41,6 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 @WithMockk
-@ExperimentalCoroutinesApi
 internal class MinionsKeeperImplTest {
 
     @RelaxedMockK
@@ -70,7 +68,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun shouldCreatePausedMinion() {
         // given
         val dag = testDag(isUnderLoad = true)
@@ -81,7 +79,7 @@ internal class MinionsKeeperImplTest {
         val runnerCountDown = CountDownLatch(2)
         coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
         coEvery {
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         } answers { runnerCountDown.countDown() }
 
@@ -95,11 +93,12 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOnce {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.info("minion.created", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
@@ -110,6 +109,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldCreateSingletonPausedMinion() {
         // given
         val dag = testDag(isSingleton = true, isUnderLoad = true)
@@ -120,7 +120,7 @@ internal class MinionsKeeperImplTest {
         val runnerCountDown = CountDownLatch(2)
         coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
         coEvery {
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         } answers { runnerCountDown.countDown() }
 
@@ -134,11 +134,12 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOnce {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.info("minion.created", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
@@ -152,6 +153,7 @@ internal class MinionsKeeperImplTest {
 
 
     @Test
+    @Timeout(10)
     internal fun shouldCreateNonSingletonNotUnderLoadPausedMinion() {
         // given
         val dag = testDag(isUnderLoad = false, root = true)
@@ -162,7 +164,7 @@ internal class MinionsKeeperImplTest {
         val runnerCountDown = CountDownLatch(2)
         coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
         coEvery {
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         } answers { runnerCountDown.countDown() }
 
@@ -176,11 +178,12 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOnce {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.info("minion.created", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         coVerifyOnce { runner.run(any(), refEq(dag)) }
@@ -193,6 +196,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldNotCreateSingletonWhenDagDoesNotExist() {
         // given
         every {
@@ -216,6 +220,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldStartScenarioAndSingletonsImmediately() = runBlockingTest {
         // given
         val minionsKeeper =
@@ -248,6 +253,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldIgnoreStartScenarioSingletonsStartWhenScenarioNotExist() = runBlockingTest {
         // given
         val minionsKeeper =
@@ -268,6 +274,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldStartMinionImmediately() {
         // given
         val minionsKeeper =
@@ -309,6 +316,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldIgnoreScenarioStartWhenNotExist() = runBlockingTest {
         // given
         val minionsKeeper =
@@ -329,6 +337,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
+    @Timeout(10)
     internal fun shouldStartMinionLater() {
         // given
         val minionsKeeper =

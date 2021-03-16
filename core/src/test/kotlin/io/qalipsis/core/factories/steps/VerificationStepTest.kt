@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
-@Suppress("EXPERIMENTAL_API_USAGE")
 @WithMockk
 internal class VerificationStepTest {
 
@@ -55,7 +54,7 @@ internal class VerificationStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "success", "minion", "my-minion")
             counter.increment()
-            eventsLogger.info("step-my-step-assertion-success", tagsSupplier = any())
+            eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
         }
 
         confirmVerified(eventsLogger, meterRegistry, counter)
@@ -76,7 +75,7 @@ internal class VerificationStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "success", "minion", "my-minion")
             counter.increment()
-            eventsLogger.info("step-my-step-assertion-success", tagsSupplier = any())
+            eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
         }
         confirmVerified(eventsLogger, meterRegistry, counter)
     }
@@ -99,7 +98,7 @@ internal class VerificationStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "failure", "minion", "my-minion")
             counter.increment()
-            eventsLogger.warn("step-my-step-assertion-failure", tagsSupplier = any())
+            eventsLogger.warn("step.assertion.failure", timestamp = any(), tagsSupplier = any())
         }
 
         confirmVerified(eventsLogger, meterRegistry, counter)
@@ -122,7 +121,7 @@ internal class VerificationStepTest {
         verifyOnce {
             meterRegistry.counter("step-my-step-assertion", "status", "error", "minion", "my-minion")
             counter.increment()
-            eventsLogger.warn("step-my-step-assertion-error", tagsSupplier = any())
+            eventsLogger.warn("step.assertion.error", timestamp = any(), tagsSupplier = any())
         }
         confirmVerified(eventsLogger, meterRegistry, counter)
     }

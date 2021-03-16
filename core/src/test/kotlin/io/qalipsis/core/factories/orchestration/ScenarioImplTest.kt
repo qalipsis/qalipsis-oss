@@ -153,6 +153,7 @@ internal class ScenarioImplTest {
     }
 
 
+
     private data class StartableStoppableStep(val dagId: DirectedAcyclicGraphId) :
         AbstractStep<Any?, Any?>("", null) {
 

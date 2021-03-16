@@ -27,18 +27,18 @@ internal class VerificationStep<I, O>(
         try {
             val output = assertionBlock(input)
             meterRegistry.counter("step-${id}-assertion", "status", "success", "minion", context.minionId).increment()
-            eventsLogger.info("step-${id}-assertion-success") { context.toEventTags() }
+            eventsLogger.info("step.assertion.success") { context.toEventTags() }
             context.output.send(output)
         } catch (e: Error) {
             context.isExhausted = true
             context.errors.add(StepError(e))
             meterRegistry.counter("step-${id}-assertion", "status", "failure", "minion", context.minionId).increment()
-            eventsLogger.warn("step-${id}-assertion-failure") { context.toEventTags() }
+            eventsLogger.warn("step.assertion.failure") { context.toEventTags() }
         } catch (t: Throwable) {
             context.isExhausted = true
             context.errors.add(StepError(t))
             meterRegistry.counter("step-${id}-assertion", "status", "error", "minion", context.minionId).increment()
-            eventsLogger.warn("step-${id}-assertion-error") { context.toEventTags() }
+            eventsLogger.warn("step.assertion.error") { context.toEventTags() }
         }
     }
 

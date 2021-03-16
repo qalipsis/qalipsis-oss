@@ -1,12 +1,13 @@
 package io.qalipsis.api.lang
 
+import org.slf4j.Logger
+
 /**
  * Executes the block and returns the result if the condition is matched, null otherwise.
  *
  * @see supplyUnless
- * @see coSupplyIf for suspend block
  */
-fun <T> supplyIf(condition: Boolean, block: () -> T): T? {
+inline fun <T> supplyIf(condition: Boolean, block: () -> T): T? {
     return if (condition) {
         block()
     } else {
@@ -18,37 +19,8 @@ fun <T> supplyIf(condition: Boolean, block: () -> T): T? {
  * Executes the block and returns the result if the condition is not matched, null otherwise.
  *
  * @see supplyIf
- * @see coSupplyUnless for suspend block
  */
-fun <T> supplyUnless(condition: Boolean, block: () -> T): T? {
-    return if (!condition) {
-        block()
-    } else {
-        null
-    }
-}
-
-/**
- * Executes the block and returns the result if the condition is matched, null otherwise.
- *
- * @see coSupplyUnless
- * @see supplyIf for blocking block
- */
-suspend fun <T> coSupplyIf(condition: Boolean, block: suspend () -> T): T? {
-    return if (condition) {
-        block()
-    } else {
-        null
-    }
-}
-
-/**
- * Executes the block and returns the result if the condition is not matched, null otherwise.
- *
- * @see coSupplyIf
- * @see supplyUnless for blocking block
- */
-suspend fun <T> coSupplyUnless(condition: Boolean, block: suspend () -> T): T? {
+inline fun <T> supplyUnless(condition: Boolean, block: () -> T): T? {
     return if (!condition) {
         block()
     } else {
@@ -60,9 +32,8 @@ suspend fun <T> coSupplyUnless(condition: Boolean, block: suspend () -> T): T? {
  * Executes the block only if the condition is matched.
  *
  * @see doUnless
- * @see coDoIf for suspend block
  */
-fun doIf(condition: Boolean, block: () -> Any?) {
+inline fun doIf(condition: Boolean, block: () -> Any?) {
     if (condition) {
         block()
     }
@@ -72,35 +43,37 @@ fun doIf(condition: Boolean, block: () -> Any?) {
  * Executes the block only if the condition is not matched.
  *
  * @see doIf
- * @see coDoUnless for suspend block
  */
-fun doUnless(condition: Boolean, block: () -> Any?) {
+inline fun doUnless(condition: Boolean, block: () -> Any?) {
     if (!condition) {
         block()
     }
 }
 
-
 /**
- * Executes the block only if the condition is matched.
+ * Helper function to log any thrown exception with the specified [logger] or return the result when everything went well.
  *
- * @see coDoUnless
- * @see doIf for blocking block
+ * @author Eric Jessé
  */
-suspend fun coDoIf(condition: Boolean, block: suspend () -> Any?) {
-    if (condition) {
+inline fun <T> tryAndLog(logger: Logger, block: () -> T): T {
+    return try {
         block()
+    } catch (e: Exception) {
+        logger.error(e.message, e)
+        throw e
     }
 }
 
 /**
- * Executes the block only if the condition is not matched.
+ * Helper function to log any thrown exception with the specified [logger] and return null or return the result when everything went well.
  *
- * @see coDoIf
- * @see doUnless for blocking block
+ * @author Eric Jessé
  */
-suspend fun coDoUnless(condition: Boolean, block: suspend () -> Any?) {
-    if (!condition) {
+inline fun <T> tryAndLogOrNull(logger: Logger, block: () -> T): T? {
+    return try {
         block()
+    } catch (e: Exception) {
+        logger.error(e.message, e)
+        null
     }
 }

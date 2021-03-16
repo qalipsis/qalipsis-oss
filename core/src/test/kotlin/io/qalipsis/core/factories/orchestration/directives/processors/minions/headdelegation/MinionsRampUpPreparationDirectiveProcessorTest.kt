@@ -25,7 +25,6 @@ import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
@@ -36,7 +35,6 @@ import org.junit.jupiter.api.assertThrows
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @WithMockk
 internal class MinionsRampUpPreparationDirectiveProcessorTest {
 

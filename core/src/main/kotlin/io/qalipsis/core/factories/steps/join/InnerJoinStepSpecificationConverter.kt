@@ -13,14 +13,12 @@ import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.core.factories.steps.singleton.NoMoreNextStepDecorator
 import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * [StepSpecificationConverter] from [InnerJoinStepSpecification] to [InnerJoinStep].
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @StepConverter
 internal class InnerJoinStepSpecificationConverter : StepSpecificationConverter<InnerJoinStepSpecification<*, *>> {
 

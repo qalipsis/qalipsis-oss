@@ -80,7 +80,7 @@ internal open class MinionImpl(
      */
     private val jobsCompletion = SuspendedCountLatch {
         onCompleteHooks.forEach { it() }
-        eventsLogger.info("minion-completed", tags = mapOf("campaign" to campaignId, "minion" to id))
+        eventsLogger.info("minion.execution-complete", tags = mapOf("campaign" to campaignId, "minion" to id))
     }
 
     private val logger = logger()
@@ -92,7 +92,7 @@ internal open class MinionImpl(
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private val executingStepsGauge: AtomicInteger =
-        meterRegistry.gauge("minion-executing-steps", listOf(Tag.of("campaign", campaignId), Tag.of("minion", id)),
+        meterRegistry.gauge("minion-running-steps", listOf(Tag.of("campaign", campaignId), Tag.of("minion", id)),
             AtomicInteger())
 
     private val maintenancePeriodTimer = meterRegistry.timer("minion-maintenance", "campaign", campaignId, "minion", id)
@@ -104,7 +104,7 @@ internal open class MinionImpl(
         get() = executingStepsGauge.get()
 
     init {
-        eventsLogger.info("minion-created", tags = mapOf("campaign" to campaignId, "minion" to id))
+        eventsLogger.info("minion.created", tags = mapOf("campaign" to campaignId, "minion" to id))
         if (!pauseAtStart) {
             runBlocking(coroutineScope.coroutineContext) {
                 start()
@@ -116,13 +116,13 @@ internal open class MinionImpl(
     @VisibleForTest
     fun startMaintenance(coroutineScope: CoroutineScope) {
         coroutineScope.launch {
-            eventsLogger.trace("minion-maintenance-routine-started",
+            eventsLogger.trace("minion.maintenance.job-started",
                 tags = mapOf("campaign" to campaignId, "minion" to id))
             startLatch.await()
             delay(maintenancePeriod.toMillis())
             while (!cancelled) {
                 delay(maintenancePeriod.toMillis())
-                eventsLogger.trace("minion-maintenance-operation-started",
+                eventsLogger.trace("minion.maintenance.running",
                     tags = mapOf("campaign" to campaignId, "minion" to id))
                 logger.trace("Running maintenance operations...")
                 val start = System.nanoTime()
@@ -132,12 +132,12 @@ internal open class MinionImpl(
                 }
                 Duration.ofNanos(System.nanoTime() - start).let {
                     maintenancePeriodTimer.record(it)
-                    eventsLogger.trace("minion-maintenance-operation-completed", it,
+                    eventsLogger.trace("minion.maintenance.complete", it,
                         tags = mapOf("campaign" to campaignId, "minion" to id))
                     logger.trace("Maintenance operations executed in $it")
                 }
             }
-            eventsLogger.trace("minion-maintenance-routine-stopped",
+            eventsLogger.trace("minion.maintenance.job-stopped",
                 tags = mapOf("campaign" to campaignId, "minion" to id))
         }
     }
@@ -149,7 +149,7 @@ internal open class MinionImpl(
     override suspend fun start() {
         if (!isStarted()) {
             startLatch.release()
-            eventsLogger.info("minion-started", tags = mapOf("campaign" to campaignId, "minion" to id))
+            eventsLogger.info("minion.running", tags = mapOf("campaign" to campaignId, "minion" to id))
         }
     }
 
@@ -193,7 +193,7 @@ internal open class MinionImpl(
         logger.trace("Cancelling minion $id")
         cancelled = true
         startLatch.release()
-        eventsLogger.info("minion-cancellation-started", tags = mapOf("campaign" to campaignId, "minion" to id))
+        eventsLogger.info("minion.cancellation.started", tags = mapOf("campaign" to campaignId, "minion" to id))
         try {
             jobManagementMutex.withLock {
                 for (job in completionJobs.plus(stepJobs).filter { it.isActive }) {
@@ -201,9 +201,9 @@ internal open class MinionImpl(
                 }
             }
             logger.trace("Cancellation of minions $id completed")
-            eventsLogger.info("minion-cancellation-completed", tags = mapOf("campaign" to campaignId, "minion" to id))
+            eventsLogger.info("minion.cancellation.complete", tags = mapOf("campaign" to campaignId, "minion" to id))
         } catch (e: Exception) {
-            eventsLogger.info("minion-cancellation-completed", e,
+            eventsLogger.info("minion.cancellation.complete", e,
                 tags = mapOf("campaign" to campaignId, "minion" to id))
         }
         executingLatch.release()

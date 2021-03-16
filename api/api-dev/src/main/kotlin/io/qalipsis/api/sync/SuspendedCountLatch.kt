@@ -1,7 +1,6 @@
 package io.qalipsis.api.sync
 
 import io.qalipsis.api.logging.LoggerHelper.logger
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onReceiveOrNull
@@ -46,7 +45,7 @@ class SuspendedCountLatch(
 
     private var count = AtomicLong(initialCount)
 
-    @ExperimentalCoroutinesApi
+
     val onRelease
         get() = syncFlag.onReceiveOrNull()
 
@@ -102,7 +101,7 @@ class SuspendedCountLatch(
      * @return the value of the counter after the reset.
      */
     suspend fun reset(): Long = mutex.withLock {
-        logger().trace("Resetting...")
+        log.trace("Resetting...")
         count.set(initialCount)
         resetFlags()
         count.get()
@@ -114,30 +113,30 @@ class SuspendedCountLatch(
     fun blockingReset(): Long = runBlocking { reset() }
 
     suspend fun increment(value: Long = 1): Long = mutex.withLock {
-        count.addAndGet(value)
-        logger().trace("Count is now $count")
-        activityFlag.close()
+        val result = count.addAndGet(value)
+        closeActivityFlag()
         // When the count gets from 0 to 1, the sync flag is recreated.
-        if (count.get() == 1L) {
+        if (value == 1L && result == 1L) {
             resetFlags()
         }
-        count.get()
+        result
     }
 
     fun blockingIncrement(value: Long = 1): Long = runBlocking {
         increment(value)
     }
 
-    suspend fun decrement(value: Long = 1): Long = mutex.withLock {
-        require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
-        count.addAndGet(-value)
-        logger().trace("Count is now $count")
-        activityFlag.close()
-        if (count.get() == 0L) {
-            onReleaseAction()
-            syncFlag.close()
+    suspend fun decrement(value: Long = 1): Long {
+        return mutex.withLock {
+            require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
+            val result = count.addAndGet(-value)
+            closeActivityFlag()
+            if (result == 0L) {
+                onReleaseAction()
+                syncFlag.close()
+            }
+            result
         }
-        count.get()
     }
 
     fun blockingDecrement(value: Long = 1): Long = runBlocking {
@@ -147,7 +146,7 @@ class SuspendedCountLatch(
     fun get() = count.get()
 
     fun isSuspended(): Boolean {
-        logger().trace("Is suspended?")
+        log.trace("Is suspended?")
         return count.get() > 0
     }
 
@@ -160,4 +159,16 @@ class SuspendedCountLatch(
         }
     }
 
+    private fun closeActivityFlag() {
+        if (!activityFlag.isClosedForReceive) {
+            activityFlag.close()
+        }
+    }
+
+    companion object {
+
+        @JvmStatic
+        private val log = logger()
+
+    }
 }

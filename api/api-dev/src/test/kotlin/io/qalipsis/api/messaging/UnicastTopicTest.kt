@@ -1,7 +1,6 @@
 package io.qalipsis.api.messaging
 
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -36,7 +35,7 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    @ExperimentalCoroutinesApi
+
     internal fun `should provide subscription`() = runBlocking {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
@@ -62,7 +61,7 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    @ExperimentalCoroutinesApi
+
     internal fun `should provide subscription from beginning`() = runBlocking {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(10))

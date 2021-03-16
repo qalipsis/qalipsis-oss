@@ -2,15 +2,7 @@ package io.qalipsis.core.heads.campaigns
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.any
-import assertk.assertions.each
-import assertk.assertions.hasSize
-import assertk.assertions.index
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
-import assertk.assertions.key
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -35,7 +27,6 @@ import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.utils.getProperty
 import io.qalipsis.test.utils.setProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -46,7 +37,6 @@ import java.util.concurrent.TimeUnit
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @WithMockk
 internal class DefaultCampaignManagerTest {
 

@@ -2,11 +2,7 @@ package io.qalipsis.core.factories.steps.singleton
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.each
-import assertk.assertions.hasSize
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.*
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkObject
@@ -35,7 +31,6 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -50,7 +45,6 @@ import java.time.Duration
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class SingletonStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<SingletonStepSpecificationConverter>() {
