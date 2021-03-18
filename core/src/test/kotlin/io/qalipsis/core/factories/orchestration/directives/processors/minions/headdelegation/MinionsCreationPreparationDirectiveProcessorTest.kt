@@ -25,7 +25,6 @@ import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import assertk.assertions.hasSize as hasSize1
 
 /**
  * @author Eric Jessé
@@ -141,15 +140,15 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
             }
             index(0).all {
                 prop(MinionsCreationDirective::dagId).isEqualTo("my-dag-1")
-                prop(MinionsCreationDirective::queue).hasSize1(123)
+                prop(MinionsCreationDirective::queue).hasSize(123)
             }
             index(1).all {
                 prop(MinionsCreationDirective::dagId).isEqualTo("my-dag-2")
-                prop(MinionsCreationDirective::queue).hasSize1(1)
+                prop(MinionsCreationDirective::queue).hasSize(1)
             }
             index(2).all {
                 prop(MinionsCreationDirective::dagId).isEqualTo("my-dag-3")
-                prop(MinionsCreationDirective::queue).hasSize1(1)
+                prop(MinionsCreationDirective::queue).hasSize(1)
             }
         }
 

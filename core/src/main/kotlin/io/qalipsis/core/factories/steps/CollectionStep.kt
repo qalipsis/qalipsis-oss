@@ -78,7 +78,7 @@ internal class CollectionStep<I>(
                 mutex.withLock {
                     // Only forward the values if the ticker was not yet cancelled.
                     if (!ticker!!.isClosedForReceive) {
-                        log.trace("Timeout is reached.")
+                        log.trace("Timeout is confirmed.")
                         val values = buffer.pollFirst(min(buffer.size, batchSize))
                         val context = latestContextSlot.getOrNull()
                         log.trace(

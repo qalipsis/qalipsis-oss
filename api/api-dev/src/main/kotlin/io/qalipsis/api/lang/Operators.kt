@@ -51,7 +51,7 @@ inline fun doUnless(condition: Boolean, block: () -> Any?) {
 }
 
 /**
- * Helper function to log any thrown exception with the specified [logger] or return the result when everything went well.
+ * Helper function to log any exception with the specified [logger] before throwing it or return the result when everything went well.
  *
  * @author Eric Jessé
  */
