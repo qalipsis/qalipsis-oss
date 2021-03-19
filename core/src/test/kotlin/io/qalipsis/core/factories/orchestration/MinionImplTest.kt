@@ -58,7 +58,7 @@ internal class MinionImplTest {
             loggerContext.getLogger(SuspendedCountLatch::class.java.`package`.name).level
 
         every {
-            meterRegistry.gauge("minion-executing-steps", any(), any<AtomicInteger>())
+            meterRegistry.gauge("minion-running-steps", any(), any<AtomicInteger>())
         } returns executingStepsGauge
         every { meterRegistry.timer("minion-maintenance", "minion", any()) } returns relaxedMockk()
     }
@@ -93,14 +93,15 @@ internal class MinionImplTest {
         assertEquals(1, completionCounter.get())
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-completed", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.created", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.running", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.execution-complete", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         verifyExactly(3) { executingStepsGauge.incrementAndGet() }
         verifyExactly(3) { executingStepsGauge.decrementAndGet() }
@@ -131,13 +132,13 @@ internal class MinionImplTest {
         assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.created", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.running", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
         confirmVerified(eventsLogger, meterRegistry, executingStepsGauge)
     }
@@ -166,16 +167,17 @@ internal class MinionImplTest {
         // then
         assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-cancellation-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-cancellation-completed", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.created", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.cancellation.started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.cancellation.complete", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 
         confirmVerified(eventsLogger, meterRegistry, executingStepsGauge)
@@ -215,17 +217,17 @@ internal class MinionImplTest {
         assertEquals(0, completionCounter.get())
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-cancellation-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-cancellation-completed", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.created", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.running", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.cancellation.started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.cancellation.complete", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 
         confirmVerified(eventsLogger, meterRegistry)
@@ -250,13 +252,13 @@ internal class MinionImplTest {
         assertEquals(0, completionCounter.get())
 
         verifyOnce {
-            meterRegistry.gauge("minion-executing-steps",
+            meterRegistry.gauge("minion-running-steps",
                 listOf(Tag.of("campaign", "my-campaign"), Tag.of("minion", "my-minion")), any<AtomicInteger>())
             meterRegistry.timer("minion-maintenance", "campaign", "my-campaign", "minion", "my-minion")
-            eventsLogger.info("minion-created", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.info("minion-started", null, mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
-            eventsLogger.trace("minion-maintenance-routine-started", null,
-                mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.created", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.info("minion.running", timestamp = any(), tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
+            eventsLogger.trace("minion.maintenance.job-started", timestamp = any(),
+                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion"))
         }
 
         confirmVerified(eventsLogger, meterRegistry)
@@ -269,7 +271,7 @@ internal class MinionImplTest {
         // Reduces the logs which affect the performances significantly.
         loggerContext.getLogger(MinionImpl::class.java).level = Level.INFO
         loggerContext.getLogger(SuspendedCountLatch::class.java).level = Level.INFO
-        every { meterRegistry.gauge("minion-executing-steps", any(), any<AtomicInteger>()) } returnsArgument 2
+        every { meterRegistry.gauge("minion-running-steps", any(), any<AtomicInteger>()) } returnsArgument 2
 
         val minionsCount = 1000
         val stepsCount = 100

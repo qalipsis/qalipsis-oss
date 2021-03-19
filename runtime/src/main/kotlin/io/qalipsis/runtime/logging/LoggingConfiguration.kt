@@ -4,7 +4,7 @@ import io.micronaut.context.annotation.ConfigurationProperties
 import java.util.Properties
 
 @ConfigurationProperties("logging")
-open class LoggingConfiguration {
+class LoggingConfiguration {
 
     var root: String? = null
 
@@ -21,6 +21,9 @@ open class LoggingConfiguration {
     @ConfigurationProperties("file")
     class NormalLoggingFile : LoggingFile()
 
+    /**
+     * Configuration for the slf4j event publisher.
+     */
     @ConfigurationProperties("events")
     class EventsLoggingFile : LoggingFile()
 

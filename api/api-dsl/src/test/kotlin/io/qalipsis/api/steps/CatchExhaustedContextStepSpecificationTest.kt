@@ -3,7 +3,6 @@ package io.qalipsis.api.steps
 import assertk.assertThat
 import assertk.assertions.isInstanceOf
 import io.qalipsis.api.context.StepContext
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 internal class CatchExhaustedContextStepSpecificationTest {
 
     @Test

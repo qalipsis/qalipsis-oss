@@ -6,7 +6,6 @@ import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.ErrorProcessingStep
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * Step in charge of processing the errors received from the ancestors.
@@ -20,7 +19,7 @@ internal class CatchErrorsStep<I>(
     private val block: ((errors: Collection<StepError>) -> Unit)
 ) : AbstractStep<I, I>(id, null), ErrorProcessingStep<I, I> {
 
-    @ExperimentalCoroutinesApi
+
     @Throws(Throwable::class)
     override suspend fun execute(context: StepContext<I, I>) {
         if (context.errors.isNotEmpty()) {

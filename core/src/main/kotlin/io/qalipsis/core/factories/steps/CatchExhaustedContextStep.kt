@@ -4,7 +4,6 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * Step in charge of processing the context once it is exhausted.
@@ -18,7 +17,7 @@ internal class CatchExhaustedContextStep<O>(
     private val block: (suspend (context: StepContext<*, O>) -> Unit)
 ) : AbstractStep<Any?, O>(id, null) {
 
-    @ExperimentalCoroutinesApi
+
     override suspend fun execute(context: StepContext<Any?, O>) {
         if (context.isExhausted) {
             log.trace("Catching exhausted context")

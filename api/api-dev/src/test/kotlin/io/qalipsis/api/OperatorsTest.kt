@@ -1,23 +1,29 @@
 package io.qalipsis.api
 
+import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNull
-import io.qalipsis.api.lang.coDoIf
-import io.qalipsis.api.lang.coDoUnless
-import io.qalipsis.api.lang.coSupplyIf
-import io.qalipsis.api.lang.coSupplyUnless
-import io.qalipsis.api.lang.doIf
-import io.qalipsis.api.lang.doUnless
-import io.qalipsis.api.lang.supplyIf
-import io.qalipsis.api.lang.supplyUnless
-import io.qalipsis.api.sync.SuspendedCountLatch
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runBlockingTest
+import assertk.assertions.*
+import io.qalipsis.api.lang.*
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.slf4j.LoggerFactory
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class OperatorsTest {
+
+
+    private val outPrintStream: PrintStream = System.out
+
+    /**
+     * Resets the right console stream after the tests on the loggers.
+     */
+    @AfterEach
+    internal fun tearDown() {
+        System.setOut(outPrintStream)
+    }
 
     @Test
     internal fun `supplyIf should provide when the condition is met`() {
@@ -34,26 +40,6 @@ internal class OperatorsTest {
     }
 
     @Test
-    internal fun `coSupplyIf should provide when the condition is met`() = runBlockingTest {
-        val result = coSupplyIf(true) {
-            delay(200)
-            "my-value"
-        }
-
-        assertThat(result).isEqualTo("my-value")
-    }
-
-    @Test
-    internal fun `coSupplyIf should not provide when the condition is not met`() = runBlockingTest {
-        val result = coSupplyIf(false) {
-            delay(200)
-            "my-value"
-        }
-
-        assertThat(result).isNull()
-    }
-
-    @Test
     internal fun `supplyUnless should provide when the condition is not met`() {
         val result = supplyUnless(false) { "my-value" }
 
@@ -63,26 +49,6 @@ internal class OperatorsTest {
     @Test
     internal fun `supplyUnless should not provide when the condition is met`() {
         val result = supplyUnless(true) { "my-value" }
-
-        assertThat(result).isNull()
-    }
-
-    @Test
-    internal fun `coSupplyUnless should provide when the condition is not met`() = runBlockingTest {
-        val result = coSupplyUnless(false) {
-            delay(200)
-            "my-value"
-        }
-
-        assertThat(result).isEqualTo("my-value")
-    }
-
-    @Test
-    internal fun `coSupplyUnless should not provide when the condition is met`() = runBlockingTest {
-        val result = coSupplyUnless(true) {
-            delay(200)
-            "my-value"
-        }
 
         assertThat(result).isNull()
     }
@@ -104,22 +70,6 @@ internal class OperatorsTest {
     }
 
     @Test
-    internal fun `coDoIf should execute when the condition is met`() = runBlockingTest {
-        val counter = SuspendedCountLatch()
-        coDoIf(true) { counter.increment() }
-
-        assertThat(counter.get()).isEqualTo(1)
-    }
-
-    @Test
-    internal fun `coDoIf should not execute when the condition is not met`() = runBlockingTest {
-        val counter = SuspendedCountLatch()
-        coDoIf(false) { counter.increment() }
-
-        assertThat(counter.get()).isEqualTo(0)
-    }
-
-    @Test
     internal fun `doUnless should execute when the condition is not met`() {
         val counter = AtomicInteger()
         doUnless(false) { counter.incrementAndGet() }
@@ -136,18 +86,64 @@ internal class OperatorsTest {
     }
 
     @Test
-    internal fun `coDoUnless should execute when the condition is not met`() = runBlockingTest {
-        val counter = SuspendedCountLatch()
-        coDoUnless(false) { counter.increment() }
+    internal fun `tryAndLog should log the exception and throw it`() {
+        val logStream = ByteArrayOutputStream()
+        System.setOut(PrintStream(logStream))
+        val logger = LoggerFactory.getLogger("my-test-logger")
+        val exception = RuntimeException("My error message")
 
-        assertThat(counter.get()).isEqualTo(1)
+        val thrownException = assertThrows<RuntimeException> {
+            tryAndLog(logger) {
+                throw exception
+            }
+        }
+
+        assertThat(logStream.toString()).all {
+            contains("my-test-logger")
+            contains("My error message")
+        }
+        assertThat(thrownException).isSameAs(exception)
     }
 
     @Test
-    internal fun `coDoUnless should not execute when the condition is met`() = runBlockingTest {
-        val counter = SuspendedCountLatch()
-        coDoUnless(true) { counter.increment() }
+    internal fun `tryAndLog should return a valid result`() {
+        val logStream = ByteArrayOutputStream()
+        System.setOut(PrintStream(logStream))
+        val logger = LoggerFactory.getLogger("my-test-logger")
 
-        assertThat(counter.get()).isEqualTo(0)
+        val result = tryAndLog(logger) { 123 }
+
+        assertThat(logStream.toString()).isEmpty()
+        assertThat(result).isEqualTo(123)
+    }
+
+    @Test
+    internal fun `tryAndLogOrNull should log the exception and return null`() {
+        val logStream = ByteArrayOutputStream()
+        System.setOut(PrintStream(logStream))
+        val logger = LoggerFactory.getLogger("my-test-logger")
+        val exception = RuntimeException("My error message")
+
+        val result = tryAndLogOrNull(logger) {
+            throw exception
+        }
+
+        assertThat(logStream.toString()).all {
+            contains("my-test-logger")
+            contains("My error message")
+        }
+        assertThat(result).isNull()
+    }
+
+    @Test
+    internal fun `tryAndLogOrNull should return a valid result`() {
+        val logStream = ByteArrayOutputStream()
+        System.setOut(PrintStream(logStream))
+        val logger = LoggerFactory.getLogger("my-test-logger")
+
+        val result = tryAndLogOrNull(logger) { 123 }
+
+        assertThat(logStream.toString()).isEmpty()
+        assertThat(result).isEqualTo(123)
     }
 }

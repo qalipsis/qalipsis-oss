@@ -20,7 +20,6 @@ import io.qalipsis.core.cross.directives.TestQueueDirectiveReference
 import io.qalipsis.core.cross.directives.TestSingleUseDirective
 import io.qalipsis.core.cross.directives.TestSingleUseDirectiveReference
 import io.qalipsis.test.mockk.WithMockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -32,7 +31,6 @@ import java.util.Collections
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @WithMockk
 internal class InMemoryDirectiveRegistryTest {
 

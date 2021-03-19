@@ -107,6 +107,7 @@ object Qalipsis : Callable<Unit> {
         environments.add("config")
 
         applicationContext = Micronaut.build()
+            .banner(true)
             .environments(*environments.toTypedArray() + this.environments)
             .packages("io.qalipsis")
             .mainClass(MicronautBootstrap::class.java)

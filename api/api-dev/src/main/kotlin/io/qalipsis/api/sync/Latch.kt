@@ -1,7 +1,6 @@
 package io.qalipsis.api.sync
 
 import io.qalipsis.api.logging.LoggerHelper.logger
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.sync.Mutex
@@ -40,7 +39,7 @@ class Latch(var isLocked: Boolean = false) {
         }
     }
 
-    @ExperimentalCoroutinesApi
+
     suspend fun await() {
         if (isLocked) {
             log.trace("The latch $this is locked, suspending the coroutine.")

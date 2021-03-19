@@ -7,7 +7,6 @@ import io.mockk.mockk
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import io.qalipsis.test.steps.StepTestHelper
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 internal class SingletonProxyStepTest {
 
     @Test

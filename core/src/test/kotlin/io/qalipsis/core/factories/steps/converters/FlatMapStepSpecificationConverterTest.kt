@@ -14,7 +14,6 @@ import io.qalipsis.core.factories.steps.FlatMapStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runBlockingTest
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @Suppress("UNCHECKED_CAST")
 internal class FlatMapStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<FlatMapStepSpecificationConverter>() {

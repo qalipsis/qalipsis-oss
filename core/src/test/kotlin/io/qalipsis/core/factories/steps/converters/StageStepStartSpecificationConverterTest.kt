@@ -22,7 +22,6 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 internal class StageStepStartSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<StageStepSpecificationConverter>() {
 

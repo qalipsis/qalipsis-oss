@@ -1,0 +1,11 @@
+events:
+  root: error
+  level:
+    the.first: warn
+    the.second:
+      level: info
+      other.level: debug
+    the.third.level: error
+  export:
+    slf4j:
+      enabled: true

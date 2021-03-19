@@ -1,27 +1,21 @@
 package io.qalipsis.core.factories.steps
 
 import assertk.assertThat
-import assertk.assertions.hasSize
-import assertk.assertions.isBetween
-import assertk.assertions.isEqualTo
-import assertk.assertions.isGreaterThan
-import assertk.assertions.isGreaterThanOrEqualTo
-import assertk.assertions.isLessThanOrEqualTo
+import assertk.assertions.*
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runBlockingTest
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Duration
 
-@ExperimentalCoroutinesApi
 internal class CollectionStepTest {
 
     @Test
@@ -43,7 +37,7 @@ internal class CollectionStepTest {
                 outputChannel = output)
             this.launch {
                 step.execute(ctx)
-                // Clear the mock to ensure that any potential call is performed before the end of the step execution.
+                // Clears the mock to ensure that no call can be found after the execution scope was left.
                 clearMocks(output)
                 counter.decrement()
             }
@@ -80,7 +74,7 @@ internal class CollectionStepTest {
                 outputChannel = output)
             this.launch {
                 step.execute(ctx)
-                // Clear the mock to ensure that any potential call is performed before the end of the step execution.
+                // Clears the mock to ensure that no call can be found after the execution scope was left.
                 clearMocks(output)
                 counter.decrement()
             }
@@ -105,23 +99,26 @@ internal class CollectionStepTest {
         val step =
             CollectionStep<String>("", timeout = Duration.ofMillis(600), batchSize = batchSize, coroutineScope = this)
         step.start(relaxedMockk())
-        val count = 1020
+        val count = 1030 // Should not be a multiple of batchSize.
         val counter = SuspendedCountLatch(count.toLong())
         val batchCaptor = mutableListOf<Pair<String, List<String>>>()
 
         // when
-        repeat(count) { index ->
-            delay((Math.random() * 10 + 5).toLong()) // Random delay between 5 and 15 ms.
-            val output = relaxedMockk<SendChannel<List<String>?>> {
-                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg()) }
-            }
-            val ctx = StepTestHelper.createStepContext<String, List<String>>(minionId = "$index", input = "$index",
-                outputChannel = output)
-            this.launch {
-                step.execute(ctx)
-                // Clear the mock to ensure that any potential call is performed before the end of the step execution.
-                clearMocks(output)
-                counter.decrement()
+        launch {
+            delay(100)
+            repeat(count) { index ->
+                delay((Math.random() * 10 + 5).toLong()) // Random delay between 5 and 15 ms.
+                val output = relaxedMockk<SendChannel<List<String>?>> {
+                    coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg()) }
+                }
+                val ctx = StepTestHelper.createStepContext<String, List<String>>(minionId = "$index", input = "$index",
+                    outputChannel = output)
+                this.launch {
+                    step.execute(ctx)
+                    // Clears the mock to ensure that no call can be found after the execution scope was left.
+                    clearMocks(output)
+                    counter.decrement()
+                }
             }
         }
 

@@ -2,13 +2,7 @@ package io.qalipsis.core.factories.steps
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.containsExactlyInAnyOrder
-import assertk.assertions.hasSize
-import assertk.assertions.index
-import assertk.assertions.isEmpty
-import assertk.assertions.isSameAs
-import assertk.assertions.isTrue
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -21,7 +15,6 @@ import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -29,7 +22,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
-@ExperimentalCoroutinesApi
+
 @WithMockk
 internal class StageStepTest {
 

@@ -7,7 +7,6 @@ import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepExecutor
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import java.time.Duration
@@ -17,7 +16,6 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 internal class IterativeStepDecorator<I, O>(
     private val iterations: Long = 1,
     delay: Duration = Duration.ZERO,

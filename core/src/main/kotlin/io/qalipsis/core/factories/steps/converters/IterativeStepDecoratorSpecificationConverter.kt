@@ -4,7 +4,6 @@ import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.*
 import io.qalipsis.core.factories.steps.IterativeStepDecorator
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.time.Duration
 
 /**
@@ -12,7 +11,6 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @StepConverter
 internal class IterativeStepDecoratorSpecificationConverter :
     StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {

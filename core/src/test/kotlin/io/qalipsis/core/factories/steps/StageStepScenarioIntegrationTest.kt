@@ -27,16 +27,15 @@ internal class StageStepScenarioIntegrationTest {
         val exitCode = QalipsisTestRunner.withScenarios("group-scenario-test").execute()
 
         assertThat(exitCode).isEqualTo(0)
-        assertThat(GroupStepScenario.capturedValues).all {
-            hasSize(GroupStepScenario.minionsNumber * 10)
+        assertThat(StageStepScenario.capturedValues).all {
+            hasSize(StageStepScenario.minionsNumber * 10)
         }
-        println(GroupStepScenario.capturedValues)
     }
 }
 
-object GroupStepScenario {
+object StageStepScenario {
 
-    val minionsNumber = 20
+    const val minionsNumber = 20
 
     private val initialCounter = AtomicInteger(1)
 
@@ -45,7 +44,7 @@ object GroupStepScenario {
     val capturedValues = concurrentList<String>()
 
     @Scenario
-    fun groupStepScenario() {
+    fun stageStepScenario() {
         scenario("group-scenario-test") {
             minionsCount = minionsNumber
             rampUp { regular(100, minionsNumber) }

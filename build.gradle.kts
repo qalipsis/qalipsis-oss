@@ -1,4 +1,7 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 
 plugins {
     idea
@@ -111,8 +114,19 @@ allprojects {
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            kotlinOptions.useIR = true
-            kotlinOptions.jvmTarget = target.majorVersion
+            kotlinOptions {
+                useIR = true
+                jvmTarget = target.majorVersion
+                freeCompilerArgs += listOf(
+                    "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                    "-Xuse-experimental=kotlinx.coroutines.ObsoleteCoroutinesApi"
+                )
+            }
+        }
+
+        val replacedPropertiesInResources = mapOf("project.version" to project.version)
+        withType<ProcessResources> {
+            filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to replacedPropertiesInResources)
         }
 
         named<Test>("test") {

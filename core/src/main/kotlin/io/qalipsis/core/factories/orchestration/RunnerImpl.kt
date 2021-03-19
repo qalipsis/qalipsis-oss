@@ -157,19 +157,19 @@ internal class RunnerImpl(
 
     private suspend fun executeSingleStep(minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>) {
         if (!ctx.isExhausted || step is ErrorProcessingStep) {
-            eventsLogger.info("step-${step.id}-started", tagsSupplier = { ctx.toEventTags() })
+            eventsLogger.info("step.execution.started", tagsSupplier = { ctx.toEventTags() })
             runningStepsGauge.incrementAndGet()
             val start = System.nanoTime()
             try {
                 @Suppress("UNCHECKED_CAST")
                 executeStep(minion, step as Step<Any?, Any?>, ctx as StepContext<Any?, Any?>)
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventsLogger.info("step-${step.id}-completed", tagsSupplier = { ctx.toEventTags() })
+                    eventsLogger.info("step.execution.complete", tagsSupplier = { ctx.toEventTags() })
                     meterRegistry.timer("step-execution", "step", step.id, "status", "completed").record(duration)
                 }
             } catch (t: Throwable) {
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventsLogger.warn("step-${step.id}-failed", t, tagsSupplier = { ctx.toEventTags() })
+                    eventsLogger.warn("step.execution.failed", t, tagsSupplier = { ctx.toEventTags() })
                     meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)
                 }
                 ctx.errors.add(StepError(t))

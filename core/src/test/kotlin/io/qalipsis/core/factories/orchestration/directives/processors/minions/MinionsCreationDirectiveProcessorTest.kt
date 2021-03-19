@@ -13,7 +13,6 @@ import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
@@ -24,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * @author Eric Jessé
  */
-@ExperimentalCoroutinesApi
 @WithMockk
 internal class MinionsCreationDirectiveProcessorTest {
 

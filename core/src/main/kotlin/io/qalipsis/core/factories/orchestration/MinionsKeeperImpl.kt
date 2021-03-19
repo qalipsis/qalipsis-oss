@@ -29,11 +29,11 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class MinionsKeeperImpl(
-        private val scenariosRegistry: ScenariosRegistry,
-        private val runner: Runner,
-        private val eventsLogger: EventsLogger,
-        private val meterRegistry: MeterRegistry,
-        private val feedbackProducer: FeedbackProducer
+    private val scenariosRegistry: ScenariosRegistry,
+    private val runner: Runner,
+    private val eventsLogger: EventsLogger,
+    private val meterRegistry: MeterRegistry,
+    private val feedbackProducer: FeedbackProducer
 ) : MinionsKeeper {
 
     private val minions: MutableMap<MinionId, MutableCollection<MinionImpl>> = ConcurrentHashMap()
@@ -61,8 +61,8 @@ internal class MinionsKeeperImpl(
                     SuspendedCountLatch(0) {
                         log.info("All the minions were executed")
                         scenario.stop(campaignId)
-                        eventsLogger.info("end-of-campaign", null, "campaignId" to campaignId,
-                                "scenarioId" to scenarioId)
+                        eventsLogger.info("minions-keeper.campaign.complete", null, Instant.now(), "campaignId" to campaignId,
+                            "scenarioId" to scenarioId)
                         feedbackProducer.publish(EndOfCampaignFeedback(campaignId))
                         minionsCountLatchesByCampaign.remove(campaignId)
                     }

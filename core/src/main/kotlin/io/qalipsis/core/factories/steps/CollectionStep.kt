@@ -6,10 +6,10 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.lang.pollFirst
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
+import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.Slot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -24,7 +24,7 @@ import java.time.Duration
 import java.util.LinkedList
 import kotlin.math.min
 
-@ExperimentalCoroutinesApi
+
 internal class CollectionStep<I>(
     id: StepId,
     private val timeout: Duration?,
@@ -50,12 +50,16 @@ internal class CollectionStep<I>(
 
         // If there is a timeout, a background coroutine with a ticker forwards the values periodically.
         timeout?.let {
+            val latch = Latch(true)
             log.debug("Starting the background coroutine to forward data on timeout")
             publicationJob = coroutineScope.launch {
+                latch.release()
                 while (running) {
                     awaitTimeoutAndForward()
                 }
             }
+            latch.await()
+            log.debug("Background coroutine to forward data on timeout was started")
         }
     }
 
@@ -68,16 +72,17 @@ internal class CollectionStep<I>(
     private suspend fun awaitTimeoutAndForward() {
         resetTicker()
         try {
-            ticker!!.receiveOrNull()
-            log.trace("Timeout is reached")
-            if (running && buffer.isNotEmpty()) {
+            val receiveOrClosed = ticker!!.receiveOrNull()
+            if (receiveOrClosed != null && running && buffer.isNotEmpty()) {
+                log.trace("Timeout is reached")
                 mutex.withLock {
+                    // Only forward the values if the ticker was not yet cancelled.
                     if (!ticker!!.isClosedForReceive) {
-                        // Only forward the values if the ticker was not yet cancelled.
+                        log.trace("Timeout is confirmed.")
                         val values = buffer.pollFirst(min(buffer.size, batchSize))
                         val context = latestContextSlot.getOrNull()
                         log.trace(
-                            "Forwarding ${values.size} records in a batch with context of minion ${context?.minionId}.")
+                            "Forwarding ${values.size} records in a batch after timeout with context of minion ${context?.minionId}.")
                         forwardValues(context, values)
                     }
                 }
@@ -108,7 +113,7 @@ internal class CollectionStep<I>(
                 log.trace("Forwarding ${buffer.size} records in a batch with context of minion ${context.minionId}.")
                 // We have to perform the forwarding in the same lock scope.
                 // Releasing the lock and acquiring it again in a coroutine would place the acquisition at the end of
-                // the queue, because the lock is fair.
+                // the queue, because the lock is fair. However, we want this operation to have the priority.
                 forwardValues(context, buffer.toList())
                 buffer.clear()
                 log.trace("Values were sent, resetting the ticker.")
@@ -117,7 +122,10 @@ internal class CollectionStep<I>(
                 ticker?.cancel()
             } else if (timeout != null) {
                 // Releases the potential last step context to let it finish its execution.
-                latestContextSlot.getOrNull()?.release()
+                latestContextSlot.getOrNull()?.also {
+                    log.trace("Releasing the context of minion ${it.minionId}.")
+                    it.release()
+                }
                 context.lock()
                 // Saves the context in case it is required for a release by timeout or close.
                 latestContextSlot.set(context)
