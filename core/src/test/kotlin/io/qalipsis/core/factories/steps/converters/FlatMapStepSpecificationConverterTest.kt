@@ -2,15 +2,18 @@ package io.qalipsis.core.factories.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import io.mockk.every
 import io.qalipsis.api.steps.FlatMapStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.FlatMapStep
+import io.qalipsis.core.factories.steps.VerificationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
@@ -74,7 +77,7 @@ internal class FlatMapStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
-            prop("id").isNotNull()
+            prop(FlatMapStep<*,*>::id).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }

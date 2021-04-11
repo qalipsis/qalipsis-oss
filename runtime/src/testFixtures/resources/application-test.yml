@@ -3,3 +3,16 @@ micronaut:
     port: ${random.port}
 
 monitoring.enabled: false
+
+logging:
+  level:
+    io.qalipsis: DEBUG
+    root: INFO
+  file:
+    path: qalipsis-test.log
+    async: false
+  events:
+    path: qalipsis-events-test.log
+    async: true
+
+campaign.name: campaign-${random.shortuuid}

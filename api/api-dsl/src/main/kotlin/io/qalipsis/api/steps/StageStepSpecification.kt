@@ -66,6 +66,7 @@ fun <OUTPUT> ScenarioSpecification.stage(
     // We actually creates a start and end boundaries, surrounding the specifications to group.
     val groupStartName = if (stageName.isBlank()) Cuid.createCuid() else stageName
     val start = StageStepStartSpecification<Unit>()
+    start.scenario = this
     start.name = groupStartName
 
     // Replace the brand new root by the start of the stage.

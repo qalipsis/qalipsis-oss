@@ -1,13 +1,6 @@
 package io.qalipsis.core.cross.directives
 
-import io.qalipsis.api.orchestration.directives.DescriptiveDirective
-import io.qalipsis.api.orchestration.directives.DirectiveKey
-import io.qalipsis.api.orchestration.directives.ListDirective
-import io.qalipsis.api.orchestration.directives.ListDirectiveReference
-import io.qalipsis.api.orchestration.directives.QueueDirective
-import io.qalipsis.api.orchestration.directives.QueueDirectiveReference
-import io.qalipsis.api.orchestration.directives.SingleUseDirective
-import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
+import io.qalipsis.api.orchestration.directives.*
 
 /**
  *

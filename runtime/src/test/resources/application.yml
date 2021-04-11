@@ -1,3 +1,5 @@
 micronaut:
   server:
     port: -1
+
+campaign.name: campaign-${random.shortuuid}

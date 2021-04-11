@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.CatchExhaustedContextStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -25,7 +24,7 @@ internal class CatchExhaustedContextStepSpecificationConverter :
         creationContext: StepCreationContext<CatchExhaustedContextStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as CatchExhaustedContextStepSpecification<O>
-        val step = CatchExhaustedContextStep(spec.name ?: Cuid.createCuid(), spec.block)
+        val step = CatchExhaustedContextStep(spec.name, spec.block)
         creationContext.createdStep(step)
     }
 

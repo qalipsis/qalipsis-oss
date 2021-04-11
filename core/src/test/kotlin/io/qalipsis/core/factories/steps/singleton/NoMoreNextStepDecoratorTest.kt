@@ -35,7 +35,7 @@ internal class NoMoreNextStepDecoratorTest {
     internal fun `should execute decorated`() = runBlockingTest {
         coEvery { decoratedStep.execute(any()) } coAnswers {
             (firstArg() as StepContext<Int, Int>).also {
-                it.output.send(it.input.receive())
+                it.send(it.receive())
             }
         }
         val step = NoMoreNextStepDecorator(decoratedStep)

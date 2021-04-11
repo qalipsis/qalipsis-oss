@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.FilterStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -24,7 +23,7 @@ internal class FilterStepSpecificationConverter :
     override suspend fun <I, O> convert(creationContext: StepCreationContext<FilterStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as FilterStepSpecification<I>
-        val step = FilterStep(spec.name ?: Cuid.createCuid(),
+        val step = FilterStep(spec.name,
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,
             spec.specification)
         creationContext.createdStep(step)

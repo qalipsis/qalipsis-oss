@@ -23,19 +23,19 @@ import java.time.Duration
 abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: StepSpecification<I, O, *>) :
     StepSpecification<I, O, AbstractPluginStepWrapper<I, O>> {
 
-    override var name: StepName?
+    override var name: StepName
         get() = wrappedStepSpec.name
         set(value) {
             wrappedStepSpec.name = value
         }
 
-    override var scenario: StepSpecificationRegistry?
+    override var scenario: StepSpecificationRegistry
         get() = wrappedStepSpec.scenario
         set(value) {
             wrappedStepSpec.scenario = value
         }
 
-    override var directedAcyclicGraphId: DirectedAcyclicGraphId?
+    override var directedAcyclicGraphId: DirectedAcyclicGraphId
         get() = wrappedStepSpec.directedAcyclicGraphId
         set(value) {
             wrappedStepSpec.directedAcyclicGraphId = value
@@ -59,6 +59,8 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
     override fun add(step: StepSpecification<*, *, *>) {
         wrappedStepSpec.add(step)
     }
+
+    override var reporting: StepReportingSpecification = wrappedStepSpec.reporting
 
     override fun split(block: AbstractPluginStepWrapper<I, O>.() -> Unit) {
         throw InvalidSpecificationException(

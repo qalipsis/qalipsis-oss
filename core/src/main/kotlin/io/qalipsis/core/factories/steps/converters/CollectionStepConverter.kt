@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.CollectionStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -25,7 +24,7 @@ internal class CollectionStepSpecificationConverter :
         creationContext: StepCreationContext<CollectionStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as CollectionStepSpecification<I>
-        val step = CollectionStep<I>(spec.name ?: Cuid.createCuid(), spec.batchTimeout,
+        val step = CollectionStep<I>(spec.name, spec.batchTimeout,
             if (spec.batchSize <= 0) Int.MAX_VALUE else spec.batchSize)
         creationContext.createdStep(step)
     }

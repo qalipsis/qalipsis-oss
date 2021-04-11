@@ -18,9 +18,9 @@ internal class MapStep<I, O>(
 ) : AbstractStep<I, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, O>) {
-        val input = context.input.receive()
+        val input = context.receive()
         val output = block(input)
-        context.output.send(output)
+        context.send(output)
     }
 
     companion object {

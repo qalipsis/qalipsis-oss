@@ -3,6 +3,7 @@ package io.qalipsis.core.factories.steps
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.steps.AbstractStep
+import io.qalipsis.core.factories.context.StepContextImpl
 
 /**
  * Step to consume data without producing anything.
@@ -14,7 +15,9 @@ internal class BlackHoleStep<I, O>(
 ) : AbstractStep<I, O>(id, null) {
 
     override suspend fun execute(context: StepContext<I, O>) {
-        context.output.close()
-        context.input.receive()
+        if (context is StepContextImpl) {
+            context.output.close()
+        }
+        context.receive()
     }
 }

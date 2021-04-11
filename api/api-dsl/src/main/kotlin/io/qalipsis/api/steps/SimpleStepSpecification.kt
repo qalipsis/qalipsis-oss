@@ -38,7 +38,7 @@ fun <OUTPUT> ScenarioSpecification.execute(
  */
 fun <OUTPUT> ScenarioSpecification.returns(value: OUTPUT): SimpleStepSpecification<Unit, OUTPUT> {
     val step = SimpleStepSpecification<Unit, OUTPUT> {
-        it.output.send(value)
+        it.send(value)
     }
     (this as StepSpecificationRegistry).add(step)
     return step
@@ -54,7 +54,7 @@ fun <OUTPUT> ScenarioSpecification.returns(value: OUTPUT): SimpleStepSpecificati
 fun <OUTPUT> ScenarioSpecification.returns(
         specification: suspend (context: StepContext<Unit, OUTPUT>) -> OUTPUT): SimpleStepSpecification<Unit, OUTPUT> {
     val step = SimpleStepSpecification<Unit, OUTPUT> {
-        it.output.send(specification(it))
+        it.send(specification(it))
     }
     (this as StepSpecificationRegistry).add(step)
     return step

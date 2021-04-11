@@ -3,31 +3,34 @@ package io.qalipsis.core.factories.steps
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.steps.Step
+import io.qalipsis.core.factories.coreStepContext
+import io.qalipsis.core.factories.orchestration.MinionImpl
 import io.qalipsis.core.factories.orchestration.RunnerImpl
 import io.qalipsis.test.assertk.prop
-import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.CleanMockkRecordedCalls
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.steps.StepTestHelper
+import io.qalipsis.test.utils.setProperty
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 
-@WithMockk
+@CleanMockkRecordedCalls
 internal class StageStepTest {
 
-    @RelaxedMockK
-    lateinit var minion: Minion
+    private val meterRegistry: MeterRegistry = relaxedMockk {
+        every { gauge(eq("minion-running-steps"), any<Iterable<Tag>>(), any<Number>()) } returnsArgument 2
+    }
 
     @Test
     internal fun `should first add a head, then a next`() {
@@ -63,13 +66,15 @@ internal class StageStepTest {
 
     @Test
     @Timeout(10)
-    internal fun `should execute all steps and forward the output`() = runBlockingTest {
+    internal fun `should execute all steps and forward the output`() = runBlocking {
+        val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
         val tailStep: Step<Int, String> = relaxedMockk {
+            every { id } returns "<tail>"
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
-                repeat(ctx.input.receive()) {
+                repeat(ctx.receive()) {
                     // Write several times to ensure that all the values are passed to the output.
-                    ctx.output.send((it + 1).toString())
+                    ctx.send((it + 1).toString())
                 }
             }
             every { next } returns emptyList()
@@ -77,12 +82,13 @@ internal class StageStepTest {
         }
 
         val headStep: Step<Double, Int> = relaxedMockk {
+            every { id } returns "<head>"
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Double, Int>>()
-                val input = ctx.input.receive().toInt()
+                val input = ctx.receive().toInt()
                 // Write twice to ensure that all the values are passed from a step to the next.
-                ctx.output.send(input)
-                ctx.output.send(input)
+                ctx.send(input)
+                ctx.send(input)
             }
             every { next } returns listOf<Step<Int, *>>(tailStep)
             every { retryPolicy } returns null
@@ -93,12 +99,10 @@ internal class StageStepTest {
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
             every { gauge(any(), any()) } returnsArgument 1
-        })
-        runner.coroutineScope = this
+        }, relaxedMockk())
+        runner.setProperty("executionScope", this)
         step.runner = runner
-
-        val ctx = StepTestHelper.createStepContext<Double, String>(input = 3.0)
-
+        val ctx = coreStepContext<Double, String>(input = 3.0)
         val results = mutableListOf<String>()
 
         step.execute(minion, ctx)
@@ -107,7 +111,7 @@ internal class StageStepTest {
         }
 
         assertTrue((ctx.output as Channel).isEmpty)
-        assertFalse((ctx.output as Channel).isClosedForReceive)
+        assertFalse(ctx.output.isClosedForReceive)
 
         assertThat(results).all {
             hasSize(6)
@@ -117,12 +121,13 @@ internal class StageStepTest {
 
     @Test
     @Timeout(3)
-    internal fun `should mark the context as exhausted when a wrapped step is in error`() = runBlockingTest {
+    internal fun `should mark the context as exhausted when a wrapped step is in error`() = runBlocking {
+        val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
         val exception = RuntimeException("This is an error")
         val secondStep: Step<Int, String> = relaxedMockk {
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
-                ctx.input.receive()
+                ctx.receive()
                 throw exception
             }
             every { next } returns listOf(relaxedMockk {
@@ -140,15 +145,15 @@ internal class StageStepTest {
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
             every { gauge(any(), any()) } returnsArgument 1
-        })
-        runner.coroutineScope = this
+        }, relaxedMockk())
+        runner.setProperty("executionScope", this)
         step.runner = runner
 
-        val ctx = StepTestHelper.createStepContext<Int, String>(input = 3)
+        val ctx = coreStepContext<Int, String>(input = 3)
         step.execute(minion, ctx)
 
         assertTrue((ctx.output as Channel).isEmpty)
-        assertFalse((ctx.output as Channel).isClosedForReceive)
+        assertFalse(ctx.output.isClosedForReceive)
         assertThat(ctx).all {
             prop(StepContext<Int, String>::isExhausted).isTrue()
             prop(StepContext<Int, String>::errors).all {

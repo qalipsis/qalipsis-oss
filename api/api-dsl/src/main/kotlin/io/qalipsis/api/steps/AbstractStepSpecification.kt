@@ -5,6 +5,7 @@ import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import java.time.Duration
+import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 
@@ -20,27 +21,26 @@ import javax.validation.constraints.Positive
 abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPUT, SELF>> :
     ConfigurableStepSpecification<INPUT, OUTPUT, SELF> {
 
-    override var name: StepName? = null
-        set(value) {
-            field = value
-            // When the name is muted after the step was added to the scenario, the step has to be registered
-            // on the scenario once again.
-            scenario?.register(this)
-        }
+    override var name: StepName = ""
 
-    override var scenario: @NotNull StepSpecificationRegistry? = null
+    @field:NotNull
+    override lateinit var scenario: StepSpecificationRegistry
 
-    override var directedAcyclicGraphId: @NotNull DirectedAcyclicGraphId? = null
+    @field:NotBlank
+    override var directedAcyclicGraphId: DirectedAcyclicGraphId = ""
 
     override var timeout: Duration? = null
 
-    override var iterations: @Positive Long = 1
+    @field:Positive
+    override var iterations: Long = 1
 
     override var iterationPeriods: Duration = Duration.ZERO
 
     override var retryPolicy: RetryPolicy? = null
 
     override val nextSteps = mutableListOf<StepSpecification<*, *, *>>()
+
+    override var reporting = StepReportingSpecification()
 
     /**
      * Defines the timeout of the step execution on a single context, in milliseconds.
@@ -63,6 +63,10 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
 
     override fun add(step: StepSpecification<*, *, *>) {
         nextSteps.add(step)
-        scenario!!.registerNext(this, step)
+        scenario.registerNext(this, step)
+    }
+
+    override fun report(specification: StepReportingSpecification.() -> Unit) {
+        reporting.specification()
     }
 }

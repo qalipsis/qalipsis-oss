@@ -1,12 +1,7 @@
 package io.qalipsis.test.mockk
 
-import io.mockk.MockKVerificationScope
-import io.mockk.clearAllMocks
-import io.mockk.coVerify
+import io.mockk.*
 import io.mockk.junit5.MockKExtension
-import io.mockk.mockk
-import io.mockk.unmockkAll
-import io.mockk.verify
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtendWith

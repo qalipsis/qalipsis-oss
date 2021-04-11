@@ -21,7 +21,7 @@ internal class PaceStep<I>(
     private val nextExecutions = ConcurrentHashMap<MinionId, NextExecution>()
 
     override suspend fun execute(context: StepContext<I, I>) {
-        val input = context.input.receive()
+        val input = context.receive()
         val nextExecution = nextExecutions[context.minionId] ?: NextExecution(specification(0))
         val waitingDelay = (nextExecution.timestampNanos - System.nanoTime()) / 1_000_000
         if (waitingDelay > 0) {
@@ -29,7 +29,7 @@ internal class PaceStep<I>(
             delay(waitingDelay)
         }
         nextExecutions[context.minionId] = NextExecution(specification(nextExecution.periodMs))
-        context.output.send(input)
+        context.send(input)
     }
 
     private data class NextExecution(val periodMs: Long = 0,

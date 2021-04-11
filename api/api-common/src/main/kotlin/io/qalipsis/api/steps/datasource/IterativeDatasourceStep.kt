@@ -21,10 +21,10 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 class IterativeDatasourceStep<R, T, O>(
-        id: StepId,
-        private val reader: DatasourceIterativeReader<R>,
-        private val processor: DatasourceObjectProcessor<R, T>,
-        private val converter: DatasourceObjectConverter<T, O>
+    id: StepId,
+    private val reader: DatasourceIterativeReader<R>,
+    private val processor: DatasourceObjectProcessor<R, T>,
+    private val converter: DatasourceObjectConverter<T, O>
 ) : AbstractStep<Unit, O>(id, null) {
 
     override suspend fun start(context: StepStartStopContext) {
@@ -46,9 +46,9 @@ class IterativeDatasourceStep<R, T, O>(
             try {
                 val value = processor.process(rowIndex, reader.next())
                 log.trace("Received one record")
-                converter.supply(rowIndex, value, context.output)
+                converter.supply(rowIndex, value, context)
             } catch (e: Exception) {
-                context.errors.add(StepError(DatasourceException(rowIndex.get() - 1, e.message)))
+                context.addError(StepError(DatasourceException(rowIndex.get() - 1, e.message)))
             }
         }
 

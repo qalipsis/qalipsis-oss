@@ -1,6 +1,7 @@
 package io.qalipsis.core.cross.feedbacks
 
 import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.orchestration.feedbacks.Feedback
 
 /**
@@ -9,5 +10,6 @@ import io.qalipsis.api.orchestration.feedbacks.Feedback
  * @author Eric Jessé
  */
 internal data class EndOfCampaignFeedback(
-    val campaignId: CampaignId
+    val campaignId: CampaignId,
+    val scenarioId: ScenarioId
 ) : Feedback()

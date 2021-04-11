@@ -2,10 +2,12 @@ package io.qalipsis.core.factories.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
@@ -13,13 +15,12 @@ import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.UnshelveStepSpecification
 import io.qalipsis.core.factories.steps.SingularUnshelveStep
 import io.qalipsis.core.factories.steps.UnshelveStep
+import io.qalipsis.core.factories.steps.VerificationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.test.runBlockingTest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 /**
@@ -78,7 +79,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(UnshelveStep::class).all {
-            prop("id").isNotNull()
+            prop(UnshelveStep<*>::id).isEmpty()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("names").isSameAs(keys)
             prop("delete").isEqualTo(false)
@@ -100,7 +101,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SingularUnshelveStep::class).all {
-            prop("id").isNotNull()
+            prop(SingularUnshelveStep<*,*>::id).isEmpty()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("name").isEqualTo("value-1")
             prop("delete").isEqualTo(true)

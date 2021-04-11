@@ -4,6 +4,7 @@ import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.javaField
 
 
 fun Any.setProperty(propertyName: String, value: Any?) {
@@ -11,6 +12,13 @@ fun Any.setProperty(propertyName: String, value: Any?) {
     if (property is KMutableProperty<*>) {
         property.isAccessible = true
         property.setter.call(this, value)
+    } else if (property is KProperty<*>) {
+        property.javaField!!.also {
+            it.isAccessible = true
+            it.set(this, value)
+        }
+    } else {
+        throw RuntimeException("The property $propertyName could not be found")
     }
 }
 

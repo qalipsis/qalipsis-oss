@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.ConfigurationProperties
 import io.qalipsis.api.events.EventLevel
 import java.util.Properties
 
+
 /**
  * Configuration of the events logging.
  *

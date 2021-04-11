@@ -8,15 +8,12 @@ import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.steps.AbstractStep
+import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import io.qalipsis.core.factories.steps.MinionsKeeperAware
 import io.qalipsis.core.factories.steps.RunnerAware
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 
 /**
  * Step forcing the execution of next step after a record was received from [topic].
@@ -62,7 +59,7 @@ internal class TopicDataPushStep<I>(
                     val valueFromTopic = topicSubscription.pollValue()
                     if (filter(valueFromTopic)) {
                         val input = Channel<I>(1)
-                        val ctx = StepContext<I, I>(
+                        val ctx = StepContextImpl<I, I>(
                             input = input,
                             campaignId = context.campaignId,
                             scenarioId = context.scenarioId,

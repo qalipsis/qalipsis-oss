@@ -20,7 +20,7 @@ abstract class FlowDatasourceStep<O>(
 ) : AbstractStep<Unit, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<Unit, O>) {
-        dataSupplier().collect { value -> context.output.send(value) }
+        dataSupplier().collect { value -> context.send(value) }
         context.isCompleted = true
     }
 }

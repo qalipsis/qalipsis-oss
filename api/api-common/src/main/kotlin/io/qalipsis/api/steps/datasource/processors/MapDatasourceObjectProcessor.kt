@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 class MapDatasourceObjectProcessor(
-        private val conversionsRules: Map<String, ((Any?) -> Any?)?>
+    private val conversionsRules: Map<String, ((Any?) -> Any?)?>
 ) : DatasourceObjectProcessor<Map<String, Any?>, Map<String, Any?>> {
 
     override fun process(offset: AtomicLong, readObject: Map<String, Any?>): Map<String, Any?> {

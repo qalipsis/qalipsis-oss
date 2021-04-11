@@ -17,9 +17,9 @@ internal class OnEachStep<I>(
 ) : AbstractStep<I, I>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, I>) {
-        val input = context.input.receive()
+        val input = context.receive()
         statement(input)
-        context.output.send(input)
+        context.send(input)
     }
 
 }

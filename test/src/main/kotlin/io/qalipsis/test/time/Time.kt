@@ -95,7 +95,7 @@ object QalipsisTimeAssertions {
     }
 }
 
-fun measureTime(block: (() -> Unit)): Duration {
+inline fun measureTime(block: (() -> Unit)): Duration {
     val start = System.currentTimeMillis()
     try {
         block()

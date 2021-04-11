@@ -24,8 +24,8 @@ interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<
         (this as SELF).specification()
 
         // If the name was changed, the step has to be declared again in the scenario with its new name.
-        if (name != nameBeforeConfiguration && scenario != null) {
-            scenario!!.register(this)
+        if (name != nameBeforeConfiguration) {
+            scenario.register(this)
         }
         return this
     }
@@ -44,4 +44,9 @@ interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<
      * Defines how many times and how often the step execution has to be repeated.
      */
     fun iterate(iterations: Long, period: Duration = Duration.ZERO)
+
+    /**
+     * Configures the reporting for the step.
+     */
+    fun report(specification: StepReportingSpecification.() -> Unit)
 }

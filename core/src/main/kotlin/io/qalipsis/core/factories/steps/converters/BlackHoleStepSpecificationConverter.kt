@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.BlackHoleStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -23,7 +22,7 @@ internal class BlackHoleStepSpecificationConverter : StepSpecificationConverter<
     override suspend fun <I, O> convert(creationContext: StepCreationContext<BlackHoleStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as BlackHoleStepSpecification<I>
-        val step = BlackHoleStep<I, O>(spec.name ?: Cuid.createCuid())
+        val step = BlackHoleStep<I, O>(spec.name)
         creationContext.createdStep(step)
     }
 

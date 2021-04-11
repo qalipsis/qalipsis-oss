@@ -2,9 +2,7 @@ package io.qalipsis.api.steps
 
 import io.mockk.every
 import io.qalipsis.test.mockk.relaxedMockk
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotSame
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 /**

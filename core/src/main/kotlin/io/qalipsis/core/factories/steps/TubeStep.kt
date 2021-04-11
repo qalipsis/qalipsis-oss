@@ -12,7 +12,7 @@ import io.qalipsis.api.steps.AbstractStep
 internal class TubeStep<I>(id: StepId) : AbstractStep<I, I>(id, null) {
 
     override suspend fun execute(context: StepContext<I, I>) {
-        context.output.send(context.input.receive())
+        context.send(context.receive())
     }
 
 }

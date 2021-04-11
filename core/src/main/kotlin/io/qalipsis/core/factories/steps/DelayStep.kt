@@ -19,7 +19,7 @@ internal class DelayStep<I>(
 
     override suspend fun execute(context: StepContext<I, I>) {
         delay(delay.toMillis())
-        context.output.send(context.input.receive())
+        context.send(context.receive())
     }
 
     companion object {

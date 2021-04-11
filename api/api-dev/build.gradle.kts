@@ -34,6 +34,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion")
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micronaut:micronaut-runtime")
+    implementation("io.micronaut.micrometer:micronaut-micrometer-core")
 
     compileOnly("org.slf4j:slf4j-api")
 

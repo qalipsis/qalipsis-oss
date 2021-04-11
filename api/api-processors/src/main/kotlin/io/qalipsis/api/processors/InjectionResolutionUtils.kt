@@ -23,7 +23,6 @@ internal class InjectionResolutionUtils(private val typeUtils: TypeUtils) {
         } else {
             "${typeUtils.erase(paramType)}.class"
         }
-        println("Default value: '${property.orElse}' for name '${property.name}' is blank: ${property.orElse.isNullOrBlank()}")
         return if (property.orElse.isBlank() || isOptional) {
             if (isOptional) {
                 "($paramType) applicationContext.getProperty(\"${property.name}\", ${propertyTypeName})"

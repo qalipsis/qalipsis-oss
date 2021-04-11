@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
@@ -24,7 +23,7 @@ internal class ValidationStepSpecificationConverter :
     override suspend fun <I, O> convert(creationContext: StepCreationContext<ValidationStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as ValidationStepSpecification<I>
-        val step = ValidationStep(spec.name ?: Cuid.createCuid(),
+        val step = ValidationStep(spec.name,
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,
             spec.specification)
         creationContext.createdStep(step)

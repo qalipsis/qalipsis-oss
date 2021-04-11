@@ -3,7 +3,12 @@ package io.qalipsis.api.orchestration.factories
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.sync.SuspendedCountLatch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlin.coroutines.CoroutineContext
 
 /**
  *
@@ -15,6 +20,8 @@ interface Minion {
     val id: MinionId
 
     val campaignId: CampaignId
+
+    val scenarioId: ScenarioId
 
     val dagId: DirectedAcyclicGraphId
 
@@ -36,11 +43,15 @@ interface Minion {
     suspend fun cancel()
 
     /**
-     * Attaches a coroutine to the corresponding minion in order to monitor the activity state.
-     * When the job is completed, the counter is decreased and the completion flag is closed to release the
-     * [join] function.
+     * Launches a coroutine to be attached to the minion. Calls to [join] are suspended until all the [Job]s
+     * are completed, either successfully or not.
      */
-    suspend fun attach(job: Job)
+    suspend fun launch(
+        scope: CoroutineScope? = GlobalScope,
+        context: CoroutineContext? = scope?.coroutineContext,
+        countLatch: SuspendedCountLatch? = null,
+        block: suspend CoroutineScope.() -> Unit
+    ): Job?
 
     /**
      * Returns `true` of the start flag was released.

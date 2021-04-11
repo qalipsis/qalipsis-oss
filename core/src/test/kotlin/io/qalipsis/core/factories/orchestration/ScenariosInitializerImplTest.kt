@@ -2,22 +2,11 @@ package io.qalipsis.core.factories.orchestration
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.hasSize
-import assertk.assertions.index
-import assertk.assertions.isEqualTo
-import assertk.assertions.isFalse
-import assertk.assertions.isSameAs
-import assertk.assertions.isTrue
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.micronaut.context.ApplicationContext
-import io.mockk.coEvery
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.mockkObject
-import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.unmockkObject
-import io.mockk.verifyOrder
+import io.mockk.impl.annotations.SpyK
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
@@ -28,28 +17,18 @@ import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.steps.Step
-import io.qalipsis.api.steps.StepCreationContext
-import io.qalipsis.api.steps.StepCreationContextImpl
-import io.qalipsis.api.steps.StepSpecification
-import io.qalipsis.api.steps.StepSpecificationConverter
-import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.api.steps.*
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.qalipsis.core.factories.testScenario
 import io.qalipsis.core.heads.campaigns.HeadDirectedAcyclicGraph
-import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.coVerifyExactly
-import io.qalipsis.test.mockk.coVerifyNever
-import io.qalipsis.test.mockk.coVerifyOnce
-import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
+import io.qalipsis.test.lang.TestIdGenerator
+import io.qalipsis.test.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.atomic.AtomicInteger
@@ -91,15 +70,18 @@ internal class ScenariosInitializerImplTest {
     @RelaxedMockK
     lateinit var applicationContext: ApplicationContext
 
-    lateinit var scenariosInitializer: ScenariosInitializerImpl
+    @SpyK
+    var idGenerator = TestIdGenerator
 
-    @BeforeEach
-    internal fun setUp() {
-        scenariosInitializer = spyk(
-            ScenariosInitializerImpl(applicationContext, scenariosRegistry, scenarioSpecificationsKeeper,
+    val scenariosInitializer: ScenariosInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
+        spyk(
+            ScenariosInitializerImpl(
+                applicationContext, scenariosRegistry, scenarioSpecificationsKeeper,
                 feedbackProducer,
-                listOf(stepConverter1, stepConverter2), runner, minionsKeeper,
-                listOf(stepDecorator1, stepDecorator2)))
+                listOf(stepConverter1, stepConverter2), runner, minionsKeeper, idGenerator,
+                listOf(stepDecorator1, stepDecorator2)
+            )
+        )
     }
 
     @AfterEach
@@ -122,8 +104,8 @@ internal class ScenariosInitializerImplTest {
 
         // then
         coVerifyOnce {
-            (stepDecorator1).decorate(context)
-            (stepDecorator2).decorate(context)
+            (stepDecorator1).decorate(refEq(context))
+            (stepDecorator2).decorate(refEq(context))
         }
     }
 
@@ -140,8 +122,8 @@ internal class ScenariosInitializerImplTest {
 
         // then
         coVerifyNever {
-            (stepDecorator1).decorate(context)
-            (stepDecorator2).decorate(context)
+            (stepDecorator1).decorate(refEq(context))
+            (stepDecorator2).decorate(refEq(context))
         }
     }
 
@@ -159,9 +141,10 @@ internal class ScenariosInitializerImplTest {
 
         // then
         coVerifyOnce {
-            (stepConverter1).support(stepSpecification)
-            (stepConverter2).support(stepSpecification)
-            (stepConverter2).convert<Any?, Any?>(context)
+            (stepConverter1).support(refEq(stepSpecification))
+            (stepConverter2).support(refEq(stepSpecification))
+            scenariosInitializer.addStepNameIfRequired(refEq(stepSpecification))
+            (stepConverter2).convert<Any?, Any?>(refEq(context))
         }
         coVerifyNever {
             (stepConverter1).convert<Any?, Any?>(context)
@@ -181,12 +164,12 @@ internal class ScenariosInitializerImplTest {
 
         // then
         coVerifyOnce {
-            (stepConverter1).support(stepSpecification)
-            (stepConverter2).support(stepSpecification)
+            (stepConverter1).support(refEq(stepSpecification))
+            (stepConverter2).support(refEq(stepSpecification))
         }
         coVerifyNever {
-            (stepConverter2).convert<Any?, Any?>(context)
-            (stepConverter1).convert<Any?, Any?>(context)
+            (stepConverter2).convert<Any?, Any?>(refEq(context))
+            (stepConverter1).convert<Any?, Any?>(refEq(context))
         }
     }
 
@@ -217,9 +200,11 @@ internal class ScenariosInitializerImplTest {
         coEvery { scenariosInitializer.decorateStep(any()) } answers {}
 
         // when
-        scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
+        scenariosInitializer.convertSteps(
+            scenarioSpecification, scenario, null,
             // Only the root steps are passed.
-            listOf(stepSpecification1, stepSpecification3))
+            listOf(stepSpecification1, stepSpecification3)
+        )
 
         // then
         // Only two dags were created.
@@ -260,16 +245,18 @@ internal class ScenariosInitializerImplTest {
             val context: StepCreationContext<*> = firstArg()
             if (context.stepSpecification.name != "step-3") {
                 context.createdStep(relaxedMockk {
-                    every { id } returns context.stepSpecification.name!!
+                    every { id } returns context.stepSpecification.name
                 })
             }
         }
         coEvery { scenariosInitializer.decorateStep(any()) } answers {}
 
         // when
-        scenariosInitializer.convertSteps(scenarioSpecification, scenario, null,
+        scenariosInitializer.convertSteps(
+            scenarioSpecification, scenario, null,
             // Only the root steps are passed.
-            listOf(stepSpecification1, stepSpecification3))
+            listOf(stepSpecification1, stepSpecification3)
+        )
 
         // then
         assertEquals(1, scenario["dag-1"]!!.stepsCount)
@@ -307,8 +294,10 @@ internal class ScenariosInitializerImplTest {
         }
 
         coVerifyOnce {
-            scenariosInitializer.convertSteps(refEq(scenarioSpecification), refEq(scenario), isNull(),
-                refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>))
+            scenariosInitializer.convertSteps(
+                refEq(scenarioSpecification), refEq(scenario), isNull(),
+                refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>)
+            )
         }
     }
 
@@ -473,5 +462,50 @@ internal class ScenariosInitializerImplTest {
         assertThrows<InvalidSpecificationException> {
             scenariosInitializer.convertScenario("my-scenario", scenarioSpecification)
         }
+    }
+
+    @Test
+    internal fun `should add step name when empty`() {
+        // given
+        val stepSpecification: StepSpecification<Any?, Any?, *> = TubeStepSpecification<Any?>().also {
+            it.scenario = relaxedMockk()
+            it.name = ""
+        }
+
+        // when
+        scenariosInitializer.addStepNameIfRequired(stepSpecification)
+
+        // then
+        assertThat(stepSpecification.name.trim()).isNotEmpty()
+    }
+
+    @Test
+    internal fun `should add step name when blank`() {
+        // given
+        val stepSpecification: StepSpecification<Any?, Any?, *> = TubeStepSpecification<Any?>().also {
+            it.scenario = relaxedMockk()
+            it.name = "     "
+        }
+
+        // when
+        scenariosInitializer.addStepNameIfRequired(stepSpecification)
+
+        // then
+        assertThat(stepSpecification.name.trim()).isNotEmpty()
+    }
+
+    @Test
+    internal fun `should not overwrite step name when not blank`() {
+        // given
+        val stepSpecification: StepSpecification<Any?, Any?, *> = TubeStepSpecification<Any?>().also {
+            it.scenario = relaxedMockk()
+            it.name = "   a step for my name   "
+        }
+
+        // when
+        scenariosInitializer.addStepNameIfRequired(stepSpecification)
+
+        // then
+        assertThat(stepSpecification.name).isEqualTo("   a step for my name   ")
     }
 }

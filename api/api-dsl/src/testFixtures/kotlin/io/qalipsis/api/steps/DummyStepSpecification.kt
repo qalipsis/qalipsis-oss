@@ -13,7 +13,14 @@ import kotlin.reflect.KClass
  */
 class InputTypeCaptor<I : Any, O : Any>(
     val inputClass: KClass<I>
-) : AbstractStepSpecification<I, O, InputTypeCaptor<I, O>>()
+) : AbstractStepSpecification<I, O, InputTypeCaptor<I, O>>(){
+
+    override fun add(step: StepSpecification<*, *, *>) {
+        step.scenario = this.scenario
+        super.add(step)
+    }
+
+}
 
 /**
  * Creates a [InputTypeCaptor] having [outputClass] as output type.
@@ -37,6 +44,11 @@ class DummyStepSpecification : AbstractStepSpecification<Unit, Int, DummyStepSpe
 
     init {
         scenario = scenario("my-scenario") as StepSpecificationRegistry
+    }
+
+    override fun add(step: StepSpecification<*, *, *>) {
+        step.scenario = this.scenario
+        super.add(step)
     }
 }
 

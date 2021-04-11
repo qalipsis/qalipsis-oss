@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.PaceStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -24,7 +23,7 @@ internal class PaceStepSpecificationConverter :
     override suspend fun <I, O> convert(creationContext: StepCreationContext<PaceStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as PaceStepSpecification<I>
-        val step = PaceStep<I>(spec.name ?: Cuid.createCuid(), spec.specification)
+        val step = PaceStep<I>(spec.name, spec.specification)
         creationContext.createdStep(step)
     }
 

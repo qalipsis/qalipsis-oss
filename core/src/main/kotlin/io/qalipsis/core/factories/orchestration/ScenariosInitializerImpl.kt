@@ -7,6 +7,7 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.factories.StartupFactoryComponent
+import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
@@ -17,12 +18,9 @@ import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.steps.SingletonStepSpecification
-import io.qalipsis.api.steps.Step
-import io.qalipsis.api.steps.StepCreationContextImpl
-import io.qalipsis.api.steps.StepSpecification
-import io.qalipsis.api.steps.StepSpecificationConverter
-import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.api.steps.*
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackDirectedAcyclicGraph
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
@@ -52,6 +50,7 @@ internal class ScenariosInitializerImpl(
     private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
     private val runner: Runner,
     private val minionsKeeper: MinionsKeeper,
+    private val idGenerator: IdGenerator,
     stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
 ) : ScenariosInitializer, StartupFactoryComponent {
 
@@ -116,25 +115,34 @@ internal class ScenariosInitializerImpl(
     }
 
     @VisibleForTest
-    internal fun convertScenario(scenarioId: ScenarioId,
-                                 scenarioSpecification: ConfiguredScenarioSpecification): Scenario {
+    @LogInputAndOutput
+    internal fun convertScenario(
+        scenarioId: ScenarioId,
+        scenarioSpecification: ConfiguredScenarioSpecification
+    ): Scenario {
         if (scenarioSpecification.dagsUnderLoad.isEmpty()) {
             throw InvalidSpecificationException(
-                "There is no main branch defined in scenario $scenarioId, please prefix at least one root branch with 'start()'")
+                "There is no main branch defined in scenario $scenarioId, please prefix at least one root branch with 'start()'"
+            )
         }
 
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
-            "The scenario $scenarioId requires a ramp-up strategy")
+            "The scenario $scenarioId requires a ramp-up strategy"
+        )
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario =
-            ScenarioImpl(scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
-                minionsCount = scenarioSpecification.minionsCount, feedbackProducer)
+            ScenarioImpl(
+                scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
+                minionsCount = scenarioSpecification.minionsCount, feedbackProducer
+            )
         scenariosRegistry.add(scenario)
 
         runBlocking {
             @Suppress("UNCHECKED_CAST")
-            convertSteps(scenarioSpecification, scenario, null,
-                scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>)
+            convertSteps(
+                scenarioSpecification, scenario, null,
+                scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>
+            )
         }
         require(scenario.dags.size >= scenarioSpecification.dagsCount) {
             "Not all the DAGs were created, only ${
@@ -145,10 +153,13 @@ internal class ScenariosInitializerImpl(
     }
 
     @VisibleForTest
-    internal suspend fun convertSteps(scenarioSpecification: ConfiguredScenarioSpecification,
-                                      scenario: Scenario,
-                                      parentStep: Step<*, *>?,
-                                      stepsSpecifications: List<StepSpecification<Any?, Any?, *>>) {
+    @LogInput
+    internal suspend fun convertSteps(
+        scenarioSpecification: ConfiguredScenarioSpecification,
+        scenario: Scenario,
+        parentStep: Step<*, *>?,
+        stepsSpecifications: List<StepSpecification<Any?, Any?, *>>
+    ) {
 
         stepsSpecifications.map { stepSpecification ->
             GlobalScope.launch {
@@ -163,12 +174,14 @@ internal class ScenariosInitializerImpl(
         scenarioSpecification: ConfiguredScenarioSpecification,
         scenario: Scenario,
         parentStep: Step<*, *>?,
-        stepSpecification: StepSpecification<Any?, Any?, *>) {
+        stepSpecification: StepSpecification<Any?, Any?, *>
+    ) {
         log.debug(
-            "Creating step ${stepSpecification.name ?: "<undefined>"} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<isRoot>"} in DAG ${stepSpecification.directedAcyclicGraphId}")
+            "Creating step ${stepSpecification.name} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<isRoot>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
+        )
 
         // Get or create the DAG to attach the step.
-        val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId!!) { dagId ->
+        val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId) { dagId ->
             DirectedAcyclicGraph(
                 dagId, scenario,
                 isRoot = (parentStep == null),
@@ -193,8 +206,10 @@ internal class ScenariosInitializerImpl(
             }
 
             @Suppress("UNCHECKED_CAST")
-            convertSteps(scenarioSpecification, scenario, step,
-                stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>)
+            convertSteps(
+                scenarioSpecification, scenario, step,
+                stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>
+            )
         }
     }
 
@@ -216,9 +231,20 @@ internal class ScenariosInitializerImpl(
         stepSpecificationConverters
             .firstOrNull { it.support(context.stepSpecification) }
             ?.let { converter ->
+                addStepNameIfRequired(context.stepSpecification)
                 @Suppress("UNCHECKED_CAST")
                 (converter as StepSpecificationConverter<StepSpecification<Any?, Any?, *>>).convert<Any?, Any?>(context)
             }
+    }
+
+    /**
+     * Adds a random name to the step if none was specified.
+     */
+    @VisibleForTest
+    fun addStepNameIfRequired(spec: StepSpecification<Any?, Any?, *>) {
+        if (spec.name.isBlank()) {
+            spec.name = idGenerator.short()
+        }
     }
 
     @VisibleForTest

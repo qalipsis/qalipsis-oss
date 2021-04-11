@@ -23,10 +23,10 @@ internal class ValidationStep<I>(
 ) : AbstractStep<I, I>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, I>) {
-        val input = context.input.receive()
+        val input = context.receive()
         val errors = specification(input)
-        context.errors.addAll(errors)
-        context.output.send(input)
+        errors.forEach(context::addError)
+        context.send(input)
     }
 
     companion object {

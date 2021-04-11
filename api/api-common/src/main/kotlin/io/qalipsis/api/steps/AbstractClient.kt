@@ -61,14 +61,14 @@ abstract class AbstractClient<RQ, RS, START_CTX : Any, CTX : Any, STOP_CTX : Any
      */
     @Suppress("UNCHECKED_CAST")
     open suspend fun <I, O> execute(stepContext: StepContext<I, Pair<I, O>>, clientContext: CTX,
-                               requestBuilder: suspend (I) -> RQ = { it as RQ },
-                               responseBuilder: suspend (RS) -> O = { it as O }) {
+                                    requestBuilder: suspend (I) -> RQ = { it as RQ },
+                                    responseBuilder: suspend (RS) -> O = { it as O }) {
         try {
             context.set(clientContext)
-            val input = stepContext.input.receive()
+            val input = stepContext.receive()
             request.set(requestBuilder(input))
             val response = response.get()
-            stepContext.output.send(input to responseBuilder(response))
+            stepContext.send(input to responseBuilder(response))
         } finally {
             request.clear()
             context.clear()

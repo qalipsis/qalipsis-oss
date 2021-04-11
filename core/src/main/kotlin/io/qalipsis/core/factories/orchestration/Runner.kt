@@ -5,6 +5,7 @@ import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.SuspendedCountLatch
+import kotlinx.coroutines.Job
 
 /**
  * Core component in charge of executing all the steps on all the minions.
@@ -40,5 +41,5 @@ interface Runner {
      * @param consumer action to execute on the output of the last steps of the chain, it is started asynchronously before the last step execute: the channel will provide the execution status (open or closed)
      */
     suspend fun execute(minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
-                        consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?)
+                        consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?): Job?
 }
