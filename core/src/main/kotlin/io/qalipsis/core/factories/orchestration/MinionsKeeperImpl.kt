@@ -8,9 +8,11 @@ import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.orchestration.Scenario
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
+import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.cross.feedbacks.EndOfCampaignFeedback
@@ -33,6 +35,7 @@ internal class MinionsKeeperImpl(
     private val runner: Runner,
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
+    private val campaignStateKeeper: CampaignStateKeeper,
     private val feedbackProducer: FeedbackProducer
 ) : MinionsKeeper {
 
@@ -53,25 +56,20 @@ internal class MinionsKeeperImpl(
     }
 
     @LogInput(level = Level.DEBUG)
-    override fun create(campaignId: CampaignId, scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId,
-                        minionId: MinionId) {
+    override fun create(
+        campaignId: CampaignId, scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId,
+        minionId: MinionId
+    ) {
         scenariosRegistry[scenarioId]?.let { scenario ->
             scenario[dagId]?.let { dag ->
                 val runningMinionsLatch = minionsCountLatchesByCampaign.computeIfAbsent(campaignId) {
-                    SuspendedCountLatch(0) {
-                        log.info("All the minions were executed")
-                        scenario.stop(campaignId)
-                        eventsLogger.info("minions-keeper.campaign.complete", null, Instant.now(), "campaignId" to campaignId,
-                            "scenarioId" to scenarioId)
-                        feedbackProducer.publish(EndOfCampaignFeedback(campaignId))
-                        minionsCountLatchesByCampaign.remove(campaignId)
-                    }
+                    SuspendedCountLatch(0) { onCampaignComplete(campaignId, scenario) }
                 }
 
                 log.trace("Creating minion $minionId for DAG $dagId of scenario $scenarioId")
                 // Only minions for singleton and DAGs under load are started and scheduled.
                 // The others will be used on demand.
-                val minion = MinionImpl(minionId, campaignId, dagId, true, eventsLogger, meterRegistry)
+                val minion = MinionImpl(minionId, campaignId, scenarioId, dagId, true, eventsLogger, meterRegistry)
                 when {
                     dag.isUnderLoad && !dag.isSingleton -> {
                         runningMinionsLatch.blockingIncrement()
@@ -105,10 +103,29 @@ internal class MinionsKeeperImpl(
         }
     }
 
+    /**
+     * Actions to trigger when the campaign completes.
+     */
+    private suspend fun onCampaignComplete(
+        campaignId: CampaignId,
+        scenario: Scenario
+    ) {
+        log.info("All the minions were executed for campaign $campaignId of scenario ${scenario.id}")
+        scenario.stop(campaignId)
+        eventsLogger.info(
+            "minions-keeper.campaign.complete", null, Instant.now(), "campaign" to campaignId,
+            "scenarioId" to scenario.id
+        )
+        campaignStateKeeper.complete(campaignId, scenario.id)
+        feedbackProducer.publish(EndOfCampaignFeedback(campaignId, scenario.id))
+        minionsCountLatchesByCampaign.remove(campaignId)
+    }
+
 
     @LogInput(level = Level.DEBUG)
     override suspend fun startCampaign(campaignId: CampaignId, scenarioId: ScenarioId) {
         if (scenarioId in scenariosRegistry) {
+            campaignStateKeeper.start(campaignId, scenarioId)
             scenariosRegistry[scenarioId]!!.start(campaignId)
             readySingletonsMinions[scenarioId]?.apply {
                 forEach { minion ->
@@ -124,11 +141,13 @@ internal class MinionsKeeperImpl(
     @LogInput
     override suspend fun startMinionAt(minionId: MinionId, instant: Instant) {
         minions[minionId]?.let { minionsWithId ->
-            val waitingDelay = instant.toEpochMilli() - System.currentTimeMillis()
+            val (campaignId, scenarioId) = minionsWithId.first().let { it.campaignId to it.scenarioId }
             log.trace("Starting minion $minionId")
-            val runningMinionsLatch = minionsCountLatchesByCampaign[minionsWithId.first().campaignId]!!
+            val waitingDelay = instant.toEpochMilli() - System.currentTimeMillis()
+            val runningMinionsLatch = minionsCountLatchesByCampaign[campaignId]!!
             minionsWithId.forEach { minion ->
                 minion.onComplete {
+                    campaignStateKeeper.recordCompletedMinion(campaignId, scenarioId)
                     runningMinionsLatch.decrement()
                     minionsWithId.remove(minion)
                     if (minionsWithId.isEmpty()) {
@@ -142,6 +161,9 @@ internal class MinionsKeeperImpl(
             }
             minionsWithId.forEach {
                 it.start()
+            }
+            with(minionsWithId) {
+                campaignStateKeeper.recordStartedMinion(campaignId, scenarioId, size)
             }
         }
     }

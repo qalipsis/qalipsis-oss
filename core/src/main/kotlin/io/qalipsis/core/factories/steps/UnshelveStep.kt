@@ -24,10 +24,10 @@ internal class UnshelveStep<I>(
 ) : AbstractStep<I, Pair<I, Map<String, Any?>>>(id, null) {
 
     override suspend fun execute(context: StepContext<I, Pair<I, Map<String, Any?>>>) {
-        val input = context.input.receive()
+        val input = context.receive()
         val definitions = names.map { name -> SharedStateDefinition(context.minionId, name) }
         val values = if (delete) sharedStateRegistry.remove(definitions) else sharedStateRegistry.get(definitions)
-        context.output.send(input to values)
+        context.send(input to values)
     }
 
     companion object {
@@ -53,10 +53,10 @@ internal class SingularUnshelveStep<I, O>(
 ) : AbstractStep<I, Pair<I, O?>>(id, null) {
 
     override suspend fun execute(context: StepContext<I, Pair<I, O?>>) {
-        val input = context.input.receive()
+        val input = context.receive()
         val definition = SharedStateDefinition(context.minionId, name)
         val value = if (delete) sharedStateRegistry.remove<O>(definition) else sharedStateRegistry.get<O>(definition)
-        context.output.send(input to value)
+        context.send(input to value)
     }
 
     companion object {

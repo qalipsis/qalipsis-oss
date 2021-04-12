@@ -5,6 +5,7 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.context.StepStartStopContext
+import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
@@ -22,14 +23,14 @@ import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Implementation of a [Scenario]
+ * Implementation of a [Scenario].
  */
 class ScenarioImpl(
-        override val id: ScenarioId,
-        override val rampUpStrategy: RampUpStrategy,
-        override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
-        override val minionsCount: Int = 1,
-        private val feedbackProducer: FeedbackProducer
+    override val id: ScenarioId,
+    override val rampUpStrategy: RampUpStrategy,
+    override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
+    override val minionsCount: Int = 1,
+    private val feedbackProducer: FeedbackProducer
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepId, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
@@ -47,8 +48,10 @@ class ScenarioImpl(
         return internalDags[dagId]
     }
 
-    override fun createIfAbsent(dagId: DirectedAcyclicGraphId,
-                                dagSupplier: (DirectedAcyclicGraphId) -> DirectedAcyclicGraph): DirectedAcyclicGraph {
+    override fun createIfAbsent(
+        dagId: DirectedAcyclicGraphId,
+        dagSupplier: (DirectedAcyclicGraphId) -> DirectedAcyclicGraph
+    ): DirectedAcyclicGraph {
         return internalDags.computeIfAbsent(dagId, dagSupplier)
     }
 
@@ -73,25 +76,27 @@ class ScenarioImpl(
         runBlocking {
             internalDags.values.forEach { dag ->
                 val feedback = CampaignStartedForDagFeedback(
-                        scenarioId = scenarioId,
-                        dagId = dag.id,
-                        campaignId = campaignId,
-                        status = FeedbackStatus.IN_PROGRESS
+                    scenarioId = scenarioId,
+                    dagId = dag.id,
+                    campaignId = campaignId,
+                    status = FeedbackStatus.IN_PROGRESS
                 )
                 log.trace("Sending feedback: $feedback")
                 feedbackProducer.publish(feedback)
 
-                startStepRecursively(dag.rootStep.get(), StepStartStopContext(
+                startStepRecursively(
+                    dag.rootStep.get(), StepStartStopContext(
                         campaignId = campaignId,
                         scenarioId = scenarioId,
                         dagId = dag.id
-                ))
+                    )
+                )
 
                 val completionFeedback = CampaignStartedForDagFeedback(
-                        scenarioId = scenarioId,
-                        dagId = dag.id,
-                        campaignId = campaignId,
-                        status = FeedbackStatus.COMPLETED
+                    scenarioId = scenarioId,
+                    dagId = dag.id,
+                    campaignId = campaignId,
+                    status = FeedbackStatus.COMPLETED
                 )
                 log.trace("Sending feedback: $completionFeedback")
                 feedbackProducer.publish(completionFeedback)
@@ -100,6 +105,8 @@ class ScenarioImpl(
     }
 
     private suspend fun startStepRecursively(step: Step<*, *>, context: StepStartStopContext) {
+        // The start is not surrounded by a try catch because they all have to start successfully to be able to start
+        // a campaign.
         step.start(context)
         step.next.forEach {
             startStepRecursively(it, context)
@@ -111,18 +118,22 @@ class ScenarioImpl(
         val scenarioId = this.id
         runBlocking {
             internalDags.values.map { it.id to it.rootStep.get() }.forEach {
-                stopStepRecursively(it.second, StepStartStopContext(
+                stopStepRecursively(
+                    it.second, StepStartStopContext(
                         campaignId = campaignId,
                         scenarioId = scenarioId,
                         dagId = it.first
-                ))
+                    )
+                )
             }
         }
     }
 
 
     private suspend fun stopStepRecursively(step: Step<*, *>, context: StepStartStopContext) {
-        step.stop(context)
+        tryAndLogOrNull(log) {
+            step.stop(context)
+        }
         step.next.forEach {
             stopStepRecursively(it, context)
         }
@@ -137,7 +148,9 @@ class ScenarioImpl(
     }
 
     private suspend fun destroyStepRecursively(step: Step<*, *>) {
-        step.destroy()
+        tryAndLogOrNull(log) {
+            step.destroy()
+        }
         step.next.forEach {
             destroyStepRecursively(it)
         }

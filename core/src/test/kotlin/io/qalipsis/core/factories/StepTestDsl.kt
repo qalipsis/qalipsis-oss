@@ -1,9 +1,7 @@
 package io.qalipsis.core.factories
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.mockk.every
+import io.qalipsis.api.context.*
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
 import io.qalipsis.api.orchestration.factories.Minion
@@ -11,8 +9,12 @@ import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.ErrorProcessingStep
+import io.qalipsis.api.steps.StepDecorator
+import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.ScenarioImpl
 import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
@@ -22,14 +24,55 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * @author Eric Jessé
  */
+@SuppressWarnings("kotlin:S107")
+internal fun <IN : Any?, OUT : Any?> coreStepContext(
+    input: IN? = null, outputChannel: SendChannel<OUT?> = Channel(100),
+    errors: MutableList<StepError> = mutableListOf(),
+    minionId: MinionId = "my-minion",
+    scenarioId: ScenarioId = "",
+    directedAcyclicGraphId: DirectedAcyclicGraphId = "",
+    parentStepId: StepId = "my-parent-step",
+    stepId: StepId = "my-step", stepIterationIndex: Long = 0,
+    attemptsAfterFailure: Long = 0, isExhausted: Boolean = false,
+    completed: Boolean = false
+): StepContextImpl<IN, OUT> {
+    val inputChannel = Channel<IN>(1)
+    runBlocking {
+        input?.let {
+            inputChannel.send(it)
+        }
+    }
+    return StepContextImpl(
+        inputChannel,
+        outputChannel,
+        errors,
+        "",
+        minionId,
+        scenarioId,
+        directedAcyclicGraphId,
+        parentStepId,
+        stepId,
+        "",
+        "",
+        stepIterationIndex,
+        attemptsAfterFailure,
+        System.currentTimeMillis(),
+        isExhausted,
+        completed,
+        isTail = false
+    )
+}
 
 internal fun testScenario(
-        id: ScenarioId = "my-scenario",
-        rampUpStrategy: RampUpStrategy = relaxedMockk(),
-        minionsCount: Int = 1,
-        configure: suspend Scenario.() -> Unit = {}): Scenario {
-    val scenario = ScenarioImpl(id, rampUpStrategy = rampUpStrategy, minionsCount = minionsCount,
-            feedbackProducer = relaxedMockk())
+    id: ScenarioId = "my-scenario",
+    rampUpStrategy: RampUpStrategy = relaxedMockk(),
+    minionsCount: Int = 1,
+    configure: suspend Scenario.() -> Unit = {}
+): Scenario {
+    val scenario = ScenarioImpl(
+        id, rampUpStrategy = rampUpStrategy, minionsCount = minionsCount,
+        feedbackProducer = relaxedMockk()
+    )
     runBlocking {
         scenario.configure()
     }
@@ -37,12 +80,13 @@ internal fun testScenario(
 }
 
 internal fun testDag(
-        id: DirectedAcyclicGraphId = "my-dag",
-        scenario: Scenario = testScenario(),
-        root: Boolean = false,
-        isSingleton: Boolean = false,
-        isUnderLoad: Boolean = false,
-        configure: suspend DirectedAcyclicGraph.() -> Unit = {}): DirectedAcyclicGraph {
+    id: DirectedAcyclicGraphId = "my-dag",
+    scenario: Scenario = testScenario(),
+    root: Boolean = false,
+    isSingleton: Boolean = false,
+    isUnderLoad: Boolean = false,
+    configure: suspend DirectedAcyclicGraph.() -> Unit = {}
+): DirectedAcyclicGraph {
     val dag = DirectedAcyclicGraph(id, scenario, isRoot = root, isSingleton = isSingleton, isUnderLoad = isUnderLoad)
     runBlocking {
         dag.configure()
@@ -50,9 +94,11 @@ internal fun testDag(
     return dag
 }
 
-internal fun <O> DirectedAcyclicGraph.testStep(id: String, output: O? = null,
-                                               retryPolicy: RetryPolicy? = null,
-                                               generateException: Boolean = false): TestStep<Unit, O> {
+internal fun <O> DirectedAcyclicGraph.testStep(
+    id: String, output: O? = null,
+    retryPolicy: RetryPolicy? = null,
+    generateException: Boolean = false
+): TestStep<Unit, O> {
     val step = TestStep<Unit, O>(id, retryPolicy, output, generateException = generateException)
     val self = this
     runBlocking {
@@ -79,10 +125,11 @@ internal fun DirectedAcyclicGraph.steps(): Map<StepId, TestStep<*, *>> {
 }
 
 
-internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null, private val output: O? = null,
-                                   private val delay: Long? = null,
-                                   private val generateException: Boolean = false) :
-    AbstractStep<I, O>(id, retryPolicy) {
+internal open class TestStep<I, O>(
+    id: String, retryPolicy: RetryPolicy? = null, private val output: O? = null,
+    private val delay: Long? = null,
+    private val generateException: Boolean = false
+) : AbstractStep<I, O>(id, retryPolicy) {
 
     var received: I? = null
 
@@ -91,11 +138,15 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
     private val singleCaptured = AtomicReference<StepContext<*, *>>()
 
     override suspend fun execute(context: StepContext<I, O>) {
+        received = context.receive()
+        doExecute(context)
+    }
+
+    suspend protected fun doExecute(context: StepContext<I, O>) {
         executed = true
         Assertions.assertEquals("my-scenario", context.scenarioId)
         Assertions.assertEquals("my-dag", context.directedAcyclicGraphId)
         singleCaptured.set(context)
-        received = context.input.poll()
 
         delay?.let {
             delay(it)
@@ -104,7 +155,7 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
         if (generateException) {
             throw RuntimeException()
         } else if (output != null) {
-            context.output.send(output)
+            context.send(output)
         }
     }
 
@@ -145,6 +196,20 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
     }
 
     /**
+     * Create an error processing step as next.
+     */
+    fun decoratedProcessError(id: String): StepDecorator<O, O> {
+        val step = ErrorProcessingTestStep<O>(id)
+        this.addNext(step)
+        return relaxedMockk {
+            every { decorated } returns relaxedMockk<StepDecorator<O,O>> {
+                every { decorated } returns step
+            }
+            every { addNext(any()) } answers { step.addNext(firstArg()) }
+        }
+    }
+
+    /**
      * Create a recovery step as next.
      */
     fun <O2> recoverError(id: String, output: O2): TestStep<O, O2> {
@@ -177,8 +242,10 @@ internal open class TestStep<I, O>(id: String, retryPolicy: RetryPolicy? = null,
     }
 
     fun assertNotExhaustedContext() {
-        Assertions.assertFalse(singleCaptured.get().isExhausted,
-                "step $id should have not received an exhausted context")
+        Assertions.assertFalse(
+            singleCaptured.get().isExhausted,
+            "step $id should have not received an exhausted context"
+        )
     }
 
     fun collectChildren(steps: MutableMap<StepId, TestStep<*, *>>) {
@@ -196,22 +263,31 @@ internal open class ForwarderTestStep<I>(id: String) : TestStep<I, I>(id) {
      * Forward the input to the output additionally to what [TestStep] does.
      */
     override suspend fun execute(context: StepContext<I, I>) {
-        super.execute(context)
-        context.output.send(received!!)
+        if (context.isExhausted) {
+            doExecute(context)
+        } else {
+            super.execute(context)
+            context.send(received!!)
+        }
     }
 }
 
 internal open class ErrorProcessingTestStep<I>(id: String) : ForwarderTestStep<I>(id),
-    ErrorProcessingStep<I, I>
+    ErrorProcessingStep<I, I> {
+
+    override suspend fun execute(minion: Minion, context: StepContext<I, I>) {
+        super<ForwarderTestStep>.execute(context)
+    }
+}
 
 internal class RecoveryTestStep<I, O>(id: String, output: O) : TestStep<I, O>(id, output = output),
     ErrorProcessingStep<I, O> {
 
     /**
-     * Recovers the context additionally to what [ErrorProcessingTestStep] does.
+     * Recovers the context additionally to what [TestStep] does.
      */
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         context.isExhausted = false
-        super<ErrorProcessingStep>.execute(minion, context)
+        doExecute(context)
     }
 }

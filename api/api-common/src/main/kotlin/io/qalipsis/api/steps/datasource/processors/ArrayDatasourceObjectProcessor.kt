@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 class ArrayDatasourceObjectProcessor(
-        private val conversionsRules: Array<((Any?) -> Any?)?>
+    private val conversionsRules: Array<((Any?) -> Any?)?>
 ) : DatasourceObjectProcessor<Array<Any?>, Array<Any?>> {
 
     override fun process(offset: AtomicLong, readObject: Array<Any?>): Array<Any?> {

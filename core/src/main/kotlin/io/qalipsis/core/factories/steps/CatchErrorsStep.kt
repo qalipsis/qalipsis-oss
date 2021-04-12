@@ -19,7 +19,6 @@ internal class CatchErrorsStep<I>(
     private val block: ((errors: Collection<StepError>) -> Unit)
 ) : AbstractStep<I, I>(id, null), ErrorProcessingStep<I, I> {
 
-
     @Throws(Throwable::class)
     override suspend fun execute(context: StepContext<I, I>) {
         if (context.errors.isNotEmpty()) {
@@ -27,8 +26,8 @@ internal class CatchErrorsStep<I>(
             this.block(context.errors)
         }
 
-        if (!context.input.isEmpty) {
-            context.output.send(context.input.receive())
+        if (!context.hasInput) {
+            context.send(context.receive())
         }
     }
 

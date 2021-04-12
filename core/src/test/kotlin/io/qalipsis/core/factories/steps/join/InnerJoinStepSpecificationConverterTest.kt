@@ -18,6 +18,7 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.singleton.NoMoreNextStepDecorator
 import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
+import io.qalipsis.core.factories.testScenario
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyNever
@@ -26,9 +27,7 @@ import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -48,7 +47,7 @@ internal class InnerJoinStepSpecificationConverterTest :
     @Test
     override fun `should not support unexpected spec`() {
         // when+then
-        Assertions.assertFalse(converter.support(relaxedMockk()))
+        assertFalse(converter.support(relaxedMockk()))
     }
 
     @Test

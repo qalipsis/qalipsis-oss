@@ -9,6 +9,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.impl.annotations.SpyK
 import io.qalipsis.api.orchestration.directives.DirectiveProducer
 import io.qalipsis.api.orchestration.directives.DirectiveRegistry
 import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
@@ -20,6 +21,7 @@ import io.qalipsis.core.cross.directives.TestDescriptiveDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
 import io.qalipsis.core.factories.testDag
 import io.qalipsis.core.factories.testScenario
+import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
@@ -43,6 +45,9 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
 
     @RelaxedMockK
     lateinit var feedbackProducer: FeedbackProducer
+
+    @SpyK
+    var idGenerator = TestIdGenerator
 
     @InjectMockKs
     lateinit var processor: MinionsCreationPreparationDirectiveProcessor
@@ -110,7 +115,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
         coEvery { directiveProducer.publish(capture(createdDirectives)) } returns Unit
 
         // when
-            processor.process(directive)
+        processor.process(directive)
 
         // then
         coVerifyOrder {

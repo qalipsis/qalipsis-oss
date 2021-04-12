@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.DelayStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -23,7 +22,7 @@ internal class DelayedStepSpecificationConverter : StepSpecificationConverter<De
     override suspend fun <I, O> convert(creationContext: StepCreationContext<DelayStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as DelayStepSpecification<I>
-        val step = DelayStep<I>(spec.name ?: Cuid.createCuid(), spec.duration)
+        val step = DelayStep<I>(spec.name, spec.duration)
         creationContext.createdStep(step)
     }
 

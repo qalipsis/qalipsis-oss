@@ -1,7 +1,7 @@
 package io.qalipsis.api.events
 
 /**
- * Interface for instances in charge of publishing the [io.qalipsis.core.factories.events.Event]s to external systems.
+ * Interface for instances in charge of publishing the [Event]s to external systems.
  *
  * When enabled, the publishers are injected into an [EventsLogger] in order to receive the data.
  * The [EventsPublisher]s should never be used directly from an instance generating an event.
@@ -22,7 +22,7 @@ interface EventsPublisher {
     fun start() = Unit
 
     /**
-     * Perform sall the closing operations.
+     * Performs all the closing operations.
      */
     fun stop() = Unit
 }

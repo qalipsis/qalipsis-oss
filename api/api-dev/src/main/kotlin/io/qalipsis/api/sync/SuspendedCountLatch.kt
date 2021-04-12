@@ -35,7 +35,8 @@ import java.util.concurrent.atomic.AtomicLong
 class SuspendedCountLatch(
     private var initialCount: Long = 0,
     private val allowsNegative: Boolean = false,
-    private val onReleaseAction: suspend (() -> Unit) = {}) {
+    private val onReleaseAction: suspend (() -> Unit) = {}
+) {
 
     private var activityFlag = Channel<Unit>(1)
 
@@ -44,7 +45,6 @@ class SuspendedCountLatch(
     private val mutex = Mutex()
 
     private var count = AtomicLong(initialCount)
-
 
     val onRelease
         get() = syncFlag.onReceiveOrNull()
@@ -88,11 +88,25 @@ class SuspendedCountLatch(
     }
 
     /**
+     * Blocking implementation of [release].
+     */
+    fun blockingRelease() = runBlocking { release() }
+
+    /**
      * Releases all current and future calls to [await] and sets the counter to 0.
      */
-    fun release() {
+    fun cancel() {
         count.set(0)
+        activityFlag.close()
         syncFlag.close()
+    }
+
+    /**
+     * Releases all current and future calls to [await], executes [onReleaseAction] and sets the counter back to 0.
+     */
+    suspend fun release() {
+        releaseSyncFlag()
+        count.set(0)
     }
 
     /**
@@ -103,7 +117,7 @@ class SuspendedCountLatch(
     suspend fun reset(): Long = mutex.withLock {
         log.trace("Resetting...")
         count.set(initialCount)
-        resetFlags()
+        resetFlag()
         count.get()
     }
 
@@ -113,11 +127,11 @@ class SuspendedCountLatch(
     fun blockingReset(): Long = runBlocking { reset() }
 
     suspend fun increment(value: Long = 1): Long = mutex.withLock {
-        val result = count.addAndGet(value)
         closeActivityFlag()
+        val result = count.addAndGet(value)
         // When the count gets from 0 to 1, the sync flag is recreated.
         if (value == 1L && result == 1L) {
-            resetFlags()
+            resetFlag()
         }
         result
     }
@@ -129,14 +143,18 @@ class SuspendedCountLatch(
     suspend fun decrement(value: Long = 1): Long {
         return mutex.withLock {
             require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
-            val result = count.addAndGet(-value)
             closeActivityFlag()
+            val result = count.addAndGet(-value)
             if (result == 0L) {
-                onReleaseAction()
-                syncFlag.close()
+                releaseSyncFlag()
             }
             result
         }
+    }
+
+    private suspend fun releaseSyncFlag() {
+        onReleaseAction()
+        syncFlag.close()
     }
 
     fun blockingDecrement(value: Long = 1): Long = runBlocking {
@@ -146,16 +164,12 @@ class SuspendedCountLatch(
     fun get() = count.get()
 
     fun isSuspended(): Boolean {
-        log.trace("Is suspended?")
-        return count.get() > 0
+        return count.get() != 0L
     }
 
-    private fun resetFlags() {
+    private fun resetFlag() {
         if (syncFlag.isClosedForReceive) {
             syncFlag = Channel(1)
-        }
-        if (activityFlag.isClosedForReceive) {
-            activityFlag = Channel(1)
         }
     }
 

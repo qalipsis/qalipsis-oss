@@ -105,7 +105,7 @@ internal class InnerJoinStep<I, O>(
     override suspend fun execute(context: StepContext<I, O>) {
         if (!running) throw NotInitializedStepException()
 
-        val input = context.input.receive()
+        val input = context.receive()
         // Extract the key from the left side and search or wait for an available equivalent value coming from the right side.
         leftKeyExtractor(CorrelationRecord(context.minionId, context.parentStepId!!, input))
             ?.let { key ->
@@ -116,7 +116,7 @@ internal class InnerJoinStep<I, O>(
                         GlobalScope.launch {
                             val secondaryValues = entry.get()
                             log.trace("Forwarding a correlated set of values")
-                            context.output.send(outputSupplier(input, secondaryValues))
+                            context.send(outputSupplier(input, secondaryValues))
                             latch.release()
                         }
                     }

@@ -18,7 +18,12 @@ internal class SimpleStep<I, O>(
 ) : AbstractStep<I, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, O>) {
-        specification(context)
+        try {
+            specification(context)
+        } catch (e: Exception) {
+            log.error(e.message, e)
+            throw e
+        }
     }
 
     companion object {

@@ -1,10 +1,16 @@
 package io.qalipsis.runtime.logging
 
+import ch.qos.logback.classic.Level
 import io.micronaut.context.annotation.ConfigurationProperties
-import java.util.Properties
+import io.micronaut.context.env.Environment
+import io.micronaut.core.naming.conventions.StringConvention
+
+import javax.annotation.PostConstruct
 
 @ConfigurationProperties("logging")
-class LoggingConfiguration {
+internal class LoggingConfiguration(
+    val environment: Environment
+) {
 
     var root: String? = null
 
@@ -16,7 +22,7 @@ class LoggingConfiguration {
 
     var console: Boolean = false
 
-    var level: Properties = Properties()
+    lateinit var loggingLevels: Map<String, Level>
 
     @ConfigurationProperties("file")
     class NormalLoggingFile : LoggingFile()
@@ -26,6 +32,18 @@ class LoggingConfiguration {
      */
     @ConfigurationProperties("events")
     class EventsLoggingFile : LoggingFile()
+
+    @PostConstruct
+    fun init() {
+        val properties: MutableMap<String, Any> = HashMap(environment.getProperties("logging.level"))
+        // Using raw keys here allows configuring log levels for camelCase package names in application.yml
+        properties.putAll(environment.getProperties("logging.level", StringConvention.RAW))
+        val levels = mutableMapOf<String, Level>()
+        properties.forEach { (loggerPrefix, levelValue) ->
+            levels[loggerPrefix] = Level.valueOf(levelValue.toString().toUpperCase())
+        }
+        loggingLevels = levels
+    }
 
     open class LoggingFile {
 
@@ -71,5 +89,4 @@ class LoggingConfiguration {
          */
         var neverBlock = false
     }
-
 }

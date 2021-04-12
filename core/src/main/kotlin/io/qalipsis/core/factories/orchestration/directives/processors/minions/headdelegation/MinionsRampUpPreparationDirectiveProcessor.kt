@@ -7,11 +7,13 @@ import io.qalipsis.api.orchestration.directives.DirectiveProducer
 import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.directives.MinionStartDefinition
 import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.cross.directives.MinionsStartDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
+import org.slf4j.event.Level
 import java.util.LinkedList
 import javax.inject.Singleton
 
@@ -24,13 +26,13 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class MinionsRampUpPreparationDirectiveProcessor(
-        private val scenariosRegistry: ScenariosRegistry,
-        private val directiveProducer: DirectiveProducer,
-        private val feedbackProducer: FeedbackProducer,
-        private val minionsCreationPreparationDirectiveProcessor: MinionsCreationPreparationDirectiveProcessor
+    private val scenariosRegistry: ScenariosRegistry,
+    private val directiveProducer: DirectiveProducer,
+    private val feedbackProducer: FeedbackProducer,
+    private val minionsCreationPreparationDirectiveProcessor: MinionsCreationPreparationDirectiveProcessor
 ) : DirectiveProcessor<MinionsRampUpPreparationDirective> {
 
-    @LogInputAndOutput
+    @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         if (directive is MinionsRampUpPreparationDirective) {
             // The scenario has to be known and the same factory should have generated all the minions IDs.
@@ -40,11 +42,12 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
         return false
     }
 
+    @LogInput(level = Level.DEBUG)
     override suspend fun process(directive: MinionsRampUpPreparationDirective) {
         scenariosRegistry[directive.scenarioId]?.let { scenario ->
             try {
                 feedbackProducer.publish(
-                        DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.IN_PROGRESS)
+                    DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.IN_PROGRESS)
                 )
 
                 val createdMinions =
@@ -54,6 +57,7 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
                 var start = System.currentTimeMillis() + directive.startOffsetMs
                 val minionsStartDefinitions = mutableListOf<MinionStartDefinition>()
 
+                log.debug("Creating the ramp-up for ${createdMinions.size} minions on campaign ${directive.campaignId} of scenario ${scenario.id}")
                 while (createdMinions.isNotEmpty()) {
                     val nextStartingLine = rampUpStrategyIterator.next()
                     require(nextStartingLine.count > 0) { "nextStartingLine.count <= 0" }
@@ -64,16 +68,19 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
                         minionsStartDefinitions.add(MinionStartDefinition(createdMinions.removeFirst(), start))
                     }
                 }
+                log.debug("Ramp-up creation is complete on campaign ${directive.campaignId} of scenario ${scenario.id}")
                 directiveProducer.publish(MinionsStartDirective(scenario.id, minionsStartDefinitions))
 
                 feedbackProducer.publish(
-                        DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.COMPLETED)
+                    DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.COMPLETED)
                 )
             } catch (e: Exception) {
                 log.error("Error when processing $directive: ${e.message}", e)
                 feedbackProducer.publish(
-                        DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.FAILED,
-                                error = e.message)
+                    DirectiveFeedback(
+                        directiveKey = directive.key, status = FeedbackStatus.FAILED,
+                        error = e.message
+                    )
                 )
 
                 throw e

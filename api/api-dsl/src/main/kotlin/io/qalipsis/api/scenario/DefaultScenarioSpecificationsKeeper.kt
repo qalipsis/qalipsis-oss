@@ -3,6 +3,7 @@ package io.qalipsis.api.scenario
 import io.micronaut.context.annotation.Property
 import io.qalipsis.api.context.ScenarioId
 import java.util.Optional
+
 import javax.inject.Singleton
 
 /**

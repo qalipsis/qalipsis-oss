@@ -2,15 +2,18 @@ package io.qalipsis.core.factories.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.steps.CatchExhaustedContextStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.CatchExhaustedContextStep
+import io.qalipsis.core.factories.steps.VerificationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
@@ -63,7 +66,6 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // given
         val blockSpecification: suspend (context: StepContext<*, String>) -> Unit = {}
         val spec = CatchExhaustedContextStepSpecification(blockSpecification)
-        spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -73,7 +75,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
-            prop("id").isNotNull()
+            prop(CatchExhaustedContextStep<*>::id).isEmpty()
             prop("block").isSameAs(blockSpecification)
         }
     }

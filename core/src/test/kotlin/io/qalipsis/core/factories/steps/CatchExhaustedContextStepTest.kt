@@ -35,7 +35,7 @@ internal class CatchExhaustedContextStepTest {
     fun shouldExecuteStepWhenContextIsExhausted() = runBlockingTest {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
-        val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 456, exhausted = true)
+        val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 456, isExhausted = true)
 
         step.execute(ctx)
 

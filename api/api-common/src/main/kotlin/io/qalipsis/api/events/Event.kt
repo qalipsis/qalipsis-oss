@@ -9,7 +9,7 @@ import javax.validation.constraints.DecimalMin
  *
  * @author Eric Jessé
  */
-enum class EventLevel() {
+enum class EventLevel {
     // The order of the declarations matters to perform comparisons.
     TRACE,
     DEBUG,

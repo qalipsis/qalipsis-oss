@@ -6,6 +6,7 @@ import io.micronaut.runtime.Micronaut
 import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
 import io.qalipsis.core.cross.configuration.ENV_VOLATILE
@@ -16,6 +17,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.IVersionProvider
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import java.util.Properties
+
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
@@ -34,17 +37,17 @@ import kotlin.system.exitProcess
 object Qalipsis : Callable<Unit> {
 
     @Option(
-        names = ["-p", "--prompt"], description = ["Prompt for campaign configuration"],
+        names = ["-p", "--prompt"], description = ["Prompt for campaign configuration."],
         defaultValue = "false"
     )
     var prompt: Boolean = false
 
-    @Option(names = ["-e", "--environments"], description = ["Environments to enable further configuration"])
+    @Option(names = ["-e", "--environments"], description = ["Environments to enable further configuration."])
     var environments: Array<String> = arrayOf()
 
     @Option(
         names = ["-s", "--scenarios"],
-        description = ["Comma-separated list of scenarios to include, wildcard such as * or ? are supported, default to all the scenarios"]
+        description = ["Comma-separated list of scenarios to include, wildcard such as * or ? are supported, defaults to all the scenarios."]
     )
     var scenariosSelectors: String = ""
 
@@ -63,7 +66,11 @@ object Qalipsis : Callable<Unit> {
     @JvmStatic
     private val log = logger()
 
-    internal var applicationContext: ApplicationContext? = null
+    internal lateinit var applicationContext: ApplicationContext
+
+    private var exitCode = 0
+
+    private val executionProperties = Properties()
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -71,11 +78,13 @@ object Qalipsis : Callable<Unit> {
     }
 
     fun start(args: Array<String> = emptyArray()): Int {
+        executionProperties.load(Qalipsis::class.java.getResourceAsStream("/build.properties"))
         this.args = args
-        return CommandLine(Qalipsis)
+        val runtimeExitCode = CommandLine(Qalipsis)
             .setCaseInsensitiveEnumValuesAllowed(true)
             .setUsageHelpAutoWidth(true)
             .execute(*args)
+        return runtimeExitCode.takeIf { it != 0 } ?: exitCode
     }
 
     enum class Role {
@@ -83,8 +92,13 @@ object Qalipsis : Callable<Unit> {
     }
 
     override fun call() {
-        val environments = mutableListOf<String>()
         val properties = mutableMapOf<String, Any>()
+        // Adds the build properties to the application context.
+        executionProperties.forEach { (key, value) ->
+            properties["qalipsis.${key}"] = value
+        }
+
+        val environments = mutableListOf<String>()
         if (role == Role.STANDALONE) {
             if (prompt) {
                 promptForConfiguration(properties)
@@ -118,15 +132,24 @@ object Qalipsis : Callable<Unit> {
 
         // Force the loading if key services.
         if (role == Role.STANDALONE) {
-            applicationContext!!.getBeansOfType(StartupFactoryComponent::class.java)
-            applicationContext!!.getBeansOfType(StartupHeadComponent::class.java)
+            applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
+            applicationContext.getBeansOfType(StartupHeadComponent::class.java)
         }
         val processBlockers: Collection<ProcessBlocker> =
-            applicationContext!!.getBeansOfType(ProcessBlocker::class.java)
+            applicationContext.getBeansOfType(ProcessBlocker::class.java)
         if (processBlockers.isNotEmpty()) {
             runBlocking {
                 log.info("${processBlockers.size} service(s) to join before exiting the process")
                 processBlockers.forEach { it.join() }
+            }
+
+            if (ENV_AUTOSTART in environments) {
+                // Publishes the result just before leaving and set the exit code.
+                applicationContext.findBean(CampaignStateKeeper::class.java).ifPresent { campaignStateKeeper ->
+                    applicationContext.getProperty("campaign.name", String::class.java).ifPresent { campaignName ->
+                        exitCode = campaignStateKeeper.report(campaignName).status.exitCode
+                    }
+                }
             }
         } else {
             log.info("There is no service to join before exiting the process")
@@ -134,6 +157,16 @@ object Qalipsis : Callable<Unit> {
     }
 
     private fun promptForConfiguration(properties: MutableMap<String, Any>) {
+        promptAndValidate(
+            "Enter the name of your campaign or leave blank for default:",
+            "A value is mandatory",
+            { this.trim() },
+            { true }
+        ).apply {
+            if (this.isNotBlank()) {
+                properties["campaign.name"] = this
+            }
+        }
         val loadSelectionStrategy: Int = promptAndValidate(
             "Do you want to enter [1] a minion count by scenario or [2] a minion count multiplier?",
             "Please select 1 or 2",
@@ -191,7 +224,7 @@ object Qalipsis : Callable<Unit> {
 
     internal class VersionProviderWithVariables : IVersionProvider {
         override fun getVersion(): Array<String> {
-            return arrayOf("\${COMMAND-FULL-NAME} version 0.1")
+            return arrayOf("QALIPSIS version ${executionProperties.getProperty("version")}")
         }
     }
 

@@ -2,25 +2,20 @@ package io.qalipsis.core.factories.orchestration
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
+import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.factories.Minion
+import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import java.time.Duration
+import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.CoroutineContext
 
 /**
  * <p>
@@ -36,34 +31,27 @@ import java.util.concurrent.atomic.AtomicInteger
 internal open class MinionImpl(
     override val id: MinionId,
     override val campaignId: CampaignId,
+    override val scenarioId: ScenarioId,
     override val dagId: DirectedAcyclicGraphId,
     pauseAtStart: Boolean = true,
     private val eventsLogger: EventsLogger,
-    meterRegistry: MeterRegistry,
-    private val maintenancePeriod: Duration = MAINTENANCE_PERIOD,
-    coroutineScope: CoroutineScope = GlobalScope
+    meterRegistry: MeterRegistry
 ) : Minion {
 
     /**
      * Latch to suspend caller while the minion is not started.
      */
-    private val startLatch = SuspendedCountLatch(1)
+    private val startLatch = Latch(true)
 
     /**
-     * Latch to suspend caller before the first step was attached.
+     * Counter to assign an ID to the running jobs.
      */
-    private val executingLatch = SuspendedCountLatch(1)
+    private val jobIndex = AtomicLong(Long.MIN_VALUE)
 
     /**
-     * List of the [step][io.qalipsis.api.steps.Step] jobs to be executed for the current minion.
-     *
+     * Map of running jobs attached to a unique identifier.
      */
-    private val stepJobs = mutableListOf<Job>()
-
-    /**
-     * List of internal jobs waiting for completion of step jobs.
-     */
-    private val completionJobs = mutableListOf<Job>()
+    private val runningJobs = ConcurrentHashMap<Long, Job>()
 
     /**
      * Cancellation state of the minion.
@@ -76,26 +64,19 @@ internal open class MinionImpl(
     private val onCompleteHooks: MutableList<suspend (() -> Unit)> = mutableListOf()
 
     /**
-     * Latch suspending until all the jobs are complete.
+     * Latch suspending until all the jobs are complete then triggering all the statements of [onCompleteHooks] successively.
      */
-    private val jobsCompletion = SuspendedCountLatch {
+    private val runningJobsLatch = SuspendedCountLatch {
         onCompleteHooks.forEach { it() }
         eventsLogger.info("minion.execution-complete", tags = mapOf("campaign" to campaignId, "minion" to id))
     }
 
-    private val logger = logger()
-
-    /**
-     * Mutex to sync operations on the jobs.
-     */
-    private val jobManagementMutex = Mutex()
-
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private val executingStepsGauge: AtomicInteger =
-        meterRegistry.gauge("minion-running-steps", listOf(Tag.of("campaign", campaignId), Tag.of("minion", id)),
-            AtomicInteger())
-
-    private val maintenancePeriodTimer = meterRegistry.timer("minion-maintenance", "campaign", campaignId, "minion", id)
+        meterRegistry.gauge(
+            "minion-running-steps", listOf(Tag.of("campaign", campaignId), Tag.of("minion", id)),
+            AtomicInteger()
+        )
 
     /**
      * Computed count of active steps.
@@ -106,39 +87,7 @@ internal open class MinionImpl(
     init {
         eventsLogger.info("minion.created", tags = mapOf("campaign" to campaignId, "minion" to id))
         if (!pauseAtStart) {
-            runBlocking(coroutineScope.coroutineContext) {
-                start()
-            }
-        }
-        startMaintenance(coroutineScope)
-    }
-
-    @VisibleForTest
-    fun startMaintenance(coroutineScope: CoroutineScope) {
-        coroutineScope.launch {
-            eventsLogger.trace("minion.maintenance.job-started",
-                tags = mapOf("campaign" to campaignId, "minion" to id))
-            startLatch.await()
-            delay(maintenancePeriod.toMillis())
-            while (!cancelled) {
-                delay(maintenancePeriod.toMillis())
-                eventsLogger.trace("minion.maintenance.running",
-                    tags = mapOf("campaign" to campaignId, "minion" to id))
-                logger.trace("Running maintenance operations...")
-                val start = System.nanoTime()
-                jobManagementMutex.withLock {
-                    stepJobs.removeIf { !it.isActive }
-                    completionJobs.removeIf { !it.isActive }
-                }
-                Duration.ofNanos(System.nanoTime() - start).let {
-                    maintenancePeriodTimer.record(it)
-                    eventsLogger.trace("minion.maintenance.complete", it,
-                        tags = mapOf("campaign" to campaignId, "minion" to id))
-                    logger.trace("Maintenance operations executed in $it")
-                }
-            }
-            eventsLogger.trace("minion.maintenance.job-stopped",
-                tags = mapOf("campaign" to campaignId, "minion" to id))
+            doStart()
         }
     }
 
@@ -153,61 +102,71 @@ internal open class MinionImpl(
         }
     }
 
-
-    override fun isStarted(): Boolean {
-        return !startLatch.isSuspended()
+    private fun doStart() {
+        if (!isStarted()) {
+            startLatch.cancel()
+            eventsLogger.info("minion.running", tags = mapOf("campaign" to campaignId, "minion" to id))
+        }
     }
 
-    override suspend fun attach(job: Job) {
-        if (cancelled) {
-            logger.trace("Minion $id was cancelled, received job is cancelled")
-            job.cancel()
-        } else {
-            waitForStart()
+    override fun isStarted(): Boolean {
+        return !startLatch.isLocked
+    }
 
-            // Inventory a new running job.
-            jobManagementMutex.withLock {
-                jobsCompletion.increment()
-                executingStepsGauge.incrementAndGet()
-                job.invokeOnCompletion {
-                    if (!cancelled) {
-                        runBlocking {
-                            jobsCompletion.decrement()
-                        }
-                    }
+    override suspend fun launch(
+        scope: CoroutineScope?,
+        context: CoroutineContext?,
+        countLatch: SuspendedCountLatch?,
+        block: suspend CoroutineScope.() -> Unit
+    ): Job? {
+        return if (cancelled) {
+            log.trace("Minion $id was cancelled, no new job can be started")
+            null
+        } else {
+            log.trace("Adding a job to minion $id (number of active jobs: ${runningJobsLatch.get()})")
+            executingStepsGauge.incrementAndGet()
+            runningJobsLatch.increment()
+            countLatch?.increment()
+            val jobId = jobIndex.getAndIncrement()
+            (scope ?: GlobalScope).launch(context ?: GlobalScope.coroutineContext) {
+                waitForStart()
+                try {
+                    this.block()
+                } finally {
+                    runningJobs.remove(jobId)
+                    runningJobsLatch.decrement()
                     executingStepsGauge.decrementAndGet()
-                    logger.trace(
-                        "One job of minion $id was completed or cancelled (number of active jobs: ${jobsCompletion.get()})")
+                    countLatch?.decrement()
+                    log.trace(
+                        "One job of minion $id was completed or cancelled (number of active jobs: ${runningJobsLatch.get()})"
+                    )
                 }
-                stepJobs.add(job)
-                logger.trace("Job attached to minion $id (number of active jobs: ${jobsCompletion.get()})")
-                // Put a new value to allow other coroutines to add a new job.
-                if (executingLatch.isSuspended()) {
-                    executingLatch.release()
-                }
+            }.also {
+                runningJobs[jobId] = it
             }
         }
     }
 
     override suspend fun cancel() {
-        logger.trace("Cancelling minion $id")
+        log.trace("Cancelling minion $id")
         cancelled = true
-        startLatch.release()
+        startLatch.cancel()
         eventsLogger.info("minion.cancellation.started", tags = mapOf("campaign" to campaignId, "minion" to id))
         try {
-            jobManagementMutex.withLock {
-                for (job in completionJobs.plus(stepJobs).filter { it.isActive }) {
+            for (job in runningJobs.values) {
+                kotlin.runCatching {
                     job.cancel(CancellationException())
                 }
             }
-            logger.trace("Cancellation of minions $id completed")
+            log.trace("Cancellation of minions $id completed")
             eventsLogger.info("minion.cancellation.complete", tags = mapOf("campaign" to campaignId, "minion" to id))
         } catch (e: Exception) {
-            eventsLogger.info("minion.cancellation.complete", e,
-                tags = mapOf("campaign" to campaignId, "minion" to id))
+            eventsLogger.info(
+                "minion.cancellation.complete", e,
+                tags = mapOf("campaign" to campaignId, "minion" to id)
+            )
         }
-        executingLatch.release()
-        jobsCompletion.release()
+        runningJobsLatch.cancel()
     }
 
     override suspend fun waitForStart() {
@@ -215,11 +174,11 @@ internal open class MinionImpl(
     }
 
     override suspend fun join() {
-        logger.trace("Joining minion $id")
+        log.trace("Joining minion $id")
         startLatch.await()
-        executingLatch.await()
-        jobsCompletion.await()
-        logger.trace("Minion $id completed")
+        runningJobsLatch.awaitActivity()
+        runningJobsLatch.await()
+        log.trace("Minion $id completed")
     }
 
     override fun equals(other: Any?): Boolean {
@@ -242,7 +201,8 @@ internal open class MinionImpl(
 
 
     companion object {
-        @JvmStatic
-        val MAINTENANCE_PERIOD: Duration = Duration.ofMinutes(2)
+
+        private val log = logger()
+
     }
 }

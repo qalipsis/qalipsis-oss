@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.SingletonTubeStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -23,7 +22,7 @@ internal class SingletonTubeStepSpecificationConverter : StepSpecificationConver
     override suspend fun <I, O> convert(creationContext: StepCreationContext<SingletonTubeStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as SingletonTubeStepSpecification<I>
-        val step = TubeStep<I>(spec.name ?: Cuid.createCuid())
+        val step = TubeStep<I>(spec.name)
         creationContext.createdStep(step)
     }
 

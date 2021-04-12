@@ -3,6 +3,7 @@ package io.qalipsis.api.steps
 import assertk.assertThat
 import assertk.assertions.isInstanceOf
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -31,7 +32,7 @@ internal class CatchExhaustedContextStepSpecificationTest {
 
         @Suppress("UNCHECKED_CAST") val stepSpecification =
             (previousStep.nextSteps[0] as CatchExhaustedContextStepSpecification).block as (suspend (context: StepContext<*, Unit>) -> Unit)
-        val stepContext = StepContext<Any?, Unit>(
+        val stepContext = StepTestHelper.createStepContext<Any?, Unit>(
             minionId = "",
             scenarioId = "",
             directedAcyclicGraphId = "",

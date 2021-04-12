@@ -1,0 +1,4 @@
+report:
+  export:
+    console:
+      enabled: true

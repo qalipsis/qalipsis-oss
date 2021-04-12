@@ -2,20 +2,9 @@ package io.qalipsis.core.factories.steps.converters
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.hasSize
-import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isNotNull
-import assertk.assertions.isNull
-import assertk.assertions.isSameAs
-import assertk.assertions.key
+import assertk.assertions.*
 import io.mockk.every
-import io.qalipsis.api.steps.StageStepEndSpecification
-import io.qalipsis.api.steps.StageStepSpecification
-import io.qalipsis.api.steps.StageStepStartSpecification
-import io.qalipsis.api.steps.StepCreationContext
-import io.qalipsis.api.steps.StepCreationContextImpl
+import io.qalipsis.api.steps.*
 import io.qalipsis.core.factories.steps.StageStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
@@ -104,6 +93,7 @@ internal class StageStepStartSpecificationConverterTest :
     internal fun `should convert end group spec without name to step`() = runBlockingTest {
         // given
         val startSpec = StageStepStartSpecification<Int>()
+        startSpec.scenario = relaxedMockk()
         startSpec.name = "the-group-start-spec"
         val stageStep: StageStep<*, *> = relaxedMockk()
         converter.getProperty<MutableMap<String, StageStep<*, *>>>("startStepsById")["the-group-start-spec"] = stageStep
@@ -130,6 +120,7 @@ internal class StageStepStartSpecificationConverterTest :
     internal fun `should convert end group spec with name to step`() = runBlockingTest {
         // given
         val startSpec = StageStepStartSpecification<Int>()
+        startSpec.scenario = relaxedMockk()
         startSpec.name = "the-group-start-spec"
         val stageStep: StageStep<*, *> = relaxedMockk()
         converter.getProperty<MutableMap<String, StageStep<*, *>>>("startStepsById")["the-group-start-spec"] = stageStep

@@ -194,7 +194,7 @@ fun myScenario() {
         }
     }
     .execute<Pair<String, Long?>, Unit> { ctx -> // <6>
-        val input = ctx.input.receive()
+        val input = ctx.receive()
         println("${input.first} and finished after ${input.second!! - start} ms")
     }
     .configure {

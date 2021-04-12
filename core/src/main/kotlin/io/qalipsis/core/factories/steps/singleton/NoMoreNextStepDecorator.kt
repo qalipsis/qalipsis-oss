@@ -1,9 +1,8 @@
 package io.qalipsis.core.factories.steps.singleton
 
-import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
-import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.Step
+import io.qalipsis.api.steps.StepDecorator
 
 /**
  * Decorator for a step on which no more step step can be added.
@@ -11,8 +10,8 @@ import io.qalipsis.api.steps.Step
  * @author Eric Jessé
  */
 class NoMoreNextStepDecorator<I, O>(
-        internal val decorated: Step<I, O>
-) : Step<I, O> {
+    override val decorated: Step<I, O>
+) : Step<I, O>, StepDecorator<I, O> {
 
     override val id: StepId = decorated.id
 
@@ -25,23 +24,4 @@ class NoMoreNextStepDecorator<I, O>(
         // Do nothing.
     }
 
-    override suspend fun init() {
-        decorated.init()
-    }
-
-    override suspend fun start(context: StepStartStopContext) {
-        decorated.start(context)
-    }
-
-    override suspend fun stop(context: StepStartStopContext) {
-        decorated.stop(context)
-    }
-
-    override suspend fun destroy() {
-        decorated.destroy()
-    }
-
-    override suspend fun execute(context: StepContext<I, O>) {
-        decorated.execute(context)
-    }
 }

@@ -1,11 +1,7 @@
 package io.qalipsis.core.factories.events
 
 import io.qalipsis.api.annotations.VisibleForTest
-import io.qalipsis.api.events.Event
-import io.qalipsis.api.events.EventLevel
-import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.events.EventsPublisher
-import io.qalipsis.api.events.toTags
+import io.qalipsis.api.events.*
 import io.qalipsis.api.logging.LoggerHelper.logger
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap

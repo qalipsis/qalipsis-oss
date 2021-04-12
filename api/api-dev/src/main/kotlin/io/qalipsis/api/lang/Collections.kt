@@ -1,7 +1,7 @@
 package io.qalipsis.api.lang
 
+
 import java.util.Collections
-import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -56,11 +56,11 @@ fun <T> concurrentList(values: Collection<T>): MutableList<T> {
 }
 
 /**
- * Polls the first [count] items in a new [MutableList]. If [count] is 0, a new empty [List] is returned.
+ * Polls the first [count] items in a new [List] in the limit of this size. If [count] is 0, a new empty [List] is returned.
  */
 fun <T> MutableList<T>.pollFirst(count: Int): List<T> {
     val result = mutableListOf<T>()
-    repeat(count) {
+    repeat(count.coerceAtMost(this.size)) {
         result.add(this.removeAt(0))
     }
     return result

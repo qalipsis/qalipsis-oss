@@ -37,7 +37,7 @@ internal class SingletonProxyStep<I>(
     override suspend fun execute(context: StepContext<I, I>) {
         val valueFromTopic = topic.subscribe("${context.minionId}-${context.stepId}").pollValue()
         if (filter(valueFromTopic)) {
-            context.output.send(valueFromTopic)
+            context.send(valueFromTopic)
         }
     }
 

@@ -15,8 +15,8 @@ kapt {
 
 allOpen {
     annotations(
-            "io.micronaut.aop.Around",
-            "io.qalipsis.api.annotations.Spec"
+        "io.micronaut.aop.Around",
+        "io.qalipsis.api.annotations.Spec"
     )
 }
 
@@ -55,4 +55,5 @@ dependencies {
     kapt("io.micronaut:micronaut-graal")
 
     testImplementation(project(":test"))
+    testImplementation(testFixtures(project(":api:api-common")))
 }

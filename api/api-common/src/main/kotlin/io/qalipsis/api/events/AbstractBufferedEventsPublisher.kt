@@ -43,7 +43,7 @@ abstract class AbstractBufferedEventsPublisher(
 
     private lateinit var publicationJob: Job
 
-    private var running = false
+    protected var running = false
 
     override fun start() = runBlocking {
         running = true
@@ -85,7 +85,7 @@ abstract class AbstractBufferedEventsPublisher(
 
     private suspend fun publishSafely(values: List<Event>) {
         log.trace("Publishing ${values.size} events.")
-        tryAndLogOrNull(logger()) {
+        tryAndLogOrNull(log) {
             publish(values)
         }
     }
@@ -102,7 +102,7 @@ abstract class AbstractBufferedEventsPublisher(
     override fun publish(event: Event) {
         if (minLevel != EventLevel.OFF && event.level >= minLevel) {
             buffer.add(event)
-            if (buffer.size >= batchSize) {
+            if (buffer.size >= batchSize && running) {
                 log.trace("The buffer is full, starting a coroutine to publish the events")
                 coroutineScope.launch {
                     mutex.withLock {
@@ -120,17 +120,21 @@ abstract class AbstractBufferedEventsPublisher(
     }
 
     override fun stop() {
-        ticker?.cancel()
         running = false
+        ticker?.cancel()
         runBlocking {
-            publishSafely(buffer.toList())
+            mutex.withLock {
+                while (buffer.isNotEmpty()) {
+                    publishSafely(buffer.pollFirst(batchSize.coerceAtMost(buffer.size)))
+                }
+            }
         }
-        buffer.clear()
     }
 
     abstract suspend fun publish(values: List<Event>)
 
     companion object {
+
         @JvmStatic
         val log = logger()
     }

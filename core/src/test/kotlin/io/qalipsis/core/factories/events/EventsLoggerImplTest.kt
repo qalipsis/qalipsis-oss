@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.Properties
 
+
 /**
  * @author Eric Jessé
  */

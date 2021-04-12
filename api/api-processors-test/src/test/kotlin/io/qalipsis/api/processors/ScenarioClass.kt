@@ -6,6 +6,7 @@ import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
 import java.time.Duration
 import java.util.Optional
+
 import javax.inject.Named
 
 internal val injectedForMethodOutsideAClass = mutableMapOf<String, Any?>()

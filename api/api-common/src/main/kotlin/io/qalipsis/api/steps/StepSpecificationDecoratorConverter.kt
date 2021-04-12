@@ -20,12 +20,12 @@ abstract class StepSpecificationDecoratorConverter<SPEC : StepSpecification<*, *
     companion object {
 
         /**
-         * Constant for the highest precedence value.
+         * Constant for the highest precedence value, placing the decorator closer from the decorated step.
          */
         const val HIGHEST_PRECEDENCE = Int.MIN_VALUE
 
         /**
-         * Constant for the lowest precedence value.
+         * Constant for the lowest precedence value, placing the decorator further from the decorated step
          */
         const val LOWEST_PRECEDENCE = Int.MAX_VALUE
 

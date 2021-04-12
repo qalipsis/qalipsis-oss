@@ -5,11 +5,7 @@ import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.*
 
 /**
  * Step to convert a context to a collection of them.
@@ -44,8 +40,8 @@ internal class FlatMapStep<I, O>(
 ) : AbstractStep<I, O>(id, retryPolicy) {
 
     override suspend fun execute(context: StepContext<I, O>) {
-        val input = context.input.receive()
-        block(input).collect { context.output.send(it) }
+        val input = context.receive()
+        block(input).collect { context.send(it) }
     }
 
     companion object {

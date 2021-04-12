@@ -19,10 +19,10 @@ import io.qalipsis.api.steps.Step
  * @author Eric Jessé
  */
 internal open class TopicMirrorStep<I, T>(
-        id: StepId,
-        private val topic: Topic<T>,
-        private val predicate: (context: StepContext<I, I>, value: Any?) -> Boolean = { _, _ -> true },
-        @Suppress(
+    id: StepId,
+    private val topic: Topic<T>,
+    private val predicate: (context: StepContext<I, I>, value: Any?) -> Boolean = { _, _ -> true },
+    @Suppress(
                 "UNCHECKED_CAST") private val wrap: (context: StepContext<I, I>, value: Any?) -> T = { _, value -> value as T }
 ) : AbstractStep<I, I>(id, null) {
 
@@ -41,12 +41,12 @@ internal open class TopicMirrorStep<I, T>(
             topic.complete()
         } else {
             // Consumes the data emitted by the previous step to populate the broadcast channel to the proxy steps.
-            val value = context.input.receive()
+            val value = context.receive()
             if (predicate(context, value)) {
                 val record = wrap(context, value)
                 topic.produceValue(record)
             }
-            context.output.send(value)
+            context.send(value)
         }
     }
 

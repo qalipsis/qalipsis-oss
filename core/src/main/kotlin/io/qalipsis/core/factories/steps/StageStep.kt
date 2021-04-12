@@ -8,6 +8,7 @@ import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -42,23 +43,22 @@ internal class StageStep<I, O>(
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         val output = Channel<Any?>(Channel.UNLIMITED)
         val innerContext = context.duplicate(newOutput = output)
-        val countLatch = SuspendedCountLatch()
 
         // The first step of the group is executed.
-        runner.launch(minion, head!!, innerContext, countLatch) { ctx ->
+        runner.execute(minion, head!!, innerContext) { ctx ->
+            log.trace("Consuming the tail context $ctx")
             if (!context.isExhausted && !ctx.isExhausted) {
                 // When the latest step of the group is executed, its output is forwarded to the overall context.
-                for (outputRecord in ctx.output as ReceiveChannel<*>) {
+                for (outputRecord in (ctx as StepContextImpl).output as ReceiveChannel<*>) {
                     @Suppress("UNCHECKED_CAST")
-                    context.output.send(outputRecord as O)
+                    context.send(outputRecord as O)
                 }
             } else {
                 // Errors have to be forwarded.
-                context.errors.addAll(ctx.errors)
+                ctx.errors.forEach(context::addError)
                 context.isExhausted = true
             }
-        }
-        countLatch.awaitActivity().await()
+        }?.join()
     }
 
     override suspend fun execute(context: StepContext<I, O>) {

@@ -1,9 +1,9 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
@@ -18,7 +18,8 @@ import io.qalipsis.core.factories.steps.VerificationStep
 @StepConverter
 internal class VerificationStepSpecificationConverter(
     private val eventsLogger: EventsLogger,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
+    private val campaignStateKeeper: CampaignStateKeeper
 ) : StepSpecificationConverter<VerificationStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
@@ -28,7 +29,9 @@ internal class VerificationStepSpecificationConverter(
     override suspend fun <I, O> convert(creationContext: StepCreationContext<VerificationStepSpecification<*, *>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as VerificationStepSpecification<I, O>
-        val step = VerificationStep(spec.name ?: Cuid.createCuid(), eventsLogger, meterRegistry, spec.verificationBlock)
+        // The reporting is done by the step itself and should not added by the decorator.
+        spec.reporting.reportErrors = false
+        val step = VerificationStep(spec.name, eventsLogger, meterRegistry, campaignStateKeeper, spec.verificationBlock)
         creationContext.createdStep(step)
     }
 

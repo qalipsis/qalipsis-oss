@@ -41,7 +41,7 @@ internal class ScenarioSpecificationImplementation(
         step.scenario = this
         rootSteps.add(step)
         register(step)
-        if (step.directedAcyclicGraphId.isNullOrBlank()) {
+        if (step.directedAcyclicGraphId.isBlank()) {
             step.directedAcyclicGraphId = this.buildDagId()
         }
     }
@@ -56,7 +56,7 @@ internal class ScenarioSpecificationImplementation(
     override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
         register(nextStep)
         // If any step is a singleton, a new DAG is built.
-        if (nextStep.directedAcyclicGraphId.isNullOrBlank()) {
+        if (nextStep.directedAcyclicGraphId.isBlank()) {
             if (previousStep is SingletonStepSpecification || nextStep is SingletonStepSpecification) {
                 nextStep.directedAcyclicGraphId = buildDagId(previousStep.directedAcyclicGraphId)
             } else {
@@ -67,9 +67,9 @@ internal class ScenarioSpecificationImplementation(
 
     override fun register(step: StepSpecification<*, *, *>) {
         step.scenario = this
-        if (!step.name.isNullOrBlank()) {
+        if (step.name.isNotBlank()) {
             runBlocking {
-                registeredSteps.computeIfAbsent(step.name!!) { ImmutableSlot() }.also {
+                registeredSteps.computeIfAbsent(step.name) { ImmutableSlot() }.also {
                     if (it.isEmpty()) {
                         it.set(step)
                     }

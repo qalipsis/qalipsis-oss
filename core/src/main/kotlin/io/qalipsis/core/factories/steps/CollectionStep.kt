@@ -8,20 +8,16 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.Slot
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Duration
 import java.util.LinkedList
+
 import kotlin.math.min
 
 
@@ -104,7 +100,7 @@ internal class CollectionStep<I>(
 
     override suspend fun execute(context: StepContext<I, List<I>>) {
         require(running) { "The step is in termination mode" }
-        val input = context.input.receive()
+        val input = context.receive()
 
         mutex.withLock {
             buffer.add(input)
@@ -141,7 +137,7 @@ internal class CollectionStep<I>(
     private suspend fun forwardValues(context: StepContext<I, List<I>>?, values: List<I>) {
         context?.apply {
             // Sends all the values into the output of the latest context.
-            this.output.send(values)
+            this.send(values)
             // Releases the context in order to let its execution finish and the values be consumed by the next steps.
             this.release()
         }

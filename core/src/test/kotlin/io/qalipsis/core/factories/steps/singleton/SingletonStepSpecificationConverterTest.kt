@@ -11,20 +11,9 @@ import io.mockk.unmockkObject
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
-import io.qalipsis.api.steps.AbstractStepSpecification
-import io.qalipsis.api.steps.SingletonConfiguration
-import io.qalipsis.api.steps.SingletonStepSpecification
-import io.qalipsis.api.steps.SingletonType
-import io.qalipsis.api.steps.Step
-import io.qalipsis.api.steps.StepCreationContext
-import io.qalipsis.api.steps.StepCreationContextImpl
-import io.qalipsis.api.steps.StepSpecification
+import io.qalipsis.api.steps.*
 import io.qalipsis.core.factories.orchestration.Runner
-import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicBuilder
-import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicConfiguration
-import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicDataPushStep
-import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
-import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicType
+import io.qalipsis.core.factories.steps.topicrelatedsteps.*
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -33,11 +22,7 @@ import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -63,6 +48,16 @@ internal class SingletonStepSpecificationConverterTest :
 
     @RelaxedMockK
     lateinit var runner: Runner
+
+    @BeforeAll
+    fun setUpAll() {
+        mockkObject(TopicBuilder)
+    }
+
+    @AfterAll
+    fun tearDownAll() {
+        unmockkObject(TopicBuilder)
+    }
 
     @Test
     internal fun `should have order 100`() {
@@ -166,7 +161,7 @@ internal class SingletonStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name into a SingletonProxyStep`() = runBlockingTest {
+    internal fun `should convert spec into a SingletonProxyStep`() = runBlockingTest {
         // given
         every { TopicBuilder.build<String>(any()) } returns dataTransferTopic
         val nextStep: StepSpecification<String, *, *> = relaxedMockk()
@@ -175,6 +170,7 @@ internal class SingletonStepSpecificationConverterTest :
             nextStep,
             dataTransferTopic
         )
+        spec.name = "my-proxy"
         every { directedAcyclicGraph.isUnderLoad } returns true
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
@@ -191,7 +187,7 @@ internal class SingletonStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec without name into a TopicDataPushStep`() = runBlockingTest {
+    internal fun `should convert spec into a TopicDataPushStep`() = runBlockingTest {
         // given
         every { TopicBuilder.build<String>(any()) } returns dataTransferTopic
         val nextStep: StepSpecification<String, *, *> = relaxedMockk()
@@ -200,6 +196,7 @@ internal class SingletonStepSpecificationConverterTest :
             nextStep,
             dataTransferTopic
         )
+        spec.name = "my-proxy"
         every { directedAcyclicGraph.isUnderLoad } returns false
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
@@ -214,22 +211,6 @@ internal class SingletonStepSpecificationConverterTest :
                 typedProp<Topic<String>>("topic").isSameAs(dataTransferTopic)
             }
         }
-    }
-
-    companion object {
-
-        @BeforeAll
-        @JvmStatic
-        fun setUpAll() {
-            mockkObject(TopicBuilder)
-        }
-
-        @AfterAll
-        @JvmStatic
-        fun tearDownAll() {
-            unmockkObject(TopicBuilder)
-        }
-
     }
 
     inner class TestSingletonSpecification(

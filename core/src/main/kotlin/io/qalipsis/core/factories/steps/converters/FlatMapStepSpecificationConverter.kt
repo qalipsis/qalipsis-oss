@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.FlatMapStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -24,7 +23,7 @@ internal class FlatMapStepSpecificationConverter :
     override suspend fun <I, O> convert(creationContext: StepCreationContext<FlatMapStepSpecification<*, *>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as FlatMapStepSpecification<I, O>
-        val step = FlatMapStep(spec.name ?: Cuid.createCuid(),
+        val step = FlatMapStep(spec.name,
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy, spec.block)
         creationContext.createdStep(step)
     }

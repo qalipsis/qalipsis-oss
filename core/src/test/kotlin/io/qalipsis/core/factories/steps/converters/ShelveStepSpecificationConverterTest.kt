@@ -2,16 +2,19 @@ package io.qalipsis.core.factories.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.steps.ShelveStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.ShelveStep
+import io.qalipsis.core.factories.steps.VerificationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
@@ -66,7 +69,6 @@ internal class ShelveStepSpecificationConverterTest :
         // given
         val blockSpecification: (input: String) -> Map<String, Any?> = { mapOf() }
         val spec = ShelveStepSpecification(blockSpecification)
-        spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -74,7 +76,7 @@ internal class ShelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
-            prop("id").isNotNull()
+            prop(ShelveStep<*>::id).isEmpty()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("specification").isSameAs(blockSpecification)
         }

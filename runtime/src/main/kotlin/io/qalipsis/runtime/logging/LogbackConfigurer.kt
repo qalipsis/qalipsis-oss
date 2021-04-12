@@ -21,7 +21,7 @@ import javax.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-open class LogbackConfigurer(
+internal class LogbackConfigurer(
     private val config: LoggingConfiguration
 ) : Configurer {
 
@@ -61,15 +61,16 @@ open class LogbackConfigurer(
             loggerContext.getLogger("ROOT").level = Level.valueOf(level)
         }
 
-        config.level.mapKeys { it.key as String }.mapValues { Level.valueOf(it.value as String) }
-            .forEach { (logger, level) ->
-                loggerContext.getLogger(logger).level = level
-            }
+        config.loggingLevels.forEach { (logger, level) ->
+            loggerContext.getLogger(logger).level = level
+        }
     }
 
-    private fun buildRollingFileAppender(name: String, context: LoggerContext,
-                                         configFile: LoggingConfiguration.LoggingFile,
-                                         defaultPattern: String?): Appender<ILoggingEvent> {
+    private fun buildRollingFileAppender(
+        name: String, context: LoggerContext,
+        configFile: LoggingConfiguration.LoggingFile,
+        defaultPattern: String?
+    ): Appender<ILoggingEvent> {
         val configuredMaxSize = if (configFile.maxSize.isNullOrBlank()) "30MB" else configFile.maxSize
         val configuredTotalCap = if (configFile.totalCapacity.isNullOrBlank()) "100MB" else configFile.totalCapacity
         val configuredMaxHistory = configFile.maxHistory

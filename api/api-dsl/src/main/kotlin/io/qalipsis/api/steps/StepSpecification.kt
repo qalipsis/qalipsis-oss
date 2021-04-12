@@ -6,7 +6,6 @@ import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import java.time.Duration
-import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 
 /**
@@ -23,17 +22,18 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     /**
      * Name of the step (default is assigned at runtime).
      */
-    var name: StepName?
+    var name: StepName
 
     /**
      * The parent [ScenarioSpecification] to which the [StepSpecification] belongs.
+     * The scenario has to be assigned before the name is set.
      */
-    var scenario: @NotNull StepSpecificationRegistry?
+    var scenario: StepSpecificationRegistry
 
     /**
      * ID of the directed acyclic graph attached to the step.
      */
-    var directedAcyclicGraphId: @NotNull DirectedAcyclicGraphId?
+    var directedAcyclicGraphId: DirectedAcyclicGraphId
 
     /**
      * Defines the delay after which a non completed execution triggers a failure.
@@ -54,6 +54,11 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
      * The [RetryPolicy] to apply when using the step, if it requires one.
      */
     val retryPolicy: RetryPolicy?
+
+    /**
+     * Configuration of the reporting for the step.
+     */
+    var reporting: StepReportingSpecification
 
     /**
      * Collection of [StepSpecification]s to create the sibling [io.qalipsis.api.steps.Step]s.

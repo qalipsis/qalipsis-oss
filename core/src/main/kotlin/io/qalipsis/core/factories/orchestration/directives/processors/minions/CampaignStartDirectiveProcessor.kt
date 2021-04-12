@@ -4,6 +4,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
+import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.directives.CampaignStartDirective

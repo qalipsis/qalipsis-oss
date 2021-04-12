@@ -22,9 +22,9 @@ internal class CatchExhaustedContextStep<O>(
         if (context.isExhausted) {
             log.trace("Catching exhausted context")
             this.block(context)
-        } else if (!context.input.isEmpty) {
+        } else if (!context.hasInput) {
             @Suppress("UNCHECKED_CAST")
-            context.output.send(context.input.receive() as O)
+            context.send(context.receive() as O)
         }
     }
 

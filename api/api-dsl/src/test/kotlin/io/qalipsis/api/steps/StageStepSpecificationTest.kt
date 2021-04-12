@@ -2,13 +2,7 @@ package io.qalipsis.api.steps
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.hasSize
-import assertk.assertions.index
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isNull
-import assertk.assertions.isSameAs
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.scenario.scenario

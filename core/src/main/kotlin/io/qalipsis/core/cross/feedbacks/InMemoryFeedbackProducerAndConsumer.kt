@@ -1,7 +1,7 @@
 package io.qalipsis.core.cross.feedbacks
 
-import cool.graph.cuid.Cuid
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.messaging.broadcastTopic
 import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
@@ -19,7 +19,9 @@ import javax.inject.Singleton
  */
 @Singleton
 @Requires(env = [ENV_STANDALONE])
-internal class InMemoryFeedbackProducerAndConsumer : FeedbackProducer, FeedbackConsumer {
+internal class InMemoryFeedbackProducerAndConsumer(
+    private val idGenerator: IdGenerator
+) : FeedbackProducer, FeedbackConsumer {
 
     private val topic = broadcastTopic<Feedback>()
 
@@ -28,7 +30,7 @@ internal class InMemoryFeedbackProducerAndConsumer : FeedbackProducer, FeedbackC
     }
 
     override suspend fun onReceive(block: suspend (Feedback) -> Unit): Job {
-        return topic.subscribe(Cuid.createCuid()).onReceiveValue(block)
+        return topic.subscribe(idGenerator.short()).onReceiveValue(block)
     }
 
 }

@@ -91,11 +91,19 @@ class Latch(var isLocked: Boolean = false) {
             // Releases the awaiting ones.
             syncFlag?.close()
             syncFlag = null
-            // Suspends the concurrent and futures again.
+            // Suspends the new and futures calls.
             syncFlag = Channel(Channel.RENDEZVOUS)
         }
         // Let the concurrent calls to [await] now wait for [syncFlag] to be released.
         releaseAwaitingFlag?.close()
+    }
+
+    /**
+     * Forces to unlock all the current and future calls to [await].
+     */
+    fun cancel() {
+        isLocked = false
+        syncFlag?.close()
     }
 
     companion object {

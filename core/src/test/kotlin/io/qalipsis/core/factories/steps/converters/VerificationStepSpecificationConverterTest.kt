@@ -2,10 +2,13 @@ package io.qalipsis.core.factories.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.VerificationStepSpecification
@@ -38,19 +41,22 @@ internal class VerificationStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert spec with name to step`() = runBlockingTest {
+    internal fun `should convert spec with name to step and ignore the error reporting`() = runBlockingTest {
         // given
         val blockSpecification: suspend (input: String) -> Int = { value -> value.toInt() }
         val spec = VerificationStepSpecification(blockSpecification)
         spec.name = "my-step"
+        spec.reporting.reportErrors = true
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
         converter.convert<String, Int>(creationContext as StepCreationContext<VerificationStepSpecification<*, *>>)
 
         // then
+        assertThat(spec.reporting.reportErrors).isFalse()
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
             prop("id").isEqualTo("my-step")
+            prop("campaignStateKeeper").isSameAs(campaignStateKeeper)
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
             prop("assertionBlock").isSameAs(blockSpecification)
@@ -69,7 +75,7 @@ internal class VerificationStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
-            prop("id").isNotNull()
+            prop(VerificationStep<*,*>::id).isEmpty()
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
             prop("assertionBlock").isSameAs(blockSpecification)

@@ -2,11 +2,7 @@ package io.qalipsis.core.factories.steps.topicrelatedsteps
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.containsExactly
-import assertk.assertions.index
-import assertk.assertions.isEqualTo
-import assertk.assertions.isFalse
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -18,6 +14,7 @@ import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
@@ -87,13 +84,11 @@ internal class TopicDataPushStepTest {
                 prop(StepContext<String, String>::stepId).isEqualTo("my-next-step")
                 prop(StepContext<String, String>::minionId).isEqualTo("my-minion")
                 prop(StepContext<String, String>::isTail).isFalse()
-                prop(StepContext<String, String>::output).all {
-                    transform { it.isClosedForSend }.isFalse()
-                }
+                transform { (it as StepContextImpl).output.isClosedForSend }.isFalse()
             }
         }
         // Verifies the values sent into the context for the next step.
-        val emittedValues = contexts.map { it.input.receive() }
+        val emittedValues = contexts.map { it.receive() }
         assertThat(emittedValues).containsExactly("value-1", "value-2", "value-3")
     }
 

@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
@@ -28,10 +27,10 @@ internal class UnshelveStepSpecificationConverter(
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as UnshelveStepSpecification<I, O>
         val step = if (spec.singular) {
-            SingularUnshelveStep<I, O>(spec.name ?: Cuid.createCuid(), sharedStateRegistry, spec.names.first(),
+            SingularUnshelveStep<I, O>(spec.name, sharedStateRegistry, spec.names.first(),
                 spec.delete)
         } else {
-            UnshelveStep<I>(spec.name ?: Cuid.createCuid(), sharedStateRegistry, spec.names, spec.delete)
+            UnshelveStep<I>(spec.name, sharedStateRegistry, spec.names, spec.delete)
         }
         creationContext.createdStep(step)
     }

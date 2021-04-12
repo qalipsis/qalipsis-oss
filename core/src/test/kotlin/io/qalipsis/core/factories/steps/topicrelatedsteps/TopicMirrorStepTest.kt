@@ -28,7 +28,7 @@ internal class TopicMirrorStepTest {
     fun `should forward data to channel and topic`() = runBlockingTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
-        val ctx = StepTestHelper.createStepContext<String, String>("This is a test")
+        val ctx = StepTestHelper.createStepContext<String, String>("This is a test").also { it.isTail = false }
 
         // when
         step.execute(ctx)

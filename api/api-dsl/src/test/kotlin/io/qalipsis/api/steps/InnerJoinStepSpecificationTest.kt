@@ -2,11 +2,7 @@ package io.qalipsis.api.steps
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isNotNull
-import assertk.assertions.isTrue
-import assertk.assertions.prop
+import assertk.assertions.*
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.scenario.ScenarioSpecification
 import org.junit.jupiter.api.Assertions.assertEquals

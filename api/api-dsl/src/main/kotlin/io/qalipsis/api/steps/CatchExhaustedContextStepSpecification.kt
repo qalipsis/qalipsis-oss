@@ -39,7 +39,7 @@ fun <OUTPUT> StepSpecification<*, *, *>.catchExhaustedContext(
 fun StepSpecification<*, *, *>.recover(): CatchExhaustedContextStepSpecification<Unit> {
     val step = CatchExhaustedContextStepSpecification<Unit> { context ->
         context.isExhausted = false
-        context.output.send(Unit)
+        context.send(Unit)
     }
     this.add(step)
     return step

@@ -30,6 +30,7 @@ dependencies {
     compileOnly("org.graalvm.nativeimage:svm")
 
     implementation(kotlin("stdlib"))
+    implementation("cool.graph:cuid-java:0.1.1")
     api(project(":api:api-dev"))
     api(project(":api:api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
@@ -39,7 +40,6 @@ dependencies {
     api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("javax.annotation:javax.annotation-api")
     api("io.micronaut:micronaut-validation")
-    api("cool.graph:cuid-java:0.1.1")
 
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")

@@ -126,7 +126,7 @@ internal class SuspendedCountLatchTest {
 
     @Test
     @Timeout(1)
-    internal fun `should release but not execute onDone action`() = runBlocking {
+    internal fun `should release and execute onDone action`() = runBlocking {
         // given
         val doneFlag = AtomicBoolean(false)
         val countLatch = SuspendedCountLatch(20) { doneFlag.set(true) }
@@ -134,6 +134,27 @@ internal class SuspendedCountLatchTest {
         launch {
             delay(50)
             countLatch.release()
+        }
+
+        // when
+        Assertions.assertTrue(countLatch.isSuspended())
+        countLatch.await()
+
+
+        // then
+        Assertions.assertTrue(doneFlag.get())
+    }
+
+    @Test
+    @Timeout(1)
+    internal fun `should cancel and not execute onDone action`() = runBlocking {
+        // given
+        val doneFlag = AtomicBoolean(false)
+        val countLatch = SuspendedCountLatch(20) { doneFlag.set(true) }
+
+        launch {
+            delay(50)
+            countLatch.cancel()
         }
 
         // when

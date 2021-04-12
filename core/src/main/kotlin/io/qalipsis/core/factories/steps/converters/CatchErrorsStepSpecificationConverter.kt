@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.steps.converters
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.steps.CatchErrorsStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -23,7 +22,7 @@ internal class CatchErrorsStepSpecificationConverter : StepSpecificationConverte
     override suspend fun <I, O> convert(creationContext: StepCreationContext<CatchErrorsStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification
-        val step = CatchErrorsStep<I>(spec.name ?: Cuid.createCuid(), spec.block)
+        val step = CatchErrorsStep<I>(spec.name, spec.block)
         creationContext.createdStep(step)
     }
 
