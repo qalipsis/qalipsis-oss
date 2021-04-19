@@ -12,8 +12,12 @@ import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import io.qalipsis.core.factories.steps.MinionsKeeperAware
 import io.qalipsis.core.factories.steps.RunnerAware
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
 /**
  * Step forcing the execution of next step after a record was received from [topic].
@@ -49,7 +53,7 @@ internal class TopicDataPushStep<I>(
         val nextStep = next.first()
         val stepId = nextStep.id
         val minion = minionsKeeper.getSingletonMinion(context.dagId)
-        log.debug("Starting to push data with the minion $minion")
+        log.debug { "Starting to push data with the minion $minion" }
 
         // Starts the coroutines that consumes the topic and pass the values to the step after.
         consumingJob = coroutineScope.launch {
@@ -74,7 +78,7 @@ internal class TopicDataPushStep<I>(
                     }
                 }
             } catch (e: Exception) {
-                log.warn(e.message, e)
+                log.warn(e) { e.message }
             } finally {
                 topicSubscription.cancel()
             }

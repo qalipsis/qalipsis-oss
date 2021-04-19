@@ -22,7 +22,7 @@ internal class CatchErrorsStep<I>(
     @Throws(Throwable::class)
     override suspend fun execute(context: StepContext<I, I>) {
         if (context.errors.isNotEmpty()) {
-            log.trace("${context.errors.size} error(s) to be caught")
+            log.trace { "${context.errors.size} error(s) to be caught" }
             this.block(context.errors)
         }
 

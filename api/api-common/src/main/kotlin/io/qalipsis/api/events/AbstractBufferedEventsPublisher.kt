@@ -67,7 +67,7 @@ abstract class AbstractBufferedEventsPublisher(
         resetTicker()
         try {
             ticker!!.receiveOrNull()
-            log.trace("Timeout is reached")
+            log.trace { "Timeout is reached" }
             if (buffer.isNotEmpty()) {
                 mutex.withLock {
                     if (!ticker!!.isClosedForReceive) {
@@ -79,12 +79,12 @@ abstract class AbstractBufferedEventsPublisher(
         } catch (e: CancellationException) {
             // Called when the ticker is cancelled.
         } catch (e: Exception) {
-            log.error(e.message, e)
+            log.error(e) { e.message }
         }
     }
 
     private suspend fun publishSafely(values: List<Event>) {
-        log.trace("Publishing ${values.size} events.")
+        log.trace { "Publishing ${values.size} events." }
         tryAndLogOrNull(log) {
             publish(values)
         }
@@ -103,7 +103,7 @@ abstract class AbstractBufferedEventsPublisher(
         if (minLevel != EventLevel.OFF && event.level >= minLevel) {
             buffer.add(event)
             if (buffer.size >= batchSize && running) {
-                log.trace("The buffer is full, starting a coroutine to publish the events")
+                log.trace { "The buffer is full, starting a coroutine to publish the events" }
                 coroutineScope.launch {
                     mutex.withLock {
                         // Verifies the size once again, in case the batch was emptied in the meantime.

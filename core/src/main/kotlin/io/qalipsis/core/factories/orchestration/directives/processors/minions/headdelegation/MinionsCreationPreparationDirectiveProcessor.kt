@@ -50,7 +50,7 @@ internal class MinionsCreationPreparationDirectiveProcessor(
     override suspend fun process(directive: MinionsCreationPreparationDirectiveReference) {
         scenariosRegistry[directive.scenarioId]?.let { scenario ->
             directiveRegistry.read(directive)?.let { minionsCount ->
-                log.debug("Creating $minionsCount minions IDs for the scenario ${directive.scenarioId}")
+                log.debug { "Creating $minionsCount minions IDs for the scenario ${directive.scenarioId}" }
                 feedbackProducer.publish(
                     DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.IN_PROGRESS)
                 )

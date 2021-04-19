@@ -139,7 +139,7 @@ object Qalipsis : Callable<Unit> {
             applicationContext.getBeansOfType(ProcessBlocker::class.java)
         if (processBlockers.isNotEmpty()) {
             runBlocking {
-                log.info("${processBlockers.size} service(s) to join before exiting the process")
+                log.info { "${processBlockers.size} service(s) to join before exiting the process" }
                 processBlockers.forEach { it.join() }
             }
 
@@ -152,7 +152,7 @@ object Qalipsis : Callable<Unit> {
                 }
             }
         } else {
-            log.info("There is no service to join before exiting the process")
+            log.info { "There is no service to join before exiting the process" }
         }
     }
 

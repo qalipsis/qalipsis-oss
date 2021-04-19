@@ -1,7 +1,6 @@
 package io.qalipsis.api.logging
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 /**
  * Helper to support logging facilities.
@@ -13,6 +12,5 @@ object LoggerHelper {
     /**
      * Creates / returns an instance of logger for the caller class.
      */
-    inline fun <reified T : Any> T.logger(): Logger =
-        LoggerFactory.getLogger(T::class.java.enclosingClass ?: T::class.java)
+    inline fun <reified T : Any> T.logger() = KotlinLogging.logger { }
 }

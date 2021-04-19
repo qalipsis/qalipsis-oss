@@ -22,7 +22,7 @@ class MapDatasourceObjectProcessor(
             try {
                 conversionsRules[entry.key]?.let { it(value) } ?: value
             } catch (e: Exception) {
-                log.debug("Row $offset, field $entry.key, value $value: ${e.message}", e)
+                log.debug(e) { "Row $offset, field $entry.key, value $value: ${e.message}" }
                 errors.add("column ${entry.key}, value $value: ${e.message}")
             }
         }

@@ -99,7 +99,7 @@ internal class DefaultCampaignManager(
     @PostConstruct
     fun init() {
         consumptionJob = GlobalScope.launch {
-            log.debug("Consuming from $feedbackConsumer")
+            log.debug { "Consuming from $feedbackConsumer" }
             feedbackConsumer.onReceive { feedback ->
                 processFeedBack(feedback)
             }
@@ -170,7 +170,7 @@ internal class DefaultCampaignManager(
     internal suspend fun processFeedBack(feedback: Feedback) {
         when (feedback) {
             is DirectiveFeedback -> {
-                log.debug("Processing a directive feedback: ${feedback}")
+                log.debug { "Processing a directive feedback: ${feedback}" }
                 processDirectiveFeedback(feedback)
             }
             is CampaignStartedForDagFeedback -> receiveCampaignStartedFeedback(feedback)
@@ -209,7 +209,7 @@ internal class DefaultCampaignManager(
             FeedbackStatus.FAILED -> onCriticalFailure(
                     "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions could not be created: ${feedback.error}")
             FeedbackStatus.COMPLETED -> {
-                log.debug("Scenario ${directive.scenarioId} - IDs for all the minions were created")
+                log.debug { "Scenario ${directive.scenarioId} - IDs for all the minions were created" }
             }
         }
     }
@@ -252,7 +252,7 @@ internal class DefaultCampaignManager(
      * Mark the scenario ready and triggers [onAllScenariosReady] if all the others are ready.
      */
     private suspend fun onScenarioReady(campaignId: CampaignId, scenarioId: ScenarioId) {
-        log.debug("Campaign ${campaignId}, scenario ${scenarioId} - All minions were created")
+        log.debug { "Campaign ${campaignId}, scenario ${scenarioId} - All minions were created" }
         readyScenarios.add(scenarioId)
         if (readyScenarios.size == scenarios.keys.size) {
             onAllScenariosReady(campaignId)
@@ -263,7 +263,7 @@ internal class DefaultCampaignManager(
      * Trigger the ramp-up when all the minions for all the scenarios are ready.
      */
     private suspend fun onAllScenariosReady(campaignId: CampaignId) {
-        log.info("All minions for all the scenarios were created, now starting the campaign")
+        log.info { "All minions for all the scenarios were created, now starting the campaign" }
         readyDagsByScenario.clear()
         directivesInProgress.clear()
         startedDagsByScenario.clear()
@@ -311,7 +311,7 @@ internal class DefaultCampaignManager(
      * Mark the scenario ready and triggers [onAllScenariosReady] if all the others are ready.
      */
     private suspend fun onScenarioStarted(campaignId: CampaignId, scenarioId: ScenarioId) {
-        log.debug("Campaign $campaignId, scenario $scenarioId - All minions were created")
+        log.debug { "Campaign $campaignId, scenario $scenarioId - All minions were created" }
         startedScenarios.add(scenarioId)
         if (startedScenarios.size == scenarios.keys.size) {
             onAllScenariosStarted(campaignId)
@@ -322,7 +322,7 @@ internal class DefaultCampaignManager(
      * Trigger the ramp-up when all the minions for all the scenarios are ready.
      */
     private suspend fun onAllScenariosStarted(campaignId: CampaignId) {
-        log.info("All minions for all the scenarios were created, now starting the campaign")
+        log.info { "All minions for all the scenarios were created, now starting the campaign" }
         startedDagsByScenario.clear()
         directivesInProgress.clear()
 

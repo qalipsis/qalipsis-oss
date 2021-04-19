@@ -52,7 +52,7 @@ internal class IterativeStepDecorator<I, O>(
 
             // Provide the input value again for each iteration.
             internalInputChannel.send(inputValue)
-            log.trace("Executing iteration $currentIteration for context $context")
+            log.trace { "Executing iteration $currentIteration for context $context" }
             try {
                 executeStep(minion, decorated, internalContext)
             } catch (t: Throwable) {
@@ -62,17 +62,17 @@ internal class IterativeStepDecorator<I, O>(
 
             remainingIterations--
             currentIteration++
-            log.trace("Executed iteration $currentIteration for context ${context}, remaining $remainingIterations")
+            log.trace { "Executed iteration $currentIteration for context ${context}, remaining $remainingIterations" }
 
             if (delayMillis > 0 && remainingIterations > 0) {
-                log.trace("Applying delay of $delayMillis ms before next iteration")
+                log.trace { "Applying delay of $delayMillis ms before next iteration" }
                 delay(delayMillis)
             } else if (remainingIterations > 0) {
                 // Force a delay to have a suspension point.
                 delay(1)
             }
         }
-        log.trace("End of the iterations for context $context")
+        log.trace { "End of the iterations for context $context" }
     }
 
     override suspend fun execute(context: StepContext<I, O>) {

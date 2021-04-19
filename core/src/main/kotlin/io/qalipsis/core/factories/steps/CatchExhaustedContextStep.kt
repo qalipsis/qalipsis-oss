@@ -20,7 +20,7 @@ internal class CatchExhaustedContextStep<O>(
 
     override suspend fun execute(context: StepContext<Any?, O>) {
         if (context.isExhausted) {
-            log.trace("Catching exhausted context")
+            log.trace { "Catching exhausted context" }
             this.block(context)
         } else if (!context.hasInput) {
             @Suppress("UNCHECKED_CAST")

@@ -9,6 +9,7 @@ import ch.qos.logback.core.Appender
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy
 import ch.qos.logback.core.util.FileSize
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.Configurer
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -34,7 +35,7 @@ internal class LogbackConfigurer(
         val rootLogger = loggerContext.getLogger("ROOT")
         // If the logs are expected in the console.
         if (!config.console) {
-            log.info("Disabling the console logs")
+            log.info { "Disabling the console logs" }
             rootLogger.detachAppender("console")
         }
 
@@ -78,7 +79,7 @@ internal class LogbackConfigurer(
         val appender = RollingFileAppender<ILoggingEvent>().also { app ->
             app.name = name
             app.context = context
-            app.file = File(configFile.path).absolutePath
+            app.file = File(configFile.path!!).absolutePath
             app.rollingPolicy = SizeAndTimeBasedRollingPolicy<ILoggingEvent>().also { policy ->
                 policy.context = context
                 policy.setParent(app)
@@ -112,6 +113,6 @@ internal class LogbackConfigurer(
 
         @Suppress("JAVA_CLASS_ON_COMPANION")
         @JvmStatic
-        private val log = LoggerFactory.getLogger(javaClass.enclosingClass)
+        private val log = logger()
     }
 }

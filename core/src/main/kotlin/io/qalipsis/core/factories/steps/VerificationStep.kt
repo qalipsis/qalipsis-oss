@@ -46,7 +46,7 @@ internal class VerificationStep<I, O>(
             failureMeter.increment()
             eventsLogger.warn(
                 "step.assertion.failure",
-                value = context.errors.joinToString(", ") { it.cause.message!! }.takeIf { it.isNotBlank() }
+                value = context.errors.joinToString(", ") { it.cause.message ?: "" }.takeIf { it.isNotBlank() }
                     ?: "An error occurred in a previous step") { context.toEventTags() }
         } else {
             val input = context.receive()
@@ -88,7 +88,7 @@ internal class VerificationStep<I, O>(
             ReportMessageSeverity.INFO
         }
         campaignStateKeeper.put(context.campaignId, context.scenarioId, this.id, severity, result)
-        log.info("Stopping the verification step ${this.id} for the campaign ${context.campaignId}: $result")
+        log.info { "Stopping the verification step ${this.id} for the campaign ${context.campaignId}: $result" }
         super<AbstractStep>.stop(context)
     }
 

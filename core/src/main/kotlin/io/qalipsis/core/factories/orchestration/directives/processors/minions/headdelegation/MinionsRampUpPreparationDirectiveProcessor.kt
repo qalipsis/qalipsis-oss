@@ -57,7 +57,7 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
                 var start = System.currentTimeMillis() + directive.startOffsetMs
                 val minionsStartDefinitions = mutableListOf<MinionStartDefinition>()
 
-                log.debug("Creating the ramp-up for ${createdMinions.size} minions on campaign ${directive.campaignId} of scenario ${scenario.id}")
+                log.debug { "Creating the ramp-up for ${createdMinions.size} minions on campaign ${directive.campaignId} of scenario ${scenario.id}" }
                 while (createdMinions.isNotEmpty()) {
                     val nextStartingLine = rampUpStrategyIterator.next()
                     require(nextStartingLine.count > 0) { "nextStartingLine.count <= 0" }
@@ -68,14 +68,14 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
                         minionsStartDefinitions.add(MinionStartDefinition(createdMinions.removeFirst(), start))
                     }
                 }
-                log.debug("Ramp-up creation is complete on campaign ${directive.campaignId} of scenario ${scenario.id}")
+                log.debug { "Ramp-up creation is complete on campaign ${directive.campaignId} of scenario ${scenario.id}" }
                 directiveProducer.publish(MinionsStartDirective(scenario.id, minionsStartDefinitions))
 
                 feedbackProducer.publish(
                     DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.COMPLETED)
                 )
             } catch (e: Exception) {
-                log.error("Error when processing $directive: ${e.message}", e)
+                log.error(e) { "Error when processing $directive: ${e.message}" }
                 feedbackProducer.publish(
                     DirectiveFeedback(
                         directiveKey = directive.key, status = FeedbackStatus.FAILED,

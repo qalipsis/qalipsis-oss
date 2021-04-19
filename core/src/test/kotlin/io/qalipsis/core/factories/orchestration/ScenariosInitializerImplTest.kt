@@ -2,11 +2,24 @@ package io.qalipsis.core.factories.orchestration
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isNotEmpty
+import assertk.assertions.isSameAs
+import assertk.assertions.isTrue
+import assertk.assertions.prop
 import io.micronaut.context.ApplicationContext
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
+import io.mockk.mockkObject
+import io.mockk.slot
+import io.mockk.spyk
+import io.mockk.unmockkObject
+import io.mockk.verifyOrder
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
@@ -17,13 +30,24 @@ import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.steps.*
+import io.qalipsis.api.steps.Step
+import io.qalipsis.api.steps.StepCreationContext
+import io.qalipsis.api.steps.StepCreationContextImpl
+import io.qalipsis.api.steps.StepSpecification
+import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.api.steps.TubeStepSpecification
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.qalipsis.core.factories.testScenario
 import io.qalipsis.core.heads.campaigns.HeadDirectedAcyclicGraph
 import io.qalipsis.test.lang.TestIdGenerator
-import io.qalipsis.test.mockk.*
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyExactly
+import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.relaxedMockk
+import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
@@ -143,7 +167,7 @@ internal class ScenariosInitializerImplTest {
         coVerifyOnce {
             (stepConverter1).support(refEq(stepSpecification))
             (stepConverter2).support(refEq(stepSpecification))
-            scenariosInitializer.addStepNameIfRequired(refEq(stepSpecification))
+            scenariosInitializer.addMissingStepName(refEq(stepSpecification))
             (stepConverter2).convert<Any?, Any?>(refEq(context))
         }
         coVerifyNever {
@@ -473,7 +497,7 @@ internal class ScenariosInitializerImplTest {
         }
 
         // when
-        scenariosInitializer.addStepNameIfRequired(stepSpecification)
+        scenariosInitializer.addMissingStepName(stepSpecification)
 
         // then
         assertThat(stepSpecification.name.trim()).isNotEmpty()
@@ -488,7 +512,7 @@ internal class ScenariosInitializerImplTest {
         }
 
         // when
-        scenariosInitializer.addStepNameIfRequired(stepSpecification)
+        scenariosInitializer.addMissingStepName(stepSpecification)
 
         // then
         assertThat(stepSpecification.name.trim()).isNotEmpty()
@@ -503,7 +527,7 @@ internal class ScenariosInitializerImplTest {
         }
 
         // when
-        scenariosInitializer.addStepNameIfRequired(stepSpecification)
+        scenariosInitializer.addMissingStepName(stepSpecification)
 
         // then
         assertThat(stepSpecification.name).isEqualTo("   a step for my name   ")

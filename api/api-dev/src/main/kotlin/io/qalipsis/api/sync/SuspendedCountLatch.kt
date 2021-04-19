@@ -115,7 +115,7 @@ class SuspendedCountLatch(
      * @return the value of the counter after the reset.
      */
     suspend fun reset(): Long = mutex.withLock {
-        log.trace("Resetting...")
+        log.trace { "Resetting..." }
         count.set(initialCount)
         resetFlag()
         count.get()

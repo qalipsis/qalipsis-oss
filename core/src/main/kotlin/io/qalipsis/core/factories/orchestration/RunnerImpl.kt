@@ -14,16 +14,18 @@ import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.factories.context.StepContextBuilder
 import io.qalipsis.core.factories.context.StepContextImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import org.slf4j.MDC
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Singleton
 
 /**
@@ -65,12 +67,6 @@ internal class RunnerImpl(
 
     private val executedStepCounter = meterRegistry.counter("executed-steps")
 
-    private val successCount = AtomicLong()
-
-    private val failureCount = AtomicLong()
-
-    private val errorCount = AtomicLong()
-
     @LogInput
     override suspend fun run(minion: Minion, dag: DirectedAcyclicGraph) {
         idleMinionsGauge.incrementAndGet()
@@ -90,28 +86,52 @@ internal class RunnerImpl(
         launch(minion, step, ctx)
     }
 
+    @LogInput
     override suspend fun launch(
         minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
         jobsCounter: SuspendedCountLatch?,
         consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
     ) {
+        configureMdcContext(minion)
+
         minion.start()
         runningMinionsGauge.incrementAndGet()
         minion.onComplete { runningMinionsGauge.decrementAndGet() }
-        log.trace("Running minion ${minion.id}")
 
-        minion.launch(executionScope, countLatch = jobsCounter) {
+        log.trace { "Running minion" }
+
+        MDC.put("step", step.id)
+        val minionParentJob = minion.launch(executionScope, countLatch = jobsCounter) {
+            log.trace { "Starting the execution of a subtree of tasks for the minion" }
             doExecute(this, minion, step, ctx, jobsCounter, consumer)
+            log.trace { "Execution of the subtree of tasks is completed for the minion (1/2)" }
+        }
+
+        GlobalScope.launch {
+            minionParentJob?.join()
+            log.trace { "Execution of the subtree of tasks is completed for the minion (2/2)" }
         }
     }
 
+    @LogInputAndOutput
     override suspend fun execute(
         minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
         consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
     ): Job? {
+        configureMdcContext(minion)
+
+        MDC.put("step", step.id)
         return minion.launch(executionScope) {
             doExecute(this, minion, step, ctx, null, consumer)
         }
+    }
+
+    /**
+     * Configures the [MDC] context for the execution of the minion.
+     */
+    private fun configureMdcContext(minion: Minion) {
+        minion.completeMdcContext()
+        MDC.put("step", "_runner")
     }
 
     private suspend fun doExecute(
@@ -120,11 +140,12 @@ internal class RunnerImpl(
         jobsCounter: SuspendedCountLatch?,
         consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
     ) {
-        log.trace("Executing step ${step.id} on minion ${minion.id} on context $ctx")
+        log.trace { "Executing step with context $ctx" }
         // Asynchronously read the output to trigger the next steps.
         if (step.next.isNotEmpty()) {
             // The output is read asynchronously to release the current coroutine and let the step execute.
             minion.launch(minionScope, countLatch = jobsCounter) {
+                log.trace { "Scheduling next steps" }
                 scheduleNextSteps(minionScope, ctx, step, minion, jobsCounter, consumer)
             }
         } else {
@@ -132,13 +153,13 @@ internal class RunnerImpl(
             // If the step is the latest one of the chain and a completion operation is provided, the output channel
             // is provided to completion operation.
             consumer?.let { completionConsumer ->
-                log.trace("Launching the consumer for the latest step of the graph")
+                log.trace { "Launching the consumer for the latest step of the graph" }
+                MDC.put("step", "_completion")
                 minion.launch(minionScope, countLatch = jobsCounter) { completionConsumer(ctx) }
             }
         }
 
         executeSingleStep(minion, step, ctx)
-        log.trace("Step ${step.id} completed on minion ${minion.id} on context $ctx")
     }
 
     /**
@@ -152,34 +173,43 @@ internal class RunnerImpl(
     ) {
         var errorOfContextProcessed = false
         var hasOutput = false
+        log.trace { "Waiting for the output of the step ${step.id}" }
         for (outputRecord in (ctx as StepContextImpl<*, *>).output as Channel<*>) {
             hasOutput = true
             step.next.forEach { nextStep ->
+
                 if (ctx.isExhausted) {
                     errorOfContextProcessed = true
                 }
-
                 // Each next step is executed in its individual coroutine and with a dedicated context.
                 @Suppress("UNCHECKED_CAST")
                 val nextContext =
                     StepContextBuilder.next<Any?, Any?, Any?>(outputRecord, ctx as StepContext<Any?, Any?>, nextStep.id)
+
+                MDC.put("step", nextStep.id)
                 minion.launch(minionScope, countLatch = jobsCounter) {
+                    log.trace { "Launching the coroutine for the next step ${nextStep.id}" }
                     doExecute(minionScope, minion, nextStep, nextContext, jobsCounter, consumer)
                 }
             }
         }
+        log.trace { "Output of the step ${step.id} was fully consumed" }
+
         // If the context is exhausted, it only ensures that the error processing steps are executed.
         if (!errorOfContextProcessed && ctx.isExhausted) {
             step.next.forEach { nextStep ->
                 val nextContext = StepContextBuilder.next(ctx, nextStep.id)
+                MDC.put("step", nextStep.id)
                 minion.launch(minionScope, countLatch = jobsCounter) {
+                    log.trace { "Launching the coroutine for the next error processing step ${nextStep.id}" }
                     doExecute(minionScope, minion, nextStep, nextContext, jobsCounter, consumer)
                 }
             }
         } else if (!hasOutput) {
             ctx.isCompleted = true
             consumer?.let { completionConsumer ->
-                log.trace("Launching the consumer for a step without output")
+                log.trace { "Launching the consumer for a step without output" }
+                MDC.put("step", "_completion")
                 minion.launch(minionScope, countLatch = jobsCounter) { completionConsumer(ctx) }
             }
         }
@@ -187,6 +217,7 @@ internal class RunnerImpl(
 
     private suspend fun executeSingleStep(minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>) {
         if (!ctx.isExhausted || isErrorProcessingStep(step)) {
+            log.trace { "Performing the execution of the step..." }
             ctx.stepType = stepTypes.computeIfAbsent(step.id) { getStepType(step) }
             eventsLogger.info("step.execution.started", tagsSupplier = { ctx.toEventTags() })
             runningStepsGauge.incrementAndGet()
@@ -199,6 +230,7 @@ internal class RunnerImpl(
                     meterRegistry.timer("step-execution", "step", step.id, "status", "completed").record(duration)
                 }
                 campaignStateKeeper.recordSuccessfulStepExecution(ctx.campaignId, minion.scenarioId, step.id)
+                log.trace { "Step completed with success" }
             } catch (t: Throwable) {
                 campaignStateKeeper.recordFailedStepExecution(ctx.campaignId, minion.scenarioId, step.id)
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
@@ -206,16 +238,13 @@ internal class RunnerImpl(
                     meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)
                 }
                 ctx.addError(StepError(t))
-                log.warn(
-                    "step $step completed with an exception for the minion ${ctx.minionId}, the context is marked as exhausted",
-                    t
-                )
+                log.warn(t) { "Step completed with an exception, the context is marked as exhausted" }
                 ctx.isExhausted = true
             }
             runningStepsGauge.decrementAndGet()
             executedStepCounter.increment()
         } else {
-            log.trace("The step ${step.id} will not be executed on minion ${minion.id} because the context is exhausted and the step is not relevant")
+            log.trace { "The step will not be executed on minion because the context is exhausted and the step cannot process it" }
         }
         // Once the step was executed, the channels can be closed if not done in the step itself.
         ((ctx as StepContextImpl<*, *>).input as Channel<*>).close()

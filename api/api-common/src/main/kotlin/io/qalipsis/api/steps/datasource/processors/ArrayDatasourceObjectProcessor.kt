@@ -27,7 +27,7 @@ class ArrayDatasourceObjectProcessor(
                         value
                     }
             } catch (e: Exception) {
-                log.debug("Row $offset, column $columnIndex, value $value: ${e.message}", e)
+                log.debug(e) { "Row $offset, column $columnIndex, value $value: ${e.message}" }
                 errors.add("column $columnIndex, value $value: ${e.message}")
             }
         }

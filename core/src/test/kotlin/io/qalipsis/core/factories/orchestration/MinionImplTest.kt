@@ -98,16 +98,16 @@ internal class MinionImplTest {
             eventsLogger.info(
                 "minion.created",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.running",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.execution-complete", timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
         verifyExactly(3) { executingStepsGauge.incrementAndGet() }
@@ -146,12 +146,12 @@ internal class MinionImplTest {
             eventsLogger.info(
                 "minion.created",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.running",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
         confirmVerified(eventsLogger, meterRegistry, executingStepsGauge)
@@ -187,15 +187,15 @@ internal class MinionImplTest {
             )
             eventsLogger.info(
                 "minion.created", timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.cancellation.started", timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.cancellation.complete", timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
 
@@ -243,20 +243,20 @@ internal class MinionImplTest {
             eventsLogger.info(
                 "minion.created",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.running",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.cancellation.started", timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.cancellation.complete", timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
 
@@ -289,12 +289,12 @@ internal class MinionImplTest {
             eventsLogger.info(
                 "minion.created",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             eventsLogger.info(
                 "minion.running",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "minion" to "my-minion")
+                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
 
@@ -340,7 +340,7 @@ internal class MinionImplTest {
         }
 
         stepsCountDown.await()
-        log.debug("All ${minionsCount * stepsCount} steps were created")
+        log.debug { "All ${minionsCount * stepsCount} steps were created" }
 
         minions.forEach {
             assertEquals(
@@ -353,7 +353,7 @@ internal class MinionImplTest {
         runBlocking {
             // Triggers the start for all the jobs at the same time.
             startLatch.release()
-            log.debug("Joining all minions")
+            log.debug { "Joining all minions" }
             minions.forEach { it.join() }
         }
         assertEquals(minionsCount, completionCounter.get())

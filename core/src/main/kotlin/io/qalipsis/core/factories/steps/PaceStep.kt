@@ -25,7 +25,7 @@ internal class PaceStep<I>(
         val nextExecution = nextExecutions[context.minionId] ?: NextExecution(specification(0))
         val waitingDelay = (nextExecution.timestampNanos - System.nanoTime()) / 1_000_000
         if (waitingDelay > 0) {
-            log.trace("Waiting for $waitingDelay ms")
+            log.trace { "Waiting for $waitingDelay ms" }
             delay(waitingDelay)
         }
         nextExecutions[context.minionId] = NextExecution(specification(nextExecution.periodMs))
