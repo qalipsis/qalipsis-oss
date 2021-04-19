@@ -26,7 +26,7 @@ internal open class BroadcastTopic<T>(
         currentTopicSize++
         if (maximalTopicSize >= 0) {
             while (currentTopicSize > maximalTopicSize) {
-                log.trace("Reducing the size of the topic from $currentTopicSize to $maximalTopicSize")
+                log.trace { "Reducing the size of the topic from $currentTopicSize to $maximalTopicSize" }
                 subscriptionSlot = subscriptionSlot.get().next
                 currentTopicSize--
             }

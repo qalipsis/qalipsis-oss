@@ -36,7 +36,7 @@ internal class PaceStepTest {
         // Check that values are individual for each minion.
         repeat(2) { minionIndex ->
             repeat(10) { rep ->
-                log.debug("Executing loop $rep of minion $minionIndex")
+                log.debug { "Executing loop $rep of minion $minionIndex" }
                 val context = StepTestHelper.createStepContext<Long, Long>(input = 1L, minionId = "minion-$minionIndex")
                 val start = pastExecutionEnd ?: System.currentTimeMillis()
                 step.execute(context)

@@ -41,22 +41,22 @@ interface CampaignStateKeeper {
     fun delete(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, messageId: Any)
 
     /**
-     * Increment the counter of the started minions by [count].
+     * Increments the counter of the started minions by [count].
      */
     fun recordStartedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int = 1)
 
     /**
-     * Increment the counter of the completed (whether successful or not) minions by [count].
+     * Increments the counter of the completed (whether successful or not) minions by [count].
      */
     fun recordCompletedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int = 1)
 
     /**
-     * Increment the counter of the successful step executions by [count].
+     * Increments the counter of the successful step executions by [count].
      */
     fun recordSuccessfulStepExecution(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, count: Int = 1)
 
     /**
-     * Increment the counter of the failed step executions by [count].
+     * Increments the counter of the failed step executions by [count].
      */
     fun recordFailedStepExecution(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, count: Int = 1)
 

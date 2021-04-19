@@ -3,8 +3,6 @@ package io.qalipsis.core.factories.steps
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isSameAs
-import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.every
@@ -15,7 +13,6 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.WithMockk
@@ -23,7 +20,6 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.test.runBlockingTest
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.atomic.AtomicLong
@@ -164,7 +160,7 @@ internal class ReportingStepDecoratorTest {
     }
 
     @Test
-    internal fun `should count the execution as an error`() = runBlockingTest {
+    internal fun `should count the execution as an error when there is an exception`() = runBlockingTest {
         // given
         val context: StepContext<Any, Int> = relaxedMockk()
         coEvery { decorated.execute(any(), any()) } throws RuntimeException("An error")
@@ -182,4 +178,46 @@ internal class ReportingStepDecoratorTest {
             typedProp<AtomicLong>("errorCount").transform { it.get() }.isEqualTo(1)
         }
     }
+
+    @Test
+    internal fun `should count the execution as an error when there is no exception but the context switches to exhausted`() =
+        runBlockingTest {
+            // given
+            val context: StepContext<Any, Int> = relaxedMockk()
+            coEvery { decorated.execute(any(), any()) } answers {
+                // Stubs the context to be exhausted from now on.
+                every { context.isExhausted } returns true
+            }
+            val step = ReportingStepDecorator(decorated, campaignStateKeeper)
+
+            // when
+            step.execute(minion, context)
+
+            // then
+            coVerifyOnce { decorated.execute(refEq(minion), refEq(context)) }
+            assertThat(step).all {
+                typedProp<AtomicLong>("successCount").transform { it.get() }.isEqualTo(0)
+                typedProp<AtomicLong>("errorCount").transform { it.get() }.isEqualTo(1)
+            }
+        }
+
+    @Test
+    internal fun `should count the execution as a success when the context remains exhausted without exception`() =
+        runBlockingTest {
+            // given
+            val context: StepContext<Any, Int> = relaxedMockk()
+            every { context.isExhausted } returns true
+            coJustRun { decorated.execute(any(), any()) }
+            val step = ReportingStepDecorator(decorated, campaignStateKeeper)
+
+            // when
+            step.execute(minion, context)
+
+            // then
+            coVerifyOnce { decorated.execute(refEq(minion), refEq(context)) }
+            assertThat(step).all {
+                typedProp<AtomicLong>("successCount").transform { it.get() }.isEqualTo(1)
+                typedProp<AtomicLong>("errorCount").transform { it.get() }.isEqualTo(0)
+            }
+        }
 }

@@ -3,9 +3,13 @@ package io.qalipsis.core.factories.orchestration.directives.processors.minions.h
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.slot
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.orchestration.directives.DirectiveProducer
@@ -255,8 +259,10 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
                 repeat(3) { i ->
                     val itemIndex = startIndex * 3 + i
                     Assertions.assertEquals("minion-$itemIndex", this.set[itemIndex].minionId)
-                    QalipsisTimeAssertions.assertInstantAfter(expectedStart, this.set[itemIndex].timestamp,
-                            "Start line for item $itemIndex")
+                    QalipsisTimeAssertions.assertInstantAfterOrEqual(
+                        expectedStart, this.set[itemIndex].timestamp,
+                        "Start line for item $itemIndex"
+                    )
                 }
             }
             QalipsisTimeAssertions.assertInstantAfter(start + 5000, this.set[27].timestamp)

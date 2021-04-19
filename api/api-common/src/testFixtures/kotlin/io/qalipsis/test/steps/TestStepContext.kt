@@ -1,7 +1,13 @@
 package io.qalipsis.test.steps
 
 import io.micrometer.core.instrument.Tags
-import io.qalipsis.api.context.*
+import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.MinionId
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepError
+import io.qalipsis.api.context.StepId
 import io.qalipsis.api.sync.Latch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -73,7 +79,7 @@ class TestStepContext<IN, OUT>(
     override val errors: List<StepError> = internalErrors
 
     override val hasInput: Boolean
-        get() = input.isEmpty
+        get() = !input.isEmpty
 
     override fun addError(error: StepError) {
         internalErrors.add(error)

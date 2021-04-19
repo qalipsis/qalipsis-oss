@@ -28,24 +28,24 @@ class IterativeDatasourceStep<R, T, O>(
 ) : AbstractStep<Unit, O>(id, null) {
 
     override suspend fun start(context: StepStartStopContext) {
-        log.trace("Starting datasource reader for step $id")
+        log.trace { "Starting datasource reader for step $id" }
         reader.start()
     }
 
     override suspend fun stop(context: StepStartStopContext) {
-        log.trace("Stopping datasource reader for step $id")
+        log.trace { "Stopping datasource reader for step $id" }
         reader.stop()
-        log.trace("Datasource reader stopped for step $id")
+        log.trace { "Datasource reader stopped for step $id" }
     }
 
     override suspend fun execute(context: StepContext<Unit, O>) {
         context.isTail = false
-        log.trace("Iterating datasource reader for step $id")
+        log.trace { "Iterating datasource reader for step $id" }
         val rowIndex = AtomicLong()
         while (reader.hasNext()) {
             try {
                 val value = processor.process(rowIndex, reader.next())
-                log.trace("Received one record")
+                log.trace { "Received one record" }
                 converter.supply(rowIndex, value, context)
             } catch (e: Exception) {
                 context.addError(StepError(DatasourceException(rowIndex.get() - 1, e.message)))

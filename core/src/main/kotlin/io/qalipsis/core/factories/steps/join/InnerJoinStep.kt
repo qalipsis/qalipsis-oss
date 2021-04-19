@@ -77,12 +77,12 @@ internal class InnerJoinStep<I, O>(
             @Suppress("UNCHECKED_CAST")
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
             consumptionJobs.add(GlobalScope.launch {
-                log.debug("Starting the coroutine buffering right records from step ${corr.sourceStepId}")
+                log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepId}" }
                 val subscription = corr.topic.subscribe(stepId)
                 while (subscription.isActive()) {
                     val record = subscription.pollValue()
                     keyExtractor(record)?.let { key ->
-                        log.trace("Adding right record to cache with key '$key' as ${key::class}")
+                        log.trace { "Adding right record to cache with key '$key' as ${key::class}" }
                         cache.get(key).thenAccept { entry ->
                             runBlocking {
                                 entry.addValue(record.stepId, record.value)
@@ -90,7 +90,7 @@ internal class InnerJoinStep<I, O>(
                         }
                     }
                 }
-                log.debug("Leaving the coroutine buffering right records")
+                log.debug { "Leaving the coroutine buffering right records" }
             })
         }
         running = true
@@ -110,19 +110,19 @@ internal class InnerJoinStep<I, O>(
         leftKeyExtractor(CorrelationRecord(context.minionId, context.parentStepId!!, input))
             ?.let { key ->
                 try {
-                    log.trace("Searching correlation values for key '$key' as ${key::class}")
+                    log.trace { "Searching correlation values for key '$key' as ${key::class}" }
                     val latch = Latch(true)
                     cache.get(key).thenAccept { entry ->
                         GlobalScope.launch {
                             val secondaryValues = entry.get()
-                            log.trace("Forwarding a correlated set of values")
+                            log.trace { "Forwarding a correlated set of values" }
                             context.send(outputSupplier(input, secondaryValues))
                             latch.release()
                         }
                     }
                     latch.await()
                 } finally {
-                    log.trace("Invalidating cache with key $key as ${key::class}")
+                    log.trace { "Invalidating cache with key $key as ${key::class}" }
                     cache.synchronous().invalidate(key)
                 }
             }

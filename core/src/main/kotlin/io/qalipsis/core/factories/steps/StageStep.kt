@@ -7,7 +7,6 @@ import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.Step
-import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import kotlinx.coroutines.channels.Channel
@@ -46,7 +45,7 @@ internal class StageStep<I, O>(
 
         // The first step of the group is executed.
         runner.execute(minion, head!!, innerContext) { ctx ->
-            log.trace("Consuming the tail context $ctx")
+            log.trace { "Consuming the tail context $ctx" }
             if (!context.isExhausted && !ctx.isExhausted) {
                 // When the latest step of the group is executed, its output is forwarded to the overall context.
                 for (outputRecord in (ctx as StepContextImpl).output as ReceiveChannel<*>) {

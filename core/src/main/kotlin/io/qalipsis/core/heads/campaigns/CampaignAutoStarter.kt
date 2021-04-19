@@ -5,7 +5,6 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.heads.StartupHeadComponent
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -15,7 +14,6 @@ import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.heads.lifetime.ProcessBlocker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
-import javax.annotation.Nullable
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.inject.Singleton
@@ -44,9 +42,9 @@ internal class CampaignAutoStarter(
     @PostConstruct
     fun init() {
         runBlocking {
-            log.debug("Consuming from $feedbackConsumer")
+            log.debug { "Consuming from $feedbackConsumer" }
             consumptionJob = feedbackConsumer.onReceive { feedback ->
-                log.debug("Received feedback $feedback")
+                log.debug { "Received feedback $feedback" }
                 when (feedback) {
                     is FactoryRegistrationFeedback -> {
                         if (feedback.scenarios.isNotEmpty()) {
@@ -59,14 +57,14 @@ internal class CampaignAutoStarter(
                                 onCriticalFailure(message)
                             }
                         } else {
-                            log.error("No executable scenario was found")
+                            log.error { "No executable scenario was found" }
                             // Increments in order to release the awaitActivity().
                             runningScenariosLatch.increment()
                             runningScenariosLatch.release()
                         }
                     }
                     is EndOfCampaignFeedback -> {
-                        log.info("The campaign ${feedback.campaignId} of scenario ${feedback.scenarioId} was completed")
+                        log.info { "The campaign ${feedback.campaignId} of scenario ${feedback.scenarioId} was completed" }
                         runningScenariosLatch.decrement()
                     }
                 }
@@ -84,7 +82,7 @@ internal class CampaignAutoStarter(
      */
     @VisibleForTest
     internal fun onCriticalFailure(message: String) {
-        log.error(message)
+        log.error { message }
         System.err.println("An error occurred that requires the program to exit.")
         System.err.println(message)
         exitProcess(1)
@@ -92,11 +90,11 @@ internal class CampaignAutoStarter(
 
     override suspend fun join() {
         runningScenariosLatch.awaitActivity()
-        log.info("Waiting for the ${runningScenariosLatch.get()} scenario(s) to be completed")
+        log.info { "Waiting for the ${runningScenariosLatch.get()} scenario(s) to be completed" }
         runningScenariosLatch.await()
-        log.info("Stopping the events logger")
+        log.info { "Stopping the events logger" }
         eventsLogger.stop()
-        log.info("The events logger was stopped")
+        log.info { "The events logger was stopped" }
     }
 
     companion object {

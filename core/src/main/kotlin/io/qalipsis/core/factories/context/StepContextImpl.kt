@@ -1,7 +1,13 @@
 package io.qalipsis.core.factories.context
 
 import io.micrometer.core.instrument.Tags
-import io.qalipsis.api.context.*
+import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.MinionId
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepError
+import io.qalipsis.api.context.StepId
 import io.qalipsis.api.sync.Latch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -13,7 +19,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal data class StepContextImpl<IN, OUT>(
+internal class StepContextImpl<IN, OUT>(
 
     /**
      * Channel providing the source.
@@ -72,7 +78,7 @@ internal data class StepContextImpl<IN, OUT>(
     override val errors: List<StepError> = internalErrors
 
     override val hasInput: Boolean
-        get() = input.isEmpty
+        get() = !input.isEmpty
 
     override fun addError(error: StepError) {
         internalErrors.add(error)
@@ -199,6 +205,11 @@ internal data class StepContextImpl<IN, OUT>(
         }
         return immutableMetersTags!!
     }
+
+    override fun toString(): String {
+        return "StepContext(campaignId='$campaignId', minionId='$minionId', scenarioId='$scenarioId', directedAcyclicGraphId='$directedAcyclicGraphId', parentStepId=$parentStepId, stepId='$stepId')"
+    }
+
 
 }
 

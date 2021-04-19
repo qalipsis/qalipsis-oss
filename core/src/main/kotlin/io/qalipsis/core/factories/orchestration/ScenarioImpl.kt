@@ -81,7 +81,7 @@ class ScenarioImpl(
                     campaignId = campaignId,
                     status = FeedbackStatus.IN_PROGRESS
                 )
-                log.trace("Sending feedback: $feedback")
+                log.trace { "Sending feedback: $feedback" }
                 feedbackProducer.publish(feedback)
 
                 startStepRecursively(
@@ -98,7 +98,7 @@ class ScenarioImpl(
                     campaignId = campaignId,
                     status = FeedbackStatus.COMPLETED
                 )
-                log.trace("Sending feedback: $completionFeedback")
+                log.trace { "Sending feedback: $completionFeedback" }
                 feedbackProducer.publish(completionFeedback)
             }
         }

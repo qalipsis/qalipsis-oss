@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * @author Eric Jessé
  */
-@Suppress("EXPERIMENTAL_API_USAGE")
 internal class ValidationStepTest {
 
     @Test

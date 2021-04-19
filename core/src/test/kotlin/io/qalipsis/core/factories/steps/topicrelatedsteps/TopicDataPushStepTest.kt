@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit
  *
  * @author Eric Jessé
  */
-@Suppress("EXPERIMENTAL_API_USAGE")
 @WithMockk
 internal class TopicDataPushStepTest {
 

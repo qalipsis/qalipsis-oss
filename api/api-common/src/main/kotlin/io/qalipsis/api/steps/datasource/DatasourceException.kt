@@ -5,7 +5,7 @@ package io.qalipsis.api.steps.datasource
  *
  * @author Eric Jessé
  */
-class DatasourceException constructor(message: String) : RuntimeException(message) {
+class DatasourceException(message: String) : RuntimeException(message) {
 
     constructor(rowIndex: Long, message: String?) : this("Row $rowIndex: $message")
 

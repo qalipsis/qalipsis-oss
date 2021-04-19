@@ -18,7 +18,6 @@ class MicronautBootstrap(
 
     companion object {
 
-        @Suppress("JAVA_CLASS_ON_COMPANION")
         @JvmStatic
         private val log = logger()
     }
