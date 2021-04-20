@@ -18,7 +18,12 @@ import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.steps.*
+import io.qalipsis.api.steps.SingletonStepSpecification
+import io.qalipsis.api.steps.Step
+import io.qalipsis.api.steps.StepCreationContextImpl
+import io.qalipsis.api.steps.StepSpecification
+import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
@@ -78,7 +83,7 @@ internal class ScenariosInitializerImpl(
                     dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
                 }
             } catch (e: Exception) {
-                log.error(e.message, e)
+                log.error(e) { e.message }
                 throw e
             }
         }
@@ -109,7 +114,7 @@ internal class ScenariosInitializerImpl(
         }
 
         runBlocking {
-            log.trace("Sending feedback: $feedbackScenarios to $feedbackProducer")
+            log.trace { "Sending feedback: $feedbackScenarios to $feedbackProducer" }
             feedbackProducer.publish(FactoryRegistrationFeedback(feedbackScenarios))
         }
     }
@@ -231,7 +236,7 @@ internal class ScenariosInitializerImpl(
         stepSpecificationConverters
             .firstOrNull { it.support(context.stepSpecification) }
             ?.let { converter ->
-                addStepNameIfRequired(context.stepSpecification)
+                addMissingStepName(context.stepSpecification)
                 @Suppress("UNCHECKED_CAST")
                 (converter as StepSpecificationConverter<StepSpecification<Any?, Any?, *>>).convert<Any?, Any?>(context)
             }
@@ -241,9 +246,9 @@ internal class ScenariosInitializerImpl(
      * Adds a random name to the step if none was specified.
      */
     @VisibleForTest
-    fun addStepNameIfRequired(spec: StepSpecification<Any?, Any?, *>) {
+    fun addMissingStepName(spec: StepSpecification<Any?, Any?, *>) {
         if (spec.name.isBlank()) {
-            spec.name = idGenerator.short()
+            spec.name = "_${idGenerator.short()}"
         }
     }
 

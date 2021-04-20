@@ -8,6 +8,7 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import org.slf4j.MDC
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -41,6 +42,16 @@ interface Minion {
      * Cancels all running coroutines of the current minion.
      */
     suspend fun cancel()
+
+    /**
+     * Configures the [MDC] context for the execution of the minion.
+     */
+    fun completeMdcContext() {
+        MDC.put("campaign", this.campaignId)
+        MDC.put("scenario", this.scenarioId)
+        MDC.put("dag", this.dagId)
+        MDC.put("minion", this.id)
+    }
 
     /**
      * Launches a coroutine to be attached to the minion. Calls to [join] are suspended until all the [Job]s

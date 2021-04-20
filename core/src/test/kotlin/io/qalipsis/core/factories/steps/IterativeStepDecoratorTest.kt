@@ -1,29 +1,20 @@
 package io.qalipsis.core.factories.steps
 
-import assertk.all
-import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isSameAs
-import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.orchestration.factories.Minion
-import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.factories.coreStepContext
-import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
-import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
@@ -33,12 +24,10 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * @author Eric Jessé
  */
-@Suppress("EXPERIMENTAL_API_USAGE")
 @WithMockk
 internal class IterativeStepDecoratorTest {
 

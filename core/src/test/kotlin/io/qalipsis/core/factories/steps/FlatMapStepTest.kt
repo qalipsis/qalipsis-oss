@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
-@Suppress("EXPERIMENTAL_API_USAGE")
 internal class FlatMapStepTest {
 
     @Test

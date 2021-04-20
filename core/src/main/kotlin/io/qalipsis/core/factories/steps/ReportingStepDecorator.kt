@@ -49,14 +49,20 @@ internal class ReportingStepDecorator<I, O>(
             ReportMessageSeverity.INFO
         }
         campaignStateKeeper.put(context.campaignId, context.scenarioId, this.id, severity, result)
-        log.info("Stopping the step ${this.id} for the campaign ${context.campaignId}: $result")
+        log.info { "Stopping the step ${this.id} for the campaign ${context.campaignId}: $result" }
         super<StepDecorator>.stop(context)
     }
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         try {
+            val exhaustedBefore = context.isExhausted
             decorated.execute(minion, context)
-            successCount.incrementAndGet()
+
+            if (context.isExhausted && !exhaustedBefore) {
+                errorCount.incrementAndGet()
+            } else {
+                successCount.incrementAndGet()
+            }
         } catch (t: Throwable) {
             errorCount.incrementAndGet()
             throw t

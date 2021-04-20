@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 internal class SimpleStepTest {
 
     @Test

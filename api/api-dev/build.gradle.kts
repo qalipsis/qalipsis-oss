@@ -25,9 +25,9 @@ val kotlinCoroutinesVersion: String by project
 val jacksonVersion: String by project
 
 dependencies {
-    implementation(
-            kotlin("stdlib")
-    )
+    implementation(kotlin("stdlib"))
+    api("io.github.microutils:kotlin-logging-jvm:2.0.6")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${kotlinCoroutinesVersion}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")

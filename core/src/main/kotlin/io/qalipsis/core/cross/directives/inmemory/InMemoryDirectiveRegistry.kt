@@ -6,7 +6,15 @@ import com.github.benmanes.caffeine.cache.LoadingCache
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.directives.*
+import io.qalipsis.api.orchestration.directives.Directive
+import io.qalipsis.api.orchestration.directives.DirectiveKey
+import io.qalipsis.api.orchestration.directives.DirectiveRegistry
+import io.qalipsis.api.orchestration.directives.ListDirective
+import io.qalipsis.api.orchestration.directives.ListDirectiveReference
+import io.qalipsis.api.orchestration.directives.QueueDirective
+import io.qalipsis.api.orchestration.directives.QueueDirectiveReference
+import io.qalipsis.api.orchestration.directives.SingleUseDirective
+import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
 import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
@@ -86,7 +94,7 @@ internal class InMemoryDirectiveRegistry(
 
                 @Suppress("UNCHECKED_CAST") val value = it.removeFirst() as T?
                 if (it.isEmpty()) {
-                    log.trace("Evicting the empty queue directive ${reference.key}")
+                    log.trace { "Evicting the empty queue directive ${reference.key}" }
                     // Once the last value has been consumed, the directive is removed from the cache.
                     queueDirectives.invalidate(reference.key)
                     feedbackProducer.publish(
@@ -107,7 +115,7 @@ internal class InMemoryDirectiveRegistry(
     override suspend fun <T> read(reference: SingleUseDirectiveReference<T>): T? {
         return mutexesCache[reference.key]!!.withLock {
             singleUseDirectives.getIfPresent(reference.key)?.let {
-                log.trace("Evicting the read once directive ${reference.key}")
+                log.trace { "Evicting the read once directive ${reference.key}" }
                 singleUseDirectives.invalidate(reference.key)
                 @Suppress("UNCHECKED_CAST")
                 it.value as T?

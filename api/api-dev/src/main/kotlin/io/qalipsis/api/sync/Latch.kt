@@ -42,12 +42,12 @@ class Latch(var isLocked: Boolean = false) {
 
     suspend fun await() {
         if (isLocked) {
-            log.trace("The latch $this is locked, suspending the coroutine.")
+            log.trace { "The latch $this is locked, suspending the coroutine." }
             // If a coroutine makes this call while the previously suspended calls are released,
             // it should not be immediately released.
             releaseAwaitingFlag?.receiveOrNull()
             syncFlag?.receiveOrNull()
-            log.trace("The latch $this is no longer locked, resuming the coroutine.")
+            log.trace { "The latch $this is no longer locked, resuming the coroutine." }
         }
     }
 
@@ -61,7 +61,7 @@ class Latch(var isLocked: Boolean = false) {
                 syncFlag?.close()
                 syncFlag = null
             }
-            log.trace("Latch $this is now unlocked")
+            log.trace { "Latch $this is now unlocked" }
         }
     }
 
@@ -75,7 +75,7 @@ class Latch(var isLocked: Boolean = false) {
                 syncFlag = Channel(Channel.RENDEZVOUS)
                 isLocked = true
             }
-            log.trace("Latch $this is now locked")
+            log.trace { "Latch $this is now locked" }
         }
     }
 

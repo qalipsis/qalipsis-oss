@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":api:api-common"))
     api(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${kotlinCoroutinesVersion}")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-debug:${kotlinCoroutinesVersion}")
     api("org.junit.jupiter:junit-jupiter")
     api("io.mockk:mockk:$mockkVersion")
     api("org.skyscreamer:jsonassert:1.5.0")

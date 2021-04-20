@@ -21,7 +21,7 @@ internal class SimpleStep<I, O>(
         try {
             specification(context)
         } catch (e: Exception) {
-            log.error(e.message, e)
+            log.error(e) { e.message }
             throw e
         }
     }

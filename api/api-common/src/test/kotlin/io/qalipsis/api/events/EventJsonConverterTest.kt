@@ -5,7 +5,11 @@ import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.io.PrintWriter
-import java.time.*
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 internal class EventJsonConverterTest{
@@ -261,22 +265,32 @@ internal class EventJsonConverterTest{
 
     @Test
     fun `should write document with value as array`() {
-        val event = Event("my-event", EventLevel.INFO, emptyList(), arrayOf(12.34, "here is the test"))
+        val event = Event(
+            "my-event",
+            EventLevel.INFO,
+            emptyList(),
+            listOf(12.34, 8765, "here is the test", "here is the other test", Duration.ofMillis(123))
+        )
         val result = converter.convert(event)
 
         JSONAssert.assertEquals(
-            """{"@timestamp":${expectedTimestamp(event)},"name":"my-event","level":"info","values":["12.34","here is the test"]}""",
+            """{"@timestamp":${expectedTimestamp(event)},"name":"my-event","level":"info","number":12.34,"message":"here is the test","duration":0.123,"values":["8765","here is the other test"]}""",
             result, false
         )
     }
 
     @Test
     fun `should write document with value as iterable`() {
-        val event = Event("my-event", EventLevel.INFO, emptyList(), listOf(12.34, "here is the test"))
+        val event = Event(
+            "my-event",
+            EventLevel.INFO,
+            emptyList(),
+            listOf(12.34, 8765, "here is the test", "here is the other test", Duration.ofMillis(123))
+        )
         val result = converter.convert(event)
 
         JSONAssert.assertEquals(
-            """{"@timestamp":${expectedTimestamp(event)},"name":"my-event","level":"info","values":["12.34","here is the test"]}""",
+            """{"@timestamp":${expectedTimestamp(event)},"name":"my-event","level":"info","number":12.34,"message":"here is the test","duration":0.123,"values":["8765","here is the other test"]}""",
             result, false
         )
     }

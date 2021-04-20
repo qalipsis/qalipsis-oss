@@ -13,7 +13,7 @@ interface StepOutput<OUT> {
     fun addError(error: StepError)
 
     /**
-     * Send a record to the next steps.
+     * Sends a record to the next steps.
      */
     suspend fun send(element: OUT)
 

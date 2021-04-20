@@ -20,10 +20,10 @@ internal class FilterStep<I>(
     override suspend fun execute(context: StepContext<I, I>) {
         val input = context.receive()
         if (specification(input)) {
-            log.trace("Forwarding the input")
+            log.trace { "Forwarding the input" }
             context.send(input)
         } else {
-            log.trace("No data is forwarded")
+            log.trace { "No data is forwarded" }
         }
     }
 

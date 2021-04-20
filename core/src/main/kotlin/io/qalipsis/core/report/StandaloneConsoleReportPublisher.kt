@@ -23,13 +23,14 @@ import javax.annotation.PreDestroy
         Requires(property = "report.export.console.enabled", notEquals = "false")
     ]
 )
-class StandaloneConsoleReportPublisher(
+internal class StandaloneConsoleReportPublisher(
     @Property(name = "campaign.name") private val campaignName: String,
     private val campaignStateKeeper: CampaignStateKeeper
 ) : ReportPublisher {
 
     override fun publish(campaignId: CampaignId) {
         val report = campaignStateKeeper.report(campaignId)
+        val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }
 
         println(
             """
@@ -39,9 +40,9 @@ class StandaloneConsoleReportPublisher(
 
 Campaign...........................${report.campaignId}
 Start..............................${report.start}
-End................................${report.end ?: "<Running>"}
-Duration...........................${report.end?.let { Duration.between(report.start, it).toSeconds() }} seconds
-Configured minions.................${report.configuredMinionsCount}
+End................................${report.end ?: RUNNING_INDICATOR}
+Duration...........................${duration?.let { "$it seconds" } ?: RUNNING_INDICATOR} 
+Configured minions..................${report.configuredMinionsCount}
 Completed minions..................${report.executedMinionsCount}
 Successful steps executions........${report.successfulExecutions}
 Failed steps executions............${report.failedExecutions}
@@ -51,14 +52,15 @@ Status.............................${report.status}
         )
 
         report.scenariosReports.forEach { scenarioReport ->
+            val scenarioDuration = scenarioReport.end?.let { Duration.between(report.start, it).toSeconds() }
             println(
                 """
 =====================  SCENARIO REPORT =====================
 Scenario...........................${scenarioReport.scenarioId}
 Start..............................${scenarioReport.start}
-End................................${scenarioReport.end ?: "<Running>"}
-Duration...........................${scenarioReport.end?.let { Duration.between(report.start, it).toSeconds() }} seconds
-Configured minions.................${scenarioReport.configuredMinionsCount}
+End................................${scenarioReport.end ?: RUNNING_INDICATOR}
+Duration...........................${scenarioDuration?.let { "$it seconds" } ?: RUNNING_INDICATOR} 
+Configured minions..................${scenarioReport.configuredMinionsCount}
 Completed minions..................${scenarioReport.executedMinionsCount}
 Successful steps executions........${scenarioReport.successfulExecutions}
 Failed steps executions............${scenarioReport.failedExecutions}
@@ -80,6 +82,12 @@ ${
     @PreDestroy
     fun publishOnLeave() {
         publish(campaignName)
+    }
+
+    companion object {
+
+        private const val RUNNING_INDICATOR = "<Running>"
+
     }
 
 }

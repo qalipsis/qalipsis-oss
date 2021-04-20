@@ -66,7 +66,7 @@ internal class MinionsKeeperImpl(
                     SuspendedCountLatch(0) { onCampaignComplete(campaignId, scenario) }
                 }
 
-                log.trace("Creating minion $minionId for DAG $dagId of scenario $scenarioId")
+                log.trace { "Creating minion $minionId for DAG $dagId of scenario $scenarioId" }
                 // Only minions for singleton and DAGs under load are started and scheduled.
                 // The others will be used on demand.
                 val minion = MinionImpl(minionId, campaignId, scenarioId, dagId, true, eventsLogger, meterRegistry)
@@ -110,7 +110,7 @@ internal class MinionsKeeperImpl(
         campaignId: CampaignId,
         scenario: Scenario
     ) {
-        log.info("All the minions were executed for campaign $campaignId of scenario ${scenario.id}")
+        log.info { "All the minions were executed for campaign $campaignId of scenario ${scenario.id}" }
         scenario.stop(campaignId)
         eventsLogger.info(
             "minions-keeper.campaign.complete", null, Instant.now(), "campaign" to campaignId,
@@ -129,7 +129,7 @@ internal class MinionsKeeperImpl(
             scenariosRegistry[scenarioId]!!.start(campaignId)
             readySingletonsMinions[scenarioId]?.apply {
                 forEach { minion ->
-                    log.debug("Starting singleton minion ${minion.id}")
+                    log.debug { "Starting singleton minion ${minion.id}" }
                     minion.start()
                 }
                 clear()
@@ -142,7 +142,7 @@ internal class MinionsKeeperImpl(
     override suspend fun startMinionAt(minionId: MinionId, instant: Instant) {
         minions[minionId]?.let { minionsWithId ->
             val (campaignId, scenarioId) = minionsWithId.first().let { it.campaignId to it.scenarioId }
-            log.trace("Starting minion $minionId")
+            log.trace { "Starting minion $minionId" }
             val waitingDelay = instant.toEpochMilli() - System.currentTimeMillis()
             val runningMinionsLatch = minionsCountLatchesByCampaign[campaignId]!!
             minionsWithId.forEach { minion ->
@@ -156,7 +156,7 @@ internal class MinionsKeeperImpl(
                 }
             }
             if (waitingDelay > 0) {
-                log.trace("Waiting for $waitingDelay ms until start of minion $minionId")
+                log.trace { "Waiting for $waitingDelay ms until start of minion $minionId" }
                 delay(waitingDelay)
             }
             minionsWithId.forEach {

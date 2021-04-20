@@ -7,11 +7,18 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.slf4j.MDCContext
+import org.slf4j.MDC
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -63,12 +70,20 @@ internal open class MinionImpl(
      */
     private val onCompleteHooks: MutableList<suspend (() -> Unit)> = mutableListOf()
 
+    private val eventsTags = mapOf("campaign" to campaignId, "scenario" to scenarioId, "minion" to id)
+
     /**
      * Latch suspending until all the jobs are complete then triggering all the statements of [onCompleteHooks] successively.
      */
     private val runningJobsLatch = SuspendedCountLatch {
-        onCompleteHooks.forEach { it() }
-        eventsLogger.info("minion.execution-complete", tags = mapOf("campaign" to campaignId, "minion" to id))
+        completeMdcContext()
+        log.trace { "The minion is now complete, executing the hooks" }
+        onCompleteHooks.forEach {
+            tryAndLogOrNull(log) {
+                it()
+            }
+        }
+        eventsLogger.info("minion.execution-complete", tags = eventsTags)
     }
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
@@ -85,7 +100,7 @@ internal open class MinionImpl(
         get() = executingStepsGauge.get()
 
     init {
-        eventsLogger.info("minion.created", tags = mapOf("campaign" to campaignId, "minion" to id))
+        eventsLogger.info("minion.created", tags = eventsTags)
         if (!pauseAtStart) {
             doStart()
         }
@@ -96,16 +111,13 @@ internal open class MinionImpl(
     }
 
     override suspend fun start() {
-        if (!isStarted()) {
-            startLatch.release()
-            eventsLogger.info("minion.running", tags = mapOf("campaign" to campaignId, "minion" to id))
-        }
+        doStart()
     }
 
     private fun doStart() {
         if (!isStarted()) {
             startLatch.cancel()
-            eventsLogger.info("minion.running", tags = mapOf("campaign" to campaignId, "minion" to id))
+            eventsLogger.info("minion.running", tags = eventsTags)
         }
     }
 
@@ -120,26 +132,36 @@ internal open class MinionImpl(
         block: suspend CoroutineScope.() -> Unit
     ): Job? {
         return if (cancelled) {
-            log.trace("Minion $id was cancelled, no new job can be started")
+            log.trace { "Minion was cancelled, no new job can be started" }
             null
         } else {
-            log.trace("Adding a job to minion $id (number of active jobs: ${runningJobsLatch.get()})")
+            val jobId = jobIndex.getAndIncrement()
+
             executingStepsGauge.incrementAndGet()
             runningJobsLatch.increment()
             countLatch?.increment()
-            val jobId = jobIndex.getAndIncrement()
-            (scope ?: GlobalScope).launch(context ?: GlobalScope.coroutineContext) {
+
+            MDC.put("job", "$jobId")
+            log.trace {
+                "Adding a job to minion (active jobs: ${runningJobs.keys.toList().joinToString(", ")})"
+            }
+            (scope ?: GlobalScope).launch((context ?: GlobalScope.coroutineContext) + MDCContext()) {
                 waitForStart()
                 try {
+                    log.trace { "Executing the minion job $jobId" }
                     this.block()
+                    log.trace { "Successfully executed the minion job $jobId" }
+                } catch (e: Exception) {
+                    log.warn(e) { "An error occurred while executing the minion job $jobId: ${e.message}" }
+                    throw e
                 } finally {
                     runningJobs.remove(jobId)
                     runningJobsLatch.decrement()
                     executingStepsGauge.decrementAndGet()
                     countLatch?.decrement()
-                    log.trace(
-                        "One job of minion $id was completed or cancelled (number of active jobs: ${runningJobsLatch.get()})"
-                    )
+                    log.trace {
+                        "Minion job $jobId was completed (active jobs: ${runningJobs.keys.toList().joinToString(", ")})"
+                    }
                 }
             }.also {
                 runningJobs[jobId] = it
@@ -148,37 +170,39 @@ internal open class MinionImpl(
     }
 
     override suspend fun cancel() {
-        log.trace("Cancelling minion $id")
+        log.trace { "Cancelling minion $id" }
         cancelled = true
         startLatch.cancel()
-        eventsLogger.info("minion.cancellation.started", tags = mapOf("campaign" to campaignId, "minion" to id))
+        eventsLogger.info("minion.cancellation.started", tags = eventsTags)
         try {
             for (job in runningJobs.values) {
                 kotlin.runCatching {
                     job.cancel(CancellationException())
                 }
             }
-            log.trace("Cancellation of minions $id completed")
-            eventsLogger.info("minion.cancellation.complete", tags = mapOf("campaign" to campaignId, "minion" to id))
+            log.trace { "Cancellation of minions $id completed" }
+            eventsLogger.info("minion.cancellation.complete", tags = eventsTags)
         } catch (e: Exception) {
-            eventsLogger.info(
-                "minion.cancellation.complete", e,
-                tags = mapOf("campaign" to campaignId, "minion" to id)
-            )
+            eventsLogger.info("minion.cancellation.complete", e, tags = eventsTags)
         }
         runningJobsLatch.cancel()
     }
 
     override suspend fun waitForStart() {
-        startLatch.await()
+        if (!isStarted()) {
+            log.trace { "Waiting for the minion to start" }
+            startLatch.await()
+            log.trace { "The minion was just started, now going on" }
+        }
     }
 
     override suspend fun join() {
-        log.trace("Joining minion $id")
-        startLatch.await()
+        completeMdcContext()
+        log.trace { "Joining minion $id" }
+        waitForStart()
         runningJobsLatch.awaitActivity()
         runningJobsLatch.await()
-        log.trace("Minion $id completed")
+        log.trace { "Minion $id completed" }
     }
 
     override fun equals(other: Any?): Boolean {

@@ -17,7 +17,7 @@ enum class ReportMessageSeverity {
     WARN,
 
     /**
-     * Severity for issues that will let the campaign continue until the end but will make the camnpaign fail.
+     * Severity for issues that will let the campaign continue until the end but will make the campaign fail.
      */
     ERROR,
 

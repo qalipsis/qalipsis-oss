@@ -51,13 +51,13 @@ internal abstract class AbstractChannelBasedTopic<T>(
 
     override suspend fun produce(record: Record<T>) {
         verifyState()
-        log.trace("Producing record $record")
+        log.trace { "Producing record $record" }
         channel.send(record)
     }
 
     override suspend fun produceValue(value: T) {
         verifyState()
-        log.trace("Producing value $value")
+        log.trace { "Producing value $value" }
         produce(Record<T>(value = value))
     }
 
@@ -88,11 +88,11 @@ internal abstract class AbstractChannelBasedTopic<T>(
     }
 
     private fun verifyState() {
-        log.trace("Verifying topic state")
+        log.trace { "Verifying topic state" }
         if (!open) {
-            log.trace("Topic is closed")
+            log.trace { "Topic is closed" }
             throw ClosedTopicException()
         }
-        log.trace("Topic is open")
+        log.trace { "Topic is open" }
     }
 }

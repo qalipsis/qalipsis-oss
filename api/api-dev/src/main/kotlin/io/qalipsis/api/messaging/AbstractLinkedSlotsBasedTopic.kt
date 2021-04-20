@@ -41,10 +41,10 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
     override suspend fun subscribe(subscriberId: String): TopicSubscription<T> {
         verifyState()
         return if (subscriptions.containsKey(subscriberId)) {
-            log.trace("Returning existing subscription for $subscriberId")
+            log.trace { "Returning existing subscription for $subscriberId" }
             subscriptions[subscriberId]!!
         } else {
-            log.trace("Creating new subscription for $subscriberId")
+            log.trace { "Creating new subscription for $subscriberId" }
             subscriptionMutex.withLock {
                 val subscription = SlotBasedSubscription(subscriptionSlot, idleTimeout) {
                     subscriptions.remove(subscriberId)
@@ -57,12 +57,12 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
 
     override suspend fun produceValue(value: T) {
         verifyState()
-        log.trace("Adding the value $value")
+        log.trace { "Adding the value $value" }
         produce(Record(value = value))
     }
 
     override suspend fun produce(record: Record<T>) {
-        log.trace("Adding the record $record to the topic")
+        log.trace { "Adding the record $record to the topic" }
         writeMutex.withLock {
             val linkedRecord = LinkedRecordWithValue(record)
             writeSlot.set(linkedRecord)
@@ -74,27 +74,27 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
     abstract suspend fun updateSubscriptionSlot(lastSetSlot: ImmutableSlot<LinkedRecord<T>>)
 
     override suspend fun poll(subscriberId: String): Record<T> {
-        log.trace("Polling next record for subscription $subscriberId")
+        log.trace { "Polling next record for subscription $subscriberId" }
         verifyState()
         val subscription = subscriptions[subscriberId] ?: error("The subscription $subscriberId no longer exists")
         return subscription.poll()
     }
 
     override suspend fun pollValue(subscriberId: String): T {
-        log.trace("Polling next value for subscription $subscriberId")
+        log.trace { "Polling next value for subscription $subscriberId" }
         return poll(subscriberId).value
     }
 
     override fun cancel(subscriberId: String) {
-        log.trace("Cancelling subscription $subscriberId")
+        log.trace { "Cancelling subscription $subscriberId" }
         subscriptions.remove(subscriberId)?.let {
             it.cancel()
-            log.trace("Subscription $subscriberId was found and cancelled")
+            log.trace { "Subscription $subscriberId was found and cancelled" }
         }
     }
 
     override fun close() {
-        log.trace("Closing topic")
+        log.trace { "Closing topic" }
         open = false
         subscriptions.values.forEach { it.cancel() }
         subscriptions.clear()
