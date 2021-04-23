@@ -6,6 +6,7 @@ import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -16,8 +17,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.slf4j.MDCContext
 import org.slf4j.MDC
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -145,7 +144,7 @@ internal open class MinionImpl(
             log.trace {
                 "Adding a job to minion (active jobs: ${runningJobs.keys.toList().joinToString(", ")})"
             }
-            (scope ?: GlobalScope).launch((context ?: GlobalScope.coroutineContext) + MDCContext()) {
+            (scope ?: GlobalScope).contextualLaunch((context ?: GlobalScope.coroutineContext)) {
                 waitForStart()
                 try {
                     log.trace { "Executing the minion job $jobId" }
