@@ -84,11 +84,13 @@ class ScenarioImpl(
                 log.trace { "Sending feedback: $feedback" }
                 feedbackProducer.publish(feedback)
 
+                val step = dag.rootStep.get()
                 startStepRecursively(
-                    dag.rootStep.get(), StepStartStopContext(
+                    step, StepStartStopContext(
                         campaignId = campaignId,
                         scenarioId = scenarioId,
-                        dagId = dag.id
+                        dagId = dag.id,
+                        stepId = step.id
                     )
                 )
 
@@ -122,7 +124,8 @@ class ScenarioImpl(
                     it.second, StepStartStopContext(
                         campaignId = campaignId,
                         scenarioId = scenarioId,
-                        dagId = it.first
+                        dagId = it.first,
+                        stepId = it.second.id
                     )
                 )
             }

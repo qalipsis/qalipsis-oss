@@ -29,7 +29,7 @@ class IterativeDatasourceStep<R, T, O>(
 
     override suspend fun start(context: StepStartStopContext) {
         log.trace { "Starting datasource reader for step $id" }
-        reader.start()
+        reader.start(context)
     }
 
     override suspend fun stop(context: StepStartStopContext) {

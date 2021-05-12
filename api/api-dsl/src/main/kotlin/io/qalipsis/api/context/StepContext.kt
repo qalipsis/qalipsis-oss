@@ -1,11 +1,10 @@
 package io.qalipsis.api.context
 
-import io.micrometer.core.instrument.Tags
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
-interface StepContext<IN, OUT> : StepOutput<OUT> {
+interface StepContext<IN, OUT> : StepOutput<OUT>, MonitoringTags {
     /**
      * Identifier of the test campaign owning the context.
      */
@@ -118,14 +117,5 @@ interface StepContext<IN, OUT> : StepOutput<OUT> {
 
     fun <T> next(stepId: StepId): StepContext<OUT, T>
 
-    /**
-     * Converts the context to a map that can be used as tags for logged events.
-     */
-    fun toEventTags(): Map<String, String>
 
-    /**
-     * Converts the context to a map that can be used as tags for meters. The tags should not contain
-     * any detail about the minion, but remains at the level of step, scenario and campaign.
-     */
-    fun toMetersTags(): Tags
 }

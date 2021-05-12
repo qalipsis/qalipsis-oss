@@ -80,7 +80,8 @@ internal class ScenarioImplTest {
             val context = StepStartStopContext(
                     campaignId = "camp-1",
                     scenarioId = "my-scenario",
-                    dagId = step.dagId
+                    dagId = step.dagId,
+                    stepId = step.id
             )
             coVerifyOnce {
                 step.start(eq(context))
@@ -111,7 +112,8 @@ internal class ScenarioImplTest {
             val context = StepStartStopContext(
                     campaignId = "camp-1",
                     scenarioId = "my-scenario",
-                    dagId = step.dagId
+                    dagId = step.dagId,
+                    stepId = step.id
             )
             coVerifyOnce {
                 step.stop(eq(context))

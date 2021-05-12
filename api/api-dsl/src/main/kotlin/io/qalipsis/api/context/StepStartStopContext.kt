@@ -1,5 +1,7 @@
 package io.qalipsis.api.context
 
+import io.micrometer.core.instrument.Tags
+
 /**
  * Data class to pass to a step when starting and stopping it.
  *
@@ -10,7 +12,28 @@ package io.qalipsis.api.context
  * @author Eric Jessé
  */
 data class StepStartStopContext(
-        val campaignId: CampaignId,
-        val scenarioId: ScenarioId,
-        val dagId: DirectedAcyclicGraphId
-)
+    val campaignId: CampaignId,
+    val scenarioId: ScenarioId,
+    val dagId: DirectedAcyclicGraphId,
+    val stepId: StepId
+): MonitoringTags {
+
+    override fun toEventTags(): Map<String, String> {
+        return mutableMapOf(
+            "campaign" to campaignId,
+            "scenario" to scenarioId,
+            "dag" to dagId,
+            "step" to stepId,
+        )
+
+    }
+
+    override fun toMetersTags(): Tags {
+        return Tags.of(
+            "campaign", campaignId,
+            "scenario", scenarioId,
+            "dag", dagId,
+            "step", stepId
+        )
+    }
+}
