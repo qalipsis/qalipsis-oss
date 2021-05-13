@@ -61,7 +61,7 @@ internal class TopicDataPushStepTest {
         coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
 
         // when
-        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag"))
+        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step"))
         dataTransferTopic.produceValue("value-1")
         dataTransferTopic.produceValue("value-2")
         dataTransferTopic.produceValue("value-3")
@@ -121,7 +121,7 @@ internal class TopicDataPushStepTest {
         }
 
         // when
-        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag"))
+        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step"))
 
         // then
         countDownLatch.await()

@@ -1,5 +1,7 @@
 package io.qalipsis.api.steps.datasource
 
+import io.qalipsis.api.context.StepStartStopContext
+
 /**
  * Reads objects from a datasource in an iterative way.
  *
@@ -9,7 +11,7 @@ package io.qalipsis.api.steps.datasource
  */
 interface DatasourceIterativeReader<R> {
 
-    fun start() = Unit
+    fun start(context: StepStartStopContext) = Unit
 
     fun stop() = Unit
 
