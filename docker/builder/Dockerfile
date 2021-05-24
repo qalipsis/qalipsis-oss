@@ -1,6 +1,7 @@
 FROM openjdk:11-jdk-slim
 
 LABEL maintainer="Eric Jessé <me@ericjesse.com>"
+ARG GRADLE_VERSION="7.0.1"
 
 USER root
 # https://stackoverflow.com/questions/15505775/debian-apt-packages-hash-sum-mismatch
@@ -34,7 +35,8 @@ RUN apt-get install -y --no-install-recommends \
      nodejs \
      yarn \
      git \
-     gettext
+     gettext \
+     unzip
 
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 RUN add-apt-repository \
@@ -47,6 +49,12 @@ RUN apt-get install -y docker-ce docker-ce-cli containerd.io
 
 RUN cp /usr/bin/envsubst /usr/local/bin/envsubst && \
     rm -rf /var/lib/apt/lists/*
+
+ADD https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip /tmp
+RUN mkdir /opt/gradle && \
+    unzip -d /opt/gradle /tmp/gradle-$GRADLE_VERSION-bin.zip && \
+    rm -f /tmp/gradle-$GRADLE_VERSION-bin.zip && \
+    ln -s /opt/gradle/gradle-$GRADLE_VERSION /opt/gradle/latest
 
 ENV PATH="$(yarn global bin):$PATH"
 RUN yarn global add vega vega-cli

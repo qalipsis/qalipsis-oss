@@ -371,7 +371,7 @@ internal class MinionsKeeperImplTest {
             minion2.start()
             campaignStateKeeper.recordStartedMinion(eq("my-campaign"), eq("my-scenario"), eq(2))
         }
-        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(10), duration)
+        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(20), duration)
         confirmVerified(eventsLogger, meterRegistry, campaignStateKeeper)
     }
 

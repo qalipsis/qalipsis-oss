@@ -76,13 +76,15 @@ internal open class MinionImpl(
      */
     private val runningJobsLatch = SuspendedCountLatch {
         completeMdcContext()
-        log.trace { "The minion is now complete, executing the hooks" }
-        onCompleteHooks.forEach {
-            tryAndLogOrNull(log) {
-                it()
+        if (!cancelled) {
+            log.trace { "The minion is now complete, executing the hooks" }
+            onCompleteHooks.forEach {
+                tryAndLogOrNull(log) {
+                    it()
+                }
             }
+            eventsLogger.info("minion.execution-complete", tags = eventsTags)
         }
-        eventsLogger.info("minion.execution-complete", tags = eventsTags)
     }
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
@@ -154,12 +156,17 @@ internal open class MinionImpl(
                     log.warn(e) { "An error occurred while executing the minion job $jobId: ${e.message}" }
                     throw e
                 } finally {
-                    runningJobs.remove(jobId)
-                    runningJobsLatch.decrement()
                     executingStepsGauge.decrementAndGet()
                     countLatch?.decrement()
-                    log.trace {
-                        "Minion job $jobId was completed (active jobs: ${runningJobs.keys.toList().joinToString(", ")})"
+
+                    if (!cancelled) {
+                        runningJobs.remove(jobId)
+                        runningJobsLatch.decrement()
+                        log.trace {
+                            "Minion job $jobId was completed (active jobs: ${
+                                runningJobs.keys.toList().joinToString(", ")
+                            })"
+                        }
                     }
                 }
             }.also {

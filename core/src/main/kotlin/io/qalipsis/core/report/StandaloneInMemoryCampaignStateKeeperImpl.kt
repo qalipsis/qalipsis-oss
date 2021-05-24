@@ -12,6 +12,9 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
+import org.slf4j.event.Level
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,15 +28,18 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
 
     private val runningCampaigns = ConcurrentHashMap<CampaignId, ConcurrentHashMap<ScenarioId, RunningCampaign>>()
 
+    @LogInput(Level.DEBUG)
     override fun start(campaignId: CampaignId, scenarioId: ScenarioId) {
         runningCampaigns.computeIfAbsent(campaignId) { ConcurrentHashMap() }[scenarioId] =
             RunningCampaign(campaignId, scenarioId)
     }
 
+    @LogInput(Level.DEBUG)
     override fun complete(campaignId: CampaignId, scenarioId: ScenarioId) {
         runningCampaigns[campaignId]!![scenarioId]!!.end = Instant.now()
     }
 
+    @LogInputAndOutput
     override fun put(
         campaignId: CampaignId,
         scenarioId: ScenarioId,
@@ -47,18 +53,22 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
         }
     }
 
+    @LogInput
     override fun delete(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, messageId: Any) {
         runningCampaigns[campaignId]!![scenarioId]!!.messages.remove(messageId)
     }
 
+    @LogInput
     override fun recordStartedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int) {
         runningCampaigns[campaignId]!![scenarioId]!!.startedMinions.addAndGet(count)
     }
 
+    @LogInput
     override fun recordCompletedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int) {
         runningCampaigns[campaignId]!![scenarioId]!!.completedMinions.addAndGet(count)
     }
 
+    @LogInput
     override fun recordSuccessfulStepExecution(
         campaignId: CampaignId,
         scenarioId: ScenarioId,
@@ -68,12 +78,14 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
         runningCampaigns[campaignId]!![scenarioId]!!.successfulStepExecutions.addAndGet(count)
     }
 
+    @LogInput
     override fun recordFailedStepExecution(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, count: Int) {
         runningCampaigns[campaignId]!![scenarioId]!!.failedStepExecutions.addAndGet(count)
     }
 
+    @LogInputAndOutput
     override fun report(campaignId: CampaignId): CampaignReport {
-        return runningCampaigns[campaignId]?.values?.let { runningCampaigns ->
+        return runningCampaigns[campaignId]?.values?.takeIf { it.isNotEmpty() }?.let { runningCampaigns ->
             val scenariosReports = runningCampaigns.map { runningCampaign ->
                 runningCampaign.run {
                     ScenarioReport(

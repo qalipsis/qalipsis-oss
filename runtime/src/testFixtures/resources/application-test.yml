@@ -4,6 +4,11 @@ micronaut:
 
 monitoring.enabled: false
 
+report:
+  export:
+    console:
+      enabled: false
+
 logging:
   level:
     io.qalipsis: DEBUG

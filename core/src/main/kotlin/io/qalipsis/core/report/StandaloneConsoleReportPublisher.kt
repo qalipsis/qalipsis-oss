@@ -42,7 +42,7 @@ Campaign...........................${report.campaignId}
 Start..............................${report.start}
 End................................${report.end ?: RUNNING_INDICATOR}
 Duration...........................${duration?.let { "$it seconds" } ?: RUNNING_INDICATOR} 
-Configured minions..................${report.configuredMinionsCount}
+Configured minions.................${report.configuredMinionsCount}
 Completed minions..................${report.executedMinionsCount}
 Successful steps executions........${report.successfulExecutions}
 Failed steps executions............${report.failedExecutions}
@@ -60,7 +60,7 @@ Scenario...........................${scenarioReport.scenarioId}
 Start..............................${scenarioReport.start}
 End................................${scenarioReport.end ?: RUNNING_INDICATOR}
 Duration...........................${scenarioDuration?.let { "$it seconds" } ?: RUNNING_INDICATOR} 
-Configured minions..................${scenarioReport.configuredMinionsCount}
+Configured minions.................${scenarioReport.configuredMinionsCount}
 Completed minions..................${scenarioReport.executedMinionsCount}
 Successful steps executions........${scenarioReport.successfulExecutions}
 Failed steps executions............${scenarioReport.failedExecutions}

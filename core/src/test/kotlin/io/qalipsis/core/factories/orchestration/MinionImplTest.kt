@@ -21,6 +21,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -47,7 +48,7 @@ internal class MinionImplTest {
     @RelaxedMockK
     lateinit var executingStepsGauge: AtomicInteger
 
-    private val coroutinesExecutionTime = Duration.ofMillis(200)
+    private val coroutinesExecutionTime = Duration.ofMillis(500)
 
     @BeforeEach
     internal fun setUp() {
@@ -63,7 +64,7 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(5)
-    internal fun attachAndJoin() {
+    internal fun `attach and join`() {
         // given
         val completionCounter = AtomicInteger()
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
@@ -73,21 +74,21 @@ internal class MinionImplTest {
         // when
         GlobalScope.launch {
             val latch = Latch(true)
-            repeat(3) {
-                minion.launch {
+            repeat(5) { index ->
+                minion.launch(this) {
                     latch.await()
                     // Add 5ms to thread preemption and rounding issues.
-                    delay(coroutinesExecutionTime.toMillis() + 5)
+                    delay(index * coroutinesExecutionTime.toMillis() + 5)
                     executionCounter.incrementAndGet()
                 }
             }
             latch.release()
         }
+        val executionDuration = coMeasureTime { minion.join() }
 
         // then
-        val executionDuration = coMeasureTime { minion.join() }
-        assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
-        assertEquals(3, executionCounter.get())
+        assertLongerOrEqualTo(coroutinesExecutionTime.multipliedBy(4), executionDuration)
+        assertEquals(5, executionCounter.get())
         assertEquals(1, completionCounter.get())
 
         verifyOnce {
@@ -110,15 +111,15 @@ internal class MinionImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
-        verifyExactly(3) { executingStepsGauge.incrementAndGet() }
-        verifyExactly(3) { executingStepsGauge.decrementAndGet() }
+        verifyExactly(5) { executingStepsGauge.incrementAndGet() }
+        verifyExactly(5) { executingStepsGauge.decrementAndGet() }
 
         confirmVerified(eventsLogger, meterRegistry, executingStepsGauge)
     }
 
     @Test
     @Timeout(3)
-    internal fun shouldSuspendCallerUntilTheMinionStarts() {
+    internal fun `should suspend caller until the minion starts`() {
         // given
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", true, eventsLogger, meterRegistry)
         val latch = Latch(true)
@@ -159,7 +160,7 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(3)
-    internal fun waitForStartAndCancel() {
+    internal fun `wait for start and cancel`() {
         // given
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", true, eventsLogger, meterRegistry)
         val latch = Latch(true)
@@ -203,35 +204,36 @@ internal class MinionImplTest {
     }
 
     @Test
-    @Timeout(3)
-    internal fun joinAndCancel() {
+    @Timeout(1)
+    internal fun `join and cancel`() = runBlockingTest {
         // given
         val completionCounter = AtomicInteger()
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
-        minion.onComplete { completionCounter.incrementAndGet() }
+        minion.onComplete {
+            completionCounter.incrementAndGet()
+        }
         val executionCounter = AtomicInteger()
         val startLatch = Latch(true)
 
         // when attaching 3 suspended jobs to the minion
-        GlobalScope.launch {
+        this.launch {
             repeat(3) {
-                minion.launch {
-                    startLatch.await()
+                minion.launch(this) {
+                    startLatch.await() // This latch remains locked forever.
                     executionCounter.incrementAndGet()
                 }
             }
         }
 
         // then
-        runBlocking {
-            launch {
-                // Just wait that the join was executed.
-                delay(10)
-                minion.cancel()
-            }
-            minion.join()
-            delay(20)
+        val latch = Latch(true)
+        launch {
+            latch.await()
+            minion.cancel()
         }
+        latch.cancel()
+        minion.join()
+
         assertEquals(0, executionCounter.get())
         assertEquals(0, completionCounter.get())
 
@@ -265,7 +267,7 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(3)
-    internal fun shouldSuspendJoinCallWhenNoJobStart() {
+    internal fun `should suspend join call when no job start`() = runBlockingTest {
         // given
         val completionCounter = AtomicInteger()
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
@@ -273,10 +275,8 @@ internal class MinionImplTest {
 
         // then
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
-                withTimeout(coroutinesExecutionTime.toMillis()) {
-                    minion.join()
-                }
+            withTimeout(coroutinesExecutionTime.toMillis()) {
+                minion.join()
             }
         }
         assertEquals(0, completionCounter.get())
@@ -303,7 +303,7 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(20)
-    internal fun shouldSupportALotOfMinionsWithALotOfJobs() {
+    internal fun `should support a lot of minions with a lot of jobs`() {
         // given
         // Reduces the logs which affect the performances significantly.
         loggerContext.getLogger(MinionImpl::class.java).level = Level.INFO

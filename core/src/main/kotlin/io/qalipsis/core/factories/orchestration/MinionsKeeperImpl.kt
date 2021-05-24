@@ -125,6 +125,7 @@ internal class MinionsKeeperImpl(
     @LogInput(level = Level.DEBUG)
     override suspend fun startCampaign(campaignId: CampaignId, scenarioId: ScenarioId) {
         if (scenarioId in scenariosRegistry) {
+            log.debug { "Starting campaign $campaignId on scenario $scenarioId" }
             campaignStateKeeper.start(campaignId, scenarioId)
             scenariosRegistry[scenarioId]!!.start(campaignId)
             readySingletonsMinions[scenarioId]?.apply {
