@@ -64,7 +64,7 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(5)
-    internal fun `attach and join`() {
+    internal fun `attach and join`(): Unit = runBlocking {
         // given
         val completionCounter = AtomicInteger()
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
@@ -72,18 +72,17 @@ internal class MinionImplTest {
         val executionCounter = AtomicInteger()
 
         // when
-        GlobalScope.launch {
-            val latch = Latch(true)
-            repeat(5) { index ->
-                minion.launch(this) {
-                    latch.await()
-                    // Add 5ms to thread preemption and rounding issues.
-                    delay(index * coroutinesExecutionTime.toMillis() + 5)
-                    executionCounter.incrementAndGet()
-                }
+        val latch = Latch(true)
+        repeat(5) { index ->
+            minion.launch(this) {
+                latch.await()
+                // Add 5ms to thread preemption and rounding issues.
+                delay(index * coroutinesExecutionTime.toMillis() + 5)
+                executionCounter.incrementAndGet()
             }
-            latch.release()
         }
+        latch.release()
+
         val executionDuration = coMeasureTime { minion.join() }
 
         // then
@@ -119,13 +118,13 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `should suspend caller until the minion starts`() {
+    internal fun `should suspend caller until the minion starts`(): Unit = runBlocking {
         // given
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", true, eventsLogger, meterRegistry)
         val latch = Latch(true)
 
         // when
-        GlobalScope.launch {
+        launch {
             latch.await()
             // Add 20ms to thread preemption and rounding issues.
             delay(coroutinesExecutionTime.toMillis() + 20)
@@ -160,13 +159,13 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `wait for start and cancel`() {
+    internal fun `wait for start and cancel`() = runBlocking {
         // given
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", true, eventsLogger, meterRegistry)
         val latch = Latch(true)
 
         // when
-        GlobalScope.launch {
+        launch {
             latch.await()
             // Add 20ms to thread preemption and rounding issues.
             delay(coroutinesExecutionTime.toMillis() + 20)
@@ -216,7 +215,7 @@ internal class MinionImplTest {
         val startLatch = Latch(true)
 
         // when attaching 3 suspended jobs to the minion
-        this.launch {
+        launch {
             repeat(3) {
                 minion.launch(this) {
                     startLatch.await() // This latch remains locked forever.
@@ -330,7 +329,7 @@ internal class MinionImplTest {
         GlobalScope.launch {
             minions.forEach { minion ->
                 repeat(stepsCount) {
-                    minion.launch {
+                    minion.launch(this) {
                         startLatch.await()
                         executionCounter.incrementAndGet()
                     }

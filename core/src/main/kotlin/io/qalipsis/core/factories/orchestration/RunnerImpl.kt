@@ -124,6 +124,7 @@ internal class RunnerImpl(
         return minion.launch(executionScope) {
             doExecute(this, minion, step, ctx, null, consumer)
         }
+        MDC.clear()
     }
 
     /**
