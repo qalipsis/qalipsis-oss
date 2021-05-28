@@ -13,6 +13,11 @@ logging:
   level:
     io.qalipsis: DEBUG
     root: INFO
+    io:
+      qalipsis:
+        core:
+          report:
+            StandaloneInMemoryCampaignStateKeeperImpl: TRACE
   file:
     path: qalipsis-test.log
     async: false
