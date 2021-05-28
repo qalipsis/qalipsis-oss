@@ -21,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import org.slf4j.MDC
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -101,15 +100,10 @@ internal class RunnerImpl(
         log.trace { "Running minion" }
 
         MDC.put("step", step.id)
-        val minionParentJob = minion.launch(executionScope, countLatch = jobsCounter) {
+        minion.launch(executionScope, countLatch = jobsCounter) {
             log.trace { "Starting the execution of a subtree of tasks for the minion" }
             doExecute(this, minion, step, ctx, jobsCounter, consumer)
             log.trace { "Execution of the subtree of tasks is completed for the minion (1/2)" }
-        }
-
-        GlobalScope.launch {
-            minionParentJob?.join()
-            log.trace { "Execution of the subtree of tasks is completed for the minion (2/2)" }
         }
     }
 

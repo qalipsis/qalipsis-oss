@@ -59,7 +59,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
         every { scenariosRegistry.contains("my-scenario") } returns true
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf<ScenarioId, List<MinionId>>(
-                directive.scenarioId to emptyList()
+            directive.scenarioId to emptyList()
         )
 
         Assertions.assertTrue(processor.accept(directive))
@@ -105,10 +105,10 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         }
 
         confirmVerified(
-                scenariosRegistry,
-                feedbackProducer,
-                directiveProducer,
-                minionsCreationPreparationDirectiveProcessor
+            scenariosRegistry,
+            feedbackProducer,
+            directiveProducer,
+            minionsCreationPreparationDirectiveProcessor
         )
     }
 
@@ -130,7 +130,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
         // when
         assertThrows<IllegalArgumentException> {
-                processor.process(directive)
+            processor.process(directive)
         }
 
         // then
@@ -148,10 +148,10 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         assertThat(feedbacks[1]::status).isEqualTo(FeedbackStatus.FAILED)
 
         confirmVerified(
-                scenariosRegistry,
-                feedbackProducer,
-                directiveProducer,
-                minionsCreationPreparationDirectiveProcessor
+            scenariosRegistry,
+            feedbackProducer,
+            directiveProducer,
+            minionsCreationPreparationDirectiveProcessor
         )
     }
 
@@ -180,7 +180,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
         // when
         assertThrows<IllegalArgumentException> {
-                processor.process(directive)
+            processor.process(directive)
         }
 
         // then
@@ -199,10 +199,10 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
         assertThat(feedbacks[1]::status).isEqualTo(FeedbackStatus.FAILED)
 
         confirmVerified(
-                scenariosRegistry,
-                feedbackProducer,
-                directiveProducer,
-                minionsCreationPreparationDirectiveProcessor
+            scenariosRegistry,
+            feedbackProducer,
+            directiveProducer,
+            minionsCreationPreparationDirectiveProcessor
         )
     }
 
@@ -233,7 +233,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
         // when
         val start = System.currentTimeMillis() + 2000
-            processor.process(directive)
+        processor.process(directive)
 
         // then
         coVerifyOrder {
@@ -265,15 +265,15 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
                     )
                 }
             }
-            QalipsisTimeAssertions.assertInstantAfter(start + 5000, this.set[27].timestamp)
+            QalipsisTimeAssertions.assertInstantAfterOrEqual(start + 5000, this.set[27].timestamp)
             Assertions.assertEquals("minion-27", this.set[27].minionId)
         }
 
         confirmVerified(
-                scenariosRegistry,
-                feedbackProducer,
-                directiveProducer,
-                minionsCreationPreparationDirectiveProcessor
+            scenariosRegistry,
+            feedbackProducer,
+            directiveProducer,
+            minionsCreationPreparationDirectiveProcessor
         )
     }
 }
