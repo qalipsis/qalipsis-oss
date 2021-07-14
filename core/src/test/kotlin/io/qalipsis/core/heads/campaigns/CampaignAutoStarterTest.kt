@@ -1,9 +1,12 @@
 package io.qalipsis.core.heads.campaigns
 
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.spyk
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
 import io.qalipsis.api.sync.SuspendedCountLatch
