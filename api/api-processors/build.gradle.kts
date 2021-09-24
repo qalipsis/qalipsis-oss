@@ -17,7 +17,7 @@ tasks.withType<KotlinCompile> {
 val micronautVersion: String by project
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation(project(":api:api-dsl"))
     implementation("com.squareup:javapoet:1.13.0")

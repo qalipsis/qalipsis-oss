@@ -1,6 +1,6 @@
 FROM openjdk:11-jdk-slim
 
-LABEL maintainer="Eric Jessé <me@ericjesse.com>"
+LABEL maintainer="Eric Jessé <eric.jesse@aeris-consulting.com>"
 ARG GRADLE_VERSION="7.0.1"
 
 USER root

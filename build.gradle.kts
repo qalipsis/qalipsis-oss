@@ -6,9 +6,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 plugins {
     idea
     java
-    kotlin("jvm") version "1.4.30"
-    kotlin("kapt") version "1.4.30"
-    kotlin("plugin.allopen") version "1.4.30"
+    kotlin("jvm") version "1.4.32"
+    kotlin("kapt") version "1.4.32"
+    kotlin("plugin.allopen") version "1.4.32"
     id("net.ltgt.apt") version "0.21" apply false
 
     id("nebula.contacts") version "5.1.0"
@@ -32,7 +32,8 @@ configure<JavaPluginConvention> {
 }
 
 tasks.withType<Wrapper> {
-    distributionType = Wrapper.DistributionType.ALL
+    distributionType = Wrapper.DistributionType.BIN
+    gradleVersion = "6.8.1"
 }
 
 val testNumCpuCore: String? by project
@@ -57,7 +58,11 @@ allprojects {
     }
 
     infoBroker {
-        excludedManifestProperties = listOf("Module-Owner", "Module-Email", "Module-Source")
+        excludedManifestProperties = listOf(
+            "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
+            "Built-OS", "Build-Host", "Build-Job", "Build-Host", "Build-Job", "Build-Number", "Build-Id", "Build-Url",
+            "Built-Status"
+        )
     }
 
     contacts {
@@ -73,12 +78,8 @@ allprojects {
         mavenCentral()
         jcenter()
         maven {
-            name = "bintray"
-            setUrl("https://jcenter.bintray.com")
-        }
-        maven {
             name = "rubygems"
-            setUrl("http://rubygems-proxy.torquebox.org/releases")
+            setUrl("https://rubygems-proxy.torquebox.org/releases")
         }
     }
 

@@ -31,7 +31,7 @@ allOpen {
 val micronautVersion: String by project
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib"))
 
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
@@ -58,7 +58,7 @@ dependencies {
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    testFixturesImplementation(kotlin("stdlib"))
+    testFixturesCompileOnly(kotlin("stdlib"))
 
     testImplementation(project(":test"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")

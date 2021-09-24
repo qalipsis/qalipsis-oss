@@ -15,9 +15,7 @@ tasks.withType<KotlinCompile> {
 val micronautVersion: String by project
 
 dependencies {
-    implementation(
-        kotlin("stdlib")
-    )
+    compileOnly(kotlin("stdlib"))
 
     kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest(project(":api:api-processors"))

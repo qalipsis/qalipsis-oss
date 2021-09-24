@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath("com.github.jruby-gradle:jruby-gradle-plugin:2.0.0-alpha.6")
+        classpath("com.github.jruby-gradle.base:com.github.jruby-gradle.base.gradle.plugin:2.+")
     }
 }
 
@@ -21,13 +21,11 @@ description = "Technical documentation for developers and architects"
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 dependencies {
     asciidoctorGems("rubygems:asciidoctor-diagram:2.0.1")
     asciidoctorGems("rubygems:rouge:3.16.0")
 }
-
 
 asciidoctorj {
     modules {

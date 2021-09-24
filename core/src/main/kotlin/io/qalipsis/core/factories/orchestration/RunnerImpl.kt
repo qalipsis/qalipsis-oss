@@ -115,10 +115,13 @@ internal class RunnerImpl(
         configureMdcContext(minion)
 
         MDC.put("step", step.id)
-        return minion.launch(executionScope) {
-            doExecute(this, minion, step, ctx, null, consumer)
+        return try {
+            minion.launch(executionScope) {
+                doExecute(this, minion, step, ctx, null, consumer)
+            }
+        } finally {
+            MDC.clear()
         }
-        MDC.clear()
     }
 
     /**

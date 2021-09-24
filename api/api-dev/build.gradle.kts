@@ -25,15 +25,15 @@ val kotlinCoroutinesVersion: String by project
 val jacksonVersion: String by project
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib"))
     api("io.github.microutils:kotlin-logging-jvm:2.0.6")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${kotlinCoroutinesVersion}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion")
-    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
-    implementation("io.micronaut:micronaut-runtime")
+    implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly("io.micronaut:micronaut-runtime")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
 
     compileOnly("org.slf4j:slf4j-api")

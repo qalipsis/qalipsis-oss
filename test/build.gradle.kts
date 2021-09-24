@@ -21,7 +21,7 @@ val mockkVersion: String by project
 val kotlinCoroutinesVersion: String by project
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib"))
     api(kotlin("reflect"))
     implementation(project(":api:api-common"))
     api(platform("io.micronaut:micronaut-bom:$micronautVersion"))

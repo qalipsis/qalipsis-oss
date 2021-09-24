@@ -29,7 +29,7 @@ dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
 
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib"))
     implementation("cool.graph:cuid-java:0.1.1")
     api(project(":api:api-dev"))
     api(project(":api:api-dsl"))
