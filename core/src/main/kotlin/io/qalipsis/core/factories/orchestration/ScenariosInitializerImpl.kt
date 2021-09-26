@@ -1,8 +1,10 @@
 package io.qalipsis.core.factories.orchestration
 
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.annotation.Property
 import io.micronaut.validation.Validated
 import io.qalipsis.api.annotations.VisibleForTest
+import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.exceptions.InvalidSpecificationException
@@ -34,6 +36,7 @@ import io.qalipsis.core.factories.steps.RunnerAware
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -53,10 +56,14 @@ internal class ScenariosInitializerImpl(
     private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
     private val feedbackProducer: FeedbackProducer,
     private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
+    stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>,
     private val runner: Runner,
     private val minionsKeeper: MinionsKeeper,
     private val idGenerator: IdGenerator,
-    stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>
+    @PositiveDuration @Property(
+        name = "campaign.step.start-timeout",
+        defaultValue = "30s"
+    ) private val stepStartTimeout: Duration
 ) : ScenariosInitializer, StartupFactoryComponent {
 
     /**
@@ -74,21 +81,27 @@ internal class ScenariosInitializerImpl(
         ServicesLoader.loadServices<Any>("scenarios", applicationContext)
 
         // Fetch and convert them.
-        val allScenarios = mutableListOf<Scenario>()
-        scenarioSpecificationsKeeper.asMap().forEach { (scenarioId, scenarioSpecification) ->
-            try {
-                val scenario = convertScenario(scenarioId, scenarioSpecification)
-                allScenarios.add(scenario)
-                scenario.dags.forEach { dag ->
-                    dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
+        val foundScenarios = scenarioSpecificationsKeeper.asMap()
+        if (foundScenarios.isEmpty()) {
+            // FIXME Trigger an error if there is no scenario found, in order to kill this useless instance.
+            publishScenarioCreationFeedback(emptyList())
+        } else {
+            val allScenarios = mutableListOf<Scenario>()
+            foundScenarios.forEach { (scenarioId, scenarioSpecification) ->
+                try {
+                    val scenario = convertScenario(scenarioId, scenarioSpecification)
+                    allScenarios.add(scenario)
+                    scenario.dags.forEach { dag ->
+                        dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
+                    }
+                } catch (e: Exception) {
+                    log.error(e) { e.message }
+                    throw e
                 }
-            } catch (e: Exception) {
-                log.error(e) { e.message }
-                throw e
             }
+            publishScenarioCreationFeedback(allScenarios)
         }
 
-        publishScenarioCreationFeedback(allScenarios)
     }
 
     @PreDestroy
@@ -138,7 +151,7 @@ internal class ScenariosInitializerImpl(
         val scenario =
             ScenarioImpl(
                 scenarioId, rampUpStrategy = rampUpStrategy, defaultRetryPolicy = defaultRetryPolicy,
-                minionsCount = scenarioSpecification.minionsCount, feedbackProducer
+                minionsCount = scenarioSpecification.minionsCount, feedbackProducer, stepStartTimeout
             )
         scenariosRegistry.add(scenario)
 
@@ -150,9 +163,7 @@ internal class ScenariosInitializerImpl(
             )
         }
         require(scenario.dags.size >= scenarioSpecification.dagsCount) {
-            "Not all the DAGs were created, only ${
-                scenario.dags.joinToString(", ") { it.id }
-            } were found"
+            "Not all the DAGs were created, only ${scenario.dags.joinToString(", ") { it.id }} were found"
         }
         return scenario
     }
@@ -181,9 +192,9 @@ internal class ScenariosInitializerImpl(
         parentStep: Step<*, *>?,
         stepSpecification: StepSpecification<Any?, Any?, *>
     ) {
-        log.debug(
-            "Creating step ${stepSpecification.name} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<isRoot>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
-        )
+        log.debug {
+            "Creating step ${stepSpecification.name} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
+        }
 
         // Get or create the DAG to attach the step.
         val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId) { dagId ->

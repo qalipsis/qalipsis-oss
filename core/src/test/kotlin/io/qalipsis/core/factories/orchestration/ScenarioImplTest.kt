@@ -14,8 +14,10 @@ import io.qalipsis.core.factories.testDag
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -63,31 +65,157 @@ internal class ScenarioImplTest {
         // then
         assertEquals(mockedSteps.size, calledStart.get())
         coVerifyOnce {
-            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
-                    "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-            )))
-            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
-                    "camp-1", "my-scenario", "dag-2", FeedbackStatus.IN_PROGRESS
-            )))
-            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
-                    "camp-1", "my-scenario", "dag-1", FeedbackStatus.COMPLETED
-            )))
-            feedbackProducer.publish(eq(CampaignStartedForDagFeedback(
-                    "camp-1", "my-scenario", "dag-2", FeedbackStatus.COMPLETED
-            )))
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
+                    )
+                )
+            )
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1", "my-scenario", "dag-2", FeedbackStatus.IN_PROGRESS
+                    )
+                )
+            )
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.COMPLETED
+                    )
+                )
+            )
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1", "my-scenario", "dag-2", FeedbackStatus.COMPLETED
+                    )
+                )
+            )
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                    campaignId = "camp-1",
-                    scenarioId = "my-scenario",
-                    dagId = step.dagId,
-                    stepId = step.id
+                campaignId = "camp-1",
+                scenarioId = "my-scenario",
+                dagId = step.dagId,
+                stepId = step.id
             )
             coVerifyOnce {
                 step.start(eq(context))
             }
         }
+    }
 
+    @Test
+    internal fun `should interrupt the start when a step is in timeout`() {
+        // given
+        val mockedSteps = mutableListOf<StartableStoppableStep>()
+        val scenario = buildDagsByScenario(mockedSteps, Duration.ofMillis(100))
+        coEvery { mockedSteps[2].start(any()) } coAnswers { delay(200) }
+
+        // when
+        scenario.start("camp-1")
+
+        // then
+        coVerifyOnce {
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
+                    )
+                )
+            )
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1",
+                        "my-scenario",
+                        "dag-1",
+                        FeedbackStatus.FAILED,
+                        "The start of the DAG dag-1 failed: Timed out waiting for 100 ms"
+                    )
+                )
+            )
+        }
+        mockedSteps.subList(0, 2).forEach { step ->
+            val context = StepStartStopContext(
+                campaignId = "camp-1",
+                scenarioId = "my-scenario",
+                dagId = step.dagId,
+                stepId = step.id
+            )
+            coVerifyOnce {
+                step.start(eq(context))
+            }
+        }
+        mockedSteps.forEach { step ->
+            val context = StepStartStopContext(
+                campaignId = "camp-1",
+                scenarioId = "my-scenario",
+                dagId = step.dagId,
+                stepId = step.id
+            )
+            coVerifyOnce {
+                step.stop(eq(context))
+            }
+        }
+    }
+
+
+    @Test
+    internal fun `should interrupt the start when a step fails`() {
+        // given
+        val mockedSteps = mutableListOf<StartableStoppableStep>()
+        val scenario = buildDagsByScenario(mockedSteps)
+        coEvery { mockedSteps[2].start(any()) } throws RuntimeException("this is the error")
+
+        // when
+        scenario.start("camp-1")
+
+        // then
+        coVerifyOnce {
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
+                    )
+                )
+            )
+            feedbackProducer.publish(
+                eq(
+                    CampaignStartedForDagFeedback(
+                        "camp-1",
+                        "my-scenario",
+                        "dag-1",
+                        FeedbackStatus.FAILED,
+                        "The start of the DAG dag-1 failed: this is the error"
+                    )
+                )
+            )
+        }
+        mockedSteps.subList(0, 2).forEach { step ->
+            val context = StepStartStopContext(
+                campaignId = "camp-1",
+                scenarioId = "my-scenario",
+                dagId = step.dagId,
+                stepId = step.id
+            )
+            coVerifyOnce {
+                step.start(eq(context))
+            }
+        }
+        mockedSteps.forEach { step ->
+            val context = StepStartStopContext(
+                campaignId = "camp-1",
+                scenarioId = "my-scenario",
+                dagId = step.dagId,
+                stepId = step.id
+            )
+            coVerifyOnce {
+                step.stop(eq(context))
+            }
+        }
     }
 
     @Test
@@ -110,10 +238,10 @@ internal class ScenarioImplTest {
         assertEquals(mockedSteps.size, calledStop.get())
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                    campaignId = "camp-1",
-                    scenarioId = "my-scenario",
-                    dagId = step.dagId,
-                    stepId = step.id
+                campaignId = "camp-1",
+                scenarioId = "my-scenario",
+                dagId = step.dagId,
+                stepId = step.id
             )
             coVerifyOnce {
                 step.stop(eq(context))
@@ -121,11 +249,15 @@ internal class ScenarioImplTest {
         }
     }
 
-    private fun buildDagsByScenario(mockedSteps: MutableList<StartableStoppableStep>): ScenarioImpl {
+    private fun buildDagsByScenario(
+        mockedSteps: MutableList<StartableStoppableStep>,
+        stepStartTimeout: Duration = Duration.ofSeconds(30)
+    ): ScenarioImpl {
         val scenarioImpl = ScenarioImpl(
-                id = "my-scenario",
-                rampUpStrategy = relaxedMockk(),
-                feedbackProducer = feedbackProducer
+            id = "my-scenario",
+            rampUpStrategy = relaxedMockk(),
+            feedbackProducer = feedbackProducer,
+            stepStartTimeout = stepStartTimeout
         )
 
         scenarioImpl.createIfAbsent("dag-1") {
@@ -153,7 +285,6 @@ internal class ScenarioImplTest {
         }
         return scenarioImpl
     }
-
 
 
     private data class StartableStoppableStep(val dagId: DirectedAcyclicGraphId) :

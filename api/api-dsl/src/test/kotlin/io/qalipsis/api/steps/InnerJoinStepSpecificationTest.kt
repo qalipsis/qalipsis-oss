@@ -35,7 +35,7 @@ internal class InnerJoinStepSpecificationTest {
                 secondaryKeyExtractor as (CorrelationRecord<out Any?>) -> Any?, "my-other-step")
         expected.cacheTimeout = Duration.ofMillis(Long.MAX_VALUE)
         assertEquals(expected, previousStep.nextSteps[0])
-        assertThat(previousStep.scenario!!.exists("my-other-step")).isTrue()
+        assertThat(previousStep.scenario.exists("my-other-step")).isTrue()
     }
 
     @Test
@@ -58,8 +58,11 @@ internal class InnerJoinStepSpecificationTest {
             prop(InnerJoinStepSpecification<*, *>::cacheTimeout).isEqualTo(Duration.ofMillis(Long.MAX_VALUE))
             prop(InnerJoinStepSpecification<*, *>::secondaryStepName).isNotNull()
         }
-        assertThat(previousStep.scenario!!.exists(
-                (nextStep as InnerJoinStepSpecification<*, *>).secondaryStepName)).isTrue()
+        assertThat(
+            previousStep.scenario.exists(
+                (nextStep as InnerJoinStepSpecification<*, *>).secondaryStepName
+            )
+        ).isTrue()
     }
 
     @Test

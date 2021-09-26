@@ -134,8 +134,9 @@ internal class DefaultCampaignManager(
      * Create the directive to create all the minions for the given scenario.
      */
     private suspend fun triggerMinionsCreation(id: CampaignId, scenario: HeadScenario) {
-        log.debug(
-                "Campaign ${id}, scenario ${scenario.id} - creating the directive to create the IDs for all the minions")
+        log.debug {
+            "Campaign ${id}, scenario ${scenario.id} - creating the directive to create the IDs for all the minions"
+        }
         val count =
             if (minionsCountPerScenario > 0) minionsCountPerScenario else (scenario.minionsCount * minionsCountFactor).toInt()
 
@@ -201,13 +202,17 @@ internal class DefaultCampaignManager(
      * Log the feedback from a [MinionsCreationPreparationDirective] or trigger the critical failure action when the feedback is in failure.
      */
     @VisibleForTest
-    internal fun receivedMinionsCreationPreparationFeedback(feedback: DirectiveFeedback,
-                                                            directive: MinionsCreationPreparationDirective) {
+    internal fun receivedMinionsCreationPreparationFeedback(
+        feedback: DirectiveFeedback,
+        directive: MinionsCreationPreparationDirective
+    ) {
         when (feedback.status) {
-            FeedbackStatus.IN_PROGRESS -> log.debug(
-                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions are being created")
+            FeedbackStatus.IN_PROGRESS -> log.debug {
+                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions are being created"
+            }
             FeedbackStatus.FAILED -> onCriticalFailure(
-                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions could not be created: ${feedback.error}")
+                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions could not be created: ${feedback.error}"
+            )
             FeedbackStatus.COMPLETED -> {
                 log.debug { "Scenario ${directive.scenarioId} - IDs for all the minions were created" }
             }
@@ -218,23 +223,28 @@ internal class DefaultCampaignManager(
      * Process the feedback from a [MinionsCreationDirectiveReference].
      */
     @VisibleForTest
-    internal suspend fun receiveMinionsCreationDirectiveFeedback(feedback: DirectiveFeedback,
-                                                                 directive: MinionsCreationDirectiveReference) {
+    internal suspend fun receiveMinionsCreationDirectiveFeedback(
+        feedback: DirectiveFeedback,
+        directive: MinionsCreationDirectiveReference
+    ) {
         when (feedback.status) {
-            FeedbackStatus.IN_PROGRESS -> log.debug(
-                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions are being created")
+            FeedbackStatus.IN_PROGRESS -> log.debug {
+                "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions are being created"
+            }
             FeedbackStatus.FAILED -> {
                 // Prevents the completed feedbacks to be processed.
                 readyDagsByScenario.clear()
                 readyScenarios.clear()
-                // TODO Cancel the campaign.
+                // TODO Cancel the campaign: delete the minions.
                 onCriticalFailure(
-                        "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions could not be created: ${feedback.error}")
+                    "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions could not be created: ${feedback.error}"
+                )
             }
             FeedbackStatus.COMPLETED -> {
                 readyDagsByScenario[directive.scenarioId]?.apply {
-                    log.debug(
-                            "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions were created")
+                    log.debug {
+                        "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions were created"
+                    }
                     add(directive.dagId)
                     // When all the DAGs of the scenario are ready, the scenario is marked ready.
                     if (scenarios.containsKey(directive.scenarioId)
@@ -280,20 +290,23 @@ internal class DefaultCampaignManager(
 
     private suspend fun receiveCampaignStartedFeedback(feedback: CampaignStartedForDagFeedback) {
         when (feedback.status) {
-            FeedbackStatus.IN_PROGRESS -> log.debug(
-                    "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign is being started")
+            FeedbackStatus.IN_PROGRESS -> log.debug {
+                "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign is being started"
+            }
             FeedbackStatus.FAILED -> {
                 // Prevents the completed feedbacks to be processed.
                 startedDagsByScenario.clear()
                 readyScenarios.clear()
-                // TODO Cancel the campaign.
+                // TODO Cancel the campaign: delete the minions, stop the campaign everywhere.
                 onCriticalFailure(
-                        "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign could not be started: ${feedback.error}")
+                    "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign could not be started: ${feedback.error}"
+                )
             }
             FeedbackStatus.COMPLETED -> {
                 startedDagsByScenario[feedback.scenarioId]?.apply {
-                    log.debug(
-                            "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign is started")
+                    log.debug {
+                        "Campaign ${feedback.campaignId}, scenario ${feedback.scenarioId}, DAG ${feedback.dagId} - The campaign is started"
+                    }
                     add(feedback.dagId)
                     // When all the DAGs of the scenario are ready, the scenario is marked ready.
                     if (scenarios.containsKey(feedback.scenarioId)
@@ -340,7 +353,7 @@ internal class DefaultCampaignManager(
     }
 
     data class DirectiveInProgress<T : Directive>(
-            val directive: T
+        val directive: T
     ) {
 
         fun isA(directiveClass: KClass<out Directive>) = directiveClass.isInstance(directive)

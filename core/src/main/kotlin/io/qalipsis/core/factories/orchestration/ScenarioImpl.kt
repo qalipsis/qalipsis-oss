@@ -19,7 +19,9 @@ import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -30,7 +32,8 @@ class ScenarioImpl(
     override val rampUpStrategy: RampUpStrategy,
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
-    private val feedbackProducer: FeedbackProducer
+    private val feedbackProducer: FeedbackProducer,
+    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepId, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
@@ -74,17 +77,32 @@ class ScenarioImpl(
     override fun start(campaignId: CampaignId) {
         val scenarioId = this.id
         runBlocking {
-            internalDags.values.forEach { dag ->
-                val feedback = CampaignStartedForDagFeedback(
-                    scenarioId = scenarioId,
-                    dagId = dag.id,
-                    campaignId = campaignId,
-                    status = FeedbackStatus.IN_PROGRESS
-                )
-                log.trace { "Sending feedback: $feedback" }
-                feedbackProducer.publish(feedback)
+            try {
+                startAllDags(scenarioId, campaignId)
+            } catch (e: Exception) {
+                log.error(e) { "An error occurred while starting the scenario $scenarioId: ${e.message}" }
+                stopAllDags(campaignId, scenarioId)
+            }
+        }
+    }
 
-                val step = dag.rootStep.get()
+    private suspend fun startAllDags(
+        scenarioId: ScenarioId,
+        campaignId: CampaignId
+    ) {
+        internalDags.values.forEach { dag ->
+            CampaignStartedForDagFeedback(
+                scenarioId = scenarioId,
+                dagId = dag.id,
+                campaignId = campaignId,
+                status = FeedbackStatus.IN_PROGRESS
+            ).also {
+                log.trace { "Sending feedback: $it" }
+                feedbackProducer.publish(it)
+            }
+
+            val step = dag.rootStep.get()
+            try {
                 startStepRecursively(
                     step, StepStartStopContext(
                         campaignId = campaignId,
@@ -94,14 +112,27 @@ class ScenarioImpl(
                     )
                 )
 
-                val completionFeedback = CampaignStartedForDagFeedback(
+                CampaignStartedForDagFeedback(
                     scenarioId = scenarioId,
                     dagId = dag.id,
                     campaignId = campaignId,
                     status = FeedbackStatus.COMPLETED
-                )
-                log.trace { "Sending feedback: $completionFeedback" }
-                feedbackProducer.publish(completionFeedback)
+                ).also {
+                    log.trace { "Sending feedback: $it" }
+                    feedbackProducer.publish(it)
+                }
+            } catch (e: Exception) {
+                CampaignStartedForDagFeedback(
+                    scenarioId = scenarioId,
+                    dagId = dag.id,
+                    campaignId = campaignId,
+                    status = FeedbackStatus.FAILED,
+                    error = "The start of the DAG ${dag.id} failed: ${e.message}"
+                ).also {
+                    log.trace { "Sending feedback: $it" }
+                    feedbackProducer.publish(it)
+                }
+                throw e
             }
         }
     }
@@ -109,7 +140,9 @@ class ScenarioImpl(
     private suspend fun startStepRecursively(step: Step<*, *>, context: StepStartStopContext) {
         // The start is not surrounded by a try catch because they all have to start successfully to be able to start
         // a campaign.
-        step.start(context)
+        withTimeout(stepStartTimeout.toMillis()) {
+            step.start(context)
+        }
         step.next.forEach {
             startStepRecursively(it, context)
         }
@@ -119,16 +152,20 @@ class ScenarioImpl(
     override fun stop(campaignId: CampaignId) {
         val scenarioId = this.id
         runBlocking {
-            internalDags.values.map { it.id to it.rootStep.get() }.forEach {
-                stopStepRecursively(
-                    it.second, StepStartStopContext(
-                        campaignId = campaignId,
-                        scenarioId = scenarioId,
-                        dagId = it.first,
-                        stepId = it.second.id
-                    )
+            stopAllDags(campaignId, scenarioId)
+        }
+    }
+
+    private suspend fun stopAllDags(campaignId: CampaignId, scenarioId: ScenarioId) {
+        internalDags.values.map { it.id to it.rootStep.get() }.forEach {
+            stopStepRecursively(
+                it.second, StepStartStopContext(
+                    campaignId = campaignId,
+                    scenarioId = scenarioId,
+                    dagId = it.first,
+                    stepId = it.second.id
                 )
-            }
+            )
         }
     }
 

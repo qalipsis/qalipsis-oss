@@ -55,6 +55,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -97,13 +98,19 @@ internal class ScenariosInitializerImplTest {
     @SpyK
     var idGenerator = TestIdGenerator
 
-    val scenariosInitializer: ScenariosInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
+    private val scenariosInitializer: ScenariosInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
         spyk(
             ScenariosInitializerImpl(
-                applicationContext, scenariosRegistry, scenarioSpecificationsKeeper,
+                applicationContext,
+                scenariosRegistry,
+                scenarioSpecificationsKeeper,
                 feedbackProducer,
-                listOf(stepConverter1, stepConverter2), runner, minionsKeeper, idGenerator,
-                listOf(stepDecorator1, stepDecorator2)
+                listOf(stepConverter1, stepConverter2),
+                listOf(stepDecorator1, stepDecorator2),
+                runner,
+                minionsKeeper,
+                idGenerator,
+                Duration.ofSeconds(30)
             )
         )
     }
