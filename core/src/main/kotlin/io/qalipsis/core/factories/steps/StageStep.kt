@@ -7,6 +7,7 @@ import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.Step
+import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import kotlinx.coroutines.channels.Channel
@@ -43,6 +44,8 @@ internal class StageStep<I, O>(
         val output = Channel<Any?>(Channel.UNLIMITED)
         val innerContext = context.duplicate(newOutput = output)
 
+        var failure = false
+
         // The first step of the group is executed.
         runner.execute(minion, head!!, innerContext) { ctx ->
             log.trace { "Consuming the tail context $ctx" }
@@ -53,11 +56,16 @@ internal class StageStep<I, O>(
                     context.send(outputRecord as O)
                 }
             } else {
+                failure = true
+                log.trace { "The stage ${this.id} finished with error(s): ${ctx.errors.joinToString { it.message }}" }
                 // Errors have to be forwarded.
                 ctx.errors.forEach(context::addError)
-                context.isExhausted = true
             }
         }?.join()
+
+        if (failure) {
+            throw StepExecutionException()
+        }
     }
 
     override suspend fun execute(context: StepContext<I, O>) {

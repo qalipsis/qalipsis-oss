@@ -19,7 +19,7 @@ import kotlinx.coroutines.sync.withLock
  *
  * @author Eric Jessé
  */
-class Latch(var isLocked: Boolean = false) {
+class Latch(var isLocked: Boolean = false, val name: String = "") {
 
     /**
      * Flag used to suspend the calls to [await] between a [lock] and a [release].
@@ -104,6 +104,10 @@ class Latch(var isLocked: Boolean = false) {
     fun cancel() {
         isLocked = false
         syncFlag?.close()
+    }
+
+    override fun toString(): String {
+        return "Latch(name='$name', isLocked=$isLocked)"
     }
 
     companion object {

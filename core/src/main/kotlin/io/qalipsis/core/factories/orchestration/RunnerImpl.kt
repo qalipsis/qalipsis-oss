@@ -15,6 +15,7 @@ import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factories.context.StepContextBuilder
 import io.qalipsis.core.factories.context.StepContextImpl
 import kotlinx.coroutines.CoroutineScope
@@ -230,12 +231,11 @@ internal class RunnerImpl(
                 campaignStateKeeper.recordSuccessfulStepExecution(ctx.campaignId, minion.scenarioId, step.id)
                 log.trace { "Step completed with success" }
             } catch (t: Throwable) {
+                val duration = Duration.ofNanos(System.nanoTime() - start)
                 campaignStateKeeper.recordFailedStepExecution(ctx.campaignId, minion.scenarioId, step.id)
-                Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventsLogger.warn("step.execution.failed", t, tagsSupplier = { ctx.toEventTags() })
-                    meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)
-                }
-                ctx.addError(StepError(t))
+                val cause = getFailureCause(t, ctx, step)
+                eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { ctx.toEventTags() })
+                meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)
                 log.warn(t) { "Step completed with an exception, the context is marked as exhausted" }
                 ctx.isExhausted = true
             }
@@ -247,6 +247,21 @@ internal class RunnerImpl(
         // Once the step was executed, the channels can be closed if not done in the step itself.
         ((ctx as StepContextImpl<*, *>).input as Channel<*>).close()
         ctx.output.close()
+    }
+
+    /**
+     * Extracts the actual cause of the step execution failure.
+     */
+    private fun getFailureCause(t: Throwable, ctx: StepContext<*, *>, step: Step<*, *>) = when {
+        t !is StepExecutionException -> {
+            ctx.addError(StepError(t, step.id))
+            t
+        }
+        t.cause != null -> {
+            ctx.addError(StepError(t.cause!!, step.id))
+            t.cause!!
+        }
+        else -> ctx.errors.lastOrNull()?.message
     }
 
     private fun isErrorProcessingStep(step: Step<*, *>): Boolean {

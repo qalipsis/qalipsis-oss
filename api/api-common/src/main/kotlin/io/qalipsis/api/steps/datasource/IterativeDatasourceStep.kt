@@ -48,7 +48,7 @@ class IterativeDatasourceStep<R, T, O>(
                 log.trace { "Received one record" }
                 converter.supply(rowIndex, value, context)
             } catch (e: Exception) {
-                context.addError(StepError(DatasourceException(rowIndex.get() - 1, e.message)))
+                context.addError(StepError(DatasourceException(rowIndex.get() - 1, e.message), this.id))
             }
         }
 

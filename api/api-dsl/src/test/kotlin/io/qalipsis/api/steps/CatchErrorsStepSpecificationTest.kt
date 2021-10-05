@@ -42,8 +42,8 @@ internal class CatchErrorsStepSpecificationTest {
         val errors = exceptions.map { StepError(it) }
         specification(errors)
         verifyOrder {
-            logger.error(eq("Message-1"), refEq(exceptions[0]))
-            logger.error(eq("Message-2"), refEq(exceptions[1]))
+            logger.error(eq("Message-1"))
+            logger.error(eq("Message-2"))
         }
     }
 

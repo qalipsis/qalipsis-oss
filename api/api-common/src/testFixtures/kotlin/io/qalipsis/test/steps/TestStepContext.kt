@@ -35,7 +35,7 @@ class TestStepContext<IN, OUT>(
     /**
      * List of the generated errors so far.
      */
-    private val internalErrors: MutableList<StepError> = mutableListOf(),
+    private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),
 
     override val campaignId: CampaignId = "",
 
@@ -76,7 +76,8 @@ class TestStepContext<IN, OUT>(
 
     private var immutableMetersTags: Tags? = null
 
-    override val errors: List<StepError> = internalErrors
+    override val errors: List<StepError>
+        get() = internalErrors.toList()
 
     override val hasInput: Boolean
         get() = !input.isEmpty

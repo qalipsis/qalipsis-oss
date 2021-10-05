@@ -62,8 +62,9 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
 
     override var reporting: StepReportingSpecification = wrappedStepSpec.reporting
 
-    override fun split(block: AbstractPluginStepWrapper<I, O>.() -> Unit) {
+    override fun split(block: AbstractPluginStepWrapper<I, O>.() -> Unit): AbstractPluginStepWrapper<I, O> {
         throw InvalidSpecificationException(
-                "The all operation is not supported on a wrapped step, call it directly on the source step")
+            "The split operation is not supported on a wrapped step, call it directly on the source step"
+        )
     }
 }

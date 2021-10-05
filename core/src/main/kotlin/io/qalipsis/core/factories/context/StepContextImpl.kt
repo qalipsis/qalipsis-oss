@@ -34,7 +34,7 @@ internal class StepContextImpl<IN, OUT>(
     /**
      * List of the generated errors so far.
      */
-    private val internalErrors: MutableList<StepError> = mutableListOf(),
+    private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),
 
     override val campaignId: CampaignId = "",
 
@@ -75,12 +75,16 @@ internal class StepContextImpl<IN, OUT>(
 
     private var immutableMetersTags: Tags? = null
 
-    override val errors: List<StepError> = internalErrors
+    override val errors: List<StepError>
+        get() = internalErrors.toList()
 
     override val hasInput: Boolean
         get() = !input.isEmpty
 
     override fun addError(error: StepError) {
+        if (error.stepId.isEmpty()) {
+            error.stepId = stepId
+        }
         internalErrors.add(error)
     }
 
@@ -152,7 +156,7 @@ internal class StepContextImpl<IN, OUT>(
 
     override fun <T : Any?> next(stepId: StepId): StepContext<OUT, T> {
         return StepContextImpl(
-            internalErrors = internalErrors,
+            internalErrors = LinkedHashSet<StepError>().apply { addAll(internalErrors) },
             campaignId = campaignId,
             minionId = minionId,
             scenarioId = scenarioId,

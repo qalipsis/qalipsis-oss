@@ -55,21 +55,28 @@ internal class IterativeStepDecorator<I, O>(
             log.trace { "Executing iteration $currentIteration for context $context" }
             try {
                 executeStep(minion, decorated, internalContext)
+                internalContext.errors.forEach(context::addError)
             } catch (t: Throwable) {
+                log.debug(t) { "The repeated step ${decorated.id} failed: ${t.message}" }
                 context.isTail = isOutputContextTail
                 throw t
             }
+            if (!internalContext.isExhausted) {
+                remainingIterations--
+                currentIteration++
+                log.trace { "Executed iteration $currentIteration for context ${context}, remaining $remainingIterations" }
 
-            remainingIterations--
-            currentIteration++
-            log.trace { "Executed iteration $currentIteration for context ${context}, remaining $remainingIterations" }
-
-            if (delayMillis > 0 && remainingIterations > 0) {
-                log.trace { "Applying delay of $delayMillis ms before next iteration" }
-                delay(delayMillis)
-            } else if (remainingIterations > 0) {
-                // Force a delay to have a suspension point.
-                delay(1)
+                if (delayMillis > 0 && remainingIterations > 0) {
+                    log.trace { "Applying delay of $delayMillis ms before next iteration" }
+                    delay(delayMillis)
+                } else if (remainingIterations > 0) {
+                    // Force a delay to have a suspension point.
+                    delay(1)
+                }
+            } else {
+                log.debug { "The repeated step ${decorated.id} failed." }
+                context.isExhausted = true
+                context.isTail = isOutputContextTail
             }
         }
         log.trace { "End of the iterations for context $context" }

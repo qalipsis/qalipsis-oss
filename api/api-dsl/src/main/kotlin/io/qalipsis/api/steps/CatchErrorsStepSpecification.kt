@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
  */
 @Introspected
 data class CatchErrorsStepSpecification<OUTPUT>(
-        val block: (errors: Collection<StepError>) -> Unit
+    val block: (errors: Collection<StepError>) -> Unit
 ) : AbstractStepSpecification<OUTPUT, OUTPUT, CatchErrorsStepSpecification<OUTPUT>>()
 
 /**
@@ -24,7 +24,7 @@ data class CatchErrorsStepSpecification<OUTPUT>(
  * @author Eric Jessé
  */
 fun <OUTPUT> StepSpecification<*, OUTPUT, *>.catchErrors(
-        block: (errors: Collection<StepError>) -> Unit
+    block: (errors: Collection<StepError>) -> Unit
 ): CatchErrorsStepSpecification<OUTPUT> {
     val step = CatchErrorsStepSpecification<OUTPUT>(block)
     this.add(step)
@@ -40,9 +40,10 @@ fun <OUTPUT> StepSpecification<*, OUTPUT, *>.catchErrors(
  * @author Eric Jessé
  */
 fun <OUTPUT> StepSpecification<*, OUTPUT, *>.logErrors(
-        logger: Logger = LoggerFactory.getLogger("ERRORS")): CatchErrorsStepSpecification<OUTPUT> {
+    logger: Logger = LoggerFactory.getLogger("ERRORS")
+): CatchErrorsStepSpecification<OUTPUT> {
     val step = CatchErrorsStepSpecification<OUTPUT> { errors ->
-        errors.forEach { error -> logger.error(error.cause.message, error.cause) }
+        errors.forEach { error -> logger.error(error.message) }
     }
     this.add(step)
     return step

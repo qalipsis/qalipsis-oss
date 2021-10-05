@@ -4,6 +4,7 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * <p>
@@ -55,7 +56,7 @@ data class DirectedAcyclicGraph(
     /**
      * Steps are stored into slots, because they might be decorated or wrapped during the initialization process.
      */
-    private val steps = mutableMapOf<StepId, Slot<Step<*, *>>>()
+    private val steps = ConcurrentHashMap<StepId, Slot<Step<*, *>>>()
 
     val stepsCount: Int
         get() = steps.size

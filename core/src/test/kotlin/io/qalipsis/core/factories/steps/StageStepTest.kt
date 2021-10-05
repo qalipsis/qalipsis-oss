@@ -10,6 +10,7 @@ import io.mockk.every
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.steps.Step
+import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factories.coreStepContext
 import io.qalipsis.core.factories.orchestration.MinionImpl
 import io.qalipsis.core.factories.orchestration.RunnerImpl
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.assertThrows
 
 
 @CleanMockkRecordedCalls
@@ -35,26 +37,26 @@ internal class StageStepTest {
     @Test
     internal fun `should first add a head, then a next`() {
         // given
-        val groupStep = StageStep<Double, String>("", null)
+        val stageStep = StageStep<Double, String>("", null)
         val tailStep: Step<Double, String> = relaxedMockk()
         val stepAfter1: Step<String, Double> = relaxedMockk()
         val stepAfter2: Step<String, Unit> = relaxedMockk()
 
         // when
-        groupStep.addNext(tailStep)
+        stageStep.addNext(tailStep)
 
         // then
-        assertThat(groupStep).all {
+        assertThat(stageStep).all {
             prop("head").isSameAs(tailStep)
             prop(StageStep<Double, String>::next).isEmpty()
         }
 
         // when
-        groupStep.addNext(stepAfter1)
-        groupStep.addNext(stepAfter2)
+        stageStep.addNext(stepAfter1)
+        stageStep.addNext(stepAfter2)
 
         // then
-        assertThat(groupStep).all {
+        assertThat(stageStep).all {
             prop("head").isSameAs(tailStep)
             prop(StageStep<Double, String>::next).all {
                 hasSize(2)
@@ -121,14 +123,13 @@ internal class StageStepTest {
 
     @Test
     @Timeout(3)
-    internal fun `should mark the context as exhausted when a wrapped step is in error`() = runBlocking {
+    internal fun `should throw an exception when a wrapped step is in error`() = runBlocking {
         val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
-        val exception = RuntimeException("This is an error")
         val secondStep: Step<Int, String> = relaxedMockk {
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
                 ctx.receive()
-                throw exception
+                throw RuntimeException("This is an error")
             }
             every { next } returns listOf(relaxedMockk {
                 every { retryPolicy } returns null
@@ -150,15 +151,68 @@ internal class StageStepTest {
         step.runner = runner
 
         val ctx = coreStepContext<Int, String>(input = 3)
-        step.execute(minion, ctx)
+        val exception = assertThrows<StepExecutionException> {
+            step.execute(minion, ctx)
+        }
 
         assertTrue((ctx.output as Channel).isEmpty)
         assertFalse(ctx.output.isClosedForReceive)
+        assertThat(exception).isInstanceOf(StepExecutionException::class).all {
+            prop(StepExecutionException::cause).isNull()
+        }
         assertThat(ctx).all {
-            prop(StepContext<Int, String>::isExhausted).isTrue()
+            prop(StepContext<Int, String>::isExhausted).isFalse()
             prop(StepContext<Int, String>::errors).all {
                 hasSize(1)
-                index(0).prop(StepError::cause).isSameAs(exception)
+                index(0).prop(StepError::message).isEqualTo("This is an error")
+            }
+        }
+    }
+
+    @Test
+    @Timeout(3)
+    internal fun `should throw an exception when a wrapped step context is exhausted`() = runBlocking {
+        val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
+        val secondStep: Step<Int, String> = relaxedMockk {
+            coEvery { execute(refEq(minion), any()) } coAnswers {
+                val ctx = secondArg<StepContext<Int, String>>()
+                ctx.isExhausted = true
+                ctx.addError(StepError("This is an error", ""))
+            }
+            every { next } returns listOf(relaxedMockk {
+                every { retryPolicy } returns null
+                every { next } returns emptyList()
+            })
+            every { retryPolicy } returns null
+        }
+
+        val headStep = TubeStep<Int>("")
+        headStep.addNext(secondStep)
+
+        val step = StageStep<Int, String>("", null)
+        step.addNext(headStep)
+
+        val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
+            every { gauge(any(), any()) } returnsArgument 1
+        }, relaxedMockk())
+        runner.setProperty("executionScope", this)
+        step.runner = runner
+
+        val ctx = coreStepContext<Int, String>(input = 3)
+        val exception = assertThrows<StepExecutionException> {
+            step.execute(minion, ctx)
+        }
+
+        assertTrue((ctx.output as Channel).isEmpty)
+        assertFalse(ctx.output.isClosedForReceive)
+        assertThat(exception).isInstanceOf(StepExecutionException::class).all {
+            prop(StepExecutionException::cause).isNull()
+        }
+        assertThat(ctx).all {
+            prop(StepContext<Int, String>::isExhausted).isFalse()
+            prop(StepContext<Int, String>::errors).all {
+                hasSize(1)
+                index(0).prop(StepError::message).isEqualTo("This is an error")
             }
         }
     }

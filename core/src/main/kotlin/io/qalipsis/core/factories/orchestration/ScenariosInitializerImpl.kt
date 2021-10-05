@@ -209,10 +209,12 @@ internal class ScenariosInitializerImpl(
         val context =
             StepCreationContextImpl(scenarioSpecification as StepSpecificationRegistry, dag, stepSpecification)
         convertSingleStep(context)
+        // Injects the dependencies on the converted step.
         context.createdStep?.let(this::injectDependencies)
 
         decorateStep(context)
         context.createdStep?.let { step ->
+            // Injects the dependencies on the decorated step, additionally to the converted one.
             injectDependencies(step)
             step.init()
             dag.addStep(step)

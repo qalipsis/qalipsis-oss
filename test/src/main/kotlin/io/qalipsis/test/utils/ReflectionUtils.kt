@@ -99,13 +99,11 @@ class DynamicSetter<T>(
         if (property is KMutableProperty<*>) {
             property.isAccessible = true
             property.setter.call(instance, value)
-        } else if (property is KProperty<*>) {
+        } else {
             property.javaField!!.also {
                 it.isAccessible = true
                 it.set(instance, value)
             }
-        } else {
-            throw RuntimeException("The property ${property.name} cannot be set")
         }
     }
 
@@ -246,6 +244,7 @@ internal class DynamicCall<T>(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun getArgument(parameter: KParameter, value: Any?): Pair<KParameter, Any?> {
         val result = if (parameter.isVararg) {
             val parameterType = (parameter.type.classifier as KClass<Array<*>>)

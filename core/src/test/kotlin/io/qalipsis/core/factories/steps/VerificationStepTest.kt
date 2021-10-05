@@ -2,10 +2,11 @@ package io.qalipsis.core.factories.steps
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tags
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.context.StepError
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportMessageSeverity
@@ -47,17 +48,29 @@ internal class VerificationStepTest {
     @RelaxedMockK
     private lateinit var campaignStateKeeper: CampaignStateKeeper
 
+    @RelaxedMockK
+    private lateinit var stepStartStopContext: StepStartStopContext
+
     @BeforeEach
     internal fun setUp() {
-        every { meterRegistry.counter("step-my-step-assertion", "status", "success") } returns successCounter
-        every { meterRegistry.counter("step-my-step-assertion", "status", "failure") } returns failureCounter
-        every { meterRegistry.counter("step-my-step-assertion", "status", "error") } returns errorCounter
+        val meterTags = relaxedMockk<Tags>()
+        val successMeterTags = relaxedMockk<Tags>()
+        val failureMeterTags = relaxedMockk<Tags>()
+        val errorMeterTags = relaxedMockk<Tags>()
+        every { stepStartStopContext.toMetersTags() } returns meterTags
+        every { meterTags.and("status", "success") } returns successMeterTags
+        every { meterTags.and("status", "failure") } returns failureMeterTags
+        every { meterTags.and("status", "error") } returns errorMeterTags
+        every { meterRegistry.counter("step-my-step-assertion", refEq(successMeterTags)) } returns successCounter
+        every { meterRegistry.counter("step-my-step-assertion", refEq(failureMeterTags)) } returns failureCounter
+        every { meterRegistry.counter("step-my-step-assertion", refEq(errorMeterTags)) } returns errorCounter
     }
 
     @Test
     @Timeout(1)
     fun shouldSimplyForwardWithDefaultStep() = runBlockingTest {
         val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry, campaignStateKeeper)
+        step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
         step.execute(ctx)
@@ -94,6 +107,7 @@ internal class VerificationStepTest {
             meterRegistry,
             campaignStateKeeper
         ) { value -> value.toString() }
+        step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
         step.execute(ctx)
@@ -127,6 +141,7 @@ internal class VerificationStepTest {
             fail<Any>("This is an error")
             value.toString()
         }
+        step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
         step.execute(ctx)
@@ -165,6 +180,7 @@ internal class VerificationStepTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, campaignStateKeeper) {
             throw RuntimeException("The error")
         }
+        step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
         step.execute(ctx)
@@ -191,44 +207,4 @@ internal class VerificationStepTest {
         confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, campaignStateKeeper)
     }
 
-    @Test
-    internal fun `should fail when the context is exhausted`() = runBlockingTest {
-        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, campaignStateKeeper) { value ->
-            fail<Any>("This is an error")
-            value.toString()
-        }
-        val ctx = StepTestHelper.createStepContext<Int, String>(input = 1, isExhausted = true)
-        ctx.addError(StepError(RuntimeException("This is the first error")))
-        ctx.addError(StepError(RuntimeException("This is the second error")))
-
-        step.execute(ctx)
-        step.stop(relaxedMockk {
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
-        })
-        assertFalse((ctx.input as Channel).isEmpty) // Then input was not consumed.
-        assertTrue((ctx.output as Channel).isEmpty)
-
-        assertFalse((ctx.output as Channel).isClosedForReceive)
-        assertTrue(ctx.isExhausted)
-
-        verifyOnce {
-            failureCounter.increment()
-            eventsLogger.warn(
-                "step.assertion.failure",
-                value = "This is the first error, This is the second error",
-                timestamp = any(),
-                tagsSupplier = any()
-            )
-            campaignStateKeeper.put(
-                eq("my-campaign"),
-                eq("my-scenario"),
-                eq("my-step"),
-                eq(ReportMessageSeverity.ERROR),
-                any()
-            )
-        }
-
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, campaignStateKeeper)
-    }
 }

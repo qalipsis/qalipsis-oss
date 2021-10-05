@@ -125,4 +125,8 @@ class Slot<T>(private var value: T? = null) {
         }
     }
 
+    override fun toString(): String {
+        return "Slot(value=$value)"
+    }
+
 }

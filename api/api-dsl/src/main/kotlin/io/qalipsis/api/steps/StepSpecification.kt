@@ -82,9 +82,10 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
      *   }
      * }
      */
-    fun split(block: SELF.() -> Unit) {
+    fun split(block: SELF.() -> Unit): SELF {
         @Suppress("UNCHECKED_CAST")
         (this as SELF).block()
+        return this
     }
 
 }

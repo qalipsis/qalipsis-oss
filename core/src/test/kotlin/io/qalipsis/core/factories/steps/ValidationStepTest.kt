@@ -30,7 +30,7 @@ internal class ValidationStepTest {
         assertEquals(123L, output)
 
         assertEquals(123L, processedValue.get())
-        assertEquals(listOf("Error 1", "Error 2"), ctx.errors.map { error -> error.cause.message })
+        assertEquals(listOf("Error 1", "Error 2"), ctx.errors.map { error -> error.message })
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }
 

@@ -47,7 +47,7 @@ internal open class MinionImpl(
     /**
      * Latch to suspend caller while the minion is not started.
      */
-    private val startLatch = Latch(true)
+    private val startLatch = Latch(true, "minionStartLatch-${id}")
 
     /**
      * Counter to assign an ID to the running jobs.
