@@ -14,7 +14,7 @@ internal class FilterStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldForwardInputWhenInputMatches() = runBlockingTest {
+    fun `should forward input when input matches`() = runBlockingTest {
         val step = FilterStep<Long>("", null) { value -> value > 0 }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 1L)
 
@@ -27,7 +27,7 @@ internal class FilterStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldCloseOutputWhenInputDoesNotMatch() = runBlockingTest {
+    fun `should close output when input does not match`() = runBlockingTest {
         val step = FilterStep<Long>("", null) { value -> value > 0 }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = -1L)
 

@@ -15,7 +15,7 @@ internal class MapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldSimplyForwardWithDefaultStep() = runBlockingTest {
+    fun `should simply forward with default step`() = runBlockingTest {
         val step = MapStep<Int, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
@@ -28,7 +28,7 @@ internal class MapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldApplyMapping() = runBlockingTest {
+    fun `should apply mapping`() = runBlockingTest {
         val step = MapStep<Int, String>("", null) { value -> value.toString() }
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 

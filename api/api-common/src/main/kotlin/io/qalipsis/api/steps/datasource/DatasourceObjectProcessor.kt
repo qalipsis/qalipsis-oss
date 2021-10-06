@@ -1,5 +1,6 @@
 package io.qalipsis.api.steps.datasource
 
+import io.qalipsis.api.context.StepStartStopContext
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -11,6 +12,10 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 interface DatasourceObjectProcessor<R, O> {
+
+    fun start(context: StepStartStopContext) = Unit
+
+    fun stop(context: StepStartStopContext) = Unit
 
     /**
      * Validates and/or transform an object and returns either the object itself or a different representation of it.

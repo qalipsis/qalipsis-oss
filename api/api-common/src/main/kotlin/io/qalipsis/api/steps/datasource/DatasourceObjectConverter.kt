@@ -1,6 +1,7 @@
 package io.qalipsis.api.steps.datasource
 
 import io.qalipsis.api.context.StepOutput
+import io.qalipsis.api.context.StepStartStopContext
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -12,6 +13,10 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 interface DatasourceObjectConverter<R, O> {
+
+    fun start(context: StepStartStopContext) = Unit
+
+    fun stop(context: StepStartStopContext) = Unit
 
     /**
      * Sends [value] to the [output] channel in any form.

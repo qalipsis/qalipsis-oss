@@ -2,6 +2,7 @@ package io.qalipsis.core.factories.steps
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
@@ -27,6 +28,46 @@ internal class StageStep<I, O>(
     private var head: Step<I, *>? = null
 
     override lateinit var runner: Runner
+
+    override suspend fun init() {
+        super.init()
+        head?.let { init(it) }
+    }
+
+    private suspend fun init(step: Step<*, *>) {
+        step.init()
+        step.next.forEach { init(it) }
+    }
+
+    override suspend fun start(context: StepStartStopContext) {
+        super.start(context)
+        head?.let { start(it, context) }
+    }
+
+    private suspend fun start(step: Step<*, *>, context: StepStartStopContext) {
+        step.start(context)
+        step.next.forEach { start(it, context) }
+    }
+
+    override suspend fun stop(context: StepStartStopContext) {
+        super.stop(context)
+        head?.let { stop(it, context) }
+    }
+
+    private suspend fun stop(step: Step<*, *>, context: StepStartStopContext) {
+        step.stop(context)
+        step.next.forEach { stop(it, context) }
+    }
+
+    override suspend fun destroy() {
+        super.destroy()
+        head?.let { destroy(it) }
+    }
+
+    private suspend fun destroy(step: Step<*, *>) {
+        step.destroy()
+        step.next.forEach { destroy(it) }
+    }
 
     override fun addNext(nextStep: Step<*, *>) {
         // addNext is called twice: once to add the head step, and once via the GroupEndProxy, to really

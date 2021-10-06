@@ -6,9 +6,11 @@ import assertk.assertions.*
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
+import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factories.coreStepContext
@@ -214,6 +216,112 @@ internal class StageStepTest {
                 hasSize(1)
                 index(0).prop(StepError::message).isEqualTo("This is an error")
             }
+        }
+    }
+
+    @Test
+    internal fun `should init all the contained steps`() = runBlocking {
+        // given
+        val step1 = relaxedMockk<Step<*, *>>()
+        val step2 = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step1)
+        }
+        val step3 = relaxedMockk<Step<*, *>>()
+        val head = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step2, step3)
+        }
+        val stageStep = StageStep<Int, String>("", null)
+        stageStep.addNext(head)
+
+        // when
+        stageStep.init()
+
+        // then
+        coVerify {
+            head.init()
+            step1.init()
+            step2.init()
+            step3.init()
+        }
+    }
+
+    @Test
+    internal fun `should start all the contained steps`() = runBlocking {
+        // given
+        val step1 = relaxedMockk<Step<*, *>>()
+        val step2 = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step1)
+        }
+        val step3 = relaxedMockk<Step<*, *>>()
+        val head = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step2, step3)
+        }
+        val stageStep = StageStep<Int, String>("", null)
+        stageStep.addNext(head)
+        val startStopContext = relaxedMockk<StepStartStopContext>()
+
+        // when
+        stageStep.start(startStopContext)
+
+        // then
+        coVerify {
+            head.start(refEq(startStopContext))
+            step1.start(refEq(startStopContext))
+            step2.start(refEq(startStopContext))
+            step3.start(refEq(startStopContext))
+        }
+    }
+
+    @Test
+    internal fun `should stop all the contained steps`() = runBlocking {
+        // given
+        val step1 = relaxedMockk<Step<*, *>>()
+        val step2 = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step1)
+        }
+        val step3 = relaxedMockk<Step<*, *>>()
+        val head = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step2, step3)
+        }
+        val stageStep = StageStep<Int, String>("", null)
+        stageStep.addNext(head)
+        val startStopContext = relaxedMockk<StepStartStopContext>()
+
+        // when
+        stageStep.stop(startStopContext)
+
+        // then
+        coVerify {
+            head.stop(refEq(startStopContext))
+            step1.stop(refEq(startStopContext))
+            step2.stop(refEq(startStopContext))
+            step3.stop(refEq(startStopContext))
+        }
+    }
+
+    @Test
+    internal fun `should destroy all the contained steps`() = runBlocking {
+        // given
+        val step1 = relaxedMockk<Step<*, *>>()
+        val step2 = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step1)
+        }
+        val step3 = relaxedMockk<Step<*, *>>()
+        val head = relaxedMockk<Step<*, *>> {
+            every { next } returns listOf(step2, step3)
+        }
+        val stageStep = StageStep<Int, String>("", null)
+        stageStep.addNext(head)
+
+        // when
+        stageStep.destroy()
+
+        // then
+        coVerify {
+            head.destroy()
+            step1.destroy()
+            step2.destroy()
+            step3.destroy()
         }
     }
 }

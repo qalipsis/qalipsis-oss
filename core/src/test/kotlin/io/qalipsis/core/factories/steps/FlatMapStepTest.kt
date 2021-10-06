@@ -17,7 +17,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldConvertArrayWithDefaultStep() = runBlockingTest {
+    fun `should convert array with default step`() = runBlockingTest {
         val step = FlatMapStep<Array<Int>, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Array<Int>, Int>(
             input = IntArray(10) { it }.toTypedArray(), outputChannel = Channel(Channel.UNLIMITED)
@@ -35,7 +35,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldConvertCollectionWithDefaultStep() = runBlockingTest {
+    fun `should convert collection with default step`() = runBlockingTest {
         val step = FlatMapStep<Collection<Int>, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Collection<Int>, Int>(
             input = IntArray(10) { it }.toList(), outputChannel = Channel(Channel.UNLIMITED)
@@ -53,7 +53,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldConvertMapWithDefaultStep() = runBlockingTest {
+    fun `should convert map with default step`() = runBlockingTest {
         val step = FlatMapStep<Map<Int, String>, Pair<Int, String>>("", null)
         val ctx = StepTestHelper.createStepContext<Map<Int, String>, Pair<Int, String>>(
             input = mapOf(1 to "1", 2 to "2", 3 to "3"), outputChannel = Channel(Channel.UNLIMITED)
@@ -71,7 +71,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldConvertNullToEmptyWithDefaultStep() = runBlockingTest {
+    fun `should convert null to empty with default step`() = runBlockingTest {
         val step = FlatMapStep<Collection<Int>?, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Collection<Int>?, Int>(outputChannel = Channel(Channel.UNLIMITED))
 
@@ -88,7 +88,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldSimplyForwardNonIterableWithDefaultStep() = runBlockingTest {
+    fun `should simply forward non iterable with default step`() = runBlockingTest {
         val step = FlatMapStep<Int, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1, outputChannel = Channel(Channel.UNLIMITED))
 
@@ -105,7 +105,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldConvertInputToSequence() = runBlockingTest {
+    fun `should convert input to sequence`() = runBlockingTest {
         val step = FlatMapStep<Int, Int>("", null) { IntArray(10) { it }.asFlow() }
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1, outputChannel = Channel(Channel.UNLIMITED))
 

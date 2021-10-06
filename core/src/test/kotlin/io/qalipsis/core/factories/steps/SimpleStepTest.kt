@@ -12,7 +12,7 @@ internal class SimpleStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldJustExecuteTheClosure() = runBlockingTest {
+    fun `should just execute the closure`() = runBlockingTest {
         val step =
             SimpleStep<Long, Long>("", null) { context -> context.send(context.receive()) }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 123L)
@@ -26,7 +26,7 @@ internal class SimpleStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldThrowTheException() {
+    fun `should throw the exception`() {
         val step = SimpleStep<Long, Long>("", null) { throw RuntimeException("This is an error") }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = -1L)
 

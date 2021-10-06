@@ -15,7 +15,7 @@ internal class CatchExhaustedContextStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldIgnoreBlockWhenContextIsNotExhausted() = runBlockingTest {
+    fun `should ignore block when context is not exhausted`() = runBlockingTest {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
         val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 123)
@@ -31,7 +31,7 @@ internal class CatchExhaustedContextStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldExecuteStepWhenContextIsExhausted() = runBlockingTest {
+    fun `should execute step when context is exhausted`() = runBlockingTest {
         val reference = AtomicInteger(0)
         val step = CatchExhaustedContextStep<Int>("") { _ -> reference.incrementAndGet() }
         val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 456, isExhausted = true)

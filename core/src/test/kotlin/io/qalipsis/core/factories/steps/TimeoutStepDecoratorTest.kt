@@ -48,7 +48,7 @@ internal class TimeoutStepDecoratorTest {
 
     @Test
     @Timeout(5)
-    fun shouldSucceedWhenDecoratedStepIsFasterThanTimeout() {
+    fun `should succeed when decorated step is faster than timeout`() {
         val decoratedStep: Step<Any, Any> = mockk {
             coEvery { execute(any(), any()) } answers { }
             every { id } answers { "my-step" }
@@ -70,7 +70,7 @@ internal class TimeoutStepDecoratorTest {
 
     @Test
     @Timeout(5)
-    fun shouldFailWhenDecoratedStepIsLongerThanTimeout() = runBlockingTest {
+    fun `should fail when decorated step is longer than timeout`() = runBlockingTest {
         val timeout = 10L
         val decoratedStep: Step<Any, Any> = mockk {
             coEvery { execute(any(), any()) } coAnswers { delay(timeout + 10) }

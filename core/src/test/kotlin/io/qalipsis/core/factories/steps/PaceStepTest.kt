@@ -19,7 +19,7 @@ internal class PaceStepTest {
 
     @Test
     @Timeout(20)
-    internal fun addIsolatedPaceForDifferentMinions() = runBlocking {
+    internal fun `add isolated pace for different minions`() = runBlocking {
         // Short warm-up to obtain finer precision.
         val warmUpStep = PaceStep<Long>("") { 0 }
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 1L)

@@ -18,7 +18,7 @@ internal class DelayStepTest {
 
     @Test
     @Timeout(3)
-    fun shouldExecuteTheDecoratedStepAfterTheDelay() = runBlocking {
+    fun `should execute the decorated step after the delay`() = runBlocking {
         val delay = 20L
         val step = DelayStep<Int>("", Duration.ofMillis(delay))
         val ctx = StepTestHelper.createStepContext<Int, Int>(123)

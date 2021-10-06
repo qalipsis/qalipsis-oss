@@ -13,7 +13,7 @@ interface DatasourceIterativeReader<R> {
 
     fun start(context: StepStartStopContext) = Unit
 
-    fun stop() = Unit
+    fun stop(context: StepStartStopContext) = Unit
 
     /**
      * Returns `true` if the iteration has more elements.

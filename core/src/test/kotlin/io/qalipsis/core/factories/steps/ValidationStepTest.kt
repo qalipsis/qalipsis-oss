@@ -17,7 +17,7 @@ internal class ValidationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldReturnsTheValidationErrors() = runBlockingTest {
+    fun `should returns the validation errors`() = runBlockingTest {
         val processedValue = AtomicLong()
         val step = ValidationStep<Long>("", null) {
             processedValue.set(it)

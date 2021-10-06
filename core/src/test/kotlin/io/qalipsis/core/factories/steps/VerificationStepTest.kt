@@ -68,7 +68,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldSimplyForwardWithDefaultStep() = runBlockingTest {
+    fun `should simply forward with default step`() = runBlockingTest {
         val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry, campaignStateKeeper)
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
@@ -100,7 +100,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(2)
-    fun shouldApplyMapping() = runBlockingTest {
+    fun `should apply mapping`() = runBlockingTest {
         val step = VerificationStep<Int, String>(
             "my-step",
             eventsLogger,
@@ -136,7 +136,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldNotForwardDataWhenAssertionThrowingError() = runBlockingTest {
+    fun `should not forward data when assertion throwing error`() = runBlockingTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, campaignStateKeeper) { value ->
             fail<Any>("This is an error")
             value.toString()
@@ -176,7 +176,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun shouldNotForwardDataWhenAssertionThrowingException() = runBlockingTest {
+    fun `should not forward data when assertion throwing exception`() = runBlockingTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, campaignStateKeeper) {
             throw RuntimeException("The error")
         }
