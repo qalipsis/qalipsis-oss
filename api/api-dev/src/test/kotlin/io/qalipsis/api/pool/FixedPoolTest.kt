@@ -40,7 +40,7 @@ internal class FixedPoolTest {
         // then
         assertThat(pool).all {
             typedProp<List<MyTestObject>>("items").hasSize(10)
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
         }
 
         // when
@@ -49,7 +49,7 @@ internal class FixedPoolTest {
         // then
         assertThat(pool).all {
             typedProp<List<MyTestObject>>("items").hasSize(10)
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isTrue()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
         }
 
         pool.close()
@@ -122,7 +122,7 @@ internal class FixedPoolTest {
             assertThat(result).isEqualTo(123.456)
             assertThat(pool).all {
                 typedProp<List<MyTestObject>>("items").hasSize(1)
-                typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
             }
 
             pool.close()
@@ -144,7 +144,7 @@ internal class FixedPoolTest {
         // then
         assertThat(pool).all {
             typedProp<List<MyTestObject>>("items").hasSize(1)
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
         }
 
         pool.close()
@@ -201,7 +201,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(result)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isTrue()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
         }
 
         // when
@@ -214,7 +214,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(pooledItem)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
         }
 
         confirmVerified(pooledItem)
@@ -247,7 +247,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(result)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isTrue()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
         }
 
         // when
@@ -260,7 +260,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(substitutePooledItem)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
         }
 
         coVerifyOnce { originalPooledItem.close() }
@@ -299,7 +299,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(result)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isTrue()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
         }
 
         // when
@@ -313,7 +313,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(pooledItem)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
         }
 
         confirmVerified(pooledItem)
@@ -353,7 +353,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(result)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isTrue()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
         }
 
         // when
@@ -367,7 +367,7 @@ internal class FixedPoolTest {
                 hasSize(1)
                 index(0).isSameAs(substitutePooledItem)
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform { it.isEmpty }.isFalse()
+            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
         }
         coVerifyOnce { originalPooledItem.close() }
         coVerifyNever { substitutePooledItem.close() }

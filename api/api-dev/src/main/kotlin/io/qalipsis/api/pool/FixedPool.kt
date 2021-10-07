@@ -2,6 +2,7 @@ package io.qalipsis.api.pool
 
 import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.io.Closeable
+import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -40,7 +41,7 @@ class FixedPool<T : Closeable>(
 
     private val itemPool: Channel<T>
 
-    private val items = mutableListOf<T>()
+    private val items = concurrentList<T>()
 
     private var open = true
 

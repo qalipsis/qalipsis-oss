@@ -13,7 +13,6 @@ import java.time.Duration
  */
 internal class LoopTopicTest {
 
-
     @Test
     internal fun `should prevent from using closed topic`() = runBlockingTest {
         // given
@@ -85,7 +84,7 @@ internal class LoopTopicTest {
 
         // when
         val subscription = topic.subscribe("any-1")
-        delay(10)
+        delay(50)
 
         // then
         Assertions.assertFalse(subscription.isActive())
