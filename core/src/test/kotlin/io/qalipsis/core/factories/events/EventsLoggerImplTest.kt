@@ -6,6 +6,7 @@ import io.qalipsis.api.events.Event
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventsPublisher
 import io.qalipsis.api.events.toTags
+import io.qalipsis.core.factories.events.catadioptre.checkLevelAndLog
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.mockk.verifyNever
@@ -13,7 +14,6 @@ import io.qalipsis.test.mockk.verifyOnce
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.Properties
-
 
 /**
  * @author Eric Jessé
@@ -34,7 +34,7 @@ internal class EventsLoggerImplTest {
         // then
         verifyNever {
             logger.checkLevelAndLog(any(), any(), any(), any(), any())
-            logger.checkLevelAndLogWithSupplier(any(), any(), any(), any(), any())
+            logger["checkLevelAndLogWithSupplier"]( any<EventLevel>(), any<String>(), any(), any<Instant>(), any<() -> Map<String, String>>())
         }
     }
 
@@ -52,7 +52,7 @@ internal class EventsLoggerImplTest {
         // then
         verifyNever {
             logger.checkLevelAndLog(any(), any(), any(), any(), any())
-            logger.checkLevelAndLogWithSupplier(any(), any(), any(), any(), any())
+            logger["checkLevelAndLogWithSupplier"]( any<EventLevel>(), any<String>(), any(), any<Instant>(), any<() -> Map<String, String>>())
         }
     }
 
@@ -74,7 +74,7 @@ internal class EventsLoggerImplTest {
         // then
         verifyNever {
             logger.checkLevelAndLog(any(), any(), any(), any(), any())
-            logger.checkLevelAndLogWithSupplier(any(), any(), any(), any(), any())
+            logger["checkLevelAndLogWithSupplier"]( any<EventLevel>(), any<String>(), any(), any<Instant>(), any<() -> Map<String, String>>())
         }
     }
 

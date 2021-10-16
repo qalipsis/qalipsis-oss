@@ -1,8 +1,8 @@
 package io.qalipsis.core.heads.campaigns
 
+import io.aerisconsulting.catadioptre.Testable
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -80,8 +80,7 @@ internal class CampaignAutoStarter(
     /**
      * Log the error and quit the program.
      */
-    @VisibleForTest
-    internal fun onCriticalFailure(message: String) {
+    private fun onCriticalFailure(message: String) {
         log.error { message }
         System.err.println("An error occurred that requires the program to exit.")
         System.err.println(message)

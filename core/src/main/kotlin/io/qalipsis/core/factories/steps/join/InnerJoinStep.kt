@@ -2,7 +2,7 @@ package io.qalipsis.core.factories.steps.join
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.qalipsis.api.annotations.VisibleForTest
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
@@ -128,11 +128,11 @@ internal class InnerJoinStep<I, O>(
             }
     }
 
-    @VisibleForTest
-    internal fun hasKeyInCache(key: Any?): Boolean = key?.let { cache.asMap().containsKey(it) } ?: false
+    @KTestable
+    private fun hasKeyInCache(key: Any?): Boolean = key?.let { cache.asMap().containsKey(it) } ?: false
 
-    @VisibleForTest
-    internal fun isCacheEmpty(): Boolean = cache.asMap().isEmpty()
+    @KTestable
+    private fun isCacheEmpty(): Boolean = cache.asMap().isEmpty()
 
     companion object {
         @JvmStatic

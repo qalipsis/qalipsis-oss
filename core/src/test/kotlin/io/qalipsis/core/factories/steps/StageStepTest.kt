@@ -2,7 +2,17 @@ package io.qalipsis.core.factories.steps
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
+import assertk.assertions.isSameAs
+import assertk.assertions.prop
+import io.aerisconsulting.catadioptre.setProperty
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
@@ -19,7 +29,6 @@ import io.qalipsis.core.factories.orchestration.RunnerImpl
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.CleanMockkRecordedCalls
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.utils.setProperty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertFalse

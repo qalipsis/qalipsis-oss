@@ -1,7 +1,6 @@
 package io.qalipsis.core.report
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepId
@@ -128,7 +127,6 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
         } ?: throw IllegalArgumentException("The campaign with ID $campaignId does not exist")
     }
 
-    @VisibleForTest
     data class RunningCampaign(val campaignId: CampaignId, val scenarioId: ScenarioId) {
         val start: Instant = Instant.now()
         val startedMinions = AtomicInteger()

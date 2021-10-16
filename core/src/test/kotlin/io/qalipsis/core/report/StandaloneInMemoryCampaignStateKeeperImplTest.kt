@@ -9,6 +9,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.key
 import assertk.assertions.prop
+import io.aerisconsulting.catadioptre.getProperty
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.report.CampaignReport
@@ -16,7 +17,6 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.test.lang.TestIdGenerator
-import io.qalipsis.test.utils.getProperty
 import org.junit.jupiter.api.Test
 import java.time.Instant
 

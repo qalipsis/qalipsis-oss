@@ -9,6 +9,8 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
+import io.aerisconsulting.catadioptre.getProperty
+import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.spyk
@@ -19,8 +21,6 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.utils.getProperty
-import io.qalipsis.test.utils.setProperty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

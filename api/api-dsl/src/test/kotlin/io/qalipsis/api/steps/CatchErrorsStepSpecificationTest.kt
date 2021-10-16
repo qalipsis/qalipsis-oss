@@ -1,11 +1,11 @@
 package io.qalipsis.api.steps
 
+import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.every
 import io.mockk.verifyOrder
 import io.qalipsis.api.context.StepError
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.utils.getProperty
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

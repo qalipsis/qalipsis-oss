@@ -2,7 +2,18 @@ package io.qalipsis.core.heads.campaigns
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.any
+import assertk.assertions.each
+import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isSameAs
+import assertk.assertions.key
+import assertk.assertions.prop
+import io.aerisconsulting.catadioptre.coInvokeInvisible
+import io.aerisconsulting.catadioptre.getProperty
+import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -22,16 +33,14 @@ import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
 import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirective
 import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
+import io.qalipsis.core.heads.campaigns.catadioptre.receivedMinionsCreationPreparationFeedback
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
-import io.qalipsis.test.utils.getProperty
-import io.qalipsis.test.utils.setProperty
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -83,14 +92,18 @@ internal class DefaultCampaignManagerTest {
                 each {
                     it.prop(MinionsCreationPreparationDirective::value).isEqualTo(10)
                 }
-                any { it.all {
-                    prop(MinionsCreationPreparationDirective::campaignId).isEqualTo("my-campaign")
-                    prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-1")
-                } }
-                any { it.all {
-                    prop(MinionsCreationPreparationDirective::campaignId).isEqualTo("my-campaign")
-                    prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-2")
-                } }
+                any {
+                    it.all {
+                        prop(MinionsCreationPreparationDirective::campaignId).isEqualTo("my-campaign")
+                        prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-1")
+                    }
+                }
+                any {
+                    it.all {
+                        prop(MinionsCreationPreparationDirective::campaignId).isEqualTo("my-campaign")
+                        prop(MinionsCreationPreparationDirective::scenarioId).isEqualTo("scen-2")
+                    }
+                }
             }
             val scenarios = campaignManager.getProperty<Map<ScenarioId, HeadScenario>>("scenarios")
             assertThat(scenarios).all {
@@ -205,7 +218,7 @@ internal class DefaultCampaignManagerTest {
                 DefaultCampaignManager(
                     10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
                     directiveProducer = directiveProducer
-                )
+                ), recordPrivateCalls = true
             ) {
                 coEvery {
                     receivedMinionsCreationPreparationFeedback(any(), any())
@@ -219,12 +232,12 @@ internal class DefaultCampaignManagerTest {
             val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.IN_PROGRESS)
 
             // when
-            campaignManager.processDirectiveFeedback(directiveFeedback)
+            campaignManager.coInvokeInvisible<Void>("processDirectiveFeedback", directiveFeedback)
 
             // then
             countDownLatch.await()
             coVerifyOnce {
-                campaignManager.receivedMinionsCreationPreparationFeedback(directiveFeedback, directive)
+                campaignManager.receivedMinionsCreationPreparationFeedback(any(), any())
             }
             // The directive is still in the cache.
             Assertions.assertTrue(directivesInProgress.containsKey(directive.key))
@@ -237,11 +250,10 @@ internal class DefaultCampaignManagerTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
             val directive = MinionsCreationPreparationDirective("directive", "", 123)
-            val campaignManager = spyk(
-                DefaultCampaignManager(
+            val campaignManager = spyk(DefaultCampaignManager(
                     10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
                     directiveProducer = directiveProducer
-                )
+                ), recordPrivateCalls = true
             ) {
                 coEvery {
                     receivedMinionsCreationPreparationFeedback(any(), any())
@@ -255,12 +267,12 @@ internal class DefaultCampaignManagerTest {
             val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.COMPLETED)
 
             // when
-            campaignManager.processDirectiveFeedback(directiveFeedback)
+            campaignManager.coInvokeInvisible<Void>("processDirectiveFeedback", directiveFeedback)
 
             // then
             countDownLatch.await()
             coVerifyOnce {
-                campaignManager.receivedMinionsCreationPreparationFeedback(directiveFeedback, directive)
+                campaignManager.receivedMinionsCreationPreparationFeedback(any(), any())
             }
         }
 
@@ -269,7 +281,7 @@ internal class DefaultCampaignManagerTest {
     internal fun `should ignore MinionsCreationPreparationDirective when the directive does not exist`() =
         runBlockingTest {
             // given
-            val countDownLatch = CountDownLatch(1)
+            val countDownLatch = SuspendedCountLatch(1)
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
@@ -278,12 +290,12 @@ internal class DefaultCampaignManagerTest {
             ) {
                 coEvery {
                     receivedMinionsCreationPreparationFeedback(any(), any())
-                } answers { countDownLatch.countDown() }
+                } coAnswers { countDownLatch.decrement(1) }
             }
             val directiveFeedback = DirectiveFeedback("", "my-directive", FeedbackStatus.COMPLETED)
 
             // when
-            campaignManager.processDirectiveFeedback(directiveFeedback)
+            campaignManager.coInvokeInvisible<Void>("processDirectiveFeedback", directiveFeedback)
 
             // then
             countDownLatch.await(50, TimeUnit.MILLISECONDS)
@@ -303,10 +315,11 @@ internal class DefaultCampaignManagerTest {
                 DefaultCampaignManager(
                     10, feedbackConsumer = feedbackConsumer, scenarioRepository = scenarioRepository,
                     directiveProducer = directiveProducer
-                )
+                ), recordPrivateCalls = true
             ) {
+                val manager = this
                 coEvery {
-                    receiveMinionsCreationDirectiveFeedback(any(), any())
+                    manager["receiveMinionsCreationDirectiveFeedback"](any<DirectiveFeedback>(), any<MinionsCreationDirectiveReference>())
                 } coAnswers { countDownLatch.decrement() }
             }
             val directivesInProgress =
@@ -317,12 +330,12 @@ internal class DefaultCampaignManagerTest {
             val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.IN_PROGRESS)
 
             // when
-            campaignManager.processDirectiveFeedback(directiveFeedback)
+            campaignManager.coInvokeInvisible<Void>("processDirectiveFeedback", directiveFeedback)
 
             // then
             countDownLatch.await()
             coVerifyOnce {
-                campaignManager.receiveMinionsCreationDirectiveFeedback(directiveFeedback, directive)
+                campaignManager["receiveMinionsCreationDirectiveFeedback"](any<DirectiveFeedback>(), any<MinionsCreationDirectiveReference>())
             }
             // The directive is still in the cache.
             Assertions.assertTrue(directivesInProgress.containsKey(directive.key))
@@ -340,8 +353,9 @@ internal class DefaultCampaignManagerTest {
                 directiveProducer = directiveProducer
             )
         ) {
+            val manager = this
             coEvery {
-                receiveMinionsCreationDirectiveFeedback(any(), any())
+                manager["receiveMinionsCreationDirectiveFeedback"](any<DirectiveFeedback>(), any<MinionsCreationDirectiveReference>())
             } coAnswers { countDownLatch.decrement() }
         }
         val directivesInProgress =
@@ -352,12 +366,12 @@ internal class DefaultCampaignManagerTest {
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.COMPLETED)
 
         // when
-        campaignManager.processDirectiveFeedback(directiveFeedback)
+        campaignManager.coInvokeInvisible<Void>("processDirectiveFeedback", directiveFeedback)
 
         // then
         countDownLatch.await()
         coVerifyOnce {
-            campaignManager.receiveMinionsCreationDirectiveFeedback(directiveFeedback, directive)
+            campaignManager["receiveMinionsCreationDirectiveFeedback"](directiveFeedback, directive)
         }
     }
 
@@ -373,19 +387,20 @@ internal class DefaultCampaignManagerTest {
                     directiveProducer = directiveProducer
                 )
             ) {
+                val manager = this
                 coEvery {
-                    receiveMinionsCreationDirectiveFeedback(any(), any())
+                    manager["receiveMinionsCreationDirectiveFeedback"](any<DirectiveFeedback>(), any<MinionsCreationDirectiveReference>())
                 } coAnswers { countDownLatch.decrement() }
             }
             val directiveFeedback = DirectiveFeedback("", "my-directive", FeedbackStatus.COMPLETED)
 
             // when
-            campaignManager.processDirectiveFeedback(directiveFeedback)
+            campaignManager.coInvokeInvisible<Void>("processDirectiveFeedback", directiveFeedback)
 
             // then
             countDownLatch.await(50, TimeUnit.MILLISECONDS)
             coVerifyNever {
-                campaignManager.receiveMinionsCreationDirectiveFeedback(any(), any())
+                campaignManager["receiveMinionsCreationDirectiveFeedback"](any<DirectiveFeedback>(), any<MinionsCreationDirectiveReference>())
             }
         }
 
@@ -426,7 +441,7 @@ internal class DefaultCampaignManagerTest {
         val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.FAILED)
 
         // when
-        campaignManager.receiveMinionsCreationDirectiveFeedback(directiveFeedback, directive)
+        campaignManager.coInvokeInvisible<Void>("receiveMinionsCreationDirectiveFeedback", directiveFeedback, directive)
 
         // then
         // Since the count down latch was decremented, the conCriticalFailure operation was called.
@@ -465,15 +480,18 @@ internal class DefaultCampaignManagerTest {
         readyDagsByScenario["scen-2"] = concurrentSet()
 
         // when
-        campaignManager.receiveMinionsCreationDirectiveFeedback(
+        campaignManager.coInvokeInvisible<Void>(
+            "receiveMinionsCreationDirectiveFeedback",
             DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
             directive1
         )
-        campaignManager.receiveMinionsCreationDirectiveFeedback(
+        campaignManager.coInvokeInvisible<Void>(
+            "receiveMinionsCreationDirectiveFeedback",
             DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
             directive2
         )
-        campaignManager.receiveMinionsCreationDirectiveFeedback(
+        campaignManager.coInvokeInvisible<Void>(
+            "receiveMinionsCreationDirectiveFeedback",
             DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
             directive3
         )
@@ -485,7 +503,8 @@ internal class DefaultCampaignManagerTest {
         Assertions.assertEquals(setOf("scen-1"), readyScenarios)
 
         // when
-        campaignManager.receiveMinionsCreationDirectiveFeedback(
+        campaignManager.coInvokeInvisible<Void>(
+            "receiveMinionsCreationDirectiveFeedback",
             DirectiveFeedback("", "", FeedbackStatus.COMPLETED),
             directive4
         )
@@ -548,7 +567,7 @@ internal class DefaultCampaignManagerTest {
         // when
         campaignManager.processFeedBack(feedback1)
         campaignManager.processFeedBack(feedback2)
-        campaignManager.processFeedBack(feedback3)
+        campaignManager.processFeedBack( feedback3)
 
         // then
         val startedScenarios = campaignManager.getProperty<Set<ScenarioId>>("startedScenarios")

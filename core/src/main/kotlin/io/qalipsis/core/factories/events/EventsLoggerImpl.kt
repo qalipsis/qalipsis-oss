@@ -1,7 +1,11 @@
 package io.qalipsis.core.factories.events
 
-import io.qalipsis.api.annotations.VisibleForTest
-import io.qalipsis.api.events.*
+import io.aerisconsulting.catadioptre.KTestable
+import io.qalipsis.api.events.Event
+import io.qalipsis.api.events.EventLevel
+import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.events.EventsPublisher
+import io.qalipsis.api.events.toTags
 import io.qalipsis.api.logging.LoggerHelper.logger
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -65,8 +69,7 @@ internal class EventsLoggerImpl(
         logMethod?.invoke(level, name, value, timestamp, tags)
     }
 
-    @VisibleForTest
-    fun checkLevelAndLogWithSupplier(level: EventLevel, name: String, value: Any?, timestamp: Instant,
+    private fun checkLevelAndLogWithSupplier(level: EventLevel, name: String, value: Any?, timestamp: Instant,
                                      tagsSupplier: () -> Map<String, String>) {
         val actualLevel = findActualEventLevel(name)
         if (level >= actualLevel) {
@@ -75,8 +78,8 @@ internal class EventsLoggerImpl(
         }
     }
 
-    @VisibleForTest
-    fun checkLevelAndLog(level: EventLevel, name: String, value: Any?, timestamp: Instant,
+    @KTestable
+    private fun checkLevelAndLog(level: EventLevel, name: String, value: Any?, timestamp: Instant,
                          tags: Map<String, String>) {
         val actualLevel = findActualEventLevel(name)
         if (level >= actualLevel) {

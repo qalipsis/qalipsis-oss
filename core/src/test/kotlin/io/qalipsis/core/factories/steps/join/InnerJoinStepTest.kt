@@ -7,6 +7,8 @@ import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.broadcastTopic
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.exceptions.NotInitializedStepException
+import io.qalipsis.core.factories.steps.join.catadioptre.hasKeyInCache
+import io.qalipsis.core.factories.steps.join.catadioptre.isCacheEmpty
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel

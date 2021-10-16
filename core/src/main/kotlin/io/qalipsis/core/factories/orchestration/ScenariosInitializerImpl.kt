@@ -3,7 +3,6 @@ package io.qalipsis.core.factories.orchestration
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Property
 import io.micronaut.validation.Validated
-import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
@@ -111,8 +110,7 @@ internal class ScenariosInitializerImpl(
         }
     }
 
-    @VisibleForTest
-    internal fun publishScenarioCreationFeedback(scenarios: Collection<Scenario>) {
+    private fun publishScenarioCreationFeedback(scenarios: Collection<Scenario>) {
         val feedbackScenarios = scenarios.map { scenario ->
             val feedbackDags = scenario.dags.map {
                 FactoryRegistrationFeedbackDirectedAcyclicGraph(
@@ -132,7 +130,6 @@ internal class ScenariosInitializerImpl(
         }
     }
 
-    @VisibleForTest
     @LogInputAndOutput
     internal fun convertScenario(
         scenarioId: ScenarioId,
@@ -168,7 +165,6 @@ internal class ScenariosInitializerImpl(
         return scenario
     }
 
-    @VisibleForTest
     @LogInput
     internal suspend fun convertSteps(
         scenarioSpecification: ConfiguredScenarioSpecification,
@@ -234,8 +230,7 @@ internal class ScenariosInitializerImpl(
     /**
      * Inject relevant dependencies in the step.
      */
-    @VisibleForTest
-    fun injectDependencies(step: Step<*, *>) {
+    private fun injectDependencies(step: Step<*, *>) {
         if (step is MinionsKeeperAware) {
             step.minionsKeeper = minionsKeeper
         }
@@ -244,8 +239,7 @@ internal class ScenariosInitializerImpl(
         }
     }
 
-    @VisibleForTest
-    internal suspend fun convertSingleStep(@Valid context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
+    private suspend fun convertSingleStep(@Valid context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         stepSpecificationConverters
             .firstOrNull { it.support(context.stepSpecification) }
             ?.let { converter ->
@@ -258,15 +252,13 @@ internal class ScenariosInitializerImpl(
     /**
      * Adds a random name to the step if none was specified.
      */
-    @VisibleForTest
-    fun addMissingStepName(spec: StepSpecification<Any?, Any?, *>) {
+    private fun addMissingStepName(spec: StepSpecification<Any?, Any?, *>) {
         if (spec.name.isBlank()) {
             spec.name = "_${idGenerator.short()}"
         }
     }
 
-    @VisibleForTest
-    internal suspend fun decorateStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
+    private suspend fun decorateStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         context.createdStep?.let {
             stepSpecificationDecoratorConverters
                 .map { converter ->
