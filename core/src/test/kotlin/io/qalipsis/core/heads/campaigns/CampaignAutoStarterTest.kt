@@ -1,5 +1,6 @@
 package io.qalipsis.core.heads.campaigns
 
+import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -17,7 +18,6 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.utils.setProperty
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test

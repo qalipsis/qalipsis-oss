@@ -3,6 +3,7 @@ package io.qalipsis.core.factories.steps
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.every
@@ -18,7 +19,6 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

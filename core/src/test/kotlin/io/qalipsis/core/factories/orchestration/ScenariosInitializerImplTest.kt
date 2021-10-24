@@ -10,6 +10,8 @@ import assertk.assertions.isNotEmpty
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import io.aerisconsulting.catadioptre.coInvokeInvisible
+import io.aerisconsulting.catadioptre.invokeInvisible
 import io.micronaut.context.ApplicationContext
 import io.mockk.coEvery
 import io.mockk.every
@@ -111,7 +113,7 @@ internal class ScenariosInitializerImplTest {
                 minionsKeeper,
                 idGenerator,
                 Duration.ofSeconds(30)
-            )
+            ), recordPrivateCalls = true
         )
     }
 
@@ -131,7 +133,7 @@ internal class ScenariosInitializerImplTest {
         context.createdStep(createdStep)
 
         // when
-        scenariosInitializer.decorateStep(context)
+        scenariosInitializer.coInvokeInvisible<Void>("decorateStep", context)
 
         // then
         coVerifyOnce {
@@ -149,7 +151,7 @@ internal class ScenariosInitializerImplTest {
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
 
         // when
-        scenariosInitializer.decorateStep(context)
+        scenariosInitializer.coInvokeInvisible<Void>("decorateStep", context)
 
         // then
         coVerifyNever {
@@ -166,15 +168,14 @@ internal class ScenariosInitializerImplTest {
         val stepSpecification: StepSpecification<Any?, Any?, *> = relaxedMockk { }
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
         coEvery { stepConverter2.support(stepSpecification) } returns true
-
         // when
-        scenariosInitializer.convertSingleStep(context)
+        scenariosInitializer.coInvokeInvisible<Void>("convertSingleStep", context)
 
         // then
         coVerifyOnce {
             (stepConverter1).support(refEq(stepSpecification))
             (stepConverter2).support(refEq(stepSpecification))
-            scenariosInitializer.addMissingStepName(refEq(stepSpecification))
+            scenariosInitializer["addMissingStepName"](refEq(stepSpecification))
             (stepConverter2).convert<Any?, Any?>(refEq(context))
         }
         coVerifyNever {
@@ -191,7 +192,7 @@ internal class ScenariosInitializerImplTest {
         val context = StepCreationContextImpl(scenarioSpecification, dag, stepSpecification)
 
         // when
-        scenariosInitializer.convertSingleStep(context)
+        scenariosInitializer.coInvokeInvisible<Void>("convertSingleStep", context)
 
         // then
         coVerifyOnce {
@@ -223,15 +224,16 @@ internal class ScenariosInitializerImplTest {
             every { directedAcyclicGraphId } returns "dag-2"
         }
         val atomicInteger = AtomicInteger()
-        coEvery { scenariosInitializer.convertSingleStep(any()) } answers {
+        coEvery { scenariosInitializer.coInvokeInvisible<Unit>("convertSingleStep", any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {
             (firstArg() as StepCreationContext<*>).createdStep(relaxedMockk {
                 every { id } returns "step-${atomicInteger.incrementAndGet()}"
             })
         }
-        coEvery { scenariosInitializer.decorateStep(any()) } answers {}
+        coEvery { scenariosInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
 
         // when
-        scenariosInitializer.convertSteps(
+        scenariosInitializer.coInvokeInvisible<Void>(
+            "convertSteps",
             scenarioSpecification, scenario, null,
             // Only the root steps are passed.
             listOf(stepSpecification1, stepSpecification3)
@@ -243,11 +245,11 @@ internal class ScenariosInitializerImplTest {
         assertEquals(2, scenario["dag-2"]!!.stepsCount)
         // 3 steps were created.
         coVerifyExactly(3) {
-            (scenariosInitializer).convertSingleStep(any())
-            (scenariosInitializer).decorateStep(any())
+            scenariosInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            scenariosInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
         }
         coVerifyExactly(6) {
-            (scenariosInitializer).injectDependencies(any())
+            scenariosInitializer["injectDependencies"](any<Step<*, *>>())
         }
     }
 
@@ -272,7 +274,7 @@ internal class ScenariosInitializerImplTest {
             every { directedAcyclicGraphId } returns "dag-2"
             every { nextSteps } returns mutableListOf(stepSpecification2)
         }
-        coEvery { scenariosInitializer.convertSingleStep(any()) } answers {
+        coEvery { scenariosInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {
             val context: StepCreationContext<*> = firstArg()
             if (context.stepSpecification.name != "step-3") {
                 context.createdStep(relaxedMockk {
@@ -280,10 +282,11 @@ internal class ScenariosInitializerImplTest {
                 })
             }
         }
-        coEvery { scenariosInitializer.decorateStep(any()) } answers {}
+        coEvery { scenariosInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
 
         // when
-        scenariosInitializer.convertSteps(
+        scenariosInitializer.coInvokeInvisible<Void>(
+            "convertSteps",
             scenarioSpecification, scenario, null,
             // Only the root steps are passed.
             listOf(stepSpecification1, stepSpecification3)
@@ -294,9 +297,9 @@ internal class ScenariosInitializerImplTest {
         assertEquals(0, scenario["dag-2"]!!.stepsCount)
         coVerifyExactly(2) {
             // 2 steps were tried.
-            (scenariosInitializer).convertSingleStep(any())
-            (scenariosInitializer).decorateStep(any())
-            (scenariosInitializer).injectDependencies(any())
+            (scenariosInitializer)["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            (scenariosInitializer)["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            (scenariosInitializer)["injectDependencies"](any<Step<*, *>>())
         }
     }
 
@@ -311,7 +314,15 @@ internal class ScenariosInitializerImplTest {
             every { minionsCount } returns 123
             every { rootSteps } returns scenarioRootSteps
         }
-        coEvery { scenariosInitializer.convertSteps(any(), any(), any(), any()) } answers {}
+        coEvery {
+            scenariosInitializer.coInvokeInvisible<Unit>(
+                "convertSteps",
+                any<ConfiguredScenarioSpecification>(),
+                any<Scenario>(),
+                any<Step<*, *>>(),
+                any<List<StepSpecification<Any?, Any?, *>>>()
+            )
+        } answers {}
 
         // when
         val scenario = scenariosInitializer.convertScenario("my-scenario", scenarioSpecification)
@@ -325,9 +336,8 @@ internal class ScenariosInitializerImplTest {
         }
 
         coVerifyOnce {
-            scenariosInitializer.convertSteps(
-                refEq(scenarioSpecification), refEq(scenario), isNull(),
-                refEq(scenarioRootSteps as List<StepSpecification<Any?, Any?, *>>)
+            scenariosInitializer["convertSteps"](
+                any<ConfiguredScenarioSpecification>(), any<Scenario>(), any<Step<*, *>>(), any<List<StepSpecification<Any?, Any?, *>>>()
             )
         }
     }
@@ -349,7 +359,7 @@ internal class ScenariosInitializerImplTest {
 
         // then
         coVerifyNever {
-            scenariosInitializer.convertSteps(any(), any(), any(), any())
+            scenariosInitializer["convertSteps"](any<ConfiguredScenarioSpecification>(), any<Scenario>(), any<Step<*, *>>(), any<List<StepSpecification<Any?, Any?, *>>>())
         }
     }
 
@@ -373,7 +383,7 @@ internal class ScenariosInitializerImplTest {
             scenariosInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
         } returns scenario2
         val publishedScenarios = slot<Collection<Scenario>>()
-        every { scenariosInitializer.publishScenarioCreationFeedback(capture(publishedScenarios)) } answers {}
+        every { scenariosInitializer.invokeInvisible<Unit>("publishScenarioCreationFeedback", (capture(publishedScenarios))) } answers {}
 
         // when
         scenariosInitializer.init()
@@ -386,7 +396,7 @@ internal class ScenariosInitializerImplTest {
         verifyOnce {
             scenariosInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
             scenariosInitializer.convertScenario(eq("scenario-1"), refEq(scenarioSpecification1))
-            scenariosInitializer.publishScenarioCreationFeedback(any())
+            scenariosInitializer["publishScenarioCreationFeedback"](any<Collection<Scenario>>())
         }
         publishedScenarios.captured.let {
             assertEquals(2, it.size)
@@ -433,7 +443,7 @@ internal class ScenariosInitializerImplTest {
         coEvery { feedbackProducer.publish(capture(feedback)) } answers {}
 
         // when
-        scenariosInitializer.publishScenarioCreationFeedback(listOf(scenario1, scenario2))
+        scenariosInitializer.invokeInvisible<Unit>("publishScenarioCreationFeedback", (listOf(scenario1, scenario2)))
 
         // then
         coVerifyOnce {
@@ -504,7 +514,7 @@ internal class ScenariosInitializerImplTest {
         }
 
         // when
-        scenariosInitializer.addMissingStepName(stepSpecification)
+        scenariosInitializer.invokeInvisible<Void>("addMissingStepName", stepSpecification)
 
         // then
         assertThat(stepSpecification.name.trim()).isNotEmpty()
@@ -519,7 +529,7 @@ internal class ScenariosInitializerImplTest {
         }
 
         // when
-        scenariosInitializer.addMissingStepName(stepSpecification)
+        scenariosInitializer.invokeInvisible<Void>("addMissingStepName", stepSpecification)
 
         // then
         assertThat(stepSpecification.name.trim()).isNotEmpty()
@@ -534,7 +544,7 @@ internal class ScenariosInitializerImplTest {
         }
 
         // when
-        scenariosInitializer.addMissingStepName(stepSpecification)
+        scenariosInitializer.invokeInvisible<Void>("addMissingStepName", stepSpecification)
 
         // then
         assertThat(stepSpecification.name).isEqualTo("   a step for my name   ")

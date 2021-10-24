@@ -1,5 +1,6 @@
 package io.qalipsis.core.factories.orchestration
 
+import io.aerisconsulting.catadioptre.getProperty
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
@@ -25,7 +26,6 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
-import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions

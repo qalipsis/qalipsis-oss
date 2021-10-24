@@ -30,6 +30,7 @@ tasks.withType<KotlinCompile> {
 
 val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
+val catadioptreVersion: String by project
 
 dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
@@ -56,4 +57,5 @@ dependencies {
 
     testImplementation(project(":test"))
     testImplementation(testFixtures(project(":api:api-common")))
+    testImplementation("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
 }

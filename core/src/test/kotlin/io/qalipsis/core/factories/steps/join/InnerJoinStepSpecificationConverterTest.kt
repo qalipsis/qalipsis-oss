@@ -2,7 +2,12 @@ package io.qalipsis.core.factories.steps.join
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
+import assertk.assertions.isSameAs
+import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -24,10 +29,12 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import io.qalipsis.test.utils.getProperty
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Duration
 

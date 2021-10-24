@@ -1,6 +1,6 @@
 package io.qalipsis.api.messaging
 
-import io.qalipsis.test.utils.getProperty
+import io.aerisconsulting.catadioptre.getProperty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

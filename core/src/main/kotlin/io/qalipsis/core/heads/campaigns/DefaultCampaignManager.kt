@@ -1,7 +1,7 @@
 package io.qalipsis.core.heads.campaigns
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Value
-import io.qalipsis.api.annotations.VisibleForTest
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
@@ -166,7 +166,6 @@ internal class DefaultCampaignManager(
         return Int.MIN_VALUE
     }
 
-    @VisibleForTest
     @LogInput
     internal suspend fun processFeedBack(feedback: Feedback) {
         when (feedback) {
@@ -181,8 +180,7 @@ internal class DefaultCampaignManager(
     /**
      * Broadcast the received directive feedback to the relevant method.
      */
-    @VisibleForTest
-    internal suspend fun processDirectiveFeedback(feedback: DirectiveFeedback) {
+    private suspend fun processDirectiveFeedback(feedback: DirectiveFeedback) {
         if (directivesInProgress.containsKey(feedback.directiveKey)) {
             val directiveInProgress = directivesInProgress[feedback.directiveKey]!!
             when {
@@ -201,11 +199,9 @@ internal class DefaultCampaignManager(
     /**
      * Log the feedback from a [MinionsCreationPreparationDirective] or trigger the critical failure action when the feedback is in failure.
      */
-    @VisibleForTest
-    internal fun receivedMinionsCreationPreparationFeedback(
-        feedback: DirectiveFeedback,
-        directive: MinionsCreationPreparationDirective
-    ) {
+    @KTestable
+    private fun receivedMinionsCreationPreparationFeedback(feedback: DirectiveFeedback,
+                                                            directive: MinionsCreationPreparationDirective) {
         when (feedback.status) {
             FeedbackStatus.IN_PROGRESS -> log.debug {
                 "Campaign ${directive.campaignId}, scenario ${directive.scenarioId} - IDs for all the minions are being created"
@@ -222,11 +218,8 @@ internal class DefaultCampaignManager(
     /**
      * Process the feedback from a [MinionsCreationDirectiveReference].
      */
-    @VisibleForTest
-    internal suspend fun receiveMinionsCreationDirectiveFeedback(
-        feedback: DirectiveFeedback,
-        directive: MinionsCreationDirectiveReference
-    ) {
+    private suspend fun receiveMinionsCreationDirectiveFeedback(feedback: DirectiveFeedback,
+                                                                 directive: MinionsCreationDirectiveReference) {
         when (feedback.status) {
             FeedbackStatus.IN_PROGRESS -> log.debug {
                 "Campaign ${directive.campaignId}, scenario ${directive.scenarioId}, DAG ${directive.dagId} - All the minions are being created"
