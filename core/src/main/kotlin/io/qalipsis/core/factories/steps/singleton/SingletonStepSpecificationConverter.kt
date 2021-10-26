@@ -1,11 +1,23 @@
 package io.qalipsis.core.factories.steps.singleton
 
-import cool.graph.cuid.Cuid
+import io.qalipsis.api.Executors
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.messaging.Topic
-import io.qalipsis.api.steps.*
-import io.qalipsis.core.factories.steps.topicrelatedsteps.*
+import io.qalipsis.api.steps.SingletonStepSpecification
+import io.qalipsis.api.steps.SingletonType
+import io.qalipsis.api.steps.Step
+import io.qalipsis.api.steps.StepCreationContext
+import io.qalipsis.api.steps.StepSpecification
+import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicBuilder
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicConfiguration
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicDataPushStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
+import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicType
+import jakarta.inject.Named
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Decorator of [SingletonStepSpecification] by adding it a [TopicMirrorStep] as next and converter from
@@ -15,7 +27,8 @@ import io.qalipsis.core.factories.steps.topicrelatedsteps.*
  */
 @StepConverter
 internal class SingletonStepSpecificationConverter(
-    private val idGenerator: IdGenerator
+    private val idGenerator: IdGenerator,
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>(),
     StepSpecificationConverter<SingletonProxyStepSpecification<*>> {
 
@@ -72,7 +85,12 @@ internal class SingletonStepSpecificationConverter(
             SingletonProxyStep("${spec.name}-singleton-proxy-${idGenerator.short()}", spec.topic)
         } else {
             // This DAG is not receiving any minion, so the next step has to be forced to be executed.
-            TopicDataPushStep("${spec.name}-topic-data-push-${idGenerator.short()}", spec.singletonStepId, spec.topic)
+            TopicDataPushStep(
+                "${spec.name}-topic-data-push-${idGenerator.short()}",
+                spec.singletonStepId,
+                spec.topic,
+                coroutineScope = coroutineScope
+            )
         }
         creationContext.createdStep(step)
     }

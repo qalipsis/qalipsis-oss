@@ -7,9 +7,9 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.events.EventsPublisher
 import io.qalipsis.api.events.toTags
 import io.qalipsis.api.logging.LoggerHelper.logger
+import jakarta.inject.Singleton
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Singleton
 
 /**
  * Default implementation of the [EventsLogger], that forwards the events to the [EventsPublisher] when the event level
@@ -28,9 +28,7 @@ internal class EventsLoggerImpl(
     private val actualLevels = ConcurrentHashMap<Int, EventLevel>()
 
     private val declaredLevels = configuration.level
-        .map { (key, level) ->
-            key as String to EventLevel.valueOf("$level".toUpperCase())
-        }
+        .toList()
         // The longest events first.
         .sortedByDescending { it.first }
 

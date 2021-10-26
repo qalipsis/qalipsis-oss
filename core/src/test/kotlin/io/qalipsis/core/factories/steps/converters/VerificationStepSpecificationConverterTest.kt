@@ -6,7 +6,6 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.qalipsis.api.steps.StepCreationContext

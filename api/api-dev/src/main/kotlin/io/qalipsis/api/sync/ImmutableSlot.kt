@@ -17,7 +17,7 @@ import java.time.Duration
  */
 class ImmutableSlot<T>(private var value: T? = null) {
 
-    private var latch: Latch? = Latch(value == null)
+    private var latch: Latch? = Latch(value == null, "immutable-slot")
 
     private val writeLock = Mutex()
 

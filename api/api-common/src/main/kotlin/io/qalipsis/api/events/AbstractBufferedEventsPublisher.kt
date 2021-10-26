@@ -8,7 +8,6 @@ import io.qalipsis.api.sync.Latch
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,7 +23,7 @@ import kotlin.math.min
  * @property minLevel minimum level of the events to publish, defaults to TRACE
  * @property lingerPeriod the period of publication, when the buffer was not emptied in the meantime, defaults to 10 seconds
  * @property batchSize the maximal size of the buffer before a publication, defaults to 2000 events
- * @property coroutineScope [CoroutineScope] to start the coroutines, defaults to [GlobalScope]
+ * @property coroutineScope [CoroutineScope] to start the coroutines
  *
  * @author Eric Jessé
  */
@@ -32,7 +31,7 @@ abstract class AbstractBufferedEventsPublisher(
     private val minLevel: EventLevel = EventLevel.TRACE,
     private val lingerPeriod: Duration = Duration.ofSeconds(10),
     private val batchSize: Int = 2000,
-    private val coroutineScope: CoroutineScope = GlobalScope
+    private val coroutineScope: CoroutineScope
 ) : EventsPublisher {
 
     protected val buffer = concurrentList<Event>()
@@ -66,7 +65,7 @@ abstract class AbstractBufferedEventsPublisher(
     private suspend fun awaitTimeoutAndForward() {
         resetTicker()
         try {
-            ticker!!.receiveOrNull()
+            ticker!!.receiveCatching()
             log.trace { "Timeout is reached" }
             if (buffer.isNotEmpty()) {
                 mutex.withLock {

@@ -1,5 +1,9 @@
 package io.qalipsis.api.pool
 
+import io.qalipsis.api.io.Closeable
+import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.CoroutineContext
+
 /**
  * Interface for a non-blocking pool of items.
  *
@@ -35,4 +39,25 @@ interface Pool<T : io.qalipsis.api.io.Closeable> {
      * Suspends the caller until the pool in initialized.
      */
     suspend fun awaitReadiness(): Pool<T>
+
+    companion object {
+
+        suspend fun <T : Closeable> fixed(
+            size: Int,
+            coroutineContext: CoroutineContext = Dispatchers.Default,
+            checkOnAcquire: Boolean = false,
+            checkOnRelease: Boolean = false,
+            healthCheck: suspend (T) -> Boolean = { true },
+            cleaner: suspend (T) -> Unit = { },
+            factory: suspend () -> T
+        ): Pool<T> = FixedPool(
+            size,
+            coroutineContext,
+            checkOnAcquire,
+            checkOnRelease,
+            healthCheck,
+            cleaner,
+            factory
+        ).apply { init() }
+    }
 }

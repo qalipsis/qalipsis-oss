@@ -15,7 +15,7 @@
     </filter>
   </appender>
 
-  <logger additive="false" name="events"/>
+  <logger name="events" additivity="false"/>
 
   <!-- When events are saved as logs. -->
   <root level="${LOGGING_LEVEL:-INFO}">

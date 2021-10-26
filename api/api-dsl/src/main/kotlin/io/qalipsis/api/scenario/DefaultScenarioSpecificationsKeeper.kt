@@ -2,9 +2,8 @@ package io.qalipsis.api.scenario
 
 import io.micronaut.context.annotation.Property
 import io.qalipsis.api.context.ScenarioId
+import jakarta.inject.Singleton
 import java.util.Optional
-
-import javax.inject.Singleton
 
 /**
  * Default implementation of the [ScenarioSpecificationsKeeper].

@@ -7,6 +7,7 @@ import com.squareup.javapoet.TypeSpec
 import io.micronaut.context.ApplicationContext
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
+import jakarta.inject.Named
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
@@ -15,7 +16,6 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
-import javax.inject.Named
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement

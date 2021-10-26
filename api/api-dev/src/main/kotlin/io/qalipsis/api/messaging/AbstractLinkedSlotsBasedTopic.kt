@@ -1,12 +1,14 @@
 package io.qalipsis.api.messaging
 
-import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.coroutines.currentCoroutineScope
 import io.qalipsis.api.messaging.subscriptions.SlotBasedSubscription
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import io.qalipsis.api.sync.ImmutableSlot
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 import java.time.Duration
+import kotlin.coroutines.CoroutineContext
 
 /**
  * [AbstractLinkedSlotsBasedTopic] is a special implementation of [Topic] providing the data as an infinite loop: once the consumer polled
@@ -17,7 +19,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 internal abstract class AbstractLinkedSlotsBasedTopic<T>(
-        protected val idleTimeout: Duration
+    protected val idleTimeout: Duration
 ) : Topic<T> {
 
     protected var open = true
@@ -36,21 +38,31 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
 
     protected val writeMutex = Mutex(false)
 
-    protected val subscriptions: MutableMap<String, SlotBasedSubscription<T>> = mutableMapOf()
+    protected val subscriptions = mutableMapOf<String, SlotBasedSubscription<T>>()
 
-    override suspend fun subscribe(subscriberId: String): TopicSubscription<T> {
+    override suspend fun subscribe(
+        subscriberId: String,
+        idleCoroutineContext: CoroutineContext?
+    ): TopicSubscription<T> {
         verifyState()
         return if (subscriptions.containsKey(subscriberId)) {
             log.trace { "Returning existing subscription for $subscriberId" }
             subscriptions[subscriberId]!!
         } else {
-            log.trace { "Creating new subscription for $subscriberId" }
             subscriptionMutex.withLock {
-                val subscription = SlotBasedSubscription(subscriptionSlot, idleTimeout) {
-                    subscriptions.remove(subscriberId)
+                if (subscriptions.containsKey(subscriberId)) {
+                    log.trace { "Returning existing subscription for $subscriberId" }
+                    subscriptions[subscriberId]!!
+                } else {
+                    log.trace { "Creating new subscription for $subscriberId" }
+                    val context = idleCoroutineContext ?: currentCoroutineScope().coroutineContext
+                    SlotBasedSubscription.create(context, subscriberId, subscriptionSlot, idleTimeout) {
+                        subscriptions.remove(subscriberId)
+                    }.also {
+                        subscriptions[subscriberId] = it
+                        log.trace { "New subscription created for $subscriberId" }
+                    }
                 }
-                subscriptions[subscriberId] = subscription
-                subscription
             }
         }
     }
@@ -76,8 +88,7 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
     override suspend fun poll(subscriberId: String): Record<T> {
         log.trace { "Polling next record for subscription $subscriberId" }
         verifyState()
-        val subscription = subscriptions[subscriberId] ?: error("The subscription $subscriberId no longer exists")
-        return subscription.poll()
+        return subscriptions[subscriberId]?.poll() ?: error("The subscription $subscriberId no longer exists")
     }
 
     override suspend fun pollValue(subscriberId: String): T {
@@ -112,7 +123,7 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
 
     companion object {
         @JvmStatic
-        private val log = logger()
+        private val log = KotlinLogging.logger { }
     }
 
 }

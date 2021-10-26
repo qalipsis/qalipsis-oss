@@ -4,10 +4,8 @@ import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.heads.persistence.Repository
 
 /**
- * Repository for [HeadScenario]s.
+ * Repository for [ScenarioSummary]s.
  *
  * @author Eric Jessé
  */
-interface HeadScenarioRepository : Repository<HeadScenario, ScenarioId> {
-
-}
+interface ScenarioSummaryRepository : Repository<ScenarioSummary, ScenarioId>

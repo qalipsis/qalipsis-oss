@@ -19,12 +19,12 @@ tasks.withType<KotlinCompile>().configureEach {
 
 allOpen {
     annotations(
-            "io.micronaut.aop.Around",
-            "javax.inject.Singleton",
-            "io.qalipsis.api.annotations.StepConverter",
-            "io.qalipsis.api.annotations.StepDecorator",
-            "io.qalipsis.api.annotations.PluginComponent",
-            "io.micronaut.validation.Validated"
+        "io.micronaut.aop.Around",
+        "jakarta.inject.Singleton",
+        "io.qalipsis.api.annotations.StepConverter",
+        "io.qalipsis.api.annotations.StepDecorator",
+        "io.qalipsis.api.annotations.PluginComponent",
+        "io.micronaut.validation.Validated"
     )
 }
 

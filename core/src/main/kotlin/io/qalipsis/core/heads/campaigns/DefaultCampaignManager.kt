@@ -2,9 +2,11 @@ package io.qalipsis.core.heads.campaigns
 
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Value
+import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.lang.alsoWhenNull
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.Directive
@@ -22,13 +24,14 @@ import io.qalipsis.core.cross.directives.MinionsCreationDirectiveReference
 import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirective
 import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.cross.feedbacks.CampaignStartedForDagFeedback
-import kotlinx.coroutines.GlobalScope
+import jakarta.inject.Named
+import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
-import javax.inject.Singleton
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 import kotlin.reflect.KClass
@@ -55,14 +58,15 @@ internal class DefaultCampaignManager(
     @Positive @Value("\${campaign.speed-factor}") private val speedFactor: Double = 1.0,
     @Positive @Value("\${campaign.start-offset-ms}") private val startOffsetMs: Long = 1000,
     private val feedbackConsumer: FeedbackConsumer,
-    private val scenarioRepository: HeadScenarioRepository,
-    private val directiveProducer: DirectiveProducer
+    private val scenarioRepository: ScenarioSummaryRepository,
+    private val directiveProducer: DirectiveProducer,
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : CampaignManager, DirectiveProcessor<Directive> {
 
     /**
      * Scenarios to include in the campaign.
      */
-    private val scenarios = ConcurrentHashMap<ScenarioId, HeadScenario>()
+    private val scenarios = ConcurrentHashMap<ScenarioId, ScenarioSummary>()
 
     /**
      * Directives related to the campaign that are being processed..
@@ -98,9 +102,9 @@ internal class DefaultCampaignManager(
 
     @PostConstruct
     fun init() {
-        consumptionJob = GlobalScope.launch {
+        consumptionJob = coroutineScope.launch {
             log.debug { "Consuming from $feedbackConsumer" }
-            feedbackConsumer.onReceive { feedback ->
+            feedbackConsumer.onReceive("${this@DefaultCampaignManager::class.simpleName}") { feedback ->
                 processFeedBack(feedback)
             }
         }
@@ -133,7 +137,7 @@ internal class DefaultCampaignManager(
     /**
      * Create the directive to create all the minions for the given scenario.
      */
-    private suspend fun triggerMinionsCreation(id: CampaignId, scenario: HeadScenario) {
+    private suspend fun triggerMinionsCreation(id: CampaignId, scenario: ScenarioSummary) {
         log.debug {
             "Campaign ${id}, scenario ${scenario.id} - creating the directive to create the IDs for all the minions"
         }
@@ -169,10 +173,7 @@ internal class DefaultCampaignManager(
     @LogInput
     internal suspend fun processFeedBack(feedback: Feedback) {
         when (feedback) {
-            is DirectiveFeedback -> {
-                log.debug { "Processing a directive feedback: ${feedback}" }
-                processDirectiveFeedback(feedback)
-            }
+            is DirectiveFeedback -> processDirectiveFeedback(feedback)
             is CampaignStartedForDagFeedback -> receiveCampaignStartedFeedback(feedback)
         }
     }
@@ -181,8 +182,8 @@ internal class DefaultCampaignManager(
      * Broadcast the received directive feedback to the relevant method.
      */
     private suspend fun processDirectiveFeedback(feedback: DirectiveFeedback) {
-        if (directivesInProgress.containsKey(feedback.directiveKey)) {
-            val directiveInProgress = directivesInProgress[feedback.directiveKey]!!
+        directivesInProgress[feedback.directiveKey]?.let { directiveInProgress ->
+            log.trace { "Proceeding with the feedback $feedback of directive ${directiveInProgress}." }
             when {
                 directiveInProgress.isA(MinionsCreationPreparationDirective::class)
                 -> receivedMinionsCreationPreparationFeedback(feedback, directiveInProgress.get())
@@ -193,7 +194,7 @@ internal class DefaultCampaignManager(
             if (feedback.status == FeedbackStatus.FAILED) {
                 directivesInProgress.remove(feedback.directiveKey)
             }
-        }
+        }.alsoWhenNull { log.debug { "The directive with key ${feedback.directiveKey} was not found." } }
     }
 
     /**

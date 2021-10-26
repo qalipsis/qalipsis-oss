@@ -40,7 +40,7 @@ internal class LoggingConfiguration(
         properties.putAll(environment.getProperties("logging.level", StringConvention.RAW))
         val levels = mutableMapOf<String, Level>()
         properties.forEach { (loggerPrefix, levelValue) ->
-            levels[loggerPrefix] = Level.valueOf(levelValue.toString().toUpperCase())
+            levels[loggerPrefix] = Level.valueOf("$levelValue".uppercase())
         }
         loggingLevels = levels
     }

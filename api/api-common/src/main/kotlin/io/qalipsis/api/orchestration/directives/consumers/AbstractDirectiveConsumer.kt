@@ -1,6 +1,7 @@
 package io.qalipsis.api.orchestration.directives.consumers
 
 import io.qalipsis.api.factories.StartupFactoryComponent
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 
@@ -12,7 +13,7 @@ import io.qalipsis.api.orchestration.directives.DirectiveProcessor
  *
  * @author Eric Jessé
  */
- abstract class AbstractDirectiveConsumer(
+abstract class AbstractDirectiveConsumer(
     directiveProcessors: Collection<DirectiveProcessor<*>>
 ) : StartupFactoryComponent {
 
@@ -25,8 +26,20 @@ import io.qalipsis.api.orchestration.directives.DirectiveProcessor
     protected suspend fun process(directive: Directive) {
         orderedDirectiveProcessors.filter { it.accept(directive) }
             .map { it as DirectiveProcessor<Directive> }
-            .forEach {
-                it.process(directive)
+            .forEach { processor ->
+                log.trace { "Processing the directive $directive with the processor $processor" }
+                try {
+                    processor.process(directive)
+                } catch (e: Exception) {
+                    log.error(e) { "An error occurred while processing the directive $directive with the processor $processor: ${e.message}" }
+                }
             }
+    }
+
+    private companion object {
+
+        @JvmStatic
+        val log = logger()
+
     }
 }

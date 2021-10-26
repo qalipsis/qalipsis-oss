@@ -35,7 +35,12 @@ interface MinionsKeeper {
      * @param dagId the ID of the directed acyclic graph to execute in the scenario.
      * @param minionId the ID of the minion.
      */
-    fun create(campaignId: CampaignId, scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId, minionId: MinionId)
+    suspend fun create(
+        campaignId: CampaignId,
+        scenarioId: ScenarioId,
+        dagId: DirectedAcyclicGraphId,
+        minionId: MinionId
+    )
 
     /**
      * Starts all the steps for a campaign and the related singleton minions.

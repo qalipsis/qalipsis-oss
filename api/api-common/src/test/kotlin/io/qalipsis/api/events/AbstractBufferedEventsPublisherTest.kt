@@ -6,28 +6,33 @@ import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
-import kotlinx.coroutines.ObsoleteCoroutinesApi
+import io.qalipsis.test.coroutines.TestDispatcherProvider
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 import java.util.LinkedList
-
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 
+@Timeout(30)
 internal class AbstractBufferedEventsPublisherTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
-    fun `should not log when logger level is OFF`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.OFF, Duration.ofMillis(500), batchSize = 1000)
+    fun `should not log when logger level is OFF`() = testCoroutineDispatcher.runTest {
+        val publisher =
+            TestAbstractBufferedEventsPublisher(this, EventLevel.OFF, Duration.ofMillis(500), batchSize = 1000)
         publisher.publish(Event(EVENT_NAME, EventLevel.TRACE))
         publisher.publish(Event(EVENT_NAME, EventLevel.DEBUG))
         publisher.publish(Event(EVENT_NAME, EventLevel.INFO))
@@ -38,8 +43,9 @@ internal class AbstractBufferedEventsPublisherTest {
     }
 
     @Test
-    fun `should log all when logger level is TRACE`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.TRACE, Duration.ofMillis(500), batchSize = 1000)
+    fun `should log all when logger level is TRACE`() = testCoroutineDispatcher.runTest {
+        val publisher =
+            TestAbstractBufferedEventsPublisher(this, EventLevel.TRACE, Duration.ofMillis(500), batchSize = 1000)
 
         publisher.publish(Event(EVENT_NAME, EventLevel.TRACE))
         publisher.publish(Event(EVENT_NAME, EventLevel.DEBUG))
@@ -58,8 +64,9 @@ internal class AbstractBufferedEventsPublisherTest {
     }
 
     @Test
-    fun `should log from DEBUG when logger level is DEBUG`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.DEBUG, Duration.ofMillis(500), batchSize = 1000)
+    fun `should log from DEBUG when logger level is DEBUG`() = testCoroutineDispatcher.runTest {
+        val publisher =
+            TestAbstractBufferedEventsPublisher(this, EventLevel.DEBUG, Duration.ofMillis(500), batchSize = 1000)
 
         publisher.publish(Event(EVENT_NAME, EventLevel.TRACE))
         publisher.publish(Event(EVENT_NAME, EventLevel.DEBUG))
@@ -77,8 +84,9 @@ internal class AbstractBufferedEventsPublisherTest {
     }
 
     @Test
-    fun `should log from INFO when logger level is INFO`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.INFO, Duration.ofMillis(500), batchSize = 1000)
+    fun `should log from INFO when logger level is INFO`() = testCoroutineDispatcher.runTest {
+        val publisher =
+            TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMillis(500), batchSize = 1000)
 
         publisher.publish(Event(EVENT_NAME, EventLevel.TRACE))
         publisher.publish(Event(EVENT_NAME, EventLevel.DEBUG))
@@ -95,8 +103,9 @@ internal class AbstractBufferedEventsPublisherTest {
     }
 
     @Test
-    fun `should log from WARN when logger level is WARN`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.WARN, Duration.ofMillis(500), batchSize = 1000)
+    fun `should log from WARN when logger level is WARN`() = testCoroutineDispatcher.runTest {
+        val publisher =
+            TestAbstractBufferedEventsPublisher(this, EventLevel.WARN, Duration.ofMillis(500), batchSize = 1000)
 
         publisher.publish(Event(EVENT_NAME, EventLevel.TRACE))
         publisher.publish(Event(EVENT_NAME, EventLevel.DEBUG))
@@ -112,8 +121,9 @@ internal class AbstractBufferedEventsPublisherTest {
     }
 
     @Test
-    fun `should log only ERROR when logger level is ERROR`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.ERROR, Duration.ofMillis(500), batchSize = 1000)
+    fun `should log only ERROR when logger level is ERROR`() = testCoroutineDispatcher.runTest {
+        val publisher =
+            TestAbstractBufferedEventsPublisher(this, EventLevel.ERROR, Duration.ofMillis(500), batchSize = 1000)
 
         publisher.publish(Event(EVENT_NAME, EventLevel.TRACE))
         publisher.publish(Event(EVENT_NAME, EventLevel.DEBUG))
@@ -129,8 +139,8 @@ internal class AbstractBufferedEventsPublisherTest {
 
     @Test
     @Timeout(5)
-    fun `should publish when buffer is full`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.INFO, Duration.ofMinutes(10), 10, 2)
+    fun `should publish when buffer is full`() = testCoroutineDispatcher.run {
+        val publisher = TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMinutes(10), 10, 2)
         publisher.start()
 
         repeat(25) {
@@ -144,8 +154,8 @@ internal class AbstractBufferedEventsPublisherTest {
 
     @Test
     @Timeout(5)
-    fun `should publish when linger time is over`() = runBlocking {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.INFO, Duration.ofMillis(400), 100, 2)
+    fun `should publish when linger time is over`() = testCoroutineDispatcher.run {
+        val publisher = TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMillis(400), 100, 2)
         publisher.start()
 
         repeat(3) {
@@ -160,8 +170,8 @@ internal class AbstractBufferedEventsPublisherTest {
 
     @Test
     @Timeout(5)
-    fun `should log even when logs are faster than publish`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.INFO, Duration.ofMinutes(1), 1, 30) {
+    fun `should log even when logs are faster than publish`() = testCoroutineDispatcher.run {
+        val publisher = TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMinutes(1), 1, 30) {
             Thread.sleep(30)
         }
         publisher.start()
@@ -178,8 +188,8 @@ internal class AbstractBufferedEventsPublisherTest {
 
     @Test
     @Timeout(1)
-    fun `should support concurrent logs`() = runBlockingTest {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.INFO, Duration.ofMinutes(1), 1000)
+    fun `should support concurrent logs`() = testCoroutineDispatcher.run {
+        val publisher = TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMinutes(1), 1000)
         publisher.start()
         val job1 = launch {
             repeat(300) {
@@ -203,8 +213,8 @@ internal class AbstractBufferedEventsPublisherTest {
 
     @Test
     @Timeout(5)
-    fun `stopping the logger should force publish`() {
-        val publisher = TestAbstractBufferedEventsPublisher(EventLevel.INFO, Duration.ofMinutes(1), 100, 1)
+    fun `stopping the logger should force publish`() = testCoroutineDispatcher.runTest {
+        val publisher = TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMinutes(1), 100, 1)
 
         publisher.start()
         publisher.publish(Event(EVENT_NAME, EventLevel.WARN))
@@ -221,15 +231,15 @@ internal class AbstractBufferedEventsPublisherTest {
 
     }
 
-    @ObsoleteCoroutinesApi
-
     class TestAbstractBufferedEventsPublisher(
+        coroutineScope: CoroutineScope,
         loggableLevel: EventLevel,
         lingerDuration: Duration,
         batchSize: Int,
         expectedPublications: Int = Int.MAX_VALUE,
-        private val doOnPublish: (() -> Unit) = {}) :
-        AbstractBufferedEventsPublisher(loggableLevel, lingerDuration, batchSize) {
+        private val doOnPublish: (() -> Unit) = {}
+    ) :
+        AbstractBufferedEventsPublisher(loggableLevel, lingerDuration, batchSize, coroutineScope) {
 
         val executionTimes = mutableListOf<Instant>()
 

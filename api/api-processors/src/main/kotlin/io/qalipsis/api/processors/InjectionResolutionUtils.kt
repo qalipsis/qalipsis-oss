@@ -1,7 +1,7 @@
 package io.qalipsis.api.processors
 
 import io.qalipsis.api.annotations.Property
-import javax.inject.Named
+import jakarta.inject.Named
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror

@@ -2,11 +2,13 @@ package io.qalipsis.api.messaging
 
 import io.qalipsis.api.messaging.subscriptions.AbstractTopicSubscription
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
+import kotlin.coroutines.CoroutineContext
 
 /**
- * A [topic] is a messaging interface able to address different models of pub/sub behind a unified interface.
+ * A [Topic] is a messaging interface able to address different models of pub/sub behind a unified interface.
  * It is freely inspired by [Apache Kafka topics][https://kafka.apache.org], moving customer configuration
  * (like <i>auto.offset.reset<i>,  <i>connections.max.idle.ms<i>) to the topic configuration for the ease-of-use.
  *
@@ -19,11 +21,14 @@ interface Topic<T> {
     /**
      * Create a subscription to the topic for the given subscriber.
      *
-     * @param subscriberId the identifier of the subscriber. If it is already known by the topic, the existing channel
-     * is returned.
+     * @param subscriberId the identifier of the subscriber. If it is already known by the topic, the existing channel is returned.
+     * @param idleVerificationCoroutineScope coroutine scope to use for the .
      */
     @Throws(ClosedTopicException::class)
-    suspend fun subscribe(subscriberId: String): TopicSubscription<T>
+    suspend fun subscribe(
+        subscriberId: String,
+        idleCoroutineContext: CoroutineContext? = Dispatchers.Default
+    ): TopicSubscription<T>
 
     /**
      * Produce a value to the topic, which will be wrapped into a [Record].

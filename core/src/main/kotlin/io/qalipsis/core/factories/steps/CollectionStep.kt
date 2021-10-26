@@ -10,12 +10,10 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.Slot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.TickerMode
-import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -29,7 +27,7 @@ internal class CollectionStep<I>(
     id: StepId,
     private val timeout: Duration?,
     private val batchSize: Int,
-    private val coroutineScope: CoroutineScope = GlobalScope
+    private val coroutineScope: CoroutineScope
 ) : AbstractStep<I, List<I>>(id, null) {
 
     private val buffer = LinkedList<I>()
@@ -50,7 +48,7 @@ internal class CollectionStep<I>(
 
         // If there is a timeout, a background coroutine with a ticker forwards the values periodically.
         timeout?.let {
-            val latch = Latch(true)
+            val latch = Latch(true, "collection-step-${id}")
             log.debug { "Starting the background coroutine to forward data on timeout" }
             publicationJob = coroutineScope.launch {
                 latch.release()
@@ -72,7 +70,7 @@ internal class CollectionStep<I>(
     private suspend fun awaitTimeoutAndForward() {
         resetTicker()
         try {
-            val receiveOrClosed = ticker!!.receiveOrNull()
+            val receiveOrClosed = ticker!!.receiveCatching().getOrNull()
             if (receiveOrClosed != null && running && buffer.isNotEmpty()) {
                 log.trace { "Timeout is reached" }
                 mutex.withLock {

@@ -1,14 +1,24 @@
 package io.qalipsis.runtime.monitoring
 
-import io.micrometer.core.instrument.*
+import io.micrometer.core.instrument.Clock
+import io.micrometer.core.instrument.Measurement
+import io.micrometer.core.instrument.Meter
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tags
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import io.micrometer.core.instrument.distribution.pause.PauseDetector
-import io.micrometer.core.instrument.noop.*
+import io.micrometer.core.instrument.noop.NoopCounter
+import io.micrometer.core.instrument.noop.NoopDistributionSummary
+import io.micrometer.core.instrument.noop.NoopFunctionCounter
+import io.micrometer.core.instrument.noop.NoopFunctionTimer
+import io.micrometer.core.instrument.noop.NoopGauge
+import io.micrometer.core.instrument.noop.NoopLongTaskTimer
+import io.micrometer.core.instrument.noop.NoopTimer
 import io.micronaut.context.annotation.Requires
+import jakarta.inject.Singleton
 import java.util.concurrent.TimeUnit
 import java.util.function.ToDoubleFunction
 import java.util.function.ToLongFunction
-import javax.inject.Singleton
 
 /**
  * No-op meter registry used for injection purpose when the monitoring is disabled.

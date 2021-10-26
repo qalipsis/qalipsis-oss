@@ -42,7 +42,7 @@ import io.qalipsis.api.steps.TubeStepSpecification
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.qalipsis.core.factories.testScenario
-import io.qalipsis.core.heads.campaigns.HeadDirectedAcyclicGraph
+import io.qalipsis.core.heads.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
@@ -457,18 +457,18 @@ internal class ScenariosInitializerImplTest {
                 prop(FactoryRegistrationFeedbackScenario::directedAcyclicGraphs).all {
                     hasSize(2)
                     index(0).all {
-                        prop(HeadDirectedAcyclicGraph::id).isEqualTo("dag-1")
-                        prop(HeadDirectedAcyclicGraph::isSingleton).isFalse()
-                        prop(HeadDirectedAcyclicGraph::isRoot).isTrue()
-                        prop(HeadDirectedAcyclicGraph::isUnderLoad).isFalse()
-                        prop(HeadDirectedAcyclicGraph::numberOfSteps).isEqualTo(12)
+                        prop(DirectedAcyclicGraphSummary::id).isEqualTo("dag-1")
+                        prop(DirectedAcyclicGraphSummary::isSingleton).isFalse()
+                        prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
+                        prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
+                        prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(12)
                     }
                     index(1).all {
-                        prop(HeadDirectedAcyclicGraph::id).isEqualTo("dag-2")
-                        prop(HeadDirectedAcyclicGraph::isSingleton).isTrue()
-                        prop(HeadDirectedAcyclicGraph::isRoot).isFalse()
-                        prop(HeadDirectedAcyclicGraph::isUnderLoad).isFalse()
-                        prop(HeadDirectedAcyclicGraph::numberOfSteps).isEqualTo(4)
+                        prop(DirectedAcyclicGraphSummary::id).isEqualTo("dag-2")
+                        prop(DirectedAcyclicGraphSummary::isSingleton).isTrue()
+                        prop(DirectedAcyclicGraphSummary::isRoot).isFalse()
+                        prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
+                        prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(4)
                     }
                 }
             }
@@ -479,11 +479,11 @@ internal class ScenariosInitializerImplTest {
                 prop(FactoryRegistrationFeedbackScenario::directedAcyclicGraphs).all {
                     hasSize(1)
                     index(0).all {
-                        prop(HeadDirectedAcyclicGraph::id).isEqualTo("dag-3")
-                        prop(HeadDirectedAcyclicGraph::isSingleton).isFalse()
-                        prop(HeadDirectedAcyclicGraph::isRoot).isTrue()
-                        prop(HeadDirectedAcyclicGraph::isUnderLoad).isTrue()
-                        prop(HeadDirectedAcyclicGraph::numberOfSteps).isEqualTo(42)
+                        prop(DirectedAcyclicGraphSummary::id).isEqualTo("dag-3")
+                        prop(DirectedAcyclicGraphSummary::isSingleton).isFalse()
+                        prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
+                        prop(DirectedAcyclicGraphSummary::isUnderLoad).isTrue()
+                        prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(42)
                     }
                 }
             }

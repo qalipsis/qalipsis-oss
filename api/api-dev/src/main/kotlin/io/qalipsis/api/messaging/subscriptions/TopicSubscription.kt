@@ -1,7 +1,9 @@
 package io.qalipsis.api.messaging.subscriptions
 
 import io.qalipsis.api.messaging.Record
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Subscription to consume records from a topic.
@@ -27,7 +29,7 @@ interface TopicSubscription<T> {
      *
      * @return the [Job] running the consumption and execution of the handler.
      */
-    suspend fun onReceiveValue(block: suspend (T) -> Unit): Job
+    suspend fun onReceiveValue(context: CoroutineContext = Dispatchers.Default, block: suspend (T) -> Unit): Job
 
     /**
      * Returns `true` if the subscription is still active, otherwise `false`.

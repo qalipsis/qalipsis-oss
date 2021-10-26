@@ -2,8 +2,8 @@ package io.qalipsis.core.factories.orchestration
 
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.orchestration.Scenario
+import jakarta.inject.Singleton
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Singleton
 
 @Singleton
 class ScenariosRegistryImpl : ScenariosRegistry {

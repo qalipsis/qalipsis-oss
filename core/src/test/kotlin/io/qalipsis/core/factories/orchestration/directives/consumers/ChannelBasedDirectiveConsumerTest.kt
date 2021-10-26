@@ -6,13 +6,14 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.core.cross.directives.TestDescriptiveDirective
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * @author Eric Jessé
@@ -27,9 +28,13 @@ internal class ChannelBasedDirectiveConsumerTest {
     @RelaxedMockK
     lateinit var processor2: DirectiveProcessor<*>
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
     @Timeout(2)
-    internal fun shouldConsumeAndProcessDirective() = runBlocking {
+    internal fun shouldConsumeAndProcessDirective() = testCoroutineDispatcher.run {
         // given
         val directive1 = TestDescriptiveDirective()
         val directive2 = TestDescriptiveDirective()
@@ -40,7 +45,7 @@ internal class ChannelBasedDirectiveConsumerTest {
         // when
         ChannelBasedDirectiveConsumer(relaxedMockk {
             every { channel } returns directiveChannel
-        }, listOf(processor1, processor2)).init()
+        }, listOf(processor1, processor2), this).init()
 
         directiveChannel.send(directive1)
         directiveChannel.send(directive2)

@@ -13,11 +13,11 @@ import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
+import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import javax.inject.Singleton
 
 @Singleton
 @Requires(env = ["standalone", "volatile"])

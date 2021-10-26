@@ -77,3 +77,17 @@ inline fun <T> tryAndLogOrNull(logger: Logger, block: () -> T): T? {
         null
     }
 }
+
+/**
+ * Executes the statement only if the receiver is not null.
+ *
+ * @author Eric Jessé
+ */
+inline fun <T> T.alsoWhenNotNull(block: () -> Unit): T = this.also { if (this != null) block() }
+
+/**
+ * Executes the statement only if the receiver is null.
+ *
+ * @author Eric Jessé
+ */
+inline fun <T> T.alsoWhenNull(block: () -> Unit): T = this.also { if (this == null) block() }

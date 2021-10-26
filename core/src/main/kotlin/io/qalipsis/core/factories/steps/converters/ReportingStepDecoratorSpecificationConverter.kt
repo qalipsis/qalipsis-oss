@@ -3,7 +3,10 @@ package io.qalipsis.core.factories.steps.converters
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.CampaignStateKeeper
-import io.qalipsis.api.steps.*
+import io.qalipsis.api.steps.AbstractStepSpecification
+import io.qalipsis.api.steps.StepCreationContext
+import io.qalipsis.api.steps.StepSpecification
+import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.core.factories.steps.ReportingStepDecorator
 
 /**

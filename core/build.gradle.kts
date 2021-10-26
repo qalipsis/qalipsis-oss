@@ -20,7 +20,7 @@ tasks.withType<KotlinCompile>().configureEach {
 allOpen {
     annotations(
         "io.micronaut.aop.Around",
-        "javax.inject.Singleton",
+        "jakarta.inject.Singleton",
         "io.qalipsis.api.annotations.StepConverter",
         "io.qalipsis.api.annotations.StepDecorator",
         "io.qalipsis.api.annotations.PluginComponent",

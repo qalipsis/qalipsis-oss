@@ -13,7 +13,6 @@ import io.qalipsis.test.mockk.verifyNever
 import io.qalipsis.test.mockk.verifyOnce
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.util.Properties
 
 /**
  * @author Eric Jessé
@@ -41,8 +40,10 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should not log anything when the root is OFF and there is no specific level but there are publishers`() {
         // given
-        val logger = spyk(EventsLoggerImpl(configuration(EventLevel.OFF), listOf(relaxedMockk())),
-            recordPrivateCalls = true)
+        val logger = spyk(
+            EventsLoggerImpl(configuration(EventLevel.OFF), listOf(relaxedMockk())),
+            recordPrivateCalls = true
+        )
 
         // when
         logger.log(EventLevel.ERROR, EVENT_NAME, EVENT_VALUE, EVENT_INSTANT, EVENT_TAGS_MAP)
@@ -52,19 +53,24 @@ internal class EventsLoggerImplTest {
         // then
         verifyNever {
             logger.checkLevelAndLog(any(), any(), any(), any(), any())
-            logger["checkLevelAndLogWithSupplier"]( any<EventLevel>(), any<String>(), any(), any<Instant>(), any<() -> Map<String, String>>())
+            logger["checkLevelAndLogWithSupplier"](
+                any<EventLevel>(),
+                any<String>(),
+                any(),
+                any<Instant>(),
+                any<() -> Map<String, String>>()
+            )
         }
     }
 
     @Test
     internal fun `should not log anything when the root is OFF and there is only specific level to OFF and there are publishers`() {
         // given
-        val levels = Properties().also {
-            it["event"] = "OFF"
-            it["event.topic"] = "off"
-        }
-        val logger = spyk(EventsLoggerImpl(configuration(EventLevel.OFF, levels), listOf(relaxedMockk())),
-            recordPrivateCalls = true)
+        val levels = mapOf("event" to EventLevel.OFF, "event.topic" to EventLevel.OFF)
+        val logger = spyk(
+            EventsLoggerImpl(configuration(EventLevel.OFF, levels), listOf(relaxedMockk())),
+            recordPrivateCalls = true
+        )
 
         // when
         logger.log(EventLevel.ERROR, EVENT_NAME, EVENT_VALUE, EVENT_INSTANT, EVENT_TAGS_MAP)
@@ -74,7 +80,13 @@ internal class EventsLoggerImplTest {
         // then
         verifyNever {
             logger.checkLevelAndLog(any(), any(), any(), any(), any())
-            logger["checkLevelAndLogWithSupplier"]( any<EventLevel>(), any<String>(), any(), any<Instant>(), any<() -> Map<String, String>>())
+            logger["checkLevelAndLogWithSupplier"](
+                any<EventLevel>(),
+                any<String>(),
+                any(),
+                any<Instant>(),
+                any<() -> Map<String, String>>()
+            )
         }
     }
 
@@ -113,10 +125,7 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should log when the exact level allows it`() {
         // given
-        val levels = Properties().also {
-            it[EVENT_NAME] = "info"
-            it[EVENT_NAME_PARENT] = "off"
-        }
+        val levels = mapOf(EVENT_NAME to EventLevel.INFO, EVENT_NAME_PARENT to EventLevel.OFF)
 
         val publisher1 = relaxedMockk<EventsPublisher>()
         val publisher2 = relaxedMockk<EventsPublisher>()
@@ -150,9 +159,7 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should log when a parent level allows it`() {
         // given
-        val levels = Properties().also {
-            it[EVENT_NAME_PARENT] = "info"
-        }
+        val levels = mapOf(EVENT_NAME_PARENT to EventLevel.INFO)
 
         val publisher1 = relaxedMockk<EventsPublisher>()
         val publisher2 = relaxedMockk<EventsPublisher>()
@@ -248,8 +255,8 @@ internal class EventsLoggerImplTest {
     /**
      * Creates a configuration for the events logger.
      */
-    private fun configuration(root: EventLevel = EventLevel.TRACE, level: Properties = Properties()) =
-        EventsLoggerConfiguration().apply {
+    private fun configuration(root: EventLevel = EventLevel.TRACE, level: Map<String, EventLevel> = emptyMap()) =
+        EventsLoggerConfiguration(relaxedMockk()).apply {
             this.root = root
             this.level = level
         }

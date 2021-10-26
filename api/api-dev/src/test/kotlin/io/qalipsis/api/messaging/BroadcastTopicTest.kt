@@ -1,11 +1,16 @@
 package io.qalipsis.api.messaging
 
+import assertk.assertThat
+import assertk.assertions.hasSize
+import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 
 /**
@@ -13,8 +18,12 @@ import java.time.Duration
  */
 internal class BroadcastTopicTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
-    internal fun `should prevent from using closed topic`() = runBlockingTest {
+    fun `should prevent from using closed topic`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
 
@@ -34,8 +43,7 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-
-    internal fun `should provide subscription`() = runBlockingTest {
+    fun `should provide subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -65,7 +73,30 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun `should cancel subscription`() = runBlockingTest {
+    @Timeout(10)
+    fun `should consume subscription`() = testCoroutineDispatcher.run {
+        // given
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
+        for (i in 0 until 10) {
+            topic.produceValue(i)
+        }
+        val counter = SuspendedCountLatch(10)
+        val received = concurrentSet<Int>()
+
+        // when
+        val subscription = topic.subscribe("any-1")
+        subscription.onReceiveValue(this.coroutineContext) {
+            received += it
+            counter.decrement()
+        }
+        counter.await()
+
+        // then
+        assertThat(received).hasSize(10)
+    }
+
+    @Test
+    fun `should cancel subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
 
@@ -78,7 +109,7 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun `should cancel idle subscription`() = runBlocking {
+    fun `should cancel idle subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(100, Duration.ofMillis(20))
 
@@ -91,7 +122,7 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun `should provide two different subscriptions`() = runBlockingTest {
+    fun `should provide two different subscriptions`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -114,7 +145,7 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun `should provide records to open subscriptions only`() = runBlockingTest {
+    fun `should provide records to open subscriptions only`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -136,7 +167,7 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun `should only keep the maximum number of values`() = runBlockingTest {
+    fun `should only keep the maximum number of values`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(10, Duration.ofSeconds(1))
         for (i in 0 until 20) {
@@ -157,7 +188,7 @@ internal class BroadcastTopicTest {
     }
 
     @Test
-    internal fun `should only subscribe from next available value`() = runBlockingTest {
+    fun `should only subscribe from next available value`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(0, Duration.ofSeconds(1))
         for (i in 0 until 20) {
@@ -176,5 +207,4 @@ internal class BroadcastTopicTest {
             Assertions.assertEquals(i, subscription.pollValue())
         }
     }
-
 }

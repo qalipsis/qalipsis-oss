@@ -3,8 +3,6 @@ package io.qalipsis.api.sync
 import io.qalipsis.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.onReceiveOrNull
-import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -47,7 +45,7 @@ class SuspendedCountLatch(
     private var count = AtomicLong(initialCount)
 
     val onRelease
-        get() = syncFlag.onReceiveOrNull()
+        get() = syncFlag.onReceiveCatching
 
     init {
         // If the count is already 0, the sync flag is released.
@@ -60,7 +58,7 @@ class SuspendedCountLatch(
      * Awaits for [increment] or [decrement] to be called at least once.
      */
     suspend fun awaitActivity(): SuspendedCountLatch {
-        activityFlag.receiveOrNull()
+        activityFlag.receiveCatching()
         return this
     }
 
@@ -68,7 +66,7 @@ class SuspendedCountLatch(
      * Awaits for the counter to be 0.
      */
     suspend fun await() {
-        syncFlag.receiveOrNull()
+        syncFlag.receiveCatching()
     }
 
     /**

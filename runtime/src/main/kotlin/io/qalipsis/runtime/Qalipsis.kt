@@ -130,7 +130,7 @@ object Qalipsis : Callable<Unit> {
             .args(*this.args)
             .start()
 
-        // Force the loading if key services.
+        // Force the loading of key services.
         if (role == Role.STANDALONE) {
             applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
             applicationContext.getBeansOfType(StartupHeadComponent::class.java)
@@ -139,7 +139,7 @@ object Qalipsis : Callable<Unit> {
             applicationContext.getBeansOfType(ProcessBlocker::class.java)
         if (processBlockers.isNotEmpty()) {
             runBlocking {
-                log.info { "${processBlockers.size} service(s) to join before exiting the process" }
+                log.info { "${processBlockers.size} service(s) to join before exiting the process: ${processBlockers.joinToString { "${it::class.simpleName}" }}" }
                 processBlockers.forEach { it.join() }
             }
 

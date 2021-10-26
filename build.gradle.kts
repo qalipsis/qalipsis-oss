@@ -6,9 +6,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 plugins {
     idea
     java
-    kotlin("jvm") version "1.4.32"
-    kotlin("kapt") version "1.4.32"
-    kotlin("plugin.allopen") version "1.4.32"
+    kotlin("jvm") version "1.5.30"
+    kotlin("kapt") version "1.5.30"
+    kotlin("plugin.allopen") version "1.5.30"
     id("net.ltgt.apt") version "0.21" apply false
 
     id("nebula.contacts") version "5.1.0"
@@ -116,11 +116,10 @@ allprojects {
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
-                useIR = true
                 jvmTarget = target.majorVersion
                 freeCompilerArgs += listOf(
-                    "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                    "-Xuse-experimental=kotlinx.coroutines.ObsoleteCoroutinesApi"
+                    "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                    "-Xopt-in=kotlinx.coroutines.ObsoleteCoroutinesApi"
                 )
             }
         }

@@ -6,12 +6,12 @@ WARNING: Ensure you have the following dependency in the project where your bean
 
 === Injection of a singleton bean
 
-You can declare a singleton bean using the annotation `@javax.inject.Singleton` on a type, or https://docs.micronaut.io/latest/guide/index.html#factories[use a Micronaut factory].
+You can declare a singleton bean using the annotation `@jakarta.inject.Singleton` on a type, or https://docs.micronaut.io/latest/guide/index.html#factories[use a Micronaut factory].
 
 .Creation of beans
 [source,kotlin]
 ----
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 @Singleton // <1>
 class NoRetry : RetryPolicy {
@@ -31,8 +31,9 @@ class ExecutorFactory {
 }
 
 ----
-<1> The annotation `@javax.inject.Singleton` can be added to a class to automatically create a bean and declare it as singleton
-<2> The annotation `@javax.inject.Singleton` added to a method declares the returned bean as a singleton
+
+<1> The annotation `@jakarta.inject.Singleton` can be added to a class to automatically create a bean and declare it as singleton
+<2> The annotation `@jakarta.inject.Singleton` added to a method declares the returned bean as a singleton
 <3> The retry policy is automatically injected into the factory method
 
 Once beans are created, you can inject them in the constructor or the scenario method:
@@ -62,7 +63,7 @@ QALIPSIS supports named injection:
 .Injection of a named bean
 [source,kotlin]
 ----
-import javax.inject.Named
+import jakarta.inject.Named
 
 class EcommercePurchase(@param:Named("default") private val retryPolicy: RetryPolicy) {  // <1>
 

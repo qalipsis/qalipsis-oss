@@ -4,10 +4,9 @@ package io.qalipsis.api.processors
 
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
+import jakarta.inject.Named
 import java.time.Duration
 import java.util.Optional
-
-import javax.inject.Named
 
 internal val injectedForMethodOutsideAClass = mutableMapOf<String, Any?>()
 internal val injectedIntoConstructor = mutableMapOf<String, Any?>()

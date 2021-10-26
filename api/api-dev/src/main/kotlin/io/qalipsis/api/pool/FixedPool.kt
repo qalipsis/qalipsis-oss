@@ -6,10 +6,11 @@ import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.SuspendedCountLatch
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Suspended pool of fixed size.
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
  */
 class FixedPool<T : Closeable>(
     size: Int,
+    private val coroutineContext: CoroutineContext = Dispatchers.Default,
     private val checkOnAcquire: Boolean = false,
     private val checkOnRelease: Boolean = false,
     private val healthCheck: suspend (T) -> Boolean = { true },
@@ -47,23 +49,37 @@ class FixedPool<T : Closeable>(
 
     private val readinessLatch: SuspendedCountLatch
 
+    private val actualSize = size.coerceAtLeast(1)
+
+    private var initialized = false
+
     init {
-        val actualSize = size.coerceAtLeast(1)
         itemPool = Channel(actualSize)
         readinessLatch = SuspendedCountLatch(actualSize.toLong())
+    }
 
-        repeat(actualSize) {
-            GlobalScope.launch {
-                val item = createItem()
-                if (open) {
-                    itemPool.send(item)
+    /**
+     * Initializes the items of the pool. This function is not thread-safe.
+     */
+    internal suspend fun init() {
+        if (!initialized) {
+            repeat(actualSize) {
+                withContext(coroutineContext) {
+                    launch {
+                        val item = createItem()
+                        if (open) {
+                            itemPool.send(item)
+                        }
+                        readinessLatch.decrement()
+                    }
                 }
-                readinessLatch.decrement()
             }
+            initialized = true
         }
     }
 
     override suspend fun awaitReadiness(): FixedPool<T> {
+        init()
         readinessLatch.await()
         return this
     }
@@ -81,12 +97,14 @@ class FixedPool<T : Closeable>(
 
     override suspend fun acquire(): T {
         log.trace { "Acquiring an item from the pool" }
-        val item = itemPool.receiveOrNull() ?: throw IllegalStateException("The pool is already closed")
+        val item = itemPool.receiveCatching().getOrNull() ?: throw IllegalStateException("The pool is already closed")
         return if (checkOnAcquire && !isHealthy(item)) {
             log.trace { "The object $item is not healthy and has to be replaced by a new one for the caller" }
-            GlobalScope.contextualLaunch {
-                items.remove(item)
-                kotlin.runCatching { item.close() }
+            withContext(coroutineContext) {
+                contextualLaunch {
+                    items.remove(item)
+                    kotlin.runCatching { item.close() }
+                }
             }
             createItem()
         } else {
@@ -97,18 +115,20 @@ class FixedPool<T : Closeable>(
     override suspend fun release(item: T) {
         if (open) {
             log.trace { "Returning the object to the pool" }
-            GlobalScope.contextualLaunch {
-                val reusableItem = try {
-                    cleaner(item)
-                    require(!checkOnRelease || isHealthy(item)) { "object is unhealthy" }
-                    item
-                } catch (e: Exception) {
-                    log.trace(e) { "The object $item cannot be released to the pool: ${e.message}" }
-                    items.remove(item)
-                    kotlin.runCatching { item.close() }
-                    createItem()
+            withContext(coroutineContext) {
+                contextualLaunch {
+                    val reusableItem = try {
+                        cleaner(item)
+                        require(!checkOnRelease || isHealthy(item)) { "object is unhealthy" }
+                        item
+                    } catch (e: Exception) {
+                        log.trace(e) { "The object $item cannot be released to the pool: ${e.message}" }
+                        items.remove(item)
+                        kotlin.runCatching { item.close() }
+                        createItem()
+                    }
+                    itemPool.send(reusableItem)
                 }
-                itemPool.send(reusableItem)
             }
         }
     }

@@ -9,19 +9,19 @@ import io.qalipsis.core.heads.persistence.Entity
  *
  * @author Eric Jessé
  */
-data class HeadScenario(
+data class ScenarioSummary(
     override var id: ScenarioId,
     val minionsCount: Int,
-    val directedAcyclicGraphs: List<HeadDirectedAcyclicGraph>
+    val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>
 ) : Entity<ScenarioId>
 
 /**
  * Entity to provide metadata of a directed acyclic graph for the head.
  */
-data class HeadDirectedAcyclicGraph(
-        val id: DirectedAcyclicGraphId,
-        val isSingleton: Boolean = false,
-        val isRoot: Boolean = false,
-        val isUnderLoad: Boolean = false,
-        val numberOfSteps: Int = 0
+data class DirectedAcyclicGraphSummary(
+    val id: DirectedAcyclicGraphId,
+    val isSingleton: Boolean = false,
+    val isRoot: Boolean = false,
+    val isUnderLoad: Boolean = false,
+    val numberOfSteps: Int = 0
 )

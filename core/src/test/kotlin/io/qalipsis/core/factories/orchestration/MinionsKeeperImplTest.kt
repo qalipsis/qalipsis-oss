@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -73,25 +72,25 @@ internal class MinionsKeeperImplTest {
 
     @Test
     @Timeout(10)
-    internal fun shouldCreatePausedMinion() {
+    internal fun shouldCreatePausedMinion() = runBlockingTest {
         // given
         val dag = testDag(isUnderLoad = true)
         every {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
         } returns dag
         val minionSlot = slot<MinionImpl>()
-        val runnerCountDown = CountDownLatch(1)
-        coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
+        val runnerCountDown = SuspendedCountLatch(1)
+        coEvery { runner.run(capture(minionSlot), refEq(dag)) } coAnswers { runnerCountDown.decrement() }
 
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -120,25 +119,25 @@ internal class MinionsKeeperImplTest {
 
     @Test
     @Timeout(10)
-    internal fun shouldCreateSingletonPausedMinion() {
+    internal fun shouldCreateSingletonPausedMinion() = runBlockingTest {
         // given
         val dag = testDag(isSingleton = true, isUnderLoad = true)
         every {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
         } returns dag
         val minionSlot = slot<MinionImpl>()
-        val runnerCountDown = CountDownLatch(1)
-        coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
+        val runnerCountDown = SuspendedCountLatch(1)
+        coEvery { runner.run(capture(minionSlot), refEq(dag)) } coAnswers { runnerCountDown.decrement() }
 
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -171,25 +170,25 @@ internal class MinionsKeeperImplTest {
 
     @Test
     @Timeout(10)
-    internal fun shouldCreateNonSingletonNotUnderLoadPausedMinion() {
+    internal fun shouldCreateNonSingletonNotUnderLoadPausedMinion() = runBlockingTest {
         // given
         val dag = testDag(isUnderLoad = false, root = true)
         every {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
         } returns dag
         val minionSlot = slot<MinionImpl>()
-        val runnerCountDown = CountDownLatch(1)
-        coEvery { runner.run(capture(minionSlot), refEq(dag)) } answers { runnerCountDown.countDown() }
+        val runnerCountDown = SuspendedCountLatch(1)
+        coEvery { runner.run(capture(minionSlot), refEq(dag)) } coAnswers { runnerCountDown.decrement() }
 
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -221,21 +220,21 @@ internal class MinionsKeeperImplTest {
 
     @Test
     @Timeout(10)
-    internal fun shouldNotCreateSingletonWhenDagDoesNotExist() {
+    internal fun shouldNotCreateSingletonWhenDagDoesNotExist() = runBlockingTest {
         // given
         every {
             scenariosRegistry.get("my-scenario")?.get("my-dag")
         } returns null
 
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
 
         // when
         minionsKeeper.create("my-campaign", "my-scenario", "my-dag", "my-minion")
@@ -256,15 +255,15 @@ internal class MinionsKeeperImplTest {
     @Timeout(10)
     internal fun shouldStartScenarioAndSingletonsImmediately() = runBlockingTest {
         // given
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
         val minion1: MinionImpl = relaxedMockk {
             every { campaignId } returns "my-campaign"
         }
@@ -298,15 +297,15 @@ internal class MinionsKeeperImplTest {
     @Timeout(10)
     internal fun shouldIgnoreStartScenarioSingletonsStartWhenScenarioNotExist() = runBlockingTest {
         // given
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
         val minion1: MinionImpl = mockk(relaxed = true)
         val minion2: MinionImpl = mockk(relaxed = true)
         minionsKeeper.getProperty<MutableMap<ScenarioId, List<MinionImpl>>>("readySingletonsMinions")["my-scenario"] =
@@ -326,15 +325,15 @@ internal class MinionsKeeperImplTest {
     @Timeout(10)
     internal fun shouldStartMinionImmediately() {
         // given
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            relaxedMockk()
+        )
         val startTime = AtomicLong()
         val latch = SuspendedCountLatch(1)
         val minion1: MinionImpl = mockk(relaxed = true) {
@@ -379,15 +378,15 @@ internal class MinionsKeeperImplTest {
     @Timeout(10)
     internal fun shouldIgnoreScenarioStartWhenNotExist() = runBlockingTest {
         // given
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            this
+        )
         val minion: MinionImpl = mockk(relaxed = true)
         minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")["my-minion"] = minion
 
@@ -407,15 +406,15 @@ internal class MinionsKeeperImplTest {
     @Timeout(10)
     internal fun shouldStartMinionLater() {
         // given
-        val minionsKeeper =
-            MinionsKeeperImpl(
-                scenariosRegistry,
-                runner,
-                eventsLogger,
-                meterRegistry,
-                campaignStateKeeper,
-                feedbackProducer
-            )
+        val minionsKeeper = MinionsKeeperImpl(
+            scenariosRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            campaignStateKeeper,
+            feedbackProducer,
+            relaxedMockk()
+        )
         val latch = SuspendedCountLatch(2)
         val minion1: MinionImpl = mockk(relaxed = true) {
             coEvery { start() } coAnswers {

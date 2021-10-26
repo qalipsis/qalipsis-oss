@@ -4,7 +4,12 @@ import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.orchestration.directives.*
+import io.qalipsis.api.orchestration.directives.DescriptiveDirective
+import io.qalipsis.api.orchestration.directives.DirectiveKey
+import io.qalipsis.api.orchestration.directives.ListDirective
+import io.qalipsis.api.orchestration.directives.ListDirectiveReference
+import io.qalipsis.api.orchestration.directives.QueueDirective
+import io.qalipsis.api.orchestration.directives.QueueDirectiveReference
 
 
 /**

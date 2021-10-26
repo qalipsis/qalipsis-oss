@@ -4,10 +4,10 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.events.Event
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventsPublisher
+import jakarta.inject.Singleton
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Singleton
 
 /**
  * Event publisher using Slf4j.

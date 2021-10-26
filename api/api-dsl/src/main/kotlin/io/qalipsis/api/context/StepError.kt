@@ -6,11 +6,11 @@ package io.qalipsis.api.context
  * @author Eric Jessé
  */
 data class StepError(val message: String, var stepId: String = "") {
-    constructor(cause: Throwable, stepId: String = "") : this(cause.message?.apply {
-        if (length > 1000) {
-            take(1000) + "... (too long messages are truncated)"
+    constructor(cause: Throwable, stepId: String = "") : this(cause.message?.let {
+        if (it.length > 1000) {
+            it.take(1000) + "... (too long messages are truncated)"
         } else {
-            this
+            it
         }
     } ?: "<No message>", stepId)
 }

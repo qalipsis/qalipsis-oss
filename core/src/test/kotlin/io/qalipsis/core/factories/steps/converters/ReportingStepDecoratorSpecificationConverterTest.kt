@@ -20,7 +20,6 @@ import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /**
  * @author Eric Jessé

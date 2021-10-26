@@ -16,9 +16,9 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.directives.MinionsCreationDirective
 import io.qalipsis.core.cross.directives.MinionsCreationPreparationDirectiveReference
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
+import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Singleton
 
 /**
  *

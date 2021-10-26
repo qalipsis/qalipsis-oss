@@ -1,6 +1,6 @@
 package io.qalipsis.api.processors
 
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 interface InterfaceToInject
 
