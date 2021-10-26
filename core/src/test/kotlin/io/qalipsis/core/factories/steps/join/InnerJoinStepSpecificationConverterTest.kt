@@ -11,6 +11,7 @@ import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.messaging.Topic
@@ -23,14 +24,13 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.singleton.NoMoreNextStepDecorator
 import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
-import io.qalipsis.core.factories.testScenario
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -44,6 +44,9 @@ import java.time.Duration
 @Suppress("UNCHECKED_CAST")
 internal class InnerJoinStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<InnerJoinStepSpecificationConverter>() {
+
+    @RelaxedMockK
+    private lateinit var coroutineScope: CoroutineScope
 
     @Test
     override fun `should support expected spec`() {
@@ -97,6 +100,7 @@ internal class InnerJoinStepSpecificationConverterTest :
         creationContext.createdStep!!.let {
             assertEquals("my-step", it.id)
             assertThat(it).isInstanceOf(InnerJoinStep::class).all {
+                prop("coroutineScope").isSameAs(coroutineScope)
                 prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)

@@ -12,6 +12,6 @@ interface ReportPublisher {
     /**
      * Publish the report for the campaign with [campaignId] as ID.
      */
-    fun publish(campaignId: CampaignId)
+    suspend fun publish(campaignId: CampaignId)
 
 }

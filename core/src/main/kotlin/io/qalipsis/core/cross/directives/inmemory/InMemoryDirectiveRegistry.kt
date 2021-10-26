@@ -20,10 +20,10 @@ import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
+import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
 
 /**
  * Implementation of [DirectiveRegistry] hosting the [Directive]s into memory, used for deployments

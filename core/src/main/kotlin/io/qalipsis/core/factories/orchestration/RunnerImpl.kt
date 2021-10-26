@@ -1,6 +1,7 @@
 package io.qalipsis.core.factories.orchestration
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.qalipsis.api.Executors
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.events.EventsLogger
@@ -18,15 +19,15 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factories.context.StepContextBuilder
 import io.qalipsis.core.factories.context.StepContextImpl
+import jakarta.inject.Named
+import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.MDC
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import javax.inject.Singleton
 
 /**
  * The Runner is the masterpiece of the factory and drives the minions to execute directed acyclic graphs (aka DAGs)
@@ -43,13 +44,9 @@ import javax.inject.Singleton
 internal class RunnerImpl(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
-    private val campaignStateKeeper: CampaignStateKeeper
+    private val campaignStateKeeper: CampaignStateKeeper,
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepExecutor, Runner {
-
-    /**
-     * Scope to launch the coroutines for the steps.
-     */
-    private val executionScope: CoroutineScope = GlobalScope
 
     /**
      * Map keeping the type of the steps.
@@ -101,7 +98,7 @@ internal class RunnerImpl(
         log.trace { "Running minion" }
 
         MDC.put("step", step.id)
-        minion.launch(executionScope, countLatch = jobsCounter) {
+        minion.launch(coroutineScope, countLatch = jobsCounter) {
             log.trace { "Starting the execution of a subtree of tasks for the minion" }
             doExecute(this, minion, step, ctx, jobsCounter, consumer)
             log.trace { "Execution of the subtree of tasks is completed for the minion (1/2)" }
@@ -117,7 +114,7 @@ internal class RunnerImpl(
 
         MDC.put("step", step.id)
         return try {
-            minion.launch(executionScope) {
+            minion.launch(coroutineScope) {
                 doExecute(this, minion, step, ctx, null, consumer)
             }
         } finally {

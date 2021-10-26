@@ -7,6 +7,9 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportPublisher
+import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
+import io.qalipsis.core.cross.configuration.ENV_STANDALONE
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import javax.annotation.PreDestroy
 
@@ -19,7 +22,7 @@ import javax.annotation.PreDestroy
 @Context
 @Requirements(
     value = [
-        Requires(env = ["standalone", "autostart"]),
+        Requires(env = [ENV_STANDALONE, ENV_AUTOSTART]),
         Requires(property = "report.export.console.enabled", notEquals = "false")
     ]
 )
@@ -28,7 +31,7 @@ internal class StandaloneConsoleReportPublisher(
     private val campaignStateKeeper: CampaignStateKeeper
 ) : ReportPublisher {
 
-    override fun publish(campaignId: CampaignId) {
+    override suspend fun publish(campaignId: CampaignId) {
         val report = campaignStateKeeper.report(campaignId)
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }
 
@@ -81,7 +84,9 @@ ${
 
     @PreDestroy
     fun publishOnLeave() {
-        publish(campaignName)
+        runBlocking {
+            publish(campaignName)
+        }
     }
 
     companion object {

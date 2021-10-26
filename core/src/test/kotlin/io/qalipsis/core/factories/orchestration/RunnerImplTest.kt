@@ -1,6 +1,5 @@
 package io.qalipsis.core.factories.orchestration
 
-import io.aerisconsulting.catadioptre.setProperty
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
@@ -18,6 +17,7 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factories.steps
 import io.qalipsis.core.factories.testDag
 import io.qalipsis.core.factories.testStep
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -25,13 +25,13 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.measureTime
-import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -51,6 +51,10 @@ internal class RunnerImplTest {
     @RelaxedMockK
     private lateinit var meterRegistry: MeterRegistry
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @BeforeEach
     internal fun setUp() {
         val defaultGauge: AtomicInteger = relaxedMockk()
@@ -65,7 +69,7 @@ internal class RunnerImplTest {
 
     @Test
     @Timeout(10)
-    internal fun `should execute the full dag asynchronously and update meters`() = runBlockingTest {
+    internal fun `should execute the full dag asynchronously and update meters`() = testCoroutineDispatcher.runTest {
         // given
         val runningStepsGauge: AtomicInteger = relaxedMockk()
         val idleMinionsGauge: AtomicInteger = relaxedMockk()
@@ -92,8 +96,7 @@ internal class RunnerImplTest {
                 }
             }
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper)
-        runner.setProperty("executionScope", this)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -166,13 +169,13 @@ internal class RunnerImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `should execute the error processing only`() = runBlockingTest {
+    internal fun `should execute the error processing only`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
-            this.testStep<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4").decoratedProcessError("step-5")
+            this.testStep<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
+                .decoratedProcessError("step-5")
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper)
-        runner.setProperty("executionScope", this)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -198,14 +201,13 @@ internal class RunnerImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `should execute the normal steps after recovery`() = runBlockingTest {
+    internal fun `should execute the normal steps after recovery`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
             this.testStep<Int>("step-1", generateException = true)
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper)
-        runner.setProperty("executionScope", this)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -233,7 +235,7 @@ internal class RunnerImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `should suspend next steps when there is no output`() = runBlockingTest {
+    internal fun `should suspend next steps when there is no output`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
             this.testStep<Int>("step-1").all {
@@ -241,8 +243,7 @@ internal class RunnerImplTest {
                 this.step("step-4")
             }
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper)
-        runner.setProperty("executionScope", this)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
 
         // when
@@ -267,7 +268,7 @@ internal class RunnerImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `should use retry policy instead of executing the step directly`() = runBlockingTest {
+    internal fun `should use retry policy instead of executing the step directly`() = testCoroutineDispatcher.runTest {
         // given
         val contextSlot = slot<StepContext<Unit, Int>>()
         val retryableFunctionSlot = slot<suspend (StepContext<Unit, Int>) -> Unit>()
@@ -285,8 +286,7 @@ internal class RunnerImplTest {
             this.testStep("step-1", output = 12, retryPolicy = retryPolicy)
                 .step("step-2")
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper)
-        runner.setProperty("executionScope", this)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
 
         // when

@@ -2,7 +2,12 @@ package io.qalipsis.core.factories.events
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.any
+import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.key
 import io.micronaut.context.ApplicationContext
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.events.EventLevel
@@ -10,10 +15,10 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.events.EventsPublisher
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
+import jakarta.inject.Inject
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import javax.inject.Inject
 
 
 internal class EventsAndPublisherIntegrationTest {

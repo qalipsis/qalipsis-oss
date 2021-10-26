@@ -17,6 +17,10 @@ object QalipsisTestRunner : ConfigurableQalipsisTestRunner {
         return ConfigurableQalipsisTestRunnerImpl().withEnvironments(*environments)
     }
 
+    override fun withConfiguration(vararg configuration: String): ConfigurableQalipsisTestRunner {
+        return ConfigurableQalipsisTestRunnerImpl().withConfiguration(*configuration)
+    }
+
     override fun execute(vararg args: String) = ConfigurableQalipsisTestRunnerImpl().execute(*args)
 
 }
@@ -38,6 +42,11 @@ interface ConfigurableQalipsisTestRunner {
     fun withEnvironments(vararg environments: String): ConfigurableQalipsisTestRunner
 
     /**
+     * Command-line configuration to apply.
+     */
+    fun withConfiguration(vararg configuration: String): ConfigurableQalipsisTestRunner
+
+    /**
      * Starts a local standalone qalipsis process with the test profile enabled and the passed arguments.
      */
     fun execute(vararg args: String): Int
@@ -50,6 +59,8 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
 
     val environments = mutableListOf("config")
 
+    val configuration = mutableListOf<String>()
+
     override fun withScenarios(vararg scenarios: String): ConfigurableQalipsisTestRunner {
         this.scenarios.addAll(scenarios.toList())
         return this
@@ -57,6 +68,11 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
 
     override fun withEnvironments(vararg environments: String): ConfigurableQalipsisTestRunner {
         this.environments.addAll(environments.toList())
+        return this
+    }
+
+    override fun withConfiguration(vararg configuration: String): ConfigurableQalipsisTestRunner {
+        this.configuration.addAll(configuration)
         return this
     }
 
@@ -76,9 +92,13 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
             allArgs.add("-e")
             allArgs.add("${it.trim()}-test")
         }
-        allArgs.addAll(args.toList())
 
+        configuration.forEach {
+            allArgs.add("-c")
+            allArgs.add(it.trim())
+        }
+
+        allArgs.addAll(args.toList())
         return Qalipsis.start(allArgs.toTypedArray())
     }
-
 }

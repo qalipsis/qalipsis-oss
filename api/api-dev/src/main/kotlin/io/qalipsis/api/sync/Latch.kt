@@ -1,10 +1,9 @@
 package io.qalipsis.api.sync
 
-import io.qalipsis.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 
 /**
  * A synchronization aid that allows one or more coroutines to wait until
@@ -45,8 +44,8 @@ class Latch(var isLocked: Boolean = false, val name: String = "") {
             log.trace { "The latch $this is locked, suspending the coroutine." }
             // If a coroutine makes this call while the previously suspended calls are released,
             // it should not be immediately released.
-            releaseAwaitingFlag?.receiveOrNull()
-            syncFlag?.receiveOrNull()
+            releaseAwaitingFlag?.receiveCatching()?.getOrNull()
+            syncFlag?.receiveCatching()?.getOrNull()
             log.trace { "The latch $this is no longer locked, resuming the coroutine." }
         }
     }
@@ -107,13 +106,13 @@ class Latch(var isLocked: Boolean = false, val name: String = "") {
     }
 
     override fun toString(): String {
-        return "Latch(name='$name', isLocked=$isLocked)"
+        return "Latch(name='${name.takeIf { it.isNotEmpty() } ?: "<No name>"}', isLocked=$isLocked)"
     }
 
     companion object {
 
         @JvmStatic
-        private val log = logger()
+        private val log = KotlinLogging.logger { }
 
     }
 }

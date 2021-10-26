@@ -2,6 +2,7 @@ package io.qalipsis.api.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.util.StringEscapeUtils
+import jakarta.inject.Singleton
 import java.io.IOException
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -13,7 +14,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAccessor
-import javax.inject.Singleton
 import kotlin.reflect.KClass
 
 /**
@@ -37,7 +37,7 @@ class EventJsonConverter : EventConverter<String> {
     override fun convert(event: Event): String {
         val timestamp = event.timestamp.truncatedTo(ChronoUnit.MILLIS).toEpochMilli()
         val name = StringEscapeUtils.escapeJson(event.name)
-        val level = event.level.toString().toLowerCase()
+        val level = event.level.toString().lowercase()
         val sb = StringBuilder("""{"@timestamp":$timestamp,"name":"$name","level":"$level"""")
         if (event.tags.isNotEmpty()) {
             event.tags.joinToString(",") { tag ->
@@ -53,6 +53,7 @@ class EventJsonConverter : EventConverter<String> {
         return sb.toString()
     }
 
+    @Suppress("kotlin:S3776")
     private fun addValue(value: Any, sb: StringBuilder) {
         when {
             value is String -> {

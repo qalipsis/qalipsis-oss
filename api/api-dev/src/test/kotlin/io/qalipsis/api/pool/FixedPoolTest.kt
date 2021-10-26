@@ -18,24 +18,29 @@ import io.qalipsis.api.io.Closeable
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.assertk.typedProp
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class FixedPoolTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
     @Timeout(1)
-    internal fun `should create a pool with 10 items`() = runBlocking {
+    internal fun `should create a pool with 10 items`() = testCoroutineDispatcher.run {
         // when
-        val pool = FixedPool(10) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+        val pool = FixedPool(10, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
 
         // then
         assertThat(pool).all {
@@ -57,9 +62,9 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(5)
-    internal fun `should only acquire items from the pool`() = runBlocking {
+    internal fun `should only acquire items from the pool`() = testCoroutineDispatcher.run {
         // given
-        val pool = FixedPool(5) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+        val pool = FixedPool(5, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
         val uniqueItems = concurrentSet<MyTestObject>()
         val latch = SuspendedCountLatch(100)
 
@@ -83,9 +88,9 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(5)
-    internal fun `should execute only with items from the pool`() = runBlocking {
+    internal fun `should execute only with items from the pool`() = testCoroutineDispatcher.run {
         // given
-        val pool = FixedPool(5) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+        val pool = FixedPool(5, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
         val uniqueItems = concurrentSet<MyTestObject>()
         val latch = SuspendedCountLatch(100)
 
@@ -111,9 +116,9 @@ internal class FixedPoolTest {
     @Test
     @Timeout(1)
     internal fun `should execute, return the value and return the pooled item even in case of exception`() =
-        runBlocking {
+        testCoroutineDispatcher.run {
             // given
-            val pool = FixedPool(1) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+            val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
 
             // when
             val result = pool.withPoolItem { 123.456 }
@@ -130,9 +135,9 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(1)
-    internal fun `should execute and return even in case of exception`() = runBlocking {
+    internal fun `should execute and return even in case of exception`() = testCoroutineDispatcher.run {
         // given
-        val pool = FixedPool(1) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+        val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
 
         // when
         assertThrows<RuntimeException> {
@@ -152,13 +157,13 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(1)
-    internal fun `should acquire and release without health checks`() = runBlocking {
+    internal fun `should acquire and release without health checks`() = testCoroutineDispatcher.run {
         // given
         val cleanerCalls = AtomicInteger(0)
         val healthChecks = AtomicInteger(0)
         val additionToInternalPool = SuspendedCountLatch(1)
         val pool = FixedPool(
-            1,
+            1, this.coroutineContext,
             cleaner = { cleanerCalls.incrementAndGet() },
             healthCheck = { healthChecks.incrementAndGet(); false }) { relaxedMockk<MyTestObject>() }.awaitReadiness()
         val spiedInternalPool = spyk(pool.getProperty<Channel<MyTestObject>>("itemPool")) {
@@ -181,205 +186,209 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(1)
-    internal fun `should check the health on acquire and returns the item when healthy`() = runBlocking {
-        // given
-        val healthChecks = AtomicInteger(0)
-        val pooledItem = relaxedMockk<MyTestObject>()
-        val pool = FixedPool(
-            1,
-            checkOnAcquire = true,
-            healthCheck = { healthChecks.incrementAndGet(); true }) { pooledItem }.awaitReadiness()
+    internal fun `should check the health on acquire and returns the item when healthy`() =
+        testCoroutineDispatcher.run {
+            // given
+            val healthChecks = AtomicInteger(0)
+            val pooledItem = relaxedMockk<MyTestObject>()
+            val pool = FixedPool(
+                1, this.coroutineContext,
+                checkOnAcquire = true,
+                healthCheck = { healthChecks.incrementAndGet(); true }) { pooledItem }.awaitReadiness()
 
-        // when
-        val result = pool.acquire()
+            // when
+            val result = pool.acquire()
 
-        // then
-        assertThat(healthChecks.get()).isEqualTo(1)
-        assertThat(result).isSameAs(pooledItem)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(result)
+            // then
+            assertThat(healthChecks.get()).isEqualTo(1)
+            assertThat(result).isSameAs(pooledItem)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(result)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
-        }
 
-        // when
-        pool.release(result)
+            // when
+            pool.release(result)
 
-        // then
-        assertThat(healthChecks.get()).isEqualTo(1)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(pooledItem)
+            // then
+            assertThat(healthChecks.get()).isEqualTo(1)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(pooledItem)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
+
+            confirmVerified(pooledItem)
+
+            pool.close()
         }
-
-        confirmVerified(pooledItem)
-
-        pool.close()
-    }
 
     @Test
     @Timeout(1)
-    internal fun `should check the health on acquire and returns a new item when unhealthy`() = runBlocking {
-        // given
-        val healthChecks = AtomicInteger(0)
+    internal fun `should check the health on acquire and returns a new item when unhealthy`() =
+        testCoroutineDispatcher.run {
+            // given
+            val healthChecks = AtomicInteger(0)
 
-        val pooledItems = mutableListOf(relaxedMockk<MyTestObject>(), relaxedMockk())
-        val originalPooledItem = pooledItems[0]
-        val substitutePooledItem = pooledItems[1]
-        val pool = FixedPool(
-            1,
-            checkOnAcquire = true,
-            healthCheck = { healthChecks.incrementAndGet(); false }) { pooledItems.removeAt(0) }.awaitReadiness()
+            val pooledItems = mutableListOf(relaxedMockk<MyTestObject>(), relaxedMockk())
+            val originalPooledItem = pooledItems[0]
+            val substitutePooledItem = pooledItems[1]
+            val pool = FixedPool(
+                1, this.coroutineContext,
+                checkOnAcquire = true,
+                healthCheck = { healthChecks.incrementAndGet(); false }) { pooledItems.removeAt(0) }.awaitReadiness()
 
-        // when
-        val result = pool.acquire()
+            // when
+            val result = pool.acquire()
 
-        // then
-        assertThat(healthChecks.get()).isEqualTo(1)
-        assertThat(result).isSameAs(substitutePooledItem)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(result)
+            // then
+            assertThat(healthChecks.get()).isEqualTo(1)
+            assertThat(result).isSameAs(substitutePooledItem)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(result)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
-        }
 
-        // when
-        pool.release(result)
+            // when
+            pool.release(result)
 
-        // then
-        assertThat(healthChecks.get()).isEqualTo(1)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(substitutePooledItem)
+            // then
+            assertThat(healthChecks.get()).isEqualTo(1)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(substitutePooledItem)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
+
+            coVerifyOnce { originalPooledItem.close() }
+            coVerifyNever { substitutePooledItem.close() }
+
+            pool.close()
         }
-
-        coVerifyOnce { originalPooledItem.close() }
-        coVerifyNever { substitutePooledItem.close() }
-
-        pool.close()
-    }
 
     @Test
     @Timeout(10)
-    internal fun `should check the health on release and add the item to the pool when healthy`() = runBlocking {
-        // given
-        val healthChecks = AtomicInteger(0)
-        val additionToInternalPool = SuspendedCountLatch(1)
-        val pooledItem = relaxedMockk<MyTestObject>()
-        val pool = FixedPool(
-            1,
-            checkOnRelease = true,
-            healthCheck = { healthChecks.incrementAndGet(); true }) { pooledItem }.awaitReadiness()
-        val spiedInternalPool = spyk(pool.getProperty<Channel<MyTestObject>>("itemPool")) {
-            coEvery { send(any()) } coAnswers {
-                additionToInternalPool.decrement()
-                this.invocation.originalCall.invoke()
+    internal fun `should check the health on release and add the item to the pool when healthy`() =
+        testCoroutineDispatcher.run {
+            // given
+            val healthChecks = AtomicInteger(0)
+            val additionToInternalPool = SuspendedCountLatch(1)
+            val pooledItem = relaxedMockk<MyTestObject>()
+            val pool = FixedPool(
+                1, this.coroutineContext,
+                checkOnRelease = true,
+                healthCheck = { healthChecks.incrementAndGet(); true }) { pooledItem }.awaitReadiness()
+            val spiedInternalPool = spyk(pool.getProperty<Channel<MyTestObject>>("itemPool")) {
+                coEvery { send(any()) } coAnswers {
+                    additionToInternalPool.decrement()
+                    this.invocation.originalCall.invoke()
+                }
             }
-        }
-        pool.setProperty("itemPool", spiedInternalPool)
+            pool.setProperty("itemPool", spiedInternalPool)
 
-        // when
-        val result = pool.acquire()
+            // when
+            val result = pool.acquire()
 
-        // then
-        assertThat(healthChecks.get()).isEqualTo(0)
-        assertThat(result).isSameAs(pooledItem)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(result)
+            // then
+            assertThat(healthChecks.get()).isEqualTo(0)
+            assertThat(result).isSameAs(pooledItem)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(result)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
-        }
 
-        // when
-        pool.release(result)
+            // when
+            pool.release(result)
 
-        // then
-        additionToInternalPool.await()
-        assertThat(healthChecks.get()).isEqualTo(1)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(pooledItem)
+            // then
+            additionToInternalPool.await()
+            assertThat(healthChecks.get()).isEqualTo(1)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(pooledItem)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
+
+            confirmVerified(pooledItem)
+
+            pool.close()
         }
-
-        confirmVerified(pooledItem)
-
-        pool.close()
-    }
 
     @Test
     @Timeout(3)
-    internal fun `should check the health on release and add a new item to the pool when unhealthy`() = runBlocking {
-        // given
-        val healthChecks = AtomicInteger(0)
-        val additionToInternalPool = SuspendedCountLatch(1)
-        val pooledItems = mutableListOf(relaxedMockk<MyTestObject>(), relaxedMockk())
-        val originalPooledItem = pooledItems[0]
-        val substitutePooledItem = pooledItems[1]
-        val pool = FixedPool(
-            1,
-            checkOnRelease = true,
-            healthCheck = { healthChecks.incrementAndGet(); false }) { pooledItems.removeAt(0) }.awaitReadiness()
-        val spiedInternalPool = spyk(pool.getProperty<Channel<MyTestObject>>("itemPool")) {
-            coEvery { send(any()) } coAnswers {
-                additionToInternalPool.decrement()
-                this.invocation.originalCall.invoke()
+    internal fun `should check the health on release and add a new item to the pool when unhealthy`() =
+        testCoroutineDispatcher.run {
+            // given
+            val healthChecks = AtomicInteger(0)
+            val additionToInternalPool = SuspendedCountLatch(1)
+            val pooledItems = mutableListOf(relaxedMockk<MyTestObject>(), relaxedMockk())
+            val originalPooledItem = pooledItems[0]
+            val substitutePooledItem = pooledItems[1]
+            val pool = FixedPool(
+                1, this.coroutineContext,
+                checkOnRelease = true,
+                healthCheck = { healthChecks.incrementAndGet(); false }) { pooledItems.removeAt(0) }.awaitReadiness()
+            val spiedInternalPool = spyk(pool.getProperty<Channel<MyTestObject>>("itemPool")) {
+                coEvery { send(any()) } coAnswers {
+                    additionToInternalPool.decrement()
+                    this.invocation.originalCall.invoke()
+                }
             }
-        }
-        pool.setProperty("itemPool", spiedInternalPool)
+            pool.setProperty("itemPool", spiedInternalPool)
 
-        // when
-        val result = pool.acquire()
+            // when
+            val result = pool.acquire()
 
-        // then
-        assertThat(healthChecks.get()).isEqualTo(0)
-        assertThat(result).isSameAs(originalPooledItem)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(result)
+            // then
+            assertThat(healthChecks.get()).isEqualTo(0)
+            assertThat(result).isSameAs(originalPooledItem)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(result)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isTrue()
-        }
 
-        // when
-        pool.release(result)
+            // when
+            pool.release(result)
 
-        // then
-        additionToInternalPool.await()
-        assertThat(healthChecks.get()).isEqualTo(1)
-        assertThat(pool).all {
-            typedProp<List<MyTestObject>>("items").all {
-                hasSize(1)
-                index(0).isSameAs(substitutePooledItem)
+            // then
+            additionToInternalPool.await()
+            assertThat(healthChecks.get()).isEqualTo(1)
+            assertThat(pool).all {
+                typedProp<List<MyTestObject>>("items").all {
+                    hasSize(1)
+                    index(0).isSameAs(substitutePooledItem)
+                }
+                typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
             }
-            typedProp<Channel<MyTestObject>>("itemPool").transform("itemPool is empty") { it.isEmpty }.isFalse()
-        }
-        coVerifyOnce { originalPooledItem.close() }
-        coVerifyNever { substitutePooledItem.close() }
+            coVerifyOnce { originalPooledItem.close() }
+            coVerifyNever { substitutePooledItem.close() }
 
-        pool.close()
-    }
+            pool.close()
+        }
 
     @Test
     @Timeout(1)
-    internal fun `should not serve items after closing`(): Unit = runBlocking {
+    internal fun `should not serve items after closing`(): Unit = testCoroutineDispatcher.run {
         // given
-        val pool = FixedPool(1) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+        val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
 
         // when
         pool.close()
@@ -396,10 +405,11 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(1)
-    internal fun `should close all the items when closing the pool`(): Unit = runBlocking {
+    internal fun `should close all the items when closing the pool`(): Unit = testCoroutineDispatcher.run {
         // given
         val mocks = mutableListOf<MyTestObject>()
-        val pool = FixedPool(5) { relaxedMockk<MyTestObject>().also { mocks.add(it) } }.awaitReadiness()
+        val pool =
+            FixedPool(5, this.coroutineContext) { relaxedMockk<MyTestObject>().also { mocks.add(it) } }.awaitReadiness()
 
         // when
         pool.acquire()
@@ -417,9 +427,9 @@ internal class FixedPoolTest {
 
     @Test
     @Timeout(3)
-    internal fun `should ignore release after closing`(): Unit = runBlocking {
+    internal fun `should ignore release after closing`(): Unit = testCoroutineDispatcher.run {
         // given
-        val pool = FixedPool(1) { relaxedMockk<MyTestObject>() }.awaitReadiness()
+        val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
 
         // when
         val item = pool.acquire()

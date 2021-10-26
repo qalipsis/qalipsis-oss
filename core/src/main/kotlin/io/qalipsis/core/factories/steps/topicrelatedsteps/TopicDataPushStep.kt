@@ -12,8 +12,8 @@ import io.qalipsis.core.factories.context.StepContextImpl
 import io.qalipsis.core.factories.orchestration.Runner
 import io.qalipsis.core.factories.steps.MinionsKeeperAware
 import io.qalipsis.core.factories.steps.RunnerAware
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -35,7 +35,7 @@ internal class TopicDataPushStep<I>(
     private val parentStepId: StepId,
     private val topic: Topic<I>,
     private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true },
-    private val coroutineScope: CoroutineScope = GlobalScope
+    private val coroutineScope: CoroutineScope
 ) : AbstractStep<I, I>(id, null), RunnerAware, MinionsKeeperAware {
 
     override lateinit var minionsKeeper: MinionsKeeper
@@ -73,10 +73,12 @@ internal class TopicDataPushStep<I>(
                             minionId = minion.id,
                             isTail = false // We actually never know when the tail will come.
                         )
-                        input.offer(valueFromTopic)
+                        input.send(valueFromTopic)
                         runner.launch(minion, nextStep, ctx)
                     }
                 }
+            } catch (e: CancellationException) {
+                // Ignore.
             } catch (e: Exception) {
                 log.warn(e) { e.message }
             } finally {
@@ -88,8 +90,10 @@ internal class TopicDataPushStep<I>(
 
     override suspend fun stop(context: StepStartStopContext) {
         running = false
+        kotlin.runCatching {
+            consumingJob.cancelAndJoin()
+        }
         topicSubscription.cancel()
-        consumingJob.cancelAndJoin()
         super.stop(context)
     }
 

@@ -102,7 +102,7 @@ internal class StepContextImpl<IN, OUT>(
      * Locks the internal latch of the context.
      */
     override suspend fun lock() {
-        latch = latch ?: Latch()
+        latch = latch ?: Latch(name = "step-context-${this}")
         latch!!.lock()
     }
 
@@ -122,7 +122,7 @@ internal class StepContextImpl<IN, OUT>(
 
     override fun <T : Any?> next(input: OUT, stepId: StepId): StepContext<OUT, T> {
         return (this.next<T>(stepId) as StepContextImpl<OUT, T>).also {
-            (it.input as Channel<OUT>).offer(input)
+            (it.input as Channel<OUT>).trySend(input)
         }
     }
 
@@ -147,9 +147,9 @@ internal class StepContextImpl<IN, OUT>(
             it.internalErrors.addAll(this.internalErrors)
             if (!input.isEmpty) {
                 // The input value should be in both input channels.
-                val inputValue = input.poll()!!
-                (newInput as Channel<IN>).offer(inputValue)
-                (input as Channel<IN>).offer(inputValue)
+                val inputValue = input.tryReceive().getOrThrow()
+                (newInput as Channel<IN>).trySend(inputValue)
+                (input as Channel<IN>).trySend(inputValue)
             }
         }
     }

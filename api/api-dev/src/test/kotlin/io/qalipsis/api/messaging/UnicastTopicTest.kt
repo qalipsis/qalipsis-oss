@@ -1,12 +1,18 @@
 package io.qalipsis.api.messaging
 
+import assertk.assertThat
+import assertk.assertions.hasSize
 import io.aerisconsulting.catadioptre.getProperty
+import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 
 /**
@@ -14,8 +20,13 @@ import java.time.Duration
  */
 internal class UnicastTopicTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
-    internal fun `should prevent from using closed topic`() = runBlocking {
+    @Timeout(10)
+    internal fun `should prevent from using closed topic`(): Unit = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
 
@@ -35,8 +46,8 @@ internal class UnicastTopicTest {
     }
 
     @Test
-
-    internal fun `should provide subscription`() = runBlocking {
+    @Timeout(10)
+    internal fun `should provide subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -61,8 +72,31 @@ internal class UnicastTopicTest {
     }
 
     @Test
+    @Timeout(10)
+    fun `should consume subscription`() = testCoroutineDispatcher.run {
+        // given
+        val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
+        for (i in 0 until 10) {
+            topic.produceValue(i)
+        }
+        val counter = SuspendedCountLatch(10)
+        val received = concurrentSet<Int>()
 
-    internal fun `should provide subscription from beginning`() = runBlocking {
+        // when
+        val subscription = topic.subscribe("any-1")
+        subscription.onReceiveValue {
+            received += it
+            counter.decrement()
+        }
+        counter.await()
+
+        // then
+        assertThat(received).hasSize(10)
+    }
+
+    @Test
+    @Timeout(10)
+    internal fun `should provide subscription from beginning`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(10))
         for (i in 0 until 10) {
@@ -93,7 +127,8 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun `should cancel subscription`() = runBlocking {
+    @Timeout(10)
+    internal fun `should cancel subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
 
@@ -106,7 +141,8 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun `should cancel idle subscription`() = runBlocking {
+    @Timeout(10)
+    internal fun `should cancel idle subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofMillis(20))
 
@@ -119,7 +155,8 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun `should provide two different subscriptions from beginning`() = runBlocking {
+    @Timeout(10)
+    internal fun `should provide two different subscriptions from beginning`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
 
@@ -143,7 +180,8 @@ internal class UnicastTopicTest {
     }
 
     @Test
-    internal fun `should provide records to open subscriptions only`() = runBlocking {
+    @Timeout(10)
+    internal fun `should provide records to open subscriptions only`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))
         for (i in 0 until 10) {

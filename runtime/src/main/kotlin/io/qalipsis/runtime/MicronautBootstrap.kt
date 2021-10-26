@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.Context
 import io.qalipsis.api.logging.LoggerHelper.logger
 
 /**
+ * Class to prepare and configure the Micronaut environment.
  *
  * @author Eric Jessé
  */

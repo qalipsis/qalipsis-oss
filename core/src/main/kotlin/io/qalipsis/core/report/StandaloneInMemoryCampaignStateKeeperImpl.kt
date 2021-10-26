@@ -1,5 +1,6 @@
 package io.qalipsis.core.report
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
@@ -11,31 +12,56 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.cross.configuration.ENV_STANDALONE
+import io.qalipsis.core.cross.configuration.ENV_VOLATILE
+import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import javax.inject.Singleton
 
 @Singleton
-@Requires(env = ["standalone", "volatile"])
+@Requires(env = [ENV_STANDALONE, ENV_VOLATILE])
 internal class StandaloneInMemoryCampaignStateKeeperImpl(
     private val idGenerator: IdGenerator
 ) : CampaignStateKeeper {
 
-    private val runningCampaigns = ConcurrentHashMap<CampaignId, ConcurrentHashMap<ScenarioId, RunningCampaign>>()
+    @KTestable
+    private val runningCampaigns = ConcurrentHashMap<CampaignId, MutableMap<ScenarioId, RunningCampaign>>()
+
+    private val campaignStatus = ConcurrentHashMap<CampaignId, CampaignReport>()
+
+    /**
+     * Counter for the running scenarios to block the reporting until the .
+     */
+    private val runningScenarioLatch = SuspendedCountLatch()
 
     @LogInput(Level.DEBUG)
     override fun start(campaignId: CampaignId, scenarioId: ScenarioId) {
         runningCampaigns.computeIfAbsent(campaignId) { ConcurrentHashMap() }[scenarioId] =
             RunningCampaign(campaignId, scenarioId)
+        runningScenarioLatch.blockingIncrement()
     }
 
     @LogInput(Level.DEBUG)
     override fun complete(campaignId: CampaignId, scenarioId: ScenarioId) {
         runningCampaigns[campaignId]!![scenarioId]!!.end = Instant.now()
+        runningScenarioLatch.blockingDecrement()
+    }
+
+    override fun abort(campaignId: CampaignId) {
+        campaignStatus[campaignId] = CampaignReport(
+            campaignId = campaignId,
+            start = Instant.now(),
+            end = Instant.now(),
+            status = ExecutionStatus.ABORTED
+        )
+        // Increments at least one to ensure the awaitActivity is released.
+        runningScenarioLatch.blockingIncrement()
+        runningScenarioLatch.blockingDecrement(1L + (runningCampaigns.get(campaignId)?.values?.size ?: 0))
     }
 
     @LogInputAndOutput
@@ -83,48 +109,57 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
     }
 
     @LogInputAndOutput
-    override fun report(campaignId: CampaignId): CampaignReport {
-        return runningCampaigns[campaignId]?.values?.takeIf { it.isNotEmpty() }?.let { runningCampaigns ->
-            val scenariosReports = runningCampaigns.map { runningCampaign ->
-                runningCampaign.run {
-                    ScenarioReport(
-                        campaignId,
-                        scenarioId,
-                        start,
-                        end,
-                        startedMinions.get(),
-                        completedMinions.get(),
-                        0, // FIXME
-                        successfulStepExecutions.get(),
-                        failedStepExecutions.get(),
-                        when {
-                            messages.values.any { it.severity == ReportMessageSeverity.ABORT } -> ExecutionStatus.ABORTED
-                            messages.values.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
-                            messages.values.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
-                            else -> ExecutionStatus.SUCCESSFUL
-                        },
-                        messages.values.toList()
-                    )
-                }
+    override suspend fun report(campaignId: CampaignId): CampaignReport {
+        // Ensure that the details about the scenarios were received and all complete before the report
+        // is generated.
+        runningScenarioLatch.awaitActivity()
+        runningScenarioLatch.await()
+
+        val runningCampaign = runningCampaigns[campaignId]?.values?.takeIf { it.isNotEmpty() }
+            ?: throw IllegalArgumentException("The campaign with ID $campaignId does not exist")
+
+        val scenariosReports = runningCampaign.map { runningScenarioCampaign ->
+            runningScenarioCampaign.run {
+                ScenarioReport(
+                    campaignId,
+                    scenarioId,
+                    start,
+                    end,
+                    startedMinions.get(),
+                    completedMinions.get(),
+                    0, // FIXME
+                    successfulStepExecutions.get(),
+                    failedStepExecutions.get(),
+                    when {
+                        messages.values.any { it.severity == ReportMessageSeverity.ABORT } -> ExecutionStatus.ABORTED
+                        messages.values.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
+                        messages.values.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
+                        else -> ExecutionStatus.SUCCESSFUL
+                    },
+                    messages.values.toList()
+                )
             }
-            CampaignReport(
-                campaignId,
-                scenariosReports.minOf(ScenarioReport::start),
-                if (scenariosReports.any { it.end == null }) null else scenariosReports.maxOf { it.end!! },
-                scenariosReports.sumOf { it.configuredMinionsCount },
-                scenariosReports.sumOf { it.executedMinionsCount },
-                scenariosReports.sumOf { it.stepsCount },
-                scenariosReports.sumOf { it.successfulExecutions },
-                scenariosReports.sumOf { it.failedExecutions },
-                when {
-                    scenariosReports.any { it.status == ExecutionStatus.ABORTED } -> ExecutionStatus.ABORTED
-                    scenariosReports.any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
-                    scenariosReports.any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
-                    else -> ExecutionStatus.SUCCESSFUL
-                },
-                scenariosReports
-            )
-        } ?: throw IllegalArgumentException("The campaign with ID $campaignId does not exist")
+        }
+
+        val forcedReport = campaignStatus[campaignId]
+        return CampaignReport(
+            campaignId,
+            scenariosReports.minOf(ScenarioReport::start),
+            forcedReport?.end
+                ?: if (scenariosReports.any { it.end == null }) null else scenariosReports.maxOf { it.end!! },
+            scenariosReports.sumOf { it.configuredMinionsCount },
+            scenariosReports.sumOf { it.executedMinionsCount },
+            scenariosReports.sumOf { it.stepsCount },
+            scenariosReports.sumOf { it.successfulExecutions },
+            scenariosReports.sumOf { it.failedExecutions },
+            forcedReport?.status ?: when {
+                scenariosReports.any { it.status == ExecutionStatus.ABORTED } -> ExecutionStatus.ABORTED
+                scenariosReports.any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
+                scenariosReports.any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
+                else -> ExecutionStatus.SUCCESSFUL
+            },
+            scenariosReports
+        )
     }
 
     data class RunningCampaign(val campaignId: CampaignId, val scenarioId: ScenarioId) {

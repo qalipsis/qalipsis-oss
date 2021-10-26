@@ -8,7 +8,11 @@ import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
-import io.qalipsis.api.steps.*
+import io.qalipsis.api.steps.flatten
+import io.qalipsis.api.steps.map
+import io.qalipsis.api.steps.onEach
+import io.qalipsis.api.steps.returns
+import io.qalipsis.api.steps.stage
 import io.qalipsis.runtime.test.QalipsisTestRunner
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -20,6 +24,7 @@ internal class StageStepScenarioIntegrationTest {
     @Test
     @Timeout(20)
     internal fun `should call all the steps of the group several times`() {
+        StageStepScenario.capturedValues.clear()
         val exitCode = QalipsisTestRunner.withScenarios("group-scenario-test").execute()
 
         assertThat(exitCode).isEqualTo(0)

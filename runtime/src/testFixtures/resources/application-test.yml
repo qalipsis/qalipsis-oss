@@ -4,6 +4,13 @@ micronaut:
 
 monitoring.enabled: false
 
+executors:
+  global: 0
+  campaign: 1x
+  io: 1x
+  background: global
+  orchestration: global
+
 report:
   export:
     console:
@@ -11,13 +18,13 @@ report:
 
 logging:
   level:
-    io.qalipsis: DEBUG
+    io.qalipsis: TRACE
     root: INFO
     io:
       qalipsis:
-        core:
-          report:
-            StandaloneInMemoryCampaignStateKeeperImpl: TRACE
+        api: INFO
+        core: INFO
+        runtime: INFO
   file:
     path: qalipsis-test.log
     async: false

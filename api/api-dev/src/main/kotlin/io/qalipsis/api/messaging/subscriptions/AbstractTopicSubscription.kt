@@ -1,24 +1,26 @@
 package io.qalipsis.api.messaging.subscriptions
 
+import io.qalipsis.api.coroutines.newCoroutineScope
 import io.qalipsis.api.messaging.CancelledSubscriptionException
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import mu.KotlinLogging
 import java.time.Duration
+import kotlin.coroutines.coroutineContext
 
 /**
  *
  * @author Eric Jessé
  */
 internal abstract class AbstractTopicSubscription<T>(
-        private val idleTimeout: Duration,
-        private val cancellation: (() -> Unit)
+    private val subscriberId: String,
+    private val idleTimeout: Duration,
+    private val cancellation: (() -> Unit)
 ) : TopicSubscription<T> {
 
     /**
@@ -29,42 +31,48 @@ internal abstract class AbstractTopicSubscription<T>(
     /**
      * Channel to verify that the timeout is not reached between two polls.
      */
-    protected val pollNotificationChannel: Channel<Unit>?
+    protected var pollNotificationChannel: Channel<Unit>? = null
 
     /**
      * Channel to activate the timeout when nothing happened after a poll.
      */
-    private var timeout: ReceiveChannel<Unit>?
+    private var timeout: ReceiveChannel<Unit>? = null
 
     /**
      * Coroutine running to consumer and perform the actions from the [onReceiveValue] method.
      */
     private var receivingJob: Job? = null
 
-    init {
+    private var idleVerificationJob: Job? = null
+
+    protected suspend fun init() {
         if (idleTimeout.toMillis() > 0) {
-            pollNotificationChannel = Channel<Unit>(1)
+            pollNotificationChannel = Channel(1)
             timeout = buildTimeout()
-            GlobalScope.launch {
-                while (active) {
-                    select<Unit> {
-                        pollNotificationChannel.onReceive {
-                            timeout!!.cancel()
-                            timeout = buildTimeout()
-                        }
-                        timeout!!.onReceive {
-                            cancel()
+            coroutineContext
+            idleVerificationJob = newCoroutineScope().launch {
+                try {
+                    log.trace { "Idle verification loop started for ${this@AbstractTopicSubscription} with a timeout of $idleTimeout" }
+                    while (active) {
+                        select<Unit> {
+                            pollNotificationChannel!!.onReceive {
+                                timeout!!.cancel()
+                                timeout = buildTimeout()
+                            }
+                            timeout!!.onReceive {
+                                log.trace { "Idle timeout reached for the subscription ${this@AbstractTopicSubscription}" }
+                                cancel()
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    // Ignore errors.
                 }
             }
-        } else {
-            pollNotificationChannel = null
-            timeout = null
+            log.trace { "Idle verification loop created for ${this@AbstractTopicSubscription} with a timeout of $idleTimeout" }
         }
     }
 
-    @OptIn(ObsoleteCoroutinesApi::class)
     private fun buildTimeout() = ticker(idleTimeout.toMillis())
 
     override fun isActive() = active
@@ -72,25 +80,46 @@ internal abstract class AbstractTopicSubscription<T>(
     override suspend fun onReceiveValue(block: suspend (T) -> Unit): Job {
         verifyState()
         receivingJob?.cancelAndJoin()
-        receivingJob = GlobalScope.launch {
+        receivingJob = newCoroutineScope().launch {
+            log.trace { "Receiving loop started for ${this@AbstractTopicSubscription}" }
             while (active) {
                 block(pollValue())
             }
+            log.trace { "Receiving loop completed for ${this@AbstractTopicSubscription}" }
         }
         return receivingJob!!
     }
 
     override fun cancel() {
+        log.trace { "Cancelling the subscription $this" }
         active = false
+        idleVerificationJob?.cancel()
         cancellation()
         receivingJob?.cancel()
         timeout?.cancel()
         pollNotificationChannel?.close()
     }
 
+    internal suspend fun waitForCompletion() {
+        idleVerificationJob?.join()
+        receivingJob?.join()
+    }
+
     protected fun verifyState() {
+        log.trace { "Verifying state for subscription $subscriberId: $active" }
         if (!active) {
             throw CancelledSubscriptionException()
         }
+    }
+
+    override fun toString(): String {
+        return "${this::class.simpleName}(subscriberId='$subscriberId', active=$active)"
+    }
+
+    private companion object {
+
+        @JvmStatic
+        val log = KotlinLogging.logger { }
+
     }
 }

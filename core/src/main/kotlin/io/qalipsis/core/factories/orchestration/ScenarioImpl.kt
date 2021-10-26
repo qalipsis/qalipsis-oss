@@ -76,6 +76,7 @@ class ScenarioImpl(
     @LogInput(level = Level.DEBUG)
     override fun start(campaignId: CampaignId) {
         val scenarioId = this.id
+        // FIXME Add orchestration dispatcher.
         runBlocking {
             try {
                 startAllDags(scenarioId, campaignId)

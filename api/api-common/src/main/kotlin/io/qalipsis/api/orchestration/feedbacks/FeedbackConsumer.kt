@@ -9,6 +9,6 @@ import kotlinx.coroutines.Job
  */
 interface FeedbackConsumer {
 
-    suspend fun onReceive(block: suspend (Feedback) -> Unit): Job
+    suspend fun onReceive(subscriberId: String, block: suspend (Feedback) -> Unit): Job
 
 }

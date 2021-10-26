@@ -8,12 +8,9 @@ import io.qalipsis.api.steps.CollectionStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factories.steps.CollectionStep
-import io.qalipsis.core.factories.steps.VerificationStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -36,7 +33,7 @@ internal class CollectionStepSpecificationConverterTest :
     }
 
     @Test
-    internal fun `should convert minimal spec with name and retry policy to step`() = runBlockingTest {
+    internal fun `should convert minimal spec with name and retry policy to step`() = testCoroutineDispatcher.runTest {
         // given
         val spec = CollectionStepSpecification<Int>(null, 0)
         spec.name = "my-step"
@@ -52,12 +49,12 @@ internal class CollectionStepSpecificationConverterTest :
             prop("retryPolicy").isNull()
             prop("timeout").isNull()
             prop("batchSize").isEqualTo(Int.MAX_VALUE)
-            prop("coroutineScope").isSameAs(GlobalScope)
+            prop("coroutineScope").isSameAs(campaignCoroutineScope)
         }
     }
 
     @Test
-    internal fun `should convert spec without name nor retry policy to step`() = runBlockingTest {
+    internal fun `should convert spec without name nor retry policy to step`() = testCoroutineDispatcher.runTest {
         // given
         val spec = CollectionStepSpecification<Int>(Duration.ofSeconds(123), 7127654)
         every { directedAcyclicGraph.scenario.defaultRetryPolicy } returns mockedRetryPolicy
@@ -72,7 +69,7 @@ internal class CollectionStepSpecificationConverterTest :
             prop("retryPolicy").isNull()
             prop("timeout").isEqualTo(Duration.ofSeconds(123))
             prop("batchSize").isEqualTo(7127654)
-            prop("coroutineScope").isSameAs(GlobalScope)
+            prop("coroutineScope").isSameAs(campaignCoroutineScope)
         }
     }
 

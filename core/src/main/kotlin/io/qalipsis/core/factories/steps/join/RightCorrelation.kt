@@ -11,20 +11,20 @@ import io.qalipsis.api.messaging.Topic
  *
  * @author Eric Jessé
  */
-class RightCorrelation<T : Any>(
+internal class RightCorrelation<T : Any>(
 
-        /**
-         * ID of the [io.qalipsis.api.steps.Step] providing the remote data.
-         */
-        val sourceStepId: StepId,
+    /**
+     * ID of the [io.qalipsis.api.steps.Step] providing the remote data.
+     */
+    val sourceStepId: StepId,
 
-        /**
-         * [Topic] from a [io.qalipsis.core.factories.steps.decorators.OutputTopicStepDecorator] to forward the records.
-         */
-        val topic: Topic<CorrelationRecord<T>>,
+    /**
+     * [Topic] from a [io.qalipsis.core.factories.steps.decorators.OutputTopicStepDecorator] to forward the records.
+     */
+    val topic: Topic<CorrelationRecord<T>>,
 
-        /**
-         * Specification of the key extractor based upon the received value.
-         */
-        val keyExtractor: ((record: CorrelationRecord<T>) -> Any?)
+    /**
+     * Specification of the key extractor based upon the received value.
+     */
+    val keyExtractor: ((record: CorrelationRecord<T>) -> Any?)
 )

@@ -6,6 +6,7 @@ import io.micronaut.runtime.Micronaut
 import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
 import io.qalipsis.core.cross.configuration.ENV_STANDALONE
@@ -50,6 +51,9 @@ object Qalipsis : Callable<Unit> {
         description = ["Comma-separated list of scenarios to include, wildcard such as * or ? are supported, defaults to all the scenarios."]
     )
     var scenariosSelectors: String = ""
+
+    @Option(names = ["-c", "--configuration"], description = ["Command-line configuration."])
+    var configuration: Array<String> = arrayOf()
 
     @Parameters(
         description = [
@@ -99,6 +103,10 @@ object Qalipsis : Callable<Unit> {
         }
 
         val environments = mutableListOf<String>()
+        // Loads the profiles from the plugins.
+        val pluginsProfiles = ServicesLoader.loadPlugins()
+        log.info { "Loading the plugins ${pluginsProfiles.joinToString()}" }
+        environments.addAll(pluginsProfiles)
         if (role == Role.STANDALONE) {
             if (prompt) {
                 promptForConfiguration(properties)
@@ -127,10 +135,10 @@ object Qalipsis : Callable<Unit> {
             .mainClass(MicronautBootstrap::class.java)
             .properties(properties)
             .deduceEnvironment(false)
-            .args(*this.args)
+            .args(*(configuration.map { "--$it" }.toTypedArray()))
             .start()
 
-        // Force the loading if key services.
+        // Force the loading of key services.
         if (role == Role.STANDALONE) {
             applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
             applicationContext.getBeansOfType(StartupHeadComponent::class.java)
@@ -139,7 +147,7 @@ object Qalipsis : Callable<Unit> {
             applicationContext.getBeansOfType(ProcessBlocker::class.java)
         if (processBlockers.isNotEmpty()) {
             runBlocking {
-                log.info { "${processBlockers.size} service(s) to join before exiting the process" }
+                log.info { "${processBlockers.size} service(s) to join before exiting the process: ${processBlockers.joinToString { "${it::class.simpleName}" }}" }
                 processBlockers.forEach { it.join() }
             }
 
@@ -147,7 +155,9 @@ object Qalipsis : Callable<Unit> {
                 // Publishes the result just before leaving and set the exit code.
                 applicationContext.findBean(CampaignStateKeeper::class.java).ifPresent { campaignStateKeeper ->
                     applicationContext.getProperty("campaign.name", String::class.java).ifPresent { campaignName ->
-                        exitCode = campaignStateKeeper.report(campaignName).status.exitCode
+                        exitCode = runBlocking {
+                            campaignStateKeeper.report(campaignName).status.exitCode
+                        }
                     }
                 }
             }

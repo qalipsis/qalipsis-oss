@@ -8,17 +8,19 @@ import java.time.Duration
 /**
  * Subscription used to read from a [io.qalipsis.api.messaging.AbstractLinkedSlotsBasedTopic].
  *
+ * @param subscriberId name of the subscriber
  * @property latestReadSlot latest slot from which a value was read: next call to [poll] will extract the next element
  * @param idleTimeout duration of the idle period until timeout of the subscription
  * @param cancellation statements to run when the subscription is cancelled
  *
  * @author Eric Jessé
  */
-internal class SlotBasedSubscription<T>(
-        private var latestReadSlot: ImmutableSlot<LinkedRecord<T>>,
-        idleTimeout: Duration,
-        cancellation: (() -> Unit)
-) : AbstractTopicSubscription<T>(idleTimeout, cancellation) {
+internal class SlotBasedSubscription<T> private constructor(
+    subscriberId: String,
+    private var latestReadSlot: ImmutableSlot<LinkedRecord<T>>,
+    idleTimeout: Duration,
+    cancellation: (() -> Unit)
+) : AbstractTopicSubscription<T>(subscriberId, idleTimeout, cancellation) {
 
     override suspend fun poll(): Record<T> {
         verifyState()
@@ -26,6 +28,30 @@ internal class SlotBasedSubscription<T>(
         val linkedRecord = latestReadSlot.get()
         latestReadSlot = linkedRecord.next
         return linkedRecord.record
+    }
+
+    companion object {
+
+        /**
+         * Creates a new instance of [SlotBasedSubscription].
+         *
+         * @param subscriberId name of the subscriber
+         * @param latestReadSlot latest slot from which a value was read: next call to [poll] will extract the next element
+         * @param idleTimeout duration of the idle period until timeout of the subscription
+         * @param cancellation statements to run when the subscription is cancelled
+         */
+        suspend fun <T> create(
+            subscriberId: String,
+            latestReadSlot: ImmutableSlot<LinkedRecord<T>>,
+            idleTimeout: Duration,
+            cancellation: (() -> Unit)
+        ) = SlotBasedSubscription(
+            subscriberId,
+            latestReadSlot,
+            idleTimeout,
+            cancellation
+        ).apply { init() }
+
     }
 }
 

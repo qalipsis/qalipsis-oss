@@ -22,6 +22,11 @@ interface CampaignStateKeeper {
     fun complete(campaignId: CampaignId, scenarioId: ScenarioId)
 
     /**
+     * Releases the campaign.
+     */
+    fun abort(campaignId: CampaignId)
+
+    /**
      * Adds a message to notify in the campaign report.
      *
      * @return returns a unique message ID, that can be later used for delete.
@@ -63,5 +68,5 @@ interface CampaignStateKeeper {
     /**
      * Reports the state of all the scenarios executed in a campaign.
      */
-    fun report(campaignId: CampaignId): CampaignReport
+    suspend fun report(campaignId: CampaignId): CampaignReport
 }

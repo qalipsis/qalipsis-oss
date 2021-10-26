@@ -19,6 +19,7 @@ val testContainersVersion: String by project
 val assertkVersion: String by project
 val mockkVersion: String by project
 val kotlinCoroutinesVersion: String by project
+val catadioptreVersion: String by project
 
 dependencies {
     compileOnly(kotlin("stdlib"))
@@ -33,6 +34,7 @@ dependencies {
     api("com.willowtreeapps.assertk:assertk:$assertkVersion")
     api("com.willowtreeapps.assertk:assertk-jvm:$assertkVersion")
     api("org.testcontainers:testcontainers:$testContainersVersion")
+    api("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
     api("org.testcontainers:junit-jupiter:$testContainersVersion") {
         exclude("junit", "junit")
     }

@@ -3,7 +3,7 @@ package io.qalipsis.api.dev
 import cool.graph.cuid.Cuid
 import io.micronaut.context.annotation.Primary
 import io.qalipsis.api.lang.IdGenerator
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 /**
  * Implementation of [IdGenerator] using random [Cuid]s.
@@ -19,7 +19,7 @@ class CuidBasedIdGenerator : IdGenerator {
     }
 
     override fun short(): String {
-        return Cuid.createCuid().substring(15, 25).toLowerCase()
+        return Cuid.createCuid().substring(15, 25).lowercase()
     }
 
 }

@@ -1,46 +1,47 @@
 package io.qalipsis.core.interceptors
 
+import io.micronaut.aop.InterceptorBean
 import io.micronaut.aop.MethodInterceptor
 import io.micronaut.aop.MethodInvocationContext
 import io.micronaut.inject.ExecutableMethod
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.annotations.LogOutput
-import org.slf4j.Logger
+import mu.KLogger
+import mu.KotlinLogging
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Singleton
 
 /**
  * Interceptor for the logging annotations.
  *
  * @author Eric Jessé
  */
-@Singleton
-internal class LoggingInterceptor : MethodInterceptor<Any, Any?> {
+@InterceptorBean(LogInput::class, LogOutput::class, LogInputAndOutput::class)
+internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
 
-    private val loggers = ConcurrentHashMap<Class<*>, Logger>()
+    private val loggers = ConcurrentHashMap<Class<*>, KLogger>()
 
     private val annotationsByContext = ConcurrentHashMap<ExecutableMethod<*, *>, LoggingContext?>()
 
-    private val loggingCalls = mapOf<Level, ((Logger, () -> String) -> Unit)>(
-            Level.TRACE to { logger, message -> if (logger.isTraceEnabled()) logger.trace(message.invoke()) },
-            Level.DEBUG to { logger, message -> if (logger.isDebugEnabled()) logger.debug(message.invoke()) },
-            Level.INFO to { logger, message -> if (logger.isInfoEnabled()) logger.info(message.invoke()) },
-            Level.WARN to { logger, message -> if (logger.isWarnEnabled()) logger.warn(message.invoke()) },
-            Level.ERROR to { logger, message -> if (logger.isErrorEnabled()) logger.error(message.invoke()) },
+    private val loggingCalls = mapOf<Level, ((KLogger, () -> String) -> Unit)>(
+        Level.TRACE to { logger, message -> if (logger.isTraceEnabled) logger.trace { message() } },
+        Level.DEBUG to { logger, message -> if (logger.isDebugEnabled) logger.debug { message() } },
+        Level.INFO to { logger, message -> if (logger.isInfoEnabled) logger.info { message() } },
+        Level.WARN to { logger, message -> if (logger.isWarnEnabled) logger.warn { message() } },
+        Level.ERROR to { logger, message -> if (logger.isErrorEnabled) logger.error { message() } },
     )
 
-    private val exceptionLoggingCalls = mapOf<Level, ((Logger, Throwable, () -> String) -> Unit)>(
-            Level.TRACE to { logger, t, message -> if (logger.isTraceEnabled()) logger.trace(message.invoke(), t) },
-            Level.DEBUG to { logger, t, message -> if (logger.isDebugEnabled()) logger.trace(message.invoke(), t) },
-            Level.INFO to { logger, t, message -> if (logger.isInfoEnabled()) logger.trace(message.invoke(), t) },
-            Level.WARN to { logger, t, message -> if (logger.isWarnEnabled()) logger.trace(message.invoke(), t) },
-            Level.ERROR to { logger, t, message -> if (logger.isErrorEnabled()) logger.trace(message.invoke(), t) },
+    private val exceptionLoggingCalls = mapOf<Level, ((KLogger, Throwable, () -> String) -> Unit)>(
+        Level.TRACE to { logger, t, message -> if (logger.isTraceEnabled) logger.trace(t) { message() } },
+        Level.DEBUG to { logger, t, message -> if (logger.isDebugEnabled) logger.debug(t) { message() } },
+        Level.INFO to { logger, t, message -> if (logger.isInfoEnabled) logger.info(t) { message() } },
+        Level.WARN to { logger, t, message -> if (logger.isWarnEnabled) logger.warn(t) { message() } },
+        Level.ERROR to { logger, t, message -> if (logger.isErrorEnabled) logger.error(t) { message() } },
     )
 
-    override fun intercept(context: MethodInvocationContext<Any, Any?>): Any? {
+    override fun intercept(context: MethodInvocationContext<Any, Any>): Any? {
         val contextLevels =
             annotationsByContext.computeIfAbsent(context.executableMethod) {
                 buildLoggingContext(context)
@@ -51,8 +52,8 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any?> {
                 context.parameters.entries
                     .map { e -> "${e.key}=${e.value.value}" }
                     .joinToString(
-                            separator = ", ",
-                            prefix = "Method ${context.executableMethod.name} - INPUT: "
+                        separator = ", ",
+                        prefix = "Method ${context.executableMethod.name} - INPUT: "
                     )
             }
         }
@@ -70,7 +71,7 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any?> {
 
         contextLevels?.output?.let { logger ->
             logger.invoke {
-                "Method ${context.executableMethod.name} - OUTPUT: $result"
+                "Method ${context.executableMethod.name} - OUTPUT: ${if (result == Unit) "<The function has no return type>" else result}"
             }
         }
 
@@ -78,7 +79,8 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any?> {
     }
 
     private fun buildLoggingContext(
-            context: MethodInvocationContext<Any, Any?>): LoggingContext? {
+        context: MethodInvocationContext<Any, Any>
+    ): LoggingContext? {
         val logInput =
             context.getAnnotation(LogInput::class.java) ?: context.getAnnotation(LogInputAndOutput::class.java)
         val logOutput =
@@ -94,26 +96,27 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any?> {
         }
 
         return if (logInput != null || logOutput != null) {
-            val logger = loggers.computeIfAbsent(context.declaringType) { type -> LoggerFactory.getLogger(type) }
+            val logger = loggers.computeIfAbsent(context.declaringType) { type ->
+                KotlinLogging.logger(LoggerFactory.getLogger(type))
+            }
             LoggingContext(
-                    inputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
-                    outputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
-                    exceptionLevel?.let { level ->
-                        { t, message ->
-                            exceptionLoggingCalls[level]?.invoke(logger, t, message)
-                        }
-                    },
-
-                    )
+                inputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
+                outputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
+                exceptionLevel?.let { level ->
+                    { t, message ->
+                        exceptionLoggingCalls[level]?.invoke(logger, t, message)
+                    }
+                }
+            )
         } else {
             null
         }
     }
 
     private class LoggingContext(
-            val input: ((() -> String) -> Unit)?,
-            val output: ((() -> String) -> Unit)?,
-            val exception: ((Throwable, () -> String) -> Unit)?,
+        val input: ((() -> String) -> Unit)?,
+        val output: ((() -> String) -> Unit)?,
+        val exception: ((Throwable, () -> String) -> Unit)?,
     )
 
 }

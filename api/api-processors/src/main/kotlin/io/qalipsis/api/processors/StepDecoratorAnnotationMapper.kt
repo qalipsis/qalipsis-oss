@@ -3,7 +3,7 @@ package io.qalipsis.api.processors
 import io.micronaut.core.annotation.AnnotationValue
 import io.micronaut.inject.annotation.NamedAnnotationMapper
 import io.micronaut.inject.visitor.VisitorContext
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 /**
  * Annotation mapper abstracting Micronaut from plugin implementation.

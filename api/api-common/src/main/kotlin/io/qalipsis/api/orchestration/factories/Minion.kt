@@ -6,7 +6,6 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import org.slf4j.MDC
 import kotlin.coroutines.CoroutineContext
@@ -58,8 +57,8 @@ interface Minion {
      * are completed, either successfully or not.
      */
     suspend fun launch(
-        scope: CoroutineScope? = GlobalScope,
-        context: CoroutineContext? = scope?.coroutineContext,
+        scope: CoroutineScope,
+        context: CoroutineContext = scope.coroutineContext,
         countLatch: SuspendedCountLatch? = null,
         block: suspend CoroutineScope.() -> Unit
     ): Job?

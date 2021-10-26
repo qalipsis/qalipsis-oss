@@ -11,10 +11,10 @@ import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy
 import ch.qos.logback.core.util.FileSize
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.Configurer
+import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets
-import javax.inject.Singleton
 
 /**
  * Configures the loggers dynamically.

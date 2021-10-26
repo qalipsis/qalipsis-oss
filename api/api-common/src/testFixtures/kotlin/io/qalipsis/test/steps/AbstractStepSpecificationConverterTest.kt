@@ -11,9 +11,12 @@ import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
+import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
 abstract class AbstractStepSpecificationConverterTest<T : StepSpecificationConverter<*>> {
@@ -38,6 +41,13 @@ abstract class AbstractStepSpecificationConverterTest<T : StepSpecificationConve
 
     @SpyK
     var idGenerator: IdGenerator = TestIdGenerator
+
+    @RelaxedMockK
+    lateinit var campaignCoroutineScope: CoroutineScope
+
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
 
     @InjectMockKs
     lateinit var converter: T

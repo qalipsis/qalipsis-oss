@@ -2,4 +2,14 @@ micronaut:
   server:
     port: -1
 
+logging:
+  console: true
+
+executors:
+  global: -1
+  campaign: 2x
+  io: 4
+  background: global
+  orchestration: global
+
 campaign.name: campaign-${random.shortuuid}

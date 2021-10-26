@@ -1,24 +1,25 @@
 package io.qalipsis.api.messaging
 
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.messaging.subscriptions.ChannelBasedTopicSubscription
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- *  Abstract implementation of [topic] for the ones that are based upon native capabilities of
- *  [kotlinx.coroutines.channels.Channel]s.
+ *  Abstract implementation of [Topic] using native capabilities of [kotlinx.coroutines.channels.Channel]s.
  *
  * @author Eric Jessé
  */
 internal abstract class AbstractChannelBasedTopic<T>(
-        /**
-         * Idle time of a subscription. Once a subscription passed this duration without record, it is cancelled.
-         */
-        private val idleTimeout: Duration
+    /**
+     * Idle time of a subscription. Once a subscription passed this duration without record, it is cancelled.
+     */
+    private val idleTimeout: Duration
 
 ) : Topic<T> {
 
@@ -26,22 +27,32 @@ internal abstract class AbstractChannelBasedTopic<T>(
 
     protected abstract val channel: SendChannel<Record<T>>
 
-    protected val subscriptions: MutableMap<String, ChannelBasedTopicSubscription<T>> = ConcurrentHashMap()
+    protected val subscriptionMutex = Mutex(false)
 
-    private val log = logger()
+    protected val subscriptions = ConcurrentHashMap<String, ChannelBasedTopicSubscription<T>>()
 
     override suspend fun subscribe(subscriberId: String): TopicSubscription<T> {
         verifyState()
         return if (subscriptions.containsKey(subscriberId)) {
+            log.trace { "Returning existing subscription for $subscriberId" }
             subscriptions[subscriberId]!!
         } else {
-            val subscriptionChannel = buildSubscriptionChannel()
-            val subscription = ChannelBasedTopicSubscription(subscriptionChannel, idleTimeout) {
-                subscriptions.remove(subscriberId)
-                onSubscriptionCancel(subscriptionChannel)
+            subscriptionMutex.withLock {
+                if (subscriptions.containsKey(subscriberId)) {
+                    log.trace { "Returning existing subscription for $subscriberId" }
+                    subscriptions[subscriberId]!!
+                } else {
+                    log.trace { "Creating new subscription for $subscriberId" }
+                    val subscriptionChannel = buildSubscriptionChannel()
+                    ChannelBasedTopicSubscription.create(subscriberId, subscriptionChannel, idleTimeout) {
+                        subscriptions.remove(subscriberId)
+                        onSubscriptionCancel(subscriptionChannel)
+                    }.also {
+                        subscriptions[subscriberId] = it
+                        log.trace { "New subscription created for $subscriberId" }
+                    }
+                }
             }
-            subscriptions[subscriberId] = subscription
-            subscription
         }
     }
 
@@ -63,8 +74,7 @@ internal abstract class AbstractChannelBasedTopic<T>(
 
     override suspend fun poll(subscriberId: String): Record<T> {
         verifyState()
-        val subscription = subscriptions[subscriberId] ?: error("The subscription $subscriberId no longer exists")
-        return subscription.poll()
+        return subscriptions[subscriberId]?.poll() ?: error("The subscription $subscriberId no longer exists")
     }
 
     override suspend fun pollValue(subscriberId: String): T {
@@ -94,5 +104,11 @@ internal abstract class AbstractChannelBasedTopic<T>(
             throw ClosedTopicException()
         }
         log.trace { "Topic is open" }
+    }
+
+    companion object {
+
+        @JvmStatic
+        private val log = KotlinLogging.logger { }
     }
 }

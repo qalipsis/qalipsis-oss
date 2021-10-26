@@ -16,7 +16,6 @@ import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.time.QalipsisTimeAssertions.assertLongerOrEqualTo
 import io.qalipsis.test.time.coMeasureTime
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -302,7 +300,7 @@ internal class MinionImplTest {
 
     @Test
     @Timeout(20)
-    internal fun `should support a lot of minions with a lot of jobs`() {
+    internal fun `should support a lot of minions with a lot of jobs`() = runBlockingTest {
         // given
         // Reduces the logs which affect the performances significantly.
         loggerContext.getLogger(MinionImpl::class.java).level = Level.INFO
@@ -323,17 +321,17 @@ internal class MinionImplTest {
         }
 
         val startLatch = SuspendedCountLatch(1)
-        val stepsCountDown = CountDownLatch(minionsCount * stepsCount)
+        val stepsCountDown = SuspendedCountLatch(minionsCount.toLong() * stepsCount)
 
         // when
-        GlobalScope.launch {
+        launch {
             minions.forEach { minion ->
                 repeat(stepsCount) {
                     minion.launch(this) {
                         startLatch.await()
                         executionCounter.incrementAndGet()
                     }
-                    stepsCountDown.countDown()
+                    stepsCountDown.decrement()
                 }
             }
         }
@@ -349,12 +347,11 @@ internal class MinionImplTest {
         }
 
         // then
-        runBlocking {
-            // Triggers the start for all the jobs at the same time.
-            startLatch.release()
-            log.debug { "Joining all minions" }
-            minions.forEach { it.join() }
-        }
+        // Triggers the start for all the jobs at the same time.
+        startLatch.release()
+        log.debug { "Joining all minions" }
+        minions.forEach { it.join() }
+
         assertEquals(minionsCount, completionCounter.get())
         assertEquals(minionsCount * stepsCount, executionCounter.get())
     }

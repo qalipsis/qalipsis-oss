@@ -13,9 +13,9 @@ import io.qalipsis.core.cross.directives.MinionStartDefinition
 import io.qalipsis.core.cross.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.cross.directives.MinionsStartDirective
 import io.qalipsis.core.factories.orchestration.ScenariosRegistry
+import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.util.LinkedList
-import javax.inject.Singleton
 
 /**
  *

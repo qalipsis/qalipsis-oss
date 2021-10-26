@@ -32,14 +32,14 @@ import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackDirectedAcycl
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.qalipsis.core.factories.steps.MinionsKeeperAware
 import io.qalipsis.core.factories.steps.RunnerAware
-import kotlinx.coroutines.GlobalScope
+import jakarta.inject.Singleton
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
-import javax.inject.Singleton
 import javax.validation.Valid
 
 /**
@@ -105,6 +105,7 @@ internal class ScenariosInitializerImpl(
 
     @PreDestroy
     fun destroy() {
+        // FIXME Add orchestration dispatcher.
         runBlocking {
             dagsByScenario.keys.mapNotNull(scenariosRegistry::get).forEach(Scenario::destroy)
         }
@@ -124,6 +125,7 @@ internal class ScenariosInitializerImpl(
             )
         }
 
+        // FIXME Add orchestration dispatcher.
         runBlocking {
             log.trace { "Sending feedback: $feedbackScenarios to $feedbackProducer" }
             feedbackProducer.publish(FactoryRegistrationFeedback(feedbackScenarios))
@@ -152,6 +154,7 @@ internal class ScenariosInitializerImpl(
             )
         scenariosRegistry.add(scenario)
 
+        // FIXME Add orchestration dispatcher.
         runBlocking {
             @Suppress("UNCHECKED_CAST")
             convertSteps(
@@ -172,10 +175,11 @@ internal class ScenariosInitializerImpl(
         parentStep: Step<*, *>?,
         stepsSpecifications: List<StepSpecification<Any?, Any?, *>>
     ) {
-
-        stepsSpecifications.map { stepSpecification ->
-            GlobalScope.launch {
-                convertStepRecursively(scenarioSpecification, scenario, parentStep, stepSpecification)
+        coroutineScope {
+            stepsSpecifications.map { stepSpecification ->
+                launch {
+                    convertStepRecursively(scenarioSpecification, scenario, parentStep, stepSpecification)
+                }
             }
         }.forEach { job ->
             job.join()
@@ -189,7 +193,7 @@ internal class ScenariosInitializerImpl(
         stepSpecification: StepSpecification<Any?, Any?, *>
     ) {
         log.debug {
-            "Creating step ${stepSpecification.name} specified by a ${stepSpecification::class} with parent ${parentStep?.id ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
+            "Creating step ${stepSpecification.name.takeIf(String::isNotBlank) ?: "<no specified name>"} specified by ${stepSpecification::class.qualifiedName} with parent ${parentStep?.id ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
         }
 
         // Get or create the DAG to attach the step.

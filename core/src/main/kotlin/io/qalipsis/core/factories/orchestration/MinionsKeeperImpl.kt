@@ -1,6 +1,7 @@
 package io.qalipsis.core.factories.orchestration
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
@@ -15,14 +16,16 @@ import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.cross.feedbacks.EndOfCampaignFeedback
-import kotlinx.coroutines.GlobalScope
+import jakarta.inject.Named
+import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Singleton
 
 /**
  * Registry to keep the minions of the current factory.
@@ -36,7 +39,8 @@ internal class MinionsKeeperImpl(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
     private val campaignStateKeeper: CampaignStateKeeper,
-    private val feedbackProducer: FeedbackProducer
+    private val feedbackProducer: FeedbackProducer,
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : MinionsKeeper {
 
     private val minions: MutableMap<MinionId, MutableCollection<MinionImpl>> = ConcurrentHashMap()
@@ -55,8 +59,8 @@ internal class MinionsKeeperImpl(
         return singletonMinionsByDagId[dagId]!!
     }
 
-    @LogInput(level = Level.DEBUG)
-    override fun create(
+    @LogInputAndOutput(level = Level.DEBUG)
+    override suspend fun create(
         campaignId: CampaignId, scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId,
         minionId: MinionId
     ) {
@@ -72,7 +76,7 @@ internal class MinionsKeeperImpl(
                 val minion = MinionImpl(minionId, campaignId, scenarioId, dagId, true, eventsLogger, meterRegistry)
                 when {
                     dag.isUnderLoad && !dag.isSingleton -> {
-                        runningMinionsLatch.blockingIncrement()
+                        runningMinionsLatch.increment()
                         // There can be the same minion on several DAGs, each "instance" of the same
                         // minion is considered separately.
                         minions.computeIfAbsent(minionId) { concurrentSet() }.add(minion)
@@ -95,10 +99,9 @@ internal class MinionsKeeperImpl(
                     }
                 }
 
-                // Runs the minion, which will be idle until it the call to startCampaign().
-                GlobalScope.launch {
-                    runner.run(minion, dag)
-                }
+                // The minion is ready to start but remains idle until the call to startCampaign().
+                coroutineScope.launch { runner.run(minion, dag) }
+                log.trace { "Minion $minionId for DAG $dagId of scenario $scenarioId is ready to start and idle" }
             }
         }
     }
@@ -106,7 +109,8 @@ internal class MinionsKeeperImpl(
     /**
      * Actions to trigger when the campaign completes.
      */
-    private suspend fun onCampaignComplete(
+    @LogInputAndOutput(level = Level.DEBUG)
+    protected suspend fun onCampaignComplete(
         campaignId: CampaignId,
         scenario: Scenario
     ) {
@@ -119,13 +123,15 @@ internal class MinionsKeeperImpl(
         campaignStateKeeper.complete(campaignId, scenario.id)
         feedbackProducer.publish(EndOfCampaignFeedback(campaignId, scenario.id))
         minionsCountLatchesByCampaign.remove(campaignId)
+        // Removes all the meters.
+        meterRegistry.clear()
     }
 
 
-    @LogInput(level = Level.DEBUG)
+    @LogInputAndOutput(level = Level.DEBUG)
     override suspend fun startCampaign(campaignId: CampaignId, scenarioId: ScenarioId) {
         if (scenarioId in scenariosRegistry) {
-            log.debug { "Starting campaign $campaignId on scenario $scenarioId" }
+            log.info { "Starting campaign $campaignId on scenario $scenarioId" }
             campaignStateKeeper.start(campaignId, scenarioId)
             scenariosRegistry[scenarioId]!!.start(campaignId)
             readySingletonsMinions[scenarioId]?.apply {
@@ -137,7 +143,6 @@ internal class MinionsKeeperImpl(
             }
         }
     }
-
 
     @LogInput
     override suspend fun startMinionAt(minionId: MinionId, instant: Instant) {

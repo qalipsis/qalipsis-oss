@@ -33,22 +33,19 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class InnerJoinStep<I, O>(
     id: StepId,
-
+    private val coroutineScope: CoroutineScope,
     /**
      * Specification of the key extractor based upon the value received from the left step.
      */
     private val leftKeyExtractor: (record: CorrelationRecord<I>) -> Any?,
-
     /**
      * Configuration for the consumption and correlation from right steps.
      */
     private val rightCorrelations: Collection<RightCorrelation<out Any>>,
-
     /**
      * Timeout, after which the values received but not forwarded are evicted from the cache.
      */
     cacheTimeout: Duration,
-
     /**
      * Statement to convert the list of values into the output.
      */
@@ -76,22 +73,22 @@ internal class InnerJoinStep<I, O>(
         rightCorrelations.forEach { corr ->
             @Suppress("UNCHECKED_CAST")
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
-            consumptionJobs.add(GlobalScope.launch {
-                log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepId}" }
-                val subscription = corr.topic.subscribe(stepId)
-                while (subscription.isActive()) {
-                    val record = subscription.pollValue()
-                    keyExtractor(record)?.let { key ->
-                        log.trace { "Adding right record to cache with key '$key' as ${key::class}" }
-                        cache.get(key).thenAccept { entry ->
-                            runBlocking {
-                                entry.addValue(record.stepId, record.value)
+            consumptionJobs.add(
+                coroutineScope.launch {
+                    log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepId}" }
+                    val subscription = corr.topic.subscribe(stepId)
+                    while (subscription.isActive()) {
+                        val record = subscription.pollValue()
+                        keyExtractor(record)?.let { key ->
+                            log.trace { "Adding right record to cache with key '$key' as ${key::class}" }
+                            cache.get(key).thenAccept { entry ->
+                                coroutineScope.launch { entry.addValue(record.stepId, record.value) }
                             }
                         }
                     }
+                    log.debug { "Leaving the coroutine buffering right records" }
                 }
-                log.debug { "Leaving the coroutine buffering right records" }
-            })
+            )
         }
         running = true
     }
@@ -111,9 +108,9 @@ internal class InnerJoinStep<I, O>(
             ?.let { key ->
                 try {
                     log.trace { "Searching correlation values for key '$key' as ${key::class}" }
-                    val latch = Latch(true)
+                    val latch = Latch(true, "inner-join-step-${id}")
                     cache.get(key).thenAccept { entry ->
-                        GlobalScope.launch {
+                        coroutineScope.launch {
                             val secondaryValues = entry.get()
                             log.trace { "Forwarding a correlated set of values" }
                             context.send(outputSupplier(input, secondaryValues))

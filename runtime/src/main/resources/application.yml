@@ -1,8 +1,17 @@
 server:
   port: 8400
 
-monitoring:
-  enabled: false
+# For the executors:
+# - 0 or less means the Kotlin Global Scope
+# - 1 or more means a fixed thread execution context with the number of threads - cannot be less than 2
+# - 1.5x means 1.5 times the number of cores, rounded to the next integer if required - cannot be less than 2
+# - name of another executor to reuse it
+executors:
+  global: -1
+  campaign: 2x
+  io: 1x
+  background: global
+  orchestration: global
 
 logging:
   console: true
@@ -41,24 +50,31 @@ events:
   root: TRACE
   level:
 
+meters:
+  enabled: true
+
+monitoring:
+  enabled: false
+  port: 8410
+
 # Micronaut configuration, which should not be changed by the users.
 micronaut:
   server:
-    port: ${server.port}
+    port: ${monitoring.port}
   metrics:
-    enabled: ${monitoring.enabled}
+    enabled: true
     binders:
       jvm:
-        enabled: true
+        enabled: ${monitoring.enabled}
       web:
-        enabled: true
+        enabled: ${monitoring.enabled}
       uptime:
-        enabled: true
+        enabled: ${monitoring.enabled}
       processor:
-        enabled: true
+        enabled: ${monitoring.enabled}
       files:
-        enabled: true
+        enabled: ${monitoring.enabled}
       logback:
-        enabled: false
+        enabled: ${monitoring.enabled}
       cache:
-        enabled: false
+        enabled: ${monitoring.enabled}

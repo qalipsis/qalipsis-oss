@@ -22,8 +22,7 @@ internal open class TopicMirrorStep<I, T>(
     id: StepId,
     private val topic: Topic<T>,
     private val predicate: (context: StepContext<I, I>, value: Any?) -> Boolean = { _, _ -> true },
-    @Suppress(
-                "UNCHECKED_CAST") private val wrap: (context: StepContext<I, I>, value: Any?) -> T = { _, value -> value as T }
+    @Suppress("UNCHECKED_CAST") private val wrap: (context: StepContext<I, I>, value: Any?) -> T = { _, value -> value as T }
 ) : AbstractStep<I, I>(id, null) {
 
     override fun addNext(nextStep: Step<*, *>) {
@@ -44,7 +43,10 @@ internal open class TopicMirrorStep<I, T>(
             val value = context.receive()
             if (predicate(context, value)) {
                 val record = wrap(context, value)
+                log.trace { "Adding $value to the topic" }
                 topic.produceValue(record)
+            } else {
+                log.trace { "The value $value does not match the predicate" }
             }
             context.send(value)
         }

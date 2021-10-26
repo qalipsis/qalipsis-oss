@@ -17,7 +17,7 @@ internal class StepContextImplTest {
 
     @Test
     internal fun `should return not empty when there is an input`() {
-        val channel = Channel<String>(1).also { it.offer("Test") }
+        val channel = Channel<String>(1).also { it.trySend("Test").isSuccess }
         val context = StepContextImpl<String, Int>(
             input = channel,
             minionId = "",

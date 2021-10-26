@@ -9,27 +9,31 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.exceptions.NotInitializedStepException
 import io.qalipsis.core.factories.steps.join.catadioptre.hasKeyInCache
 import io.qalipsis.core.factories.steps.join.catadioptre.isCacheEmpty
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 
 internal class InnerJoinStepTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
     @Timeout(1)
-    internal fun `should not execute when not started`() = runBlockingTest {
-        val step = InnerJoinStep<Long, Unit>("corr", { 1 }, emptyList(),
-            Duration.ofSeconds(10), { _, _ -> Unit }
+    internal fun `should not execute when not started`() = testCoroutineDispatcher.runTest {
+        val step = InnerJoinStep<Long, Unit>("corr", this, { 1 }, emptyList(),
+            Duration.ofSeconds(10), { _, _ -> }
         )
         val ctx = StepTestHelper.createStepContext<Long, Unit>()
 
@@ -41,11 +45,11 @@ internal class InnerJoinStepTest {
 
     @Test
     @Timeout(2)
-    internal fun `should suspend until all values are received`() = runBlocking {
+    internal fun `should suspend until all values are received`() = testCoroutineDispatcher.run {
         // given
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
-        val step = buildLeftJoinStep(topic1, topic2)
+        val step = buildInnerJoinStep(this, topic1, topic2)
         step.start(relaxedMockk())
         val entityFromLeft = TestLeftJoinEntity(123, "From Left")
         val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
@@ -76,11 +80,11 @@ internal class InnerJoinStepTest {
 
     @Test
     @Timeout(1)
-    internal fun `should not suspend when all values are already received`() = runBlocking {
+    internal fun `should not suspend when all values are already received`() = testCoroutineDispatcher.run {
         // given
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
-        val step = buildLeftJoinStep(topic1, topic2)
+        val step = buildInnerJoinStep(this, topic1, topic2)
         step.start(relaxedMockk())
         val entityFromLeft = TestLeftJoinEntity(123, "From Left")
         val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
@@ -106,52 +110,61 @@ internal class InnerJoinStepTest {
      * This test validates the concurrency behavior when running the unit tests massively.
      */
     @Timeout(2)
-    @RepeatedTest(100)
-    internal fun `should succeed when sending messages concurrently before the execution`() = runBlocking {
-        // given
-        val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
-        val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
-        val step = buildLeftJoinStep(topic1, topic2)
-        step.start(relaxedMockk())
-        val entityFromLeft = TestLeftJoinEntity(123, "From Left")
-        val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
-        val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
+    @Test
+    //@RepeatedTest(100)
+    internal fun `should succeed when sending messages concurrently before the execution`() =
+        testCoroutineDispatcher.run {
+            // given
+            val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
+            val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
+            val step = buildInnerJoinStep(this, topic1, topic2)
+            step.start(relaxedMockk())
+            val entityFromLeft = TestLeftJoinEntity(123, "From Left")
+            val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
+            val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
 
-        val ctx = buildStepContext(entityFromLeft)
+            val ctx = buildStepContext(entityFromLeft)
 
-        // when sending two messages concurrently
-        val startLatch = SuspendedCountLatch(1)
-        launch {
-            startLatch.await()
-            topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromRight1))
+            // when sending two messages concurrently
+            val startLatch = SuspendedCountLatch(1)
+            launch {
+                startLatch.await()
+                topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromRight1))
+            }
+            launch {
+                startLatch.await()
+                topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromRight2))
+            }
+            startLatch.release()
+            step.execute(ctx)
+
+            // then
+            Assertions.assertFalse(ctx.isExhausted)
+            Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
+            val output = (ctx.output as Channel).receive()
+            assertThat(output).containsExactly(
+                entityFromLeft.value,
+                entityFromFromRight1.value,
+                entityFromFromRight2.value
+            )
+            Assertions.assertFalse(step.hasKeyInCache(123))
         }
-        launch {
-            startLatch.await()
-            topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromRight2))
-        }
-        startLatch.release()
-        step.execute(ctx)
-
-        // then
-        Assertions.assertFalse(ctx.isExhausted)
-        Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-        val output = (ctx.output as Channel).receive()
-        assertThat(output).containsExactly(entityFromLeft.value, entityFromFromRight1.value, entityFromFromRight2.value)
-        Assertions.assertFalse(step.hasKeyInCache(123))
-    }
 
     @Test
     @Timeout(1)
-    internal fun `should not cache null key`() = runBlocking {
+    internal fun `should not cache null key`() = testCoroutineDispatcher.run {
         // given
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
         // The conversion from the right record to key always returns null.
         val step = InnerJoinStep<TestLeftJoinEntity, List<Any?>>(
             "corr",
+            this,
             { record -> record.value.key },
-            listOf(RightCorrelation("secondary-1",
+            listOf(RightCorrelation(
+                "secondary-1",
                 // The conversion from record to key always returns null.
-                topic1) { null }
+                topic1
+            ) { null }
             ),
             Duration.ofSeconds(10)
         ) { leftValue, rightValues ->
@@ -172,11 +185,12 @@ internal class InnerJoinStepTest {
 
     @Test
     @Timeout(1)
-    internal fun `should not execute null key`() = runBlockingTest {
+    internal fun `should not execute null key`() = testCoroutineDispatcher.runTest {
         // given
         // The conversion from the left record to key always returns null.
         val step = InnerJoinStep<TestLeftJoinEntity, List<Any?>>(
             "corr",
+            this,
             { null },
             emptyList(),
             Duration.ofSeconds(10)
@@ -198,8 +212,10 @@ internal class InnerJoinStepTest {
         Assertions.assertTrue(step.isCacheEmpty())
     }
 
-    private fun buildLeftJoinStep(
-        vararg topics: Topic<CorrelationRecord<TestLeftJoinEntity>>): InnerJoinStep<TestLeftJoinEntity, List<Any?>> {
+    private fun buildInnerJoinStep(
+        coroutineScope: CoroutineScope,
+        vararg topics: Topic<CorrelationRecord<TestLeftJoinEntity>>
+    ): InnerJoinStep<TestLeftJoinEntity, List<Any?>> {
 
         val secondaryCorrelations = topics.mapIndexed { index, topic ->
             RightCorrelation("secondary-${index + 1}", topic) { record -> (record.value).key }
@@ -207,6 +223,7 @@ internal class InnerJoinStepTest {
 
         return InnerJoinStep(
             "corr",
+            coroutineScope,
             { record -> (record.value).key },
             secondaryCorrelations,
             Duration.ZERO
@@ -218,7 +235,8 @@ internal class InnerJoinStepTest {
     }
 
     private fun buildStepContext(
-        entityFromLeft: TestLeftJoinEntity) =
+        entityFromLeft: TestLeftJoinEntity
+    ) =
         StepTestHelper.createStepContext<TestLeftJoinEntity, List<Any?>>(entityFromLeft)
 
     private class TestLeftJoinEntity(val key: Int, val value: Any)

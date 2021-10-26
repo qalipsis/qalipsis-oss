@@ -37,11 +37,7 @@ import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -222,8 +218,9 @@ internal class SingletonStepSpecificationConverterTest :
         creationContext.createdStep!!.let { step ->
             assertNotNull(step.id)
             assertThat(step).isInstanceOf(TopicDataPushStep::class).all {
-                typedProp<Topic<String>>("parentStepId").isEqualTo("my-singleton")
-                typedProp<Topic<String>>("topic").isSameAs(dataTransferTopic)
+                prop("parentStepId").isEqualTo("my-singleton")
+                prop("topic").isSameAs(dataTransferTopic)
+                prop("coroutineScope").isSameAs(campaignCoroutineScope)
             }
         }
     }

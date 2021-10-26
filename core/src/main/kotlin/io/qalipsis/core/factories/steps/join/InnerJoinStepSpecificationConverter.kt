@@ -1,5 +1,6 @@
 package io.qalipsis.core.factories.steps.join
 
+import io.qalipsis.api.Executors
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.context.StepId
@@ -13,6 +14,8 @@ import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.core.factories.steps.singleton.NoMoreNextStepDecorator
 import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
+import jakarta.inject.Named
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * [StepSpecificationConverter] from [InnerJoinStepSpecification] to [InnerJoinStep].
@@ -21,7 +24,8 @@ import io.qalipsis.core.factories.steps.topicrelatedsteps.TopicMirrorStep
  */
 @StepConverter
 internal class InnerJoinStepSpecificationConverter(
-    private val idGenerator: IdGenerator
+    private val idGenerator: IdGenerator,
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepSpecificationConverter<InnerJoinStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
@@ -65,12 +69,9 @@ internal class InnerJoinStepSpecificationConverter(
 
         @Suppress("UNCHECKED_CAST")
         val step = InnerJoinStep(
-            spec.name, spec.primaryKeyExtractor,
+            spec.name, coroutineScope, spec.primaryKeyExtractor,
             listOf(
-                RightCorrelation(
-                    secondaryStep.id, topic as Topic<CorrelationRecord<Any>>,
-                    spec.secondaryKeyExtractor
-                )
+                RightCorrelation(secondaryStep.id, topic as Topic<CorrelationRecord<Any>>, spec.secondaryKeyExtractor)
             ), spec.cacheTimeout, outputSupplier
         )
         creationContext.createdStep(step)

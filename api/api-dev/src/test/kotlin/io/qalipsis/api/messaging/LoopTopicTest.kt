@@ -1,11 +1,16 @@
 package io.qalipsis.api.messaging
 
+import assertk.assertThat
+import assertk.assertions.hasSize
+import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 
 /**
@@ -13,8 +18,12 @@ import java.time.Duration
  */
 internal class LoopTopicTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
-    internal fun `should prevent from using closed topic`() = runBlockingTest {
+    internal fun `should prevent from using closed topic`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))
 
@@ -35,7 +44,7 @@ internal class LoopTopicTest {
 
     @Test
 
-    internal fun `should provide subscription`() = runBlockingTest {
+    internal fun `should provide subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -65,7 +74,30 @@ internal class LoopTopicTest {
     }
 
     @Test
-    internal fun `should cancel subscription`() = runBlockingTest {
+    @Timeout(10)
+    fun `should consume subscription`() = testCoroutineDispatcher.run {
+        // given
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
+        for (i in 0 until 10) {
+            topic.produceValue(i)
+        }
+        val counter = SuspendedCountLatch(10)
+        val received = concurrentSet<Int>()
+
+        // when
+        val subscription = topic.subscribe("any-1")
+        subscription.onReceiveValue {
+            received += it
+            counter.decrement()
+        }
+        counter.await()
+
+        // then
+        assertThat(received).hasSize(10)
+    }
+
+    @Test
+    internal fun `should cancel subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))
 
@@ -78,7 +110,7 @@ internal class LoopTopicTest {
     }
 
     @Test
-    internal fun `should cancel idle subscription`() = runBlocking {
+    internal fun `should cancel idle subscription`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofMillis(5))
 
@@ -91,7 +123,7 @@ internal class LoopTopicTest {
     }
 
     @Test
-    internal fun `should provide two different subscriptions`() = runBlockingTest {
+    internal fun `should provide two different subscriptions`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -114,7 +146,7 @@ internal class LoopTopicTest {
     }
 
     @Test
-    internal fun `should provide records to open subscriptions only`() = runBlockingTest {
+    internal fun `should provide records to open subscriptions only`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         for (i in 0 until 10) {
@@ -135,9 +167,8 @@ internal class LoopTopicTest {
         }
     }
 
-
     @Test
-    internal fun `should provide infinite data once completed`() = runBlockingTest {
+    internal fun `should provide infinite data once completed`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))
         for (i in 0 until 20) {

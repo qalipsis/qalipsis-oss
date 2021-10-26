@@ -25,4 +25,17 @@ object ServicesLoader {
                 }
             }
     }
+
+    /**
+     * Load the profiles defined in the plugins.
+     */
+    fun loadPlugins(): Collection<String> {
+        return this.javaClass.classLoader.getResources("META-INF/qalipsis/plugin")
+            .toList()
+            .flatMap { ServicesFiles.readFile(it.openStream()) }
+            .flatMap { it.split(",") }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSet()
+    }
 }

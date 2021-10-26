@@ -4,7 +4,7 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.cross.configuration.ENV_VOLATILE
 import io.qalipsis.core.heads.persistence.inmemory.InMemoryRepository
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 /**
  * Component to store and provides scenarios from all the factories.
@@ -14,4 +14,5 @@ import javax.inject.Singleton
  */
 @Singleton
 @Requires(env = [ENV_VOLATILE])
-internal class InMemoryScenariosRepository : InMemoryRepository<HeadScenario, ScenarioId>(), HeadScenarioRepository
+internal class InMemoryScenariosRepository : InMemoryRepository<ScenarioSummary, ScenarioId>(),
+    ScenarioSummaryRepository

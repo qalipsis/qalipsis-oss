@@ -15,7 +15,6 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import org.slf4j.MDC
 import java.util.concurrent.ConcurrentHashMap
@@ -127,8 +126,8 @@ internal open class MinionImpl(
     }
 
     override suspend fun launch(
-        scope: CoroutineScope?,
-        context: CoroutineContext?,
+        scope: CoroutineScope,
+        context: CoroutineContext,
         countLatch: SuspendedCountLatch?,
         block: suspend CoroutineScope.() -> Unit
     ): Job? {
@@ -146,7 +145,7 @@ internal open class MinionImpl(
             log.trace {
                 "Adding a job to minion (active jobs: ${runningJobs.keys.toList().joinToString(", ")})"
             }
-            (scope ?: GlobalScope).contextualLaunch((context ?: GlobalScope.coroutineContext)) {
+            scope.contextualLaunch(context) {
                 waitForStart()
                 try {
                     log.trace { "Executing the minion job $jobId" }
