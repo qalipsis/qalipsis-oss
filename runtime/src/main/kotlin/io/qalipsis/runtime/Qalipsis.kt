@@ -2,9 +2,10 @@ package io.qalipsis.runtime
 
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.Environment
-import io.micronaut.runtime.Micronaut
+import io.micronaut.runtime.EmbeddedApplication
 import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.heads.StartupHeadComponent
+import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.report.CampaignStateKeeper
@@ -19,7 +20,6 @@ import picocli.CommandLine.IVersionProvider
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.util.Properties
-
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
@@ -127,8 +127,7 @@ object Qalipsis : Callable<Unit> {
         }
         // The user can create a application-config.yml file to overload the default.
         environments.add("config")
-
-        applicationContext = Micronaut.build()
+        val embeddedApplication = ApplicationContext.builder()
             .banner(true)
             .environments(*environments.toTypedArray() + this.environments)
             .packages("io.qalipsis")
@@ -136,33 +135,45 @@ object Qalipsis : Callable<Unit> {
             .properties(properties)
             .deduceEnvironment(false)
             .args(*(configuration.map { "--$it" }.toTypedArray()))
-            .start()
+            .start().use {
+                applicationContext = it
 
-        // Force the loading of key services.
-        if (role == Role.STANDALONE) {
-            applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
-            applicationContext.getBeansOfType(StartupHeadComponent::class.java)
-        }
-        val processBlockers: Collection<ProcessBlocker> =
-            applicationContext.getBeansOfType(ProcessBlocker::class.java)
-        if (processBlockers.isNotEmpty()) {
-            runBlocking {
-                log.info { "${processBlockers.size} service(s) to join before exiting the process: ${processBlockers.joinToString { "${it::class.simpleName}" }}" }
-                processBlockers.forEach { it.join() }
-            }
+                // Force the loading of key services.
+                if (role == Role.STANDALONE) {
+                    applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
+                    applicationContext.getBeansOfType(StartupHeadComponent::class.java)
+                }
+                val processBlockers: Collection<ProcessBlocker> =
+                    applicationContext.getBeansOfType(ProcessBlocker::class.java)
+                if (processBlockers.isNotEmpty()) {
+                    runBlocking {
+                        log.info { "${processBlockers.size} service(s) to join before exiting the process: ${processBlockers.joinToString { "${it::class.simpleName}" }}" }
+                        processBlockers.forEach { it.join() }
+                    }
 
-            if (ENV_AUTOSTART in environments) {
-                // Publishes the result just before leaving and set the exit code.
-                applicationContext.findBean(CampaignStateKeeper::class.java).ifPresent { campaignStateKeeper ->
-                    applicationContext.getProperty("campaign.name", String::class.java).ifPresent { campaignName ->
-                        exitCode = runBlocking {
-                            campaignStateKeeper.report(campaignName).status.exitCode
+                    if (ENV_AUTOSTART in environments) {
+                        // Publishes the result just before leaving and set the exit code.
+                        applicationContext.findBean(CampaignStateKeeper::class.java).ifPresent { campaignStateKeeper ->
+                            applicationContext.getProperty("campaign.name", String::class.java)
+                                .ifPresent { campaignName ->
+                                    exitCode = runBlocking {
+                                        campaignStateKeeper.report(campaignName).status.exitCode
+                                    }
+                                }
                         }
                     }
+                } else {
+                    log.info { "There is no service to join before exiting the process" }
+                }
+
+                applicationContext.findBean(EmbeddedApplication::class.java)
+            }
+        tryAndLogOrNull(log) {
+            embeddedApplication.ifPresent { embedded ->
+                if (embedded.isRunning) {
+                    embedded.stop()
                 }
             }
-        } else {
-            log.info { "There is no service to join before exiting the process" }
         }
     }
 

@@ -25,4 +25,12 @@ internal class ShelveStepSpecificationTest {
 
         assertTrue(previousStep.nextSteps[0] is ShelveStepSpecification)
     }
+
+    @Test
+    internal fun `should add shelve step with unique name and specification as next`() {
+        val previousStep = DummyStepSpecification()
+        previousStep.shelve("value-1") { input -> input.toString() }
+
+        assertTrue(previousStep.nextSteps[0] is ShelveStepSpecification)
+    }
 }

@@ -180,7 +180,7 @@ internal class CampaignAutoStarterTest {
             campaignAutoStarter.runningScenariosLatch(runningScenariosLatch)
 
             // when
-            repeat(2) { index ->
+            repeat(2) {
                 campaignAutoStarter.coInvokeInvisible<Unit>(
                     "receivedFeedback",
                     FactoryRegistrationFeedback(emptyList())

@@ -32,9 +32,13 @@ val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
 val catadioptreVersion: String by project
 
+kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
+kapt.useBuildCache = false
+
 dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
+    compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
 
     compileOnly(kotlin("stdlib"))
     implementation(project(":api:api-dev"))
@@ -54,6 +58,7 @@ dependencies {
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
+    kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
 
     testImplementation(project(":test"))
     testImplementation(testFixtures(project(":api:api-common")))

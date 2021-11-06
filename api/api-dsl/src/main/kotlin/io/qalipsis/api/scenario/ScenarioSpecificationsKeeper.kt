@@ -9,5 +9,13 @@ import io.qalipsis.api.context.ScenarioId
  */
 interface ScenarioSpecificationsKeeper {
 
+    /**
+     * Clears the scenario specifications in the factory.
+     */
+    fun clear()
+
+    /**
+     * Returns the map of specifications in the factory.
+     */
     fun asMap(): Map<ScenarioId, ConfiguredScenarioSpecification>
 }

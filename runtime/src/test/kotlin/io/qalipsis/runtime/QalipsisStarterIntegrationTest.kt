@@ -1,5 +1,8 @@
 package io.qalipsis.runtime
 
+import assertk.assertThat
+import assertk.assertions.containsAll
+import assertk.assertions.isEqualTo
 import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Timeout
 /**
  * @author Eric Jessé
  */
+@Timeout(60)
 internal class QalipsisStarterIntegrationTest {
 
     @Test
@@ -35,13 +39,16 @@ internal class QalipsisStarterIntegrationTest {
     @Timeout(20)
     internal fun `should start with additional environments`() {
         val exitCode =
-            Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-e", "these", "-e", "are", "-e", "my", "-e", "additional", "-e", "environments"))
+            Qalipsis.start(
+                arrayOf(
+                    "-s", "do-nothing-scenario", "-e", "these", "-e", "are", "-e", "my",
+                    "-e", "additional", "-e", "environments"
+                )
+            )
 
         assertEquals(0, exitCode)
-        assertTrue(
-            Qalipsis.applicationContext.environment.activeNames.containsAll(
-                listOf(ENV_STANDALONE, ENV_AUTOSTART, "config", "these", "are", "my", "additional", "environments")
-            )
+        assertThat(Qalipsis.applicationContext.environment.activeNames).containsAll(
+            ENV_STANDALONE, ENV_AUTOSTART, "config", "these", "are", "my", "additional", "environments"
         )
     }
 
@@ -59,6 +66,20 @@ internal class QalipsisStarterIntegrationTest {
         val exitCode = Qalipsis.start(arrayOf("-s", "failing-scenario"))
 
         assertEquals(1, exitCode)
+    }
+
+    @Test
+    @Timeout(20)
+    internal fun `should start with property value`() {
+        var exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-c", "property.test=test-1"))
+        assertEquals(0, exitCode)
+        assertThat(Qalipsis.applicationContext.environment.getRequiredProperty("property.test", String::class.java))
+            .isEqualTo("test-1")
+
+        exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-c", "property.test=test-2"))
+        assertEquals(0, exitCode)
+        assertThat(Qalipsis.applicationContext.environment.getRequiredProperty("property.test", String::class.java))
+            .isEqualTo("test-2")
     }
 
     @Scenario
@@ -81,4 +102,5 @@ internal class QalipsisStarterIntegrationTest {
             .configure { report { reportErrors = true } }
             .blackHole()
     }
+
 }

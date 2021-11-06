@@ -1,5 +1,6 @@
 package io.qalipsis.api.scenario
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.concurrentList
@@ -26,8 +27,8 @@ internal class ScenarioSpecificationImplementation(
 
     override val rootSteps = concurrentList<StepSpecification<*, *, *>>()
 
-    // Visible for test only.
-    internal val registeredSteps = ConcurrentHashMap<String, ImmutableSlot<StepSpecification<*, *, *>>>()
+    @KTestable
+    private val registeredSteps = ConcurrentHashMap<String, ImmutableSlot<StepSpecification<*, *, *>>>()
 
     override var rampUpStrategy: RampUpStrategy? = null
 

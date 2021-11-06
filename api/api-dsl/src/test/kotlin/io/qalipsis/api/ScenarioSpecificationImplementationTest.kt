@@ -6,13 +6,20 @@ import assertk.assertions.containsAll
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import io.qalipsis.api.rampup.RampUpStrategy
-import io.qalipsis.api.scenario.*
+import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
+import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
+import io.qalipsis.api.scenario.StepSpecificationRegistry
+import io.qalipsis.api.scenario.catadioptre.registeredSteps
+import io.qalipsis.api.scenario.scenario
+import io.qalipsis.api.scenario.scenariosSpecifications
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
 import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.test.runBlockingTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -72,7 +79,7 @@ internal class ScenarioSpecificationImplementationTest {
         assertTrue(scenario.rootSteps.isNotEmpty())
         assertSame(step, scenario.rootSteps[0])
 
-        assertTrue(scenario.registeredSteps.isEmpty())
+        assertTrue(scenario.registeredSteps().isEmpty())
     }
 
     @Test
@@ -88,7 +95,7 @@ internal class ScenarioSpecificationImplementationTest {
         assertTrue(scenario.rootSteps.isNotEmpty())
         assertSame(step, scenario.rootSteps[0])
 
-        assertTrue(scenario.registeredSteps.isEmpty())
+        assertTrue(scenario.registeredSteps().isEmpty())
     }
 
     @Test
