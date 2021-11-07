@@ -41,10 +41,10 @@ fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.verifyAndMap(
  */
 fun <INPUT> StepSpecification<*, INPUT, *>.verify(
         assertionBlock: (suspend (input: INPUT) -> Unit)): VerificationStepSpecification<INPUT, INPUT> {
-    val step = VerificationStepSpecification<INPUT, INPUT>({ value ->
+    val step = VerificationStepSpecification<INPUT, INPUT> { value ->
         assertionBlock(value)
         value
-    })
+    }
     this.add(step)
     return step
 }

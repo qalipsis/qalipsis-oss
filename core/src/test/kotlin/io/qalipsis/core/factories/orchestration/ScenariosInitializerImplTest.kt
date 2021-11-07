@@ -17,11 +17,12 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
+import io.mockk.justRun
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.unmockkObject
-import io.mockk.verifyOrder
+import io.mockk.verify
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.orchestration.DirectedAcyclicGraph
 import io.qalipsis.api.orchestration.Scenario
@@ -41,23 +42,25 @@ import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.api.steps.TubeStepSpecification
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedback
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
+import io.qalipsis.core.factories.orchestration.catadioptre.convertScenario
 import io.qalipsis.core.factories.testScenario
 import io.qalipsis.core.heads.campaigns.DirectedAcyclicGraphSummary
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -97,6 +100,9 @@ internal class ScenariosInitializerImplTest {
     @RelaxedMockK
     lateinit var applicationContext: ApplicationContext
 
+    @RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
+
     @SpyK
     var idGenerator = TestIdGenerator
 
@@ -104,6 +110,7 @@ internal class ScenariosInitializerImplTest {
         spyk(
             ScenariosInitializerImpl(
                 applicationContext,
+                testDispatcherProvider.default(),
                 scenariosRegistry,
                 scenarioSpecificationsKeeper,
                 feedbackProducer,
@@ -112,7 +119,8 @@ internal class ScenariosInitializerImplTest {
                 runner,
                 minionsKeeper,
                 idGenerator,
-                Duration.ofSeconds(30)
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(1)
             ), recordPrivateCalls = true
         )
     }
@@ -123,7 +131,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should decorate converted step`() = runBlockingTest {
+    internal fun `should decorate converted step`() = testDispatcherProvider.runTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -143,7 +151,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should not decorate unconverted step`() = runBlockingTest {
+    internal fun `should not decorate unconverted step`() = testDispatcherProvider.runTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -161,7 +169,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should convert single step`() = runBlockingTest {
+    internal fun `should convert single step`() = testDispatcherProvider.runTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -184,7 +192,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should not convert single step when no converter is found`() = runBlockingTest {
+    internal fun `should not convert single step when no converter is found`() = testDispatcherProvider.runTest {
         // given
         val scenarioSpecification: StepSpecificationRegistry = relaxedMockk { }
         val dag: DirectedAcyclicGraph = relaxedMockk { }
@@ -206,7 +214,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should convert steps and followers`() = runBlocking {
+    internal fun `should convert steps and followers`() = testDispatcherProvider.run {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
             ScenarioSpecification::class, StepSpecificationRegistry::class
@@ -224,7 +232,12 @@ internal class ScenariosInitializerImplTest {
             every { directedAcyclicGraphId } returns "dag-2"
         }
         val atomicInteger = AtomicInteger()
-        coEvery { scenariosInitializer.coInvokeInvisible<Unit>("convertSingleStep", any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {
+        coEvery {
+            scenariosInitializer.coInvokeInvisible<Unit>(
+                "convertSingleStep",
+                any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()
+            )
+        } answers {
             (firstArg() as StepCreationContext<*>).createdStep(relaxedMockk {
                 every { id } returns "step-${atomicInteger.incrementAndGet()}"
             })
@@ -254,7 +267,7 @@ internal class ScenariosInitializerImplTest {
     }
 
     @Test
-    internal fun `should not convert followers when step is not converted`() = runBlocking {
+    internal fun `should not convert followers when step is not converted`() = testDispatcherProvider.run {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
             ScenarioSpecification::class, StepSpecificationRegistry::class
@@ -314,15 +327,6 @@ internal class ScenariosInitializerImplTest {
             every { minionsCount } returns 123
             every { rootSteps } returns scenarioRootSteps
         }
-        coEvery {
-            scenariosInitializer.coInvokeInvisible<Unit>(
-                "convertSteps",
-                any<ConfiguredScenarioSpecification>(),
-                any<Scenario>(),
-                any<Step<*, *>>(),
-                any<List<StepSpecification<Any?, Any?, *>>>()
-            )
-        } answers {}
 
         // when
         val scenario = scenariosInitializer.convertScenario("my-scenario", scenarioSpecification)
@@ -337,7 +341,10 @@ internal class ScenariosInitializerImplTest {
 
         coVerifyOnce {
             scenariosInitializer["convertSteps"](
-                any<ConfiguredScenarioSpecification>(), any<Scenario>(), any<Step<*, *>>(), any<List<StepSpecification<Any?, Any?, *>>>()
+                any<ConfiguredScenarioSpecification>(),
+                any<Scenario>(),
+                any<Step<*, *>>(),
+                any<List<StepSpecification<Any?, Any?, *>>>()
             )
         }
     }
@@ -359,11 +366,17 @@ internal class ScenariosInitializerImplTest {
 
         // then
         coVerifyNever {
-            scenariosInitializer["convertSteps"](any<ConfiguredScenarioSpecification>(), any<Scenario>(), any<Step<*, *>>(), any<List<StepSpecification<Any?, Any?, *>>>())
+            scenariosInitializer["convertSteps"](
+                any<ConfiguredScenarioSpecification>(),
+                any<Scenario>(),
+                any<Step<*, *>>(),
+                any<List<StepSpecification<Any?, Any?, *>>>()
+            )
         }
     }
 
     @Test
+    @Timeout(10)
     internal fun `should load scenarios, convert them and publish feedback`() {
         // given
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
@@ -377,31 +390,91 @@ internal class ScenariosInitializerImplTest {
         val scenario1: Scenario = relaxedMockk { }
         val scenario2: Scenario = relaxedMockk { }
         every {
-            scenariosInitializer.convertScenario(eq("scenario-1"), refEq(scenarioSpecification1))
+            scenariosInitializer invoke ("convertScenario") withArguments listOf(
+                eq("scenario-1"),
+                refEq(scenarioSpecification1)
+            )
         } returns scenario1
         every {
-            scenariosInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
+            scenariosInitializer invoke ("convertScenario") withArguments listOf(
+                eq("scenario-2"),
+                refEq(scenarioSpecification2)
+            )
         } returns scenario2
         val publishedScenarios = slot<Collection<Scenario>>()
-        every { scenariosInitializer.invokeInvisible<Unit>("publishScenarioCreationFeedback", (capture(publishedScenarios))) } answers {}
+        justRun {
+            scenariosInitializer invoke ("publishScenarioCreationFeedback") withArguments listOf(
+                capture(publishedScenarios)
+            )
+        }
 
         // when
-        scenariosInitializer.init()
+        scenariosInitializer.refresh()
 
         // then
-        verifyOrder {
+        verify {
             ServicesLoader.loadServices<Any>("scenarios", refEq(applicationContext))
             scenarioSpecificationsKeeper.asMap()
-        }
-        verifyOnce {
-            scenariosInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
-            scenariosInitializer.convertScenario(eq("scenario-1"), refEq(scenarioSpecification1))
+            scenariosInitializer["convertScenario"](eq("scenario-2"), refEq(scenarioSpecification2))
+            scenariosInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
             scenariosInitializer["publishScenarioCreationFeedback"](any<Collection<Scenario>>())
         }
         publishedScenarios.captured.let {
             assertEquals(2, it.size)
             assertTrue(it.contains(scenario1))
             assertTrue(it.contains(scenario2))
+        }
+    }
+
+    @Test
+    @Timeout(4)
+    internal fun `should generate an exception when the conversion is too long`() {
+        // given
+        val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
+        val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
+        mockkObject(ServicesLoader)
+        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } answers {
+            Thread.sleep(1500)
+            emptyList()
+        }
+        every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
+            "scenario-1" to scenarioSpecification1,
+            "scenario-2" to scenarioSpecification2
+        )
+        val scenario1: Scenario = relaxedMockk { }
+        val scenario2: Scenario = relaxedMockk { }
+        every {
+            scenariosInitializer.convertScenario(eq("scenario-1"), refEq(scenarioSpecification1))
+        } returns scenario1
+        every {
+            scenariosInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
+        } returns scenario2
+        val publishedScenarios = slot<Collection<Scenario>>()
+        every {
+            scenariosInitializer.invokeInvisible<Unit>(
+                "publishScenarioCreationFeedback",
+                (capture(publishedScenarios))
+            )
+        } answers {}
+
+        // when
+        assertThrows<TimeoutException> {
+            scenariosInitializer.refresh()
+        }
+    }
+
+    @Test
+    @Timeout(4)
+    internal fun `should throw the conversion exception`() {
+        // given
+        mockkObject(ServicesLoader)
+        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
+        every { scenarioSpecificationsKeeper.asMap() } returns mapOf("scenario-1" to relaxedMockk { })
+        every { scenariosInitializer.convertScenario(any(), any()) } throws RuntimeException()
+
+        // when
+        assertThrows<RuntimeException> {
+            scenariosInitializer.refresh()
         }
     }
 

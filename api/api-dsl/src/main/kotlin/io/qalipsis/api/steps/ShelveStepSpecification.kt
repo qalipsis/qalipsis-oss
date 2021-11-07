@@ -10,7 +10,7 @@ import javax.validation.constraints.NotBlank
  */
 @Introspected
 data class ShelveStepSpecification<INPUT>(
-        val specification: (input: INPUT) -> Map<@NotBlank String, Any?>
+    val specification: (input: INPUT) -> Map<@NotBlank String, Any?>
 ) : AbstractStepSpecification<INPUT, INPUT, ShelveStepSpecification<INPUT>>()
 
 /**
@@ -21,7 +21,8 @@ data class ShelveStepSpecification<INPUT>(
  * @author Eric Jessé
  */
 fun <INPUT> StepSpecification<*, INPUT, *>.shelve(
-        specification: (input: INPUT) -> Map<String, Any?>): ShelveStepSpecification<INPUT> {
+    specification: (input: INPUT) -> Map<String, Any?>
+): ShelveStepSpecification<INPUT> {
     val step = ShelveStepSpecification(specification)
     this.add(step)
     return step
@@ -36,4 +37,19 @@ fun <INPUT> StepSpecification<*, INPUT, *>.shelve(
  */
 fun <INPUT> StepSpecification<*, INPUT, *>.shelve(name: String): ShelveStepSpecification<INPUT> {
     return this.shelve { input -> mapOf(name to input) }
+}
+
+
+/**
+ * Shelves the input into a cache for later use with the given name.
+ *
+ * @param name name of the value to later [unshelve] in the cache.
+ *
+ * @author Eric Jessé
+ */
+fun <INPUT> StepSpecification<*, INPUT, *>.shelve(
+    name: String,
+    specification: (input: INPUT) -> Any?
+): ShelveStepSpecification<INPUT> {
+    return this.shelve { input -> mapOf(name to specification(input)) }
 }

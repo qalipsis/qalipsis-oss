@@ -16,4 +16,9 @@ package io.qalipsis.core.factories.orchestration
  */
 internal interface ScenariosInitializer {
 
+    /**
+     * Refreshes the scenarios
+     */
+    fun refresh()
+
 }

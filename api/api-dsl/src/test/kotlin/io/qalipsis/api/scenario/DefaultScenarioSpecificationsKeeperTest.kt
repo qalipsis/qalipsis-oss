@@ -5,6 +5,8 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isNotNull
 import assertk.assertions.key
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.scenario.catadioptre.filterScenarios
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import java.util.Optional
@@ -25,7 +27,7 @@ internal class DefaultScenarioSpecificationsKeeperTest {
             "my-first-scenario" to relaxedMockk { },
             "my-second-scenario" to relaxedMockk { },
             "my-third-scenario" to relaxedMockk { }
-        ))
+        )) as Map<*, *>
 
         // then
         assertThat(eligibleScenarios).hasSize(3)
@@ -41,7 +43,7 @@ internal class DefaultScenarioSpecificationsKeeperTest {
             "my-first-scenario" to relaxedMockk { },
             "my-second-scenario" to relaxedMockk { },
             "my-third-scenario" to relaxedMockk { }
-        ))
+        )) as Map<*, *>
 
         // then
         assertThat(eligibleScenarios).hasSize(3)
@@ -57,7 +59,7 @@ internal class DefaultScenarioSpecificationsKeeperTest {
             "my-first-scenario" to relaxedMockk { },
             "my-second-scenario" to relaxedMockk { },
             "my-third-scenario" to relaxedMockk { }
-        ))
+        )) as Map<*, *>
 
         // then
         assertThat(eligibleScenarios).hasSize(3)
@@ -77,7 +79,7 @@ internal class DefaultScenarioSpecificationsKeeperTest {
             "my-fourth-scenario" to relaxedMockk { },
             "my-fifth-scenario" to relaxedMockk { },
             "my-sixth-scenario" to relaxedMockk { }
-        ))
+        )) as Map<ScenarioId, *>
 
         // then
         assertThat(eligibleScenarios).all {

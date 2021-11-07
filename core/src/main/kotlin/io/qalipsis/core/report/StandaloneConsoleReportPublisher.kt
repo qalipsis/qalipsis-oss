@@ -5,6 +5,8 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.lang.tryAndLogOrNull
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportPublisher
 import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
@@ -84,12 +86,17 @@ ${
 
     @PreDestroy
     fun publishOnLeave() {
-        runBlocking {
-            publish(campaignName)
+        tryAndLogOrNull(log) {
+            runBlocking {
+                publish(campaignName)
+            }
         }
     }
 
     companion object {
+
+        @JvmStatic
+        private val log = logger()
 
         private const val RUNNING_INDICATOR = "<Running>"
 

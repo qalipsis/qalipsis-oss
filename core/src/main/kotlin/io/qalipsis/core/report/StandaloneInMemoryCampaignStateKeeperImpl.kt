@@ -118,19 +118,21 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
         val runningCampaign = runningCampaigns[campaignId]?.values?.takeIf { it.isNotEmpty() }
             ?: throw IllegalArgumentException("The campaign with ID $campaignId does not exist")
 
+        val forcedReport = campaignStatus[campaignId]
         val scenariosReports = runningCampaign.map { runningScenarioCampaign ->
             runningScenarioCampaign.run {
                 ScenarioReport(
                     campaignId,
                     scenarioId,
                     start,
-                    end,
+                    end ?: forcedReport?.end ?: Instant.now(),
                     startedMinions.get(),
                     completedMinions.get(),
                     0, // FIXME
                     successfulStepExecutions.get(),
                     failedStepExecutions.get(),
                     when {
+                        end == null -> ExecutionStatus.ABORTED
                         messages.values.any { it.severity == ReportMessageSeverity.ABORT } -> ExecutionStatus.ABORTED
                         messages.values.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
                         messages.values.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
@@ -141,12 +143,10 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
             }
         }
 
-        val forcedReport = campaignStatus[campaignId]
         return CampaignReport(
             campaignId,
             scenariosReports.minOf(ScenarioReport::start),
-            forcedReport?.end
-                ?: if (scenariosReports.any { it.end == null }) null else scenariosReports.maxOf { it.end!! },
+            forcedReport?.end ?: scenariosReports.maxOf { it.end!! },
             scenariosReports.sumOf { it.configuredMinionsCount },
             scenariosReports.sumOf { it.executedMinionsCount },
             scenariosReports.sumOf { it.stepsCount },

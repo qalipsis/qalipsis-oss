@@ -226,16 +226,20 @@ Converts a collective input into single element in the output, using the user-de
 image:operators/flatMap.svg[operators-flatMap]
 
 ===== flatten
+
 Converts a collective input into single element in the output, for a known collective type (array, iterable).
 
 image:operators/flatten.svg[operators-flatten]
 
 ===== map
+
 Converts each element into another in the output.
+`mapWithContext` provides the same capability with the step context as additional argument.
 
 image:operators/map.svg[operators-map]
 
 ===== onEach
+
 Executes one or several statements on each element of the input, and forwards them unchanged to the output.
 
 image:operators/onEach.svg[operators-onEach]

@@ -1,8 +1,10 @@
 package io.qalipsis.core.factories.orchestration
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Property
 import io.micronaut.validation.Validated
+import io.qalipsis.api.Executors
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
@@ -32,12 +34,16 @@ import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackDirectedAcycl
 import io.qalipsis.core.cross.feedbacks.FactoryRegistrationFeedbackScenario
 import io.qalipsis.core.factories.steps.MinionsKeeperAware
 import io.qalipsis.core.factories.steps.RunnerAware
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.validation.Valid
@@ -51,6 +57,7 @@ import javax.validation.Valid
 @Validated
 internal class ScenariosInitializerImpl(
     private val applicationContext: ApplicationContext,
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
     private val scenariosRegistry: ScenariosRegistry,
     private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
     private val feedbackProducer: FeedbackProducer,
@@ -62,7 +69,11 @@ internal class ScenariosInitializerImpl(
     @PositiveDuration @Property(
         name = "campaign.step.start-timeout",
         defaultValue = "30s"
-    ) private val stepStartTimeout: Duration
+    ) private val stepStartTimeout: Duration,
+    @PositiveDuration @Property(
+        name = "scenario.conversion.timeout",
+        defaultValue = "10s"
+    ) private val conversionTimeout: Duration
 ) : ScenariosInitializer, StartupFactoryComponent {
 
     /**
@@ -74,40 +85,42 @@ internal class ScenariosInitializerImpl(
     // Sort the decorator converters in the expected order.
     private val stepSpecificationDecoratorConverters = stepSpecificationDecoratorConverters.sortedBy { it.order }
 
-    @PostConstruct
-    fun init() {
-        // Load all the scenarios specifications into memory.
-        ServicesLoader.loadServices<Any>("scenarios", applicationContext)
+    private lateinit var scenarioSpecs: Map<ScenarioId, ConfiguredScenarioSpecification>
 
-        // Fetch and convert them.
-        val foundScenarios = scenarioSpecificationsKeeper.asMap()
-        if (foundScenarios.isEmpty()) {
-            // FIXME Trigger an error if there is no scenario found, in order to kill this useless instance.
-            publishScenarioCreationFeedback(emptyList())
-        } else {
-            val allScenarios = mutableListOf<Scenario>()
-            foundScenarios.forEach { (scenarioId, scenarioSpecification) ->
-                try {
+    @PostConstruct
+    override fun refresh() {
+        scenarioSpecificationsKeeper.clear()
+        val future = CompletableFuture.supplyAsync {
+            try {
+                // Load all the scenarios specifications into memory.
+                ServicesLoader.loadServices<Any>("scenarios", applicationContext)
+
+                scenarioSpecs = scenarioSpecificationsKeeper.asMap()
+                val allScenarios = mutableListOf<Scenario>()
+                scenarioSpecs.forEach { (scenarioId, scenarioSpecification) ->
+                    log.info { "Converting the scenario specification $scenarioId" }
                     val scenario = convertScenario(scenarioId, scenarioSpecification)
                     allScenarios.add(scenario)
                     scenario.dags.forEach { dag ->
                         dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
                     }
-                } catch (e: Exception) {
-                    log.error(e) { e.message }
-                    throw e
                 }
+                publishScenarioCreationFeedback(allScenarios)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                log.error(e) { e.message }
+                Result.failure(e)
             }
-            publishScenarioCreationFeedback(allScenarios)
         }
-
+        future.get(conversionTimeout.toMillis(), TimeUnit.MILLISECONDS).getOrThrow()
     }
 
     @PreDestroy
     fun destroy() {
-        // FIXME Add orchestration dispatcher.
-        runBlocking {
+        runBlocking(coroutineDispatcher) {
+            log.info { "Stopping all the scenarios..." }
             dagsByScenario.keys.mapNotNull(scenariosRegistry::get).forEach(Scenario::destroy)
+            log.info { "All the scenarios were stopped..." }
         }
     }
 
@@ -125,15 +138,15 @@ internal class ScenariosInitializerImpl(
             )
         }
 
-        // FIXME Add orchestration dispatcher.
-        runBlocking {
+        runBlocking(coroutineDispatcher) {
             log.trace { "Sending feedback: $feedbackScenarios to $feedbackProducer" }
             feedbackProducer.publish(FactoryRegistrationFeedback(feedbackScenarios))
         }
     }
 
     @LogInputAndOutput
-    internal fun convertScenario(
+    @KTestable
+    protected fun convertScenario(
         scenarioId: ScenarioId,
         scenarioSpecification: ConfiguredScenarioSpecification
     ): Scenario {
@@ -154,8 +167,7 @@ internal class ScenariosInitializerImpl(
             )
         scenariosRegistry.add(scenario)
 
-        // FIXME Add orchestration dispatcher.
-        runBlocking {
+        runBlocking(coroutineDispatcher) {
             @Suppress("UNCHECKED_CAST")
             convertSteps(
                 scenarioSpecification, scenario, null,

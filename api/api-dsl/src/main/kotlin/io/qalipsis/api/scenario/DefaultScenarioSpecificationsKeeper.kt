@@ -1,5 +1,6 @@
 package io.qalipsis.api.scenario
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Property
 import io.qalipsis.api.context.ScenarioId
 import jakarta.inject.Singleton
@@ -30,6 +31,10 @@ internal class DefaultScenarioSpecificationsKeeper(
         }
     }
 
+    override fun clear() {
+        scenariosSpecifications.clear()
+    }
+
     override fun asMap(): Map<ScenarioId, ConfiguredScenarioSpecification> {
         return filterScenarios(scenariosSpecifications)
     }
@@ -37,8 +42,8 @@ internal class DefaultScenarioSpecificationsKeeper(
     /**
      * Filters out the scenarios that are not matching the existing selectors. When no selector is set, [scenarios] is returned.
      */
-    // Visible for test.
-    internal fun filterScenarios(scenarios: Map<ScenarioId, ConfiguredScenarioSpecification>): Map<ScenarioId, ConfiguredScenarioSpecification> {
+    @KTestable
+    private fun filterScenarios(scenarios: Map<ScenarioId, ConfiguredScenarioSpecification>): Map<ScenarioId, ConfiguredScenarioSpecification> {
         return if (exactMatchers.isEmpty() && patternMatchers.isEmpty()) {
             scenarios
         } else scenarios.filterKeys { scenarioId ->
