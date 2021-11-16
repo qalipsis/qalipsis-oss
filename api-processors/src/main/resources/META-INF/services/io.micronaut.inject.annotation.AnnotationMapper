@@ -1,0 +1,5 @@
+io.qalipsis.api.processors.StepConverterAnnotationMapper
+io.qalipsis.api.processors.StepDecoratorAnnotationMapper
+io.qalipsis.api.processors.PluginComponentAnnotationMapper
+io.qalipsis.api.processors.NoReflectionMapper
+io.qalipsis.api.processors.Spec
