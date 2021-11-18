@@ -1,5 +1,0 @@
-marble delay
-{
-    source input:      +-A-B---C---->
-    operator "delay":  +----A-B---C->
-}

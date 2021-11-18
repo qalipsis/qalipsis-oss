@@ -1,5 +1,0 @@
-marble map
-{
-    source input:                  +-A-B---C->
-    operator "map(toLowercase())": +-a-b---c->
-}

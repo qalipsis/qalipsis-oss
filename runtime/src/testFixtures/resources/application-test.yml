@@ -11,6 +11,9 @@ executors:
   background: global
   orchestration: global
 
+runtime:
+  minimal-duration: 2s
+
 report:
   export:
     console:

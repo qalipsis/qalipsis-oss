@@ -25,7 +25,7 @@ plugins {
 val target = JavaVersion.VERSION_11
 
 configure<JavaPluginConvention> {
-    description = "Qalipsis"
+    description = "Qalipsis Engine"
 
     sourceCompatibility = target
     targetCompatibility = target
@@ -52,11 +52,6 @@ allprojects {
     apply(plugin = "nebula.maven-developer")
     apply(plugin = "signing")
 
-    if (name.contains("api") || name == "test") {
-        apply(plugin = "nebula.javadoc-jar")
-        apply(plugin = "nebula.source-jar")
-    }
-
     infoBroker {
         excludedManifestProperties = listOf(
             "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
@@ -78,8 +73,8 @@ allprojects {
         mavenCentral()
         jcenter()
         maven {
-            name = "rubygems"
-            setUrl("https://rubygems-proxy.torquebox.org/releases")
+            name = "maven-central-snapshots"
+            setUrl("https://oss.sonatype.org/content/repositories/snapshots")
         }
     }
 
@@ -96,6 +91,7 @@ allprojects {
     val ossrhPassword: String? by project
     publishing {
         repositories {
+            mavenLocal()
             maven {
                 val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
                 val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
@@ -184,7 +180,6 @@ allprojects {
     }
 
 }
-
 
 val testTasks = subprojects.flatMap {
     val testTasks = mutableListOf<Test>()

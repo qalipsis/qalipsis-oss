@@ -9,8 +9,8 @@ import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
 import io.qalipsis.api.steps.execute
 import io.qalipsis.api.steps.returns
-import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
-import io.qalipsis.core.cross.configuration.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_AUTOSTART
+import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

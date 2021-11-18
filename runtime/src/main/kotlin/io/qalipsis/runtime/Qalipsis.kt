@@ -9,9 +9,7 @@ import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.report.CampaignStateKeeper
-import io.qalipsis.core.cross.configuration.ENV_AUTOSTART
-import io.qalipsis.core.cross.configuration.ENV_STANDALONE
-import io.qalipsis.core.cross.configuration.ENV_VOLATILE
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.heads.lifetime.ProcessBlocker
 import kotlinx.coroutines.runBlocking
 import picocli.CommandLine
@@ -23,9 +21,8 @@ import java.util.Properties
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
-
 /**
- * Starter object to launch the application Qalipsis as a JVM process.
+ * Starter object to launch the application QALIPSIS as a JVM process.
  *
  * @author Eric Jessé
  */
@@ -88,7 +85,7 @@ object Qalipsis : Callable<Unit> {
             .setCaseInsensitiveEnumValuesAllowed(true)
             .setUsageHelpAutoWidth(true)
             .execute(*args)
-        return runtimeExitCode.takeIf { it != 0 } ?: exitCode
+        return exitCode.takeIf { it != 0 } ?: runtimeExitCode
     }
 
     enum class Role {
@@ -117,11 +114,11 @@ object Qalipsis : Callable<Unit> {
             }
 
             // Start the campaigns when everything is ready.
-            environments.add(ENV_AUTOSTART)
+            environments.add(ExecutionEnvironments.ENV_AUTOSTART)
             // Do not persist configuration of factories and scenarios.
-            environments.add(ENV_VOLATILE)
+            environments.add(ExecutionEnvironments.ENV_VOLATILE)
             // Start head and one factory in the same process.
-            environments.add(ENV_STANDALONE)
+            environments.add(ExecutionEnvironments.ENV_STANDALONE)
             // Do not run in server mode, exit as soon as the operations are complete.
             environments.add(Environment.CLI)
         }
@@ -147,18 +144,20 @@ object Qalipsis : Callable<Unit> {
                     applicationContext.getBeansOfType(ProcessBlocker::class.java)
                 if (processBlockers.isNotEmpty()) {
                     runBlocking {
-                        log.info { "${processBlockers.size} service(s) to join before exiting the process: ${processBlockers.joinToString { "${it::class.simpleName}" }}" }
-                        processBlockers.forEach { it.join() }
+                        log.info { "${processBlockers.size} service(s) to wait before exiting the process: ${processBlockers.joinToString { blocker -> "${blocker::class.simpleName}" }}" }
+                        processBlockers.sortedBy(ProcessBlocker::getOrder).forEach { blocker -> blocker.join() }
                     }
 
-                    if (ENV_AUTOSTART in environments) {
+                    if (ExecutionEnvironments.ENV_AUTOSTART in environments) {
                         // Publishes the result just before leaving and set the exit code.
                         applicationContext.findBean(CampaignStateKeeper::class.java).ifPresent { campaignStateKeeper ->
                             applicationContext.getProperty("campaign.name", String::class.java)
                                 .ifPresent { campaignName ->
                                     exitCode = runBlocking {
-                                        campaignStateKeeper.report(campaignName).status.exitCode
-                                    }
+                                        val reportStatus = campaignStateKeeper.report(campaignName).status
+                                        log.info { "Exiting the scenario with the stats $reportStatus" }
+                                        reportStatus
+                                    }.exitCode
                                 }
                         }
                     }

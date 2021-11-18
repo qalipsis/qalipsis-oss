@@ -1,5 +1,0 @@
-marble blackHole
-{
-    source input:          +-A-B--C->
-    operator "blackHole":  +-------->
-}

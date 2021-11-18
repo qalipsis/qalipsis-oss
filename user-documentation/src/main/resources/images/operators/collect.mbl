@@ -1,5 +1,0 @@
-marble collect
-{
-    source input:        +--ABC  --DEF->
-    operator "collect":  +----{A,B,C}----{D,E,F}--->
-}

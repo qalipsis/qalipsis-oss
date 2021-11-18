@@ -1,5 +1,0 @@
-marble onEach
-{
-    source input:      +-1-2---3-->
-    operator "onEach": +-1-2---3-->
-}

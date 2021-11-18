@@ -1,7 +1,6 @@
 # QALIPSIS
 
-
-![CI](https://github.com/aeris-consulting/qalipsis/actions/workflows/gradle-master.yml/badge.svg)
+![CI](https://github.com/aeris-consulting/qalipsis-engine/actions/workflows/gradle-master.yml/badge.svg)
 
 ## Build the project in a prepared Docker image
 

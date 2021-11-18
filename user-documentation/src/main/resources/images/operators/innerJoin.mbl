@@ -1,6 +1,0 @@
-marble innerJoin
-{
-    source left:                                 +--A   ---B   -----C---D      ------------>
-    source right:                                +--a   -----b   ----d   --------c   ----e->
-    operator "innerJoin(lower(top) == bottom)":  +--(Aa)-----(Bb)-------(Dd)-----(Cc)------>
-}

@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    `java-test-fixtures`
 }
 
 description = "Qalipsis Core"
@@ -48,9 +49,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
 
-    implementation(project(":api:api-common"))
-    implementation(project(":api:api-dsl"))
-    implementation(project(":api:api-processors"))
+    implementation("io.qalipsis:api-common:${project.version}")
+    implementation("io.qalipsis:api-dsl:${project.version}")
+    implementation("io.qalipsis:api-processors:${project.version}")
 
     implementation("com.google.guava:guava:29.0-jre")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
@@ -65,20 +66,22 @@ dependencies {
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
-    kapt(project(":api:api-processors"))
+    kapt("io.qalipsis:api-processors:${project.version}")
     kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
 
-    testImplementation(project(":test"))
+    testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
-    testImplementation(testFixtures(project(":api:api-dsl")))
-    testImplementation(testFixtures(project(":api:api-common")))
+    testImplementation(testFixtures("io.qalipsis:api-dsl:${project.version}"))
+    testImplementation(testFixtures("io.qalipsis:api-common:${project.version}"))
     testImplementation(testFixtures(project(":runtime")))
 
     kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest(project(":api:api-processors"))
+    kaptTest("io.qalipsis:api-processors:${project.version}")
+
+    testFixturesApi("io.qalipsis:api-common:${project.version}")
 }
 

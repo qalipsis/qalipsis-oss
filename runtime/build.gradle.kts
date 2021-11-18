@@ -36,10 +36,12 @@ dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
 
-    api(project(":api:api-common"))
-    api(project(":api:api-dsl"))
-    api(project(":api:api-processors"))
+    api("io.qalipsis:api-common:${project.version}")
+    api("io.qalipsis:api-dsl:${project.version}")
+    api("io.qalipsis:api-processors:${project.version}")
     api(project(":core"))
+    api(project(":factory"))
+    api(project(":head"))
 
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("ch.qos.logback:logback-classic")
@@ -60,12 +62,12 @@ dependencies {
 
     testFixturesCompileOnly(kotlin("stdlib"))
 
-    testImplementation(project(":test"))
+    testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
 
     kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest(project(":api:api-processors"))
+    kaptTest("io.qalipsis:api-processors:${project.version}")
 }

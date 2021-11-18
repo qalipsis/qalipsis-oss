@@ -1,5 +1,0 @@
-marble acceleratingPace
-{
-    source input:                     +-ABC---------DE-->
-    operator "acceleratingPace": +-A----B--C---DE->
-}

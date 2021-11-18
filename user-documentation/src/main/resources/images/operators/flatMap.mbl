@@ -1,5 +1,0 @@
-marble flatMap
-{
-    source input:                       +--{A,B,C}----{D,E,F}--->
-    operator "flatMap(toLowercase())":  +--abc  --def->
-}

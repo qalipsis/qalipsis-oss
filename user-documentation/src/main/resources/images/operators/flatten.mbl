@@ -1,5 +1,0 @@
-marble flatten
-{
-    source input:        +--{A,B,C}----{D,E,F}--->
-    operator "flatten":  +--ABC  --DEF->
-}

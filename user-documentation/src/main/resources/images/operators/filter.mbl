@@ -1,5 +1,0 @@
-marble filter
-{
-    source input:                +-1-2---3--4->
-    operator "filter(is even)":  +---2------4->
-}

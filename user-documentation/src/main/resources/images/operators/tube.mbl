@@ -1,5 +1,0 @@
-marble tube
-{
-    source input:     +-A-B--C--->
-    operator "tube":  +-A-B--C--->
-}

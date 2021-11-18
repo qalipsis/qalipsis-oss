@@ -6,4 +6,4 @@ package io.qalipsis.core.exceptions
  *
  * @author Eric Jessé
  */
-internal class StepExecutionException(cause: Throwable? = null) : RuntimeException(cause)
+class StepExecutionException(cause: Throwable? = null) : RuntimeException(cause)
