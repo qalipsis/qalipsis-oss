@@ -12,17 +12,16 @@ import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.annotations.lifetime.ProcessBlocker
 import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_AUTOSTART
 import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.FactoryRegistrationFeedback
-import io.qalipsis.core.heads.lifetime.ProcessBlocker
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
-import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import kotlin.system.exitProcess
 
@@ -49,8 +48,9 @@ internal class CampaignAutoStarter(
 
     private var consumptionJob: Job? = null
 
-    @PostConstruct
-    fun init() {
+    override fun getStartupOrder() = Int.MIN_VALUE
+
+    override fun init() {
         executionCoroutineScope.launch {
             log.debug { "Consuming from $feedbackConsumer" }
             consumptionJob = feedbackConsumer.onReceive("${this@CampaignAutoStarter::class.simpleName}") { feedback ->

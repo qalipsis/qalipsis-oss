@@ -1,13 +1,14 @@
 package io.qalipsis.runtime.executors
 
+import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Bean
-import io.micronaut.context.annotation.EachBean
+import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Factory
+import io.micronaut.context.annotation.Infrastructure
 import io.qalipsis.api.Executors
 import io.qalipsis.api.coroutines.CoroutineScopeProvider
 import io.qalipsis.api.logging.LoggerHelper.logger
 import jakarta.inject.Named
-import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -26,12 +27,18 @@ import kotlin.math.ceil
 @Factory
 internal class ExecutorsFactory {
 
+    private lateinit var createdScopes: Map<String, NamedCoroutineScope>
+
     /**
      * Creates a new instance of [CoroutineScopeProvider] that matches the configuration.
      */
-    @Singleton
+    @Infrastructure
+    @Context
     @Bean(preDestroy = "close")
-    fun coroutineScopeProvider(configuration: ExecutorsConfiguration): CoroutineScopeProvider {
+    fun coroutineScopeProvider(
+        applicationContext: ApplicationContext,
+        configuration: ExecutorsConfiguration
+    ): CoroutineScopeProvider {
         val scopes =
             mutableMapOf(
                 Executors.GLOBAL_EXECUTOR_NAME to createScope(
@@ -52,7 +59,7 @@ internal class ExecutorsFactory {
         // Scopes with a defined size or referencing the global scope.
         @Suppress("UNCHECKED_CAST") val definedScopes = nonGlobalConfigs
             .mapValues { (name, config) -> createScope(name, config) }
-            .filterValues { it != null } as Map<String, CoroutineScope>
+            .filterValues { it != null } as Map<String, NamedCoroutineScope>
         scopes += definedScopes
 
         val referencingScopes = (nonGlobalConfigs - scopes.keys).mapValues { (_, config) ->
@@ -60,6 +67,7 @@ internal class ExecutorsFactory {
                 ?: throw IllegalArgumentException("No defined executor with name '$config' could be found")
         }
         scopes += referencingScopes
+        createdScopes = scopes as Map<String, NamedCoroutineScope>
 
         return SimpleCoroutineScopeProvider(
             scopes[Executors.GLOBAL_EXECUTOR_NAME]!!,
@@ -70,7 +78,7 @@ internal class ExecutorsFactory {
         )
     }
 
-    private fun createScope(name: String, configuration: String): CoroutineScope? {
+    private fun createScope(name: String, configuration: String): NamedCoroutineScope? {
         val threadsCount = configuration.toIntOrNull()
         val actualThreadsCount = threadsCount
             ?: if (configuration.trim().endsWith("x")
@@ -88,63 +96,84 @@ internal class ExecutorsFactory {
         }
     }
 
-    private fun createFixedThreadPoolContext(name: String, threadsCount: Int): CoroutineScope {
+    private fun createFixedThreadPoolContext(name: String, threadsCount: Int): NamedCoroutineScope {
         return if (threadsCount > 0) {
-            log.info { "Creating the coroutine context $name with $threadsCount threads" }
-            CoroutineScope(newFixedThreadPoolContext(threadsCount, "$name-scope"))
+            val dispatcher = newFixedThreadPoolContext(threadsCount, name)
+            NamedCoroutineScope(name, dispatcher, dispatcher, CoroutineScope(dispatcher)).also {
+                log.trace { "Created the coroutine context $name with $threadsCount threads: $it" }
+            }
         } else {
-            log.info { "Creating the coroutine context $name with the GlobalScope" }
-            GlobalScope
+            log.trace { "Creating the coroutine context $name with the GlobalScope" }
+            NamedCoroutineScope(name, Dispatchers.Default, Dispatchers.Default, GlobalScope)
         }
     }
 
     @Named(Executors.GLOBAL_EXECUTOR_NAME)
-    @Singleton
-    fun globalScope(provider: CoroutineScopeProvider): CoroutineScope {
-        return provider.global
-    }
-
-    @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
-    @Singleton
-    fun campaignScope(provider: CoroutineScopeProvider): CoroutineScope {
-        return provider.campaign
-    }
-
-    @Named(Executors.IO_EXECUTOR_NAME)
-    @Singleton
-    fun ioScope(provider: CoroutineScopeProvider): CoroutineScope {
-        return provider.io
-    }
+    @Bean(typed = [CoroutineDispatcher::class])
+    fun globalDispatcher() = createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.BACKGROUND_EXECUTOR_NAME)
-    @Singleton
-    fun backgroundScope(provider: CoroutineScopeProvider): CoroutineScope {
-        return provider.background
-    }
+    @Bean(typed = [CoroutineDispatcher::class])
+    fun backgroundDispatcher() = createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!.dispatcher
+
+    @Named(Executors.IO_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineDispatcher::class])
+    fun ioDispatcher() = createdScopes[Executors.IO_EXECUTOR_NAME]!!.dispatcher
+
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineDispatcher::class])
+    fun campaignDispatcher() = createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME)
-    @Singleton
-    fun orchestrationScope(provider: CoroutineScopeProvider): CoroutineScope {
-        return provider.orchestration
-    }
-
-    @EachBean(CoroutineScope::class)
-    @Bean(typed = [CoroutineContext::class])
-    fun coroutineContexts(scope: CoroutineScope): CoroutineContext {
-        return scope.coroutineContext
-    }
-
-    @EachBean(CoroutineContext::class)
     @Bean(typed = [CoroutineDispatcher::class])
-    fun coroutineDispatchers(context: CoroutineContext): CoroutineDispatcher {
-        return when (context) {
-            is CoroutineDispatcher -> context
-            else -> {
-                log.warn { "Context $context is not a CoroutineDispatcher and is replaced by Dispatchers.Default" }
-                Dispatchers.Default
-            }
-        }
-    }
+    fun orchestrationDispatcher() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!.dispatcher
+
+    @Named(Executors.GLOBAL_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineContext::class])
+    fun globalContext() = createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!.context
+
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineContext::class])
+    fun backgroundContext() = createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!.context
+
+    @Named(Executors.IO_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineContext::class])
+    fun ioContext() = createdScopes[Executors.IO_EXECUTOR_NAME]!!.context
+
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineContext::class])
+    fun campaignContext() = createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!.context
+
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineContext::class])
+    fun orchestrationContext() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!.context
+
+    @Named(Executors.GLOBAL_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineScope::class])
+    fun globalScope() = createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!
+
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineScope::class])
+    fun backgroundScope() = createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!
+
+    @Named(Executors.IO_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineScope::class])
+    fun ioScope() = createdScopes[Executors.IO_EXECUTOR_NAME]
+
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineScope::class])
+    fun campaignScope() = createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!
+
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME)
+    @Bean(typed = [CoroutineScope::class])
+    fun orchestrationScope() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!
+
+    internal class NamedCoroutineScope(
+        val name: String,
+        val dispatcher: CoroutineDispatcher,
+        val context: CoroutineContext,
+        delegate: CoroutineScope
+    ) : CoroutineScope by delegate
 
     private companion object {
 

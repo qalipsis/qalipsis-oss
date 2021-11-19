@@ -11,7 +11,6 @@ import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import javax.annotation.PostConstruct
 
 /**
  * Implementation of [AbstractDirectiveConsumer] based upon [kotlinx.coroutines.channels.Channel]s, used for deployments
@@ -27,8 +26,9 @@ internal class ChannelBasedDirectiveConsumer(
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : AbstractDirectiveConsumer(directiveProcessors) {
 
-    @PostConstruct
-    fun init() {
+    override fun getStartupOrder() = Int.MIN_VALUE
+
+    override fun init() {
         coroutineScope.launch {
             log.debug { "Consuming the directives from ${producer.channel}" }
             for (directive in producer.channel) {

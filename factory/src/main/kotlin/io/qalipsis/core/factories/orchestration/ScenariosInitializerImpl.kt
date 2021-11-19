@@ -44,7 +44,6 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.validation.Valid
 
@@ -57,7 +56,7 @@ import javax.validation.Valid
 @Validated
 internal class ScenariosInitializerImpl(
     private val applicationContext: ApplicationContext,
-    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
+    @Named(Executors.GLOBAL_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
     private val scenariosRegistry: ScenariosRegistry,
     private val scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper,
     private val feedbackProducer: FeedbackProducer,
@@ -87,11 +86,17 @@ internal class ScenariosInitializerImpl(
 
     private lateinit var scenarioSpecs: Map<ScenarioId, ConfiguredScenarioSpecification>
 
-    @PostConstruct
+    override fun getStartupOrder() = Int.MAX_VALUE
+
+    override fun init() {
+        refresh()
+    }
+
     override fun refresh() {
-        scenarioSpecificationsKeeper.clear()
-        val future = CompletableFuture.supplyAsync {
+        CompletableFuture.supplyAsync {
             try {
+                scenarioSpecificationsKeeper.clear()
+                log.info { "Refreshing the scenarios specifications" }
                 // Load all the scenarios specifications into memory.
                 ServicesLoader.loadServices<Any>("scenarios", applicationContext)
 
@@ -102,17 +107,16 @@ internal class ScenariosInitializerImpl(
                     val scenario = convertScenario(scenarioId, scenarioSpecification)
                     allScenarios.add(scenario)
                     scenario.dags.forEach { dag ->
-                        dagsByScenario.computeIfAbsent(scenarioId) { mutableMapOf() }[dag.id] = dag
+                        dagsByScenario.computeIfAbsent(scenarioId) { ConcurrentHashMap() }[dag.id] = dag
                     }
                 }
                 publishScenarioCreationFeedback(allScenarios)
                 Result.success(Unit)
             } catch (e: Exception) {
-                log.error(e) { e.message }
+                log.error(e) { "${e.message}" }
                 Result.failure(e)
             }
-        }
-        future.get(conversionTimeout.toMillis(), TimeUnit.MILLISECONDS).getOrThrow()
+        }.get(conversionTimeout.toMillis(), TimeUnit.MILLISECONDS).getOrThrow()
     }
 
     @PreDestroy
@@ -139,8 +143,9 @@ internal class ScenariosInitializerImpl(
         }
 
         runBlocking(coroutineDispatcher) {
-            log.trace { "Sending feedback: $feedbackScenarios to $feedbackProducer" }
-            feedbackProducer.publish(FactoryRegistrationFeedback(feedbackScenarios))
+            val feedback = FactoryRegistrationFeedback(feedbackScenarios)
+            log.trace { "Sending feedback: $feedback to $feedbackProducer" }
+            feedbackProducer.publish(feedback)
         }
     }
 
@@ -193,9 +198,7 @@ internal class ScenariosInitializerImpl(
                     convertStepRecursively(scenarioSpecification, scenario, parentStep, stepSpecification)
                 }
             }
-        }.forEach { job ->
-            job.join()
-        }
+        }.forEach { job -> job.join() }
     }
 
     private suspend fun convertStepRecursively(

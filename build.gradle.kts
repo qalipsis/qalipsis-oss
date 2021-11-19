@@ -51,6 +51,7 @@ allprojects {
     apply(plugin = "nebula.maven-manifest")
     apply(plugin = "nebula.maven-developer")
     apply(plugin = "signing")
+    apply(plugin = "nebula.source-jar")
 
     infoBroker {
         excludedManifestProperties = listOf(

@@ -5,18 +5,20 @@ import io.micronaut.context.env.Environment
 import io.micronaut.runtime.EmbeddedApplication
 import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.heads.StartupHeadComponent
+import io.qalipsis.api.lang.tryAndLog
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.core.annotations.lifetime.ProcessBlocker
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.heads.lifetime.ProcessBlocker
 import kotlinx.coroutines.runBlocking
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.IVersionProvider
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import java.util.Optional
 import java.util.Properties
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
@@ -124,55 +126,79 @@ object Qalipsis : Callable<Unit> {
         }
         // The user can create a application-config.yml file to overload the default.
         environments.add("config")
-        val embeddedApplication = ApplicationContext.builder()
-            .banner(true)
-            .environments(*environments.toTypedArray() + this.environments)
-            .packages("io.qalipsis")
-            .mainClass(MicronautBootstrap::class.java)
-            .properties(properties)
-            .deduceEnvironment(false)
-            .args(*(configuration.map { "--$it" }.toTypedArray()))
-            .start().use {
-                applicationContext = it
+        var embeddedApplication = Optional.empty<EmbeddedApplication<*>>()
+        try {
+            ApplicationContext.builder()
+                .banner(true)
+                .environments(*environments.toTypedArray() + this.environments)
+                .packages("io.qalipsis")
+                .mainClass(MicronautBootstrap::class.java)
+                .properties(properties)
+                .deduceEnvironment(false)
+                .args(*(configuration.map { "--$it" }.toTypedArray()))
+                .start().use {
+                    applicationContext = it
+                    embeddedApplication = applicationContext.findBean(EmbeddedApplication::class.java)
 
-                // Force the loading of key services.
-                if (role == Role.STANDALONE) {
-                    applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
-                    applicationContext.getBeansOfType(StartupHeadComponent::class.java)
-                }
-                val processBlockers: Collection<ProcessBlocker> =
-                    applicationContext.getBeansOfType(ProcessBlocker::class.java)
-                if (processBlockers.isNotEmpty()) {
-                    runBlocking {
-                        log.info { "${processBlockers.size} service(s) to wait before exiting the process: ${processBlockers.joinToString { blocker -> "${blocker::class.simpleName}" }}" }
-                        processBlockers.sortedBy(ProcessBlocker::getOrder).forEach { blocker -> blocker.join() }
+                    tryAndLog(log) {
+                        doExecute(environments)
                     }
-
-                    if (ExecutionEnvironments.ENV_AUTOSTART in environments) {
-                        // Publishes the result just before leaving and set the exit code.
-                        applicationContext.findBean(CampaignStateKeeper::class.java).ifPresent { campaignStateKeeper ->
-                            applicationContext.getProperty("campaign.name", String::class.java)
-                                .ifPresent { campaignName ->
-                                    exitCode = runBlocking {
-                                        val reportStatus = campaignStateKeeper.report(campaignName).status
-                                        log.info { "Exiting the scenario with the stats $reportStatus" }
-                                        reportStatus
-                                    }.exitCode
-                                }
-                        }
-                    }
-                } else {
-                    log.info { "There is no service to join before exiting the process" }
                 }
-
-                applicationContext.findBean(EmbeddedApplication::class.java)
-            }
-        tryAndLogOrNull(log) {
-            embeddedApplication.ifPresent { embedded ->
-                if (embedded.isRunning) {
-                    embedded.stop()
+        } finally {
+            tryAndLogOrNull(log) {
+                embeddedApplication.ifPresent { embedded ->
+                    if (embedded.isRunning) {
+                        embedded.stop()
+                    }
                 }
             }
+        }
+    }
+
+    private fun doExecute(environments: MutableList<String>) {
+        // Force the loading of key services.
+        if (role == Role.STANDALONE) {
+            log.trace { "Triggering startup components for the head..." }
+            applicationContext.getBeansOfType(StartupHeadComponent::class.java)
+                .sortedBy(StartupHeadComponent::getStartupOrder)
+                .forEach {
+                    log.trace { "Triggering ${it::class.simpleName}" }
+                    it.init()
+                    log.trace { "Triggered ${it::class.simpleName}" }
+                }
+            log.trace { "Triggering startup components for the factory..." }
+            applicationContext.getBeansOfType(StartupFactoryComponent::class.java)
+                .sortedBy(StartupFactoryComponent::getStartupOrder).forEach {
+                    log.trace { "Triggering ${it::class.simpleName}" }
+                    it.init()
+                    log.trace { "Triggered ${it::class.simpleName}" }
+                }
+        }
+
+        val processBlockers: Collection<ProcessBlocker> =
+            applicationContext.getBeansOfType(ProcessBlocker::class.java)
+        if (processBlockers.isNotEmpty()) {
+            runBlocking {
+                log.info { "${processBlockers.size} service(s) to wait before exiting the process: ${processBlockers.joinToString { blocker -> "${blocker::class.simpleName}" }}" }
+                processBlockers.sortedBy(ProcessBlocker::getOrder).forEach { blocker -> blocker.join() }
+            }
+
+            if (ExecutionEnvironments.ENV_AUTOSTART in environments) {
+                // Publishes the result just before leaving and set the exit code.
+                applicationContext.findBean(CampaignStateKeeper::class.java)
+                    .ifPresent { campaignStateKeeper ->
+                        applicationContext.getProperty("campaign.name", String::class.java)
+                            .ifPresent { campaignName ->
+                                exitCode = runBlocking {
+                                    val reportStatus = campaignStateKeeper.report(campaignName).status
+                                    log.info { "Exiting the scenario with the status $reportStatus" }
+                                    reportStatus
+                                }.exitCode
+                            }
+                    }
+            }
+        } else {
+            log.info { "There is no service to join before exiting the process" }
         }
     }
 

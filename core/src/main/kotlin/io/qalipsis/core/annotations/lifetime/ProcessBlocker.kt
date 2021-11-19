@@ -1,4 +1,4 @@
-package io.qalipsis.core.heads.lifetime
+package io.qalipsis.core.annotations.lifetime
 
 /**
  * Interface for objects that prevents the QALIPSIS process to exit while their processing is not complete.
