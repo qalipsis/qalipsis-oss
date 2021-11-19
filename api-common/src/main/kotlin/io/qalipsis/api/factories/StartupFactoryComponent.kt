@@ -6,4 +6,10 @@ package io.qalipsis.api.factories
  *
  * @author Eric Jessé
  */
-interface StartupFactoryComponent
+interface StartupFactoryComponent {
+
+    fun getStartupOrder() = 0
+
+    fun init() = Unit
+
+}

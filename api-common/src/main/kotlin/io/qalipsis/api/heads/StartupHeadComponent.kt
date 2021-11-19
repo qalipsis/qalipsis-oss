@@ -6,4 +6,11 @@ package io.qalipsis.api.heads
  *
  * @author Eric Jessé
  */
-interface StartupHeadComponent
+interface StartupHeadComponent {
+
+    fun getStartupOrder() = 0
+
+    fun init() = Unit
+
+}
+

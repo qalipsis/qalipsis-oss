@@ -19,6 +19,8 @@ abstract class AbstractDirectiveConsumer(
 
     private val orderedDirectiveProcessors = directiveProcessors.sortedBy { it.order() }
 
+    override fun getStartupOrder() = Int.MIN_VALUE
+
     /**
      * Pass the directive to all the known processors supporting it.
      */
