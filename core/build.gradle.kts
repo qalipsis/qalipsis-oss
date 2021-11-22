@@ -48,6 +48,7 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    implementation("io.micronaut.redis:micronaut-redis-lettuce")
 
     implementation("io.qalipsis:api-common:${project.version}")
     implementation("io.qalipsis:api-dsl:${project.version}")
@@ -78,11 +79,17 @@ dependencies {
     testImplementation(testFixtures("io.qalipsis:api-dsl:${project.version}"))
     testImplementation(testFixtures("io.qalipsis:api-common:${project.version}"))
     testImplementation(testFixtures(project(":runtime")))
+    testImplementation("org.testcontainers:testcontainers:$testContainersVersion")
 
     kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 
+    testFixturesApi("org.testcontainers:testcontainers:$testContainersVersion")
     testFixturesApi("io.qalipsis:api-common:${project.version}")
+    testFixturesImplementation("io.micronaut.test:micronaut-test-junit5")
+    testFixturesImplementation("io.micronaut:micronaut-runtime")
+    testFixturesImplementation("org.testcontainers:junit-jupiter:$testContainersVersion")
+
 }
 
