@@ -6,7 +6,7 @@ import io.qalipsis.api.orchestration.directives.DirectiveProducer
 import io.qalipsis.api.orchestration.directives.DirectiveRegistry
 import io.qalipsis.api.orchestration.directives.ReferencableDirective
 import io.qalipsis.core.annotations.LogInput
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import jakarta.inject.Singleton
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.event.Level
@@ -18,7 +18,7 @@ import org.slf4j.event.Level
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_STANDALONE])
+@Requires(env = [STANDALONE])
 class InMemoryDirectiveProducer(
     private val registry: DirectiveRegistry
 ) : DirectiveProducer {

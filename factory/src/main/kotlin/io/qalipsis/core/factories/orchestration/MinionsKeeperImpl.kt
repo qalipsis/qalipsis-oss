@@ -146,18 +146,18 @@ internal class MinionsKeeperImpl(
 
     @LogInput
     override suspend fun startMinionAt(minionId: MinionId, instant: Instant) {
-        minions[minionId]?.let { minionsWithId ->
-            val (campaignId, scenarioId) = minionsWithId.first().let { it.campaignId to it.scenarioId }
+        minions[minionId]?.let { minions ->
+            val (campaignId, scenarioId) = minions.first().let { it.campaignId to it.scenarioId }
             log.trace { "Starting minion $minionId" }
             val waitingDelay = instant.toEpochMilli() - System.currentTimeMillis()
             val runningMinionsLatch = minionsCountLatchesByCampaign[campaignId]!!
-            minionsWithId.forEach { minion ->
+            minions.forEach { minion ->
                 minion.onComplete {
                     campaignStateKeeper.recordCompletedMinion(campaignId, scenarioId)
                     runningMinionsLatch.decrement()
-                    minionsWithId.remove(minion)
-                    if (minionsWithId.isEmpty()) {
-                        minions.remove(minionId)
+                    minions.remove(minion)
+                    if (minions.isEmpty()) {
+                        this.minions.remove(minionId)
                     }
                 }
             }
@@ -165,10 +165,10 @@ internal class MinionsKeeperImpl(
                 log.trace { "Waiting for $waitingDelay ms until start of minion $minionId" }
                 delay(waitingDelay)
             }
-            minionsWithId.forEach {
+            minions.forEach {
                 it.start()
             }
-            with(minionsWithId) {
+            with(minions) {
                 campaignStateKeeper.recordStartedMinion(campaignId, scenarioId, size)
             }
         }

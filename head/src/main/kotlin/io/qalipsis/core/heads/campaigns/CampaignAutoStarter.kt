@@ -13,7 +13,7 @@ import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.annotations.lifetime.ProcessBlocker
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_AUTOSTART
+import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.FactoryRegistrationFeedback
 import jakarta.inject.Named
@@ -32,7 +32,7 @@ import kotlin.system.exitProcess
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_AUTOSTART])
+@Requires(env = [AUTOSTART])
 internal class CampaignAutoStarter(
     private val feedbackConsumer: FeedbackConsumer,
     private val campaignManager: CampaignManager,

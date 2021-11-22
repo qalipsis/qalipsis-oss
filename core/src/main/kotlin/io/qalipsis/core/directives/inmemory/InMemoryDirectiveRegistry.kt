@@ -19,7 +19,7 @@ import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_STANDALONE])
+@Requires(env = [STANDALONE])
 internal class InMemoryDirectiveRegistry(
     private val feedbackProducer: FeedbackProducer
 ) : DirectiveRegistry {

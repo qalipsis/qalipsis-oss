@@ -9,8 +9,8 @@ import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
 import io.qalipsis.api.steps.execute
 import io.qalipsis.api.steps.returns
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_AUTOSTART
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -30,7 +30,7 @@ internal class QalipsisStarterIntegrationTest {
         assertEquals(0, exitCode)
         assertTrue(
             Qalipsis.applicationContext.environment.activeNames.containsAll(
-                listOf(ENV_STANDALONE, ENV_AUTOSTART, "config")
+                listOf(STANDALONE, AUTOSTART, "config")
             )
         )
     }
@@ -48,7 +48,7 @@ internal class QalipsisStarterIntegrationTest {
 
         assertEquals(0, exitCode)
         assertThat(Qalipsis.applicationContext.environment.activeNames).containsAll(
-            ENV_STANDALONE, ENV_AUTOSTART, "config", "these", "are", "my", "additional", "environments"
+            STANDALONE, AUTOSTART, "config", "these", "are", "my", "additional", "environments"
         )
     }
 

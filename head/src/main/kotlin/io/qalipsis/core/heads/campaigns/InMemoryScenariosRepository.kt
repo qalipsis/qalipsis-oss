@@ -3,7 +3,7 @@ package io.qalipsis.core.heads.campaigns
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_VOLATILE
+import io.qalipsis.core.configuration.ExecutionEnvironments.VOLATILE
 import io.qalipsis.core.heads.persistence.inmemory.InMemoryRepository
 import jakarta.inject.Singleton
 
@@ -14,6 +14,6 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_VOLATILE])
+@Requires(env = [VOLATILE])
 internal class InMemoryScenariosRepository : InMemoryRepository<ScenarioSummary, ScenarioId>(),
     ScenarioSummaryRepository

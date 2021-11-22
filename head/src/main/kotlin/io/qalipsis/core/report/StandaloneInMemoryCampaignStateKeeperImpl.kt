@@ -16,8 +16,8 @@ import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_VOLATILE
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.VOLATILE
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Instant
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 @Singleton
-@Requires(env = [ENV_STANDALONE, ENV_VOLATILE])
+@Requires(env = [STANDALONE, VOLATILE])
 internal class StandaloneInMemoryCampaignStateKeeperImpl(
     private val idGenerator: IdGenerator
 ) : CampaignStateKeeper {

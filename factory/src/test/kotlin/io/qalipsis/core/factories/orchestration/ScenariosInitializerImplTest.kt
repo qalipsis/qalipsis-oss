@@ -33,13 +33,13 @@ import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
+import io.qalipsis.api.steps.PipeStepSpecification
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
-import io.qalipsis.api.steps.TubeStepSpecification
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.factories.orchestration.catadioptre.convertScenario
 import io.qalipsis.core.factories.testScenario
@@ -581,7 +581,7 @@ internal class ScenariosInitializerImplTest {
     @Test
     internal fun `should add step name when empty`() {
         // given
-        val stepSpecification: StepSpecification<Any?, Any?, *> = TubeStepSpecification<Any?>().also {
+        val stepSpecification: StepSpecification<Any?, Any?, *> = PipeStepSpecification<Any?>().also {
             it.scenario = relaxedMockk()
             it.name = ""
         }
@@ -596,7 +596,7 @@ internal class ScenariosInitializerImplTest {
     @Test
     internal fun `should add step name when blank`() {
         // given
-        val stepSpecification: StepSpecification<Any?, Any?, *> = TubeStepSpecification<Any?>().also {
+        val stepSpecification: StepSpecification<Any?, Any?, *> = PipeStepSpecification<Any?>().also {
             it.scenario = relaxedMockk()
             it.name = "     "
         }
@@ -611,7 +611,7 @@ internal class ScenariosInitializerImplTest {
     @Test
     internal fun `should not overwrite step name when not blank`() {
         // given
-        val stepSpecification: StepSpecification<Any?, Any?, *> = TubeStepSpecification<Any?>().also {
+        val stepSpecification: StepSpecification<Any?, Any?, *> = PipeStepSpecification<Any?>().also {
             it.scenario = relaxedMockk()
             it.name = "   a step for my name   "
         }

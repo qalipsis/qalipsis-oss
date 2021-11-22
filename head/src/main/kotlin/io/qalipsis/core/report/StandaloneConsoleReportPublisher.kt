@@ -9,8 +9,8 @@ import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportPublisher
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_AUTOSTART
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import javax.annotation.PreDestroy
@@ -24,7 +24,7 @@ import javax.annotation.PreDestroy
 @Context
 @Requirements(
     value = [
-        Requires(env = [ENV_STANDALONE, ENV_AUTOSTART]),
+        Requires(env = [STANDALONE, AUTOSTART]),
         Requires(property = "report.export.console.enabled", notEquals = "false")
     ]
 )

@@ -7,7 +7,7 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.context.annotation.Value
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import jakarta.inject.Singleton
 import java.time.Duration
 
@@ -17,7 +17,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_STANDALONE])
+@Requires(env = [STANDALONE])
 class InMemorySharedStateRegistry(
     @Value("\${shared-registry.time-to-live:PT1M}") timeToLive: Duration
 ) : SharedStateRegistry {

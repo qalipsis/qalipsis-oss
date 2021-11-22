@@ -2,10 +2,11 @@ package io.qalipsis.core.factories.orchestration.directives.consumers
 
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
+import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 import io.qalipsis.api.orchestration.directives.consumers.AbstractDirectiveConsumer
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.directives.inmemory.InMemoryDirectiveProducer
 import jakarta.inject.Named
 import jakarta.inject.Singleton
@@ -19,12 +20,12 @@ import kotlinx.coroutines.launch
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_STANDALONE])
+@Requires(env = [STANDALONE])
 internal class ChannelBasedDirectiveConsumer(
     private val producer: InMemoryDirectiveProducer,
     directiveProcessors: Collection<DirectiveProcessor<*>>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
-) : AbstractDirectiveConsumer(directiveProcessors) {
+) : AbstractDirectiveConsumer(directiveProcessors), StartupFactoryComponent {
 
     override fun getStartupOrder() = Int.MIN_VALUE
 

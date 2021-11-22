@@ -37,7 +37,7 @@ internal open class MinionImpl(
     override val id: MinionId,
     override val campaignId: CampaignId,
     override val scenarioId: ScenarioId,
-    override val dagId: DirectedAcyclicGraphId,
+    override val rootDagId: DirectedAcyclicGraphId,
     pauseAtStart: Boolean = true,
     private val eventsLogger: EventsLogger,
     meterRegistry: MeterRegistry
@@ -216,7 +216,7 @@ internal open class MinionImpl(
 
         if (id != other.id) return false
         if (campaignId != other.campaignId) return false
-        if (dagId != other.dagId) return false
+        if (rootDagId != other.rootDagId) return false
 
         return true
     }
@@ -224,7 +224,7 @@ internal open class MinionImpl(
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + campaignId.hashCode()
-        result = 31 * result + dagId.hashCode()
+        result = 31 * result + rootDagId.hashCode()
         return result
     }
 

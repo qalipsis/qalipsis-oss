@@ -152,7 +152,7 @@ internal class StageStepTest {
             every { retryPolicy } returns null
         }
 
-        val headStep = TubeStep<Int>("")
+        val headStep = PipeStep<Int>("")
         headStep.addNext(secondStep)
 
         val step = StageStep<Int, String>("", null)
@@ -200,7 +200,7 @@ internal class StageStepTest {
                 every { retryPolicy } returns null
             }
 
-            val headStep = TubeStep<Int>("")
+            val headStep = PipeStep<Int>("")
             headStep.addNext(secondStep)
 
             val step = StageStep<Int, String>("", null)

@@ -8,16 +8,16 @@ object ExecutionEnvironments {
     /**
      * Enables for in-memory repositories instead of persistent ones.
      */
-    const val ENV_VOLATILE = "volatile"
+    const val VOLATILE = "volatile"
 
     /**
      * Automatically starts a campaign when the instance is ready. Is only applicable in
-     * conjunction with [ENV_STANDALONE].
+     * conjunction with [STANDALONE].
      */
-    const val ENV_AUTOSTART = "autostart"
+    const val AUTOSTART = "autostart"
 
     /**
      * Starts an instance with head and factory running aside in the same JVM.
      */
-    const val ENV_STANDALONE = "standalone"
+    const val STANDALONE = "standalone"
 }

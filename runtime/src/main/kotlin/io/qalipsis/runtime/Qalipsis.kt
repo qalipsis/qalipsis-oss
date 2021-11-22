@@ -116,11 +116,11 @@ object Qalipsis : Callable<Unit> {
             }
 
             // Start the campaigns when everything is ready.
-            environments.add(ExecutionEnvironments.ENV_AUTOSTART)
+            environments.add(ExecutionEnvironments.AUTOSTART)
             // Do not persist configuration of factories and scenarios.
-            environments.add(ExecutionEnvironments.ENV_VOLATILE)
+            environments.add(ExecutionEnvironments.VOLATILE)
             // Start head and one factory in the same process.
-            environments.add(ExecutionEnvironments.ENV_STANDALONE)
+            environments.add(ExecutionEnvironments.STANDALONE)
             // Do not run in server mode, exit as soon as the operations are complete.
             environments.add(Environment.CLI)
         }
@@ -183,7 +183,7 @@ object Qalipsis : Callable<Unit> {
                 processBlockers.sortedBy(ProcessBlocker::getOrder).forEach { blocker -> blocker.join() }
             }
 
-            if (ExecutionEnvironments.ENV_AUTOSTART in environments) {
+            if (ExecutionEnvironments.AUTOSTART in environments) {
                 // Publishes the result just before leaving and set the exit code.
                 applicationContext.findBean(CampaignStateKeeper::class.java)
                     .ifPresent { campaignStateKeeper ->

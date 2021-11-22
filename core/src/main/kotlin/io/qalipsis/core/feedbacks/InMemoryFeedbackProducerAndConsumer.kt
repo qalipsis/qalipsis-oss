@@ -6,7 +6,7 @@ import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.api.orchestration.feedbacks.FeedbackConsumer
 import io.qalipsis.api.orchestration.feedbacks.FeedbackProducer
 import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.configuration.ExecutionEnvironments.ENV_STANDALONE
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import jakarta.inject.Singleton
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -18,7 +18,7 @@ import kotlinx.coroutines.channels.Channel
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ENV_STANDALONE])
+@Requires(env = [STANDALONE])
 internal class InMemoryFeedbackProducerAndConsumer : FeedbackProducer, FeedbackConsumer {
 
     private val topic = broadcastTopic<Feedback>()
