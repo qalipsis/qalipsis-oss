@@ -10,8 +10,9 @@ import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.report.CampaignStateKeeper
-import io.qalipsis.core.annotations.lifetime.ProcessBlocker
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.lifetime.ProcessBlocker
 import kotlinx.coroutines.runBlocking
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -160,7 +161,7 @@ object Qalipsis : Callable<Unit> {
     }
 
     private fun doExecute(environments: MutableList<String>) {
-        // Force the loading of key services.
+        // Forces the loading of key services.
         if (role == Role.STANDALONE) {
             log.trace { "Triggering startup components for the head..." }
             applicationContext.getBeansOfType(StartupHeadComponent::class.java)
@@ -184,17 +185,20 @@ object Qalipsis : Callable<Unit> {
         if (processBlockers.isNotEmpty()) {
             runBlocking {
                 log.info { "${processBlockers.size} service(s) to wait before exiting the process: ${processBlockers.joinToString { blocker -> "${blocker::class.simpleName}" }}" }
-                processBlockers.sortedBy(ProcessBlocker::getOrder).forEach { blocker -> blocker.join() }
+                processBlockers.sortedBy(ProcessBlocker::getOrder).forEach { blocker ->
+                    log.debug { "Waiting for ${blocker::class.simpleName} to complete..." }
+                    blocker.join()
+                }
             }
 
             if (ExecutionEnvironments.AUTOSTART in environments) {
                 // Publishes the result just before leaving and set the exit code.
                 applicationContext.findBean(CampaignStateKeeper::class.java)
                     .ifPresent { campaignStateKeeper ->
-                        applicationContext.getProperty("campaign.name", String::class.java)
-                            .ifPresent { campaignName ->
+                        applicationContext.findBean(CampaignConfiguration::class.java)
+                            .ifPresent { campaign ->
                                 exitCode = runBlocking {
-                                    val reportStatus = campaignStateKeeper.report(campaignName).status
+                                    val reportStatus = campaignStateKeeper.report(campaign.id).status
                                     log.info { "Exiting the scenario with the status $reportStatus" }
                                     reportStatus
                                 }.exitCode

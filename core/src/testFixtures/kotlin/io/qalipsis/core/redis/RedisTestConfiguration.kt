@@ -29,7 +29,7 @@ object RedisTestConfiguration {
 
     @JvmStatic
     fun createContainer(redisImageNameAndTag: String = DEFAULT_DOCKER_IMAGE): GenericContainer<Nothing> {
-        return GenericContainer<Nothing>(DEFAULT_DOCKER_IMAGE_NAME)
+        return GenericContainer<Nothing>(redisImageNameAndTag)
             .apply {
                 withCreateContainerCmdModifier { cmd ->
                     cmd.hostConfig!!.withMemory(50 * 1024.0.pow(2).toLong()).withCpuCount(2)

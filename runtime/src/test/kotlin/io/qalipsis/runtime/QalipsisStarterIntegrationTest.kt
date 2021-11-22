@@ -12,6 +12,7 @@ import io.qalipsis.api.steps.returns
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -57,7 +58,7 @@ internal class QalipsisStarterIntegrationTest {
     internal fun `should return an error when the scenario does not exist`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "no-scenario"))
 
-        assertEquals(1, exitCode)
+        assertNotEquals(0, exitCode)
     }
 
     @Test
@@ -65,7 +66,7 @@ internal class QalipsisStarterIntegrationTest {
     internal fun `should return an error when the scenario fails`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "failing-scenario"))
 
-        assertEquals(1, exitCode)
+        assertNotEquals(0, exitCode)
     }
 
     @Test

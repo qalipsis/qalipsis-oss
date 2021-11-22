@@ -1,6 +1,5 @@
 package io.qalipsis.runtime.executors
 
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Bean
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Factory
@@ -35,10 +34,7 @@ internal class ExecutorsFactory {
     @Infrastructure
     @Context
     @Bean(preDestroy = "close")
-    fun coroutineScopeProvider(
-        applicationContext: ApplicationContext,
-        configuration: ExecutorsConfiguration
-    ): CoroutineScopeProvider {
+    fun coroutineScopeProvider(configuration: ExecutorsConfiguration): CoroutineScopeProvider {
         val scopes =
             mutableMapOf(
                 Executors.GLOBAL_EXECUTOR_NAME to createScope(
@@ -67,6 +63,7 @@ internal class ExecutorsFactory {
                 ?: throw IllegalArgumentException("No defined executor with name '$config' could be found")
         }
         scopes += referencingScopes
+        @Suppress("UNCHECKED_CAST")
         createdScopes = scopes as Map<String, NamedCoroutineScope>
 
         return SimpleCoroutineScopeProvider(

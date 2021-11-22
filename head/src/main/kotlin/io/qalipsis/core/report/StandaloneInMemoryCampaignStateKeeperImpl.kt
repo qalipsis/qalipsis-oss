@@ -1,6 +1,7 @@
 package io.qalipsis.core.report
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
@@ -18,6 +19,7 @@ import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.configuration.ExecutionEnvironments.VOLATILE
+import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Instant
@@ -25,10 +27,13 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 @Singleton
-@Requires(env = [STANDALONE, VOLATILE])
+@Requirements(
+    Requires(env = [STANDALONE]),
+    Requires(env = [VOLATILE])
+)
 internal class StandaloneInMemoryCampaignStateKeeperImpl(
     private val idGenerator: IdGenerator
-) : CampaignStateKeeper {
+) : CampaignStateKeeper, ProcessBlocker {
 
     @KTestable
     private val runningCampaigns = ConcurrentHashMap<CampaignId, MutableMap<ScenarioId, RunningCampaign>>()
@@ -39,6 +44,13 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
      * Counter for the running scenarios to block the reporting until the .
      */
     private val runningScenarioLatch = SuspendedCountLatch()
+
+    override fun getOrder() = Int.MAX_VALUE
+
+    override suspend fun join() {
+        runningScenarioLatch.awaitActivity()
+        runningScenarioLatch.await()
+    }
 
     @LogInput(Level.DEBUG)
     override fun start(campaignId: CampaignId, scenarioId: ScenarioId) {
@@ -112,10 +124,7 @@ internal class StandaloneInMemoryCampaignStateKeeperImpl(
 
     @LogInputAndOutput
     override suspend fun report(campaignId: CampaignId): CampaignReport {
-        // Ensure that the details about the scenarios were received and all complete before the report
-        // is generated.
-        runningScenarioLatch.awaitActivity()
-        runningScenarioLatch.await()
+        join()
 
         val runningCampaign = runningCampaigns[campaignId]?.values?.takeIf { it.isNotEmpty() }
             ?: throw IllegalArgumentException("The campaign with ID $campaignId does not exist")

@@ -12,4 +12,4 @@ executors:
   background: global
   orchestration: global
 
-campaign.name: campaign-${random.shortuuid}
+campaign.id: campaign-${random.shortuuid}

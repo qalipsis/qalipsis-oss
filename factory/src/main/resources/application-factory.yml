@@ -1,0 +1,7 @@
+# Configuration of the local factory
+factory:
+  node-id: ""
+  selectors: ""
+  metadata-path: "./metadata"
+  handshake-request-channel: handshake-request
+  handshake-response-channel: handshake-response

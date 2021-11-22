@@ -69,6 +69,7 @@ dependencies {
     kapt("io.qalipsis:api-processors:${project.version}")
     kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
 
+    testImplementation(project(":core"))
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")

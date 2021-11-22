@@ -1,7 +1,7 @@
 package io.qalipsis.runtime
 
 import io.micronaut.context.annotation.Property
-import io.qalipsis.core.annotations.lifetime.ProcessBlocker
+import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Singleton
 import kotlinx.coroutines.delay
 import java.time.Duration
