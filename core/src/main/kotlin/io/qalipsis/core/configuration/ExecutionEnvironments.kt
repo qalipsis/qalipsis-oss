@@ -26,4 +26,9 @@ object ExecutionEnvironments {
      * Enables the integration with Redis to support data caching and messaging.
      */
     const val REDIS = "redis"
+
+    /**
+     * Enables the default configuration for a factory.
+     */
+    const val FACTORY = "factory"
 }

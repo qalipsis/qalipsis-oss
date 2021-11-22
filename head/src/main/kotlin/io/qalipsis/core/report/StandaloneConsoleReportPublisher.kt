@@ -1,7 +1,6 @@
 package io.qalipsis.core.report
 
 import io.micronaut.context.annotation.Context
-import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
@@ -11,6 +10,7 @@ import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.head.campaign.CampaignConfiguration
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import javax.annotation.PreDestroy
@@ -23,13 +23,13 @@ import javax.annotation.PreDestroy
  */
 @Context
 @Requirements(
-    value = [
-        Requires(env = [STANDALONE, AUTOSTART]),
-        Requires(property = "report.export.console.enabled", notEquals = "false")
-    ]
+    Requires(env = [STANDALONE]),
+    Requires(env = [AUTOSTART]),
+    Requires(beans = [CampaignConfiguration::class]),
+    Requires(property = "report.export.console.enabled", notEquals = "false")
 )
 internal class StandaloneConsoleReportPublisher(
-    @Property(name = "campaign.name") private val campaignName: String,
+    private val campaign: CampaignConfiguration,
     private val campaignStateKeeper: CampaignStateKeeper
 ) : ReportPublisher {
 
@@ -88,7 +88,7 @@ ${
     fun publishOnLeave() {
         tryAndLogOrNull(log) {
             runBlocking {
-                publish(campaignName)
+                publish(campaign.id)
             }
         }
     }

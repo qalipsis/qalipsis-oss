@@ -23,5 +23,6 @@ data class DirectedAcyclicGraphSummary(
     val isSingleton: Boolean = false,
     val isRoot: Boolean = false,
     val isUnderLoad: Boolean = false,
-    val numberOfSteps: Int = 0
+    val numberOfSteps: Int = 0,
+    val selectors: Map<String, String> = emptyMap()
 )
