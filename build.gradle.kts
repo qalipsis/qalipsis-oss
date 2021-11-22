@@ -97,6 +97,7 @@ allprojects {
                 val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
                 val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
                 name = "sonatype"
+                // See https://docs.gradle.org/current/userguide/single_versions.html#version_ordering.
                 url = uri(if (project.version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
                 credentials {
                     username = ossrhUsername
