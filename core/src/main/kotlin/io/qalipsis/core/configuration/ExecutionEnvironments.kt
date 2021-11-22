@@ -1,6 +1,7 @@
 package io.qalipsis.core.configuration
 
 /**
+ * Set of environments available to configure QALIPSIS at startup.
  *
  * @author Eric Jessé
  */
@@ -20,4 +21,9 @@ object ExecutionEnvironments {
      * Starts an instance with head and factory running aside in the same JVM.
      */
     const val STANDALONE = "standalone"
+
+    /**
+     * Enables the integration with Redis to support data caching and messaging.
+     */
+    const val REDIS = "redis"
 }

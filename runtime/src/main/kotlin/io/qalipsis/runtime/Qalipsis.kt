@@ -123,7 +123,11 @@ object Qalipsis : Callable<Unit> {
             environments.add(ExecutionEnvironments.STANDALONE)
             // Do not run in server mode, exit as soon as the operations are complete.
             environments.add(Environment.CLI)
+        } else {
+            // Enables the configuration to use Redis when not running as standalone.
+            environments.add(ExecutionEnvironments.REDIS)
         }
+
         // The user can create a application-config.yml file to overload the default.
         environments.add("config")
         var embeddedApplication = Optional.empty<EmbeddedApplication<*>>()
