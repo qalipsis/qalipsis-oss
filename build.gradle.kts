@@ -93,7 +93,6 @@ allprojects {
     val ossrhPassword: String? by project
     publishing {
         repositories {
-            mavenLocal()
             maven {
                 val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
                 val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"

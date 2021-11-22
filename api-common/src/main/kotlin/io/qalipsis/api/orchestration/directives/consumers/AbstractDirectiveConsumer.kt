@@ -1,6 +1,5 @@
 package io.qalipsis.api.orchestration.directives.consumers
 
-import io.qalipsis.api.factories.StartupFactoryComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
@@ -15,11 +14,9 @@ import io.qalipsis.api.orchestration.directives.DirectiveProcessor
  */
 abstract class AbstractDirectiveConsumer(
     directiveProcessors: Collection<DirectiveProcessor<*>>
-) : StartupFactoryComponent {
+) {
 
     private val orderedDirectiveProcessors = directiveProcessors.sortedBy { it.order() }
-
-    override fun getStartupOrder() = Int.MIN_VALUE
 
     /**
      * Pass the directive to all the known processors supporting it.

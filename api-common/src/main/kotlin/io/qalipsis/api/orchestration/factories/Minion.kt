@@ -23,7 +23,7 @@ interface Minion {
 
     val scenarioId: ScenarioId
 
-    val dagId: DirectedAcyclicGraphId
+    val rootDagId: DirectedAcyclicGraphId
 
     fun onComplete(block: suspend (() -> Unit))
 
@@ -48,7 +48,7 @@ interface Minion {
     fun completeMdcContext() {
         MDC.put("campaign", this.campaignId)
         MDC.put("scenario", this.scenarioId)
-        MDC.put("dag", this.dagId)
+        MDC.put("dag", this.rootDagId)
         MDC.put("minion", this.id)
     }
 
