@@ -3,6 +3,7 @@ package io.qalipsis.core.factory.events
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.events.Event
 import io.qalipsis.api.events.EventLevel
+import io.qalipsis.api.events.EventTag
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.events.EventsPublisher
 import io.qalipsis.api.events.toTags
@@ -23,15 +24,32 @@ internal class EventsLoggerImpl(
     private val publishers: Collection<EventsPublisher>
 ) : EventsLogger {
 
+    /**
+     * Tags to systematically add to all the generated events.
+     */
+    private val tags = mutableListOf<EventTag>()
+
+    /**
+     * Default level for all the non-otherwise-configured [Event]s.
+     */
     private val rootLevel = configuration.root
 
-    private val actualLevels = ConcurrentHashMap<Int, EventLevel>()
-
+    /**
+     * Consolidated configuration of the the level for the [Event]s.
+     */
     private val declaredLevels = configuration.level
         .toList()
         // The longest events first.
         .sortedByDescending { it.first }
 
+    /**
+     * Consolidated levels of the so-far-generated and configured [Event]s.
+     */
+    private val actualLevels = ConcurrentHashMap<Int, EventLevel>()
+
+    /**
+     * Checks whether there is a reason to enable the logger or not.
+     */
     private val enabled =
         publishers.isNotEmpty() && (rootLevel < EventLevel.OFF || declaredLevels.any { it.second < EventLevel.OFF })
 
@@ -58,8 +76,15 @@ internal class EventsLoggerImpl(
         }
     }
 
-    override fun log(level: EventLevel, name: String, value: Any?, timestamp: Instant,
-                     tagsSupplier: () -> Map<String, String>) {
+    override fun configureTags(tags: Map<String, String>) {
+        this.tags.clear()
+        this.tags += tags.map { (key, value) -> EventTag(key, value) }
+    }
+
+    override fun log(
+        level: EventLevel, name: String, value: Any?, timestamp: Instant,
+        tagsSupplier: () -> Map<String, String>
+    ) {
         logMethodWithSupplier?.invoke(level, name, value, timestamp, tagsSupplier)
     }
 
@@ -67,21 +92,27 @@ internal class EventsLoggerImpl(
         logMethod?.invoke(level, name, value, timestamp, tags)
     }
 
-    private fun checkLevelAndLogWithSupplier(level: EventLevel, name: String, value: Any?, timestamp: Instant,
-                                     tagsSupplier: () -> Map<String, String>) {
+    @KTestable
+    private fun checkLevelAndLogWithSupplier(
+        level: EventLevel, name: String, value: Any?, timestamp: Instant,
+        tagsSupplier: () -> Map<String, String>
+    ) {
         val actualLevel = findActualEventLevel(name)
         if (level >= actualLevel) {
             publishers.asSequence()
-                .forEach { it.publish(Event(name, level, tagsSupplier().toTags(), value, timestamp)) }
+                .forEach { it.publish(Event(name, level, this.tags + tagsSupplier().toTags(), value, timestamp)) }
         }
     }
 
     @KTestable
-    private fun checkLevelAndLog(level: EventLevel, name: String, value: Any?, timestamp: Instant,
-                         tags: Map<String, String>) {
+    private fun checkLevelAndLog(
+        level: EventLevel, name: String, value: Any?, timestamp: Instant,
+        tags: Map<String, String>
+    ) {
         val actualLevel = findActualEventLevel(name)
         if (level >= actualLevel) {
-            publishers.asSequence().forEach { it.publish(Event(name, level, tags.toTags(), value, timestamp)) }
+            publishers.asSequence()
+                .forEach { it.publish(Event(name, level, this.tags + tags.toTags(), value, timestamp)) }
         }
     }
 

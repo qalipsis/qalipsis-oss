@@ -2,8 +2,10 @@ package io.qalipsis.core.factory.handshake
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotEmpty
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
@@ -222,6 +224,7 @@ internal class FactoryInitializerImplTest {
         val scenario = testScenario()
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { directedAcyclicGraphId } returns "dag-1"
+            every { selectors } returns emptyMap()
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { directedAcyclicGraphId } returns "dag-2"
@@ -230,6 +233,7 @@ internal class FactoryInitializerImplTest {
         val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification2)
             every { directedAcyclicGraphId } returns "dag-2"
+            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val atomicInteger = AtomicInteger()
         coEvery {
@@ -254,8 +258,14 @@ internal class FactoryInitializerImplTest {
 
         // then
         // Only two dags were created.
-        assertEquals(1, scenario["dag-1"]!!.stepsCount)
-        assertEquals(2, scenario["dag-2"]!!.stepsCount)
+        assertThat(scenario["dag-1"]).isNotNull().all {
+            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(1)
+            prop(DirectedAcyclicGraph::selectors).isEmpty()
+        }
+        assertThat(scenario["dag-2"]).isNotNull().all {
+            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
+            prop(DirectedAcyclicGraph::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+        }
         // 3 steps were created.
         coVerifyExactly(3) {
             factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())

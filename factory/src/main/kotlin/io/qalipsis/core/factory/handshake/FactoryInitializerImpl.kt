@@ -140,15 +140,14 @@ internal class FactoryInitializerImpl(
             "The scenario $scenarioId requires a ramp-up strategy"
         )
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
-        val scenario =
-            ScenarioImpl(
-                scenarioId,
-                rampUpStrategy = rampUpStrategy,
-                defaultRetryPolicy = defaultRetryPolicy,
-                minionsCount = scenarioSpecification.minionsCount,
-                feedbackFactoryChannel = initializationContext.feedbackFactoryChannel,
-                stepStartTimeout = stepStartTimeout
-            )
+        val scenario = ScenarioImpl(
+            scenarioId,
+            rampUpStrategy = rampUpStrategy,
+            defaultRetryPolicy = defaultRetryPolicy,
+            minionsCount = scenarioSpecification.minionsCount,
+            feedbackFactoryChannel = initializationContext.feedbackFactoryChannel,
+            stepStartTimeout = stepStartTimeout
+        )
         scenariosRegistry.add(scenario)
 
         runBlocking(coroutineDispatcher) {
@@ -197,7 +196,7 @@ internal class FactoryInitializerImpl(
                 isRoot = (parentStep == null),
                 isSingleton = stepSpecification is SingletonStepSpecification,
                 isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad),
-                selectors = mutableMapOf()
+                selectors = stepSpecification.selectors
             )
         }
 

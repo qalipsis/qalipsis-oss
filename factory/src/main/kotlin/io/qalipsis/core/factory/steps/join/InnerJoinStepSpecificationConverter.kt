@@ -9,6 +9,7 @@ import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.broadcastTopic
 import io.qalipsis.api.steps.InnerJoinStepSpecification
+import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
@@ -32,8 +33,8 @@ internal class InnerJoinStepSpecificationConverter(
         return stepSpecification is InnerJoinStepSpecification<*, *>
     }
 
+    @Suppress("UNCHECKED_CAST")
     override suspend fun <I, O> convert(creationContext: StepCreationContext<InnerJoinStepSpecification<*, *>>) {
-        @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as InnerJoinStepSpecification<I, O>
         if (!creationContext.scenarioSpecification.exists(spec.secondaryStepName)) {
             throw InvalidSpecificationException(
@@ -48,26 +49,10 @@ internal class InnerJoinStepSpecificationConverter(
             )
         ) { "Step ${spec.secondaryStepName} could not be found" }
 
-        val topic = broadcastTopic<CorrelationRecord<*>>()
+        val topic = createRightDataSupplier<O>(secondaryStep)
 
-        // A step is added as output to forward the data to the topic.
-        val consumer = TopicMirrorStep<O, CorrelationRecord<*>>(
-            "${secondaryStep.id}-topic-mirror-step-${idGenerator.short()}",
-            topic, { _, value -> value != null },
-            { context, value -> CorrelationRecord(context.minionId, context.stepId, value) }
-        )
-
-        if (secondaryStep is NoMoreNextStepDecorator<*, *>) {
-            secondaryStep.decorated.addNext(consumer)
-        } else {
-            secondaryStep.addNext(consumer)
-        }
-
-        // For now, only two-source left join is supported.
-        @Suppress("UNCHECKED_CAST")
+        // For now, only two-source joins are supported.
         val outputSupplier: (I, Map<StepId, Any?>) -> O = { left, right -> (left to right.values.first()) as O }
-
-        @Suppress("UNCHECKED_CAST")
         val step = InnerJoinStep(
             spec.name, coroutineScope, spec.primaryKeyExtractor,
             listOf(
@@ -75,6 +60,22 @@ internal class InnerJoinStepSpecificationConverter(
             ), spec.cacheTimeout, outputSupplier
         )
         creationContext.createdStep(step)
+    }
+
+    private fun <O> createRightDataSupplier(secondaryStep: Step<*, *>): Topic<CorrelationRecord<*>> {
+        val topic = broadcastTopic<CorrelationRecord<*>>()
+        // A step is added as output to forward the data to the topic.
+        val dataSupplier = TopicMirrorStep<O, CorrelationRecord<*>>(
+            "${secondaryStep.id}-topic-mirror-step-${idGenerator.short()}",
+            topic, { _, value -> value != null },
+            { context, value -> CorrelationRecord(context.minionId, context.stepId, value) }
+        )
+        if (secondaryStep is NoMoreNextStepDecorator<*, *>) {
+            secondaryStep.decorated.addNext(dataSupplier)
+        } else {
+            secondaryStep.addNext(dataSupplier)
+        }
+        return topic
     }
 
 }
