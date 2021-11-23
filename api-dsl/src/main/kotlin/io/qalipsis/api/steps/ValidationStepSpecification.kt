@@ -4,7 +4,7 @@ import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.StepError
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.ValidationStep].
+ * Specification for a [io.qalipsis.core.factory.steps.ValidationStep].
  *
  * @author Eric Jessé
  */

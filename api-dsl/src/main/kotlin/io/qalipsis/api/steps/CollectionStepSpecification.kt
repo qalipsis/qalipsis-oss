@@ -7,7 +7,7 @@ import java.time.Duration
 import javax.validation.constraints.Positive
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.CollectionStep].
+ * Specification for a [io.qalipsis.core.factory.steps.CollectionStep].
  *
  * @author Eric Jessé
  */

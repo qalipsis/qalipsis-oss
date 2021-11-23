@@ -45,7 +45,12 @@ data class DirectedAcyclicGraph(
     /**
      * Defines if the DAG runs for a singleton minion, in which case it is not driven by start directive.
      */
-    val isSingleton: Boolean
+    val isSingleton: Boolean,
+
+    /**
+     * Selectors to correlate on which factory the DAG can be executed.
+     */
+    val selectors: MutableMap<String, String>
 ) {
 
     /**

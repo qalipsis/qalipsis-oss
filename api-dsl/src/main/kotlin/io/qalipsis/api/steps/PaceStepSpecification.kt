@@ -4,7 +4,7 @@ import io.micronaut.core.annotation.Introspected
 import java.time.Duration
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.PaceStep].
+ * Specification for a [io.qalipsis.core.factory.steps.PaceStep].
  *
  * @author Eric Jessé
  */

@@ -4,7 +4,7 @@ import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.StepContext
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.CatchExhaustedContextStep].
+ * Specification for a [io.qalipsis.core.factory.steps.CatchExhaustedContextStep].
  *
  * @author Eric Jessé
  */

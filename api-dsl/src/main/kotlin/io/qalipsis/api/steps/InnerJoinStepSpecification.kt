@@ -9,7 +9,7 @@ import java.time.Duration
 import javax.validation.constraints.NotBlank
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.LeftJoinStep].
+ * Specification for a [io.qalipsis.core.factory.steps.LeftJoinStep].
  *
  * @author Eric Jessé
  */

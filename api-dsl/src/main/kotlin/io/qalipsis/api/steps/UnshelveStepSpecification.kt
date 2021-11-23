@@ -4,7 +4,7 @@ import io.micronaut.core.annotation.Introspected
 import javax.validation.constraints.NotBlank
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.UnshelveStep].
+ * Specification for a [io.qalipsis.core.factory.steps.UnshelveStep].
  *
  * @author Eric Jessé
  */

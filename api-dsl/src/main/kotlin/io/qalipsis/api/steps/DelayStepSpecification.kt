@@ -6,7 +6,7 @@ import io.qalipsis.api.exceptions.InvalidSpecificationException
 import java.time.Duration
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.DelayedStep].
+ * Specification for a [io.qalipsis.core.factory.steps.DelayedStep].
  *
  * @author Eric Jessé
  */

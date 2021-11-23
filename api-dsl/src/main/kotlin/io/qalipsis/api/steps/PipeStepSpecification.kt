@@ -5,7 +5,7 @@ import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.PipeStep].
+ * Specification for a [io.qalipsis.core.factory.steps.PipeStep].
  *
  * @author Eric Jessé
  */
@@ -37,7 +37,7 @@ fun <INPUT> ScenarioSpecification.pipe(): PipeStepSpecification<INPUT> {
 }
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.PipeStep], but acting as a singleton.
+ * Specification for a [io.qalipsis.core.factory.steps.PipeStep], but acting as a singleton.
  *
  * @author Eric Jessé
  */

@@ -3,7 +3,7 @@ package io.qalipsis.api.steps
 import io.micronaut.core.annotation.Introspected
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.BlackHoleStep].
+ * Specification for a [io.qalipsis.core.factory.steps.BlackHoleStep].
  *
  * @author Eric Jessé
  */

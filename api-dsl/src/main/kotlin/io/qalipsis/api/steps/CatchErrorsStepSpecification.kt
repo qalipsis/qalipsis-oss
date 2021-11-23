@@ -6,7 +6,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.CatchErrorStep].
+ * Specification for a [io.qalipsis.core.factory.steps.CatchErrorStep].
  *
  * @author Eric Jessé
  */

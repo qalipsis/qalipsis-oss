@@ -4,7 +4,7 @@ import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.StepContext
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.MapWithContextStep].
+ * Specification for a [io.qalipsis.core.factory.steps.MapWithContextStep].
  *
  * @author Eric Jessé
  */

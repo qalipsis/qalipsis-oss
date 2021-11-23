@@ -3,8 +3,8 @@ package io.qalipsis.api.rampup
 /**
  * Ramp-up of minions on a scenario are defined as a sequence of starts, which are described by a [MinionsStartingLine].
  *
- * @see io.qalipsis.core.factories.orchestration.rampup.RampUpStrategy
- * @see io.qalipsis.core.factories.orchestration.rampup.RampUpStrategyIterator
+ * @see io.qalipsis.core.factory.orchestration.rampup.RampUpStrategy
+ * @see io.qalipsis.core.factory.orchestration.rampup.RampUpStrategyIterator
  *
  * @author Eric Jessé
  */

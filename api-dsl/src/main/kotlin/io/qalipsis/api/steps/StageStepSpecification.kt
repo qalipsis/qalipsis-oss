@@ -6,7 +6,7 @@ import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 
 /**
- * Parent specification for the step implied in a [io.qalipsis.core.factories.steps.GroupStep].
+ * Parent specification for the step implied in a [io.qalipsis.core.factory.steps.GroupStep].
  *
  * @author Eric Jessé
  */
@@ -15,7 +15,7 @@ abstract class StageStepSpecification<INPUT, OUTPUT> :
     AbstractStepSpecification<INPUT, OUTPUT, StageStepSpecification<INPUT, OUTPUT>>()
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.GroupStep].
+ * Specification for a [io.qalipsis.core.factory.steps.GroupStep].
  *
  * @author Eric Jessé
  */
@@ -23,7 +23,7 @@ abstract class StageStepSpecification<INPUT, OUTPUT> :
 class StageStepStartSpecification<INPUT> : StageStepSpecification<INPUT, INPUT>()
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.GroupStep] to forward the configuration to the start step.
+ * Specification for a [io.qalipsis.core.factory.steps.GroupStep] to forward the configuration to the start step.
  *
  * @author Eric Jessé
  */

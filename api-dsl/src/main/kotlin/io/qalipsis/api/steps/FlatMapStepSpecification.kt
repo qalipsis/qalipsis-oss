@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.FlatMapStep].
+ * Specification for a [io.qalipsis.core.factory.steps.FlatMapStep].
  *
  * @author Eric Jessé
  */

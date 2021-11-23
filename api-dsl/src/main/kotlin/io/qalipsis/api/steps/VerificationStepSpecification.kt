@@ -3,7 +3,7 @@ package io.qalipsis.api.steps
 import io.micronaut.core.annotation.Introspected
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.VerificationStep].
+ * Specification for a [io.qalipsis.core.factory.steps.VerificationStep].
  *
  * @author Eric Jessé
  */

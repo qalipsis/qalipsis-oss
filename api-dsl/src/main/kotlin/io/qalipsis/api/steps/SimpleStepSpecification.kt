@@ -6,7 +6,7 @@ import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 
 /**
- * Specification for a [io.qalipsis.core.factories.steps.SimpleStep].
+ * Specification for a [io.qalipsis.core.factory.steps.SimpleStep].
  *
  * @author Eric Jessé
  */
