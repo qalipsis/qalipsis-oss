@@ -17,6 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -110,8 +111,7 @@ internal class InnerJoinStepTest {
      * This test validates the concurrency behavior when running the unit tests massively.
      */
     @Timeout(2)
-    @Test
-    //@RepeatedTest(100)
+    @RepeatedTest(100)
     internal fun `should succeed when sending messages concurrently before the execution`() =
         testCoroutineDispatcher.run {
             // given
@@ -151,7 +151,7 @@ internal class InnerJoinStepTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(2)
     internal fun `should not cache null key`() = testCoroutineDispatcher.run {
         // given
         val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
@@ -184,7 +184,7 @@ internal class InnerJoinStepTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should not execute null key`() = testCoroutineDispatcher.runTest {
         // given
         // The conversion from the left record to key always returns null.
@@ -216,7 +216,6 @@ internal class InnerJoinStepTest {
         coroutineScope: CoroutineScope,
         vararg topics: Topic<CorrelationRecord<TestLeftJoinEntity>>
     ): InnerJoinStep<TestLeftJoinEntity, List<Any?>> {
-
         val secondaryCorrelations = topics.mapIndexed { index, topic ->
             RightCorrelation("secondary-${index + 1}", topic) { record -> (record.value).key }
         }
@@ -234,9 +233,7 @@ internal class InnerJoinStepTest {
         }
     }
 
-    private fun buildStepContext(
-        entityFromLeft: TestLeftJoinEntity
-    ) =
+    private fun buildStepContext(entityFromLeft: TestLeftJoinEntity) =
         StepTestHelper.createStepContext<TestLeftJoinEntity, List<Any?>>(entityFromLeft)
 
     private class TestLeftJoinEntity(val key: Int, val value: Any)

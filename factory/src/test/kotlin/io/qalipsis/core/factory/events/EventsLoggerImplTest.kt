@@ -1,12 +1,16 @@
 package io.qalipsis.core.factory.events
 
 import io.mockk.confirmVerified
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import io.qalipsis.api.events.Event
 import io.qalipsis.api.events.EventLevel
+import io.qalipsis.api.events.EventTag
 import io.qalipsis.api.events.EventsPublisher
 import io.qalipsis.api.events.toTags
 import io.qalipsis.core.factory.events.catadioptre.checkLevelAndLog
+import io.qalipsis.core.factory.events.catadioptre.checkLevelAndLogWithSupplier
+import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.mockk.verifyNever
@@ -17,7 +21,14 @@ import java.time.Instant
 /**
  * @author Eric Jessé
  */
+@WithMockk
 internal class EventsLoggerImplTest {
+
+    @RelaxedMockK
+    lateinit var publisher1: EventsPublisher
+
+    @RelaxedMockK
+    lateinit var publisher2: EventsPublisher
 
     @Test
     internal fun `should not log anything when there are no publishers`() {
@@ -33,7 +44,13 @@ internal class EventsLoggerImplTest {
         // then
         verifyNever {
             logger.checkLevelAndLog(any(), any(), any(), any(), any())
-            logger["checkLevelAndLogWithSupplier"]( any<EventLevel>(), any<String>(), any(), any<Instant>(), any<() -> Map<String, String>>())
+            logger["checkLevelAndLogWithSupplier"](
+                any<EventLevel>(),
+                any<String>(),
+                any(),
+                any<Instant>(),
+                any<() -> Map<String, String>>()
+            )
         }
     }
 
@@ -93,8 +110,6 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should log only when the root level allows it`() {
         // given
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(EventLevel.INFO), listOf(publisher1, publisher2))
 
         // when
@@ -127,8 +142,6 @@ internal class EventsLoggerImplTest {
         // given
         val levels = mapOf(EVENT_NAME to EventLevel.INFO, EVENT_NAME_PARENT to EventLevel.OFF)
 
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(EventLevel.OFF, levels), listOf(publisher1, publisher2))
 
         // when
@@ -161,8 +174,6 @@ internal class EventsLoggerImplTest {
         // given
         val levels = mapOf(EVENT_NAME_PARENT to EventLevel.INFO)
 
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(EventLevel.OFF, levels), listOf(publisher1, publisher2))
 
         // when
@@ -193,8 +204,6 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should start the publishers when events are to be logged`() {
         // given
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(), listOf(publisher1, publisher2))
 
         // when
@@ -210,8 +219,6 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should not start the publishers when no event is to be logged`() {
         // given
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(EventLevel.OFF), listOf(publisher1, publisher2))
 
         // when
@@ -224,8 +231,6 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should stop the publishers when events are to be logged`() {
         // given
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(), listOf(publisher1, publisher2))
 
         // when
@@ -241,8 +246,6 @@ internal class EventsLoggerImplTest {
     @Test
     internal fun `should not stop the publishers when no event is to be logged`() {
         // given
-        val publisher1 = relaxedMockk<EventsPublisher>()
-        val publisher2 = relaxedMockk<EventsPublisher>()
         val logger = EventsLoggerImpl(configuration(EventLevel.OFF), listOf(publisher1, publisher2))
 
         // when
@@ -250,6 +253,64 @@ internal class EventsLoggerImplTest {
 
         // then
         confirmVerified(publisher1, publisher2)
+    }
+
+    @Test
+    internal fun `should log with configured and event tags`() {
+        // given
+        val logger = EventsLoggerImpl(configuration(EventLevel.TRACE), listOf(publisher1))
+        logger.configureTags(mapOf("key1" to "value1", "key2" to "value2"))
+        val timestamp = Instant.now()
+
+        // when
+        logger.checkLevelAndLog(
+            EventLevel.DEBUG,
+            "my-event",
+            "the-value",
+            timestamp,
+            mapOf("key2" to "valueOtherThan2", "key3" to "value3")
+        )
+
+        // then
+        verifyOnce {
+            publisher1.publish(
+                Event(
+                    "my-event", EventLevel.DEBUG, listOf(
+                        EventTag("key1", "value1"),
+                        EventTag("key2", "value2"),
+                        EventTag("key2", "valueOtherThan2"),
+                        EventTag("key3", "value3")
+                    ), "the-value", timestamp
+                )
+            )
+        }
+    }
+
+    @Test
+    internal fun `should log with configured and event tags from supplier`() {
+        // given
+        val logger = EventsLoggerImpl(configuration(EventLevel.TRACE), listOf(publisher1))
+        logger.configureTags(mapOf("key1" to "value1", "key2" to "value2"))
+        val timestamp = Instant.now()
+
+        // when
+        logger.checkLevelAndLogWithSupplier(EventLevel.DEBUG, "my-event", "the-value", timestamp) {
+            mapOf("key2" to "valueOtherThan2", "key3" to "value3")
+        }
+
+        // then
+        verifyOnce {
+            publisher1.publish(
+                Event(
+                    "my-event", EventLevel.DEBUG, listOf(
+                        EventTag("key1", "value1"),
+                        EventTag("key2", "value2"),
+                        EventTag("key2", "valueOtherThan2"),
+                        EventTag("key3", "value3")
+                    ), "the-value", timestamp
+                )
+            )
+        }
     }
 
     /**

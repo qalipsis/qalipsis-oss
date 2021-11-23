@@ -5,7 +5,6 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotEmpty
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.micronaut.context.annotation.Property
@@ -23,7 +22,7 @@ internal class FactoryConfigurationIntegrationTest {
     @Timeout(10)
     internal fun `should create the factory configuration with the default values`(factoryConfiguration: FactoryConfiguration) {
         assertThat(factoryConfiguration).all {
-            prop(FactoryConfiguration::nodeId).isNotEmpty()
+            prop(FactoryConfiguration::nodeId).isEmpty()
             prop(FactoryConfiguration::selectors).isEmpty()
             prop(FactoryConfiguration::handshakeRequestChannel).isEqualTo("handshake-request")
             prop(FactoryConfiguration::handshakeResponseChannel).isEqualTo("handshake-response")
@@ -39,7 +38,7 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.handshake-response-channel", value = "The handshake response channel"),
         Property(name = "factory.metadata-path", value = "./another-metadata-path")
     )
-    @MicronautTest(environments = [ExecutionEnvironments.FACTORY])
+    @MicronautTest(environments = [ExecutionEnvironments.FACTORY], packages = ["io.qalipsis.core.factory"])
     @Timeout(10)
     internal fun `should create the factory configuration with specified values`(factoryConfiguration: FactoryConfiguration) {
         assertThat(factoryConfiguration).all {

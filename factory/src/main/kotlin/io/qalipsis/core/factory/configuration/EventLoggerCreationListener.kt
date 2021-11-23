@@ -11,11 +11,16 @@ import jakarta.inject.Singleton
  * Implementation of [BeanCreatedEventListener] in order to start and stop the [EventsLogger]s.
  */
 @Singleton
-internal class EventLoggerCreationListener : BeanCreatedEventListener<EventsLogger>,
+internal class EventLoggerCreationListener(
+    private val factoryConfiguration: FactoryConfiguration
+) : BeanCreatedEventListener<EventsLogger>,
     BeanDestroyedEventListener<EventsLogger> {
 
     override fun onCreated(event: BeanCreatedEvent<EventsLogger>): EventsLogger {
-        event.bean.start()
+        event.bean.apply {
+            configureTags(factoryConfiguration.selectors)
+            start()
+        }
         return event.bean
     }
 

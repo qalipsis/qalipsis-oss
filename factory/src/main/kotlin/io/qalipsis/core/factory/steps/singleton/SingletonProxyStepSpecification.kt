@@ -23,7 +23,7 @@ import javax.validation.constraints.Positive
 internal open class SingletonProxyStepSpecification<T>(
     val singletonStepId: StepId,
     val next: StepSpecification<T, *, *>,
-    val topic: Topic<T>
+    val topic: Topic<T>,
 ) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
 
     override var name: StepName = singletonStepId
@@ -44,6 +44,8 @@ internal open class SingletonProxyStepSpecification<T>(
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = mutableListOf(next)
 
+    override var selectors = mutableMapOf<String, String>()
+
     override fun split(block: SingletonProxyStepSpecification<T>.() -> Unit): SingletonProxyStepSpecification<T> {
         // Nothing to do.
         return this
@@ -54,4 +56,9 @@ internal open class SingletonProxyStepSpecification<T>(
     }
 
     override var reporting: StepReportingSpecification = StepReportingSpecification()
+
+    override fun runOn(selectors: Map<String, String>) {
+        this.selectors.clear()
+        this.selectors += selectors
+    }
 }
