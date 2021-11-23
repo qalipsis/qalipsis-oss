@@ -15,6 +15,11 @@ import javax.annotation.PreDestroy
 interface EventsLogger {
 
     /**
+     * Adds [tags] to all the generated events.
+     */
+    fun configureTags(tags: Map<String, String>)
+
+    /**
      * Log an event with the provided level.
      *
      * @param level the priority of the event.

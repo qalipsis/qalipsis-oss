@@ -33,7 +33,12 @@ interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<
     /**
      * Defines the timeout of the step execution on a single context, in milliseconds.
      */
-    fun timeout(duration: Long)
+    fun timeout(duration: Long) = timeout(Duration.ofMillis(duration))
+
+    /**
+     * Defines the timeout of the step execution on a single context.
+     */
+    fun timeout(duration: Duration)
 
     /**
      * Defines the individual retry strategy on the step. When none is set, the default one of the scenario is used.

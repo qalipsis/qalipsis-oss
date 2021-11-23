@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
+import io.mockk.every
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
@@ -15,6 +16,7 @@ import io.qalipsis.api.scenario.scenariosSpecifications
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
 import io.qalipsis.api.steps.SingletonStepSpecification
+import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -130,6 +132,80 @@ internal class ScenarioSpecificationImplementationTest {
             step.directedAcyclicGraphId,
             singletonStep.directedAcyclicGraphId
         )
+    }
+
+    @Test
+    internal fun `should create a new DAG when the previous step is a singleton`() {
+        // given
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val previous = relaxedMockk<StepSpecification<*, *, *>>(
+            moreInterfaces = arrayOf(SingletonStepSpecification::class)
+        ) {
+            every { directedAcyclicGraphId } returns "my-dag"
+        }
+        val next = relaxedMockk<StepSpecification<*, *, *>>()
+
+        // when
+        scenario.registerNext(previous, next)
+
+        // then
+        every { next setProperty "directedAcyclicGraphId" value "dag-1" }
+    }
+
+    @Test
+    internal fun `should create a new DAG when the next step is a singleton`() {
+        // given
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val previous = relaxedMockk<StepSpecification<*, *, *>> {
+            every { directedAcyclicGraphId } returns "my-dag"
+        }
+        val next = relaxedMockk<StepSpecification<*, *, *>>(
+            moreInterfaces = arrayOf(SingletonStepSpecification::class)
+        )
+
+        // when
+        scenario.registerNext(previous, next)
+
+        // then
+        every { next setProperty "directedAcyclicGraphId" value "dag-1" }
+    }
+
+    @Test
+    internal fun `should create a new DAG when the selectors are not equal`() {
+        // given
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val previous = relaxedMockk<StepSpecification<*, *, *>> {
+            every { directedAcyclicGraphId } returns "my-dag"
+            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+        }
+        val next = relaxedMockk<StepSpecification<*, *, *>> {
+            every { selectors } returns mapOf("key3" to "value3", "key4" to "value4")
+        }
+
+        // when
+        scenario.registerNext(previous, next)
+
+        // then
+        every { next setProperty "directedAcyclicGraphId" value "dag-1" }
+    }
+
+    @Test
+    internal fun `should not create a new DAG when the selectors are equal and there is no singleton`() {
+        // given
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val previous = relaxedMockk<StepSpecification<*, *, *>> {
+            every { directedAcyclicGraphId } returns "my-dag"
+            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+        }
+        val next = relaxedMockk<StepSpecification<*, *, *>> {
+            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+        }
+
+        // when
+        scenario.registerNext(previous, next)
+
+        // then
+        every { next setProperty "directedAcyclicGraphId" value "my-dag" }
     }
 
     private inner class TestStep : AbstractStepSpecification<Unit, Unit, TestStep>()

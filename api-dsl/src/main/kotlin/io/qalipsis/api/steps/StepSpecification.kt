@@ -61,14 +61,29 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     var reporting: StepReportingSpecification
 
     /**
+     * Selectors of the factories where the step can be executed.
+     */
+    val selectors: Map<String, String>
+
+    /**
      * Collection of [StepSpecification]s to create the sibling [io.qalipsis.api.steps.Step]s.
      */
     val nextSteps: MutableList<StepSpecification<*, *, *>>
 
     /**
-     * Add the [StepSpecification] as next step of the current one, declare it in the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
+     * Adds the [StepSpecification] as next step of the current one, declare it in the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
      */
     fun add(step: StepSpecification<*, *, *>)
+
+    /**
+     * Specifies the selectors of the factories where the step can be executed.
+     */
+    fun runOn(vararg selectors: Pair<String, String>) = runOn(selectors.toMap())
+
+    /**
+     * Specifies the selectors of the factories where the step can be executed.
+     */
+    fun runOn(selectors: Map<String, String>)
 
     /**
      * Add several next steps to run concurrently.
@@ -80,7 +95,7 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
      *   map{...}.validate{}.split {
      *      ...
      *   }
-     * }
+     * }.map{...}
      */
     fun split(block: SELF.() -> Unit): SELF {
         @Suppress("UNCHECKED_CAST")

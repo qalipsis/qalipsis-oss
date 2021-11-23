@@ -7,7 +7,6 @@ import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepId
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.runBlocking
 
 /**
  *
@@ -28,10 +27,8 @@ object StepTestHelper {
         completed: Boolean = false
     ): TestStepContext<IN, OUT> {
         val inputChannel = Channel<IN>(1)
-        runBlocking {
-            input?.let {
-                inputChannel.send(it)
-            }
+        input?.let {
+            inputChannel.trySend(it)
         }
         return TestStepContext(
             inputChannel,

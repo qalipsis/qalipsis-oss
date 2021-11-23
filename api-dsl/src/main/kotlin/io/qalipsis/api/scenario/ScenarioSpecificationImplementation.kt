@@ -56,14 +56,22 @@ internal class ScenarioSpecificationImplementation(
 
     override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
         register(nextStep)
-        // If any step is a singleton, a new DAG is built.
         if (nextStep.directedAcyclicGraphId.isBlank()) {
-            if (previousStep is SingletonStepSpecification || nextStep is SingletonStepSpecification) {
+            if (isNewDag(previousStep, nextStep)) {
                 nextStep.directedAcyclicGraphId = buildDagId(previousStep.directedAcyclicGraphId)
             } else {
                 nextStep.directedAcyclicGraphId = previousStep.directedAcyclicGraphId
             }
         }
+    }
+
+    /**
+     * Checks whether a new DAG has to be created for [nextStep].
+     */
+    private fun isNewDag(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>): Boolean {
+        return previousStep is SingletonStepSpecification
+                || nextStep is SingletonStepSpecification
+                || previousStep.selectors != nextStep.selectors
     }
 
     override fun register(step: StepSpecification<*, *, *>) {

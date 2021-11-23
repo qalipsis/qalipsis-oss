@@ -8,6 +8,7 @@ import java.time.Duration
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
+import javax.validation.constraints.PositiveOrZero
 
 /**
  * Generic specification for the step specifications. The actual operations are added by extensions.
@@ -34,6 +35,7 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
     @field:Positive
     override var iterations: Long = 1
 
+    @field:PositiveOrZero
     override var iterationPeriods: Duration = Duration.ZERO
 
     override var retryPolicy: RetryPolicy? = null
@@ -42,16 +44,14 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
 
     override var reporting = StepReportingSpecification()
 
-    /**
-     * Defines the timeout of the step execution on a single context, in milliseconds.
-     */
-    override fun timeout(duration: Long) {
-        timeout = Duration.ofMillis(duration)
+    private var selectorsSet = false
+
+    override var selectors: Map<String, String> = emptyMap()
+
+    override fun timeout(duration: Duration) {
+        timeout = duration
     }
 
-    /**
-     * Defines the individual retry strategy on the step. When none is set, the default one of the scenario is used.
-     */
     override fun retry(retryPolicy: RetryPolicy) {
         this.retryPolicy = retryPolicy
     }
@@ -62,11 +62,20 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
     }
 
     override fun add(step: StepSpecification<*, *, *>) {
+        // If no selector is specified on the next step, they are inherited.
+        if (step.selectors.isEmpty() || (step as? AbstractStepSpecification<*, *, *>)?.selectorsSet != true) {
+            step.runOn(selectors)
+        }
         nextSteps.add(step)
         scenario.registerNext(this, step)
     }
 
     override fun report(specification: StepReportingSpecification.() -> Unit) {
         reporting.specification()
+    }
+
+    override fun runOn(selectors: Map<String, String>) {
+        selectorsSet = true
+        this.selectors = selectors
     }
 }

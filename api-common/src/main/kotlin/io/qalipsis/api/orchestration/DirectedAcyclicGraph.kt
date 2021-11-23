@@ -50,7 +50,7 @@ data class DirectedAcyclicGraph(
     /**
      * Selectors to correlate on which factory the DAG can be executed.
      */
-    val selectors: MutableMap<String, String>
+    val selectors: Map<String, String>
 ) {
 
     /**

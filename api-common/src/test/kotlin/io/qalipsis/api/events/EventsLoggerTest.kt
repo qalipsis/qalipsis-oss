@@ -180,6 +180,8 @@ internal class EventsLoggerTest {
 
     class TestEventsLogger(private val mockedLogger: EventsLogger) : EventsLogger {
 
+        override fun configureTags(tags: Map<String, String>) = Unit
+
         override fun log(
             level: EventLevel, name: String, value: Any?, timestamp: Instant,
             tagsSupplier: () -> Map<String, String>

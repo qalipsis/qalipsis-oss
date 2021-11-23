@@ -56,11 +56,16 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = wrappedStepSpec.nextSteps
 
+
+    override var reporting: StepReportingSpecification = wrappedStepSpec.reporting
+
     override fun add(step: StepSpecification<*, *, *>) {
         wrappedStepSpec.add(step)
     }
 
-    override var reporting: StepReportingSpecification = wrappedStepSpec.reporting
+    override fun runOn(selectors: Map<String, String>) {
+        wrappedStepSpec.runOn(selectors)
+    }
 
     override fun split(block: AbstractPluginStepWrapper<I, O>.() -> Unit): AbstractPluginStepWrapper<I, O> {
         throw InvalidSpecificationException(
