@@ -7,6 +7,7 @@ import com.squareup.javapoet.TypeSpec
 import io.micronaut.context.ApplicationContext
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
+import io.qalipsis.api.services.ServicesFiles
 import jakarta.inject.Named
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -33,7 +34,6 @@ import javax.tools.StandardLocation
  *
  * @author Eric Jessé
  */
-
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedAnnotationTypes(ScenarioAnnotationProcessor.ANNOTATION_CLASS_NAME)
 internal class ScenarioAnnotationProcessor : AbstractProcessor() {
@@ -85,7 +85,6 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
         if (!allScenarios.containsAll(newScenarios.keys)) {
             allScenarios.addAll(newScenarios.keys)
 
-            // Create the
             val reallyNewScenarios = mutableSetOf<String>()
             reallyNewScenarios.addAll(newScenarios.keys)
             reallyNewScenarios.removeAll(oldScenarios)

@@ -1,4 +1,4 @@
-package io.qalipsis.api.processors
+package io.qalipsis.api.services
 
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets
  *
  * Fetched from https://github.com/google/auto/blob/master/service/processor/src/main/java/com/google/auto/service/processor/ServicesFiles.java under Apache License, Version 2.0.
  */
-internal object ServicesFiles {
+object ServicesFiles {
 
     /**
      * Reads the set of services from a file.

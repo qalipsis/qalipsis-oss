@@ -1,6 +1,6 @@
 @file:Suppress("UNUSED_PARAMETER")
 
-package io.qalipsis.api.processors
+package io.qalipsis.api.processors.scenario
 
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario

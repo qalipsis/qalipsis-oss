@@ -1,4 +1,4 @@
-package io.qalipsis.api.processors
+package io.qalipsis.api.processors.scenario
 
 import assertk.all
 import assertk.assertThat
@@ -11,6 +11,7 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.core.convert.ConversionService
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
+import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.test.io.readFileLines
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions

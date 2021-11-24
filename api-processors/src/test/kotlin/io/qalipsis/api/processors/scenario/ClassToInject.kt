@@ -1,4 +1,4 @@
-package io.qalipsis.api.processors
+package io.qalipsis.api.processors.scenario
 
 import jakarta.inject.Singleton
 

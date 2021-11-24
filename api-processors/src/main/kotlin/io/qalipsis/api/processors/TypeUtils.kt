@@ -55,4 +55,10 @@ internal class TypeUtils(private val elementUtils: Elements, private val typeUti
     fun erase(type: TypeMirror): TypeMirror {
         return typeUtils.erasure(type)
     }
+
+    /**
+     * Returns the [TypeElement] for the [TypeMirror] passed as parameter if it exists.
+     * Primitive types returns null.
+     */
+    fun getTypeElement(typeMirror: TypeMirror) = typeUtils.asElement(typeMirror) as TypeElement?
 }

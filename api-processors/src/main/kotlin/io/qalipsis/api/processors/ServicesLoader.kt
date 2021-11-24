@@ -1,6 +1,7 @@
 package io.qalipsis.api.processors
 
 import io.micronaut.context.ApplicationContext
+import io.qalipsis.api.services.ServicesFiles
 
 /**
  *
@@ -9,7 +10,7 @@ import io.micronaut.context.ApplicationContext
 object ServicesLoader {
 
     /**
-     * Load the services passing the application context as parameter.
+     * Loads the services passing the application context as parameter.
      */
     @Suppress("UNCHECKED_CAST")
     fun <T> loadServices(name: String, context: ApplicationContext): Collection<T> {
@@ -27,7 +28,7 @@ object ServicesLoader {
     }
 
     /**
-     * Load the profiles defined in the plugins.
+     * Loads the profiles defined in the plugins.
      */
     fun loadPlugins(): Collection<String> {
         return this.javaClass.classLoader.getResources("META-INF/qalipsis/plugin")
@@ -38,4 +39,5 @@ object ServicesLoader {
             .filter { it.isNotBlank() }
             .toSet()
     }
+
 }

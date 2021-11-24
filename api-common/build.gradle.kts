@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    kotlin("plugin.serialization") version "1.5.31"
     `java-test-fixtures`
 }
 
@@ -35,6 +36,7 @@ dependencies {
     api(project(":api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     // Libraries relevant for the development of plugins.
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.+")
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
