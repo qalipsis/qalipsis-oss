@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 description = "Qalipsis Factory components"
@@ -53,6 +54,7 @@ dependencies {
     implementation("io.qalipsis:api-dsl:${project.version}")
     implementation("io.qalipsis:api-processors:${project.version}")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.+")
     implementation("com.google.guava:guava:29.0-jre")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
     implementation("cool.graph:cuid-java:0.1.1")

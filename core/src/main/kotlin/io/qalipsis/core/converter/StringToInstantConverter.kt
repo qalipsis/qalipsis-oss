@@ -1,4 +1,4 @@
-package digital.rosenberger.commons.converter
+package io.qalipsis.core.converter
 
 import io.micronaut.core.convert.ConversionContext
 import io.micronaut.core.convert.ConversionService
