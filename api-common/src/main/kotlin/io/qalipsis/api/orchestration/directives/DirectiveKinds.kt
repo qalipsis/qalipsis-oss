@@ -1,17 +1,20 @@
 package io.qalipsis.api.orchestration.directives
 
-import cool.graph.cuid.Cuid
+import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.util.LinkedList
 
 
 typealias DirectiveKey = String
 
 /**
- * A Directive is sent from the header to the factories to notify them of operations to perform.
+ * A Directive is sent from the head to the factories to notify them of operations to perform.
  */
-abstract class Directive(
-    val key: DirectiveKey = Cuid.createCuid()
-) {
+@Serializable
+@Polymorphic
+abstract class Directive{
+    abstract val key: DirectiveKey
     override fun toString(): String {
         return "${this::class.simpleName}(key=$key)"
     }
@@ -21,13 +24,15 @@ abstract class Directive(
  * Kind of [Directive] containing all the relevant information to process the directive.
  *
  */
+@Serializable
 abstract class DescriptiveDirective : Directive()
 
 /**
  * Kind of [Directive] containing a key to read the actual directive from the cache.
  *
  */
-abstract class DirectiveReference(key: DirectiveKey) : Directive(key)
+@Serializable
+abstract class DirectiveReference : Directive()
 
 interface ReferencableDirective<T : DirectiveReference> {
 
@@ -40,17 +45,20 @@ interface ReferencableDirective<T : DirectiveReference> {
  *
  * They are published to the directive consumers as a [SingleUseDirectiveReference].
  */
+@Serializable
 abstract class SingleUseDirective<T, R : SingleUseDirectiveReference<T>>(
+) : Directive(), ReferencableDirective<R>{
     /**
-     * Values to initialize the queue.
+     * Values to be consumed only once.
      */
-    val value: T
-) : Directive(), ReferencableDirective<R>
+    abstract val value: T
+}
 
 /**
  * Transportable representation of a [SingleUseDirective].
  */
-abstract class SingleUseDirectiveReference<T>(key: DirectiveKey) : DirectiveReference(key)
+@Serializable
+abstract class SingleUseDirectiveReference<T> : DirectiveReference()
 
 /**
  * Kind of [Directive] containing a queue of values to pop.
@@ -58,20 +66,23 @@ abstract class SingleUseDirectiveReference<T>(key: DirectiveKey) : DirectiveRefe
  *
  * They are published to the directive consumers as a [QueueDirectiveReference].
  */
+@Serializable
 abstract class QueueDirective<T, R : QueueDirectiveReference<T>>(
+) : Directive(), ReferencableDirective<R> {
+
+    val queue: Collection<T> by lazy { LinkedList(values) }
+
     /**
      * Values to initialize the queue.
      */
-    values: List<T>
-) : Directive(), ReferencableDirective<R> {
-
-    val queue: LinkedList<T> = LinkedList<T>(values)
+    abstract val values: List<T>
 }
 
 /**
  * Transportable representation of a [QueueDirective].
  */
-abstract class QueueDirectiveReference<T>(key: DirectiveKey) : DirectiveReference(key)
+@Serializable
+abstract class QueueDirectiveReference<T> : DirectiveReference()
 
 /**
  * Kind of [Directive] containing a full set of data to process.
@@ -79,17 +90,21 @@ abstract class QueueDirectiveReference<T>(key: DirectiveKey) : DirectiveReferenc
  * They are published to the directive consumers as a [ListDirectiveReference].
  *
  */
+@Serializable
 abstract class ListDirective<T, R : ListDirectiveReference<T>>(
+) : Directive(), ReferencableDirective<R> {
+
+    val set: List<T> by lazy { values }
+
     /**
      * Values to initialize the set.
      */
-    values: List<T>
-) : Directive(), ReferencableDirective<R> {
+    abstract  val values: List<T>
 
-    val set: List<T> = values
 }
 
 /**
  * Transportable representation of a [ListDirective].
  */
-abstract class ListDirectiveReference<T>(key: DirectiveKey) : DirectiveReference(key)
+@Serializable
+abstract class ListDirectiveReference<T> : DirectiveReference()

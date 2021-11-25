@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     kotlin("kapt")
-    kotlin("plugin.serialization") version "1.5.31"
+    kotlin("plugin.serialization")
 }
 
 description = "Qalipsis compile time processors"

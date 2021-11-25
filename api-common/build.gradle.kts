@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     kotlin("kapt")
     kotlin("plugin.allopen")
-    kotlin("plugin.serialization") version "1.5.31"
     `java-test-fixtures`
 }
 
@@ -51,8 +51,10 @@ dependencies {
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micrometer:micrometer-core")
     implementation("com.google.guava:guava:28.2-jre")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.1")
 
     testImplementation(project(":test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
 
     testFixturesImplementation(project(":test"))
 }
