@@ -30,7 +30,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize list reference directive as base class`() {
-        val directive: ListDirectiveReference<String> = ListDirectiveReferenceImpl<String>("123")
+        val directive: ListDirectiveReference<String> = ListDirectiveReferenceImpl<String>("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -42,7 +42,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize list reference directive implementation`() {
-        val directive: ListDirectiveReferenceImpl<String> = ListDirectiveReferenceImpl<String>("123")
+        val directive: ListDirectiveReferenceImpl<String> = ListDirectiveReferenceImpl<String>("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -54,7 +54,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize queue reference directive as base class`() {
-        val directive: QueueDirectiveReference<String> = QueueDirectiveReferenceImpl<String>("123")
+        val directive: QueueDirectiveReference<String> = QueueDirectiveReferenceImpl<String>("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -66,7 +66,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize queue reference directive implementation`() {
-        val directive: QueueDirectiveReferenceImpl<String> = QueueDirectiveReferenceImpl<String>("123")
+        val directive: QueueDirectiveReferenceImpl<String> = QueueDirectiveReferenceImpl<String>("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -78,7 +78,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize single use directive as base class`() {
-        val directive: SingleUseDirectiveReference<String> = SingleUseDirectiveReferenceImpl<String>("123")
+        val directive: SingleUseDirectiveReference<String> = SingleUseDirectiveReferenceImpl<String>("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -90,7 +90,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize single use directive reference implementation`() {
-        val directive: SingleUseDirectiveReferenceImpl<String> = SingleUseDirectiveReferenceImpl<String>("123")
+        val directive: SingleUseDirectiveReferenceImpl<String> = SingleUseDirectiveReferenceImpl<String>("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -102,7 +102,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize descriptive directive as base class`() {
-        val directive: DescriptiveDirective = DescriptiveDirectiveImpl("123")
+        val directive: DescriptiveDirective = DescriptiveDirectiveImpl("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -114,7 +114,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize descriptive directive implementation`() {
-        val directive = DescriptiveDirectiveImpl("123")
+        val directive = DescriptiveDirectiveImpl("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -126,7 +126,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize directive as base class`() {
-        val directive: Directive = DirectiveImpl("123")
+        val directive: Directive = DirectiveImpl("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -138,7 +138,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize directive implementation`() {
-        val directive = DirectiveImpl("123")
+        val directive = DirectiveImpl("123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -150,7 +150,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize single use directive`() {
-        val directive: SingleUseDirective<String, SingleUseDirectiveReference<String>> = SingleUseDirectiveImpl("key", "123")
+        val directive: SingleUseDirective<String, SingleUseDirectiveReference<String>> = SingleUseDirectiveImpl("key", "123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -163,7 +163,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize single use directive implementation`() {
-        val directive = SingleUseDirectiveImpl("key", "123")
+        val directive = SingleUseDirectiveImpl("key", "123", listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -176,7 +176,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize queue directive`() {
-        val directive: QueueDirective<String, QueueDirectiveReference<String>> = QueueDirectiveImpl("key", listOf("123"))
+        val directive: QueueDirective<String, QueueDirectiveReference<String>> = QueueDirectiveImpl("key", listOf("123"), listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -189,7 +189,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize queue directive implementation`() {
-        val directive = QueueDirectiveImpl("key", listOf("123"))
+        val directive = QueueDirectiveImpl("key", listOf("123"), listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -202,7 +202,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize list directive`() {
-        val directive: ListDirective<String, ListDirectiveReference<String>> = ListDirectiveImpl("key", listOf("123"))
+        val directive: ListDirective<String, ListDirectiveReference<String>> = ListDirectiveImpl("key", listOf("123"), listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -215,7 +215,7 @@ class DirectiveKindTest {
 
     @Test
     fun `should be able to serialize list directive implementation`() {
-        val directive = ListDirectiveImpl("key", listOf("123"))
+        val directive = ListDirectiveImpl("key", listOf("123"), listOf("unicast"))
         
         val jsonString = json.encodeToString(directive)
         
@@ -228,51 +228,51 @@ class DirectiveKindTest {
 
     @Serializable
     @SerialName("listDirectiveReferenceImpl")
-    internal class ListDirectiveReferenceImpl<String>(override val key: DirectiveKey) : ListDirectiveReference<String>()
+    internal class ListDirectiveReferenceImpl<String>(override val key: DirectiveKey, override val channels: List<DispatcherChannel>) : ListDirectiveReference<String>()
 
     @Serializable
     @SerialName("queueDirectiveReferenceImpl")
-    internal class QueueDirectiveReferenceImpl<String>(override val key: DirectiveKey) : QueueDirectiveReference<String>()
+    internal class QueueDirectiveReferenceImpl<String>(override val key: DirectiveKey, override val channels: List<DispatcherChannel>) : QueueDirectiveReference<String>()
 
     @Serializable
     @SerialName("singleUseDirectiveReferenceImpl")
-    internal class SingleUseDirectiveReferenceImpl<String>(override val key: DirectiveKey) : SingleUseDirectiveReference<String>()
+    internal class SingleUseDirectiveReferenceImpl<String>(override val key: DirectiveKey, override val channels: List<DispatcherChannel>) : SingleUseDirectiveReference<String>()
 
     @Serializable
     @SerialName("singleUseDirectiveImpl")
-    internal class SingleUseDirectiveImpl(override val key: DirectiveKey, override val value: String) : SingleUseDirective<String, SingleUseDirectiveReference<String>>() {
+    internal class SingleUseDirectiveImpl(override val key: DirectiveKey, override val value: String, override val channels: List<DispatcherChannel>) : SingleUseDirective<String, SingleUseDirectiveReference<String>>() {
 
         override fun toReference(): SingleUseDirectiveReference<String> {
-            return SingleUseDirectiveReferenceImpl(key)
+            return SingleUseDirectiveReferenceImpl(key, channels)
         }
     }
 
     @Serializable
     @SerialName("queueDirectiveImpl")
-    internal class QueueDirectiveImpl(override val key: DirectiveKey, override val values: List<String>) : QueueDirective<String, QueueDirectiveReference<String>>() {
+    internal class QueueDirectiveImpl(override val key: DirectiveKey, override val values: List<String>, override val channels: List<DispatcherChannel>) : QueueDirective<String, QueueDirectiveReference<String>>() {
 
         override fun toReference(): QueueDirectiveReference<String> {
-            return QueueDirectiveReferenceImpl(key)
+            return QueueDirectiveReferenceImpl(key, channels)
         }
     }
 
     @Serializable
     @SerialName("listDirectiveImpl")
-    internal class ListDirectiveImpl(override val key: DirectiveKey, override val values: List<String>) : ListDirective<String, ListDirectiveReference<String>>() {
+    internal class ListDirectiveImpl(override val key: DirectiveKey, override val values: List<String>, override val channels: List<DispatcherChannel>) : ListDirective<String, ListDirectiveReference<String>>() {
 
         override fun toReference(): ListDirectiveReference<String> {
-            return ListDirectiveReferenceImpl(key)
+            return ListDirectiveReferenceImpl(key, channels)
         }
     }
 
     @Serializable
     @SerialName("descriptiveDirectiveImpl")
-    internal class DescriptiveDirectiveImpl(override val key: DirectiveKey) : DescriptiveDirective()
+    internal class DescriptiveDirectiveImpl(override val key: DirectiveKey, override val channels: List<DispatcherChannel>) : DescriptiveDirective()
 
 
     @Serializable
     @SerialName("directiveImpl")
-    internal class DirectiveImpl(override val key: DirectiveKey) : Directive()
+    internal class DirectiveImpl(override val key: DirectiveKey, override val channels: List<DispatcherChannel>) : Directive()
 
     private val module = SerializersModule {
         polymorphic(ListDirectiveReference::class) {

@@ -1,12 +1,12 @@
 package io.qalipsis.api.orchestration.directives
 
 import kotlinx.serialization.Polymorphic
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.LinkedList
 
 
 typealias DirectiveKey = String
+typealias DispatcherChannel = String
 
 /**
  * A Directive is sent from the head to the factories to notify them of operations to perform.
@@ -15,6 +15,7 @@ typealias DirectiveKey = String
 @Polymorphic
 abstract class Directive{
     abstract val key: DirectiveKey
+    abstract val channels: List<DispatcherChannel>
     override fun toString(): String {
         return "${this::class.simpleName}(key=$key)"
     }
