@@ -46,9 +46,9 @@ dependencies {
     compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
 
     compileOnly(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
-    implementation("io.micronaut.redis:micronaut-redis-lettuce")
+    api("io.micronaut.redis:micronaut-redis-lettuce")
 
     implementation("io.qalipsis:api-common:${project.version}")
     implementation("io.qalipsis:api-dsl:${project.version}")

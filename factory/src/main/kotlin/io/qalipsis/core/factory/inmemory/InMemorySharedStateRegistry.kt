@@ -27,7 +27,7 @@ class InMemorySharedStateRegistry(
         .expireAfter(SharedStateDefinitionExpiry(timeToLive))
         .build()
 
-    override fun set(definition: SharedStateDefinition, payload: Any?) {
+    override suspend fun set(definition: SharedStateDefinition, payload: Any?) {
         if (payload == null) {
             cache.invalidate(definition)
         } else {
@@ -35,30 +35,30 @@ class InMemorySharedStateRegistry(
         }
     }
 
-    override fun set(values: Map<SharedStateDefinition, Any?>) {
+    override suspend fun set(values: Map<SharedStateDefinition, Any?>) {
         values.forEach { (def, value) -> set(def, value) }
     }
 
-    override fun <T> get(definition: SharedStateDefinition): T? {
+    override suspend fun <T> get(definition: SharedStateDefinition): T? {
         @Suppress("UNCHECKED_CAST")
         return cache.getIfPresent(definition) as T
     }
 
-    override fun get(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
+    override suspend fun get(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
         return definitions.map { it.sharedStateName to get<Any>(it) }.toMap()
     }
 
-    override fun <T> remove(definition: SharedStateDefinition): T? {
+    override suspend fun <T> remove(definition: SharedStateDefinition): T? {
         return get<T>(definition)?.also { cache.invalidate(definition) }
     }
 
-    override fun remove(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
+    override suspend fun remove(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
         return get(definitions).also {
             definitions.forEach { cache.invalidate(it) }
         }
     }
 
-    override fun contains(definition: SharedStateDefinition): Boolean {
+    override suspend fun contains(definition: SharedStateDefinition): Boolean {
         return cache.asMap().containsKey(definition)
     }
 
