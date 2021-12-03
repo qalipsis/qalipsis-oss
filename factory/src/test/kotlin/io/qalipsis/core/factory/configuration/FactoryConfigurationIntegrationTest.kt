@@ -11,6 +11,8 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.factory.configuration.FactoryConfiguration.Cache
+import java.time.Duration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
@@ -27,6 +29,10 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::handshakeRequestChannel).isEqualTo("handshake-request")
             prop(FactoryConfiguration::handshakeResponseChannel).isEqualTo("handshake-response")
             prop(FactoryConfiguration::metadataPath).isEqualTo("./metadata")
+            prop(FactoryConfiguration::cache).all {
+                prop(Cache::ttl).isEqualTo(Duration.ofMinutes(1))
+                prop(Cache::keyPrefix).isEqualTo("shared-state-registry")
+            }
         }
     }
 
@@ -36,7 +42,9 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.selectors", value = "key1=value1,key2=value2"),
         Property(name = "factory.handshake-request-channel", value = "The handshake request channel"),
         Property(name = "factory.handshake-response-channel", value = "The handshake response channel"),
-        Property(name = "factory.metadata-path", value = "./another-metadata-path")
+        Property(name = "factory.metadata-path", value = "./another-metadata-path"),
+        Property(name = "factory.cache.ttl", value = "PT2M"),
+        Property(name = "factory.cache.keyPrefix", value = "some-other-registry")
     )
     @MicronautTest(environments = [ExecutionEnvironments.FACTORY], packages = ["io.qalipsis.core.factory"])
     @Timeout(10)
@@ -51,7 +59,10 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::handshakeRequestChannel).isEqualTo("The handshake request channel")
             prop(FactoryConfiguration::handshakeResponseChannel).isEqualTo("The handshake response channel")
             prop(FactoryConfiguration::metadataPath).isEqualTo("./another-metadata-path")
+            prop(FactoryConfiguration::cache).all {
+                prop(Cache::ttl).isEqualTo(Duration.ofMinutes(2))
+                prop(Cache::keyPrefix).isEqualTo("some-other-registry")
+            }
         }
     }
-
 }

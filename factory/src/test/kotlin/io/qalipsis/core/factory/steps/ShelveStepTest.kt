@@ -1,12 +1,12 @@
 package io.qalipsis.core.factory.steps
 
+import io.mockk.coJustRun
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.mockk.slot
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runBlockingTest
@@ -23,7 +23,7 @@ internal class ShelveStepTest {
     internal fun `should push all the values to the shared state registry`() = runBlockingTest {
         val capturedValues = slot<Map<SharedStateDefinition, Any?>>()
         val sharedStateRegistry: SharedStateRegistry = relaxedMockk {
-            every { set(capture(capturedValues)) } returns Unit
+           coJustRun { set(capture(capturedValues)) }
         }
         val step = ShelveStep<Long>("", sharedStateRegistry) { input ->
             mapOf("value-1" to input + 1, "value-2" to "My Value", "value-3" to null)
@@ -39,7 +39,7 @@ internal class ShelveStepTest {
             SharedStateDefinition("my-minion", "value-2") to "My Value",
             SharedStateDefinition("my-minion", "value-3") to null
         ), capturedValues.captured)
-        verifyOnce {
+        coVerifyOnce {
             sharedStateRegistry.set(any<Map<SharedStateDefinition, Any?>>())
         }
         confirmVerified(sharedStateRegistry)

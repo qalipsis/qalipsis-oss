@@ -1,11 +1,11 @@
 package io.qalipsis.core.factory.steps
 
+import io.mockk.coEvery
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runBlockingTest
@@ -22,7 +22,7 @@ internal class UnshelveStepTest {
     internal fun `should get all the values from the shared state registry`() = runBlockingTest {
         val values = mapOf("value-1" to 123L, "value-2" to "My Value", "value-3" to null)
         val sharedStateRegistry: SharedStateRegistry = relaxedMockk {
-            every { get(any<Iterable<SharedStateDefinition>>()) } returns values
+            coEvery { get(any<Iterable<SharedStateDefinition>>()) } returns values
         }
 
         val step = UnshelveStep<Long>("", sharedStateRegistry, listOf("value-1", "value-2", "value-3"), false)
@@ -32,7 +32,7 @@ internal class UnshelveStepTest {
         val output = (ctx.output as Channel).receive()
         assertEquals(output, 123L to values)
 
-        verifyOnce {
+        coVerifyOnce {
             sharedStateRegistry.get(listOf(
                 SharedStateDefinition("my-minion", "value-1"),
                 SharedStateDefinition("my-minion", "value-2"),
@@ -48,7 +48,7 @@ internal class UnshelveStepTest {
     internal fun `should remove all the values from the shared state registry`() = runBlockingTest {
         val values = mapOf("value-1" to 123L, "value-2" to "My Value", "value-3" to null)
         val sharedStateRegistry: SharedStateRegistry = relaxedMockk {
-            every { remove(any()) } returns values
+            coEvery { remove(any()) } returns values
         }
 
         val step = UnshelveStep<Long>("", sharedStateRegistry, listOf("value-1", "value-2", "value-3"), true)
@@ -58,7 +58,7 @@ internal class UnshelveStepTest {
         val output = (ctx.output as Channel).receive()
         assertEquals(output, 123L to values)
 
-        verifyOnce {
+        coVerifyOnce {
             sharedStateRegistry.remove(listOf(
                 SharedStateDefinition("my-minion", "value-1"),
                 SharedStateDefinition("my-minion", "value-2"),
@@ -72,7 +72,7 @@ internal class UnshelveStepTest {
     @Test
     internal fun `should get the value from the shared state registry`() = runBlockingTest {
         val sharedStateRegistry: SharedStateRegistry = relaxedMockk {
-            every { get<String>(any()) } returns "The value"
+            coEvery { get<String>(any()) } returns "The value"
         }
 
         val step = SingularUnshelveStep<Long, String>("", sharedStateRegistry, "value-1", false)
@@ -82,7 +82,7 @@ internal class UnshelveStepTest {
         val output = (ctx.output as Channel).receive()
         assertEquals(output, 123L to "The value")
 
-        verifyOnce {
+        coVerifyOnce {
             sharedStateRegistry.get<String>(SharedStateDefinition("my-minion", "value-1"))
         }
         confirmVerified(sharedStateRegistry)
@@ -93,7 +93,7 @@ internal class UnshelveStepTest {
     @Test
     internal fun `should remove the value from the shared state registry`() = runBlockingTest {
         val sharedStateRegistry: SharedStateRegistry = relaxedMockk {
-            every { remove<String>(any()) } returns "The value"
+            coEvery { remove<String>(any()) } returns "The value"
         }
 
         val step = SingularUnshelveStep<Long, String>("", sharedStateRegistry, "value-1", true)
@@ -103,7 +103,7 @@ internal class UnshelveStepTest {
         val output = (ctx.output as Channel).receive()
         assertEquals(output, 123L to "The value")
 
-        verifyOnce {
+        coVerifyOnce {
             sharedStateRegistry.remove<String>(SharedStateDefinition("my-minion", "value-1"))
         }
         confirmVerified(sharedStateRegistry)

@@ -1,6 +1,8 @@
 package io.qalipsis.core.factory.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
+import io.qalipsis.api.constraints.PositiveDuration
+import java.time.Duration
 import javax.validation.constraints.NotEmpty
 
 @ConfigurationProperties("factory")
@@ -34,6 +36,26 @@ internal class FactoryConfiguration {
      */
     @field:NotEmpty
     var metadataPath: String = "./metadata"
+
+    /**
+     * This object contains the settings applied to each key and value stored in cache.
+     */
+    var cache: Cache = Cache()
+
+    @ConfigurationProperties("cache")
+    class Cache {
+
+        /**
+         * Time to live used for each value in cache.
+         */
+        @field:PositiveDuration
+        var ttl: Duration = Duration.ofMinutes(1)
+
+        /**
+         * The prefix of the keys in cache.
+         */
+        var keyPrefix: String = "shared-state-registry"
+    }
 
     companion object {
 
