@@ -15,7 +15,7 @@ typealias DispatcherChannel = String
 @Polymorphic
 abstract class Directive{
     abstract val key: DirectiveKey
-    abstract val channels: List<DispatcherChannel>
+    abstract val channel: DispatcherChannel
     override fun toString(): String {
         return "${this::class.simpleName}(key=$key)"
     }
