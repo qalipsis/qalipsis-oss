@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 /**
  * Service to serialize and deserialize objects of any kind.

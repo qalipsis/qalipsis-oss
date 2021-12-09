@@ -1,20 +1,25 @@
 package io.qalipsis.core.directives
 
+import io.qalipsis.api.dev.CuidBasedIdGenerator
 import io.qalipsis.api.orchestration.directives.DescriptiveDirective
 import io.qalipsis.api.orchestration.directives.DirectiveKey
+import io.qalipsis.api.orchestration.directives.DispatcherChannel
 import io.qalipsis.api.orchestration.directives.ListDirective
 import io.qalipsis.api.orchestration.directives.ListDirectiveReference
 import io.qalipsis.api.orchestration.directives.QueueDirective
 import io.qalipsis.api.orchestration.directives.QueueDirectiveReference
 import io.qalipsis.api.orchestration.directives.SingleUseDirective
 import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  *
  * @author Eric Jessé
  */
-
-class TestQueueDirective(values: List<Int>) : QueueDirective<Int, QueueDirectiveReference<Int>>(values) {
+@Serializable
+@SerialName("testQueueDirective")
+class TestQueueDirective(override val values: List<Int>, override val key: DirectiveKey = CuidBasedIdGenerator().long(), override val channel: DispatcherChannel = "broadcast-channel") : QueueDirective<Int, QueueDirectiveReference<Int>>() {
 
     private val ref = TestQueueDirectiveReference("my-queue-directive")
 
@@ -22,10 +27,13 @@ class TestQueueDirective(values: List<Int>) : QueueDirective<Int, QueueDirective
         return ref
     }
 }
+@Serializable
+@SerialName("testQueueDirectiveReference")
+class TestQueueDirectiveReference(override val key: DirectiveKey, override val channel: DispatcherChannel = "broadcast-channel") : QueueDirectiveReference<Int>()
 
-class TestQueueDirectiveReference(key: DirectiveKey) : QueueDirectiveReference<Int>(key)
-
-class TestListDirective(values: List<Int>) : ListDirective<Int, ListDirectiveReference<Int>>(values) {
+@Serializable
+@SerialName("testListDirective")
+class TestListDirective(override val values: List<Int>, override val key: DirectiveKey = CuidBasedIdGenerator().long(), override val channel: DispatcherChannel = "broadcast-channel") : ListDirective<Int, ListDirectiveReference<Int>>() {
 
     private val ref = TestListDirectiveReference("my-list-directive")
 
@@ -34,9 +42,13 @@ class TestListDirective(values: List<Int>) : ListDirective<Int, ListDirectiveRef
     }
 }
 
-class TestListDirectiveReference(key: DirectiveKey) : ListDirectiveReference<Int>(key)
+@Serializable
+@SerialName("testListDirectiveReference")
+class TestListDirectiveReference(override val key: DirectiveKey, override val channel: DispatcherChannel = "broadcast-channel") : ListDirectiveReference<Int>()
 
-class TestSingleUseDirective(value: Int) : SingleUseDirective<Int, SingleUseDirectiveReference<Int>>(value) {
+@Serializable
+@SerialName("testSingleUseDirective")
+class TestSingleUseDirective(override val value: Int, override val key: DirectiveKey = CuidBasedIdGenerator().long(), override val channel: DispatcherChannel = "broadcast-channel") : SingleUseDirective<Int, SingleUseDirectiveReference<Int>>() {
 
     private val ref = TestSingleUseDirectiveReference("my-single-use-directive")
 
@@ -45,6 +57,10 @@ class TestSingleUseDirective(value: Int) : SingleUseDirective<Int, SingleUseDire
     }
 }
 
-class TestSingleUseDirectiveReference(key: DirectiveKey) : SingleUseDirectiveReference<Int>(key)
+@Serializable
+@SerialName("testSingleUseDirectiveReference")
+class TestSingleUseDirectiveReference(override val key: DirectiveKey, override val channel: DispatcherChannel = "broadcast-channel") : SingleUseDirectiveReference<Int>()
 
-class TestDescriptiveDirective : DescriptiveDirective()
+@Serializable
+@SerialName("testDescriptiveDirective")
+class TestDescriptiveDirective(override val key: DirectiveKey = CuidBasedIdGenerator().long(), override val channel: DispatcherChannel = "broadcast-channel") : DescriptiveDirective()

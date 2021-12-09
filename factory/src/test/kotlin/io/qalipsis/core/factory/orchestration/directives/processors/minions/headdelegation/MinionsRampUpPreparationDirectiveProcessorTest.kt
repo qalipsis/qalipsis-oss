@@ -9,6 +9,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.impl.annotations.SpyK
 import io.mockk.slot
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
@@ -20,23 +21,29 @@ import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.ScenariosRegistry
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
+import io.qalipsis.test.coroutines.TestDispatcherProvider
+import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * @author Eric Jessé
  */
 @WithMockk
 internal class MinionsRampUpPreparationDirectiveProcessorTest {
+
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
     lateinit var scenariosRegistry: ScenariosRegistry
@@ -50,13 +57,19 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @RelaxedMockK
     lateinit var minionsCreationPreparationDirectiveProcessor: MinionsCreationPreparationDirectiveProcessor
 
+    @RelaxedMockK
+    lateinit var factoryConfiguration: FactoryConfiguration
+
+    @SpyK
+    var idGenerator = TestIdGenerator
+
     @InjectMockKs
     lateinit var processor: MinionsRampUpPreparationDirectiveProcessor
 
     @Test
     @Timeout(2)
     internal fun shouldAcceptMinionsRampUpPreparationDirective() {
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", channel = "broadcast", key = idGenerator.short())
         every { scenariosRegistry.contains("my-scenario") } returns true
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf<ScenarioId, List<MinionId>>(
             directive.scenarioId to emptyList()
@@ -74,7 +87,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Test
     @Timeout(2)
     internal fun shouldNotAcceptMinionsRampUpPreparationDirectiveForUnknownScenario() {
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", channel = "broadcast", key = idGenerator.short())
         every { scenariosRegistry.contains("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
@@ -83,7 +96,7 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
     @Test
     @Timeout(2)
     internal fun shouldNotAcceptMinionsRampUpPreparationDirectiveWhenMinionsWereNotCreatedLocally() {
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", channel = "broadcast", key = idGenerator.short())
         every { scenariosRegistry.contains("my-scenario") } returns true
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf<ScenarioId, List<MinionId>>()
 
@@ -92,8 +105,8 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
     @Test
     @Timeout(2)
-    internal fun shouldNotProcessWhenScenarioNotFound() = runBlocking {
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario")
+    internal fun shouldNotProcessWhenScenarioNotFound() = testCoroutineDispatcher.run {
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", channel = "broadcast", key = idGenerator.short())
         every { scenariosRegistry.get("my-scenario") } returns null
 
         // when
@@ -114,9 +127,9 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
     @Test
     @Timeout(2)
-    internal fun shouldThrowExceptionWhenMinionsToStartIsZero() = runBlockingTest {
+    internal fun shouldThrowExceptionWhenMinionsToStartIsZero() = testCoroutineDispatcher.runTest {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 3.0)
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 3.0, channel = "broadcast", key = idGenerator.short())
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
@@ -157,9 +170,12 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
     @Test
     @Timeout(2)
-    internal fun shouldThrowExceptionWhenStartOffsetIsZero() = runBlockingTest {
+    internal fun shouldThrowExceptionWhenStartOffsetIsZero() = testCoroutineDispatcher.runTest {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0)
+        val directive = MinionsRampUpPreparationDirective(
+            "my-campaign", "my-scenario", 2000, 2.0,
+            channel = "broadcast", key = idGenerator.short()
+        )
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(
@@ -208,9 +224,9 @@ internal class MinionsRampUpPreparationDirectiveProcessorTest {
 
     @Test
     @Timeout(2)
-    internal fun shouldCreateOneDirectiveWithAllTheStarts() = runBlockingTest {
+    internal fun shouldCreateOneDirectiveWithAllTheStarts() = testCoroutineDispatcher.runTest {
         // given
-        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0)
+        val directive = MinionsRampUpPreparationDirective("my-campaign", "my-scenario", 2000, 2.0, channel = "broadcast", key = idGenerator.short())
         val createdDirective = slot<MinionsStartDirective>()
         val feedbacks = mutableListOf<DirectiveFeedback>()
         every { minionsCreationPreparationDirectiveProcessor getProperty "minions" } returns mutableMapOf(

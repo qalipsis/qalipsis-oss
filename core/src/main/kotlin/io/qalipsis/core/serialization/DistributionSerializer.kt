@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 /**
  * Interface for a serializer to cache and transport data over the wire.

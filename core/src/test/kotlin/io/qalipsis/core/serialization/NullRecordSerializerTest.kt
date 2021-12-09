@@ -1,9 +1,11 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 import assertk.assertThat
 import assertk.assertions.isFalse
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
+import io.qalipsis.core.serialization.NullRecordSerializer
+import io.qalipsis.core.serialization.SerializedRecord
 import org.junit.jupiter.api.Test
 
 internal class NullRecordSerializerTest {

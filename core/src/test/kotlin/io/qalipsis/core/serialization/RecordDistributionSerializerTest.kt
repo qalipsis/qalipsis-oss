@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 import assertk.all
 import assertk.assertThat
@@ -26,6 +26,7 @@ internal class RecordDistributionSerializerTest {
 
     @RelaxedMockK
     private lateinit var serializer3: RecordSerializer
+
 
     @Test
     internal fun `should serialize with the first that accepts and succeeds`() {

@@ -31,4 +31,9 @@ object ExecutionEnvironments {
      * Enables the default configuration for a factory.
      */
     const val FACTORY = "factory"
+
+    /**
+     * Distributed streaming platform property configuration.
+     */
+    const val DISTRIBUTED_STREAMING_PLATFORM_PROPERTY = "distributed.streaming.platform"
 }

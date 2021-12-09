@@ -10,11 +10,13 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
 import assertk.assertions.key
 import assertk.assertions.prop
+import cool.graph.cuid.Cuid
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.aerisconsulting.catadioptre.getProperty
 import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import io.qalipsis.api.context.DirectedAcyclicGraphId
@@ -27,6 +29,7 @@ import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
+import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.directives.CampaignStartDirective
 import io.qalipsis.core.directives.MinionsCreationDirectiveReference
 import io.qalipsis.core.directives.MinionsCreationPreparationDirective
@@ -37,10 +40,12 @@ import io.qalipsis.core.head.campaign.catadioptre.currentCampaignConfiguration
 import io.qalipsis.core.head.campaign.catadioptre.receivedMinionsCreationPreparationFeedback
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.test.coroutines.TestDispatcherProvider
+import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -61,6 +66,11 @@ internal class DefaultCampaignManagerTest {
     @RelaxedMockK
     lateinit var directiveProducer: DirectiveProducer
 
+    @RelaxedMockK
+    lateinit var headConfiguration: HeadConfiguration
+
+    private val idGenerator = TestIdGenerator
+
     @JvmField
     @RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
@@ -74,6 +84,11 @@ internal class DefaultCampaignManagerTest {
         scenarios = listOf("scen-1", "scen-2"),
     )
 
+    @BeforeEach
+    fun setup() {
+        every { headConfiguration.broadcastChannel } returns "broadcast-channel"
+    }
+
     @Test
     @Timeout(3)
     internal fun `should start minions creation with the specified configuration`() =
@@ -81,7 +96,7 @@ internal class DefaultCampaignManagerTest {
             // given
             val campaignManager = DefaultCampaignManager(
                 feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                directiveProducer = directiveProducer, coroutineScope = this
+                directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
             )
             val scenario1 = ScenarioSummary("scen-1", 4, listOf())
             val scenario2 = ScenarioSummary("scen-2", 17, listOf())
@@ -136,11 +151,11 @@ internal class DefaultCampaignManagerTest {
         // given
         val campaignManager = DefaultCampaignManager(
             feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-            directiveProducer = directiveProducer, coroutineScope = this
+            directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
         )
 
         // when
-        Assertions.assertTrue(campaignManager.accept(MinionsCreationDirectiveReference("", "", "", "")))
+        Assertions.assertTrue(campaignManager.accept(MinionsCreationDirectiveReference("", "", "", "", channel = "broadcast")))
     }
 
     @Test
@@ -149,11 +164,11 @@ internal class DefaultCampaignManagerTest {
         // given
         val campaignManager = DefaultCampaignManager(
             feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-            directiveProducer = directiveProducer, coroutineScope = this
+            directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
         )
 
         // when
-        Assertions.assertTrue(campaignManager.accept(MinionsCreationDirectiveReference("", "", "", "")))
+        Assertions.assertTrue(campaignManager.accept(MinionsCreationDirectiveReference("", "", "", "", channel = "broadcast")))
     }
 
     @Test
@@ -162,9 +177,9 @@ internal class DefaultCampaignManagerTest {
         // given
         val campaignManager = DefaultCampaignManager(
             feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-            directiveProducer = directiveProducer, coroutineScope = this
+            directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
         )
-        val directive = MinionsCreationDirectiveReference("directive", "", "", "")
+        val directive = MinionsCreationDirectiveReference("directive", "", "", "", channel = "broadcast")
 
         // when
         campaignManager.process(directive)
@@ -182,11 +197,11 @@ internal class DefaultCampaignManagerTest {
         testCoroutineDispatcher.runTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
-            val directive = MinionsCreationPreparationDirective("directive", "", 123)
+            val directive = MinionsCreationPreparationDirective("directive", "", 123, channel = "broadcast", key = TestIdGenerator.short())
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                    directiveProducer = directiveProducer, coroutineScope = this
+                    directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
                 ), recordPrivateCalls = true
             ) {
                 coEvery {
@@ -218,11 +233,11 @@ internal class DefaultCampaignManagerTest {
         testCoroutineDispatcher.runTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
-            val directive = MinionsCreationPreparationDirective("directive", "", 123)
+            val directive = MinionsCreationPreparationDirective("directive", "", 123, channel = "broadcast", key = TestIdGenerator.short())
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                    directiveProducer = directiveProducer, coroutineScope = this
+                    directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
                 ), recordPrivateCalls = true
             ) {
                 coEvery {
@@ -255,7 +270,7 @@ internal class DefaultCampaignManagerTest {
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                    directiveProducer = directiveProducer, coroutineScope = this
+                    directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
                 )
             ) {
                 coEvery {
@@ -280,11 +295,11 @@ internal class DefaultCampaignManagerTest {
         testCoroutineDispatcher.runTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
-            val directive = MinionsCreationDirectiveReference("directive", "", "", "")
+            val directive = MinionsCreationDirectiveReference("directive", "", "", "", channel = "broadcast")
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                    directiveProducer = directiveProducer, coroutineScope = this
+                    directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
                 ), recordPrivateCalls = true
             )
             coEvery {
@@ -318,11 +333,11 @@ internal class DefaultCampaignManagerTest {
         testCoroutineDispatcher.runTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
-            val directive = MinionsCreationDirectiveReference("directive", "", "", "")
+            val directive = MinionsCreationDirectiveReference("directive", "", "", "", channel = "broadcast")
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                    directiveProducer = directiveProducer, coroutineScope = this
+                    directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
                 ), recordPrivateCalls = true
             )
             coEvery {
@@ -357,7 +372,7 @@ internal class DefaultCampaignManagerTest {
             val campaignManager = spyk(
                 DefaultCampaignManager(
                     feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                    directiveProducer = directiveProducer, coroutineScope = this
+                    directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
                 )
             ) {
                 val manager = this
@@ -390,11 +405,12 @@ internal class DefaultCampaignManagerTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
             val onCriticalFailure: (String) -> Unit = { _ -> countDownLatch.blockingDecrement() }
-            val directive = MinionsCreationPreparationDirective("directive", "", 123)
+            val directive = MinionsCreationPreparationDirective("directive", "", 123, channel = "broadcast", key = TestIdGenerator.short())
             val campaignManager = DefaultCampaignManager(
                 feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                directiveProducer = directiveProducer, coroutineScope = this
+                directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
             )
+
             campaignManager.setProperty("onCriticalFailure", onCriticalFailure)
             val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.FAILED)
 
@@ -413,11 +429,12 @@ internal class DefaultCampaignManagerTest {
             // given
             val countDownLatch = SuspendedCountLatch(1)
             val onCriticalFailure: (String) -> Unit = { _ -> countDownLatch.blockingDecrement() }
-            val directive = MinionsCreationDirectiveReference("directive", "", "", "")
+            val directive = MinionsCreationDirectiveReference("directive", "", "", "", channel = "broadcast")
             val campaignManager = DefaultCampaignManager(
                 feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-                directiveProducer = directiveProducer, coroutineScope = this
+                directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
             )
+
             campaignManager.setProperty("onCriticalFailure", onCriticalFailure)
             val directiveFeedback = DirectiveFeedback("", directive.key, FeedbackStatus.FAILED)
 
@@ -439,13 +456,13 @@ internal class DefaultCampaignManagerTest {
         // given
         val campaignManager = DefaultCampaignManager(
             feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-            directiveProducer = directiveProducer, coroutineScope = this
+            directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
         )
 
-        val directive1 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-1", "dag-1")
-        val directive2 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-1", "dag-2")
-        val directive3 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-2", "dag-1")
-        val directive4 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-2", "dag-2")
+        val directive1 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-1", "dag-1", channel = "broadcast")
+        val directive2 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-1", "dag-2", channel = "broadcast")
+        val directive3 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-2", "dag-1", channel = "broadcast")
+        val directive4 = MinionsCreationDirectiveReference("directive", "camp-1", "scen-2", "dag-2", channel = "broadcast")
 
         val scenario1 =
             ScenarioSummary(
@@ -530,7 +547,7 @@ internal class DefaultCampaignManagerTest {
         // given
         val campaignManager = DefaultCampaignManager(
             feedbackHeadChannel = feedbackHeadChannel, factoryService = factoryService,
-            directiveProducer = directiveProducer, coroutineScope = this
+            directiveProducer = directiveProducer, coroutineScope = this, headConfiguration, idGenerator
         )
 
         val feedback1 = CampaignStartedForDagFeedback("camp-1", "scen-1", "dag-1", FeedbackStatus.COMPLETED)

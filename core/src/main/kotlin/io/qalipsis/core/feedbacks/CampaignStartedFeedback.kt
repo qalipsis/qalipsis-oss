@@ -1,16 +1,22 @@
 package io.qalipsis.core.feedbacks
 
+import cool.graph.cuid.Cuid
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.orchestration.feedbacks.Feedback
+import io.qalipsis.api.orchestration.feedbacks.FeedbackKey
 import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Notification sent from the factory to the head, to notify that the campaign was started for a DAG.
  *
  * @author Eric Jessé
  */
+@Serializable
+@SerialName("csfd")
 data class CampaignStartedForDagFeedback(
     val campaignId: CampaignId,
     val scenarioId: ScenarioId,
@@ -22,5 +28,6 @@ data class CampaignStartedForDagFeedback(
     /**
      * Error message.
      */
-    val error: String? = null
+    val error: String? = null,
+    override val key: FeedbackKey = Cuid.createCuid()
 ) : Feedback()

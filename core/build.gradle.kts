@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    kotlin("plugin.serialization")
     `java-test-fixtures`
 }
 
@@ -33,6 +34,7 @@ val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
 val testContainersVersion: String by project
 val jacksonVersion: String by project
+val kotlinSerialization: String by project
 val catadioptreVersion: String by project
 
 
@@ -41,14 +43,15 @@ kapt.useBuildCache = false
 
 
 dependencies {
+    api("io.micronaut.redis:micronaut-redis-lettuce")
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
 
     compileOnly(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:${kotlinCoroutinesVersion}")
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
-    api("io.micronaut.redis:micronaut-redis-lettuce")
 
     implementation("io.qalipsis:api-common:${project.version}")
     implementation("io.qalipsis:api-dsl:${project.version}")
@@ -62,7 +65,7 @@ dependencies {
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
-    implementation("io.micronaut.redis:micronaut-redis-lettuce")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
 
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
@@ -90,6 +93,7 @@ dependencies {
     testFixturesImplementation("io.micronaut.test:micronaut-test-junit5")
     testFixturesImplementation("io.micronaut:micronaut-runtime")
     testFixturesImplementation("org.testcontainers:junit-jupiter:$testContainersVersion")
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
 
 }
 

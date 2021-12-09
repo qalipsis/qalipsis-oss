@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
-    kotlin("plugin.serialization") version "1.5.31"
+    kotlin("plugin.serialization")
 }
 
 description = "Qalipsis Factory components"
@@ -34,6 +34,7 @@ val kotlinCoroutinesVersion: String by project
 val testContainersVersion: String by project
 val jacksonVersion: String by project
 val catadioptreVersion: String by project
+val kotlinSerialization: String by project
 
 
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
@@ -63,6 +64,7 @@ dependencies {
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
 
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")

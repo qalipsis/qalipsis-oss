@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.Serializers
 import jakarta.inject.Singleton
@@ -20,7 +20,7 @@ internal class RecordDistributionSerializer(
     override fun <T : Any> serialize(entity: T, serializationContext: SerializationContext): ByteArray {
         val record = sortedSerializers.asSequence().filter { it.acceptsToSerialize(entity) }
             .firstNotNullOfOrNull { kotlin.runCatching { it.serialize(entity) }.getOrNull() }
-            ?: throw SerializationException("The value of type ${entity::class} could not be deserialized")
+            ?: throw SerializationException("The value of type ${entity::class} could not be serialized")
 
         return Serializers.json.encodeToString(record).encodeToByteArray()
     }

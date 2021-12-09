@@ -7,7 +7,7 @@ import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.factory.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Singleton
 
 /**

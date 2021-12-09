@@ -14,6 +14,7 @@ import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.directives.MinionsCreationDirective
 import io.qalipsis.core.directives.MinionsCreationPreparationDirectiveReference
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.ScenariosRegistry
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import jakarta.inject.Singleton
@@ -33,7 +34,8 @@ internal class MinionsCreationPreparationDirectiveProcessor(
     private val directiveRegistry: DirectiveRegistry,
     private val directiveProducer: DirectiveProducer,
     private val feedbackFactoryChannel: FeedbackFactoryChannel,
-    private val idGenerator: IdGenerator
+    private val idGenerator: IdGenerator,
+    private val factoryConfiguration: FactoryConfiguration,
 ) : DirectiveProcessor<MinionsCreationPreparationDirectiveReference> {
 
     val minions: MutableMap<ScenarioId, List<MinionId>> = ConcurrentHashMap()
@@ -69,7 +71,13 @@ internal class MinionsCreationPreparationDirectiveProcessor(
                         minions.addAll(allMinions)
                     }
                     val minionsCreationDirective =
-                        MinionsCreationDirective(directive.campaignId, scenario.id, dag.id, minions)
+                        MinionsCreationDirective(
+                            directive.campaignId,
+                            scenario.id,
+                            dag.id,
+                            minions,
+                            channel = factoryConfiguration.directiveRegistry.broadcastDirectivesChannel,
+                            key = idGenerator.short())
                     directiveProducer.publish(minionsCreationDirective)
                 }
                 feedbackFactoryChannel.publish(

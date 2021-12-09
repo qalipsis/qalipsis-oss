@@ -6,8 +6,8 @@ import assertk.assertions.hasSize
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.qalipsis.api.states.SharedStateDefinition
-import io.qalipsis.core.factory.serialization.DistributionSerializer
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
+import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject

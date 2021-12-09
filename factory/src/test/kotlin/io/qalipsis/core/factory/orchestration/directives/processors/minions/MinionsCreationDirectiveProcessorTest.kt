@@ -11,13 +11,14 @@ import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.core.directives.MinionsCreationDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.orchestration.ScenariosRegistry
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -25,6 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 @WithMockk
 internal class MinionsCreationDirectiveProcessorTest {
+
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
     lateinit var registry: DirectiveRegistry
@@ -44,7 +49,7 @@ internal class MinionsCreationDirectiveProcessorTest {
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-campaign", "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag", channel = "broadcast",
             )
         every { scenariosRegistry["my-scenario"]?.contains("my-dag") } returns true
 
@@ -63,7 +68,7 @@ internal class MinionsCreationDirectiveProcessorTest {
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-campaign", "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag", channel = "broadcast",
             )
         every { scenariosRegistry["my-scenario"]?.contains("my-dag") } returns false
 
@@ -72,12 +77,12 @@ internal class MinionsCreationDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldPopNextMinionToCreateFromQueue() = runBlockingTest {
+    internal fun shouldPopNextMinionToCreateFromQueue() = testCoroutineDispatcher.run {
         // given
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-campaign", "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag", channel = "broadcast",
             )
         val counterCall = AtomicInteger(10)
         coEvery {
@@ -103,12 +108,12 @@ internal class MinionsCreationDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldPopNextMinionButDoNothingWhereThereIsNone() = runBlockingTest {
+    internal fun shouldPopNextMinionButDoNothingWhereThereIsNone() = testCoroutineDispatcher.run {
         // given
         val directive =
             MinionsCreationDirectiveReference(
                 "my-directive",
-                "my-campaign", "my-scenario", "my-dag"
+                "my-campaign", "my-scenario", "my-dag", channel = "broadcast",
             )
         coEvery {
             registry.pop(refEq(directive))

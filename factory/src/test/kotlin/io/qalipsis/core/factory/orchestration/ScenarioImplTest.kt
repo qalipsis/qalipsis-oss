@@ -66,32 +66,32 @@ internal class ScenarioImplTest {
         assertEquals(mockedSteps.size, calledStart.get())
         coVerifyOnce {
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1", "my-scenario", "dag-2", FeedbackStatus.IN_PROGRESS
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1", "my-scenario", "dag-1", FeedbackStatus.COMPLETED
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1", "my-scenario", "dag-2", FeedbackStatus.COMPLETED
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
         }
         mockedSteps.forEach { step ->
@@ -120,22 +120,22 @@ internal class ScenarioImplTest {
         // then
         coVerifyOnce {
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1",
                         "my-scenario",
                         "dag-1",
                         FeedbackStatus.FAILED,
                         "The start of the DAG dag-1 failed: Timed out waiting for 100 ms"
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
         }
         mockedSteps.subList(0, 2).forEach { step ->
@@ -176,22 +176,22 @@ internal class ScenarioImplTest {
         // then
         coVerifyOnce {
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
             feedbackFactoryChannel.publish(
-                eq(
-                    CampaignStartedForDagFeedback(
+                match {
+                    it == CampaignStartedForDagFeedback(
                         "camp-1",
                         "my-scenario",
                         "dag-1",
                         FeedbackStatus.FAILED,
                         "The start of the DAG dag-1 failed: this is the error"
-                    )
-                )
+                    ).copy(key = it.key)
+                }
             )
         }
         mockedSteps.subList(0, 2).forEach { step ->

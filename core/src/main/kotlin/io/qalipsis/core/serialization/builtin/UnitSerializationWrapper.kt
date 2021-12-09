@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.serialization.builtin
+package io.qalipsis.core.serialization.builtin
 
 import io.qalipsis.api.serialization.SerialFormatWrapper
 import io.qalipsis.api.serialization.Serializers
@@ -8,15 +8,15 @@ import kotlinx.serialization.encodeToString
 import kotlin.reflect.KClass
 
 @ExperimentalSerializationApi
-class StringSerializationWrapper : SerialFormatWrapper<String> {
+class UnitSerializationWrapper : SerialFormatWrapper<Unit> {
 
-    override val types: Array<KClass<*>> = arrayOf(String::class)
+    override val types: Array<KClass<*>> = arrayOf(Unit::class)
 
     override val qualifier: String = "kjson"
 
-    override fun serialize(entity: String): ByteArray =
+    override fun serialize(entity: Unit): ByteArray =
         Serializers.json.encodeToString(entity).encodeToByteArray()
 
-    override fun deserialize(source: ByteArray): String =
+    override fun deserialize(source: ByteArray): Unit =
         Serializers.json.decodeFromString(source.decodeToString())
 }

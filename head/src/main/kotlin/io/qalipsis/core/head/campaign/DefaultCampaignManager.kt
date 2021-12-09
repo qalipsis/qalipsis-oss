@@ -5,6 +5,7 @@ import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.lang.alsoWhenNull
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -24,6 +25,7 @@ import io.qalipsis.core.directives.MinionsCreationPreparationDirective
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackHeadChannel
+import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import jakarta.inject.Named
 import jakarta.inject.Singleton
@@ -45,13 +47,17 @@ import kotlin.reflect.KClass
  * @property feedbackHeadChannel consumer for feedback from directives, coming from the factories
  * @property factoryService provider of scenario metadata
  * @property directiveProducer producer to send directives to the factories
+ * @property headConfiguration head configuration.
+ * @property idGenerator id generator.
  */
 @Singleton
 internal class DefaultCampaignManager(
     private val feedbackHeadChannel: FeedbackHeadChannel,
     private val factoryService: FactoryService,
     private val directiveProducer: DirectiveProducer,
-    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
+    private val headConfiguration: HeadConfiguration,
+    private val idGenerator: IdGenerator
 ) : CampaignManager, DirectiveProcessor<Directive> {
 
     @KTestable
@@ -149,7 +155,7 @@ internal class DefaultCampaignManager(
             if (configuration.minionsCountPerScenario > 0) configuration.minionsCountPerScenario else (scenario.minionsCount * configuration.minionsFactor).toInt()
 
         readyDagsByScenario[scenario.id] = concurrentSet()
-        val directive = MinionsCreationPreparationDirective(id, scenario.id, count)
+        val directive = MinionsCreationPreparationDirective(id, scenario.id, count, channel = headConfiguration.broadcastChannel, key = idGenerator.short())
         directivesInProgress[directive.key] = DirectiveInProgress(directive)
         directiveProducer.publish(directive)
     }
@@ -283,7 +289,7 @@ internal class DefaultCampaignManager(
 
         readyScenarios.forEach { scenarioId ->
             startedDagsByScenario[scenarioId] = concurrentSet()
-            val directive = CampaignStartDirective(campaignId, scenarioId)
+            val directive = CampaignStartDirective(campaignId, scenarioId, channel = headConfiguration.broadcastChannel, key = idGenerator.short())
             directivesInProgress[directive.key] = DirectiveInProgress(directive)
             directiveProducer.publish(directive)
         }
@@ -349,7 +355,9 @@ internal class DefaultCampaignManager(
                 campaignId,
                 scenarioId,
                 campaignConfiguration!!.startOffsetMs,
-                campaignConfiguration.speedFactor
+                campaignConfiguration.speedFactor,
+                channel = headConfiguration.broadcastChannel,
+                key = idGenerator.short()
             )
             directivesInProgress[directive.key] = DirectiveInProgress(directive)
             directiveProducer.publish(directive)
