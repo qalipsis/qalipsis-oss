@@ -1,9 +1,9 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.SerialFormatWrapper
 import io.qalipsis.api.serialization.Serializers
-import io.qalipsis.core.factory.serialization.builtin.StringSerializationWrapper
-import io.qalipsis.core.factory.serialization.builtin.UnitSerializationWrapper
+import io.qalipsis.core.serialization.builtin.StringSerializationWrapper
+import io.qalipsis.core.serialization.builtin.UnitSerializationWrapper
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.reflect.KClass

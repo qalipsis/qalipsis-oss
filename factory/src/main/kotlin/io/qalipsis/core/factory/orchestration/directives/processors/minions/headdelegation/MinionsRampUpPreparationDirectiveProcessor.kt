@@ -1,5 +1,6 @@
 package io.qalipsis.core.factory.orchestration.directives.processors.minions.headdelegation
 
+import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.orchestration.directives.Directive
 import io.qalipsis.api.orchestration.directives.DirectiveProcessor
@@ -11,6 +12,7 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.directives.MinionsStartDirective
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.ScenariosRegistry
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import jakarta.inject.Singleton
@@ -29,7 +31,9 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
     private val scenariosRegistry: ScenariosRegistry,
     private val directiveProducer: DirectiveProducer,
     private val feedbackFactoryChannel: FeedbackFactoryChannel,
-    private val minionsCreationPreparationDirectiveProcessor: MinionsCreationPreparationDirectiveProcessor
+    private val minionsCreationPreparationDirectiveProcessor: MinionsCreationPreparationDirectiveProcessor,
+    private val factoryConfiguration: FactoryConfiguration,
+    private val idGenerator: IdGenerator
 ) : DirectiveProcessor<MinionsRampUpPreparationDirective> {
 
     @LogInputAndOutput(level = Level.DEBUG)
@@ -69,7 +73,11 @@ internal class MinionsRampUpPreparationDirectiveProcessor(
                     }
                 }
                 log.debug { "Ramp-up creation is complete on campaign ${directive.campaignId} of scenario ${scenario.id}" }
-                directiveProducer.publish(MinionsStartDirective(scenario.id, minionsStartDefinitions))
+                directiveProducer.publish(MinionsStartDirective(
+                    scenario.id,
+                    minionsStartDefinitions,
+                    channel = factoryConfiguration.directiveRegistry.broadcastDirectivesChannel,
+                    key = idGenerator.short()))
 
                 feedbackFactoryChannel.publish(
                     DirectiveFeedback(directiveKey = directive.key, status = FeedbackStatus.COMPLETED)

@@ -1,5 +1,6 @@
 package io.qalipsis.core.redis
 
+import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.micronaut.test.support.TestPropertyProvider
 import io.qalipsis.core.configuration.ExecutionEnvironments

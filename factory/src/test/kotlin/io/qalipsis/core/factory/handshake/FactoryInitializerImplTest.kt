@@ -17,7 +17,6 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.mockk.justRun
 import io.mockk.mockkObject
-import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
@@ -419,7 +418,7 @@ internal class FactoryInitializerImplTest {
         factoryInitializer.refresh()
 
         // then
-        val publishedScenarios = slot<Collection<Scenario>>()
+        val publishedScenarios: MutableList<Collection<Scenario>> = mutableListOf()
         verify {
             ServicesLoader.loadServices<Any>("scenarios", refEq(applicationContext))
             scenarioSpecificationsKeeper.asMap()
@@ -427,10 +426,10 @@ internal class FactoryInitializerImplTest {
             factoryInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
             initializationContext.startHandshake(capture(publishedScenarios))
         }
-        publishedScenarios.captured.let {
-            assertEquals(2, it.size)
-            assertTrue(it.contains(scenario1))
-            assertTrue(it.contains(scenario2))
+        publishedScenarios.toSet().let {
+            assertEquals(2, it.flatten().size)
+            assertTrue(it.flatten().contains(scenario1))
+            assertTrue(it.flatten().contains(scenario2))
         }
     }
 

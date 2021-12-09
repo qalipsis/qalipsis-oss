@@ -4,8 +4,11 @@ import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.orchestration.directives.DescriptiveDirective
 import io.qalipsis.api.orchestration.directives.DirectiveKey
+import io.qalipsis.api.orchestration.directives.DispatcherChannel
 import io.qalipsis.api.orchestration.directives.SingleUseDirective
 import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Directives processed by the factories on behalf of the head.
@@ -17,6 +20,8 @@ import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
  *
  * It is published to the directive consumers as a [MinionsCreationPreparationDirectiveReference].
  */
+@Serializable
+@SerialName("mcpd")
 class MinionsCreationPreparationDirective(
     /**
      * The ID of the campaign for which the minion has to be created.
@@ -26,23 +31,31 @@ class MinionsCreationPreparationDirective(
      * The ID of the scenario for which the minion has to be created.
      */
     val scenarioId: ScenarioId,
-    /**
-     * Number of minions to create.
-     */
-    count: Int
 
-) : SingleUseDirective<Int, SingleUseDirectiveReference<Int>>(count) {
+    override val value: Int,
+    override val key: DirectiveKey,
+
+    /**
+     * Directive channel.
+     */
+    override val channel: DispatcherChannel
+
+) : SingleUseDirective<Int, SingleUseDirectiveReference<Int>>() {
 
     override fun toReference(): SingleUseDirectiveReference<Int> {
-        return MinionsCreationPreparationDirectiveReference(key, campaignId, scenarioId)
+        return MinionsCreationPreparationDirectiveReference(key, campaignId, scenarioId, channel)
     }
 }
 
 /**
  * Transportable representation of a [MinionsCreationPreparationDirective].
  */
+@Serializable
+@SerialName("mcpdRef")
 class MinionsCreationPreparationDirectiveReference(
-    key: DirectiveKey,
+
+    override val key: DirectiveKey,
+
     /**
      * The ID of the campaign for which the minion has to be created.
      */
@@ -50,12 +63,19 @@ class MinionsCreationPreparationDirectiveReference(
     /**
      * The ID of the scenario for which the minion has to be created.
      */
-    val scenarioId: ScenarioId
-) : SingleUseDirectiveReference<Int>(key)
+    val scenarioId: ScenarioId,
+
+    /**
+     * Directive channel.
+     */
+    override val channel: DispatcherChannel
+) : SingleUseDirectiveReference<Int>()
 
 /**
  * Directive to calculate the ramp-up of the minions given the scenario strategy.
  */
+@Serializable
+@SerialName("mrpd")
 class MinionsRampUpPreparationDirective(
     /**
      * The ID of the campaign for which the minion has to be created.
@@ -77,6 +97,13 @@ class MinionsRampUpPreparationDirective(
      * The speed factor to apply on the ramp-up strategy. Each strategy will apply it differently depending on
      * its own implementation.
      */
-    val speedFactor: Double = 1.0
+    val speedFactor: Double = 1.0,
+
+    override val key: DirectiveKey,
+
+    /**
+     * Directive channel.
+     */
+    override val channel: DispatcherChannel
 
 ) : DescriptiveDirective()

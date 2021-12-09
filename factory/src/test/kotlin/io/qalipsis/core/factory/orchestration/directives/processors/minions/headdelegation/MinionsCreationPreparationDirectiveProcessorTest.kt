@@ -12,7 +12,6 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.qalipsis.api.orchestration.directives.DirectiveProducer
@@ -22,6 +21,7 @@ import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.core.directives.MinionsCreationDirective
 import io.qalipsis.core.directives.MinionsCreationPreparationDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.ScenariosRegistry
 import io.qalipsis.core.factory.testDag
 import io.qalipsis.core.factory.testScenario
@@ -30,6 +30,7 @@ import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
@@ -51,16 +52,23 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
     @RelaxedMockK
     lateinit var feedbackFactoryChannel: FeedbackFactoryChannel
 
+    @RelaxedMockK
+    lateinit var factoryConfiguration: FactoryConfiguration
+
     @SpyK
     var idGenerator = TestIdGenerator
 
-    @InjectMockKs
     lateinit var processor: MinionsCreationPreparationDirectiveProcessor
+
+    @BeforeEach
+    fun setup(){
+        processor = MinionsCreationPreparationDirectiveProcessor(scenariosRegistry, directiveRegistry, directiveProducer, feedbackFactoryChannel, idGenerator, factoryConfiguration)
+    }
 
     @Test
     @Timeout(1)
     internal fun shouldAcceptMinionsCreationPreparationDirective() {
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario", channel = "broadcast")
         every { scenariosRegistry.contains("my-scenario") } returns true
 
         Assertions.assertTrue(processor.accept(directive))
@@ -75,7 +83,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
     @Test
     @Timeout(1)
     internal fun shouldNotAcceptMinionsCreationPreparationDirectiveForUnknownScenario() {
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario", channel = "broadcast")
         every { scenariosRegistry.contains("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
@@ -84,7 +92,7 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
     @Test
     @Timeout(1)
     internal fun shouldNotProcessWhenScenarioNotFound() = runBlockingTest {
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario", channel = "broadcast")
         every { scenariosRegistry.get("my-scenario") } returns null
 
         // when
@@ -99,10 +107,10 @@ internal class MinionsCreationPreparationDirectiveProcessorTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(5)
     internal fun shouldCreateDirectivesForEachDag() = runBlockingTest {
         // given
-        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
+        val directive = MinionsCreationPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario", channel = "broadcast")
         coEvery { directiveRegistry.read(refEq(directive)) } returns 123
         val scenario = testScenario("my-scenario", minionsCount = 2) {
             this.createIfAbsent("my-dag-1") { testDag("my-dag-1", this, isUnderLoad = true) }

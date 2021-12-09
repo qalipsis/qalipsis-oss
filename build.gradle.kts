@@ -9,6 +9,7 @@ plugins {
     kotlin("jvm") version "1.5.31"
     kotlin("kapt") version "1.5.31"
     kotlin("plugin.allopen") version "1.5.31"
+    kotlin("plugin.serialization") version "1.5.31"
     id("net.ltgt.apt") version "0.21" apply false
 
     id("nebula.contacts") version "5.1.0"

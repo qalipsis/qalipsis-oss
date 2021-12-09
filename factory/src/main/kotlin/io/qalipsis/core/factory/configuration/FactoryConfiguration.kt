@@ -4,9 +4,10 @@ import io.micronaut.context.annotation.ConfigurationProperties
 import io.qalipsis.api.constraints.PositiveDuration
 import java.time.Duration
 import javax.validation.constraints.NotEmpty
+import javax.validation.constraints.NotNull
 
 @ConfigurationProperties("factory")
-internal class FactoryConfiguration {
+class FactoryConfiguration {
 
     /**
      * ID of this factory, defaults to a random generated value which will be replaced after the registration
@@ -36,6 +37,38 @@ internal class FactoryConfiguration {
      */
     @field:NotEmpty
     var metadataPath: String = "./metadata"
+
+    @field:NotNull
+    var directiveRegistry: DirectiveRegistry = DirectiveRegistry()
+
+    /**
+     * Directive registry configuration for a factory.
+     */
+    @ConfigurationProperties("directive-registry")
+    class DirectiveRegistry {
+
+        /**
+         * Consumer group used by the factory to consumer from the unicast channel.
+         */
+        var unicastConsumerGroup: String = "consumer-group-directives-unicast"
+
+        /**
+         * Consumer group used by the factory to consumer from the broadcast channel.
+         */
+        var broadcastConsumerGroup: String = "consumer-group-directives-broadcast"
+
+        /**
+         * Unicast channel used by the factory to consume from.
+         * Values are set by the response of the handshake with the head.
+         */
+        var unicastDirectivesChannel: String = ""
+
+        /**
+         * Broadcast channel used by the factory to consume from.
+         * Values are set by the response of the handshake with the head.
+         */
+        var broadcastDirectivesChannel: String = ""
+    }
 
     /**
      * This object contains the settings applied to each key and value stored in cache.

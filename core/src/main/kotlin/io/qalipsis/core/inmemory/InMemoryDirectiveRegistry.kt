@@ -23,6 +23,7 @@ import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.LinkedList
 import java.util.concurrent.TimeUnit
 import javax.annotation.PreDestroy
 
@@ -87,6 +88,7 @@ internal class InMemoryDirectiveRegistry(
     override suspend fun <T> pop(reference: QueueDirectiveReference<T>): T? {
         return mutexesCache[reference.key]!!.withLock {
             queueDirectives.getIfPresent(reference.key)?.queue?.let {
+                val queue = it as LinkedList
                 // Publish a IN_PROGRESS notification if not yet done.
                 if (waitingQueueDirectivesInProgressFeedback.remove(reference.key)) {
                     feedbackFactoryChannel.publish(
@@ -94,8 +96,8 @@ internal class InMemoryDirectiveRegistry(
                     )
                 }
 
-                @Suppress("UNCHECKED_CAST") val value = it.removeFirst() as T?
-                if (it.isEmpty()) {
+                @Suppress("UNCHECKED_CAST") val value = queue.removeFirst() as T?
+                if (queue.isEmpty()) {
                     log.trace { "Evicting the empty queue directive ${reference.key}" }
                     // Once the last value has been consumed, the directive is removed from the cache.
                     queueDirectives.invalidate(reference.key)

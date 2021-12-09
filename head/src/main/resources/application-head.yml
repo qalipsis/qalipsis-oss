@@ -7,3 +7,7 @@ head:
   feedback-channel: feedback
   heartbeat-channel: heartbeat
   heartbeat-duration: 30s
+
+# Configuration of the core
+core:
+  pending-key: pending-key

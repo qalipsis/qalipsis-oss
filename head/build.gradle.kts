@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.allopen")
+    kotlin("plugin.serialization")
 }
 
 description = "Qalipsis Head components"

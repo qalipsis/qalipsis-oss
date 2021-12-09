@@ -90,7 +90,7 @@ internal class RunnerImplTest {
         val dag = testDag {
             this.testStep("step-1", 1).all {
                 step("step-2").processError("step-3")
-                delayedStep("step-4", 2, 300).all {
+                delayedStep("step-4", 2, 600).all {
                     step("step-5")
                     processError("step-6")
                 }
@@ -107,7 +107,7 @@ internal class RunnerImplTest {
 
         // then
         // The execution of the runner operation should return before the complete DAG is complete.
-        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(290), executionDuration)
+        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(550), executionDuration)
         val steps = dag.steps()
         (1..6).forEach {
             steps["step-$it"].let { step ->

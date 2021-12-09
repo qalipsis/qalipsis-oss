@@ -12,12 +12,13 @@ import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.directives.MinionsStartDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.orchestration.ScenariosRegistry
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 /**
@@ -25,6 +26,10 @@ import java.time.Instant
  */
 @WithMockk
 internal class MinionsStartDirectiveProcessorTest {
+
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
     lateinit var registry: DirectiveRegistry
@@ -42,8 +47,11 @@ internal class MinionsStartDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldAcceptMinionsStartDirective() {
         val directive =
-            MinionsStartDirectiveReference("my-directive",
-                "my-scenario")
+            MinionsStartDirectiveReference(
+                "my-directive",
+                "my-scenario",
+                channel = "broadcast",
+            )
         every { scenariosRegistry.contains("my-scenario") } returns true
 
         Assertions.assertTrue(processor.accept(directive))
@@ -59,8 +67,11 @@ internal class MinionsStartDirectiveProcessorTest {
     @Timeout(1)
     internal fun shouldNotAcceptMinionsStartDirectiveForUnknownDag() {
         val directive =
-            MinionsStartDirectiveReference("my-directive",
-                "my-scenario")
+            MinionsStartDirectiveReference(
+                "my-directive",
+                "my-scenario",
+                channel = "broadcast",
+            )
         every { scenariosRegistry.contains("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
@@ -68,11 +79,14 @@ internal class MinionsStartDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldListMinionsAndStartThem() = runBlocking {
+    internal fun shouldListMinionsAndStartThem() = testCoroutineDispatcher.run {
         // given
         val directive =
-            MinionsStartDirectiveReference("my-directive",
-                "my-scenario")
+            MinionsStartDirectiveReference(
+                "my-directive",
+                "my-scenario",
+                channel = "broadcast",
+            )
         coEvery {
             registry.list(refEq(directive))
         } returns listOf(
@@ -81,9 +95,9 @@ internal class MinionsStartDirectiveProcessorTest {
         )
 
         // when
-            processor.process(directive)
-            // Wait for the directive to be fully completed.
-            delay(5)
+        processor.process(directive)
+        // Wait for the directive to be fully completed.
+        delay(5)
 
         // then
         coVerify {
@@ -96,19 +110,22 @@ internal class MinionsStartDirectiveProcessorTest {
 
     @Test
     @Timeout(1)
-    internal fun shouldListMinionsToStartButDoNothingWhereThereIsNone() = runBlocking {
+    internal fun shouldListMinionsToStartButDoNothingWhereThereIsNone() = testCoroutineDispatcher.run {
         // given
         val directive =
-            MinionsStartDirectiveReference("my-directive",
-                "my-scenario")
+            MinionsStartDirectiveReference(
+                "my-directive",
+                "my-scenario",
+                channel = "broadcast",
+            )
         coEvery {
             registry.list(refEq(directive))
         } returns emptyList()
 
         // when
         processor.process(directive)
-            // Wait for the directive to be fully completed.
-            delay(5)
+        // Wait for the directive to be fully completed.
+        delay(5)
 
         // then
         coVerify {

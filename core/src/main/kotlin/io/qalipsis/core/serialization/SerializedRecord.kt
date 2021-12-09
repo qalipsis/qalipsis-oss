@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.serialization
+package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.SerializableClass
 import kotlinx.serialization.Serializable
