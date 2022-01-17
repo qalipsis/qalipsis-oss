@@ -6,3 +6,17 @@ redis:
   io-thread-pool-size: 5
   computation-thread-pool-size: 4
   client-name: "head"
+
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5432/test
+    username: test
+    password: test
+    dialect: POSTGRES
+    driverClassName: org.postgresql.Driver
+
+liquibase:
+  enabled: true
+  datasources:
+    default:
+      change-log: 'classpath:db/liquibase-changelog.xml'

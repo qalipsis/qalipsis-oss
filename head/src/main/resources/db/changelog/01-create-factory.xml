@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="01" author="rklymenko">
+    <createSequence sequenceName="factory_seq" schemaName="qalipsis"/>
+    <createTable tableName="factory" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="factory_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="factory_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="node_id" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="registration_node_id" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="registration_timestamp" type="timestamp">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+
+    <createIndex schemaName="qalipsis" indexName="unique_factory_node_idx" tableName="factory" unique="true">
+      <column name="node_id"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>

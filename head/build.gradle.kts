@@ -5,6 +5,7 @@ plugins {
     kotlin("kapt")
     kotlin("plugin.allopen")
     kotlin("plugin.serialization")
+    kotlin("plugin.noarg")
 }
 
 description = "Qalipsis Head components"
@@ -35,6 +36,7 @@ val testContainersVersion: String by project
 val jacksonVersion: String by project
 val catadioptreVersion: String by project
 
+val postgresqlDriverVersion = "42.3.1"
 
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
 kapt.useBuildCache = false
@@ -59,9 +61,16 @@ dependencies {
     implementation("cool.graph:cuid-java:0.1.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
+    implementation("io.micronaut.data:micronaut-data-jdbc")
+    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
+    implementation("org.postgresql:postgresql:$postgresqlDriverVersion")
+    implementation("io.micronaut.liquibase:micronaut-liquibase")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
+    runtimeOnly("io.micronaut.sql:micronaut-jdbc-hikari")
 
     kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
@@ -69,6 +78,7 @@ dependencies {
     kapt("io.micronaut:micronaut-graal")
     kapt("io.qalipsis:api-processors:${project.version}")
     kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
+    kapt("io.micronaut.data:micronaut-data-processor:${micronautVersion}")
 
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
@@ -79,6 +89,8 @@ dependencies {
     testImplementation(testFixtures("io.qalipsis:api-common:${project.version}"))
     testImplementation(testFixtures(project(":runtime")))
     testImplementation(testFixtures(project(":core")))
+    testImplementation("org.testcontainers:testcontainers:${testContainersVersion}")
+    testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
 
     kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
