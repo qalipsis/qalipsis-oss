@@ -1,7 +1,7 @@
 package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.orchestration.factories.Minion
+import io.qalipsis.api.runtime.Minion
 
 /**
  * Default interface for the components executing a step either directly or with its retry policy.

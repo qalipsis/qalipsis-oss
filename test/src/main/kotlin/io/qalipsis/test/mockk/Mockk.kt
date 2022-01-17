@@ -19,8 +19,17 @@ import kotlin.reflect.KClass
  */
 
 @Suppress("CHANGING_ARGUMENTS_EXECUTION_ORDER_FOR_NAMED_VARARGS")
-inline fun <reified T : Any> relaxedMockk(vararg moreInterfaces: KClass<*> = emptyArray(), block: T.() -> Unit = {}) =
-    mockk<T>(relaxed = true, moreInterfaces = moreInterfaces, block = block)
+inline fun <reified T : Any> relaxedMockk(
+    vararg moreInterfaces: KClass<*> = emptyArray(),
+    block: T.() -> Unit = {}
+) = mockk(relaxed = true, moreInterfaces = moreInterfaces, block = block)
+
+@Suppress("CHANGING_ARGUMENTS_EXECUTION_ORDER_FOR_NAMED_VARARGS")
+inline fun <reified T : Any> relaxedMockk(
+    name: String? = null,
+    vararg moreInterfaces: KClass<*> = emptyArray(),
+    block: T.() -> Unit = {}
+) = mockk(name = name, relaxed = true, moreInterfaces = moreInterfaces, block = block)
 
 fun verifyOnce(verifyBlock: MockKVerificationScope.() -> Unit) = verify(exactly = 1, verifyBlock = verifyBlock)
 
@@ -37,7 +46,6 @@ fun verifyNever(verifyBlock: MockKVerificationScope.() -> Unit) = verify(exactly
 
 fun coVerifyNever(verifyBlock: suspend MockKVerificationScope.() -> Unit) =
     coVerify(exactly = 0, verifyBlock = verifyBlock)
-
 
 @ExtendWith(MockKExtension::class, MockkCleanExtension::class)
 annotation class WithMockk
@@ -74,5 +82,5 @@ class MockkCleanRecordedCallsExtension : AfterEachCallback, AfterAllCallback {
     }
 }
 
-@ExtendWith(MockkCleanRecordedCallsExtension::class)
+@ExtendWith(MockKExtension::class, MockkCleanRecordedCallsExtension::class)
 annotation class CleanMockkRecordedCalls

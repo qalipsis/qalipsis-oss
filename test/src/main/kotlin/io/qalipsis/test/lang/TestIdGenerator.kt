@@ -8,11 +8,7 @@ import io.qalipsis.api.lang.IdGenerator
  *
  * @author Eric Jessé
  */
-class TestIdGenerator : IdGenerator {
-
-    override fun long() = wrapped.long()
-
-    override fun short() = wrapped.short()
+class TestIdGenerator : IdGenerator by wrapped {
 
     companion object : IdGenerator {
 

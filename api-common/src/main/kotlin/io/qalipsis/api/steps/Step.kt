@@ -3,8 +3,8 @@ package io.qalipsis.api.steps
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.context.StepStartStopContext
-import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
+import io.qalipsis.api.runtime.Minion
 
 /**
  * Part of scenario responsible for processing a record.

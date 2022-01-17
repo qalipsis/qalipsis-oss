@@ -1,4 +1,4 @@
-package io.qalipsis.api.orchestration
+package io.qalipsis.api.runtime
 
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId

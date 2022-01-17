@@ -1,7 +1,6 @@
-package io.qalipsis.api.orchestration.factories
+package io.qalipsis.api.runtime
 
 import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -22,8 +21,6 @@ interface Minion {
     val campaignId: CampaignId
 
     val scenarioId: ScenarioId
-
-    val rootDagId: DirectedAcyclicGraphId
 
     fun onComplete(block: suspend (() -> Unit))
 
@@ -48,8 +45,16 @@ interface Minion {
     fun completeMdcContext() {
         MDC.put("campaign", this.campaignId)
         MDC.put("scenario", this.scenarioId)
-        MDC.put("dag", this.rootDagId)
         MDC.put("minion", this.id)
+    }
+
+    /**
+     * Cleans the [MDC] context from the fields added in [completeMdcContext].
+     */
+    fun cleanMdcContext() {
+        MDC.remove("campaign")
+        MDC.remove("scenario")
+        MDC.remove("minion")
     }
 
     /**

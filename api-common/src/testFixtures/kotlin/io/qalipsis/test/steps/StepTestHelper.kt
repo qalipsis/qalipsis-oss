@@ -19,12 +19,16 @@ object StepTestHelper {
         input: IN? = null, outputChannel: SendChannel<OUT?> = Channel(100),
         errors: MutableList<StepError> = mutableListOf(),
         minionId: MinionId = "my-minion",
+        campaignId: ScenarioId = "",
         scenarioId: ScenarioId = "",
         directedAcyclicGraphId: DirectedAcyclicGraphId = "",
         parentStepId: StepId = "my-parent-step",
-        stepId: StepId = "my-step", stepIterationIndex: Long = 0,
-        attemptsAfterFailure: Long = 0, isExhausted: Boolean = false,
-        completed: Boolean = false
+        stepId: StepId = "my-step",
+        stepIterationIndex: Long = 0,
+        attemptsAfterFailure: Long = 0,
+        isExhausted: Boolean = false,
+        completed: Boolean = false,
+        isTail: Boolean = false
     ): TestStepContext<IN, OUT> {
         val inputChannel = Channel<IN>(1)
         input?.let {
@@ -34,7 +38,7 @@ object StepTestHelper {
             inputChannel,
             outputChannel,
             errors,
-            "",
+            campaignId,
             minionId,
             scenarioId,
             directedAcyclicGraphId,
@@ -47,7 +51,7 @@ object StepTestHelper {
             System.currentTimeMillis(),
             isExhausted,
             completed,
-            isTail = true
+            isTail = isTail
         )
     }
 

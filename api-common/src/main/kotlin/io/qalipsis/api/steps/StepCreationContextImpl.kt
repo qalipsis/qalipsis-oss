@@ -1,7 +1,7 @@
 package io.qalipsis.api.steps
 
 import io.micronaut.core.annotation.Introspected
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import javax.validation.Valid
 

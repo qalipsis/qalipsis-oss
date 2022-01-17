@@ -17,7 +17,7 @@ class UuidBasedIdGenerator : IdGenerator {
     }
 
     override fun short(): String {
-        return UUID.randomUUID().toString().substring(25, 35).lowercase()
+        return long().substring(22, 32)
     }
 
 }
