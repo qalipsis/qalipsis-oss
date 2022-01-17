@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="05" author="rklymenko">
+    <createSequence sequenceName="directed_acyclic_graph_seq" schemaName="qalipsis"/>
+    <createTable tableName="directed_acyclic_graph" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="directed_acyclic_graph_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="directed_acyclic_graph_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="scenario_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="directed_acyclic_graph_scenario_id_fk"
+          referencedTableName="scenario" referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+      <column name="name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="singleton" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
+      <column name="under_load" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
+      <column name="number_of_steps" type="INT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+
+    <createIndex schemaName="qalipsis" indexName="unique_dag_name_by_scenario_idx" tableName="directed_acyclic_graph"
+      unique="true">
+      <column name="scenario_id"/>
+      <column name="name"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>

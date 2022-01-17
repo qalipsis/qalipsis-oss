@@ -1,0 +1,16 @@
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5432/qalipsis
+    username: qalipsis
+    password: qalipsis
+    dialect: POSTGRES
+    driverClassName: org.postgresql.Driver
+    schema: qalipsis
+    schema-generate: none
+
+liquibase:
+  enabled: true
+  datasources:
+    default:
+      change-log: 'classpath:db/liquibase-changelog.xml'
+      liquibase-schema: qalipsis_liquibase

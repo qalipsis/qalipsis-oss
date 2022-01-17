@@ -40,8 +40,8 @@ dependencies {
     api("io.qalipsis:api-dsl:${project.version}")
     api("io.qalipsis:api-processors:${project.version}")
     api(project(":core"))
-    api(project(":factory"))
-    api(project(":head"))
+    compileOnly(project(":factory"))
+    compileOnly(project(":head"))
 
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("ch.qos.logback:logback-classic")
@@ -62,6 +62,8 @@ dependencies {
 
     testFixturesCompileOnly(kotlin("stdlib"))
 
+    testRuntimeOnly(project(":head"))
+    testRuntimeOnly(project(":factory"))
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")

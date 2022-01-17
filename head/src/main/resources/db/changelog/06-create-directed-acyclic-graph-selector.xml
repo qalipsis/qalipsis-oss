@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="06" author="rklymenko">
+    <createSequence sequenceName="directed_acyclic_graph_selector_seq" schemaName="qalipsis"/>
+    <createTable tableName="directed_acyclic_graph_selector" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="directed_acyclic_graph_selector_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="directed_acyclic_graph_selector_pk"/>
+      </column>
+      <column name="directed_acyclic_graph_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="directed_acyclic_graph_selector_directed_acyclic_graph_id_fk"
+          referencedTableName="directed_acyclic_graph"
+          referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+      <column name="key" type="VARCHAR(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="value" type="VARCHAR(50)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+
+    <createIndex schemaName="qalipsis" indexName="unique_selector_key_by_directed_acyclic_graph_idx"
+      tableName="directed_acyclic_graph_selector" unique="true">
+      <column name="directed_acyclic_graph_id"/>
+      <column name="key"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>
