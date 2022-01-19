@@ -32,11 +32,8 @@ object PostgresTestContainerConfiguration {
 
     fun PostgreSQLContainer<*>.testProperties(): Map<String, String> = mapOf(
         "datasources.default.url" to "jdbc:postgresql://localhost:${firstMappedPort}/$DB_NAME",
-        //"datasources.default.url" to "jdbc:postgresql://localhost:15432/pgsql",
         "datasources.default.username" to USERNAME,
         "datasources.default.password" to PASSWORD,
-        //"datasources.default.username" to "pgsql",
-        //"datasources.default.password" to "pwd",
         "datasources.default.dialect" to "POSTGRES",
         "datasources.default.driverClassName" to "org.postgresql.Driver",
         "datasources.default.schema-generate" to "NONE",
