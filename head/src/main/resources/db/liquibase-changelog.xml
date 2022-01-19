@@ -10,5 +10,4 @@
   <include file="changelog/04-create-scenario.xml" relativeToChangelogFile="true"/>
   <include file="changelog/05-create-directed-acyclic-graph.xml" relativeToChangelogFile="true"/>
   <include file="changelog/06-create-directed-acyclic-graph-selector.xml" relativeToChangelogFile="true"/>
-  <include file="changelog/07-update-directed-acyclic-graph.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
