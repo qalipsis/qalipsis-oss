@@ -26,11 +26,11 @@ data class FactoryStateEntity(
 ) : VersionedEntity {
 
     constructor(
+        version: Instant = Instant.now(),
         factoryId: Long,
         healthTimestamp: Instant,
         latency: Long,
-        factoryState: FactoryStateValue,
-        version: Instant = Instant.now()
+        factoryState: FactoryStateValue
     ) : this(
         -1,
         version,

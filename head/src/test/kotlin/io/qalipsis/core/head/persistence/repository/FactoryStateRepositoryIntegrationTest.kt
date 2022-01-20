@@ -44,7 +44,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                 registrationNodeId = "test"
             )
         )
-        state = FactoryStateEntity(factoryId = factory.id, healthTimestamp = Instant.now(), 0, FactoryStateValue.HEALTHY)
+        state = FactoryStateEntity(Instant.now(), factory.id, healthTimestamp = Instant.now(), 0, FactoryStateValue.HEALTHY)
     }
 
     @AfterEach
@@ -91,24 +91,28 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
             repository.saveAll(
                 listOf(
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory1.id,
                         healthTimestamp = cutoff - Duration.ofHours(4),
                         0,
                         FactoryStateValue.REGISTERED
                     ),
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory1.id,
                         healthTimestamp = cutoff - Duration.ofHours(2),
                         0,
                         FactoryStateValue.HEALTHY
                     ),
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory1.id,
                         healthTimestamp = cutoff.plusMillis(1),
                         0,
                         FactoryStateValue.UNHEALTHY
                     ),
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now(),
                         0,
@@ -116,24 +120,28 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                     ),
 
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory2.id,
                         healthTimestamp = cutoff - Duration.ofHours(4),
                         0,
                         FactoryStateValue.REGISTERED
                     ),
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory2.id,
                         healthTimestamp = cutoff - Duration.ofHours(2),
                         0,
                         FactoryStateValue.HEALTHY
                     ),
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory2.id,
                         healthTimestamp = cutoff.plusMillis(1),
                         0,
                         FactoryStateValue.UNHEALTHY
                     ),
                     FactoryStateEntity(
+                        Instant.now(),
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         0,

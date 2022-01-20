@@ -67,11 +67,11 @@ internal class PersistentFactoryService(
             val now = Instant.now()
             factoryStateRepository.save(
                 FactoryStateEntity(
+                    now,
                     factoryEntity.id,
                     now,
                     0,
-                    FactoryStateValue.REGISTERED,
-                    now
+                    FactoryStateValue.REGISTERED
                 )
             )
         }
@@ -237,8 +237,8 @@ internal class PersistentFactoryService(
      */
     override suspend fun updateHeartbeat(heartbeat: Heartbeat) {
         val latency = Instant.now().toEpochMilli() - heartbeat.timestamp.toEpochMilli()
-        val factoryId = factoryRepository.findFactoryIdByNodeId(heartbeat.nodeId)
-        factoryStateRepository.save(FactoryStateEntity(factoryId, heartbeat.timestamp, latency, FactoryStateValue.valueOf(heartbeat.state.name)))
+        val factoryId = factoryRepository.findIdByNodeId(heartbeat.nodeId)
+        factoryStateRepository.save(FactoryStateEntity(Instant.now(), factoryId, heartbeat.timestamp, latency, FactoryStateValue.valueOf(heartbeat.state.name)))
     }
 
     /**

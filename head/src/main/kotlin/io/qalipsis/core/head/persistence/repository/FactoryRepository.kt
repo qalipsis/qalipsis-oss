@@ -1,7 +1,6 @@
 package io.qalipsis.core.head.persistence.repository
 
 import io.micronaut.data.annotation.Join
-import io.micronaut.data.annotation.Query
 import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
@@ -18,6 +17,5 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
     @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
     suspend fun findByNodeId(nodeId: String): List<FactoryEntity>
 
-    @Query("SELECT id FROM factory WHERE node_id = :nodeId")
-    suspend fun findFactoryIdByNodeId(nodeId: String): Long
+    suspend fun findIdByNodeId(nodeId: String): Long
 }

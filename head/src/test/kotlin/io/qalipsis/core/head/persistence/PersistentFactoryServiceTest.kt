@@ -81,7 +81,7 @@ internal class PersistentFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId
         )
-        val factoryStateEntity = FactoryStateEntity(factoryEntity.id, now, 0, FactoryStateValue.REGISTERED, now)
+        val factoryStateEntity = FactoryStateEntity(now, factoryEntity.id, now, 0, FactoryStateValue.REGISTERED)
         coEvery { factoryRepository.findByNodeId(actualNodeId) } returns emptyList()
         coEvery { factoryRepository.save(factoryEntity) } returns factoryEntity
         coEvery { factoryStateRepository.save(factoryStateEntity) } returnsArgument 0
@@ -885,19 +885,18 @@ internal class PersistentFactoryServiceTest {
         val factoryId = 1L
         val heartbeat = Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.STATE.UNREGISTERED, campaignId = "1")
 
-        coEvery { factoryRepository.findFactoryIdByNodeId(heartbeat.nodeId) } returns factoryId
+        coEvery { factoryRepository.findIdByNodeId(heartbeat.nodeId) } returns factoryId
 
         //when
         persistentFactoryService.updateHeartbeat(heartbeat)
 
         //then
         coVerifyOrder {
-            factoryRepository.findFactoryIdByNodeId(heartbeat.nodeId)
-            factoryStateRepository.save(FactoryStateEntity(factoryId, heartbeat.timestamp, 0, FactoryStateValue.valueOf(heartbeat.state.name), now))
+            factoryRepository.findIdByNodeId(heartbeat.nodeId)
+            factoryStateRepository.save(FactoryStateEntity(now, factoryId, heartbeat.timestamp, 0, FactoryStateValue.valueOf(heartbeat.state.name)))
         }
 
-        confirmVerified(factoryRepository,
-                        factoryStateRepository)
+        confirmVerified(factoryRepository, factoryStateRepository)
     }
 
     private fun getTimeMock(): Instant {

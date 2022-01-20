@@ -11,6 +11,7 @@ import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
+import io.micronaut.data.exceptions.EmptyResultException
 import io.qalipsis.core.head.persistence.entity.FactoryEntity
 import io.qalipsis.core.head.persistence.entity.FactorySelectorEntity
 import jakarta.inject.Inject
@@ -189,5 +190,24 @@ internal class FactoryAndSelectorRepositoryIntegrationTest : PostgresqlTemplateT
         // then
         assertThat(repository.findByNodeId("the-node")).isEmpty()
         assertThat(selectorRepository.findAll().toList()).isEmpty()
+    }
+
+    @Test
+    fun `should find not factory id by node id and throw EmptyResultException`() = testDispatcherProvider.run {
+        assertThrows<EmptyResultException> {
+            repository.findIdByNodeId(factory.nodeId)
+        }
+    }
+
+    @Test
+    fun `should find factory id by node id`() = testDispatcherProvider.run {
+        //given
+        repository.save(factory.copy())
+
+        //when
+        val factoryId = repository.findIdByNodeId(factory.nodeId)
+
+        //then
+        assertThat(factoryId).isNotNull()
     }
 }
