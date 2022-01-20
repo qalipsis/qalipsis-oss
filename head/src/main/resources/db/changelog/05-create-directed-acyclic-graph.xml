@@ -21,6 +21,9 @@
       <column name="name" type="VARCHAR(255)">
         <constraints nullable="false"/>
       </column>
+      <column name="root" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
       <column name="singleton" type="BOOLEAN">
         <constraints nullable="false"/>
       </column>

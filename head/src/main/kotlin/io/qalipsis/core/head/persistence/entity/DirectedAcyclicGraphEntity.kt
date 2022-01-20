@@ -24,6 +24,7 @@ data class DirectedAcyclicGraphEntity(
     val scenarioId: Long,
     @field:NotBlank
     val name: String,
+    val root: Boolean,
     val singleton: Boolean,
     val underLoad: Boolean,
     val numberOfSteps: Int,
@@ -38,10 +39,11 @@ data class DirectedAcyclicGraphEntity(
     constructor(
         scenarioId: Long,
         name: String,
+        isRoot: Boolean,
         singleton: Boolean,
         underLoad: Boolean,
         numberOfSteps: Int,
         selectors: List<DirectedAcyclicGraphSelectorEntity> = emptyList(),
         version: Instant = Instant.now()
-    ) : this(-1, version, scenarioId, name, singleton, underLoad, numberOfSteps, selectors)
+    ) : this(-1, version, scenarioId, name, isRoot, singleton, underLoad, numberOfSteps, selectors)
 }

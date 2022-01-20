@@ -542,7 +542,8 @@ internal class PersistentFactoryServiceTest {
                         singleton = dag.isSingleton,
                         underLoad = dag.isUnderLoad,
                         numberOfSteps = dag.numberOfSteps,
-                        version = now
+                        version = now,
+                        isRoot = false
                     )
                 })
         }
@@ -587,6 +588,7 @@ internal class PersistentFactoryServiceTest {
         val savedDag = DirectedAcyclicGraphEntity(
             scenarioId = scenarioEntity.id,
             name = graphSummary.id,
+            isRoot = graphSummary.isRoot,
             singleton = true,
             underLoad = true,
             numberOfSteps = 1,
@@ -623,7 +625,8 @@ internal class PersistentFactoryServiceTest {
                         singleton = dag.isSingleton,
                         underLoad = dag.isUnderLoad,
                         numberOfSteps = dag.numberOfSteps,
-                        version = now
+                        version = now,
+                        isRoot = false
                     )
                 })
             directedAcyclicGraphSelectorRepository.saveAll(
@@ -657,6 +660,7 @@ internal class PersistentFactoryServiceTest {
         val savedDag = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = graphSummary.id,
+            isRoot = false,
             singleton = true,
             underLoad = true,
             numberOfSteps = 1,
@@ -665,6 +669,7 @@ internal class PersistentFactoryServiceTest {
         val expectedDagEntity = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = "new-test-dag-id",
+            isRoot = false,
             singleton = true,
             underLoad = true,
             numberOfSteps = 1,
@@ -716,6 +721,7 @@ internal class PersistentFactoryServiceTest {
         val savedDag = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = graphSummary.id,
+            isRoot = false,
             singleton = true,
             underLoad = true,
             numberOfSteps = 1,
@@ -724,6 +730,7 @@ internal class PersistentFactoryServiceTest {
         val expectedDagEntity = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = "new-test-dag-id",
+            isRoot = false,
             singleton = true,
             underLoad = true,
             numberOfSteps = 1,
@@ -829,6 +836,7 @@ internal class PersistentFactoryServiceTest {
                     DirectedAcyclicGraphEntity(
                         -1,
                         dag.id,
+                        dag.isRoot,
                         dag.isSingleton,
                         dag.isUnderLoad,
                         dag.numberOfSteps,
@@ -895,6 +903,7 @@ internal class PersistentFactoryServiceTest {
                 DirectedAcyclicGraphEntity(
                     -1,
                     dag.id,
+                    dag.isRoot,
                     dag.isSingleton,
                     dag.isUnderLoad,
                     dag.numberOfSteps,
@@ -906,6 +915,7 @@ internal class PersistentFactoryServiceTest {
         DirectedAcyclicGraphEntity(
             -1,
             dag.id,
+            dag.isRoot,
             dag.isSingleton,
             dag.isUnderLoad,
             dag.numberOfSteps,

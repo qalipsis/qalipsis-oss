@@ -169,7 +169,8 @@ internal class PersistentFactoryService(
                         name = dag.id,
                         singleton = dag.isSingleton,
                         underLoad = dag.isUnderLoad,
-                        numberOfSteps = dag.numberOfSteps
+                        numberOfSteps = dag.numberOfSteps,
+                        isRoot = dag.isRoot
                     )
                 }
             }
@@ -245,14 +246,13 @@ internal class PersistentFactoryService(
             id = it.name,
             minionsCount = it.defaultMinionsCount,
             directedAcyclicGraphs = it.dags.map {
-                // todo: convert selectors, find isRoot value
                 DirectedAcyclicGraphSummary(
                     id = it.id.toString(),
                     isSingleton = it.singleton,
-                    isRoot = false,
+                    isRoot = it.root,
                     isUnderLoad = it.underLoad,
                     numberOfSteps = it.numberOfSteps,
-                    selectors = emptyMap()
+                    selectors = it.selectors.map { it.key to it.value }.toMap()
                 )
             }
         )

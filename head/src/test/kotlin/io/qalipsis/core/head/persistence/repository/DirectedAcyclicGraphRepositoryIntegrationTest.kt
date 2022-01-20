@@ -60,6 +60,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             dag = DirectedAcyclicGraphEntity(
                 scenarioId = scenario.id,
                 name = "dag-1",
+                isRoot = false,
                 singleton = false,
                 underLoad = true,
                 numberOfSteps = 21,
@@ -95,6 +96,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             prop(DirectedAcyclicGraphEntity::version).isNotNull().isGreaterThan(Instant.EPOCH)
             prop(DirectedAcyclicGraphEntity::scenarioId).isEqualTo(scenario.id)
             prop(DirectedAcyclicGraphEntity::name).isEqualTo("dag-1")
+            prop(DirectedAcyclicGraphEntity::root).isFalse()
             prop(DirectedAcyclicGraphEntity::singleton).isFalse()
             prop(DirectedAcyclicGraphEntity::underLoad).isTrue()
             prop(DirectedAcyclicGraphEntity::numberOfSteps).isEqualTo(21)
@@ -188,6 +190,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             prop(DirectedAcyclicGraphEntity::version).isEqualTo(saved.version)
             prop(DirectedAcyclicGraphEntity::scenarioId).isEqualTo(scenario.id)
             prop(DirectedAcyclicGraphEntity::name).isEqualTo("dag-1")
+            prop(DirectedAcyclicGraphEntity::root).isFalse()
             prop(DirectedAcyclicGraphEntity::singleton).isFalse()
             prop(DirectedAcyclicGraphEntity::underLoad).isTrue()
             prop(DirectedAcyclicGraphEntity::numberOfSteps).isEqualTo(21)
