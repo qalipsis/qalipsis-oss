@@ -21,6 +21,9 @@
       <column name="health_timestamp" type="TIMESTAMP">
         <constraints nullable="false"/>
       </column>
+      <column name="latency" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
       <column name="state" type="varchar(20)">
         <constraints nullable="false"/>
       </column>

@@ -69,6 +69,7 @@ internal class PersistentFactoryService(
                 FactoryStateEntity(
                     factoryEntity.id,
                     now,
+                    0,
                     FactoryStateValue.REGISTERED,
                     now
                 )
@@ -235,7 +236,9 @@ internal class PersistentFactoryService(
      * updateHeartbeat method updates factory_state with given STATE
      */
     override suspend fun updateHeartbeat(heartbeat: Heartbeat) {
-        TODO("Not yet implemented: https://aeris-consulting.atlassian.net/browse/QALI-138")
+        val latency = Instant.now().toEpochMilli() - heartbeat.timestamp.toEpochMilli()
+        val factoryId = factoryRepository.findFactoryIdByNodeId(heartbeat.nodeId)
+        factoryStateRepository.save(FactoryStateEntity(factoryId, heartbeat.timestamp, latency, FactoryStateValue.valueOf(heartbeat.state.name)))
     }
 
     /**

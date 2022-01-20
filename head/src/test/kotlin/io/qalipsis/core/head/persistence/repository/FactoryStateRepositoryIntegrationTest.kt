@@ -44,7 +44,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                 registrationNodeId = "test"
             )
         )
-        state = FactoryStateEntity(factoryId = factory.id, healthTimestamp = Instant.now(), FactoryStateValue.HEALTHY)
+        state = FactoryStateEntity(factoryId = factory.id, healthTimestamp = Instant.now(), 0, FactoryStateValue.HEALTHY)
     }
 
     @AfterEach
@@ -93,42 +93,50 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                     FactoryStateEntity(
                         factoryId = factory1.id,
                         healthTimestamp = cutoff - Duration.ofHours(4),
+                        0,
                         FactoryStateValue.REGISTERED
                     ),
                     FactoryStateEntity(
                         factoryId = factory1.id,
                         healthTimestamp = cutoff - Duration.ofHours(2),
+                        0,
                         FactoryStateValue.HEALTHY
                     ),
                     FactoryStateEntity(
                         factoryId = factory1.id,
                         healthTimestamp = cutoff.plusMillis(1),
+                        0,
                         FactoryStateValue.UNHEALTHY
                     ),
                     FactoryStateEntity(
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now(),
+                        0,
                         FactoryStateValue.UNREGISTERED
                     ),
 
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = cutoff - Duration.ofHours(4),
+                        0,
                         FactoryStateValue.REGISTERED
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = cutoff - Duration.ofHours(2),
+                        0,
                         FactoryStateValue.HEALTHY
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = cutoff.plusMillis(1),
+                        0,
                         FactoryStateValue.UNHEALTHY
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
+                        0,
                         FactoryStateValue.UNREGISTERED
                     )
                 )
