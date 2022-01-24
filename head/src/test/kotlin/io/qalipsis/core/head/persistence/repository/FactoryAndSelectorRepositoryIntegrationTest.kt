@@ -202,12 +202,12 @@ internal class FactoryAndSelectorRepositoryIntegrationTest : PostgresqlTemplateT
     @Test
     fun `should find factory id by node id`() = testDispatcherProvider.run {
         //given
-        repository.save(factory.copy())
+        val saved = repository.save(factory.copy())
 
         //when
         val factoryId = repository.findIdByNodeId(factory.nodeId)
 
         //then
-        assertThat(factoryId).isNotNull()
+        assertThat(factoryId).isEqualTo(saved.id)
     }
 }
