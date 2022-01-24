@@ -16,7 +16,7 @@ data class Heartbeat(
 ) {
 
     enum class STATE {
-        HEALTHY
+        REGISTERED, UNREGISTERED, HEALTHY, UNHEALTHY
     }
 
 }
