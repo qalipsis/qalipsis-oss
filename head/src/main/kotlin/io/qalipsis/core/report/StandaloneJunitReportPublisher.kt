@@ -52,8 +52,12 @@ class StandaloneJunitReportPublisher(
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }!!
 
         report.scenariosReports.forEach {
-            File(reportFolder + "/${it.scenarioId}.xml").writeText(REPORT_HEADER + scenarioReportToText(it, duration))
+            writeScenarioToFile(it, duration)
         }
+    }
+
+    private fun writeScenarioToFile(scenarioReport: ScenarioReport, duration: Long) {
+        File(reportFolder + "/${scenarioReport.scenarioId}.xml").writeText(REPORT_HEADER + scenarioReportToText(scenarioReport, duration))
     }
 
     private fun scenarioReportToText(scenarioReport: ScenarioReport, duration: Long) =
