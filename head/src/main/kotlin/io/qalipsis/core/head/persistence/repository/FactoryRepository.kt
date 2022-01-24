@@ -15,5 +15,7 @@ import io.qalipsis.core.head.persistence.entity.FactoryEntity
 internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Long> {
 
     @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
-    suspend fun findByNodeId(factoryId: String): List<FactoryEntity>
+    suspend fun findByNodeId(nodeId: String): List<FactoryEntity>
+
+    suspend fun findIdByNodeId(nodeId: String): Long
 }

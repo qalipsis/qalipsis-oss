@@ -21,19 +21,22 @@ data class FactoryStateEntity(
     override val version: Instant,
     val factoryId: Long,
     val healthTimestamp: Instant,
+    val latency: Long,
     val state: FactoryStateValue
 ) : VersionedEntity {
 
     constructor(
+        version: Instant = Instant.now(),
         factoryId: Long,
         healthTimestamp: Instant,
-        factoryState: FactoryStateValue,
-        version: Instant = Instant.now()
+        latency: Long,
+        factoryState: FactoryStateValue
     ) : this(
         -1,
         version,
         factoryId,
         healthTimestamp,
+        latency,
         factoryState
     )
 }

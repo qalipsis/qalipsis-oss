@@ -25,6 +25,7 @@ import io.qalipsis.core.head.persistence.repository.FactoryRepository
 import io.qalipsis.core.head.persistence.repository.FactorySelectorRepository
 import io.qalipsis.core.head.persistence.repository.FactoryStateRepository
 import io.qalipsis.core.head.persistence.repository.ScenarioRepository
+import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
@@ -80,7 +81,7 @@ internal class PersistentFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId
         )
-        val factoryStateEntity = FactoryStateEntity(factoryEntity.id, now, FactoryStateValue.REGISTERED, now)
+        val factoryStateEntity = FactoryStateEntity(now, factoryEntity.id, now, 0, FactoryStateValue.REGISTERED)
         coEvery { factoryRepository.findByNodeId(actualNodeId) } returns emptyList()
         coEvery { factoryRepository.save(factoryEntity) } returns factoryEntity
         coEvery { factoryStateRepository.save(factoryStateEntity) } returnsArgument 0
@@ -875,6 +876,27 @@ internal class PersistentFactoryServiceTest {
         )
 
         confirmVerified(scenarioRepository)
+    }
+
+    @Test
+    fun `should update heartbeat`() = testDispatcherProvider.run {
+        //given
+        val now = getTimeMock()
+        val factoryId = 1L
+        val heartbeat = Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.STATE.UNREGISTERED, campaignId = "1")
+
+        coEvery { factoryRepository.findIdByNodeId(heartbeat.nodeId) } returns factoryId
+
+        //when
+        persistentFactoryService.updateHeartbeat(heartbeat)
+
+        //then
+        coVerifyOrder {
+            factoryRepository.findIdByNodeId(heartbeat.nodeId)
+            factoryStateRepository.save(FactoryStateEntity(now, factoryId, heartbeat.timestamp, 0, FactoryStateValue.valueOf(heartbeat.state.name)))
+        }
+
+        confirmVerified(factoryRepository, factoryStateRepository)
     }
 
     private fun getTimeMock(): Instant {
