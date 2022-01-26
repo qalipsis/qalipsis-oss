@@ -5,7 +5,6 @@ import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkStatic
-import io.qalipsis.api.Executors
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ExecutionStatus
@@ -15,7 +14,6 @@ import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import jakarta.inject.Named
 import org.junit.Assert
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -24,7 +22,6 @@ import java.io.File
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
-import kotlin.coroutines.CoroutineContext
 
 /**
  * @author rklymenko
@@ -38,9 +35,7 @@ internal class StandaloneJunitReportPublisherTest {
     @RelaxedMockK
     private lateinit var campaignStateKeeper: CampaignStateKeeper
 
-    @Named(Executors.BACKGROUND_EXECUTOR_NAME)
-    @RelaxedMockK
-    private lateinit var backgroundContext: CoroutineContext
+    private val testCoroutineContext = kotlinx.coroutines.newFixedThreadPoolContext(1, "test-context")
 
     private val generatedReportFolder = "."
 
@@ -54,7 +49,7 @@ internal class StandaloneJunitReportPublisherTest {
     fun `should write simple report without errors`() = testCoroutineDispatcher.run {
         //given
         val standaloneJunitReportPublisher =
-            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, backgroundContext, generatedReportFolder)
+            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, testCoroutineContext, generatedReportFolder)
 
         val campaignId = "foo"
 
@@ -116,7 +111,7 @@ internal class StandaloneJunitReportPublisherTest {
     fun `should write report with errors`() = testCoroutineDispatcher.run {
         //given
         val standaloneJunitReportPublisher =
-            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, backgroundContext, generatedReportFolder)
+            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, testCoroutineContext, generatedReportFolder)
 
         val campaignId = "foo"
 
@@ -186,7 +181,7 @@ internal class StandaloneJunitReportPublisherTest {
     fun `should write few reports with errors`() = testCoroutineDispatcher.run {
         //given
         val standaloneJunitReportPublisher =
-            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, backgroundContext, generatedReportFolder)
+            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, testCoroutineContext, generatedReportFolder)
 
         val campaignId1 = "foo"
         val campaignId2 = "foo2"
@@ -276,6 +271,56 @@ internal class StandaloneJunitReportPublisherTest {
                 .replace("__time__", time.toString())
                 .replace(" ", "")
                 .replace("\t", "")
+        }
+    }
+
+    @Test
+    fun `should call publish and wait for the full execution`() {
+        //given
+        val standaloneJunitReportPublisher =
+            StandaloneJunitReportPublisher(campaignConfiguration, campaignStateKeeper, testCoroutineContext, generatedReportFolder)
+
+        val campaignId = "boo"
+
+        val timeDiffSeconds = 10L
+        val start = Instant.now().minusSeconds(timeDiffSeconds)
+        val end = Instant.now()
+
+        val campaignReport = CampaignReport(
+            campaignId = campaignId, start = start, end = end, scenariosReports = listOf(
+                ScenarioReport(
+                    campaignId = campaignId,
+                    scenarioId = "bar0",
+                    start = start,
+                    end = end,
+                    configuredMinionsCount = 1,
+                    executedMinionsCount = 1,
+                    stepsCount = 1,
+                    successfulExecutions = 1,
+                    failedExecutions = 1,
+                    status = ExecutionStatus.SUCCESSFUL,
+                    messages = listOf(
+                        ReportMessage(
+                            stepId = "normal test",
+                            messageId = 1,
+                            severity = ReportMessageSeverity.INFO,
+                            message = "passed"
+                        )
+                    )
+                )
+            ), status = ExecutionStatus.SUCCESSFUL
+        )
+
+        coEvery { campaignConfiguration.id } returns campaignId
+        coEvery { campaignStateKeeper.report(campaignId) } returns campaignReport
+
+        //when
+        standaloneJunitReportPublisher.publishOnLeave()
+
+        //then
+        coVerifyOrder {
+            campaignConfiguration.id
+            campaignStateKeeper.report(campaignId)
         }
     }
 

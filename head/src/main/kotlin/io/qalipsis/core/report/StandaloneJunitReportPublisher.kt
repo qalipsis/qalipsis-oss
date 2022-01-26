@@ -16,7 +16,6 @@ import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignConfiguration
 import jakarta.inject.Named
-import io.qalipsis.api.coroutines.contextualLaunch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.time.Duration
@@ -101,10 +100,8 @@ internal class StandaloneJunitReportPublisher(
     @PreDestroy
     fun publishOnLeave() {
         tryAndLogOrNull(log) {
-            runBlocking {
-                contextualLaunch(backgroundContext) {
-                    publish(campaign.id)
-                }
+            runBlocking(backgroundContext) {
+                publish(campaign.id)
             }
         }
     }
