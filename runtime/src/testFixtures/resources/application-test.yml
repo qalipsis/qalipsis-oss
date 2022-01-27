@@ -18,6 +18,9 @@ report:
   export:
     console:
       enabled: false
+    junit:
+      enabled: false
+      folder: build/test-results/qalipsis
 
 logging:
   level:

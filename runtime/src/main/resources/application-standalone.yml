@@ -2,6 +2,9 @@ report:
   export:
     console:
       enabled: true
+    junit:
+      enabled: false
+      folder: build/test-results/qalipsis
 
 head:
   handshake-request-channel: handshake-request

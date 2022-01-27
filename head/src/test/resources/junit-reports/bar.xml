@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>        
+<testsuite name="bar" tests="1" skipped="0" failures="0" errors="0" timestamp="__time__" hostname="Qalipsis" time="10">    
+    <testcase name="normal test" time="10" />   
+    <system-out><![CDATA[
+    Concatenated list of messages (separator is \n\n), grouped by steps.
+    ]]></system-out>
+    <system-err><![CDATA[]]></system-err>
+</testsuite>
