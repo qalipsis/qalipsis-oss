@@ -8,13 +8,13 @@ import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ReportPublisher
 import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import jakarta.inject.Named
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -37,7 +37,7 @@ import kotlin.coroutines.CoroutineContext
 )
 internal class StandaloneJunitReportPublisher(
     private val campaign: CampaignConfiguration,
-    private val campaignStateKeeper: CampaignStateKeeper,
+    private val campaignStateKeeper: CampaignReportStateKeeper,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundContext: CoroutineContext,
     @Value("\${report.export.junit.folder}") private val reportFolder: String
 ) : ReportPublisher {

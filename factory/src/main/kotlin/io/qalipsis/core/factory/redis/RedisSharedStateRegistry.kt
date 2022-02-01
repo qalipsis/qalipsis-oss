@@ -1,6 +1,7 @@
 package io.qalipsis.core.factory.redis
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.lettuce.core.ScriptOutputType
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.states.SharedStateDefinition
@@ -39,13 +40,18 @@ internal class RedisSharedStateRegistry(
     }
 
     override suspend fun <T> remove(definition: SharedStateDefinition): T? {
-        return get<T>(definition).also { redisCoroutinesCommands.unlink(buildKey(definition)) }
+        val key = buildKey(definition)
+        return removeKey<T>(key)
     }
 
+    private suspend fun <T> removeKey(key: String): T? = redisCoroutinesCommands.eval<String>(
+        LUA_SINGULAR_REMOVAL_SCRIPT,
+        ScriptOutputType.VALUE,
+        key
+    )?.encodeToByteArray()?.let(serializer::deserialize)
+
     override suspend fun remove(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
-        return get(definitions).also {
-            definitions.forEach { redisCoroutinesCommands.unlink(buildKey(it)) }
-        }
+        return definitions.associateBy(this::buildKey).mapValues { removeKey(it.key) }
     }
 
     override suspend fun set(definition: SharedStateDefinition, payload: Any?) {
@@ -66,5 +72,17 @@ internal class RedisSharedStateRegistry(
 
     fun buildKey(definition: SharedStateDefinition): String {
         return "${factoryConfiguration.cache.keyPrefix}:${definition.minionId}:${definition.sharedStateName}"
+    }
+
+    private companion object {
+
+        /**
+         * LUA script to get and remove a key from Redis in a single call to avoid concurrency race between get and unlink.
+         */
+        const val LUA_SINGULAR_REMOVAL_SCRIPT = """
+local result = redis.call('get', KEYS[1])
+redis.call('unlink', KEYS[1])
+return result
+        """
     }
 }

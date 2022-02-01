@@ -7,7 +7,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
-import io.qalipsis.api.orchestration.factories.Minion
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.factory.coreStepContext
 import io.qalipsis.test.mockk.WithMockk

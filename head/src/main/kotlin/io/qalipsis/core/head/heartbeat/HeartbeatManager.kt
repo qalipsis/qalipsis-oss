@@ -1,11 +1,11 @@
 package io.qalipsis.core.head.heartbeat
 
 import io.qalipsis.api.Executors
-import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.heartbeat.HeartbeatConsumer
+import io.qalipsis.core.lifetime.HeadStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -24,7 +24,7 @@ internal class HeartbeatManager(
     private val headConfiguration: HeadConfiguration,
     private val heartbeatConsumer: HeartbeatConsumer,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val executionCoroutineScope: CoroutineScope
-) : StartupHeadComponent {
+) : HeadStartupComponent {
 
     private var heartbeatConsumptionJob: Job? = null
 

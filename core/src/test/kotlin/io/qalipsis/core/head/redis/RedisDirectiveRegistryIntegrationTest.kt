@@ -7,27 +7,27 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.micronaut.context.annotation.Property
+import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.micronaut.test.annotation.MockBean
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
-import io.qalipsis.api.serialization.Serializable
 import io.qalipsis.api.sync.SuspendedCountLatch
-import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.directives.TestListDirective
 import io.qalipsis.core.directives.TestListDirectiveReference
 import io.qalipsis.core.directives.TestQueueDirective
 import io.qalipsis.core.directives.TestQueueDirectiveReference
 import io.qalipsis.core.directives.TestSingleUseDirective
 import io.qalipsis.core.directives.TestSingleUseDirectiveReference
+import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
+import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -40,7 +40,7 @@ import java.util.Collections
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
 @Serializable([TestQueueDirective::class, TestListDirective::class, TestSingleUseDirective::class])
-internal class RedisDirectiveRegistryIntegrationTest: AbstractRedisIntegrationTest(){
+internal class RedisDirectiveRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
     @RegisterExtension
     @JvmField
@@ -53,6 +53,14 @@ internal class RedisDirectiveRegistryIntegrationTest: AbstractRedisIntegrationTe
 
     @Inject
     private lateinit var registry: RedisDirectiveRegistry
+
+    @Inject
+    private lateinit var redisCommands: RedisCoroutinesCommands<String, String>
+
+    @AfterEach
+    internal fun tearDown() = testDispatcherProvider.run {
+        redisCommands.flushdb()
+    }
 
     @Test
     @Timeout(10)
@@ -167,5 +175,28 @@ internal class RedisDirectiveRegistryIntegrationTest: AbstractRedisIntegrationTe
         // then
         val emptyValue = registry.read(directive.toReference())
         Assertions.assertNull(emptyValue)
+    }
+
+    @Test
+    @Timeout(10)
+    internal fun saveThenGetAndDeleteStandardDirective() = testDispatcherProvider.run {
+        // given
+        val directive = TestDescriptiveDirective("this-is-the-key")
+
+        // when
+        registry.keep(directive)
+
+        // then
+        val retrieved = registry.get("this-is-the-key")
+        Assertions.assertEquals(directive, retrieved)
+
+        // then
+        val notExistingDirective = registry.get("other-key")
+        Assertions.assertNull(notExistingDirective)
+
+        // then
+        registry.remove("this-is-the-key")
+        val deletedValue = registry.get("this-is-the-key")
+        Assertions.assertNull(deletedValue)
     }
 }

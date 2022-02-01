@@ -11,13 +11,13 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
-import java.time.Duration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 /**
  * @author Svetlana Paliashchuk
@@ -61,7 +61,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldContainRecordInCache() = testDispatcherProvider.run {
+    fun `should contain record in cache`() = testDispatcherProvider.run {
         //given
         val definition = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
 
@@ -74,9 +74,9 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotContainRecordInCache() = testDispatcherProvider.run {
+    fun `should not contain the absent record in cache`() = testDispatcherProvider.run {
         //given
-        //this definition does not exist in cache
+        // This definition does not exist in cache.
         val definition = SharedStateDefinition("minion-3", "state33", Duration.ofMillis(123))
 
         //when
@@ -88,7 +88,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    internal fun shouldGetTheRecordFromCache() = testDispatcherProvider.run {
+    internal fun `should get the record from cache`() = testDispatcherProvider.run {
         //given
         val definition = SharedStateDefinition("minion-2", "state2", Duration.ofMillis(123))
 
@@ -104,9 +104,9 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotGetTheRecordFromCache() = testDispatcherProvider.run {
+    fun `should not get the absent record from cache`() = testDispatcherProvider.run {
         //given
-        //this definition does not exist in cache
+        // This definition does not exist in cache.
         val definition = SharedStateDefinition("minion-3", "state33", Duration.ofMillis(123))
 
         //when
@@ -118,7 +118,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldGetSeveralRecordsFromCache() = testDispatcherProvider.run {
+    fun `should get several records from cache`() = testDispatcherProvider.run {
         //given
         val definition1 = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
         val definition3 = SharedStateDefinition("minion-3", "state3", Duration.ofMillis(123))
@@ -138,7 +138,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldGetSeveralRecordsFromCacheIfOneIsNotSaved() = testDispatcherProvider.run {
+    fun `should get several records from cache if one is not saved`() = testDispatcherProvider.run {
         //given
         val nonExistingDefinition = SharedStateDefinition("minion-3", "state33", Duration.ofMillis(123))
         val definition1 = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
@@ -160,7 +160,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotGetSeveralRecordsFromCache() = testDispatcherProvider.run {
+    fun `should not get several records from cache`() = testDispatcherProvider.run {
         //given
         val definition1 = SharedStateDefinition("minion-3", "state33", Duration.ofMillis(123))
         val definition2 = SharedStateDefinition("minion-4", "state5", Duration.ofMillis(123))
@@ -178,7 +178,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldRemoveTheRecordFromCache() = testDispatcherProvider.run {
+    fun `should remove the record from cache`() = testDispatcherProvider.run {
         //given
         val definition = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
 
@@ -194,9 +194,9 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotRemoveTheRecordFromCache() = testDispatcherProvider.run {
+    fun `should not remove the absent record from cache`() = testDispatcherProvider.run {
         //given
-
+        // This definition does not exist in cache.
         val definition = SharedStateDefinition("minion-3", "state33", Duration.ofMillis(123))
 
         //when
@@ -208,7 +208,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldRemoveSeveralRecordsFromCache() = testDispatcherProvider.run {
+    fun `should remove several records from cache`() = testDispatcherProvider.run {
         //given
         val definition1 = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
         val definition3 = SharedStateDefinition("minion-3", "state3", Duration.ofMillis(123))
@@ -229,7 +229,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotRemoveSeveralRecordsFromCacheIfTheyDoNotExist() = testDispatcherProvider.run {
+    fun `should not remove several records from cache if they do not exist`() = testDispatcherProvider.run {
         //given
         val definition1 = SharedStateDefinition("minion-3", "state33", Duration.ofMillis(123))
         val definition2 = SharedStateDefinition("minion-4", "state5", Duration.ofMillis(123))
@@ -247,7 +247,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldSetTheRecordInCache() = testDispatcherProvider.run {
+    fun `should set the record in cache`() = testDispatcherProvider.run {
         //given
         val definition = SharedStateDefinition("minion-100", "state100", Duration.ofMillis(123))
         val payload = Person("Nick", 30)
@@ -256,9 +256,10 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         registry.set(definition, payload)
 
         //then
-        val record = redisCoroutinesCommands.get("$KEY_PREFIX:${definition.minionId}:${definition.sharedStateName}")?.let {
-            serializer.deserialize<Person>(it.encodeToByteArray())
-        }
+        val record =
+            redisCoroutinesCommands.get("$KEY_PREFIX:${definition.minionId}:${definition.sharedStateName}")?.let {
+                serializer.deserialize<Person>(it.encodeToByteArray())
+            }
         assertThat {
             record?.name.equals("Nick")
             record?.age == (30)
@@ -267,7 +268,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotSetTheRecordInCacheIfPayloadIsNull() = testDispatcherProvider.run {
+    fun `should not set the record in cache if payload is null`() = testDispatcherProvider.run {
         //given
         val definition = SharedStateDefinition("minion-100", "state100", Duration.ofMillis(123))
         val payload = null
@@ -282,7 +283,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldSetSeveralRecordsInCache() = testDispatcherProvider.run {
+    fun `should set several records in cache`() = testDispatcherProvider.run {
         //given
         val definition1 = SharedStateDefinition("minion-100", "state100", Duration.ofMillis(123))
         val definition2 = SharedStateDefinition("minion-200", "state200", Duration.ofMillis(123))
@@ -313,7 +314,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
     @Test
     @Timeout(10)
-    fun shouldNotSetSeveralRecordsInCacheIfPayloadsAreNull() = testDispatcherProvider.run {
+    fun `should not set several records in cache if payloads are null`() = testDispatcherProvider.run {
         //given
         val definition1 = SharedStateDefinition("minion-100", "state100", Duration.ofMillis(123))
         val definition2 = SharedStateDefinition("minion-200", "state200", Duration.ofMillis(123))

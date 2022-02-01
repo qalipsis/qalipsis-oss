@@ -28,6 +28,7 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::handshakeRequestChannel).isEqualTo("handshake-request")
             prop(FactoryConfiguration::handshakeResponseChannel).isEqualTo("handshake-response")
             prop(FactoryConfiguration::metadataPath).isEqualTo("./metadata")
+            prop(FactoryConfiguration::tenant).isEmpty()
             prop(FactoryConfiguration::cache).all {
                 prop(FactoryConfiguration.Cache::ttl).isEqualTo(Duration.ofMinutes(1))
                 prop(FactoryConfiguration.Cache::keyPrefix).isEqualTo("shared-state-registry")
@@ -37,6 +38,10 @@ internal class FactoryConfigurationIntegrationTest {
                 prop(FactoryConfiguration.DirectiveRegistry::broadcastConsumerGroup).isEqualTo("consumer-group-directives-broadcast")
                 prop(FactoryConfiguration.DirectiveRegistry::unicastDirectivesChannel).isEmpty()
                 prop(FactoryConfiguration.DirectiveRegistry::broadcastDirectivesChannel).isEmpty()
+            }
+            prop(FactoryConfiguration::assignment).all {
+                prop(FactoryConfiguration.Assignment::evaluationBatchSize).isEqualTo(10)
+                prop(FactoryConfiguration.Assignment::timeout).isEqualTo(Duration.ofSeconds(10))
             }
         }
     }
@@ -48,13 +53,20 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.handshake-request-channel", value = "The handshake request channel"),
         Property(name = "factory.handshake-response-channel", value = "The handshake response channel"),
         Property(name = "factory.metadata-path", value = "./another-metadata-path"),
+        Property(name = "factory.tenant", value = "the tenant"),
         Property(name = "factory.directive-registry.unicast-consumer-group", value = "unicast-consumer-group"),
         Property(name = "factory.directive-registry.broadcast-consumer-group", value = "broadcast-consumer-group"),
         Property(name = "factory.directive-registry.unicast-directives-channel", value = "unicast-directives-channels"),
-        Property(name = "factory.directive-registry.broadcast-directives-channel", value = "broadcast-directives-channels"),
+        Property(
+            name = "factory.directive-registry.broadcast-directives-channel",
+            value = "broadcast-directives-channels"
+        ),
         Property(name = "factory.metadata-path", value = "./another-metadata-path"),
         Property(name = "factory.cache.ttl", value = "PT2M"),
-        Property(name = "factory.cache.keyPrefix", value = "some-other-registry")
+        Property(name = "factory.cache.keyPrefix", value = "some-other-registry"),
+        Property(name = "factory.metadata-path", value = "./another-metadata-path"),
+        Property(name = "factory.assignment.evaluation-batch-size", value = "67542"),
+        Property(name = "factory.assignment.timeout", value = "143s")
     )
     @MicronautTest(environments = [ExecutionEnvironments.FACTORY], packages = ["io.qalipsis.core.factory"])
     @Timeout(10)
@@ -69,6 +81,7 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::handshakeRequestChannel).isEqualTo("The handshake request channel")
             prop(FactoryConfiguration::handshakeResponseChannel).isEqualTo("The handshake response channel")
             prop(FactoryConfiguration::metadataPath).isEqualTo("./another-metadata-path")
+            prop(FactoryConfiguration::tenant).isEqualTo("the tenant")
             prop(FactoryConfiguration::directiveRegistry).all {
                 prop(FactoryConfiguration.DirectiveRegistry::unicastConsumerGroup).isEqualTo("unicast-consumer-group")
                 prop(FactoryConfiguration.DirectiveRegistry::broadcastConsumerGroup).isEqualTo("broadcast-consumer-group")
@@ -79,6 +92,12 @@ internal class FactoryConfigurationIntegrationTest {
                 prop(FactoryConfiguration.Cache::ttl).isEqualTo(Duration.ofMinutes(2))
                 prop(FactoryConfiguration.Cache::keyPrefix).isEqualTo("some-other-registry")
             }
+            prop(FactoryConfiguration::assignment).all {
+                prop(FactoryConfiguration.Assignment::evaluationBatchSize).isEqualTo(67542)
+                prop(FactoryConfiguration.Assignment::timeout).isEqualTo(Duration.ofSeconds(143))
+            }
         }
     }
+
+    // TODO Validation tests.
 }

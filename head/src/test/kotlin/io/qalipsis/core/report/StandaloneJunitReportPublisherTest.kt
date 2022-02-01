@@ -2,6 +2,7 @@ package io.qalipsis.core.report
 
 import assertk.assertThat
 import assertk.assertions.isGreaterThan
+import com.google.common.io.Files
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -9,12 +10,12 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.qalipsis.api.report.CampaignReport
-import io.qalipsis.api.report.CampaignStateKeeper
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.time.coMeasureTime
@@ -39,11 +40,11 @@ internal class StandaloneJunitReportPublisherTest {
     private lateinit var campaignConfiguration: CampaignConfiguration
 
     @RelaxedMockK
-    private lateinit var campaignStateKeeper: CampaignStateKeeper
+    private lateinit var campaignStateKeeper: CampaignReportStateKeeper
 
     private val testCoroutineContext = kotlinx.coroutines.newFixedThreadPoolContext(1, "test-context")
 
-    private val generatedReportFolder = "."
+    private val generatedReportFolder = Files.createTempDir().absoluteFile.canonicalPath
 
     private val expectedReportFolder = "src/test/resources/junit-reports"
 
@@ -75,9 +76,8 @@ internal class StandaloneJunitReportPublisherTest {
                     scenarioId = "bar",
                     start = start,
                     end = end,
-                    configuredMinionsCount = 1,
-                    executedMinionsCount = 1,
-                    stepsCount = 1,
+                    startedMinions = 1,
+                    completedMinions = 1,
                     successfulExecutions = 1,
                     failedExecutions = 1,
                     status = ExecutionStatus.SUCCESSFUL,
@@ -142,9 +142,8 @@ internal class StandaloneJunitReportPublisherTest {
                     scenarioId = "bar2",
                     start = start,
                     end = end,
-                    configuredMinionsCount = 1,
-                    executedMinionsCount = 1,
-                    stepsCount = 1,
+                    startedMinions = 1,
+                    completedMinions = 1,
                     successfulExecutions = 1,
                     failedExecutions = 1,
                     status = ExecutionStatus.SUCCESSFUL,
@@ -218,9 +217,8 @@ internal class StandaloneJunitReportPublisherTest {
                     scenarioId = "bar3",
                     start = start,
                     end = end,
-                    configuredMinionsCount = 1,
-                    executedMinionsCount = 1,
-                    stepsCount = 1,
+                    startedMinions = 1,
+                    completedMinions = 1,
                     successfulExecutions = 1,
                     failedExecutions = 1,
                     status = ExecutionStatus.SUCCESSFUL,
@@ -244,9 +242,8 @@ internal class StandaloneJunitReportPublisherTest {
                     scenarioId = "bar4",
                     start = start,
                     end = end,
-                    configuredMinionsCount = 1,
-                    executedMinionsCount = 1,
-                    stepsCount = 1,
+                    startedMinions = 1,
+                    completedMinions = 1,
                     successfulExecutions = 1,
                     failedExecutions = 1,
                     status = ExecutionStatus.SUCCESSFUL,
@@ -267,15 +264,12 @@ internal class StandaloneJunitReportPublisherTest {
                 )
             ), status = ExecutionStatus.SUCCESSFUL
         )
-
         val time = getTimeMock()
 
         coEvery { campaignStateKeeper.report(campaignId1) } returns campaignReport
 
-
         //when
         standaloneJunitReportPublisher.publish(campaignId1)
-
 
         //then
         coVerifyOrder {
@@ -286,12 +280,14 @@ internal class StandaloneJunitReportPublisherTest {
             val generatedReport = File(generatedReportFolder + "/${it.scenarioId}.xml")
                 .readText()
                 .replace(" ", "")
+                .replace(Regex("""timestamp="[^"]+""""), """timestamp="$time"""")
                 .replace("\t", "")
             val expectedReport = File(expectedReportFolder + "/${it.scenarioId}.xml")
                 .readText()
                 .replace("__time__", time.toString())
                 .replace(" ", "")
                 .replace("\t", "")
+            Assert.assertEquals(expectedReport, generatedReport)
         }
     }
 

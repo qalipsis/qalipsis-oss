@@ -7,8 +7,8 @@ import assertk.assertions.isSameAs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
@@ -38,7 +38,7 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
     lateinit var decoratedStep: Step<Int, String>
 
     @RelaxedMockK
-    lateinit var campaignStateKeeper: CampaignStateKeeper
+    lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @RelaxedMockK
     lateinit var stepSpecification: StepSpecification<Int, String, *>
@@ -64,7 +64,7 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ReportingStepDecorator::class).all {
-            prop("campaignStateKeeper").isSameAs(campaignStateKeeper)
+            prop("reportLiveStateRegistry").isSameAs(reportLiveStateRegistry)
             prop("decorated").isSameAs(decoratedStep)
         }
     }

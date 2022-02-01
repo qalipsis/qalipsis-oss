@@ -8,11 +8,11 @@ import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runBlockingTest
@@ -46,7 +46,7 @@ internal class VerificationStepTest {
     private lateinit var errorCounter: Counter
 
     @RelaxedMockK
-    private lateinit var campaignStateKeeper: CampaignStateKeeper
+    private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @RelaxedMockK
     private lateinit var stepStartStopContext: StepStartStopContext
@@ -69,7 +69,7 @@ internal class VerificationStepTest {
     @Test
     @Timeout(1)
     fun `should simply forward with default step`() = runBlockingTest {
-        val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry, campaignStateKeeper)
+        val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry)
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
@@ -83,10 +83,10 @@ internal class VerificationStepTest {
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertFalse(ctx.isExhausted)
 
-        verifyOnce {
+        coVerifyOnce {
             successCounter.increment()
             eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
-            campaignStateKeeper.put(
+            reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("my-step"),
@@ -95,7 +95,7 @@ internal class VerificationStepTest {
             )
         }
 
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, campaignStateKeeper)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
     }
 
     @Test
@@ -105,7 +105,7 @@ internal class VerificationStepTest {
             "my-step",
             eventsLogger,
             meterRegistry,
-            campaignStateKeeper
+            reportLiveStateRegistry
         ) { value -> value.toString() }
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
@@ -120,10 +120,10 @@ internal class VerificationStepTest {
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertFalse(ctx.isExhausted)
 
-        verifyOnce {
+        coVerifyOnce {
             successCounter.increment()
             eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
-            campaignStateKeeper.put(
+            reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("my-step"),
@@ -131,16 +131,17 @@ internal class VerificationStepTest {
                 any()
             )
         }
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, campaignStateKeeper)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
     }
 
     @Test
     @Timeout(1)
     fun `should not forward data when assertion throwing error`() = runBlockingTest {
-        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, campaignStateKeeper) { value ->
-            fail<Any>("This is an error")
-            value.toString()
-        }
+        val step =
+            VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) { value ->
+                fail<Any>("This is an error")
+                value.toString()
+            }
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
@@ -154,7 +155,7 @@ internal class VerificationStepTest {
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertTrue(ctx.isExhausted)
 
-        verifyOnce {
+        coVerifyOnce {
             failureCounter.increment()
             eventsLogger.warn(
                 "step.assertion.failure",
@@ -162,7 +163,7 @@ internal class VerificationStepTest {
                 timestamp = any(),
                 tagsSupplier = any()
             )
-            campaignStateKeeper.put(
+            reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("my-step"),
@@ -171,13 +172,13 @@ internal class VerificationStepTest {
             )
         }
 
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, campaignStateKeeper)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
     }
 
     @Test
     @Timeout(1)
     fun `should not forward data when assertion throwing exception`() = runBlockingTest {
-        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, campaignStateKeeper) {
+        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) {
             throw RuntimeException("The error")
         }
         step.start(stepStartStopContext)
@@ -193,10 +194,10 @@ internal class VerificationStepTest {
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertTrue(ctx.isExhausted)
 
-        verifyOnce {
+        coVerifyOnce {
             errorCounter.increment()
             eventsLogger.warn("step.assertion.error", value = "The error", timestamp = any(), tagsSupplier = any())
-            campaignStateKeeper.put(
+            reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("my-step"),
@@ -204,7 +205,7 @@ internal class VerificationStepTest {
                 any()
             )
         }
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, campaignStateKeeper)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
     }
 
 }

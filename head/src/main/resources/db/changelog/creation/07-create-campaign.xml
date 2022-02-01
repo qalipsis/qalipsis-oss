@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="07" author="ejesse">
+    <createSequence sequenceName="campaign_seq" schemaName="qalipsis"/>
+    <createTable tableName="campaign" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="campaign_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="campaign_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="varchar(300)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="speed_factor" type="decimal(6,3)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="start" type="timestamp">
+        <constraints nullable="false"/>
+      </column>
+      <column name="end" type="timestamp">
+        <constraints nullable="true"/>
+      </column>
+      <column name="result" type="varchar(20)">
+        <constraints nullable="true"/>
+      </column>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>

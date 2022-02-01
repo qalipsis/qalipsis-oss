@@ -11,13 +11,6 @@ head:
 # Configuration of the core
 core:
   pending-key: pending-key
-datasources:
-  default:
-    url: jdbc:postgresql://localhost:5432/test
-    username: test
-    password: test
-    dialect: POSTGRES
-    driverClassName: org.postgresql.Driver
 
 liquibase:
   enabled: true

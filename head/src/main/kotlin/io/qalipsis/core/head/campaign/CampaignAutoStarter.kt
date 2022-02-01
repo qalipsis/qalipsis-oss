@@ -1,27 +1,26 @@
 package io.qalipsis.core.head.campaign
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.Executors
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.feedbacks.Feedback
-import io.qalipsis.api.report.CampaignStateKeeper
-import io.qalipsis.api.sync.SuspendedCountLatch
-import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.api.sync.Latch
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
-import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
-import io.qalipsis.core.feedbacks.FeedbackHeadChannel
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.directives.CompleteCampaignDirective
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.DirectiveProcessor
+import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.lifetime.HeadStartupComponent
 import io.qalipsis.core.lifetime.ProcessBlocker
-import jakarta.inject.Named
 import jakarta.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import javax.annotation.PreDestroy
-import kotlin.system.exitProcess
 
 /**
  * Component to automatically starts the execution of a campaign with all the scenarios as soon as
@@ -30,83 +29,79 @@ import kotlin.system.exitProcess
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [AUTOSTART])
+@Requirements(Requires(env = [AUTOSTART]), Requires(env = [STANDALONE]))
 internal class CampaignAutoStarter(
-    private val feedbackHeadChannel: FeedbackHeadChannel,
+    private val factoryService: FactoryService,
     private val campaignManager: CampaignManager,
-    private val campaignStateKeeper: CampaignStateKeeper,
-    private val campaignConfiguration: CampaignConfiguration,
-    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val executionCoroutineScope: CoroutineScope
-) : ProcessBlocker, StartupHeadComponent {
+    private val campaignReportStateKeeper: CampaignReportStateKeeper,
+    private val autostartCampaignConfiguration: AutostartCampaignConfiguration
+) : ProcessBlocker, HeadStartupComponent, DirectiveProcessor<CompleteCampaignDirective> {
 
     @KTestable
-    private val runningScenariosLatch = SuspendedCountLatch()
+    private val campaignLatch = Latch(true)
 
     private var feedbackConsumptionJob: Job? = null
 
     override fun getStartupOrder() = Int.MIN_VALUE + 1
 
-    override fun init() {
-        executionCoroutineScope.launch {
-            log.debug { "Consuming from $feedbackHeadChannel" }
-            feedbackConsumptionJob =
-                feedbackHeadChannel.onReceive("${this@CampaignAutoStarter::class.simpleName}") { feedback ->
-                    receivedFeedback(feedback)
-                }
-        }
-    }
+    private var error: String? = null
 
-    @LogInputAndOutput(level = Level.DEBUG)
+    @LogInput(level = Level.DEBUG)
     suspend fun trigger(scenarios: List<ScenarioId>) {
         if (scenarios.isNotEmpty()) {
-            log.info { "Triggering the campaign ${campaignConfiguration.id} for the scenario(s) ${scenarios.joinToString()}" }
-            runningScenariosLatch.increment(scenarios.size.toLong())
-            campaignManager.start(
-                DataCampaignConfiguration(campaignConfiguration).copy(scenarios = scenarios)
-            ) { message ->
-                onCriticalFailure(message)
+            log.info { "Triggering the campaign ${autostartCampaignConfiguration.id} for the scenario(s) ${scenarios.joinToString()}" }
+            campaignLatch.lock()
+            val scenariosConfigs = factoryService.getActiveScenarios(scenarios).associate { scenario ->
+                scenario.id to ScenarioConfiguration(calculateMinionsCount(scenario))
             }
+            val campaign = CampaignConfiguration(
+                id = autostartCampaignConfiguration.id,
+                speedFactor = autostartCampaignConfiguration.speedFactor,
+                startOffsetMs = autostartCampaignConfiguration.startOffsetMs,
+                broadcastChannel = "",
+                scenarios = scenariosConfigs,
+                factories = mutableMapOf()
+            )
+            campaignManager.start(campaign)
         } else {
             log.error { "No executable scenario was found" }
-            campaignStateKeeper.abort(campaignConfiguration.id)
-            // Increments in order to release the awaitActivity().
-            runningScenariosLatch.increment()
-            runningScenariosLatch.release()
+            error = "No executable scenario was found"
+            campaignReportStateKeeper.abort(autostartCampaignConfiguration.id)
+            campaignLatch.release()
         }
     }
 
-    @LogInputAndOutput(level = Level.DEBUG)
-    protected suspend fun receivedFeedback(feedback: Feedback) {
-        when (feedback) {
-            is EndOfCampaignFeedback -> {
-                // Ensure that the latch was incremented before it is decremented, in case the scenario is too fast.
-                runningScenariosLatch.awaitActivity()
-                log.info { "The campaign ${feedback.campaignId} of scenario ${feedback.scenarioId} was completed" }
-                runningScenariosLatch.decrement()
-            }
+    @KTestable
+    private fun calculateMinionsCount(scenario: ScenarioSummary) =
+        if (autostartCampaignConfiguration.minionsCountPerScenario > 0) autostartCampaignConfiguration.minionsCountPerScenario else (scenario.minionsCount * autostartCampaignConfiguration.minionsFactor).toInt()
+
+    override fun accept(directive: Directive): Boolean {
+        return directive is CompleteCampaignDirective
+    }
+
+    @LogInput
+    override suspend fun process(directive: CompleteCampaignDirective) {
+        // Ensure that the latch was incremented before it is decremented, in case the scenario is too fast.
+        if (directive.isSuccessful) {
+            log.info { "The campaign ${directive.campaignId} was completed successfully: ${directive.message ?: "<no detail>"}" }
+        } else {
+            log.error { "The campaign ${directive.campaignId} failed: ${directive.message ?: "<no detail>"}" }
+            error = directive.message
         }
-    }
-
-    @PreDestroy
-    fun destroy() {
-        feedbackConsumptionJob?.cancel()
-    }
-
-    /**
-     * Log the error and quit the program.
-     */
-    private fun onCriticalFailure(message: String) {
-        log.error { message }
-        System.err.println("An error occurred that requires the program to exit.")
-        System.err.println(message)
-        exitProcess(1)
+        campaignLatch.release()
     }
 
     override suspend fun join() {
-        runningScenariosLatch.awaitActivity()
-        log.info { "Waiting for the ${runningScenariosLatch.get()} scenario(s) to be completed" }
-        runningScenariosLatch.await()
-        log.info { "The events logger was stopped" }
+        campaignLatch.await()
+        error?.let { throw RuntimeException(it) }
+    }
+
+    @PreDestroy
+    override fun cancel() {
+        runCatching {
+            feedbackConsumptionJob?.cancel()
+        }
+        campaignLatch.cancel()
     }
 
     companion object {

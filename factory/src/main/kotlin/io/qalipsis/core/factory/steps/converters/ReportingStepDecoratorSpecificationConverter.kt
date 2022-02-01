@@ -2,7 +2,7 @@ package io.qalipsis.core.factory.steps.converters
 
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
@@ -16,7 +16,7 @@ import io.qalipsis.core.factory.steps.ReportingStepDecorator
  */
 @StepConverter
 internal class ReportingStepDecoratorSpecificationConverter(
-    private val campaignStateKeeper: CampaignStateKeeper
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 
     override val order: Int = 100
@@ -24,7 +24,7 @@ internal class ReportingStepDecoratorSpecificationConverter(
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
         if (spec.reporting.reportErrors) {
-            creationContext.createdStep(ReportingStepDecorator(creationContext.createdStep!!, campaignStateKeeper))
+            creationContext.createdStep(ReportingStepDecorator(creationContext.createdStep!!, reportLiveStateRegistry))
         }
     }
 

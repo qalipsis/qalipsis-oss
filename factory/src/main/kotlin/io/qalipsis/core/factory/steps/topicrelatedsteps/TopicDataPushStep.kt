@@ -6,9 +6,9 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
-import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.factory.context.StepContextImpl
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.steps.MinionsKeeperAware
 import io.qalipsis.core.factory.steps.RunnerAware
@@ -52,7 +52,7 @@ internal class TopicDataPushStep<I>(
         running = true
         val nextStep = next.first()
         val stepId = nextStep.id
-        val minion = minionsKeeper.getSingletonMinion(context.dagId)
+        val minion = minionsKeeper.getSingletonMinion(context.scenarioId, context.dagId)
         log.debug { "Starting to push data with the minion $minion" }
 
         // Starts the coroutines that consumes the topic and pass the values to the step after.

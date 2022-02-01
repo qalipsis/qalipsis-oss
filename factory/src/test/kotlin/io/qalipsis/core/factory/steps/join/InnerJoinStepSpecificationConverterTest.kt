@@ -15,8 +15,8 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.messaging.Topic
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.orchestration.Scenario
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
+import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.InnerJoinStepSpecification
 import io.qalipsis.api.steps.Step

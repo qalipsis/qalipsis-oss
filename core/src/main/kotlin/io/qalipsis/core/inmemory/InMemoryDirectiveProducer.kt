@@ -1,12 +1,12 @@
 package io.qalipsis.core.inmemory
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveProducer
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
-import io.qalipsis.api.orchestration.directives.ReferencableDirective
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.DirectiveProducer
+import io.qalipsis.core.directives.DirectiveRegistry
+import io.qalipsis.core.directives.ReferencableDirective
 import jakarta.inject.Singleton
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.event.Level

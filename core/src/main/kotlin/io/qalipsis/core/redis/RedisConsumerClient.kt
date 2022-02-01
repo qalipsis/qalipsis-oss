@@ -9,6 +9,7 @@ import io.lettuce.core.XReadArgs
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.toList
 
 /**
@@ -41,7 +42,7 @@ class RedisConsumerClient<T>(
      * Starts the consumer from Redis.
      */
     suspend fun start() {
-        if(!running){
+        if (!running) {
             running = true
             readMessages()
         }
@@ -59,13 +60,10 @@ class RedisConsumerClient<T>(
         createConsumerGroup(consumerGroupName, streamsName)
         val consumer = createConsumerForGroup(consumerGroupName)
         val streamOffset = XReadArgs.StreamOffset.lastConsumed(streamsName)
-
         while (running) {
-
             val result = kotlin.runCatching {
-                val messages = redisCommands.xreadgroup(
-                    consumer, XReadArgs.Builder.count(pollSize), streamOffset
-                ).toList()
+                val messages =
+                    redisCommands.xreadgroup(consumer, XReadArgs.Builder.count(pollSize), streamOffset).toList()
 
                 if (messages.isNotEmpty()) {
                     processMessages(messages)
@@ -73,8 +71,12 @@ class RedisConsumerClient<T>(
                 }
             }
 
-            if(result.isFailure){
-                log.warn(result.exceptionOrNull()) { "Failure on consuming and processing redis messages for consumer group: $consumerGroupName" }
+            if (result.isFailure) {
+                if (result.exceptionOrNull() is CancellationException) {
+                    running = false
+                } else {
+                    log.warn(result.exceptionOrNull()) { "Failure on consuming and processing Redis messages for consumer group: $consumerGroupName" }
+                }
             }
         }
     }
@@ -91,19 +93,19 @@ class RedisConsumerClient<T>(
                 XGroupCreateArgs.Builder.mkstream(true)
             )
         } catch (e: RedisBusyException) {
-            log.debug { "Consumer group already exists" }
+            log.debug { "The consumer group $consumerGroupName already exists" }
         }
     }
 
 
     private suspend fun processMessages(messages: List<StreamMessage<String, String>>) {
         messages.map {
-            try{
+            try {
                 it.body.values.onEach { value ->
                     log.trace { "Received redis message $value" }
                     onMessage(deserializer(value))
                 }
-            }catch(e: Exception){
+            } catch (e: Exception) {
                 log.warn(e) { "Error processing message for stream $streamsName" }
             }
         }
@@ -113,7 +115,11 @@ class RedisConsumerClient<T>(
         consumerGroupName, idGenerator.long()
     )
 
-    private suspend fun acknowledgeMessages(messages: List<StreamMessage<String, String>>, consumerGroupName: String, streamsName: String) {
+    private suspend fun acknowledgeMessages(
+        messages: List<StreamMessage<String, String>>,
+        consumerGroupName: String,
+        streamsName: String
+    ) {
         log.trace { "Acknowledging messages for stream: $streamsName" }
         redisCommands.xack(
             streamsName,

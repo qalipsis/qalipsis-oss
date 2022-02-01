@@ -5,6 +5,7 @@ import io.qalipsis.api.constraints.PositiveDuration
 import java.time.Duration
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
+import javax.validation.constraints.Positive
 
 @ConfigurationProperties("factory")
 class FactoryConfiguration {
@@ -38,8 +39,26 @@ class FactoryConfiguration {
     @field:NotEmpty
     var metadataPath: String = "./metadata"
 
+    /**
+     * Identifier of the tenant owning the factory.
+     */
+    var tenant: String = ""
+
     @field:NotNull
     var directiveRegistry: DirectiveRegistry = DirectiveRegistry()
+
+
+    /**
+     * This object contains the settings applied to each key and value stored in cache.
+     */
+    var cache: Cache = Cache()
+
+    /**
+     * Channel the factory should consume to receive distributed step context.
+     */
+    var distributionChannel: String = ""
+
+    var assignment = Assignment()
 
     /**
      * Directive registry configuration for a factory.
@@ -70,10 +89,6 @@ class FactoryConfiguration {
         var broadcastDirectivesChannel: String = ""
     }
 
-    /**
-     * This object contains the settings applied to each key and value stored in cache.
-     */
-    var cache: Cache = Cache()
 
     @ConfigurationProperties("cache")
     class Cache {
@@ -88,6 +103,23 @@ class FactoryConfiguration {
          * The prefix of the keys in cache.
          */
         var keyPrefix: String = "shared-state-registry"
+    }
+
+    @ConfigurationProperties("assignment")
+    class Assignment {
+
+        /**
+         * Size of the evaluation batches of minions to assign.
+         */
+        @field:Positive
+        var evaluationBatchSize: Int = 10
+
+        /**
+         * Size of the evaluation batches of minions to assign.
+         */
+        @field:PositiveDuration
+        var timeout: Duration = Duration.ofSeconds(10)
+
     }
 
     companion object {

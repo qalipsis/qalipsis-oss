@@ -1,8 +1,8 @@
 package io.qalipsis.core.factory.orchestration
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.orchestration.factories.Minion
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.Job

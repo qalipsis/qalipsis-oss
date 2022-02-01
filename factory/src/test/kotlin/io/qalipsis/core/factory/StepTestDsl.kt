@@ -7,11 +7,11 @@ import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepId
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.orchestration.Scenario
-import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
+import io.qalipsis.api.runtime.Minion
+import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.ErrorProcessingStep
 import io.qalipsis.api.steps.StepDecorator

@@ -15,7 +15,6 @@ import io.mockk.slot
 import io.mockk.unmockkObject
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.messaging.Topic
-import io.qalipsis.api.orchestration.factories.MinionsKeeper
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
 import io.qalipsis.api.steps.SingletonStepSpecification
@@ -24,6 +23,7 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.StepSpecification
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.steps.topicrelatedsteps.TopicBuilder
 import io.qalipsis.core.factory.steps.topicrelatedsteps.TopicConfiguration
@@ -37,7 +37,11 @@ import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Duration
 

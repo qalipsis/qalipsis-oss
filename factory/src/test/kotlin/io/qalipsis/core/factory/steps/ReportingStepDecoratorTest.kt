@@ -11,9 +11,9 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
-import io.qalipsis.api.orchestration.factories.Minion
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.WithMockk
@@ -34,7 +34,7 @@ internal class ReportingStepDecoratorTest {
     private lateinit var decorated: Step<Any, Int>
 
     @RelaxedMockK
-    private lateinit var campaignStateKeeper: CampaignStateKeeper
+    private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @InjectMockKs
     private lateinit var reportingStepDecorator: ReportingStepDecorator<Any, Int>
@@ -104,7 +104,7 @@ internal class ReportingStepDecoratorTest {
         // then
         coVerifyOnce {
             decorated.stop(refEq(startContext))
-            campaignStateKeeper.put(
+            reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("the decorated"),
@@ -131,7 +131,7 @@ internal class ReportingStepDecoratorTest {
         // then
         coVerifyOnce {
             decorated.stop(refEq(startContext))
-            campaignStateKeeper.put(
+            reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("the decorated"),
@@ -146,7 +146,7 @@ internal class ReportingStepDecoratorTest {
         // given
         val context: StepContext<Any, Int> = relaxedMockk()
         coJustRun { decorated.execute(any(), any()) }
-        val step = ReportingStepDecorator(decorated, campaignStateKeeper)
+        val step = ReportingStepDecorator(decorated, reportLiveStateRegistry)
 
         // when
         step.execute(minion, context)
@@ -164,7 +164,7 @@ internal class ReportingStepDecoratorTest {
         // given
         val context: StepContext<Any, Int> = relaxedMockk()
         coEvery { decorated.execute(any(), any()) } throws RuntimeException("An error")
-        val step = ReportingStepDecorator(decorated, campaignStateKeeper)
+        val step = ReportingStepDecorator(decorated, reportLiveStateRegistry)
 
         // when
         assertThrows<RuntimeException> {
@@ -188,7 +188,7 @@ internal class ReportingStepDecoratorTest {
                 // Stubs the context to be exhausted from now on.
                 every { context.isExhausted } returns true
             }
-            val step = ReportingStepDecorator(decorated, campaignStateKeeper)
+            val step = ReportingStepDecorator(decorated, reportLiveStateRegistry)
 
             // when
             step.execute(minion, context)
@@ -208,7 +208,7 @@ internal class ReportingStepDecoratorTest {
             val context: StepContext<Any, Int> = relaxedMockk()
             every { context.isExhausted } returns true
             coJustRun { decorated.execute(any(), any()) }
-            val step = ReportingStepDecorator(decorated, campaignStateKeeper)
+            val step = ReportingStepDecorator(decorated, reportLiveStateRegistry)
 
             // when
             step.execute(minion, context)

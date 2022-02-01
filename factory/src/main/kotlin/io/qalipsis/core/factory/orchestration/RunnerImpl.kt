@@ -6,9 +6,9 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
-import io.qalipsis.api.orchestration.factories.Minion
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.ErrorProcessingStep
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger
 internal class RunnerImpl(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
-    private val campaignStateKeeper: CampaignStateKeeper,
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepExecutor, Runner {
 
@@ -89,19 +89,21 @@ internal class RunnerImpl(
         jobsCounter: SuspendedCountLatch?,
         consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
     ) {
-        configureMdcContext(minion)
-
+        minion.completeMdcContext()
         minion.start()
         runningMinionsGauge.incrementAndGet()
         minion.onComplete { runningMinionsGauge.decrementAndGet() }
 
         log.trace { "Running minion" }
-
-        MDC.put("step", step.id)
-        minion.launch(coroutineScope, countLatch = jobsCounter) {
-            log.trace { "Starting the execution of a subtree of tasks for the minion" }
-            doExecute(this, minion, step, ctx, jobsCounter, consumer)
-            log.trace { "Execution of the subtree of tasks is completed for the minion (1/2)" }
+        try {
+            MDC.put("step", step.id)
+            minion.launch(coroutineScope, countLatch = jobsCounter) {
+                log.trace { "Starting the execution of a subtree of tasks for the minion" }
+                doExecute(this, minion, step, ctx, jobsCounter, consumer)
+                log.trace { "Execution of the subtree of tasks is completed for the minion (1/2)" }
+            }
+        } finally {
+            MDC.clear()
         }
     }
 
@@ -110,24 +112,15 @@ internal class RunnerImpl(
         minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
         consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
     ): Job? {
-        configureMdcContext(minion)
-
-        MDC.put("step", step.id)
+        minion.completeMdcContext()
         return try {
+            MDC.put("step", step.id)
             minion.launch(coroutineScope) {
                 doExecute(this, minion, step, ctx, null, consumer)
             }
         } finally {
             MDC.clear()
         }
-    }
-
-    /**
-     * Configures the [MDC] context for the execution of the minion.
-     */
-    private fun configureMdcContext(minion: Minion) {
-        minion.completeMdcContext()
-        MDC.put("step", "_runner")
     }
 
     private suspend fun doExecute(
@@ -225,11 +218,11 @@ internal class RunnerImpl(
                     eventsLogger.info("step.execution.complete", tagsSupplier = { ctx.toEventTags() })
                     meterRegistry.timer("step-execution", "step", step.id, "status", "completed").record(duration)
                 }
-                campaignStateKeeper.recordSuccessfulStepExecution(ctx.campaignId, minion.scenarioId, step.id)
+                reportLiveStateRegistry.recordSuccessfulStepExecution(ctx.campaignId, minion.scenarioId, step.id)
                 log.trace { "Step completed with success" }
             } catch (t: Throwable) {
                 val duration = Duration.ofNanos(System.nanoTime() - start)
-                campaignStateKeeper.recordFailedStepExecution(ctx.campaignId, minion.scenarioId, step.id)
+                reportLiveStateRegistry.recordFailedStepExecution(ctx.campaignId, minion.scenarioId, step.id)
                 val cause = getFailureCause(t, ctx, step)
                 eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { ctx.toEventTags() })
                 meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)

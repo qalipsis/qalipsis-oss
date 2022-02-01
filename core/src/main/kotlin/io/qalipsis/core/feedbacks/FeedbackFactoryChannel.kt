@@ -1,7 +1,5 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.orchestration.feedbacks.Feedback
-
 /**
  * Service to produce the feedbacks from factories to the heads.
  *

@@ -35,6 +35,7 @@ val kotlinCoroutinesVersion: String by project
 val testContainersVersion: String by project
 val jacksonVersion: String by project
 val catadioptreVersion: String by project
+val kotlinSerialization: String by project
 
 val postgresqlDriverVersion = "42.3.1"
 
@@ -66,7 +67,7 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgresqlDriverVersion")
     implementation("io.micronaut.liquibase:micronaut-liquibase")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")

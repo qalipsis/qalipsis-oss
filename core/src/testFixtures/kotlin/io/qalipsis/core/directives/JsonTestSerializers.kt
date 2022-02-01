@@ -1,10 +1,5 @@
 package io.qalipsis.core.directives
 
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveReference
-import io.qalipsis.api.orchestration.directives.ListDirective
-import io.qalipsis.api.orchestration.directives.QueueDirective
-import io.qalipsis.api.orchestration.directives.SingleUseDirective
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
