@@ -1,8 +1,6 @@
 package io.qalipsis.core.directives
 
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveProcessor
 
 /**
  * An [AbstractDirectiveConsumer] is responsible for consuming the messages with the [Directive]s coming from the head

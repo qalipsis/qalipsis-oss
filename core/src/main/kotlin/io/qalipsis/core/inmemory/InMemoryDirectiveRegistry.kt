@@ -6,20 +6,20 @@ import com.github.benmanes.caffeine.cache.LoadingCache
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveKey
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
-import io.qalipsis.api.orchestration.directives.ListDirective
-import io.qalipsis.api.orchestration.directives.ListDirectiveReference
-import io.qalipsis.api.orchestration.directives.QueueDirective
-import io.qalipsis.api.orchestration.directives.QueueDirectiveReference
-import io.qalipsis.api.orchestration.directives.SingleUseDirective
-import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
-import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.DirectiveKey
+import io.qalipsis.core.directives.DirectiveRegistry
+import io.qalipsis.core.directives.ListDirective
+import io.qalipsis.core.directives.ListDirectiveReference
+import io.qalipsis.core.directives.QueueDirective
+import io.qalipsis.core.directives.QueueDirectiveReference
+import io.qalipsis.core.directives.SingleUseDirective
+import io.qalipsis.core.directives.SingleUseDirectiveReference
+import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
+import io.qalipsis.core.feedbacks.FeedbackStatus
 import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -63,6 +63,12 @@ internal class InMemoryDirectiveRegistry(
         Caffeine.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build()
 
     /**
+     * Cache of standard [Directive]s accessible by their keys.
+     */
+    private val standardDirectives: Cache<DirectiveKey, Directive> =
+        Caffeine.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build()
+
+    /**
      * Map of mutexes to access the synchronized directives. There are evicted quite fast to avoid useless memory usage.
      */
     private val mutexesCache: LoadingCache<DirectiveKey, Mutex> =
@@ -84,6 +90,10 @@ internal class InMemoryDirectiveRegistry(
         }
     }
 
+    override suspend fun keep(directive: Directive) {
+        standardDirectives.put(directive.key, directive)
+    }
+
     @LogInputAndOutput
     override suspend fun <T> pop(reference: QueueDirectiveReference<T>): T? {
         return mutexesCache[reference.key]!!.withLock {
@@ -92,7 +102,11 @@ internal class InMemoryDirectiveRegistry(
                 // Publish a IN_PROGRESS notification if not yet done.
                 if (waitingQueueDirectivesInProgressFeedback.remove(reference.key)) {
                     feedbackFactoryChannel.publish(
-                        DirectiveFeedback(directiveKey = reference.key, status = FeedbackStatus.IN_PROGRESS)
+                        DirectiveFeedback(
+                            directiveKey = reference.key,
+                            nodeId = "",
+                            status = FeedbackStatus.IN_PROGRESS
+                        )
                     )
                 }
 
@@ -102,7 +116,7 @@ internal class InMemoryDirectiveRegistry(
                     // Once the last value has been consumed, the directive is removed from the cache.
                     queueDirectives.invalidate(reference.key)
                     feedbackFactoryChannel.publish(
-                        DirectiveFeedback(directiveKey = reference.key, status = FeedbackStatus.COMPLETED)
+                        DirectiveFeedback(directiveKey = reference.key, nodeId = "", status = FeedbackStatus.COMPLETED)
                     )
                 }
                 value
@@ -126,6 +140,14 @@ internal class InMemoryDirectiveRegistry(
                 it.value as T?
             }
         }
+    }
+
+    override suspend fun get(key: DirectiveKey): Directive? {
+        return standardDirectives.getIfPresent(key)
+    }
+
+    override suspend fun remove(key: DirectiveKey) {
+        standardDirectives.asMap().remove(key)
     }
 
     @PreDestroy

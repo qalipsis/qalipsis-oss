@@ -6,11 +6,10 @@ import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.annotation.MockBean
 import io.mockk.mockk
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveReference
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
-import io.qalipsis.api.serialization.Serializable
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.DirectiveReference
+import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.directives.TestListDirective
 import io.qalipsis.core.directives.TestListDirectiveReference

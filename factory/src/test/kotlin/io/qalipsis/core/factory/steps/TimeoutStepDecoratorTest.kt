@@ -8,7 +8,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
-import io.qalipsis.api.orchestration.factories.Minion
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce

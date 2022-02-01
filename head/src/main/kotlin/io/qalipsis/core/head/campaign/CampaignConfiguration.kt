@@ -1,44 +1,53 @@
 package io.qalipsis.core.head.campaign
 
-import io.micronaut.context.annotation.ConfigurationProperties
-import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.core.configuration.ExecutionEnvironments
-import javax.validation.constraints.NotBlank
-import javax.validation.constraints.Positive
-import javax.validation.constraints.PositiveOrZero
+import io.qalipsis.core.head.model.NodeId
+import kotlinx.serialization.Serializable
 
-/**
- * Configuration of a campaign to start. When the environment [ExecutionEnvironments.AUTOSTART] is active,
- * a bean of that type is created.
- *
- * @property id technical identifier of the campaign
- * @property minionsCountPerScenario when set to a non-null value, specifies the number of minions to create for each scenario
- * @property minionsFactor when minionsCountPerCampaign is not set, the factor applies to the default minions count of each scenario
- * @property speedFactor speed factor for the ramp-up
- * @property startOffsetMs offset (in milliseconds) to apply to the ramp-up directive to be sure all the directives for all the scenarios are received when it really comes to start
- * @property scenarios identifiers of the scenarios to include in the campaign
- *
- * @author Eric Jessé
- */
-@Requires(env = [ExecutionEnvironments.AUTOSTART])
-@ConfigurationProperties("campaign")
-interface CampaignConfiguration {
+@Serializable
+data class CampaignConfiguration(
+    val id: CampaignId,
+    val speedFactor: Double = 1.0,
+    val startOffsetMs: Long = 1000,
+    val broadcastChannel: String,
+    val scenarios: Map<ScenarioId, ScenarioConfiguration> = emptyMap(),
+    val factories: MutableMap<NodeId, FactoryConfiguration> = mutableMapOf()
+) {
 
-    @get:NotBlank
-    val id: String
+    var message: String? = null
 
-    @get:PositiveOrZero
-    val minionsCountPerScenario: Int
+    operator fun contains(factory: NodeId) = !factories[factory]?.assignment.isNullOrEmpty()
 
-    @get:Positive
-    val minionsFactor: Double
+    /**
+     * Removes the factory from the ones assigned to the factory.
+     */
+    fun unassignFactory(factory: NodeId) {
+        factories.remove(factory)
+    }
 
-    @get:Positive
-    val speedFactor: Double
-
-    @get:Positive
-    val startOffsetMs: Long
-
-    val scenarios: List<ScenarioId>
+    /**
+     * Removes the assigned scenario from the factory.
+     * If the factory has no longer assignment, it is also unassigned.
+     */
+    fun unassignScenarioOfFactory(scenario: ScenarioId, factory: NodeId) {
+        factories[factory]?.let { it ->
+            it.assignment.remove(scenario)
+            if (it.assignment.isEmpty()) {
+                factories.remove(factory)
+            }
+        }
+    }
 }
+
+@Serializable
+data class ScenarioConfiguration(
+    val minionsCount: Int
+)
+
+@Serializable
+data class FactoryConfiguration(
+    val unicastChannel: String,
+    val assignment: MutableMap<ScenarioId, Collection<DirectedAcyclicGraphId>> = mutableMapOf()
+)

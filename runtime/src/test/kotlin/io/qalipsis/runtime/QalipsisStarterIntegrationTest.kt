@@ -3,10 +3,11 @@ package io.qalipsis.runtime
 import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
-import io.qalipsis.api.steps.blackHole
 import io.qalipsis.api.steps.execute
 import io.qalipsis.api.steps.returns
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.Timeout
 internal class QalipsisStarterIntegrationTest {
 
     @Test
-    @Timeout(20)
+    @Timeout(10)
     internal fun `should start as default`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario"))
 
@@ -37,7 +38,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(10)
     internal fun `should start with additional environments`() {
         val exitCode =
             Qalipsis.start(
@@ -54,7 +55,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(10)
     internal fun `should return an error when the scenario does not exist`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "no-scenario"))
 
@@ -62,7 +63,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(10)
     internal fun `should return an error when the scenario fails`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "failing-scenario"))
 
@@ -70,7 +71,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(15)
     internal fun `should start with property value`() {
         var exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-c", "property.test=test-1"))
         assertEquals(0, exitCode)
@@ -83,6 +84,24 @@ internal class QalipsisStarterIntegrationTest {
             .isEqualTo("test-2")
     }
 
+    @Test
+    @Timeout(10)
+    internal fun `should exit properly on when a timeout occurs in the parent thread`() {
+        // given
+        val thread = Thread {
+            Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-c", "runtime.minimal-duration=5s"))
+        }.apply { start() }
+        Thread.sleep(2000)
+        assertThat(Qalipsis.applicationContext.isRunning).isTrue()
+
+        // when
+        thread.interrupt()
+        Thread.sleep(1000)
+
+        // then
+        assertThat(Qalipsis.applicationContext.isRunning).isFalse()
+    }
+
     @Scenario
     fun doNothingScenario() {
         scenario("do-nothing-scenario") {
@@ -90,7 +109,7 @@ internal class QalipsisStarterIntegrationTest {
             rampUp { regular(1000, 1) }
         }.start()
             .returns(Unit)
-            .blackHole()
+        // .blackHole() FIXME QALI-111
     }
 
     @Scenario
@@ -101,7 +120,7 @@ internal class QalipsisStarterIntegrationTest {
         }.start()
             .execute<Unit> { throw RuntimeException("There is an error") }
             .configure { report { reportErrors = true } }
-            .blackHole()
+        // .blackHole() FIXME QALI-111
     }
 
 }

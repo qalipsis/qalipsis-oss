@@ -3,28 +3,39 @@ package io.qalipsis.core.configuration
 import io.micronaut.context.annotation.Factory
 import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.orchestration.directives.DescriptiveDirective
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveReference
-import io.qalipsis.api.orchestration.directives.ListDirective
-import io.qalipsis.api.orchestration.directives.ListDirectiveReference
-import io.qalipsis.api.orchestration.directives.QueueDirective
-import io.qalipsis.api.orchestration.directives.QueueDirectiveReference
-import io.qalipsis.api.orchestration.directives.SingleUseDirective
-import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
-import io.qalipsis.api.orchestration.feedbacks.Feedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackJsonModule
 import io.qalipsis.api.serialization.Serializers
-import io.qalipsis.core.directives.CampaignStartDirective
-import io.qalipsis.core.directives.MinionsCreationDirective
-import io.qalipsis.core.directives.MinionsCreationDirectiveReference
-import io.qalipsis.core.directives.MinionsCreationPreparationDirective
-import io.qalipsis.core.directives.MinionsCreationPreparationDirectiveReference
+import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
+import io.qalipsis.core.directives.CampaignShutdownDirective
+import io.qalipsis.core.directives.CompleteCampaignDirective
+import io.qalipsis.core.directives.DescriptiveDirective
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.DirectiveReference
+import io.qalipsis.core.directives.FactoryAssignmentDirective
+import io.qalipsis.core.directives.MinionsAssignmentDirective
+import io.qalipsis.core.directives.MinionsDeclarationDirective
+import io.qalipsis.core.directives.MinionsDeclarationDirectiveReference
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
+import io.qalipsis.core.directives.MinionsRampUpPreparationDirectiveReference
+import io.qalipsis.core.directives.MinionsShutdownDirective
 import io.qalipsis.core.directives.MinionsStartDirective
-import io.qalipsis.core.directives.MinionsStartDirectiveReference
+import io.qalipsis.core.directives.ScenarioWarmUpDirective
+import io.qalipsis.core.directives.SingleUseDirective
+import io.qalipsis.core.directives.SingleUseDirectiveReference
+import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
+import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
+import io.qalipsis.core.feedbacks.CompleteMinionFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
+import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
+import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
+import io.qalipsis.core.feedbacks.Feedback
+import io.qalipsis.core.feedbacks.FeedbackJsonModule
+import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
+import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
+import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
+import io.qalipsis.core.feedbacks.MinionsShutdownFeedback
+import io.qalipsis.core.feedbacks.MinionsStartFeedback
+import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -55,8 +66,8 @@ class JsonSerializationModuleConfiguration {
     }
 
     private val serializersModuleConfiguration = SerializersModule {
-
         feedbacksSerializer(this)
+        factoryApiDirectives(this)
         minionApiDirectives(this)
         minionHeadDelegationApiDirectives(this)
 
@@ -66,7 +77,37 @@ class JsonSerializationModuleConfiguration {
         return builderAction.apply {
             polymorphic(Feedback::class) {
                 subclass(CampaignStartedForDagFeedback::class, CampaignStartedForDagFeedback.serializer())
+                subclass(FactoryAssignmentFeedback::class, FactoryAssignmentFeedback.serializer())
+                subclass(ScenarioWarmUpFeedback::class, ScenarioWarmUpFeedback.serializer())
+                subclass(EndOfCampaignScenarioFeedback::class, EndOfCampaignScenarioFeedback.serializer())
                 subclass(EndOfCampaignFeedback::class, EndOfCampaignFeedback.serializer())
+                subclass(CampaignScenarioShutdownFeedback::class, CampaignScenarioShutdownFeedback.serializer())
+                subclass(CampaignShutdownFeedback::class, CampaignShutdownFeedback.serializer())
+                subclass(MinionsAssignmentFeedback::class, MinionsAssignmentFeedback.serializer())
+                subclass(MinionsStartFeedback::class, MinionsStartFeedback.serializer())
+                subclass(CompleteMinionFeedback::class, CompleteMinionFeedback.serializer())
+                subclass(MinionsShutdownFeedback::class, MinionsShutdownFeedback.serializer())
+                subclass(MinionsDeclarationFeedback::class, MinionsDeclarationFeedback.serializer())
+                subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
+            }
+        }
+    }
+
+    private fun factoryApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
+        return builderAction.apply {
+            polymorphic(Directive::class) {
+                subclass(FactoryAssignmentDirective::class, FactoryAssignmentDirective.serializer())
+                subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
+                subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
+                subclass(CampaignScenarioShutdownDirective::class, CampaignScenarioShutdownDirective.serializer())
+            }
+
+            polymorphic(DescriptiveDirective::class) {
+                subclass(FactoryAssignmentDirective::class, FactoryAssignmentDirective.serializer())
+                subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
+                subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
+                subclass(CampaignScenarioShutdownDirective::class, CampaignScenarioShutdownDirective.serializer())
+                subclass(CompleteCampaignDirective::class, CompleteCampaignDirective.serializer())
             }
         }
     }
@@ -74,40 +115,20 @@ class JsonSerializationModuleConfiguration {
     private fun minionApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
         return builderAction.apply {
             polymorphic(Directive::class) {
-                subclass(MinionsCreationDirective::class, MinionsCreationDirective.serializer())
-                subclass(MinionsCreationDirectiveReference::class, MinionsCreationDirectiveReference.serializer())
+                subclass(MinionsAssignmentDirective::class, MinionsAssignmentDirective.serializer())
+                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
                 subclass(MinionsStartDirective::class, MinionsStartDirective.serializer())
-                subclass(MinionsStartDirectiveReference::class, MinionsStartDirectiveReference.serializer())
-                subclass(CampaignStartDirective::class, CampaignStartDirective.serializer())
+                subclass(MinionsShutdownDirective::class, MinionsShutdownDirective.serializer())
             }
 
             polymorphic(DescriptiveDirective::class) {
-                subclass(CampaignStartDirective::class, CampaignStartDirective.serializer())
-            }
-
-            polymorphic(DirectiveReference::class) {
-                subclass(MinionsStartDirectiveReference::class, MinionsStartDirectiveReference.serializer())
-                subclass(MinionsCreationDirectiveReference::class, MinionsCreationDirectiveReference.serializer())
-            }
-
-            polymorphic(QueueDirective::class) {
-                subclass(MinionsCreationDirective::class, MinionsCreationDirective.serializer())
-            }
-
-            polymorphic(QueueDirectiveReference::class) {
-                subclass(MinionsCreationDirectiveReference::class, MinionsCreationDirectiveReference.serializer())
-            }
-
-            polymorphic(ListDirective::class) {
+                subclass(MinionsAssignmentDirective::class, MinionsAssignmentDirective.serializer())
                 subclass(MinionsStartDirective::class, MinionsStartDirective.serializer())
+                subclass(MinionsShutdownDirective::class, MinionsShutdownDirective.serializer())
             }
 
-            polymorphic(ListDirectiveReference::class) {
-                subclass(MinionsStartDirectiveReference::class, MinionsStartDirectiveReference.serializer())
-            }
-
-            polymorphic(DescriptiveDirective::class) {
-                subclass(CampaignStartDirective::class, CampaignStartDirective.serializer())
+            polymorphic(SingleUseDirective::class) {
+                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
             }
         }
     }
@@ -116,25 +137,34 @@ class JsonSerializationModuleConfiguration {
         return builderAction.apply {
 
             polymorphic(Directive::class) {
-                subclass(MinionsCreationPreparationDirective::class, MinionsCreationPreparationDirective.serializer())
-                subclass(MinionsCreationPreparationDirectiveReference::class, MinionsCreationPreparationDirectiveReference.serializer())
+                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
+                subclass(MinionsDeclarationDirectiveReference::class, MinionsDeclarationDirectiveReference.serializer())
                 subclass(MinionsRampUpPreparationDirective::class, MinionsRampUpPreparationDirective.serializer())
+                subclass(
+                    MinionsRampUpPreparationDirectiveReference::class,
+                    MinionsRampUpPreparationDirectiveReference.serializer()
+                )
             }
 
             polymorphic(DirectiveReference::class) {
-                subclass(MinionsCreationPreparationDirectiveReference::class, MinionsCreationPreparationDirectiveReference.serializer())
+                subclass(MinionsDeclarationDirectiveReference::class, MinionsDeclarationDirectiveReference.serializer())
+                subclass(
+                    MinionsRampUpPreparationDirectiveReference::class,
+                    MinionsRampUpPreparationDirectiveReference.serializer()
+                )
             }
 
             polymorphic(SingleUseDirective::class) {
-                subclass(MinionsCreationPreparationDirective::class, MinionsCreationPreparationDirective.serializer())
+                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
+                subclass(MinionsRampUpPreparationDirective::class, MinionsRampUpPreparationDirective.serializer())
             }
 
             polymorphic(SingleUseDirectiveReference::class) {
-                subclass(MinionsCreationPreparationDirectiveReference::class, MinionsCreationPreparationDirectiveReference.serializer())
-            }
-
-            polymorphic(DescriptiveDirective::class) {
-                subclass(MinionsRampUpPreparationDirective::class, MinionsRampUpPreparationDirective.serializer())
+                subclass(MinionsDeclarationDirectiveReference::class, MinionsDeclarationDirectiveReference.serializer())
+                subclass(
+                    MinionsRampUpPreparationDirectiveReference::class,
+                    MinionsRampUpPreparationDirectiveReference.serializer()
+                )
             }
         }
 

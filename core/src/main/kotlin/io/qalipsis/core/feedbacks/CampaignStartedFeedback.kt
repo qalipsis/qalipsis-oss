@@ -4,9 +4,6 @@ import cool.graph.cuid.Cuid
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.orchestration.feedbacks.Feedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackKey
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

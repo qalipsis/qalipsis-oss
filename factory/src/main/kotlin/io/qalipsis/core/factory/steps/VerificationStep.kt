@@ -8,7 +8,7 @@ import io.qalipsis.api.context.StepId
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.steps.AbstractStep
 import java.util.concurrent.atomic.AtomicLong
@@ -22,7 +22,7 @@ internal class VerificationStep<I, O>(
     id: StepId,
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
-    private val campaignStateKeeper: CampaignStateKeeper,
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Suppress("UNCHECKED_CAST") private val assertionBlock: (suspend (input: I) -> O) = { value ->
         value as O
     }
@@ -80,7 +80,7 @@ internal class VerificationStep<I, O>(
         } else {
             ReportMessageSeverity.INFO
         }
-        campaignStateKeeper.put(context.campaignId, context.scenarioId, this.id, severity, result)
+        reportLiveStateRegistry.put(context.campaignId, context.scenarioId, this.id, severity, result)
         log.info { "Stopping the verification step ${this.id} for the campaign ${context.campaignId}: $result" }
         super.stop(context)
     }

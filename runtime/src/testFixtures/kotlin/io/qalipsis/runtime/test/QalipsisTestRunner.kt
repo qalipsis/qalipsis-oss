@@ -77,28 +77,28 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
     }
 
     override fun execute(vararg args: String): Int {
-        val allArgs = mutableListOf<String>()
+        val allArgs = mutableListOf("standalone")
         if (scenarios.isNotEmpty()) {
-            allArgs.add("-s")
-            allArgs.add(scenarios.joinToString(separator = ",", transform = String::trim))
+            allArgs += "-s"
+            allArgs += scenarios.joinToString(separator = ",", transform = String::trim)
         }
 
-        allArgs.add("-e")
-        allArgs.add("test")
+        allArgs += "-e"
+        allArgs += "test"
         environments.forEach {
-            allArgs.add("-e")
-            allArgs.add(it.trim())
+            allArgs += "-e"
+            allArgs += it.trim()
             // Also adds each env with the suffix -test.
-            allArgs.add("-e")
-            allArgs.add("${it.trim()}-test")
+            allArgs += "-e"
+            allArgs += "${it.trim()}-test"
         }
 
         configuration.forEach {
-            allArgs.add("-c")
-            allArgs.add(it.trim())
+            allArgs += "-c"
+            allArgs += it.trim()
         }
 
-        allArgs.addAll(args.toList())
+        allArgs += args.toList()
         return Qalipsis.start(allArgs.toTypedArray())
     }
 }

@@ -3,8 +3,8 @@ package io.qalipsis.core.factory.steps
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.factories.Minion
 import io.qalipsis.api.retry.RetryPolicy
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor

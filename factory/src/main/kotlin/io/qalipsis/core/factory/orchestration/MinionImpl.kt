@@ -1,16 +1,12 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
 import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.coroutines.contextualLaunch
-import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.orchestration.factories.Minion
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CancellationException
@@ -37,10 +33,9 @@ internal open class MinionImpl(
     override val id: MinionId,
     override val campaignId: CampaignId,
     override val scenarioId: ScenarioId,
-    override val rootDagId: DirectedAcyclicGraphId,
     pauseAtStart: Boolean = true,
-    private val eventsLogger: EventsLogger,
-    meterRegistry: MeterRegistry
+    val isSingleton: Boolean = true,
+    private val executingStepsGauge: AtomicInteger
 ) : Minion {
 
     /**
@@ -68,8 +63,6 @@ internal open class MinionImpl(
      */
     private val onCompleteHooks: MutableList<suspend (() -> Unit)> = mutableListOf()
 
-    private val eventsTags = mapOf("campaign" to campaignId, "scenario" to scenarioId, "minion" to id)
-
     /**
      * Latch suspending until all the jobs are complete then triggering all the statements of [onCompleteHooks] successively.
      */
@@ -82,16 +75,9 @@ internal open class MinionImpl(
                     it()
                 }
             }
-            eventsLogger.info("minion.execution-complete", tags = eventsTags)
         }
+        cleanMdcContext()
     }
-
-    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val executingStepsGauge: AtomicInteger =
-        meterRegistry.gauge(
-            "minion-running-steps", listOf(Tag.of("campaign", campaignId), Tag.of("minion", id)),
-            AtomicInteger()
-        )
 
     /**
      * Computed count of active steps.
@@ -100,7 +86,6 @@ internal open class MinionImpl(
         get() = executingStepsGauge.get()
 
     init {
-        eventsLogger.info("minion.created", tags = eventsTags)
         if (!pauseAtStart) {
             doStart()
         }
@@ -117,12 +102,24 @@ internal open class MinionImpl(
     private fun doStart() {
         if (!isStarted()) {
             startLatch.cancel()
-            eventsLogger.info("minion.running", tags = eventsTags)
         }
     }
 
     override fun isStarted(): Boolean {
         return !startLatch.isLocked
+    }
+
+    suspend fun reset(paused: Boolean = false) {
+        cancelled = false
+        if (paused) {
+            startLatch.lock()
+        } else {
+            startLatch.cancel()
+        }
+        jobIndex.set(Long.MIN_VALUE)
+        runningJobs.clear()
+        runningJobsLatch.reset()
+        executingStepsGauge.set(0)
     }
 
     override suspend fun launch(
@@ -178,18 +175,12 @@ internal open class MinionImpl(
         log.trace { "Cancelling minion $id" }
         cancelled = true
         startLatch.cancel()
-        eventsLogger.info("minion.cancellation.started", tags = eventsTags)
-        try {
-            for (job in runningJobs.values) {
-                kotlin.runCatching {
-                    job.cancel(CancellationException())
-                }
+        for (job in runningJobs.values) {
+            kotlin.runCatching {
+                job.cancel(CancellationException())
             }
-            log.trace { "Cancellation of minions $id completed" }
-            eventsLogger.info("minion.cancellation.complete", tags = eventsTags)
-        } catch (e: Exception) {
-            eventsLogger.info("minion.cancellation.complete", e, tags = eventsTags)
         }
+        log.trace { "Cancellation of minions $id completed" }
         runningJobsLatch.cancel()
     }
 
@@ -208,6 +199,7 @@ internal open class MinionImpl(
         runningJobsLatch.awaitActivity()
         runningJobsLatch.await()
         log.trace { "Minion $id completed" }
+        cleanMdcContext()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -216,7 +208,6 @@ internal open class MinionImpl(
 
         if (id != other.id) return false
         if (campaignId != other.campaignId) return false
-        if (rootDagId != other.rootDagId) return false
 
         return true
     }
@@ -224,7 +215,6 @@ internal open class MinionImpl(
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + campaignId.hashCode()
-        result = 31 * result + rootDagId.hashCode()
         return result
     }
 

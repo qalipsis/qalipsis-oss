@@ -3,7 +3,7 @@ package io.qalipsis.core.factory.steps.converters
 import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
@@ -19,7 +19,7 @@ import io.qalipsis.core.factory.steps.VerificationStep
 internal class VerificationStepSpecificationConverter(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
-    private val campaignStateKeeper: CampaignStateKeeper
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : StepSpecificationConverter<VerificationStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
@@ -31,7 +31,8 @@ internal class VerificationStepSpecificationConverter(
         val spec = creationContext.stepSpecification as VerificationStepSpecification<I, O>
         // The reporting is done by the step itself and should not added by the decorator.
         spec.reporting.reportErrors = false
-        val step = VerificationStep(spec.name, eventsLogger, meterRegistry, campaignStateKeeper, spec.verificationBlock)
+        val step =
+            VerificationStep(spec.name, eventsLogger, meterRegistry, reportLiveStateRegistry, spec.verificationBlock)
         creationContext.createdStep(step)
     }
 

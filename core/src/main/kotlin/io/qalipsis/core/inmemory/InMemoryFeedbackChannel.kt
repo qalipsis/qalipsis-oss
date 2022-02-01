@@ -2,9 +2,9 @@ package io.qalipsis.core.inmemory
 
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.messaging.broadcastTopic
-import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackHeadChannel
 import jakarta.inject.Singleton

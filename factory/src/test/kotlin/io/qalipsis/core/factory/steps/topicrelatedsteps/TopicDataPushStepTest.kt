@@ -10,11 +10,11 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.unicastTopic
-import io.qalipsis.api.orchestration.factories.Minion
-import io.qalipsis.api.orchestration.factories.MinionsKeeper
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factory.context.StepContextImpl
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
@@ -55,7 +55,7 @@ internal class TopicDataPushStepTest {
         step.runner = runner
 
         every { nextStep.id } returns "my-next-step"
-        every { minionsKeeper.getSingletonMinion(eq("my-dag")) } returns minion
+        every { minionsKeeper.getSingletonMinion("my-scenario", "my-dag") } returns minion
         every { minion.id } returns "my-minion"
         val countDownLatch = SuspendedCountLatch(3)
         coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
@@ -102,7 +102,7 @@ internal class TopicDataPushStepTest {
         step.runner = runner
 
         every { nextStep.id } returns "my-next-step"
-        every { minionsKeeper.getSingletonMinion(eq("my-dag")) } returns minion
+        every { minionsKeeper.getSingletonMinion("my-scenario", "my-dag") } returns minion
         every { minion.id } returns "my-minion"
         val countDownLatch = SuspendedCountLatch(3)
         coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }

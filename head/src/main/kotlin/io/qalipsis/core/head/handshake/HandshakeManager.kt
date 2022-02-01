@@ -1,11 +1,11 @@
 package io.qalipsis.core.head.handshake
 
+import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.qalipsis.api.Executors
-import io.qalipsis.api.heads.StartupHeadComponent
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeHeadChannel
 import io.qalipsis.core.handshake.HandshakeRequest
@@ -13,6 +13,7 @@ import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.lifetime.HeadStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +30,8 @@ import javax.annotation.PreDestroy
  * @author Eric Jessé
  */
 @Singleton
-internal class HandshakeManager(
+@Requires(notEnv = [ExecutionEnvironments.STANDALONE])
+internal open class HandshakeManager(
     private val environment: Environment,
     private val handshakeHeadChannel: HandshakeHeadChannel,
     private val idGenerator: IdGenerator,
@@ -37,7 +39,7 @@ internal class HandshakeManager(
     private val factoryService: FactoryService,
     private val headConfiguration: HeadConfiguration,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val executionCoroutineScope: CoroutineScope
-) : StartupHeadComponent {
+) : HeadStartupComponent {
 
     private var handshakeConsumptionJob: Job? = null
 
@@ -53,14 +55,10 @@ internal class HandshakeManager(
         }
     }
 
-    @LogInputAndOutput(level = Level.DEBUG)
+    @LogInput(level = Level.DEBUG)
     protected suspend fun receivedHandshake(handshakeRequest: HandshakeRequest) {
         val nodeRegistrationId = handshakeRequest.nodeId
-        val actualNodeId = if (nodeRegistrationId.startsWith("_")) {
-            idGenerator.short()
-        } else {
-            nodeRegistrationId
-        }
+        val actualNodeId = giveNodeIdToFactory(nodeRegistrationId)
         log.info { "The factory $actualNodeId just started the handshake, persisting its state..." }
         factoryService.register(actualNodeId, handshakeRequest)
 
@@ -91,6 +89,13 @@ internal class HandshakeManager(
             handshakeConsumptionJob?.cancel()
         }
     }
+
+    protected open fun giveNodeIdToFactory(nodeRegistrationId: String) =
+        if (nodeRegistrationId.isBlank() || nodeRegistrationId.startsWith("_")) {
+            idGenerator.short()
+        } else {
+            nodeRegistrationId
+        }
 
     @PreDestroy
     fun destroy() {

@@ -1,6 +1,5 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.orchestration.feedbacks.Feedback
 import kotlinx.coroutines.Job
 
 /**

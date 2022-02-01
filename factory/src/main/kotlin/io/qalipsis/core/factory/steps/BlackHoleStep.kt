@@ -10,11 +10,11 @@ import io.qalipsis.core.factory.context.StepContextImpl
  *
  * @author Eric Jessé
  */
-internal class BlackHoleStep<I, O>(
+internal open class BlackHoleStep<I>(
     id: StepId
-) : AbstractStep<I, O>(id, null) {
+) : AbstractStep<I, Unit>(id, null) {
 
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(context: StepContext<I, Unit>) {
         if (context is StepContextImpl) {
             context.output.close()
         }

@@ -6,11 +6,11 @@ import io.mockk.spyk
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.factory.testDag
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
+import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk

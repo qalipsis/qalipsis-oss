@@ -11,7 +11,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.report.CampaignStateKeeper
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factory.steps
@@ -46,7 +46,7 @@ internal class RunnerImplTest {
     private lateinit var eventsLogger: EventsLogger
 
     @RelaxedMockK
-    private lateinit var campaignStateKeeper: CampaignStateKeeper
+    private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @RelaxedMockK
     private lateinit var meterRegistry: MeterRegistry
@@ -83,10 +83,6 @@ internal class RunnerImplTest {
         every { meterRegistry.counter("executed-steps") } returns executedStepCounter
         every { meterRegistry.timer("step-execution", *anyVararg()) } returns stepExecutionTimer
 
-        every {
-            meterRegistry.gauge("minion-running-steps", any<List<Tag>>(), any<AtomicInteger>())
-        } returnsArgument 2
-
         val dag = testDag {
             this.testStep("step-1", 1).all {
                 step("step-2").processError("step-3")
@@ -96,8 +92,8 @@ internal class RunnerImplTest {
                 }
             }
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
 
         // when
         val executionDuration = measureTime {
@@ -156,15 +152,45 @@ internal class RunnerImplTest {
             stepExecutionTimer.record(any<Duration>())
         }
         coVerifyOnce {
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-2"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-3"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-4"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-5"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-6"), eq(1))
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-1"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-2"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-3"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-4"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-5"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-6"),
+                eq(1)
+            )
         }
 
-        confirmVerified(runningStepsGauge, runningStepsGauge, executedStepCounter, campaignStateKeeper)
+        confirmVerified(runningStepsGauge, runningStepsGauge, executedStepCounter, reportLiveStateRegistry)
     }
 
     @Test
@@ -175,8 +201,8 @@ internal class RunnerImplTest {
             this.testStep<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
                 .decoratedProcessError("step-5")
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
 
         // when
         runner.run(minion, dag)
@@ -191,12 +217,22 @@ internal class RunnerImplTest {
         steps["step-5"]!!.assertExecuted()
 
         coVerifyOnce {
-            campaignStateKeeper.recordFailedStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-3"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-5"), eq(1))
+            reportLiveStateRegistry.recordFailedStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-3"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-5"),
+                eq(1)
+            )
         }
 
-        confirmVerified(campaignStateKeeper)
+        confirmVerified(reportLiveStateRegistry)
     }
 
     @Test
@@ -207,8 +243,8 @@ internal class RunnerImplTest {
             this.testStep<Int>("step-1", generateException = true)
                 .step("step-2").recoverError("step-3", 2).step("step-4")
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
 
         // when
         runner.run(minion, dag)
@@ -225,12 +261,22 @@ internal class RunnerImplTest {
         }
 
         coVerifyOnce {
-            campaignStateKeeper.recordFailedStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-3"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-4"), eq(1))
+            reportLiveStateRegistry.recordFailedStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-3"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-4"),
+                eq(1)
+            )
         }
 
-        confirmVerified(campaignStateKeeper)
+        confirmVerified(reportLiveStateRegistry)
     }
 
     @Test
@@ -243,8 +289,8 @@ internal class RunnerImplTest {
                 this.step("step-4")
             }
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
 
         // when
         runner.run(minion, dag)
@@ -260,10 +306,15 @@ internal class RunnerImplTest {
         }
 
         coVerifyOnce {
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-1"),
+                eq(1)
+            )
         }
 
-        confirmVerified(campaignStateKeeper)
+        confirmVerified(reportLiveStateRegistry)
     }
 
     @Test
@@ -286,8 +337,8 @@ internal class RunnerImplTest {
             this.testStep("step-1", output = 12, retryPolicy = retryPolicy)
                 .step("step-2")
         }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, campaignStateKeeper, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", "my-dag", false, eventsLogger, meterRegistry)
+        val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
 
         // when
         runner.run(minion, dag)
@@ -303,10 +354,20 @@ internal class RunnerImplTest {
         }
 
         coVerifyOnce {
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
-            campaignStateKeeper.recordSuccessfulStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-2"), eq(1))
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-1"),
+                eq(1)
+            )
+            reportLiveStateRegistry.recordSuccessfulStepExecution(
+                eq("my-campaign"),
+                eq("my-scenario"),
+                eq("step-2"),
+                eq(1)
+            )
         }
 
-        confirmVerified(campaignStateKeeper)
+        confirmVerified(reportLiveStateRegistry)
     }
 }

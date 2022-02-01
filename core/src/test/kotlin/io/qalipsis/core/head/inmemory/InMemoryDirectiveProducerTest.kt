@@ -3,7 +3,7 @@ package io.qalipsis.core.head.inmemory
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.orchestration.directives.DirectiveRegistry
+import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.directives.TestListDirective
 import io.qalipsis.core.directives.TestQueueDirective

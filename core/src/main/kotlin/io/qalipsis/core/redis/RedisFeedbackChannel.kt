@@ -5,9 +5,9 @@ import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.lang.IdGenerator
-import io.qalipsis.api.orchestration.feedbacks.Feedback
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackHeadChannel
 import io.qalipsis.core.serialization.DistributionSerializer
@@ -31,7 +31,7 @@ import javax.annotation.PreDestroy
  */
 @Singleton
 @Requires(notEnv = [STANDALONE])
-@ExperimentalLettuceCoroutinesApi 
+@ExperimentalLettuceCoroutinesApi
 internal class RedisFeedbackChannel(
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
     private val serializer: DistributionSerializer,
@@ -43,6 +43,8 @@ internal class RedisFeedbackChannel(
     private lateinit var consumerChannelName: String
     private val receivingJobs: MutableList<Job> = mutableListOf()
     private var redisConsumerClients: MutableList<RedisConsumerClient<Feedback>> = mutableListOf()
+
+    private var running = true
 
     override suspend fun start(channelName: String) {
         this.producerChannelName = channelName
@@ -59,18 +61,19 @@ internal class RedisFeedbackChannel(
 
     @LogInputAndOutput
     override suspend fun onReceive(subscriberId: String, block: suspend (Feedback) -> Unit): Job {
-
-        val job = coroutineScope.launch {
-            val redisConsumerClient = RedisConsumerClient(redisCommands, { value -> deserialize(value) }, idGenerator, subscriberId, consumerChannelName){
+        return coroutineScope.launch {
+            val redisConsumerClient = RedisConsumerClient(
+                redisCommands,
+                { value -> deserialize(value) },
+                idGenerator,
+                subscriberId,
+                consumerChannelName
+            ) {
                 block(it)
             }
-            redisConsumerClient.start()
-
             redisConsumerClients.add(redisConsumerClient)
-        }
-        receivingJobs.add(job)
-
-        return job
+            redisConsumerClient.start()
+        }.also(receivingJobs::add)
     }
 
     private fun deserialize(value: String): Feedback {
@@ -79,9 +82,12 @@ internal class RedisFeedbackChannel(
 
     @PreDestroy
     fun close() {
-        kotlin.runCatching {
-            redisConsumerClients.forEach { it.stop() }
-            receivingJobs.onEach { it.cancel() }
+        if (running) {
+            running = false
+            kotlin.runCatching {
+                redisConsumerClients.forEach { it.stop() }
+                receivingJobs.onEach { it.cancel() }
+            }
         }
     }
 

@@ -18,7 +18,6 @@ import jakarta.inject.Singleton
     Requires(env = [ExecutionEnvironments.REDIS]),
     Requires(beans = [StatefulRedisConnection::class])
 )
-
 class RedisConfiguration {
 
     /**

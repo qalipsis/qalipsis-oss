@@ -9,16 +9,17 @@ import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.orchestration.feedbacks.DirectiveFeedback
-import io.qalipsis.api.orchestration.feedbacks.FeedbackStatus
 import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.directives.TestListDirective
 import io.qalipsis.core.directives.TestListDirectiveReference
 import io.qalipsis.core.directives.TestQueueDirective
 import io.qalipsis.core.directives.TestQueueDirectiveReference
 import io.qalipsis.core.directives.TestSingleUseDirective
 import io.qalipsis.core.directives.TestSingleUseDirectiveReference
+import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
+import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.inmemory.InMemoryDirectiveRegistry
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.launch
@@ -155,5 +156,29 @@ internal class InMemoryDirectiveRegistryTest {
         // then
         val emptyValue = registry.read(directive.toReference())
         assertNull(emptyValue)
+    }
+
+    @Test
+    @Timeout(10)
+    internal fun saveThenGetAndDeleteStandardDirective() = runBlockingTest {
+        // given
+        val registry = InMemoryDirectiveRegistry(feedbackFactoryChannel)
+        val directive = TestDescriptiveDirective("this-is-the-key")
+
+        // when
+        registry.keep(directive)
+
+        // then
+        val retrieved = registry.get("this-is-the-key")
+        assertEquals(directive, retrieved)
+
+        // then
+        val notExistingDirective = registry.get("other-key")
+        assertNull(notExistingDirective)
+
+        // then
+        registry.remove("this-is-the-key")
+        val deletedValue = registry.get("this-is-the-key")
+        assertNull(deletedValue)
     }
 }

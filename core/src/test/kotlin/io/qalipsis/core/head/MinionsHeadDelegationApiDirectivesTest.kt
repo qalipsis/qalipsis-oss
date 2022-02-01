@@ -1,143 +1,175 @@
 package io.qalipsis.core.directives
 
-import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.prop
-import io.qalipsis.api.orchestration.directives.DescriptiveDirective
-import io.qalipsis.api.orchestration.directives.Directive
-import io.qalipsis.api.orchestration.directives.DirectiveReference
-import io.qalipsis.api.orchestration.directives.SingleUseDirective
-import io.qalipsis.api.orchestration.directives.SingleUseDirectiveReference
+import assertk.assertions.isDataClassEqualTo
 import io.qalipsis.core.configuration.JsonSerializationModuleConfiguration
+import io.qalipsis.core.rampup.RampUpConfiguration
 import io.qalipsis.test.lang.TestIdGenerator
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.junit.jupiter.api.Test
 
+@ExperimentalSerializationApi
 internal class MinionsHeadDelegationApiDirectivesTest {
 
     private val json = JsonSerializationModuleConfiguration().json()
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirective reference directive as base class`() {
-        val directive: SingleUseDirective<Int, SingleUseDirectiveReference<Int>> = MinionsCreationPreparationDirective("campaign", "scenario",1, channel = "broadcast", key = TestIdGenerator.short())
-
+        val directive: SingleUseDirective<Int, SingleUseDirectiveReference<Int>> =
+            MinionsDeclarationDirective("campaign", "scenario", 1, channel = "broadcast", key = TestIdGenerator.short())
         val jsonString = json.encodeToString(directive)
+        val convertedDirective =
+            json.decodeFromString<SingleUseDirective<Int, SingleUseDirectiveReference<Int>>>(jsonString)
 
-        val convertedDirective = json.decodeFromString<SingleUseDirective<Int, SingleUseDirectiveReference<Int>>>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(SingleUseDirective<Int, SingleUseDirectiveReference<Int>>::key).isEqualTo(directive.key)
-        }
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirective reference directive as directive`() {
-        val directive: Directive = MinionsCreationPreparationDirective("campaign", "scenario",1, channel = "broadcast", key = TestIdGenerator.short())
-
+        val directive: Directive =
+            MinionsDeclarationDirective("campaign", "scenario", 1, channel = "broadcast", key = TestIdGenerator.short())
         val jsonString = json.encodeToString(directive)
-
         val convertedDirective = json.decodeFromString<Directive>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(Directive::key).isEqualTo(directive.key)
-        }
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirective reference directive implementation`() {
-        val directive = MinionsCreationPreparationDirective("campaign", "scenario",1, channel = "broadcast", key = TestIdGenerator.short())
-
+        val directive =
+            MinionsDeclarationDirective("campaign", "scenario", 1, channel = "broadcast", key = TestIdGenerator.short())
         val jsonString = json.encodeToString(directive)
+        val convertedDirective = json.decodeFromString<MinionsDeclarationDirective>(jsonString)
 
-        val convertedDirective = json.decodeFromString<MinionsCreationPreparationDirective>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(MinionsCreationPreparationDirective::key).isEqualTo(directive.key)
-        }
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirectiveReference reference directive as base class`() {
-        val directive: SingleUseDirectiveReference<Int> = MinionsCreationPreparationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
-
+        val directive: SingleUseDirectiveReference<Int> =
+            MinionsDeclarationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
         val jsonString = json.encodeToString(directive)
-
         val convertedDirective = json.decodeFromString<SingleUseDirectiveReference<Int>>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(SingleUseDirectiveReference<Int>::key).isEqualTo(directive.key)
-        }
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirectiveReference as directive`() {
-        val directive: Directive = MinionsCreationPreparationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
-
+        val directive: Directive =
+            MinionsDeclarationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
         val jsonString = json.encodeToString(directive)
-
         val convertedDirective = json.decodeFromString<Directive>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(Directive::key).isEqualTo(directive.key)
-        }
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirectiveReference as directive reference`() {
-        val directive: DirectiveReference = MinionsCreationPreparationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
-
+        val directive: DirectiveReference =
+            MinionsDeclarationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
         val jsonString = json.encodeToString(directive)
-
         val convertedDirective = json.decodeFromString<DirectiveReference>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(DirectiveReference::key).isEqualTo(directive.key)
-        }
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirectiveReference reference directive implementation`() {
-        val directive = MinionsCreationPreparationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
-
+        val directive = MinionsDeclarationDirectiveReference("campaign", "scenario", "1", channel = "broadcast")
         val jsonString = json.encodeToString(directive)
+        val convertedDirective = json.decodeFromString<MinionsDeclarationDirectiveReference>(jsonString)
 
-        val convertedDirective = json.decodeFromString<MinionsCreationPreparationDirectiveReference>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(MinionsCreationPreparationDirectiveReference::key).isEqualTo(directive.key)
-        }
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
-    fun `should be able to serialize MinionsRampUpPreparationDirective as descriptive directive`() {
-        val directive: DescriptiveDirective = MinionsRampUpPreparationDirective("campaign", "scenario", channel = "broadcast", key = TestIdGenerator.short())
-
+    fun `should be able to serialize MinionsRampUpPreparationDirective as single use directive`() {
+        val directive: SingleUseDirective<RampUpConfiguration, SingleUseDirectiveReference<RampUpConfiguration>> =
+            MinionsRampUpPreparationDirective(
+                "campaign",
+                "scenario",
+                channel = "broadcast",
+                key = TestIdGenerator.short()
+            )
         val jsonString = json.encodeToString(directive)
+        val convertedDirective =
+            json.decodeFromString<SingleUseDirective<RampUpConfiguration, SingleUseDirectiveReference<RampUpConfiguration>>>(
+                jsonString
+            )
 
-        val convertedDirective = json.decodeFromString<DescriptiveDirective>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(DescriptiveDirective::key).isEqualTo(directive.key)
-        }
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
     fun `should be able to serialize MinionsRampUpPreparationDirective as directive`() {
-        val directive: Directive = MinionsRampUpPreparationDirective("campaign", "scenario", channel = "broadcast", key = TestIdGenerator.short())
-
+        val directive: Directive = MinionsRampUpPreparationDirective(
+            "campaign",
+            "scenario",
+            channel = "broadcast",
+            key = TestIdGenerator.short()
+        )
         val jsonString = json.encodeToString(directive)
-
         val convertedDirective = json.decodeFromString<Directive>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(Directive::key).isEqualTo(directive.key)
-        }
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 
     @Test
     fun `should be able to serialize MinionsRampUpPreparationDirective reference directive implementation`() {
-        val directive = MinionsRampUpPreparationDirective("campaign", "scenario", channel = "broadcast", key = TestIdGenerator.short())
-
+        val directive = MinionsRampUpPreparationDirective(
+            "campaign",
+            "scenario",
+            channel = "broadcast",
+            key = TestIdGenerator.short()
+        )
         val jsonString = json.encodeToString(directive)
-
         val convertedDirective = json.decodeFromString<MinionsRampUpPreparationDirective>(jsonString)
-        assertThat(convertedDirective).all {
-            prop(MinionsRampUpPreparationDirective::key).isEqualTo(directive.key)
-        }
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
+    }
+
+
+    @Test
+    fun `should be able to serialize MinionsRampUpPreparationDirectiveReference reference directive as base class`() {
+        val directive: SingleUseDirectiveReference<RampUpConfiguration> =
+            MinionsRampUpPreparationDirectiveReference("any", "campaign", "scenario", "broadcast")
+        val jsonString = json.encodeToString(directive)
+        val convertedDirective = json.decodeFromString<SingleUseDirectiveReference<RampUpConfiguration>>(jsonString)
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
+    }
+
+    @Test
+    fun `should be able to serialize MinionsRampUpPreparationDirectiveReference as directive`() {
+        val directive: Directive =
+            MinionsRampUpPreparationDirectiveReference("any", "campaign", "scenario", "broadcast")
+        val jsonString = json.encodeToString(directive)
+        val convertedDirective = json.decodeFromString<Directive>(jsonString)
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
+    }
+
+    @Test
+    fun `should be able to serialize MinionsRampUpPreparationDirectiveReference as directive reference`() {
+        val directive: DirectiveReference =
+            MinionsRampUpPreparationDirectiveReference("any", "campaign", "scenario", "broadcast")
+        val jsonString = json.encodeToString(directive)
+        val convertedDirective = json.decodeFromString<DirectiveReference>(jsonString)
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
+    }
+
+    @Test
+    fun `should be able to serialize MinionsRampUpPreparationDirectiveReference reference directive implementation`() {
+        val directive = MinionsRampUpPreparationDirectiveReference("any", "campaign", "scenario", "broadcast")
+        val jsonString = json.encodeToString(directive)
+        val convertedDirective = json.decodeFromString<MinionsRampUpPreparationDirectiveReference>(jsonString)
+
+        assertThat(convertedDirective).isDataClassEqualTo(directive)
     }
 }

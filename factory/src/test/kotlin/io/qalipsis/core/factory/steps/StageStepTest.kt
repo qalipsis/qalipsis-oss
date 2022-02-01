@@ -12,8 +12,6 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -44,10 +42,6 @@ internal class StageStepTest {
     @JvmField
     @RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
-
-    private val meterRegistry: MeterRegistry = relaxedMockk {
-        every { gauge(eq("minion-running-steps"), any<Iterable<Tag>>(), any<Number>()) } returnsArgument 2
-    }
 
     @Test
     internal fun `should first add a head, then a next`() {
@@ -84,7 +78,7 @@ internal class StageStepTest {
     @Test
     @Timeout(10)
     internal fun `should execute all steps and forward the output`() = testCoroutineDispatcher.runTest {
-        val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
+        val minion = MinionImpl("", "", "", false, false, relaxedMockk())
         val tailStep: Step<Int, String> = relaxedMockk {
             every { id } returns "<tail>"
             coEvery { execute(refEq(minion), any()) } coAnswers {
@@ -138,7 +132,7 @@ internal class StageStepTest {
     @Test
     @Timeout(3)
     internal fun `should throw an exception when a wrapped step is in error`() = testCoroutineDispatcher.run {
-        val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
+        val minion = MinionImpl("", "", "", false, false, relaxedMockk())
         val secondStep: Step<Int, String> = relaxedMockk {
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
@@ -186,7 +180,7 @@ internal class StageStepTest {
     @Timeout(3)
     internal fun `should throw an exception when a wrapped step context is exhausted`() =
         testCoroutineDispatcher.runTest {
-            val minion = MinionImpl("", "", "", "", false, relaxedMockk(), meterRegistry)
+            val minion = MinionImpl("", "", "", false, false, relaxedMockk())
             val secondStep: Step<Int, String> = relaxedMockk {
                 coEvery { execute(refEq(minion), any()) } coAnswers {
                     val ctx = secondArg<StepContext<Int, String>>()

@@ -8,7 +8,7 @@ import assertk.assertions.isSameAs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.orchestration.DirectedAcyclicGraph
+import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
