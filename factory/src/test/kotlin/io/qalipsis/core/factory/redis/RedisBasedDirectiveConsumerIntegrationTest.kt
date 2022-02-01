@@ -6,6 +6,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.serialization.Serializable
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DirectiveProcessor
 import io.qalipsis.core.directives.TestDescriptiveDirective

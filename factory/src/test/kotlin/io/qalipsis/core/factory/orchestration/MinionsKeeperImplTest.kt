@@ -367,7 +367,7 @@ internal class MinionsKeeperImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
         }
-        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(20), duration)
+        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(80), duration)
         confirmVerified(eventsLogger, meterRegistry, reportLiveStateRegistry, minionToIgnore)
     }
 

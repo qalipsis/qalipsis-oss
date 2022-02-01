@@ -1,4 +1,4 @@
-package io.qalipsis.core.redis
+package io.qalipsis.core.head.redis
 
 import assertk.all
 import assertk.assertThat
@@ -12,6 +12,7 @@ import io.micronaut.test.annotation.MockBean
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.qalipsis.api.serialization.Serializable
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.directives.TestListDirective
@@ -23,6 +24,8 @@ import io.qalipsis.core.directives.TestSingleUseDirectiveReference
 import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.redis.AbstractRedisIntegrationTest
+import io.qalipsis.core.redis.RedisDirectiveRegistry
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject

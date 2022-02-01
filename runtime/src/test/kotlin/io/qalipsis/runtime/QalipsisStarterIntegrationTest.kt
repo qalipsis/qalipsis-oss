@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Timeout
 internal class QalipsisStarterIntegrationTest {
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should start as default`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario"))
 
@@ -38,7 +38,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should start with additional environments`() {
         val exitCode =
             Qalipsis.start(
@@ -55,7 +55,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should return an error when the scenario does not exist`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "no-scenario"))
 
@@ -63,7 +63,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should return an error when the scenario fails`() {
         val exitCode = Qalipsis.start(arrayOf("-s", "failing-scenario"))
 
@@ -85,7 +85,7 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should exit properly on when a timeout occurs in the parent thread`() {
         // given
         val thread = Thread {
