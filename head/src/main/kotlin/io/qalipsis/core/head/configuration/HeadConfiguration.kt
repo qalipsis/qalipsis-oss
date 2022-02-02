@@ -50,4 +50,11 @@ internal interface HeadConfiguration {
     @get:NotBlank
     val feedbackChannel: String
 
+    /**
+    * Consumer group name to listen for heartbeat.
+    */
+    @get:NotBlank
+    val heartbeatConsumerGroupName: String
+
+
 }
