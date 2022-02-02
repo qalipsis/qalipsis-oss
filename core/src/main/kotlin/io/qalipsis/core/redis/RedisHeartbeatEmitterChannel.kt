@@ -76,6 +76,16 @@ internal class RedisHeartbeatEmitterChannel(
 
     @PreDestroy
     suspend fun closeChannels() {
+        sendUnregisteredHeartbeat(channelName, factoryNodeId)
         heartbeatJob?.cancel()
+    }
+
+    private suspend fun sendUnregisteredHeartbeat(channelName: String, factoryNodeId: String) {
+        heartbeatJob.runCatching {
+            redisCoroutinesCommands.xadd(
+                channelName,
+                mapOf(factoryNodeId to serializer.serialize(Heartbeat(factoryNodeId, Instant.now(), Heartbeat.STATE.UNREGISTERED)).decodeToString())
+            )
+        }
     }
 }
