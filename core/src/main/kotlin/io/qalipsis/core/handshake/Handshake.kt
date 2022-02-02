@@ -2,6 +2,8 @@ package io.qalipsis.core.handshake
 
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
+import io.qalipsis.core.serialization.DurationKotlinSerializer
+import kotlinx.serialization.Serializable
 import java.time.Duration
 
 /**
@@ -14,6 +16,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
+@Serializable
 data class HandshakeRequest(
     val nodeId: String,
     val selectors: Map<String, String>,
@@ -35,6 +38,7 @@ typealias RegistrationDirectedAcyclicGraph = DirectedAcyclicGraphSummary
  * @property heartbeatChannel name of the channel to use to send the heartbeats
  * @property heartbeatPeriod period to emmit the heartbeats
  */
+@Serializable
 data class HandshakeResponse(
     val handshakeNodeId: String,
     val nodeId: String,
@@ -42,5 +46,5 @@ data class HandshakeResponse(
     val broadcastDirectivesChannel: String,
     val feedbackChannel: String,
     val heartbeatChannel: String,
-    val heartbeatPeriod: Duration
+    @Serializable(with = DurationKotlinSerializer::class) val heartbeatPeriod: Duration
 )
