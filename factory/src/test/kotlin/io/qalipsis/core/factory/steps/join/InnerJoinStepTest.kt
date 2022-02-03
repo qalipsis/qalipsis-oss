@@ -74,7 +74,7 @@ internal class InnerJoinStepTest {
         // then
         Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertThat(output).containsExactly(entityFromLeft.value, entityFromFromRight1.value, entityFromFromRight2.value)
         Assertions.assertFalse(step.hasKeyInCache(123))
     }
@@ -102,7 +102,7 @@ internal class InnerJoinStepTest {
         // then
         Assertions.assertFalse(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertThat(output).containsExactly(entityFromLeft.value, entityFromFromRight1.value, entityFromFromRight2.value)
         Assertions.assertFalse(step.hasKeyInCache(123))
     }
@@ -141,7 +141,7 @@ internal class InnerJoinStepTest {
             // then
             Assertions.assertFalse(ctx.isExhausted)
             Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-            val output = (ctx.output as Channel).receive()
+            val output = ctx.consumeOutputValue()
             assertThat(output).containsExactly(
                 entityFromLeft.value,
                 entityFromFromRight1.value,

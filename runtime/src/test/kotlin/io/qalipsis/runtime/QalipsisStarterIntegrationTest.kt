@@ -8,8 +8,10 @@ import assertk.assertions.isTrue
 import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
-import io.qalipsis.api.steps.execute
+import io.qalipsis.api.steps.blackHole
+import io.qalipsis.api.steps.pipe
 import io.qalipsis.api.steps.returns
+import io.qalipsis.api.steps.verify
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,7 +29,16 @@ internal class QalipsisStarterIntegrationTest {
     @Test
     @Timeout(20)
     internal fun `should start as default`() {
-        val exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario"))
+        val exitCode = Qalipsis.start(
+            arrayOf(
+                "-s", "do-nothing-scenario",
+                "-c", "logging.level.io.qalipsis.core.factory.inmemory.InMemoryMinionAssignmentKeeper=TRACE",
+                "-c", "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "-c", "logging.level.io.qalipsis.core.inmemory.InMemoryFeedbackChannel=TRACE",
+                "-c", "logging.level.io.qalipsis.api.messaging.AbstractLinkedSlotsBasedTopic=TRACE"
+            )
+        )
 
         assertEquals(0, exitCode)
         assertTrue(
@@ -43,8 +54,13 @@ internal class QalipsisStarterIntegrationTest {
         val exitCode =
             Qalipsis.start(
                 arrayOf(
-                    "-s", "do-nothing-scenario", "-e", "these", "-e", "are", "-e", "my",
-                    "-e", "additional", "-e", "environments"
+                    "-s", "do-nothing-scenario",
+                    "-e", "these", "-e", "are", "-e", "my", "-e", "additional", "-e", "environments",
+                    "-c", "logging.level.io.qalipsis.core.factory.inmemory.InMemoryMinionAssignmentKeeper=TRACE",
+                    "-c", "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                    "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                    "-c", "logging.level.io.qalipsis.core.inmemory.InMemoryFeedbackChannel=TRACE",
+                    "-c", "logging.level.io.qalipsis.api.messaging.AbstractLinkedSlotsBasedTopic=TRACE"
                 )
             )
 
@@ -71,17 +87,23 @@ internal class QalipsisStarterIntegrationTest {
     }
 
     @Test
-    @Timeout(15)
+    @Timeout(20)
     internal fun `should start with property value`() {
-        var exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-c", "property.test=test-1"))
+        val randomValue = "${Math.random() * 100000}"
+        val exitCode = Qalipsis.start(
+            arrayOf(
+                "-s", "do-nothing-scenario",
+                "-c", "property.test=$randomValue",
+                "-c", "logging.level.io.qalipsis.core.factory.inmemory.InMemoryMinionAssignmentKeeper=TRACE",
+                "-c", "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "-c", "logging.level.io.qalipsis.core.inmemory.InMemoryFeedbackChannel=TRACE",
+                "-c", "logging.level.io.qalipsis.api.messaging.AbstractLinkedSlotsBasedTopic=TRACE"
+            )
+        )
         assertEquals(0, exitCode)
         assertThat(Qalipsis.applicationContext.environment.getRequiredProperty("property.test", String::class.java))
-            .isEqualTo("test-1")
-
-        exitCode = Qalipsis.start(arrayOf("-s", "do-nothing-scenario", "-c", "property.test=test-2"))
-        assertEquals(0, exitCode)
-        assertThat(Qalipsis.applicationContext.environment.getRequiredProperty("property.test", String::class.java))
-            .isEqualTo("test-2")
+            .isEqualTo(randomValue)
     }
 
     @Test
@@ -109,7 +131,7 @@ internal class QalipsisStarterIntegrationTest {
             rampUp { regular(1000, 1) }
         }.start()
             .returns(Unit)
-        // .blackHole() FIXME QALI-111
+            .blackHole()
     }
 
     @Scenario
@@ -118,9 +140,9 @@ internal class QalipsisStarterIntegrationTest {
             minionsCount = 1
             rampUp { regular(1000, 1) }
         }.start()
-            .execute<Unit> { throw RuntimeException("There is an error") }
-            .configure { report { reportErrors = true } }
-        // .blackHole() FIXME QALI-111
+            .pipe<Unit>()
+            .verify { assertThat(true).isFalse() }
+            .blackHole()
     }
 
 }

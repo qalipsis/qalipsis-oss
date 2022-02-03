@@ -207,9 +207,9 @@ internal class MinionsKeeperImplTest {
 
     @Test
     @Timeout(2)
-    internal fun `should create singleton paused minion`() = testCoroutineDispatcher.runTest {
+    internal fun `should create singleton started minion on root dag`() = testCoroutineDispatcher.run {
         // given
-        val dag = testDag(id = "my-dag-1", isSingleton = true)
+        val dag = testDag(id = "my-dag-1", isSingleton = true, root = true)
         every { scenarioRegistry.get("my-scenario")?.get("my-dag-1") } returns dag
         val minionSlot = slot<MinionImpl>()
         val runnerCountDown = SuspendedCountLatch(1)
@@ -253,7 +253,7 @@ internal class MinionsKeeperImplTest {
             prop(MinionImpl::scenarioId).isEqualTo("my-scenario")
             prop(MinionImpl::isSingleton).isTrue()
             prop("executingStepsGauge").isSameAs(executingStepsGauge)
-            prop(MinionImpl::isStarted).isFalse()
+            prop(MinionImpl::isStarted).isTrue()
         }
         assertThat(minionsKeeper).all {
             typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameAs(minionSlot.captured)

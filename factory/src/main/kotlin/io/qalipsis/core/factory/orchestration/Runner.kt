@@ -4,7 +4,6 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
-import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.Job
 
 /**
@@ -20,26 +19,28 @@ interface Runner {
     suspend fun run(minion: Minion, dag: DirectedAcyclicGraph)
 
     /**
-     * Launches the execution of a step onto a minion.
+     * Releases the minion and make it execute [rootStep] and its successors.
      *
      * @param minion the minion to launch
-     * @param step the first step of the chain to execute
-     * @param ctx the initial step context
-     * @param jobsCounter the suspended counter of the running jobs, suspends calls to [SuspendedCountLatch.await] while there are running or scheduled steps
-     * @param consumer action to execute on the output of the last steps of the chain, it is started asynchronously before the last step execute: the channel will provide the execution status (open or closed)
+     * @param rootStep the first step of the chain to execute
+     * @param stepContext the initial step context
+     * @param completionConsumer action to execute after the lately executed step of the tree, which might have an output or not, be exhausted...
      */
-    suspend fun launch(minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
-                       jobsCounter: SuspendedCountLatch? = null,
-                       consumer: (suspend (ctx: StepContext<*, *>) -> Unit)? = null)
+    suspend fun runMinion(
+        minion: Minion, rootStep: Step<*, *>, stepContext: StepContext<*, *>,
+        completionConsumer: (suspend (ctx: StepContext<*, *>) -> Unit)? = null
+    )
 
     /**
-     * Executes a single step onto the specified context and triggers the next steps asynchronously in different coroutines.
+     * Makes [minion] executes [step] and its successors, calling .
      *
      * @param minion the minion to launch
      * @param step the first step of the chain to execute
-     * @param ctx the initial step context
-     * @param consumer action to execute on the output of the last steps of the chain, it is started asynchronously before the last step execute: the channel will provide the execution status (open or closed)
+     * @param stepContext the initial step context
+     * @param completionConsumer action to execute after the lately executed step of the tree, which might have an output or not, be exhausted...
      */
-    suspend fun execute(minion: Minion, step: Step<*, *>, ctx: StepContext<*, *>,
-                        consumer: (suspend (ctx: StepContext<*, *>) -> Unit)?): Job?
+    suspend fun execute(
+        minion: Minion, step: Step<*, *>, stepContext: StepContext<*, *>,
+        completionConsumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
+    ): Job?
 }

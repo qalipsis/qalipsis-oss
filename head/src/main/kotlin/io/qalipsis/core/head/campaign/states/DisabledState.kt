@@ -23,4 +23,8 @@ internal open class DisabledState(
         )
     }
 
+    override fun toString(): String {
+        return "DisabledState(campaign=$campaign, isSuccessful=$isSuccessful, isCompleted=$isCompleted)"
+    }
+
 }

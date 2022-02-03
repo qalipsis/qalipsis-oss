@@ -41,7 +41,7 @@ internal class NoMoreNextStepDecoratorTest {
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(1, output)
 
         coVerifyOnce {

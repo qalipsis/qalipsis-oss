@@ -35,4 +35,9 @@ internal open class CompletionState(
             this
         }
     }
+
+    override fun toString(): String {
+        return "CompletionState(campaign=$campaign, expectedFeedbacks=$expectedFeedbacks)"
+    }
+
 }

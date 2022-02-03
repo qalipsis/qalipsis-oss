@@ -37,4 +37,9 @@ internal open class FailureState(
             this
         }
     }
+
+    override fun toString(): String {
+        return "FailureState(campaign=$campaign, error='$error', expectedFeedbacks=$expectedFeedbacks)"
+    }
+
 }

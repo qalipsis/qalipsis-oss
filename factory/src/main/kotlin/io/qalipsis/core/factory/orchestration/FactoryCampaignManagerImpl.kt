@@ -1,7 +1,9 @@
-package io.qalipsis.core.factory.orchestration.directives
+package io.qalipsis.core.factory.orchestration
 
 import io.aerisconsulting.catadioptre.KTestable
 import io.micrometer.core.instrument.MeterRegistry
+import io.micronaut.context.annotation.Property
+import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
@@ -12,18 +14,19 @@ import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
-import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
-import io.qalipsis.core.factory.orchestration.MinionsKeeper
-import io.qalipsis.core.factory.orchestration.ScenarioRegistry
-import io.qalipsis.core.feedbacks.CompleteMinionFeedback
-import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.rampup.RampUpConfiguration
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
+import java.time.Duration
 
 @Singleton
 internal class FactoryCampaignManagerImpl(
@@ -33,7 +36,20 @@ internal class FactoryCampaignManagerImpl(
     private val minionAssignmentKeeper: MinionAssignmentKeeper,
     private val feedbackFactoryChannel: FeedbackFactoryChannel,
     private val idGenerator: IdGenerator,
-    private val factoryConfiguration: FactoryConfiguration
+    private val factoryConfiguration: FactoryConfiguration,
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
+    @Property(
+        name = "minion-shutdown-timeout",
+        defaultValue = "1s"
+    ) private val minionShutdownTimeout: Duration = Duration.ofSeconds(1),
+    @Property(
+        name = "scenario-shutdown-timeout",
+        defaultValue = "10s"
+    ) private val scenarioShutdownTimeout: Duration = Duration.ofSeconds(10),
+    @Property(
+        name = "campaign-shutdown-timeout",
+        defaultValue = "60s"
+    ) private val campaignShutdownTimeout: Duration = Duration.ofSeconds(60)
 ) : FactoryCampaignManager {
 
     @KTestable
@@ -111,7 +127,9 @@ internal class FactoryCampaignManagerImpl(
     ) {
         val completionState =
             minionAssignmentKeeper.executionComplete(campaignId, scenarioId, minionId, listOf(dagId))
-        if (completionState.minionComplete) {
+        log.trace { "Completing minion $minionId of scenario $scenarioId in campaign $campaignId returns $completionState" }
+        // FIXME Generates CompleteMinionFeedbacks for several minions (based upon elapsed time and/or count), otherwise it makes the system overloaded.
+        /*if (completionState.minionComplete) {
             feedbackFactoryChannel.publish(
                 CompleteMinionFeedback(
                     key = idGenerator.short(),
@@ -122,7 +140,7 @@ internal class FactoryCampaignManagerImpl(
                     status = FeedbackStatus.COMPLETED
                 )
             )
-        }
+        }*/
         if (completionState.scenarioComplete) {
             feedbackFactoryChannel.publish(
                 EndOfCampaignScenarioFeedback(
@@ -134,33 +152,62 @@ internal class FactoryCampaignManagerImpl(
                 )
             )
         }
-        if (completionState.campaignComplete) {
-            feedbackFactoryChannel.publish(
-                EndOfCampaignFeedback(
-                    key = idGenerator.short(),
-                    campaignId = campaignId,
-                    nodeId = factoryConfiguration.nodeId,
-                    status = FeedbackStatus.COMPLETED
-                )
-            )
-        }
+    }
+
+    override suspend fun shutdownMinions(campaignId: CampaignId, minionIds: Collection<MinionId>) {
+        minionIds.map { minionId ->
+            backgroundScope.async {
+                kotlin.runCatching {
+                    withCancellableTimeout(minionShutdownTimeout) {
+                        try {
+                            minionsKeeper.shutdownMinion(minionId)
+                        } catch (e: Exception) {
+                            log.trace(e) { "The minion $minionId was not successfully shut down: ${e.message}" }
+                        }
+                    }
+                }
+            }
+        }.awaitAll()
     }
 
     @LogInput(Level.DEBUG)
     override suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
-        scenarioRegistry[scenarioId]!!.stop(campaignId)
+        withCancellableTimeout(scenarioShutdownTimeout) {
+            try {
+                scenarioRegistry[scenarioId]!!.stop(campaignId)
+            } catch (e: Exception) {
+                log.trace(e) { "The scenario $scenarioId was not successfully shut down: ${e.message}" }
+                throw e
+            }
+        }
     }
 
     @LogInput(Level.DEBUG)
     override suspend fun shutdownCampaign(campaignId: CampaignId) {
         if (runningCampaign == campaignId) {
-            minionsKeeper.shutdownAll()
-            runningScenarios.forEach { scenarioRegistry[it]!!.stop(campaignId) }
+            withCancellableTimeout(campaignShutdownTimeout) {
+                minionsKeeper.shutdownAll()
+                runningScenarios.forEach { scenarioRegistry[it]!!.stop(campaignId) }
 
-            runningScenarios.clear()
-            runningCampaign = ""
-            // Removes all the meters.
-            meterRegistry.clear()
+                runningScenarios.clear()
+                runningCampaign = ""
+                // Removes all the meters.
+                meterRegistry.clear()
+            }
+        }
+    }
+
+    /**
+     * Executes [block], then cancels it if it did not complete before the timeout.
+     */
+    private suspend fun withCancellableTimeout(timeout: Duration, block: suspend () -> Unit) {
+        val deferred = backgroundScope.async { block() }
+        try {
+            withTimeout(timeout.toMillis()) { deferred.await() }
+            deferred.getCompletionExceptionOrNull()?.let { throw it }
+        } catch (e: TimeoutCancellationException) {
+            deferred.cancel(e)
+            throw e
         }
     }
 

@@ -30,7 +30,7 @@ internal class PipeStepTest {
         step.execute(ctx)
 
         //then
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(1, output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
     }

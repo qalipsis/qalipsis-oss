@@ -65,9 +65,6 @@ object Qalipsis : Callable<Unit> {
     )
     var role: Role = Role.STANDALONE
 
-    private lateinit var args: Array<String>
-
-    @JvmStatic
     private val log = logger()
 
     internal lateinit var applicationContext: ApplicationContext
@@ -83,7 +80,6 @@ object Qalipsis : Callable<Unit> {
 
     fun start(args: Array<String> = emptyArray()): Int {
         executionProperties.load(Qalipsis::class.java.getResourceAsStream("/build.properties"))
-        this.args = args
         val runtimeExitCode = CommandLine(Qalipsis)
             .setCaseInsensitiveEnumValuesAllowed(true)
             .setUsageHelpAutoWidth(true)
@@ -105,9 +101,14 @@ object Qalipsis : Callable<Unit> {
         val environments = mutableListOf<String>()
         // Loads the profiles from the plugins.
         val pluginsProfiles = ServicesLoader.loadPlugins()
-        log.info { "Loading the plugins ${pluginsProfiles.joinToString()}" }
+        if (pluginsProfiles.isNotEmpty()) {
+            log.info { "Loading the plugins ${pluginsProfiles.joinToString()}" }
+        } else {
+            log.info { "No plugin was found" }
+        }
         environments.addAll(pluginsProfiles)
         if (role == Role.STANDALONE) {
+            log.info { "Starting QALIPSIS in standalone mode" }
             if (prompt) {
                 promptForConfiguration(properties)
             }

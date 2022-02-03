@@ -1,7 +1,6 @@
 package io.qalipsis.core.factory.orchestration.directives.processors
 
 import io.qalipsis.api.lang.IdGenerator
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.directives.Directive
@@ -48,18 +47,10 @@ internal class MinionsShutdownDirectiveProcessor(
                 status = FeedbackStatus.IN_PROGRESS
             )
             feedbackFactoryChannel.publish(feedback)
-            relevantMinions.forEach { minionId ->
-                kotlin.runCatching {
-                    minionsKeeper.shutdownMinion(minionId)
-                }
+            runCatching {
+                factoryCampaignManager.shutdownMinions(directive.campaignId, relevantMinions)
             }
             feedbackFactoryChannel.publish(feedback.copy(key = idGenerator.short(), status = FeedbackStatus.COMPLETED))
         }
-    }
-
-    companion object {
-
-        @JvmStatic
-        private val log = logger()
     }
 }

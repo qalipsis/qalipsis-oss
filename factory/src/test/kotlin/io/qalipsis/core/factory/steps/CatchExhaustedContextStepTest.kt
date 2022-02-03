@@ -21,7 +21,7 @@ internal class CatchExhaustedContextStepTest {
         val ctx = StepTestHelper.createStepContext<Any?, Int>(input = 123)
 
         step.execute(ctx)
-        val result = (ctx.output as Channel<Int>).receive()
+        val result = ctx.consumeOutputValue()
 
         Assertions.assertEquals(0, reference.get())
         Assertions.assertEquals(123, result)

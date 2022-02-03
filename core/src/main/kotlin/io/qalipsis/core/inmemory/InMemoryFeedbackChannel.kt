@@ -2,7 +2,7 @@ package io.qalipsis.core.inmemory
 
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.messaging.broadcastTopic
-import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
@@ -25,14 +25,14 @@ internal class InMemoryFeedbackChannel : FeedbackHeadChannel, FeedbackFactoryCha
 
     override suspend fun start(channelName: String) = Unit
 
-    @LogInputAndOutput
+    @LogInput
     override suspend fun publish(feedback: Feedback) {
         topic.produceValue(feedback)
     }
 
     override suspend fun subscribe(channelName: String) = Unit
 
-    @LogInputAndOutput
+    @LogInput
     override suspend fun onReceive(subscriberId: String, block: suspend (Feedback) -> Unit): Job {
         return topic.subscribe(subscriberId).onReceiveValue(block)
     }

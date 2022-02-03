@@ -8,7 +8,6 @@ import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor
-import io.qalipsis.core.factory.context.StepContextImpl
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import java.time.Duration
@@ -31,52 +30,57 @@ internal class IterativeStepDecorator<I, O>(
 
     override val next = decorated.next
 
-    private var delayMillis = delay.toMillis()
+    /**
+     * Force a delay to have a suspension point.
+     */
+    private var delayMillis = delay.toMillis().coerceAtLeast(1)
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         val inputValue = context.receive()
-        // Create a conflated channel to allow next iteration even if the channel was not consumed.
-        val internalInputChannel = Channel<I>(Channel.CONFLATED)
-        val internalContext = context.duplicate(internalInputChannel, (context as StepContextImpl).output)
 
-        val isOutputContextTail = context.isTail
+        // Unmark the context as tail until the very last record.
+        val isDecoratingContextTail = context.isTail
         context.isTail = false
 
+        // Reusing the same channel for all the iterations.
+        val internalInputChannel = Channel<I>(1)
         var remainingIterations = iterations
-        var currentIteration = 0L
-        while (remainingIterations > 0) {
-            internalContext.stepIterationIndex = currentIteration
-
-            internalContext.isTail = isOutputContextTail && remainingIterations == 1L
+        var repetitionIndex = 0L
+        while (remainingIterations > 0 && !context.isExhausted) {
+            log.trace { "Executing iteration $repetitionIndex for context $context" }
+            val internalContext =
+                context.duplicate(inputChannel = internalInputChannel, stepIterationIndex = repetitionIndex)
+            internalContext.isTail = isDecoratingContextTail && remainingIterations == 1L
             context.isTail = internalContext.isTail
 
-            // Provide the input value again for each iteration.
-            internalInputChannel.send(inputValue)
-            log.trace { "Executing iteration $currentIteration for context $context" }
+            // Provides the input value again for each iteration.
+            if (internalInputChannel.isEmpty) {
+                internalInputChannel.send(inputValue)
+            }
             try {
                 executeStep(minion, decorated, internalContext)
                 internalContext.errors.forEach(context::addError)
             } catch (t: Throwable) {
+                // Resets the isTail flag before leaving.
+                context.isTail = isDecoratingContextTail
                 log.debug(t) { "The repeated step ${decorated.id} failed: ${t.message}" }
-                context.isTail = isOutputContextTail
                 throw t
             }
-            if (!internalContext.isExhausted) {
-                remainingIterations--
-                currentIteration++
-                log.trace { "Executed iteration $currentIteration for context ${context}, remaining $remainingIterations" }
 
-                if (delayMillis > 0 && remainingIterations > 0) {
-                    log.trace { "Applying delay of $delayMillis ms before next iteration" }
-                    delay(delayMillis)
-                } else if (remainingIterations > 0) {
-                    // Force a delay to have a suspension point.
-                    delay(1)
-                }
-            } else {
+            if (internalContext.isExhausted) {
+                // Resets the isTail flag before leaving.
+                context.isTail = isDecoratingContextTail
                 log.debug { "The repeated step ${decorated.id} failed." }
                 context.isExhausted = true
-                context.isTail = isOutputContextTail
+            } else {
+                remainingIterations--
+                log.trace { "Executed iteration ${internalContext.stepIterationIndex} for context ${context}, remaining $remainingIterations" }
+
+                if (remainingIterations > 0) {
+                    repetitionIndex++
+                    log.trace { "Waiting $delayMillis ms for context $context" }
+                    delay(delayMillis)
+                }
             }
         }
         log.trace { "End of the iterations for context $context" }

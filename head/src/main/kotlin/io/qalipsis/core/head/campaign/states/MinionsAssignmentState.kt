@@ -76,6 +76,10 @@ internal open class MinionsAssignmentState(
         }
     }
 
+    override fun toString(): String {
+        return "MinionsAssignmentState(campaign=$campaign, expectedFeedbacks=$expectedFeedbacks)"
+    }
+
     private companion object {
 
         @JvmStatic

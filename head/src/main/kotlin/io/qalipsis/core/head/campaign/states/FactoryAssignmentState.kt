@@ -59,6 +59,10 @@ internal open class FactoryAssignmentState(
         }
     }
 
+    override fun toString(): String {
+        return "FactoryAssignmentState(campaign=$campaign, expectedFeedbacks=$expectedFeedbacks)"
+    }
+
     private companion object {
 
         @JvmStatic

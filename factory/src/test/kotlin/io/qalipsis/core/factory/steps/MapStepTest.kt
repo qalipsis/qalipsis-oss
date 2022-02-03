@@ -20,7 +20,7 @@ internal class MapStepTest {
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(1, output)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
@@ -33,7 +33,7 @@ internal class MapStepTest {
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals("1", output)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }

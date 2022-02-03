@@ -1,7 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
 
 plugins {
     idea
@@ -157,7 +156,7 @@ allprojects {
             }
             useJUnitPlatform()
             testLogging {
-                events(FAILED, STANDARD_ERROR)
+                events(STARTED, FAILED, STANDARD_ERROR)
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
                 debug {
@@ -166,7 +165,7 @@ allprojects {
                 }
 
                 info {
-                    events(FAILED, SKIPPED, PASSED, STANDARD_ERROR)
+                    events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
                     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
                 }
             }

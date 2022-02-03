@@ -17,7 +17,7 @@ internal class MapWithContextStepTest {
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(1, output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
 
@@ -31,7 +31,7 @@ internal class MapWithContextStepTest {
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(ctx.minionId + "-1", output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
     }

@@ -105,19 +105,20 @@ internal class IterativeStepDecoratorTest {
 
         val innerContextTailFlags = mutableListOf<Boolean>()
         val outerContextTailFlags = mutableListOf<Boolean>()
+
         val step = spyk(IterativeStepDecorator(10, decorated = decoratedStep))
-        val ctx = coreStepContext<TestEntity, Any>(input = testEntity).also { it.isTail = true }
+        val outerContext = coreStepContext<TestEntity, Any>(input = testEntity).also { it.isTail = true }
         coEvery { step.executeStep(refEq(minion), refEq(decoratedStep), any())  } coAnswers  {
             val innerContext = thirdArg<StepContext<*, *>>()
             innerContextTailFlags.add(innerContext.isTail)
             capturedInputs.add(innerContext.receive())
-            outerContextTailFlags.add(ctx.isTail)
+            outerContextTailFlags.add(outerContext.isTail)
         }
 
-        step.execute(minion, ctx)
+        step.execute(minion, outerContext)
 
         coVerifyExactly(10) {
-            step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx))
+            step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(outerContext))
         }
 
         // Tail flag should be false until the latest iteration.
@@ -127,15 +128,15 @@ internal class IterativeStepDecoratorTest {
         }
         Assertions.assertTrue(innerContextTailFlags[9])
         Assertions.assertTrue(outerContextTailFlags[9])
-        Assertions.assertTrue(ctx.isTail)
+        Assertions.assertTrue(outerContext.isTail)
 
-        Assertions.assertFalse(ctx.isExhausted)
+        Assertions.assertFalse(outerContext.isExhausted)
         Assertions.assertEquals(10, capturedInputs.size)
         // The same input is always reused.
         capturedInputs.forEach {
             Assertions.assertSame(testEntity, it)
         }
-        Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
+        Assertions.assertFalse((outerContext.output as Channel).isClosedForReceive)
         // The same input is always reused.
         capturedContexts.forEach {
             Assertions.assertSame(testEntity, it.receive())
@@ -188,7 +189,7 @@ internal class IterativeStepDecoratorTest {
 
     @Test
     @Timeout(10)
-    fun `should iterate on decorated step with delay`() = runBlocking {
+    fun `should iterate on decorated step with delay even when the step does not consume the input`() = runBlocking {
         val executionTimestamps = mutableListOf<Long>()
         val decoratedStep: Step<TestEntity, Any> = mockk {
             coEvery { execute(any(), any()) } answers { executionTimestamps.add(System.currentTimeMillis()) }

@@ -24,13 +24,11 @@ report:
 
 logging:
   level:
-    io.qalipsis: TRACE
     root: INFO
-    io:
-      qalipsis:
-        api: INFO
-        core: INFO
-        runtime: INFO
+    "io.qalipsis": TRACE
+    "io.qalipsis.api": TRACE
+    "io.qalipsis.core": TRACE
+    "io.qalipsis.core.runtime": TRACE
   file:
     path: qalipsis-test.log
     async: false
@@ -45,3 +43,7 @@ campaign:
   speed-factor: 1.0
   start-offset-ms: 500
   scenarios: ""
+
+minion-shutdown-timeout: 500ms
+scenario-shutdown-timeout: 1s
+campaign-shutdown-timeout: 3s

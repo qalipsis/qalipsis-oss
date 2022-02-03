@@ -19,7 +19,7 @@ internal class FilterStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 1L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
 
         Assertions.assertEquals(1L, output)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)

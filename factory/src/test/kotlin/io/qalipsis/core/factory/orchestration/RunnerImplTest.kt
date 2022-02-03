@@ -14,9 +14,10 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.factory.generate
+import io.qalipsis.core.factory.noOutput
 import io.qalipsis.core.factory.steps
 import io.qalipsis.core.factory.testDag
-import io.qalipsis.core.factory.testStep
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
@@ -84,10 +85,10 @@ internal class RunnerImplTest {
         every { meterRegistry.timer("step-execution", *anyVararg()) } returns stepExecutionTimer
 
         val dag = testDag {
-            this.testStep("step-1", 1).all {
-                step("step-2").processError("step-3")
-                delayedStep("step-4", 2, 600).all {
-                    step("step-5")
+            generate("step-1", 1).all {
+                forward("step-2").processError("step-3")
+                delayed("step-4", 2, 600).all {
+                    forward("step-5")
                     processError("step-6")
                 }
             }
@@ -107,7 +108,8 @@ internal class RunnerImplTest {
         val steps = dag.steps()
         (1..6).forEach {
             steps["step-$it"].let { step ->
-                step!!.assertExecuted()
+                step!!.assertExecutionCount(1)
+                step.assertCompletionCount(1)
                 step.assertNotExhaustedContext()
             }
         }
@@ -198,7 +200,7 @@ internal class RunnerImplTest {
     internal fun `should execute the error processing only`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
-            this.testStep<Int>("step-1", generateException = true).step("step-2").processError("step-3").step("step-4")
+            noOutput<Int>("step-1", generateException = true).forward("step-2").processError("step-3").forward("step-4")
                 .decoratedProcessError("step-5")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
@@ -210,11 +212,26 @@ internal class RunnerImplTest {
 
         // then
         val steps = dag.steps()
-        steps["step-1"]!!.assertExecuted()
-        steps["step-2"]!!.assertNotExecuted()
-        steps["step-3"]!!.assertExecuted()
-        steps["step-4"]!!.assertNotExecuted()
-        steps["step-5"]!!.assertExecuted()
+        steps["step-1"]!!.all {
+            assertExecutionCount(1)
+            assertExecutionCount(1)
+        }
+        steps["step-2"]!!.all {
+            assertNotExecuted()
+            assertCompletionCount(1)
+        }
+        steps["step-3"]!!.all {
+            assertExecutionCount(1)
+            assertCompletionCount(1)
+        }
+        steps["step-4"]!!.all {
+            assertNotExecuted()
+            assertCompletionCount(1)
+        }
+        steps["step-5"]!!.all {
+            assertExecutionCount(1)
+            assertCompletionCount(1)
+        }
 
         coVerifyOnce {
             reportLiveStateRegistry.recordFailedStepExecution(eq("my-campaign"), eq("my-scenario"), eq("step-1"), eq(1))
@@ -240,8 +257,8 @@ internal class RunnerImplTest {
     internal fun `should execute the normal steps after recovery`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
-            this.testStep<Int>("step-1", generateException = true)
-                .step("step-2").recoverError("step-3", 2).step("step-4")
+            noOutput<Int>("step-1", generateException = true)
+                .forward("step-2").recoverError("step-3", 2).forward("step-4")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
@@ -252,12 +269,22 @@ internal class RunnerImplTest {
 
         // then
         val steps = dag.steps()
-        steps["step-1"]!!.assertExecuted()
-        steps["step-2"]!!.assertNotExecuted()
-        steps["step-3"]!!.assertExecuted()
-        steps["step-4"]!!.let {
-            Assertions.assertEquals(2, it.received)
-            it.assertExecuted()
+        steps["step-1"]!!.apply {
+            assertExecutionCount(1)
+            assertCompletionCount(1)
+        }
+        steps["step-2"]!!.apply {
+            assertNotExecuted()
+            assertCompletionCount(1)
+        }
+        steps["step-3"]!!.apply {
+            assertExecutionCount(1)
+            assertCompletionCount(1)
+        }
+        steps["step-4"]!!.apply {
+            assertExecutionCount(1)
+            assertCompletionCount(1)
+            Assertions.assertEquals(2, received)
         }
 
         coVerifyOnce {
@@ -281,41 +308,48 @@ internal class RunnerImplTest {
 
     @Test
     @Timeout(3)
-    internal fun `should suspend next steps when there is no output`() = testCoroutineDispatcher.runTest {
-        // given
-        val dag = testDag {
-            this.testStep<Int>("step-1").all {
-                this.step("step-2").processError("step-3")
-                this.step("step-4")
+    internal fun `should not execute next steps when there is no output but complete them`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val dag = testDag {
+                noOutput<Int>("step-1").blackhole("step-2").all {
+                    forward("step-3").processError("step-4")
+                    forward("step-5")
+                }
             }
-        }
-        val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
+            val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+            val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
 
-        // when
-        runner.run(minion, dag)
-        withTimeout(500) {
-            minion.join()
-        }
+            // when
+            runner.run(minion, dag)
+            withTimeout(500) {
+                minion.join()
+            }
 
-        // then
-        val steps = dag.steps()
-        steps["step-1"]!!.assertExecuted()
-        (2..4).forEach {
-            steps["step-$it"]!!.assertNotExecuted()
-        }
+            // then
+            val steps = dag.steps()
+            steps["step-1"]!!.apply {
+                assertExecutionCount(1)
+                assertCompletionCount(1)
+            }
+            (2..5).forEach {
+                steps["step-$it"]!!.apply {
+                    assertNotExecuted()
+                    assertCompletionCount(1)
+                }
+            }
 
-        coVerifyOnce {
-            reportLiveStateRegistry.recordSuccessfulStepExecution(
-                eq("my-campaign"),
-                eq("my-scenario"),
-                eq("step-1"),
-                eq(1)
-            )
-        }
+            coVerifyOnce {
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-1"),
+                    eq(1)
+                )
+            }
 
-        confirmVerified(reportLiveStateRegistry)
-    }
+            confirmVerified(reportLiveStateRegistry)
+        }
 
     @Test
     @Timeout(3)
@@ -334,8 +368,8 @@ internal class RunnerImplTest {
             }
         }
         val dag = testDag {
-            this.testStep("step-1", output = 12, retryPolicy = retryPolicy)
-                .step("step-2")
+            generate("step-1", output = 12, retryPolicy = retryPolicy)
+                .forward("step-2")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
@@ -347,10 +381,14 @@ internal class RunnerImplTest {
         // then
         coVerifyOnce { retryPolicy.execute<Int, Int>(any(), any()) }
         val steps = dag.steps()
-        steps["step-1"]!!.assertNotExecuted()
-        steps["step-2"]!!.let { step ->
-            step.assertExecuted()
-            Assertions.assertEquals(123, step.received)
+        steps["step-1"]!!.apply {
+            assertNotExecuted()
+            assertCompletionCount(1)
+        }
+        steps["step-2"]!!.apply {
+            assertExecutionCount(1)
+            assertCompletionCount(1)
+            Assertions.assertEquals(123, received)
         }
 
         coVerifyOnce {
@@ -370,4 +408,94 @@ internal class RunnerImplTest {
 
         confirmVerified(reportLiveStateRegistry)
     }
+
+    @Test
+    internal fun `should complete only once per minion even when there is no output`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val dag = testDag {
+                generate("step-1", 1).repeated("step-2", 4).forward("step-3").all {
+                    forward("step-4").processError("step-5")
+                    blackhole("step-6").all {
+                        forward("step-7")
+                        processError("step-8")
+                    }
+                }
+            }
+            val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
+            val minion1 = MinionImpl("my-minion-1", "my-campaign", "my-scenario", false, false, AtomicInteger())
+            val minion2 = MinionImpl("my-minion-2", "my-campaign", "my-scenario", false, false, AtomicInteger())
+
+            // when
+            runner.run(minion1, dag)
+            runner.run(minion2, dag)
+            withTimeout(500) {
+                minion1.join()
+                minion2.join()
+            }
+
+            // then
+            val steps = dag.steps()
+            (1..2).forEach {
+                steps["step-$it"]!!.apply {
+                    assertExecutionCount(2)
+                    assertCompletionCount(2)
+                }
+            }
+            (3..6).forEach {
+                steps["step-$it"]!!.apply {
+                    assertExecutionCount(8)
+                    assertCompletionCount(2)
+                }
+            }
+            (7..8).forEach {
+                steps["step-$it"]!!.apply {
+                    assertNotExecuted()
+                    assertCompletionCount(2)
+                }
+            }
+
+            coVerifyExactly(2) {
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-1"),
+                    eq(1)
+                )
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-2"),
+                    eq(1)
+                )
+            }
+            coVerifyExactly(8) {
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-3"),
+                    eq(1)
+                )
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-4"),
+                    eq(1)
+                )
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-5"),
+                    eq(1)
+                )
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    eq("my-campaign"),
+                    eq("my-scenario"),
+                    eq("step-6"),
+                    eq(1)
+                )
+            }
+
+            confirmVerified(reportLiveStateRegistry)
+        }
 }

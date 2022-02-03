@@ -2,7 +2,8 @@ package io.qalipsis.core.factory.context
 
 import io.micrometer.core.instrument.Tags
 import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.CompletionContext
+import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepContext
@@ -12,74 +13,54 @@ import io.qalipsis.api.sync.Latch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import java.time.Instant
 
 /**
- * Data class containing all the required information to execute a step on a minion.
+ * Container for all the required information to execute a step on a minion and monitor the execution.
+ *
+ * @property input Channel providing the value to use for the execution
+ * @property output Channel to push the result
+ * @property internalErrors List of the generated errors so far
  *
  * @author Eric Jessé
  */
 internal class StepContextImpl<IN, OUT>(
-
-    /**
-     * Channel providing the source.
-     */
-    val input: ReceiveChannel<IN> = Channel(Channel.UNLIMITED),
-
-    /**
-     * Channel to push the result.
-     */
-    val output: SendChannel<OUT> = Channel(1),
-
-    /**
-     * List of the generated errors so far.
-     */
+    private val input: ReceiveChannel<IN> = Channel(1),
+    val output: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(Channel.UNLIMITED),
     private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),
-
     override val campaignId: CampaignId = "",
-
     override val minionId: MinionId,
-
     override val scenarioId: ScenarioId,
-
-    override val directedAcyclicGraphId: DirectedAcyclicGraphId,
-
-    override val parentStepId: StepId? = null,
-
+    override val previousStepId: StepId? = null,
     override var stepId: StepId,
-
     override var stepType: String? = null,
-
     override var stepFamily: String? = null,
-
     override var stepIterationIndex: Long = 0,
-
-    override var attemptsAfterFailure: Long = 0,
-
-    override var creation: Long = System.currentTimeMillis(),
-
     override var isExhausted: Boolean = false,
-
-    override var isCompleted: Boolean = true,
-
     override var isTail: Boolean = true
-
 ) : StepContext<IN, OUT> {
 
     /**
      * Latch belonging to the step context, used to synchronize it.
      */
     private var latch: Latch? = null
-
     private var immutableEventTags: Map<String, String>? = null
-
     private var immutableMetersTags: Tags? = null
+    override var generatedOutput: Boolean = false
 
     override val errors: List<StepError>
         get() = internalErrors.toList()
 
     override val hasInput: Boolean
         get() = !input.isEmpty
+
+    override val equivalentCompletionContext: CompletionContext
+        get() = DefaultCompletionContext(
+            campaignId = campaignId,
+            scenarioId = scenarioId,
+            minionId = minionId,
+            lastExecutedStepId = stepId,
+            errors = errors
+        )
 
     override fun addError(error: StepError) {
         if (error.stepId.isEmpty()) {
@@ -96,7 +77,10 @@ internal class StepContextImpl<IN, OUT>(
     /**
      * Send a record to the next steps.
      */
-    override suspend fun send(element: OUT) = output.send(element)
+    override suspend fun send(element: OUT) {
+        output.send(StepContext.StepOutputRecord(element, isTail))
+        generatedOutput = true
+    }
 
     /**
      * Locks the internal latch of the context.
@@ -126,48 +110,46 @@ internal class StepContextImpl<IN, OUT>(
         }
     }
 
-    override fun duplicate(
-        newInput: ReceiveChannel<IN>,
-        newOutput: SendChannel<OUT>
-    ): StepContext<IN, OUT> {
+    override fun <T : Any?> next(stepId: StepId): StepContext<OUT, T> {
         return StepContextImpl(
-            input = newInput,
-            output = newOutput,
+            internalErrors = LinkedHashSet(internalErrors),
             campaignId = campaignId,
             minionId = minionId,
             scenarioId = scenarioId,
-            directedAcyclicGraphId = directedAcyclicGraphId,
-            parentStepId = this.stepId,
+            previousStepId = this.stepId,
             stepId = stepId,
             isExhausted = isExhausted,
-            isCompleted = isCompleted,
-            isTail = isTail,
-            creation = creation
+            isTail = isTail
+        )
+    }
+
+    override fun duplicate(
+        inputChannel: ReceiveChannel<IN>?,
+        outputChannel: SendChannel<StepContext.StepOutputRecord<OUT>>?,
+        stepIterationIndex: Long
+    ): StepContext<IN, OUT> {
+        val sourceInput = this.input
+        return StepContextImpl(
+            input = inputChannel ?: sourceInput,
+            output = outputChannel ?: this.output,
+            campaignId = campaignId,
+            minionId = minionId,
+            scenarioId = scenarioId,
+            previousStepId = this.previousStepId,
+            stepId = stepId,
+            stepIterationIndex = stepIterationIndex,
+            isExhausted = isExhausted,
+            isTail = isTail
         ).also {
             it.internalErrors.addAll(this.internalErrors)
-            if (!input.isEmpty) {
-                // The input value should be in both input channels.
+
+            if (input !== sourceInput && !sourceInput.isEmpty) {
+                // The input value is copied in the new input, and also remains in the source one.
                 val inputValue = input.tryReceive().getOrThrow()
-                (newInput as Channel<IN>).trySend(inputValue)
+                (inputChannel as Channel<IN>).trySend(inputValue)
                 (input as Channel<IN>).trySend(inputValue)
             }
         }
-    }
-
-    override fun <T : Any?> next(stepId: StepId): StepContext<OUT, T> {
-        return StepContextImpl(
-            internalErrors = LinkedHashSet<StepError>().apply { addAll(internalErrors) },
-            campaignId = campaignId,
-            minionId = minionId,
-            scenarioId = scenarioId,
-            directedAcyclicGraphId = directedAcyclicGraphId,
-            parentStepId = this.stepId,
-            stepId = stepId,
-            isExhausted = isExhausted,
-            isCompleted = isCompleted,
-            isTail = isTail,
-            creation = creation
-        )
     }
 
     override fun toEventTags(): Map<String, String> {
@@ -176,23 +158,16 @@ internal class StepContextImpl<IN, OUT>(
                 "campaign" to campaignId,
                 "minion" to minionId,
                 "scenario" to scenarioId,
-                "dag" to directedAcyclicGraphId,
-                "step" to stepId,
-                "context-creation" to Instant.ofEpochMilli(creation).toString()
+                "iteration" to "$stepIterationIndex"
             )
-            parentStepId?.let { tags["parent-step"] = it }
+            previousStepId?.let { tags["previous-step"] = it }
             stepType?.let { tags["step-type"] = it }
             stepFamily?.let { tags["step-family"] = it }
             immutableEventTags = tags
         }
-        return immutableEventTags!!.plus(
-            mutableMapOf(
-                "iteration" to stepIterationIndex.toString(),
-                "attempts-after-failure" to attemptsAfterFailure.toString(),
-                "isExhausted" to isExhausted.toString(),
-                "isTail" to isTail.toString(),
-                "isCompleted" to isCompleted.toString()
-            )
+        return immutableEventTags!! + mapOf(
+            "isExhausted" to "$isExhausted",
+            "isTail" to "$isTail"
         )
     }
 
@@ -201,19 +176,23 @@ internal class StepContextImpl<IN, OUT>(
             var tags = Tags.of(
                 "campaign", campaignId,
                 "scenario", scenarioId,
-                "dag", directedAcyclicGraphId,
                 "step", stepId
             )
-            parentStepId?.let { tags = tags.and("parent-step", it) }
+            previousStepId?.let { tags = tags.and("previous-step", it) }
             immutableMetersTags = tags
         }
         return immutableMetersTags!!
     }
 
-    override fun toString(): String {
-        return "StepContext(campaignId='$campaignId', minionId='$minionId', scenarioId='$scenarioId', directedAcyclicGraphId='$directedAcyclicGraphId', parentStepId=$parentStepId, stepId='$stepId')"
+    override suspend fun close() {
+        input.cancel()
+        output.close()
+        super.close()
     }
 
+    override fun toString(): String {
+        return "StepContext(campaignId='$campaignId', minionId='$minionId', scenarioId='$scenarioId', parentStepId=$previousStepId, stepId='$stepId')"
+    }
 
 }
 

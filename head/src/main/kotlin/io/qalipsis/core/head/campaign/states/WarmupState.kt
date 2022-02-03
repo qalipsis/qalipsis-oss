@@ -69,6 +69,10 @@ internal open class WarmupState(
         }
     }
 
+    override fun toString(): String {
+        return "WarmupState(campaign=$campaign, expectedFeedbacks=$expectedFeedbacks)"
+    }
+
     private companion object {
 
         @JvmStatic

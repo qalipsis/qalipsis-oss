@@ -139,7 +139,7 @@ internal class RedisCampaignManagerTest {
                 directiveProducer.publish(refEq(directives[0]))
                 directiveProducer.publish(refEq(directives[1]))
             }
-            confirmVerified(originalState, finalState, directiveProducer, factoryService, campaignReportStateKeeper)
+            confirmVerified(directiveProducer, factoryService, campaignReportStateKeeper)
         }
 
     @Test
@@ -190,7 +190,7 @@ internal class RedisCampaignManagerTest {
                 directiveProducer.publish(refEq(directives[0]))
                 directiveProducer.publish(refEq(directives[1]))
             }
-            confirmVerified(originalState, finalState, directiveProducer, factoryService, campaignReportStateKeeper)
+            confirmVerified(directiveProducer, factoryService, campaignReportStateKeeper)
         }
 
     @Test

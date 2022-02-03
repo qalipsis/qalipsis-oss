@@ -29,7 +29,7 @@ internal class UnshelveStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Pair<Long, Map<String, Any?>>>(input = 123L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(output, 123L to values)
 
         coVerifyOnce {
@@ -55,7 +55,7 @@ internal class UnshelveStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Pair<Long, Map<String, Any?>>>(input = 123L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(output, 123L to values)
 
         coVerifyOnce {
@@ -79,7 +79,7 @@ internal class UnshelveStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Pair<Long, String?>>(input = 123L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(output, 123L to "The value")
 
         coVerifyOnce {
@@ -100,7 +100,7 @@ internal class UnshelveStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Pair<Long, String?>>(input = 123L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(output, 123L to "The value")
 
         coVerifyOnce {

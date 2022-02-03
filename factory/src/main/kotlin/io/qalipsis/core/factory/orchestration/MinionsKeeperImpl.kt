@@ -58,19 +58,18 @@ internal class MinionsKeeperImpl(
         return singletonMinionsByDagId[scenarioId, dagId]!!
     }
 
-    @LogInputAndOutput(level = Level.DEBUG)
+    @LogInput(level = Level.DEBUG)
     override suspend fun create(
         campaignId: CampaignId, scenarioId: ScenarioId, dagIds: Collection<DirectedAcyclicGraphId>, minionId: MinionId
     ) {
         scenarioRegistry[scenarioId]?.let { scenario ->
             // Extracts the DAG being the entry to the scenario for the minion.
-            val rootDag =
-                dagIds.asSequence().map { dagId -> scenario[dagId]!! }.firstOrNull { !it.isUnderLoad || it.isRoot }
+            val rootDag = dagIds.asSequence().map { dagId -> scenario[dagId]!! }.firstOrNull { it.isRoot }
             val minion = MinionImpl(
                 minionId,
                 campaignId,
                 scenarioId,
-                rootDag != null,
+                rootDag != null && rootDag.isUnderLoad, // Minions that have no root or are under load should not be started yet.
                 rootDag?.isSingleton == true,
                 meterRegistry.gauge(
                     "minion-running-steps",
@@ -80,7 +79,7 @@ internal class MinionsKeeperImpl(
             )
             minions[minionId] = minion
 
-            if (minion.isSingleton) {
+            if (minion.isSingleton || rootDag?.isUnderLoad == false) {
                 val dagId = dagIds.first()
                 idleSingletonsMinions.computeIfAbsent(scenarioId) { concurrentSet() } += minion
                 singletonMinionsByDagId.put(scenarioId, dagId, minion)

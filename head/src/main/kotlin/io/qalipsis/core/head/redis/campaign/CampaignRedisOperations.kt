@@ -37,6 +37,17 @@ internal class CampaignRedisOperations(
     }
 
     /**
+     * Creates brand new feedback expectations initialized with the collection of scenarios identifiers.
+     */
+    suspend fun prepareScenariosForFeedbackExpectations(campaign: CampaignConfiguration) {
+        val key = buildExpectedFeedbackKey(campaign.id)
+        redisCommands.unlink(key)
+        if (campaign.scenarios.isNotEmpty()) {
+            redisCommands.sadd(key, *campaign.scenarios.keys.toTypedArray())
+        }
+    }
+
+    /**
      * Creates brand new feedback expectations initialized with the scenarios for each factory.
      */
     suspend fun prepareAssignmentsForFeedbackExpectations(campaign: CampaignConfiguration) {
@@ -58,6 +69,17 @@ internal class CampaignRedisOperations(
     suspend fun markFeedbackForFactory(campaignId: CampaignId, factory: NodeId): Boolean {
         val feedbackKey = buildExpectedFeedbackKey(campaignId)
         redisCommands.srem(feedbackKey, factory)
+        return !exists(feedbackKey)
+    }
+
+    /**
+     * Removes the scenarioId from the feedback expectations and returns whether the expectations are empty or not.
+     *
+     * @return true when there are no longer expectations, false otherwise
+     */
+    suspend fun markFeedbackForScenario(campaignId: CampaignId, scenarioId: ScenarioId): Boolean {
+        val feedbackKey = buildExpectedFeedbackKey(campaignId)
+        redisCommands.srem(feedbackKey, scenarioId)
         return !exists(feedbackKey)
     }
 

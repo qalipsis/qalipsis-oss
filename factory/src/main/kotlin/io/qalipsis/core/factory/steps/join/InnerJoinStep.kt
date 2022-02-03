@@ -104,7 +104,7 @@ internal class InnerJoinStep<I, O>(
 
         val input = context.receive()
         // Extract the key from the left side and search or wait for an available equivalent value coming from the right side.
-        leftKeyExtractor(CorrelationRecord(context.minionId, context.parentStepId!!, input))
+        leftKeyExtractor(CorrelationRecord(context.minionId, context.previousStepId!!, input))
             ?.let { key ->
                 try {
                     log.trace { "Searching correlation values for key '$key' as ${key::class}" }

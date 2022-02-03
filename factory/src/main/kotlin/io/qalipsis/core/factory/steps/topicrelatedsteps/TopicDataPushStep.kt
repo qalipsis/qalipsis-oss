@@ -62,19 +62,17 @@ internal class TopicDataPushStep<I>(
                 while (running) {
                     val valueFromTopic = topicSubscription.pollValue()
                     if (filter(valueFromTopic)) {
-                        val input = Channel<I>(1)
                         val ctx = StepContextImpl<I, I>(
-                            input = input,
+                            input = Channel<I>(1).also { it.send(valueFromTopic) },
                             campaignId = context.campaignId,
                             scenarioId = context.scenarioId,
-                            parentStepId = parentStepId,
+                            previousStepId = parentStepId,
                             stepId = stepId,
-                            directedAcyclicGraphId = context.dagId,
                             minionId = minion.id,
                             isTail = false // We actually never know when the tail will come.
                         )
-                        input.send(valueFromTopic)
-                        runner.launch(minion, nextStep, ctx)
+                        log.debug { "Pushing the value $valueFromTopic" }
+                        runner.runMinion(minion, nextStep, ctx)
                     }
                 }
             } catch (e: CancellationException) {

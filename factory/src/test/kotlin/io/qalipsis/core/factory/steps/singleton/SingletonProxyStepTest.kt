@@ -7,7 +7,6 @@ import io.mockk.mockk
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import io.qalipsis.test.steps.StepTestHelper
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -34,7 +33,7 @@ internal class SingletonProxyStepTest {
         step.execute(ctx)
 
         // then
-        Assertions.assertEquals(123L, (ctx.output as Channel).receive())
+        Assertions.assertEquals(123L, ctx.consumeOutputValue())
         coVerifyOrder {
             topic.subscribe("${ctx.minionId}-${ctx.stepId}")
             subscription.pollValue()

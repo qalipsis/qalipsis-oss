@@ -139,8 +139,7 @@ internal class MinionsShutdownDirectiveProcessorTest {
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
-            minionsKeeper.shutdownMinion("my-minion-1")
-            minionsKeeper.shutdownMinion("my-minion-3")
+            factoryCampaignManager.shutdownMinions("my-campaign", listOf("my-minion-1", "my-minion-3"))
             feedbackFactoryChannel.publish(
                 MinionsShutdownFeedback(
                     key = "the-feedback-2",
@@ -168,7 +167,12 @@ internal class MinionsShutdownDirectiveProcessorTest {
             every { minionsKeeper.contains("my-minion-1") } returns true
             every { minionsKeeper.contains("my-minion-2") } returns false
             every { minionsKeeper.contains("my-minion-3") } returns true
-            coEvery { minionsKeeper.shutdownMinion("my-minion-1") } throws RuntimeException("A problem occurred")
+            coEvery {
+                factoryCampaignManager.shutdownMinions(
+                    "my-campaign",
+                    listOf("my-minion-1", "my-minion-3")
+                )
+            } throws RuntimeException("A problem occurred")
 
             // when
             processor.process(directive)
@@ -189,8 +193,7 @@ internal class MinionsShutdownDirectiveProcessorTest {
                         status = FeedbackStatus.IN_PROGRESS
                     )
                 )
-                minionsKeeper.shutdownMinion("my-minion-1")
-                minionsKeeper.shutdownMinion("my-minion-3")
+                factoryCampaignManager.shutdownMinions("my-campaign", listOf("my-minion-1", "my-minion-3"))
                 feedbackFactoryChannel.publish(
                     MinionsShutdownFeedback(
                         key = "the-feedback-2",
