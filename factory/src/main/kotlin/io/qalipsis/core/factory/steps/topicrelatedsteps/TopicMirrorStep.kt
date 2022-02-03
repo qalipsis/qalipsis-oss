@@ -1,5 +1,6 @@
 package io.qalipsis.core.factory.steps.topicrelatedsteps
 
+import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -26,7 +27,7 @@ internal open class TopicMirrorStep<I, T>(
 ) : AbstractStep<I, I>(id, null) {
 
     override fun addNext(nextStep: Step<*, *>) {
-        // Do nothing, this step is connected to its next ones using the property topic.
+        // Do nothing, this step is connected to its next ones using the topic property.
         // It should not have any next step, otherwise there is a race to consume the output
         // between the topic feeder and the next steps.
     }
@@ -36,20 +37,26 @@ internal open class TopicMirrorStep<I, T>(
     }
 
     override suspend fun execute(context: StepContext<I, I>) {
-        if (context.isTail) {
-            topic.complete()
-        } else {
+        if (context.hasInput) {
             // Consumes the data emitted by the previous step to populate the broadcast channel to the proxy steps.
             val value = context.receive()
             if (predicate(context, value)) {
                 val record = wrap(context, value)
                 log.trace { "Adding $value to the topic" }
                 topic.produceValue(record)
+                log.trace { "$value was added to the topic" }
             } else {
                 log.trace { "The value $value does not match the predicate" }
             }
             context.send(value)
+        } else {
+            log.trace { "The context $context has no input" }
         }
+    }
+
+    override suspend fun complete(completionContext: CompletionContext) {
+        topic.complete()
+        super.complete(completionContext)
     }
 
     companion object {

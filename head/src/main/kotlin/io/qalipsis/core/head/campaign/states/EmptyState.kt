@@ -26,5 +26,4 @@ internal object EmptyState : CampaignExecutionState {
     override suspend fun process(feedback: Feedback): CampaignExecutionState {
         throw IllegalStateException()
     }
-
 }

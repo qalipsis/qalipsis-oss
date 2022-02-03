@@ -58,7 +58,7 @@ internal class TopicDataPushStepTest {
         every { minionsKeeper.getSingletonMinion("my-scenario", "my-dag") } returns minion
         every { minion.id } returns "my-minion"
         val countDownLatch = SuspendedCountLatch(3)
-        coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
+        coEvery { runner.runMinion(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
 
         // when
         step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step"))
@@ -71,15 +71,14 @@ internal class TopicDataPushStepTest {
         step.stop(relaxedMockk())
         val contexts = mutableListOf<StepContext<String, String>>()
         coVerifyExactly(3) {
-            runner.launch(refEq(minion), nextStep, capture(contexts))
+            runner.runMinion(refEq(minion), nextStep, capture(contexts))
         }
 
         assertThat(contexts).all {
             index(0).all {
                 prop(StepContext<String, String>::campaignId).isEqualTo("my-campaign")
                 prop(StepContext<String, String>::scenarioId).isEqualTo("my-scenario")
-                prop(StepContext<String, String>::directedAcyclicGraphId).isEqualTo("my-dag")
-                prop(StepContext<String, String>::parentStepId).isEqualTo("my-parent-step")
+                prop(StepContext<String, String>::previousStepId).isEqualTo("my-parent-step")
                 prop(StepContext<String, String>::stepId).isEqualTo("my-next-step")
                 prop(StepContext<String, String>::minionId).isEqualTo("my-minion")
                 prop(StepContext<String, String>::isTail).isFalse()
@@ -105,7 +104,7 @@ internal class TopicDataPushStepTest {
         every { minionsKeeper.getSingletonMinion("my-scenario", "my-dag") } returns minion
         every { minion.id } returns "my-minion"
         val countDownLatch = SuspendedCountLatch(3)
-        coEvery { runner.launch(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
+        coEvery { runner.runMinion(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
 
         // when
         dataTransferTopic.produceValue("value-1")
@@ -117,7 +116,7 @@ internal class TopicDataPushStepTest {
         assertThat(countDownLatch.await(500, TimeUnit.MILLISECONDS)).isFalse()
         assertThat(countDownLatch.get()).isEqualTo(3L)
         coVerifyNever {
-            runner.launch(any(), any(), any())
+            runner.runMinion(any(), any(), any())
         }
 
         // when
@@ -128,7 +127,7 @@ internal class TopicDataPushStepTest {
         step.stop(relaxedMockk())
         val contexts = mutableListOf<StepContext<String, String>>()
         coVerifyExactly(3) {
-            runner.launch(refEq(minion), nextStep, capture(contexts))
+            runner.runMinion(refEq(minion), nextStep, capture(contexts))
         }
     }
 }

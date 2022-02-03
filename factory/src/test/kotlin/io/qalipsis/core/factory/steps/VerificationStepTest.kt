@@ -78,7 +78,7 @@ internal class VerificationStepTest {
             every { campaignId } returns "my-campaign"
             every { scenarioId } returns "my-scenario"
         })
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(1, output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertFalse(ctx.isExhausted)
@@ -115,7 +115,7 @@ internal class VerificationStepTest {
             every { campaignId } returns "my-campaign"
             every { scenarioId } returns "my-scenario"
         })
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals("1", output)
         assertFalse((ctx.output as Channel).isClosedForReceive)
         assertFalse(ctx.isExhausted)

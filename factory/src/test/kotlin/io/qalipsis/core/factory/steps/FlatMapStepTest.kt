@@ -28,7 +28,7 @@ internal class FlatMapStepTest {
 
         val result = mutableListOf<Int?>()
         ctx.output.close()
-        (ctx.output as Channel).consumeAsFlow().collect { value -> result.add(value) }
+        (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
 
         Assertions.assertEquals(result, IntArray(10) { it }.toList())
     }
@@ -46,7 +46,7 @@ internal class FlatMapStepTest {
 
         val result = mutableListOf<Int?>()
         ctx.output.close()
-        (ctx.output as Channel).consumeAsFlow().collect { value -> result.add(value) }
+        (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
 
         Assertions.assertEquals(result, IntArray(10) { it }.toList())
     }
@@ -64,7 +64,7 @@ internal class FlatMapStepTest {
 
         val result = mutableListOf<Pair<Int, String>?>()
         ctx.output.close()
-        (ctx.output as Channel).consumeAsFlow().collect { value -> result.add(value) }
+        (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
 
         Assertions.assertEquals(result, listOf(1 to "1", 2 to "2", 3 to "3"))
     }
@@ -81,7 +81,7 @@ internal class FlatMapStepTest {
 
         val result = mutableListOf<Int?>()
         ctx.output.close()
-        (ctx.output as Channel).consumeAsFlow().collect { value -> result.add(value) }
+        (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
 
         Assertions.assertTrue(result.isEmpty())
     }
@@ -98,7 +98,7 @@ internal class FlatMapStepTest {
 
         val result = mutableListOf<Int?>()
         ctx.output.close()
-        (ctx.output as Channel).consumeAsFlow().collect { value -> result.add(value) }
+        (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
 
         Assertions.assertEquals(result, listOf(1))
     }
@@ -114,7 +114,7 @@ internal class FlatMapStepTest {
 
         val result = mutableListOf<Int?>()
         ctx.output.close()
-        (ctx.output as Channel).consumeAsFlow().collect { value -> result.add(value) }
+        (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
         Assertions.assertEquals(result, IntArray(10) { it }.toList())
     }
 }

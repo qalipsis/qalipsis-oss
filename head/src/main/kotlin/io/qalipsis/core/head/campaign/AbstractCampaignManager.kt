@@ -6,6 +6,8 @@ import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.lang.tryAndLog
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.directives.CampaignManagementDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DirectiveProcessor
@@ -22,6 +24,8 @@ import jakarta.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
@@ -43,6 +47,8 @@ internal abstract class AbstractCampaignManager(
 
     private var feedbackConsumptionJob: Job? = null
 
+    private val processingMutex = Mutex()
+
     @PostConstruct
     fun init() {
         feedbackConsumptionJob = coroutineScope.launch {
@@ -62,26 +68,38 @@ internal abstract class AbstractCampaignManager(
 
     override fun accept(directive: Directive) = directive is CampaignManagementDirective
 
+    @LogInput
     protected open suspend fun processFeedback(feedback: Feedback) {
         if (feedback is CampaignManagementFeedback) {
             tryAndLog(log) {
-                val campaignState = get(feedback.campaignId).process(feedback)
-                val directives = campaignState.init(factoryService, campaignReportStateKeeper, idGenerator)
-                set(campaignState)
-                directives.forEach {
-                    directiveProducer.publish(it)
+                processingMutex.withLock {
+                    val sourceCampaignState = get(feedback.campaignId)
+                    log.trace { "Processing $feedback on $sourceCampaignState" }
+                    val campaignState = sourceCampaignState.process(feedback)
+                    log.trace { "New campaign state $campaignState" }
+                    val directives = campaignState.init(factoryService, campaignReportStateKeeper, idGenerator)
+                    set(campaignState)
+                    directives.forEach {
+                        directiveProducer.publish(it)
+                    }
                 }
             }
         }
     }
 
+    @LogInput
     override suspend fun process(directive: Directive) {
         tryAndLog(log) {
-            val campaignState = get((directive as CampaignManagementDirective).campaignId).process(directive)
-            val directives = campaignState.init(factoryService, campaignReportStateKeeper, idGenerator)
-            set(campaignState)
-            directives.forEach {
-                directiveProducer.publish(it)
+            processingMutex.withLock {
+                val sourceCampaignState = get((directive as CampaignManagementDirective).campaignId)
+                log.trace { "Processing $directive on $sourceCampaignState" }
+                val campaignState = sourceCampaignState.process(directive)
+                log.trace { "New campaign state $campaignState" }
+                val directives = campaignState.init(factoryService, campaignReportStateKeeper, idGenerator)
+                set(campaignState)
+                directives.forEach {
+                    directiveProducer.publish(it)
+                }
             }
         }
     }
@@ -131,12 +149,14 @@ internal abstract class AbstractCampaignManager(
         campaign: CampaignConfiguration
     ): CampaignExecutionState
 
+    @LogInputAndOutput
     abstract suspend fun get(campaignId: CampaignId): CampaignExecutionState
 
+    @LogInput
     abstract suspend fun set(state: CampaignExecutionState)
 
     companion object {
-        @JvmStatic
+
         private val log = logger()
 
     }

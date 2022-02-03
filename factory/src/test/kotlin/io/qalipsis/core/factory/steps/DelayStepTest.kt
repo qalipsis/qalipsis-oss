@@ -26,7 +26,7 @@ internal class DelayStepTest {
         val start = Instant.now()
         step.execute(ctx)
 
-        Assertions.assertEquals(123, (ctx.output as Channel).receive())
+        Assertions.assertEquals(123, ctx.consumeOutputValue())
         QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delay), start.durationSince())
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
     }

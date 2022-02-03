@@ -83,20 +83,22 @@ internal class StageStep<I, O>(
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         val output = Channel<Any?>(Channel.UNLIMITED)
-        val innerContext = context.duplicate(newOutput = output)
+        val input = Channel<I>(1)
+        val innerContext = context.duplicate(inputChannel = input, outputChannel = output)
+        input.send(context.receive())
 
         var failure = false
 
         // The first step of the group is executed.
         runner.execute(minion, head!!, innerContext) { ctx ->
             log.trace { "Consuming the tail context $ctx" }
-            if (!context.isExhausted && !ctx.isExhausted) {
+            if (!context.isExhausted && !ctx.isExhausted && ctx.generatedOutput) {
                 // When the latest step of the group is executed, its output is forwarded to the overall context.
-                for (outputRecord in (ctx as StepContextImpl).output as ReceiveChannel<*>) {
-                    @Suppress("UNCHECKED_CAST")
-                    context.send(outputRecord as O)
+                @Suppress("UNCHECKED_CAST")
+                for (outputRecord in (ctx as StepContextImpl).output as ReceiveChannel<StepContext.StepOutputRecord<*>>) {
+                    context.send(outputRecord.value as O)
                 }
-            } else {
+            } else if (ctx.isExhausted) {
                 failure = true
                 log.trace { "The stage ${this.id} finished with error(s): ${ctx.errors.joinToString { it.message }}" }
                 // Errors have to be forwarded.
@@ -105,7 +107,7 @@ internal class StageStep<I, O>(
         }?.join()
 
         if (failure) {
-            throw StepExecutionException()
+            throw StepExecutionException(RuntimeException(context.errors.last().message))
         }
     }
 

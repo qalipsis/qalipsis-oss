@@ -60,6 +60,10 @@ internal open class MinionsStartupState(
         }
     }
 
+    override fun toString(): String {
+        return "MinionsStartupState(campaign=$campaign)"
+    }
+
     private companion object {
 
         @JvmStatic

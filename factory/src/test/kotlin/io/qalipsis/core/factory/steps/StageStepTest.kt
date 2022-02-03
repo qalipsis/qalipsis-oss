@@ -9,7 +9,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isNull
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.mockk.coEvery
@@ -117,7 +117,7 @@ internal class StageStepTest {
 
         step.execute(minion, ctx)
         repeat(6) {
-            results.add((ctx.output as Channel).receive())
+            results.add((ctx.output as Channel).receive().value)
         }
 
         assertTrue((ctx.output as Channel).isEmpty)
@@ -165,7 +165,8 @@ internal class StageStepTest {
         assertTrue((ctx.output as Channel).isEmpty)
         assertFalse(ctx.output.isClosedForReceive)
         assertThat(exception).isInstanceOf(StepExecutionException::class).all {
-            prop(StepExecutionException::cause).isNull()
+            prop(StepExecutionException::cause).isNotNull().isInstanceOf(RuntimeException::class)
+                .prop(RuntimeException::message).isEqualTo("This is an error")
         }
         assertThat(ctx).all {
             prop(StepContext<Int, String>::isExhausted).isFalse()
@@ -213,7 +214,8 @@ internal class StageStepTest {
             assertTrue((ctx.output as Channel).isEmpty)
             assertFalse(ctx.output.isClosedForReceive)
             assertThat(exception).isInstanceOf(StepExecutionException::class).all {
-                prop(StepExecutionException::cause).isNull()
+                prop(StepExecutionException::cause).isNotNull().isInstanceOf(RuntimeException::class)
+                    .prop(RuntimeException::message).isEqualTo("This is an error")
             }
             assertThat(ctx).all {
                 prop(StepContext<Int, String>::isExhausted).isFalse()

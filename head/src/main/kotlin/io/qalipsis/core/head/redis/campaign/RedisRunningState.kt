@@ -4,8 +4,8 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
+import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
 import io.qalipsis.core.feedbacks.CompleteMinionFeedback
-import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -28,6 +28,7 @@ internal class RedisRunningState(
     override suspend fun doInit(): List<Directive> {
         if (!doNotPersistStateOnInit) {
             operations.setState(campaignId, CampaignRedisState.RUNNING_STATE)
+            operations.prepareScenariosForFeedbackExpectations(campaign)
         }
         return super.doInit()
     }
@@ -69,9 +70,13 @@ internal class RedisRunningState(
                     )
                 )
             }
-            feedback is EndOfCampaignFeedback -> {
-                campaignReportStateKeeper.complete(feedback.campaignId)
-                RedisCompletionState(campaign, operations)
+            feedback is CampaignScenarioShutdownFeedback -> {
+                if (operations.markFeedbackForScenario(feedback.campaignId, feedback.scenarioId)) {
+                    campaignReportStateKeeper.complete(feedback.campaignId)
+                    RedisCompletionState(campaign, operations)
+                } else {
+                    this
+                }
             }
             else -> this
         }

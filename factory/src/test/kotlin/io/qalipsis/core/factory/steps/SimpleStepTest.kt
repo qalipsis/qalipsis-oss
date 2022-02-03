@@ -18,7 +18,7 @@ internal class SimpleStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 123L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(123L, output)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
         Assertions.assertFalse(ctx.isExhausted)

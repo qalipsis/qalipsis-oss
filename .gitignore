@@ -40,3 +40,4 @@ hs_err_pid*
 /core/docker/kibana/
 /core/docker/elasticsearch/
 
+/**/id.meta

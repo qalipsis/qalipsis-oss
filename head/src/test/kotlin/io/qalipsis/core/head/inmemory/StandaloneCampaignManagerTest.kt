@@ -126,7 +126,7 @@ internal class StandaloneCampaignManagerTest {
                 directiveProducer.publish(refEq(directives[1]))
             }
             assertThat(campaignManager).prop("currentCampaignState").isSameAs(finalState)
-            confirmVerified(originalState, finalState, directiveProducer, factoryService, campaignReportStateKeeper)
+            confirmVerified(directiveProducer, factoryService, campaignReportStateKeeper)
         }
 
     @Test
@@ -174,7 +174,7 @@ internal class StandaloneCampaignManagerTest {
                 directiveProducer.publish(refEq(directives[1]))
             }
             assertThat(campaignManager).prop("currentCampaignState").isSameAs(finalState)
-            confirmVerified(originalState, finalState, directiveProducer, factoryService, campaignReportStateKeeper)
+            confirmVerified(directiveProducer, factoryService, campaignReportStateKeeper)
         }
 
     @Test

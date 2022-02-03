@@ -1,9 +1,8 @@
 package io.qalipsis.core.factory.steps
 
+import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
-import io.qalipsis.api.steps.ErrorProcessingStep
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 
 /**
@@ -15,19 +14,14 @@ internal class DeadEndStep<I>(
     id: StepId,
     private val dagId: DirectedAcyclicGraphId,
     private val factoryCampaignManager: FactoryCampaignManager
-) : BlackHoleStep<I>(id), ErrorProcessingStep<I, Unit> {
+) : BlackHoleStep<I>(id) {
 
-    override suspend fun execute(context: StepContext<I, Unit>) {
-        if (context.isTail) {
-            factoryCampaignManager.notifyCompleteMinion(
-                context.minionId,
-                context.campaignId,
-                context.scenarioId,
-                dagId
-            )
-        }
-        if (!context.isExhausted) {
-            super<BlackHoleStep>.execute(context)
-        }
+    override suspend fun complete(completionContext: CompletionContext) {
+        factoryCampaignManager.notifyCompleteMinion(
+            completionContext.minionId,
+            completionContext.campaignId,
+            completionContext.scenarioId,
+            dagId
+        )
     }
 }

@@ -9,7 +9,7 @@ package io.qalipsis.core.factory.orchestration
  *
  * @author Eric Jessé
  */
-internal class CampaignCompletionState(
+internal data class CampaignCompletionState(
     var minionComplete: Boolean = false,
     var scenarioComplete: Boolean = false,
     var campaignComplete: Boolean = false

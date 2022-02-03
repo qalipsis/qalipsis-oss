@@ -49,6 +49,11 @@ internal interface FactoryCampaignManager {
     )
 
     /**
+     * Shutdown the related minions of the specified campaign.
+     */
+    suspend fun shutdownMinions(campaignId: CampaignId, minionIds: Collection<MinionId>)
+
+    /**
      * Stops all the components of a scenario in a campaign.
      */
     suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId)

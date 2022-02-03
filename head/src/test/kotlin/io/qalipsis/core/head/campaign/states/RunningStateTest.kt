@@ -15,8 +15,8 @@ import io.mockk.mockk
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
+import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
 import io.qalipsis.core.feedbacks.CompleteMinionFeedback
-import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -234,15 +234,27 @@ internal class RunningStateTest : AbstractStateTest() {
         }
 
     @Test
-    internal fun `should return a new CompletionState with a EndOfCampaignFeedback when a scenario is complete`() =
+    internal fun `should return a new CompletionState when all the scenarios are complete`() =
         testDispatcherProvider.runTest {
             // given
+            every { campaign.scenarios } returns mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             val state = RunningState(campaign)
             state.init(factoryService, campaignReportStateKeeper, idGenerator)
 
             // when
-            val newState = state.process(mockk<EndOfCampaignFeedback> {
+            var newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
                 every { campaignId } returns "my-campaign"
+                every { scenarioId } returns "scenario-1"
+            })
+
+            // then
+            assertThat(newState).isSameAs(state)
+            confirmVerified(factoryService, campaignReportStateKeeper)
+
+            // when
+            newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
+                every { campaignId } returns "my-campaign"
+                every { scenarioId } returns "scenario-2"
             })
 
             // then

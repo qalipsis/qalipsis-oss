@@ -47,7 +47,7 @@ internal class PaceStepTest {
 
                 assertLongerOrEqualTo(expectedDuration - errorMargin, executionDuration)
                 assertShorterOrEqualTo(expectedDuration + errorMargin, executionDuration)
-                Assertions.assertEquals(1L, (context.output as Channel<Any?>).receive())
+                Assertions.assertEquals(1L, (context.output as Channel).receive().value)
             }
         }
     }

@@ -26,7 +26,7 @@ internal class ValidationStepTest {
         val ctx = StepTestHelper.createStepContext<Long, Long>(input = 123L)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(123L, output)
 
         assertEquals(123L, processedValue.get())

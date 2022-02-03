@@ -148,6 +148,8 @@ internal open class MinionImpl(
                     log.trace { "Executing the minion job $jobId" }
                     this.block()
                     log.trace { "Successfully executed the minion job $jobId" }
+                } catch (e: CancellationException) {
+                    // Ignore the error.
                 } catch (e: Exception) {
                     log.warn(e) { "An error occurred while executing the minion job $jobId: ${e.message}" }
                     throw e
@@ -177,7 +179,7 @@ internal open class MinionImpl(
         startLatch.cancel()
         for (job in runningJobs.values) {
             kotlin.runCatching {
-                job.cancel(CancellationException())
+                job.cancel()
             }
         }
         log.trace { "Cancellation of minions $id completed" }

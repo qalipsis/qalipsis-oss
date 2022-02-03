@@ -1,11 +1,13 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
+import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
 import io.qalipsis.core.feedbacks.CompleteMinionFeedback
-import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -17,7 +19,8 @@ import io.qalipsis.core.head.campaign.CampaignConfiguration
 
 internal open class RunningState(
     protected val campaign: CampaignConfiguration,
-    private val directivesForInit: List<Directive> = emptyList()
+    private val directivesForInit: List<Directive> = emptyList(),
+    private val expectedScenariosToComplete: MutableSet<ScenarioId> = concurrentSet(campaign.scenarios.keys)
 ) : AbstractCampaignExecutionState(campaign.id) {
 
     override suspend fun doInit(): List<Directive> {
@@ -80,15 +83,25 @@ internal open class RunningState(
                     )
                 )
             }
-            feedback is EndOfCampaignFeedback -> {
-                campaignReportStateKeeper.complete(feedback.campaignId)
-                CompletionState(campaign)
+            feedback is CampaignScenarioShutdownFeedback -> {
+                expectedScenariosToComplete.remove(feedback.scenarioId)
+                if (expectedScenariosToComplete.isEmpty()) {
+                    campaignReportStateKeeper.complete(feedback.campaignId)
+                    CompletionState(campaign)
+                } else {
+                    this
+                }
             }
             else -> {
                 this
             }
         }
     }
+
+    override fun toString(): String {
+        return "RunningState(campaign=$campaign, directivesForInit=$directivesForInit, expectedScenariosToComplete=$expectedScenariosToComplete)"
+    }
+
 
     private companion object {
 

@@ -8,3 +8,6 @@ factory:
   cache:
     ttl: PT1M
     key-prefix: "shared-state-registry"
+minion-shutdown-timeout: 2s
+scenario-shutdown-timeout: 10s
+campaign-shutdown-timeout: 30s

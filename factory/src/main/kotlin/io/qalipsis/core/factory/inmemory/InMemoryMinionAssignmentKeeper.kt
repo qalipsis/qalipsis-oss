@@ -117,25 +117,30 @@ internal class InMemoryMinionAssignmentKeeper(
         if (singletonMinions.remove(minionId)) {
             state.minionComplete = true
         } else {
-            executionCompleteMutex.withLock {
-                val remainingDagsForMinion = dagsCountByMinions[scenarioId, minionId]?.addAndGet(-1 * dagIds.size)
-                if (remainingDagsForMinion == 0) {
-                    state.minionComplete = true
+            val remainingDagsForMinion = dagsCountByMinions[scenarioId, minionId]?.addAndGet(-1 * dagIds.size)
+            if (remainingDagsForMinion == 0) {
+                log.trace { "The minion under load with ID $minionId of campaign $campaignId executed all its steps and is now complete" }
+                state.minionComplete = true
+                executionCompleteMutex.withLock {
                     dagsCountByMinions.remove(scenarioId, minionId)
                     minionsByScenarios[scenarioId]!!.let { minionsInScenario ->
                         minionsInScenario.remove(minionId)
 
                         // The verification of the completeness of the scenario and campaign are synchronized to avoid collision.
                         if (minionsInScenario.isEmpty()) {
+                            log.debug { "The scenario $scenarioId of campaign $campaignId is now complete" }
                             state.scenarioComplete = true
                             minionsByScenarios.remove(scenarioId)
                             if (minionsByScenarios.isEmpty()) {
+                                log.debug { "The campaign $campaignId is now complete" }
                                 state.campaignComplete = true
                                 localAssignmentStore.reset()
                             }
                         }
                     }
                 }
+            } else {
+                log.trace { "The minion with ID $minionId of campaign $campaignId has still ${remainingDagsForMinion} DAGs to complete" }
             }
         }
 
@@ -144,7 +149,6 @@ internal class InMemoryMinionAssignmentKeeper(
 
     companion object {
 
-        @JvmStatic
         private val log = logger()
 
     }

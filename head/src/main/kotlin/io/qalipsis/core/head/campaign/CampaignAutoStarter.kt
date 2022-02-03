@@ -38,7 +38,7 @@ internal class CampaignAutoStarter(
 ) : ProcessBlocker, HeadStartupComponent, DirectiveProcessor<CompleteCampaignDirective> {
 
     @KTestable
-    private val campaignLatch = Latch(true)
+    private val campaignLatch = Latch(true, "campaign-auto-starter")
 
     private var feedbackConsumptionJob: Job? = null
 

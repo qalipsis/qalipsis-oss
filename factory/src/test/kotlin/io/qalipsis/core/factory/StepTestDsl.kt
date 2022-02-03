@@ -1,6 +1,7 @@
 package io.qalipsis.core.factory
 
 import io.mockk.every
+import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
@@ -23,6 +24,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -31,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 @SuppressWarnings("kotlin:S107")
 internal fun <IN : Any?, OUT : Any?> coreStepContext(
-    input: IN? = null, outputChannel: SendChannel<OUT?> = Channel(100),
+    input: IN? = null, outputChannel: SendChannel<StepContext.StepOutputRecord<OUT>?> = Channel(100),
     errors: MutableList<StepError> = mutableListOf(),
     minionId: MinionId = "my-minion",
     scenarioId: ScenarioId = "",
@@ -54,16 +56,12 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
         "",
         minionId,
         scenarioId,
-        directedAcyclicGraphId,
         parentStepId,
         stepId,
         "",
         "",
         stepIterationIndex,
-        attemptsAfterFailure,
-        System.currentTimeMillis(),
         isExhausted,
-        completed,
         isTail = false
     )
 }
@@ -105,8 +103,8 @@ internal fun testDag(
     return dag
 }
 
-internal fun <O> DirectedAcyclicGraph.testStep(
-    id: String, output: O? = null,
+internal fun <O> DirectedAcyclicGraph.generate(
+    id: String, output: O,
     retryPolicy: RetryPolicy? = null,
     generateException: Boolean = false
 ): TestStep<Unit, O> {
@@ -118,14 +116,19 @@ internal fun <O> DirectedAcyclicGraph.testStep(
     return step
 }
 
-internal fun <O> DirectedAcyclicGraph.delayedStep(id: String, output: O, delay: Long): TestStep<Unit, O> {
-    val step = TestStep<Unit, O>(id, output = output, delay = delay)
+internal fun <O> DirectedAcyclicGraph.noOutput(
+    id: String,
+    retryPolicy: RetryPolicy? = null,
+    generateException: Boolean = false
+): TestStep<Unit, O> {
+    val step = TestStep<Unit, O>(id, retryPolicy, null, generateException = generateException)
     val self = this
     runBlocking {
         self.addStep(step)
     }
     return step
 }
+
 
 internal fun DirectedAcyclicGraph.steps(): Map<StepId, TestStep<*, *>> {
     val steps = mutableMapOf<StepId, TestStep<*, *>>()
@@ -144,7 +147,9 @@ internal open class TestStep<I, O>(
 
     var received: I? = null
 
-    private var executed = false
+    private var executionCount = AtomicInteger(0)
+
+    private var completionCount = AtomicInteger(0)
 
     private val singleCaptured = AtomicReference<StepContext<*, *>>()
 
@@ -153,10 +158,9 @@ internal open class TestStep<I, O>(
         doExecute(context)
     }
 
-    suspend protected fun doExecute(context: StepContext<I, O>) {
-        executed = true
+    protected suspend fun doExecute(context: StepContext<I, O>) {
+        executionCount.incrementAndGet()
         Assertions.assertEquals("my-scenario", context.scenarioId)
-        Assertions.assertEquals("my-dag", context.directedAcyclicGraphId)
         singleCaptured.set(context)
 
         delay?.let {
@@ -170,26 +174,48 @@ internal open class TestStep<I, O>(
         }
     }
 
+    override suspend fun complete(completionContext: CompletionContext) {
+        completionCount.incrementAndGet()
+    }
+
     /**
-     * Create a forwarder step as next.
+     * Creates a forwarder step as next.
      */
-    fun step(id: String): TestStep<O, O> {
+    fun forward(id: String): TestStep<O, O> {
         val step = ForwarderTestStep<O>(id)
         this.addNext(step)
         return step
     }
 
     /**
-     * Create a delayed forwarder step as next.
+     * Creates a forwarder step executed [repetitions] times.
      */
-    fun delayedStep(id: String, output: O, delay: Long): TestStep<Unit, O> {
+    fun repeated(id: String, repetitions: Int): TestStep<O, O> {
+        val step = ForwarderTestStep<O>(id, repetitions)
+        this.addNext(step)
+        return step
+    }
+
+    /**
+     * Creates a forwarder step executed [repetitions] times.
+     */
+    fun blackhole(id: String): TestStep<O, Unit> {
+        val step = BlackholeTestStep<O>(id)
+        this.addNext(step)
+        return step
+    }
+
+    /**
+     * Creates a delayed forwarder step as next.
+     */
+    fun delayed(id: String, output: O, delay: Long): TestStep<Unit, O> {
         val step = TestStep<Unit, O>(id, output = output, delay = delay)
         this.addNext(step)
         return step
     }
 
     /**
-     * Create a step generating an error as next.
+     * Creates a step generating an error as next.
      */
     fun <O2> errorGenerator(id: String): TestStep<O, O> {
         val step = TestStep<O, O>(id, generateException = true)
@@ -198,7 +224,7 @@ internal open class TestStep<I, O>(
     }
 
     /**
-     * Create an error processing step as next.
+     * Creates an error processing step as next.
      */
     fun processError(id: String): TestStep<O, O> {
         val step = ErrorProcessingTestStep<O>(id)
@@ -207,7 +233,7 @@ internal open class TestStep<I, O>(
     }
 
     /**
-     * Create an error processing step as next.
+     * Creates an error processing step as next.
      */
     fun decoratedProcessError(id: String): StepDecorator<O, O> {
         val step = ErrorProcessingTestStep<O>(id)
@@ -221,7 +247,7 @@ internal open class TestStep<I, O>(
     }
 
     /**
-     * Create a recovery step as next.
+     * Creates a recovery step as next.
      */
     fun <O2> recoverError(id: String, output: O2): TestStep<O, O2> {
         val step = RecoveryTestStep<O, O2>(id, output)
@@ -230,22 +256,46 @@ internal open class TestStep<I, O>(
     }
 
     /**
-     * Create several steps at once.
+     * Creates several steps at once.
      */
     fun all(block: TestStep<I, O>.() -> Unit) {
         this.block()
     }
 
     fun assertHasParent(expectedParentStepId: StepId?) {
-        Assertions.assertEquals(expectedParentStepId, singleCaptured.get().parentStepId)
+        Assertions.assertEquals(expectedParentStepId, singleCaptured.get().previousStepId)
     }
 
     fun assertExecuted() {
-        Assertions.assertTrue(executed, "step $id should have been executed")
+        Assertions.assertTrue(executionCount.get() > 0, "step $id should have been executed")
     }
 
     fun assertNotExecuted() {
-        Assertions.assertFalse(executed, "step $id should not have been executed")
+        assertExecutionCount(0)
+    }
+
+    fun assertExecutionCount(count: Int) {
+        Assertions.assertEquals(
+            count,
+            executionCount.get(),
+            "step $id should have been executed $count time(s) but was ${executionCount.get()} time(s)"
+        )
+    }
+
+    fun assertCompleted() {
+        Assertions.assertTrue(completionCount.get() > 0, "step $id should have been completed")
+    }
+
+    fun assertNotCompleted() {
+        assertCompletionCount(0)
+    }
+
+    fun assertCompletionCount(count: Int) {
+        Assertions.assertEquals(
+            count,
+            completionCount.get(),
+            "step $id should have been completed $count time(s) but was ${completionCount.get()} time(s)"
+        )
     }
 
     fun assertExhaustedContext() {
@@ -268,7 +318,7 @@ internal open class TestStep<I, O>(
     }
 }
 
-internal open class ForwarderTestStep<I>(id: String) : TestStep<I, I>(id) {
+internal open class ForwarderTestStep<I>(id: String, private val repetitions: Int = 1) : TestStep<I, I>(id) {
 
     /**
      * Forward the input to the output additionally to what [TestStep] does.
@@ -277,8 +327,28 @@ internal open class ForwarderTestStep<I>(id: String) : TestStep<I, I>(id) {
         if (context.isExhausted) {
             doExecute(context)
         } else {
+            val isContextATail = context.isTail
             super.execute(context)
+            context.isTail = false
+            repeat(repetitions - 1) {
+                context.send(received!!)
+            }
+            context.isTail = isContextATail
             context.send(received!!)
+        }
+    }
+}
+
+internal class BlackholeTestStep<I>(id: String) : TestStep<I, Unit>(id) {
+
+    /**
+     * Does not provide any output.
+     */
+    override suspend fun execute(context: StepContext<I, Unit>) {
+        if (context.isExhausted) {
+            doExecute(context)
+        } else {
+            super.execute(context)
         }
     }
 }

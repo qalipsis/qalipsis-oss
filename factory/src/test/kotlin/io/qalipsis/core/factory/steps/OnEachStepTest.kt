@@ -27,7 +27,7 @@ internal class OnEachStepTest {
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 123)
 
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals(output, 123)
         assertThat(collected).all {
             hasSize(1)

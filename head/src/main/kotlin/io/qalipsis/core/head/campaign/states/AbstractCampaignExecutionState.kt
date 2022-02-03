@@ -61,4 +61,6 @@ internal abstract class AbstractCampaignExecutionState(
     protected open suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
         return this
     }
+
+
 }

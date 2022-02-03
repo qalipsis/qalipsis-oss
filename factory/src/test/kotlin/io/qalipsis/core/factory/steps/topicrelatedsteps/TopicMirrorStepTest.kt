@@ -1,6 +1,7 @@
 package io.qalipsis.core.factory.steps.topicrelatedsteps
 
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -31,7 +32,7 @@ internal class TopicMirrorStepTest {
 
         // when
         step.execute(ctx)
-        val output = (ctx.output as Channel).receive()
+        val output = ctx.consumeOutputValue()
         assertEquals("This is a test", output)
 
         // then
@@ -44,15 +45,18 @@ internal class TopicMirrorStepTest {
     internal fun `should complete the topic`() = runBlockingTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
-        val ctx = StepTestHelper.createStepContext<String, String>()
-        ctx.isTail = true
+        val ctx = DefaultCompletionContext(
+            campaignId = "my-campaign",
+            scenarioId = "my-scenario",
+            minionId = "my-minion",
+            lastExecutedStepId = "step-1",
+            errors = emptyList()
+        )
 
         // when
-        step.execute(ctx)
+        step.complete(ctx)
 
         // then
         coVerifyOnce { dataTransferTopic.complete() }
-        assertFalse(ctx.isExhausted)
-        assertFalse((ctx.output as Channel).isClosedForReceive)
     }
 }

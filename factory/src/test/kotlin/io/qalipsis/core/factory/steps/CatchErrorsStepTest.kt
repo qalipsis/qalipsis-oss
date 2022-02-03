@@ -23,7 +23,7 @@ internal class CatchErrorsStepTest {
         val ctx = createStepContext<Int, Int>(input = 123)
 
         step.execute(ctx)
-        val result = (ctx.output as Channel<Int>).receive()
+        val result = ctx.consumeOutputValue()
 
         Assertions.assertEquals(0, reference.get())
         Assertions.assertEquals(123, result)
@@ -38,7 +38,7 @@ internal class CatchErrorsStepTest {
         val ctx = createStepContext<Int, Int>(input = 456, errors = mutableListOf(StepError(RuntimeException(""))))
 
         step.execute(ctx)
-        val result = (ctx.output as Channel<Int>).receive()
+        val result = ctx.consumeOutputValue()
 
         Assertions.assertEquals(1, reference.get())
         Assertions.assertEquals(456, result)

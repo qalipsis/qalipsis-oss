@@ -9,6 +9,7 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isLessThanOrEqualTo
 import io.mockk.clearMocks
 import io.mockk.coEvery
+import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
@@ -34,11 +35,13 @@ internal class CollectionStepTest {
 
         // when
         repeat(count) { index ->
-            val output = relaxedMockk<SendChannel<List<String>?>> {
-                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg()) }
+            val output = relaxedMockk<SendChannel<StepContext.StepOutputRecord<List<String>>?>> {
+                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg<StepContext.StepOutputRecord<List<String>>>().value) }
             }
-            val ctx = StepTestHelper.createStepContext<String, List<String>>(minionId = "$index", input = "$index",
-                outputChannel = output)
+            val ctx = StepTestHelper.createStepContext(
+                minionId = "$index", input = "$index",
+                outputChannel = output
+            )
             this.launch {
                 step.execute(ctx)
                 // Clears the mock to ensure that no call can be found after the execution scope was left.
@@ -71,11 +74,13 @@ internal class CollectionStepTest {
         // when
         repeat(count) { index ->
             delay(20)
-            val output = relaxedMockk<SendChannel<List<String>?>> {
-                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg()) }
+            val output = relaxedMockk<SendChannel<StepContext.StepOutputRecord<List<String>>>> {
+                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg<StepContext.StepOutputRecord<List<String>>>().value) }
             }
-            val ctx = StepTestHelper.createStepContext<String, List<String>>(minionId = "$index", input = "$index",
-                outputChannel = output)
+            val ctx = StepTestHelper.createStepContext(
+                minionId = "$index", input = "$index",
+                outputChannel = output
+            )
             this.launch {
                 step.execute(ctx)
                 // Clears the mock to ensure that no call can be found after the execution scope was left.
@@ -112,11 +117,13 @@ internal class CollectionStepTest {
             delay(100)
             repeat(count) { index ->
                 delay((Math.random() * 10 + 5).toLong()) // Random delay between 5 and 15 ms.
-                val output = relaxedMockk<SendChannel<List<String>?>> {
-                    coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg()) }
+                val output = relaxedMockk<SendChannel<StepContext.StepOutputRecord<List<String>>>> {
+                    coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg<StepContext.StepOutputRecord<List<String>>>().value) }
                 }
-                val ctx = StepTestHelper.createStepContext<String, List<String>>(minionId = "$index", input = "$index",
-                    outputChannel = output)
+                val ctx = StepTestHelper.createStepContext(
+                    minionId = "$index", input = "$index",
+                    outputChannel = output
+                )
                 this.launch {
                     step.execute(ctx)
                     // Clears the mock to ensure that no call can be found after the execution scope was left.
