@@ -35,7 +35,6 @@ internal class CatchExhaustedContextStepSpecificationTest {
         val stepContext = StepTestHelper.createStepContext<Any?, Unit>(
             minionId = "",
             scenarioId = "",
-            directedAcyclicGraphId = "",
             stepId = "",
             isExhausted = true
         )

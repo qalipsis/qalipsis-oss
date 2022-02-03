@@ -63,20 +63,23 @@ internal abstract class AbstractLinkedSlotsBasedTopic<T>(
 
     override suspend fun produceValue(value: T) {
         verifyState()
-        log.trace { "Adding the value $value" }
         produce(Record(value = value))
     }
 
     override suspend fun produce(record: Record<T>) {
         log.trace { "Adding the record $record to the topic" }
+        val linkedRecord = LinkedRecordWithValue(record)
         writeMutex.withLock {
-            val linkedRecord = LinkedRecordWithValue(record)
             writeSlot.set(linkedRecord)
             updateSubscriptionSlot(writeSlot)
             writeSlot = linkedRecord.next
         }
+        log.trace { "The record $record was added to the topic" }
     }
 
+    /**
+     * Updates the position of the slot for the future new subscribers.
+     */
     abstract suspend fun updateSubscriptionSlot(lastSetSlot: ImmutableSlot<LinkedRecord<T>>)
 
     override suspend fun poll(subscriberId: String): Record<T> {

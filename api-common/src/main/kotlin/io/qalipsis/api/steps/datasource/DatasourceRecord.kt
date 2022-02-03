@@ -8,7 +8,7 @@ package io.qalipsis.api.steps.datasource
  *
  * @author Eric Jessé
  */
-data class DatasourceRecord<O : Any?>(
+data class DatasourceRecord<T : Any?>(
     val ordinal: Long,
-    val value: O
+    val value: T
 )

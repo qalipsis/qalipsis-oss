@@ -23,11 +23,11 @@ internal open class ChannelBasedTopicSubscription<T> private constructor(
 ) : AbstractTopicSubscription<T>(subscriberId, idleTimeout, cancellation) {
 
     override suspend fun poll(): Record<T> {
-        log.trace { "Polling for subscription $subscriberId" }
+        log.trace { "Subscription ${subscriberId}: Polling for subscription $subscriberId" }
         verifyState()
-        log.trace { "Tracking activity for subscription $subscriberId" }
+        log.trace { "Subscription ${subscriberId}: Tracking activity for subscription $subscriberId" }
         pollNotificationChannel?.send(Unit)
-        log.trace { "Waiting for the next record for subscription $subscriberId" }
+        log.trace { "Subscription ${subscriberId}: Waiting for the next record for subscription $subscriberId" }
         return channel.receive()
     }
 

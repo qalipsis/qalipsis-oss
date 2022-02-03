@@ -44,7 +44,7 @@ fun <INPUT> ScenarioSpecification.pipe(): PipeStepSpecification<INPUT> {
 @Introspected
 class SingletonPipeStepSpecification<INPUT> :
     SingletonStepSpecification,
-    AbstractStepSpecification<INPUT, INPUT, PipeStepSpecification<INPUT>>() {
+    AbstractStepSpecification<INPUT, INPUT, SingletonPipeStepSpecification<INPUT>>() {
 
     override val singletonConfiguration = SingletonConfiguration(SingletonType.UNICAST)
 }

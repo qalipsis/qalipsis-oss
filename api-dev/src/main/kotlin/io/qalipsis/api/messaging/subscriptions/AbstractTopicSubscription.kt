@@ -52,7 +52,7 @@ internal abstract class AbstractTopicSubscription<T>(
             coroutineContext
             idleVerificationJob = newCoroutineScope().launch {
                 try {
-                    log.trace { "Idle verification loop started for ${this@AbstractTopicSubscription} with a timeout of $idleTimeout" }
+                    log.trace { "Subscription ${subscriberId}: Idle verification loop started for ${this@AbstractTopicSubscription} with a timeout of $idleTimeout" }
                     while (active) {
                         select<Unit> {
                             pollNotificationChannel!!.onReceive {
@@ -60,7 +60,7 @@ internal abstract class AbstractTopicSubscription<T>(
                                 timeout = buildTimeout()
                             }
                             timeout!!.onReceive {
-                                log.trace { "Idle timeout reached for the subscription ${this@AbstractTopicSubscription}" }
+                                log.trace { "Subscription ${subscriberId}: Idle timeout reached for the subscription ${this@AbstractTopicSubscription}" }
                                 cancel()
                             }
                         }
@@ -69,7 +69,7 @@ internal abstract class AbstractTopicSubscription<T>(
                     // Ignore errors.
                 }
             }
-            log.trace { "Idle verification loop created for ${this@AbstractTopicSubscription} with a timeout of $idleTimeout" }
+            log.trace { "Subscription ${subscriberId}: Idle verification loop created for ${this@AbstractTopicSubscription} with a timeout of $idleTimeout" }
         }
     }
 
@@ -81,17 +81,17 @@ internal abstract class AbstractTopicSubscription<T>(
         verifyState()
         receivingJob?.cancelAndJoin()
         receivingJob = newCoroutineScope().launch {
-            log.trace { "Receiving loop started for ${this@AbstractTopicSubscription}" }
+            log.trace { "Subscription ${subscriberId}: Receiving loop started for ${this@AbstractTopicSubscription}" }
             while (active) {
                 block(pollValue())
             }
-            log.trace { "Receiving loop completed for ${this@AbstractTopicSubscription}" }
+            log.trace { "Subscription ${subscriberId}: Receiving loop completed for ${this@AbstractTopicSubscription}" }
         }
         return receivingJob!!
     }
 
     override fun cancel() {
-        log.trace { "Cancelling the subscription $this" }
+        log.trace { "Subscription ${subscriberId}: Cancelling the subscription $this" }
         active = false
         idleVerificationJob?.cancel()
         cancellation()

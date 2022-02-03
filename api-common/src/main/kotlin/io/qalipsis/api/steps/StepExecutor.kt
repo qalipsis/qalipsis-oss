@@ -13,13 +13,11 @@ interface StepExecutor {
     /**
      * Executes a step either using its retry policy if defined or directly otherwise.
      */
-    suspend fun <I, O> executeStep(minion: Minion, step: Step<I, O>, context: StepContext<I, O>) {
+    suspend fun <I, O> executeStep(minion: Minion, step: Step<I, O>, stepContext: StepContext<I, O>) {
         if (step.retryPolicy != null) {
-            step.retryPolicy!!.execute(context) { stepContext ->
-                step.execute(minion, stepContext)
-            }
+            step.retryPolicy!!.execute(stepContext) { step.execute(minion, it) }
         } else {
-            step.execute(minion, context)
+            step.execute(minion, stepContext)
         }
     }
 

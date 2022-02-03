@@ -1,5 +1,7 @@
 package io.qalipsis.api.steps
 
+import io.qalipsis.api.context.CompletionContext
+import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.runtime.Minion
@@ -43,5 +45,13 @@ interface StepDecorator<I, O> : Step<I, O> {
 
     override suspend fun execute(context: StepContext<I, O>) {
         decorated.execute(context)
+    }
+
+    override suspend fun complete(completionContext: CompletionContext) {
+        decorated.complete(completionContext)
+    }
+
+    override suspend fun discard(minionIds: Collection<MinionId>) {
+        decorated.discard(minionIds)
     }
 }

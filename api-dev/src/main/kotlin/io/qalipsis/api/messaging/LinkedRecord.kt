@@ -28,6 +28,10 @@ internal class EmptyLinkedRecord<T>(override val next: ImmutableSlot<LinkedRecor
     override val record: Record<T>
         get() = error("Not supported")
 
+    override fun toString(): String {
+        return "EmptyLinkedRecord()"
+    }
+
 }
 
 /**
@@ -41,5 +45,9 @@ internal class EmptyLinkedRecord<T>(override val next: ImmutableSlot<LinkedRecor
 internal class LinkedRecordWithValue<T>(
     override val record: Record<T>,
     override val next: ImmutableSlot<LinkedRecord<T>> = ImmutableSlot()
-) :
-    LinkedRecord<T>
+) : LinkedRecord<T> {
+
+    override fun toString(): String {
+        return "LinkedRecordWithValue(record=$record)"
+    }
+}

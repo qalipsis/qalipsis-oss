@@ -1,5 +1,6 @@
 package io.qalipsis.api.messaging.subscriptions
 
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.messaging.LinkedRecord
 import io.qalipsis.api.messaging.Record
 import io.qalipsis.api.sync.ImmutableSlot
@@ -16,7 +17,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 internal class SlotBasedSubscription<T> private constructor(
-    subscriberId: String,
+    private val subscriberId: String,
     private var latestReadSlot: ImmutableSlot<LinkedRecord<T>>,
     idleTimeout: Duration,
     cancellation: (() -> Unit)
@@ -25,12 +26,17 @@ internal class SlotBasedSubscription<T> private constructor(
     override suspend fun poll(): Record<T> {
         verifyState()
         // Wait for or get the value from the slot and changes the read slot to the next one.
+        log.trace { "Subscription ${subscriberId}: Polling the next record of slot $latestReadSlot" }
         val linkedRecord = latestReadSlot.get()
+        log.trace { "Subscription ${subscriberId}: The record $linkedRecord was read, moving the cursor to the next slot" }
         latestReadSlot = linkedRecord.next
+        log.trace { "Subscription ${subscriberId}: Returning the record and moving the cursor to the next slot" }
         return linkedRecord.record
     }
 
     companion object {
+
+        private val log = logger()
 
         /**
          * Creates a new instance of [SlotBasedSubscription].

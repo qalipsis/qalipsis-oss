@@ -56,7 +56,6 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = wrappedStepSpec.nextSteps
 
-
     override var reporting: StepReportingSpecification = wrappedStepSpec.reporting
 
     override fun add(step: StepSpecification<*, *, *>) {
@@ -72,4 +71,6 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
             "The split operation is not supported on a wrapped step, call it directly on the source step"
         )
     }
+
+    override val selectors: Map<String, String> = wrappedStepSpec.selectors
 }

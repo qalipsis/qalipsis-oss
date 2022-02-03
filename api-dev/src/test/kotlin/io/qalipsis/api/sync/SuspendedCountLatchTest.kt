@@ -50,7 +50,7 @@ internal class SuspendedCountLatchTest {
 
         // then
         Assertions.assertFalse(countLatch.isSuspended())
-        QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delayMs), executionDuration)
+        QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delayMs - TOLERANCE), executionDuration)
         Assertions.assertTrue(doneFlag.get())
     }
 
@@ -121,7 +121,7 @@ internal class SuspendedCountLatchTest {
 
         // then
         Assertions.assertTrue(countLatch.isSuspended())
-        QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delayMs), executionDuration)
+        QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(delayMs - TOLERANCE), executionDuration)
     }
 
     @Test
@@ -176,5 +176,11 @@ internal class SuspendedCountLatchTest {
         assertThrows<IllegalArgumentException> {
             countLatch.decrement()
         }
+    }
+
+    companion object {
+
+        const val TOLERANCE = 50L
+
     }
 }

@@ -24,12 +24,13 @@ internal open class BroadcastTopic<T>(
 
     override suspend fun updateSubscriptionSlot(lastSetSlot: ImmutableSlot<LinkedRecord<T>>) {
         currentTopicSize++
-        if (maximalTopicSize >= 0) {
+        if (maximalTopicSize in 0 until currentTopicSize) {
+            log.trace { "Compacting the size of the topic from $currentTopicSize to $maximalTopicSize" }
             while (currentTopicSize > maximalTopicSize) {
-                log.trace { "Reducing the size of the topic from $currentTopicSize to $maximalTopicSize" }
                 subscriptionSlot = subscriptionSlot.get().next
                 currentTopicSize--
             }
+            log.trace { "The size of the topic was compacted to $currentTopicSize" }
         }
     }
 
