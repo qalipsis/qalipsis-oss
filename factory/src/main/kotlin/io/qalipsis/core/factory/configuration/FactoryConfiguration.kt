@@ -47,16 +47,20 @@ class FactoryConfiguration {
     @field:NotNull
     var directiveRegistry: DirectiveRegistry = DirectiveRegistry()
 
-
     /**
      * This object contains the settings applied to each key and value stored in cache.
      */
     var cache: Cache = Cache()
 
     /**
-     * Channel the factory should consume to receive distributed step context.
+     * Channel the factory should consume to receive distributed step and completion contexts that are assigned to it.
      */
-    var distributionChannel: String = ""
+    var unicastContextsChannel: String = ""
+
+    /**
+     * Channel the factory should consume and produce for unassigned step and completion contexts.
+     */
+    var broadcastContextsChannel: String = ""
 
     var assignment = Assignment()
 
@@ -127,7 +131,7 @@ class FactoryConfiguration {
         /**
          * Name of the file containing the node ID when persisted locally.
          */
-        const val NODE_ID_FILE_NAME = "id.meta"
+        const val NODE_ID_FILE_NAME = "id.data"
 
     }
 }

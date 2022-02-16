@@ -5,7 +5,6 @@ import assertk.assertThat
 import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
@@ -37,8 +36,8 @@ import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.init.catadioptre.convertScenario
-import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
@@ -104,7 +103,10 @@ internal class FactoryInitializerImplTest {
     private lateinit var applicationContext: ApplicationContext
 
     @RelaxedMockK
-    private lateinit var factoryCampaignManager: FactoryCampaignManager
+    private lateinit var dagTransitionStepFactory: DagTransitionStepFactory
+
+    @RelaxedMockK
+    private lateinit var factoryConfiguration: FactoryConfiguration
 
     @RegisterExtension
     private val testDispatcherProvider = TestDispatcherProvider()
@@ -126,9 +128,10 @@ internal class FactoryInitializerImplTest {
                 listOf(stepConverter1, stepConverter2),
                 listOf(stepDecorator1, stepDecorator2),
                 runner,
+                factoryConfiguration,
                 minionsKeeper,
                 idGenerator,
-                factoryCampaignManager,
+                dagTransitionStepFactory,
                 Duration.ofSeconds(30),
                 Duration.ofSeconds(1)
             ), recordPrivateCalls = true
@@ -254,6 +257,10 @@ internal class FactoryInitializerImplTest {
             (firstArg() as StepCreationContext<*>).createdStep(PipeStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
         }
         coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+        val deadEndStep1 = relaxedMockk<DeadEndStep<*>> { }
+        every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep1
+        val deadEndStep2 = relaxedMockk<DeadEndStep<*>> { }
+        every { dagTransitionStepFactory.createDeadEnd(any(), "dag-2") } returns deadEndStep2
 
         // when
         factoryInitializer.coInvokeInvisible<Void>(
@@ -269,19 +276,13 @@ internal class FactoryInitializerImplTest {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
             prop(DirectedAcyclicGraph::selectors).isEmpty()
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
-                .index(0).isInstanceOf(DeadEndStep::class).all {
-                    prop("dagId").isEqualTo("dag-1")
-                    prop("factoryCampaignManager").isSameAs(factoryCampaignManager)
-                }
+                .index(0).isSameAs(deadEndStep1)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
             prop(DirectedAcyclicGraph::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
-                .index(0).prop(Step<*, *>::next).index(0).isInstanceOf(DeadEndStep::class).all {
-                    prop("dagId").isEqualTo("dag-2")
-                    prop("factoryCampaignManager").isSameAs(factoryCampaignManager)
-                }
+                .index(0).prop(Step<*, *>::next).index(0).isSameAs(deadEndStep2)
         }
         // 3 steps were created.
         coVerifyExactly(3) {
@@ -324,6 +325,10 @@ internal class FactoryInitializerImplTest {
             (firstArg() as StepCreationContext<*>).createdStep(PipeStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
         }
         coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+        val deadEndStep = relaxedMockk<DeadEndStep<*>> { }
+        every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep
+        val dagTransitionStep = relaxedMockk<DagTransitionStep<*>> { }
+        every { dagTransitionStepFactory.createTransition(any(), "dag-2", "dag-1") } returns dagTransitionStep
 
         // when
         factoryInitializer.coInvokeInvisible<Void>(
@@ -339,19 +344,13 @@ internal class FactoryInitializerImplTest {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
             prop(DirectedAcyclicGraph::selectors).isEmpty()
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
-                .index(0).isInstanceOf(DeadEndStep::class).all {
-                    prop("dagId").isEqualTo("dag-1")
-                    prop("factoryCampaignManager").isSameAs(factoryCampaignManager)
-                }
+                .index(0).isSameAs(deadEndStep)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
             prop(DirectedAcyclicGraph::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
-                .index(0).prop(Step<*, *>::next).index(0).isInstanceOf(DagTransitionStep::class).all {
-                    prop("dagId").isEqualTo("dag-2")
-                    prop("factoryCampaignManager").isSameAs(factoryCampaignManager)
-                }
+                .index(0).prop(Step<*, *>::next).index(0).isSameAs(dagTransitionStep)
         }
         // 3 steps were created.
         coVerifyExactly(3) {

@@ -1,5 +1,7 @@
 package io.qalipsis.core.factory.inmemory
 
+import com.google.common.collect.HashBasedTable
+import com.google.common.collect.Table
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
@@ -147,9 +149,19 @@ internal class InMemoryMinionAssignmentKeeper(
         return state
     }
 
+    override suspend fun getFactoriesChannels(
+        campaignId: CampaignId,
+        scenarioId: ScenarioId,
+        minionIds: Collection<MinionId>,
+        dagsIds: Collection<DirectedAcyclicGraphId>
+    ): Table<MinionId, DirectedAcyclicGraphId, String> {
+        return EMPTY_TABLE
+    }
+
     companion object {
 
         private val log = logger()
 
+        private val EMPTY_TABLE = HashBasedTable.create<MinionId, DirectedAcyclicGraphId, String>()
     }
 }

@@ -1,7 +1,8 @@
 package io.qalipsis.core.configuration
 
-import io.micronaut.context.annotation.Factory
+import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Primary
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.serialization.Serializers
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
@@ -28,6 +29,7 @@ import io.qalipsis.core.feedbacks.CompleteMinionFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
+import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackJsonModule
 import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
@@ -54,10 +56,13 @@ import kotlinx.serialization.modules.polymorphic
  *
  * @author Gabriel Moraes
  */
-@Factory
-@Requires(notEnv = [ExecutionEnvironments.STANDALONE])
+@Context
+@Requirements(
+    Requires(notEnv = [ExecutionEnvironments.STANDALONE]),
+    Requires(missingBeans = [JsonSerializationModuleConfiguration::class])
+)
 @ExperimentalSerializationApi
-class JsonSerializationModuleConfiguration {
+open class JsonSerializationModuleConfiguration {
 
     @Singleton
     @Primary
@@ -70,8 +75,14 @@ class JsonSerializationModuleConfiguration {
         factoryApiDirectives(this)
         minionApiDirectives(this)
         minionHeadDelegationApiDirectives(this)
-
+        configure(this)
     }
+
+    /**
+     * Method to overwrite to add local types to the initialization.
+     */
+    protected open fun configure(builderAction: SerializersModuleBuilder): SerializersModuleBuilder =
+        builderAction
 
     private fun feedbacksSerializer(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
         return builderAction.apply {
@@ -89,6 +100,7 @@ class JsonSerializationModuleConfiguration {
                 subclass(MinionsShutdownFeedback::class, MinionsShutdownFeedback.serializer())
                 subclass(MinionsDeclarationFeedback::class, MinionsDeclarationFeedback.serializer())
                 subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
+                subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
             }
         }
     }

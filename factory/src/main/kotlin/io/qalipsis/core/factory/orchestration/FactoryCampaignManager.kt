@@ -12,6 +12,8 @@ internal interface FactoryCampaignManager {
 
     val feedbackNodeId: String
 
+    val runningCampaign: String
+
     /**
      * Initializes the state for the start of a new campaign.
      */

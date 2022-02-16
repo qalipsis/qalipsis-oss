@@ -27,7 +27,6 @@ internal class RecordDistributionSerializerTest {
     @RelaxedMockK
     private lateinit var serializer3: RecordSerializer
 
-
     @Test
     internal fun `should serialize with the first that accepts and succeeds`() {
         // given

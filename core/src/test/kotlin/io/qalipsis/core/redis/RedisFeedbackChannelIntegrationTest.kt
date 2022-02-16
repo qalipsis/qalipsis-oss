@@ -64,7 +64,7 @@ internal class RedisFeedbackChannelIntegrationTest : AbstractRedisIntegrationTes
         val message =
             redisCoroutinesCommands.xread(XReadArgs.StreamOffset.from("test", "0")).first().body.values.first()
         val published = distributionSerializer.deserialize<Feedback>(message.toByteArray())
-        Assertions.assertEquals(feedback.key, published.key)
+        Assertions.assertEquals(feedback.key, published?.key)
     }
 
     @Test

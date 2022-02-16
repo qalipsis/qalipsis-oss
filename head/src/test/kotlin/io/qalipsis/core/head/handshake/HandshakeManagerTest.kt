@@ -12,11 +12,11 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.sync.Latch
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.handshake.HandshakeHeadChannel
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
+import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -137,7 +137,9 @@ internal class HandshakeManagerTest {
                         broadcastDirectivesChannel = "the-broadcast-channel",
                         feedbackChannel = "the-feedback-channel",
                         heartbeatChannel = "the-heartbeat-channel",
-                        heartbeatPeriod = Duration.ofSeconds(123)
+                        heartbeatPeriod = Duration.ofSeconds(123),
+                        unicastContextsChannel = "this-id-the-actual-id",
+                        broadcastContextsChannel = "broadcasts-channel"
                     )
                 )
                 campaignAutoStarter.trigger(eq(listOf("scen-1", "scen-2")))
@@ -184,7 +186,9 @@ internal class HandshakeManagerTest {
                             broadcastDirectivesChannel = "the-broadcast-channel",
                             feedbackChannel = "the-feedback-channel",
                             heartbeatChannel = "the-heartbeat-channel",
-                            heartbeatPeriod = Duration.ofSeconds(123)
+                            heartbeatPeriod = Duration.ofSeconds(123),
+                            unicastContextsChannel = "a-real-id",
+                            broadcastContextsChannel = "broadcasts-channel"
                         )
                     )
                 }

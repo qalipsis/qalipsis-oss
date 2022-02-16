@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
+import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
@@ -216,13 +217,9 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
                     )
             }
             assertThat(allAssignments[MINIONS_SINGLETON_1], "DAGS of minion ${MINIONS_SINGLETON_1}").isNotNull()
-                .containsOnly(
-                    SCENARIO_1_DAG_SINGLETON_1
-                )
+                .containsOnly(SCENARIO_1_DAG_SINGLETON_1)
             assertThat(allAssignments[MINIONS_SINGLETON_2], "DAGS of minion ${MINIONS_SINGLETON_2}").isNotNull()
-                .containsOnly(
-                    SCENARIO_1_DAG_SINGLETON_2
-                )
+                .containsOnly(SCENARIO_1_DAG_SINGLETON_2)
             MINIONS_SCENARIO_2.forEach { minionId ->
                 assertThat(allAssignments[minionId], "DAGS of minion $minionId").isNotNull()
                     .containsOnly(SCENARIO_2_DAG_1, SCENARIO_2_DAG_2, SCENARIO_2_DAG_3, SCENARIO_2_DAG_4)
@@ -233,6 +230,33 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
                 localAssignmentStore.save(SCENARIO_1, refEq(assignedFactory2Scenario1))
                 localAssignmentStore.save(SCENARIO_2, refEq(assignedFactory1Scenario2))
                 localAssignmentStore.save(SCENARIO_2, refEq(assignedFactory2Scenario2))
+            }
+
+            // when
+            val assignmentScenario1 = minionAssignmentKeeper.getFactoriesChannels(
+                CAMPAIGN, SCENARIO_1,
+                MINIONS_SCENARIO_1 + MINIONS_SINGLETON_1 + MINIONS_SINGLETON_2,
+                listOf(
+                    SCENARIO_1_DAG_1,
+                    SCENARIO_1_DAG_2,
+                    SCENARIO_1_DAG_3,
+                    SCENARIO_1_DAG_4,
+                    SCENARIO_1_DAG_5,
+                    SCENARIO_1_DAG_SINGLETON_1,
+                    SCENARIO_1_DAG_SINGLETON_2
+                )
+            )
+
+            // then
+            assignedFactory1Scenario1.forEach { (minion, dags) ->
+                dags.forEach { dag ->
+                    assertThat(assignmentScenario1.get(minion, dag)).isEqualTo("the-factory-1-channel")
+                }
+            }
+            assignedFactory2Scenario1.forEach { (minion, dags) ->
+                dags.forEach { dag ->
+                    assertThat(assignmentScenario1.get(minion, dag)).isEqualTo("the-factory-2-channel")
+                }
             }
         }
 

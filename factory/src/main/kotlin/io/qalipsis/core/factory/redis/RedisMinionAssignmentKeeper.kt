@@ -1,5 +1,7 @@
 package io.qalipsis.core.factory.redis
 
+import com.google.common.collect.HashBasedTable
+import com.google.common.collect.Table
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.KeyScanCursor
 import io.lettuce.core.RedisNoScriptException
@@ -51,6 +53,11 @@ internal class RedisMinionAssignmentKeeper(
     private lateinit var minionCompletionScript: ByteArray
 
     /**
+     * Script to fetch the factories channels to forward the execution contexts.
+     */
+    private lateinit var minionFetchFactoryChannelScript: ByteArray
+
+    /**
      * SHA key of the script to register the minions.
      */
     private var minionRegistrationScriptSha: String = "311bdb5a9b1f6a8bba77cdedfc2a1b9c216193fc"
@@ -65,11 +72,17 @@ internal class RedisMinionAssignmentKeeper(
      */
     private var minionCompletionScriptSha: String = "a0bf608703e22bb7614ff83fe9a862f50febb1ea"
 
+    /**
+     * SHA key of the script to fetch the factories channels to forward the execution contexts.
+     */
+    private var minionFetchFactoryChannelScriptSha: String = "1842437f4e1b3a2942b3fcdc1100f44a86b29c83"
+
     @PostConstruct
     fun init() {
         minionAssignmentScript = RedisUtils.loadScript("/redis/minion-assignment.lua")
         minionCompletionScript = RedisUtils.loadScript("/redis/minion-dag-completion.lua")
         minionRegistrationScript = RedisUtils.loadScript("/redis/register-minions.lua")
+        minionFetchFactoryChannelScript = RedisUtils.loadScript("/redis/minion-get-factories-channels.lua")
     }
 
     @LogInputAndOutput
@@ -213,7 +226,7 @@ internal class RedisMinionAssignmentKeeper(
     override suspend fun assign(
         campaignId: CampaignId,
         scenarioId: ScenarioId
-    ) = assign(campaignId, scenarioId, factoryConfiguration.nodeId, factoryConfiguration.distributionChannel)
+    ) = assign(campaignId, scenarioId, factoryConfiguration.nodeId, factoryConfiguration.unicastContextsChannel)
 
     /**
      * Factory-configurable version of [assign] for testing purpose.
@@ -318,6 +331,52 @@ internal class RedisMinionAssignmentKeeper(
             cleanCampaignKeys(campaignId)
         }
         return state
+    }
+
+    override suspend fun getFactoriesChannels(
+        campaignId: CampaignId,
+        scenarioId: ScenarioId,
+        minionIds: Collection<MinionId>,
+        dagsIds: Collection<DirectedAcyclicGraphId>
+    ): Table<MinionId, DirectedAcyclicGraphId, String> {
+        val keyPrefixForAssignedDags = buildRedisKeyPrefix(campaignId, scenarioId) + MINION_ASSIGNED_DAGS_PREFIX
+        val dagsAsList = dagsIds.toList()
+        val factoriesChannels = executeFetchFactoryChannels(keyPrefixForAssignedDags, minionIds, dagsAsList)
+        val result = HashBasedTable.create<MinionId, DirectedAcyclicGraphId, String>()
+        val channelsIterator = factoriesChannels.iterator()
+        while (channelsIterator.hasNext()) {
+            val minionId = channelsIterator.next() as String
+            @Suppress("UNCHECKED_CAST") val channels = channelsIterator.next() as List<String?>
+            channels.forEachIndexed { index, channel ->
+                if (channel != null) {
+                    result.put(minionId, dagsAsList[index], channel)
+                }
+            }
+        }
+        return result
+    }
+
+    /**
+     * Executes the script to assign the minions from the SHA key of the script.
+     * If the SHA key is not valid, the script is first loaded into Redis before a new attempt.
+     */
+    private suspend fun executeFetchFactoryChannels(
+        keyPrefixForUnassignedMinions: String,
+        minionIds: Collection<MinionId>,
+        dagsIds: Collection<DirectedAcyclicGraphId>
+    ): List<*> {
+        return try {
+            redisCommands.evalsha(
+                minionFetchFactoryChannelScriptSha, ScriptOutputType.MULTI,
+                arrayOf(keyPrefixForUnassignedMinions),
+                minionIds.joinToString(","),
+                dagsIds.joinToString(",")
+            )!!
+        } catch (e: RedisNoScriptException) {
+            minionFetchFactoryChannelScriptSha = redisCommands.scriptLoad(minionFetchFactoryChannelScript)!!
+            log.debug { "Factory channel fetching script was loaded with SHA $minionFetchFactoryChannelScriptSha" }
+            executeFetchFactoryChannels(keyPrefixForUnassignedMinions, minionIds, dagsIds)
+        }
     }
 
     /**

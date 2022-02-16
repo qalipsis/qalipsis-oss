@@ -56,6 +56,8 @@ internal class InitializationContext(
         heartbeatEmitter.start(factoryConfiguration.nodeId, response.heartbeatChannel, response.heartbeatPeriod)
         feedbackFactoryChannel.start(response.feedbackChannel)
         directiveConsumer.start(response.unicastDirectivesChannel, response.broadcastDirectivesChannel)
+        factoryConfiguration.unicastContextsChannel = response.unicastContextsChannel
+        factoryConfiguration.broadcastContextsChannel = response.broadcastContextsChannel
         handshakeFactoryChannel.close()
     }
 

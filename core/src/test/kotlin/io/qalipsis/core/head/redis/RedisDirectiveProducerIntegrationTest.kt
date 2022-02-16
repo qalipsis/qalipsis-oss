@@ -77,7 +77,7 @@ internal class RedisDirectiveProducerIntegrationTest : AbstractRedisIntegrationT
         }
         val message = redisCoroutinesCommands.xread(XReadArgs.StreamOffset.from("broadcast-channel", "0")).first().body.values.first()
         val published = distributionSerializer.deserialize<DirectiveReference>(message.toByteArray())
-        Assertions.assertEquals(directive.toReference().key, published.key)
+        Assertions.assertEquals(directive.toReference().key, published?.key)
     }
 
     @Test
@@ -94,7 +94,7 @@ internal class RedisDirectiveProducerIntegrationTest : AbstractRedisIntegrationT
         }
         val message = redisCoroutinesCommands.xread(XReadArgs.StreamOffset.from("broadcast-channel", "0")).first().body.values.first()
         val published = distributionSerializer.deserialize<DirectiveReference>(message.toByteArray())
-        Assertions.assertEquals(directive.toReference().key, published.key)
+        Assertions.assertEquals(directive.toReference().key, published?.key)
     }
 
     @Test
@@ -111,7 +111,7 @@ internal class RedisDirectiveProducerIntegrationTest : AbstractRedisIntegrationT
         }
         val message = redisCoroutinesCommands.xread(XReadArgs.StreamOffset.from("broadcast-channel", "0")).first().body.values.first()
         val published = distributionSerializer.deserialize<DirectiveReference>(message.toByteArray())
-        Assertions.assertEquals(directive.toReference().key, published.key)
+        Assertions.assertEquals(directive.toReference().key, published?.key)
     }
 
     @Test
@@ -125,6 +125,6 @@ internal class RedisDirectiveProducerIntegrationTest : AbstractRedisIntegrationT
         // then
         val message = redisCoroutinesCommands.xread(XReadArgs.StreamOffset.from("broadcast-channel", "0")).first().body.values.first()
         val published = distributionSerializer.deserialize<Directive>(message.toByteArray())
-        Assertions.assertEquals(directive.key, published.key)
+        Assertions.assertEquals(directive.key, published?.key)
     }
 }
