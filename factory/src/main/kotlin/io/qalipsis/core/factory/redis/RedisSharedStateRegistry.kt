@@ -8,6 +8,7 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
+import io.qalipsis.core.configuration.ExecutionEnvironments.SINGLE_FACTORY
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.serialization.DistributionSerializer
@@ -20,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Svetlana Paliashchuk
  */
 @Singleton
-@Requires(notEnv = [STANDALONE])
+@Requires(notEnv = [STANDALONE, SINGLE_FACTORY])
 @ExperimentalLettuceCoroutinesApi
 internal class RedisSharedStateRegistry(
     private val redisCoroutinesCommands: RedisCoroutinesCommands<String, String>,
