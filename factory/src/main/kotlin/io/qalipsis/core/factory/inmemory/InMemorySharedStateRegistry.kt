@@ -19,8 +19,8 @@ import javax.annotation.PreDestroy
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.STANDALONE])
-class InMemorySharedStateRegistry(
+@Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
+internal class InMemorySharedStateRegistry(
     @Value("\${factory.cache.ttl:PT1M}") timeToLive: Duration
 ) : SharedStateRegistry {
 
