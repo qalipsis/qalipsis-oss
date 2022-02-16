@@ -31,6 +31,8 @@ typealias RegistrationDirectedAcyclicGraph = DirectedAcyclicGraphSummary
  * @property nodeId final ID of the node, as assigned from the head
  * @property unicastDirectivesChannel name of the channel to listen for the unicast directives
  * @property broadcastDirectivesChannel name of the channel to listen for the broadcast directives
+ * @property unicastContextsChannel name of the channel to listen to receive the step and completion contexts assigned to the factory
+ * @property broadcastContextsChannel name of the channel to listen to send and receive the step and completion contexts without assignment
  * @property feedbackChannel name of the channel to use to send the feedbacks to directives
  * @property heartbeatChannel name of the channel to use to send the heartbeats
  * @property heartbeatPeriod period to emmit the heartbeats
@@ -40,6 +42,8 @@ data class HandshakeResponse(
     val nodeId: String,
     val unicastDirectivesChannel: String,
     val broadcastDirectivesChannel: String,
+    val unicastContextsChannel: String,
+    val broadcastContextsChannel: String,
     val feedbackChannel: String,
     val heartbeatChannel: String,
     val heartbeatPeriod: Duration

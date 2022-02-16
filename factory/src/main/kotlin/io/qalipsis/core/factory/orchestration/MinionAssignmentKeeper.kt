@@ -1,5 +1,6 @@
 package io.qalipsis.core.factory.orchestration
 
+import com.google.common.collect.Table
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
@@ -71,4 +72,14 @@ internal interface MinionAssignmentKeeper {
         minionId: MinionId,
         dagIds: Collection<DirectedAcyclicGraphId>
     ): CampaignCompletionState
+
+    /**
+     * Returns the channels to use to forward data to the DAGs identified by [dagsIds] for the specified [minionIds].
+     */
+    suspend fun getFactoriesChannels(
+        campaignId: CampaignId,
+        scenarioId: ScenarioId,
+        minionIds: Collection<MinionId>,
+        dagsIds: Collection<DirectedAcyclicGraphId>
+    ): Table<MinionId, DirectedAcyclicGraphId, String>
 }

@@ -53,7 +53,7 @@ internal class FactoryCampaignManagerImpl(
 ) : FactoryCampaignManager {
 
     @KTestable
-    private var runningCampaign: CampaignId = ""
+    override var runningCampaign: CampaignId = ""
 
     @KTestable
     private val runningScenarios = mutableSetOf<ScenarioId>()

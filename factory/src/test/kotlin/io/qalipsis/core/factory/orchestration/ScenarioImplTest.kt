@@ -7,16 +7,19 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.AbstractStep
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.testDag
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -27,8 +30,15 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class ScenarioImplTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @RelaxedMockK
     lateinit var feedbackFactoryChannel: FeedbackFactoryChannel
+
+    @RelaxedMockK
+    lateinit var factoryConfiguration: FactoryConfiguration
 
     @Test
     internal fun `should destroy all steps`() {
@@ -47,7 +57,7 @@ internal class ScenarioImplTest {
     }
 
     @Test
-    internal fun `should start all steps`() {
+    internal fun `should start all steps`() = testCoroutineDispatcher.runTest {
         // given
         val mockedSteps = mutableListOf<StartableStoppableStep>()
         val scenario = buildDagsByScenario(mockedSteps)
@@ -108,7 +118,7 @@ internal class ScenarioImplTest {
     }
 
     @Test
-    internal fun `should interrupt the start when a step is in timeout`() {
+    internal fun `should interrupt the start when a step is in timeout`() = testCoroutineDispatcher.runTest {
         // given
         val mockedSteps = mutableListOf<StartableStoppableStep>()
         val scenario = buildDagsByScenario(mockedSteps, Duration.ofMillis(100))
@@ -162,9 +172,8 @@ internal class ScenarioImplTest {
         }
     }
 
-
     @Test
-    internal fun `should interrupt the start when a step fails`() {
+    internal fun `should interrupt the start when a step fails`() = testCoroutineDispatcher.runTest {
         // given
         val mockedSteps = mutableListOf<StartableStoppableStep>()
         val scenario = buildDagsByScenario(mockedSteps)
@@ -219,7 +228,7 @@ internal class ScenarioImplTest {
     }
 
     @Test
-    internal fun `should stop all steps`() {
+    internal fun `should stop all steps`() = testCoroutineDispatcher.runTest {
         // given
         val mockedSteps = mutableListOf<StartableStoppableStep>()
         val scenario = buildDagsByScenario(mockedSteps)
@@ -257,7 +266,8 @@ internal class ScenarioImplTest {
             id = "my-scenario",
             rampUpStrategy = relaxedMockk(),
             feedbackFactoryChannel = feedbackFactoryChannel,
-            stepStartTimeout = stepStartTimeout
+            stepStartTimeout = stepStartTimeout,
+            factoryConfiguration = factoryConfiguration
         )
 
         scenarioImpl.createIfAbsent("dag-1") {

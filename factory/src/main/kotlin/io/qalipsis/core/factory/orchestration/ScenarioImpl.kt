@@ -15,6 +15,7 @@ import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -33,7 +34,8 @@ class ScenarioImpl(
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
     private val feedbackFactoryChannel: FeedbackFactoryChannel,
-    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
+    private val stepStartTimeout: Duration = Duration.ofSeconds(30),
+    private val factoryConfiguration: FactoryConfiguration
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepId, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
@@ -68,22 +70,18 @@ class ScenarioImpl(
     /**
      * Finds a step with the expected ID or suspend until it is created or a timeout of 10 seconds happens.
      */
-    override suspend fun findStep(stepId: StepId): Pair<Step<*, *>, DirectedAcyclicGraph>? {
+    override suspend fun findStep(stepId: StepId): Pair<Step<*, *>, DirectedAcyclicGraph> {
         return steps.computeIfAbsent(stepId) { Slot() }.get()
     }
 
-
     @LogInput(level = Level.DEBUG)
-    override fun start(campaignId: CampaignId) {
+    override suspend fun start(campaignId: CampaignId) {
         val scenarioId = this.id
-        // FIXME Add orchestration dispatcher.
-        runBlocking {
-            try {
-                startAllDags(scenarioId, campaignId)
-            } catch (e: Exception) {
-                log.error(e) { "An error occurred while starting the scenario $scenarioId: ${e.message}" }
-                stopAllDags(campaignId, scenarioId)
-            }
+        try {
+            startAllDags(scenarioId, campaignId)
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while starting the scenario $scenarioId: ${e.message}" }
+            stopAllDags(campaignId, scenarioId)
         }
     }
 
@@ -150,11 +148,9 @@ class ScenarioImpl(
     }
 
     @LogInput(level = Level.DEBUG)
-    override fun stop(campaignId: CampaignId) {
+    override suspend fun stop(campaignId: CampaignId) {
         val scenarioId = this.id
-        runBlocking {
-            stopAllDags(campaignId, scenarioId)
-        }
+        stopAllDags(campaignId, scenarioId)
     }
 
     private suspend fun stopAllDags(campaignId: CampaignId, scenarioId: ScenarioId) {

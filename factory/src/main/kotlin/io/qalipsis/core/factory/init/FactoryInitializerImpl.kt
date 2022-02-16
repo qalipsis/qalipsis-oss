@@ -27,13 +27,11 @@ import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
-import io.qalipsis.core.factory.steps.DagTransitionStep
-import io.qalipsis.core.factory.steps.DeadEndStep
 import io.qalipsis.core.factory.steps.MinionsKeeperAware
 import io.qalipsis.core.factory.steps.RunnerAware
 import io.qalipsis.core.lifetime.FactoryStartupComponent
@@ -66,9 +64,10 @@ internal class FactoryInitializerImpl(
     private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
     stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>,
     private val runner: Runner,
+    private val factoryConfiguration: FactoryConfiguration,
     private val minionsKeeper: MinionsKeeper,
     private val idGenerator: IdGenerator,
-    private val factoryCampaignManager: FactoryCampaignManager,
+    private val dagTransitionStepFactory: DagTransitionStepFactory,
     @PositiveDuration @Property(name = "campaign.step.start-timeout", defaultValue = "30s")
     private val stepStartTimeout: Duration,
     @PositiveDuration @Property(name = "scenario.conversion.timeout", defaultValue = "5s")
@@ -151,7 +150,8 @@ internal class FactoryInitializerImpl(
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,
             feedbackFactoryChannel = initializationContext.feedbackFactoryChannel,
-            stepStartTimeout = stepStartTimeout
+            stepStartTimeout = stepStartTimeout,
+            factoryConfiguration = factoryConfiguration
         )
         scenarioRegistry.add(scenario)
 
@@ -176,7 +176,7 @@ internal class FactoryInitializerImpl(
         parentDag: DirectedAcyclicGraph?,
         stepsSpecifications: List<StepSpecification<Any?, Any?, *>>
     ) {
-        val parentStepOfNext = decorateStepForDagEndIfRequired(parentDag, stepsSpecifications, parentStep)
+        decorateStepForDagEndIfRequired(parentDag, stepsSpecifications, parentStep)
         coroutineScope {
             stepsSpecifications.map { stepSpecification ->
 
@@ -184,7 +184,8 @@ internal class FactoryInitializerImpl(
                     convertStepRecursively(
                         scenarioSpecification,
                         scenario,
-                        parentStepOfNext,
+                        parentDag,
+                        parentStep,
                         stepSpecification
                     )
                 }
@@ -199,32 +200,19 @@ internal class FactoryInitializerImpl(
         parentDag: DirectedAcyclicGraph?,
         stepsSpecifications: List<StepSpecification<Any?, Any?, *>>,
         parentStep: Step<*, *>?
-    ): Step<out Any?, out Any?>? {
-        return if (parentDag != null && parentStep != null) {
-            if (stepsSpecifications.isEmpty()) {
-                // Adds a DeadEndStep step at the end of a DAG to notify that there is nothing after.
-                val deadEndStep = DeadEndStep<Any?>(buildNewStepName(), parentDag.id, factoryCampaignManager)
-                parentDag.addStep(deadEndStep)
-                parentStep.addNext(deadEndStep)
-                deadEndStep
-            } else if (stepsSpecifications.none { it.directedAcyclicGraphId == parentDag.id }) {
-                // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
-                val dagTransitionStep =
-                    DagTransitionStep<Any?>(buildNewStepName(), parentDag.id, factoryCampaignManager)
-                parentDag.addStep(dagTransitionStep)
-                parentStep.addNext(dagTransitionStep)
-                dagTransitionStep
-            } else {
-                parentStep
-            }
-        } else {
-            parentStep
+    ) {
+        if (parentDag != null && parentStep != null && stepsSpecifications.isEmpty()) {
+            // Adds a DeadEndStep step at the end of a DAG to notify that there is nothing after.
+            val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName(), parentDag.id)
+            parentDag.addStep(deadEndStep)
+            parentStep.addNext(deadEndStep)
         }
     }
 
     private suspend fun convertStepRecursively(
         scenarioSpecification: ConfiguredScenarioSpecification,
         scenario: Scenario,
+        parentDag: DirectedAcyclicGraph?,
         parentStep: Step<*, *>?,
         stepSpecification: StepSpecification<Any?, Any?, *>
     ) {
@@ -232,11 +220,26 @@ internal class FactoryInitializerImpl(
             "Creating step ${stepSpecification.name.takeIf(String::isNotBlank) ?: "<no specified name>"} specified by ${stepSpecification::class.qualifiedName} with parent ${parentStep?.id ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
         }
 
+        val actualParent =
+            if (parentDag != null && parentStep != null && stepSpecification.directedAcyclicGraphId != parentDag.id) {
+                // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
+                val dagTransitionStep = dagTransitionStepFactory.createTransition(
+                    buildNewStepName(),
+                    parentDag.id,
+                    stepSpecification.directedAcyclicGraphId
+                )
+                parentDag.addStep(dagTransitionStep)
+                parentStep.addNext(dagTransitionStep)
+                dagTransitionStep
+            } else {
+                parentStep
+            }
+
         // Get or create the DAG to attach the step.
         val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId) { dagId ->
             DirectedAcyclicGraph(
                 dagId, scenario,
-                isRoot = (parentStep == null),
+                isRoot = (actualParent == null),
                 isSingleton = stepSpecification is SingletonStepSpecification,
                 isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad),
                 selectors = stepSpecification.selectors
@@ -256,7 +259,7 @@ internal class FactoryInitializerImpl(
             injectDependencies(step)
             step.init()
             dag.addStep(step)
-            parentStep?.let { ps ->
+            actualParent?.let { ps ->
                 @Suppress("UNCHECKED_CAST")
                 (ps as Step<*, Any?>).addNext(step as Step<Any?, *>)
             }

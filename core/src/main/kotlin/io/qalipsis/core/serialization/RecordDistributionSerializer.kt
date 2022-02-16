@@ -17,18 +17,17 @@ internal class RecordDistributionSerializer(
 
     private val sortedSerializers = serializers.sortedBy(RecordSerializer::order)
 
-    override fun <T : Any> serialize(entity: T, serializationContext: SerializationContext): ByteArray {
+    override fun <T> serialize(entity: T, serializationContext: SerializationContext): ByteArray {
         val record = sortedSerializers.asSequence().filter { it.acceptsToSerialize(entity) }
             .firstNotNullOfOrNull { kotlin.runCatching { it.serialize(entity) }.getOrNull() }
-            ?: throw SerializationException("The value of type ${entity::class} could not be serialized")
+            ?: throw SerializationException("The value of type ${entity?.let { it::class }} could not be serialized")
 
         return Serializers.json.encodeToString(record).encodeToByteArray()
     }
 
-    override fun <T : Any> deserialize(source: ByteArray, deserializationContext: DeserializationContext): T {
+    override fun <T> deserialize(source: ByteArray, deserializationContext: DeserializationContext): T? {
         val record: SerializedRecord = Serializers.json.decodeFromString(source.decodeToString())
         return sortedSerializers.asSequence().filter { it.acceptsToDeserialize(record) }
             .firstNotNullOfOrNull { kotlin.runCatching { it.deserialize(record) as T? }.getOrNull() }
-            ?: throw SerializationException("The value of type ${record.type.type} could not be deserialized")
     }
 }

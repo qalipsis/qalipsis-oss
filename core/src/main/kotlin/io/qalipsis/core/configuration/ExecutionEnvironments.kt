@@ -23,6 +23,11 @@ object ExecutionEnvironments {
     const val STANDALONE = "standalone"
 
     /**
+     * Starts an instance of factory that does not distribute the execution with other ones.
+     */
+    const val SINGLE_FACTORY = "single-factory"
+
+    /**
      * Enables the integration with Redis to support data caching and messaging.
      */
     const val REDIS = "redis"

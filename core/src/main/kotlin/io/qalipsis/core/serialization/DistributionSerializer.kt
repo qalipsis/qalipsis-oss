@@ -7,13 +7,13 @@ package io.qalipsis.core.serialization
  */
 interface DistributionSerializer {
 
-    fun <T : Any> serialize(
+    fun <T> serialize(
         entity: T,
         serializationContext: SerializationContext = SerializationContext.EMPTY
     ): ByteArray
 
-    fun <T : Any> deserialize(
+    fun <T> deserialize(
         source: ByteArray,
         deserializationContext: DeserializationContext = DeserializationContext.EMPTY
-    ): T
+    ): T?
 }

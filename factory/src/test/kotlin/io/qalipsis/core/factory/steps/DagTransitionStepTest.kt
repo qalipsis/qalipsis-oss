@@ -26,54 +26,52 @@ internal class DagTransitionStepTest {
 
     @Test
     @Timeout(1)
-    internal fun `should only forward input to output`() =
-        testCoroutineDispatcher.runTest {
-            // given
-            val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
-            val ctx = StepTestHelper.createStepContext<Int, Int>(
-                input = 1,
-                campaignId = "my-campaign",
-                scenarioId = "my-scenario",
-                minionId = "my-minion"
-            )
+    internal fun `should only forward input to output`() = testCoroutineDispatcher.runTest {
+        // given
+        val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
+        val ctx = StepTestHelper.createStepContext<Int, Int>(
+            input = 1,
+            campaignId = "my-campaign",
+            scenarioId = "my-scenario",
+            minionId = "my-minion"
+        )
 
-            // when
-            step.execute(ctx)
+        // when
+        step.execute(ctx)
 
-            //then
-            val output = ctx.consumeOutputValue()
-            Assertions.assertEquals(1, output)
-            Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
-            confirmVerified(factoryCampaignManager)
-        }
+        //then
+        val output = ctx.consumeOutputValue()
+        Assertions.assertEquals(1, output)
+        Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
+        confirmVerified(factoryCampaignManager)
+    }
 
 
     @Test
     @Timeout(1)
-    internal fun `should notify DAG completion when complete is called`() =
-        testCoroutineDispatcher.runTest {
-            // given
-            val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
-            val ctx = DefaultCompletionContext(
-                campaignId = "my-campaign",
-                scenarioId = "my-scenario",
-                minionId = "my-minion",
-                lastExecutedStepId = "step-1",
-                errors = emptyList()
+    internal fun `should notify DAG completion when complete is called`() = testCoroutineDispatcher.runTest {
+        // given
+        val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
+        val ctx = DefaultCompletionContext(
+            campaignId = "my-campaign",
+            scenarioId = "my-scenario",
+            minionId = "my-minion",
+            lastExecutedStepId = "step-1",
+            errors = emptyList()
+        )
+
+        // when
+        step.complete(ctx)
+
+        //then
+        coVerifyOnce {
+            factoryCampaignManager.notifyCompleteMinion(
+                "my-minion",
+                "my-campaign",
+                "my-scenario",
+                "this-is-my-dag"
             )
-
-            // when
-            step.complete(ctx)
-
-            //then
-            coVerifyOnce {
-                factoryCampaignManager.notifyCompleteMinion(
-                    "my-minion",
-                    "my-campaign",
-                    "my-scenario",
-                    "this-is-my-dag"
-                )
-            }
-            confirmVerified(factoryCampaignManager)
         }
+        confirmVerified(factoryCampaignManager)
+    }
 }

@@ -71,7 +71,9 @@ internal open class HandshakeManager(
                 broadcastDirectivesChannel = headConfiguration.broadcastChannel,
                 feedbackChannel = headConfiguration.feedbackChannel,
                 heartbeatChannel = headConfiguration.heartbeatChannel,
-                heartbeatPeriod = headConfiguration.heartbeatDuration
+                heartbeatPeriod = headConfiguration.heartbeatDuration,
+                unicastContextsChannel = actualNodeId,
+                broadcastContextsChannel = BROADCAST_CONTEXTS_CHANNEL
             )
         )
 
@@ -103,6 +105,9 @@ internal open class HandshakeManager(
     }
 
     companion object {
+
+        const val BROADCAST_CONTEXTS_CHANNEL = "broadcasts-channel"
+
         @JvmStatic
         private val log = logger()
     }

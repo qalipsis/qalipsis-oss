@@ -107,14 +107,14 @@ internal class RedisDirectiveRegistry(
     @LogInputAndOutput
     override suspend fun <T> list(reference: ListDirectiveReference<T>): List<T> {
         return redisCommands.get(reference.key)
-            ?.let { serializer.deserialize<ListDirective<T, ListDirectiveReference<T>>>(it.encodeToByteArray()).set }
+            ?.let { serializer.deserialize<ListDirective<T, ListDirectiveReference<T>>>(it.encodeToByteArray())?.set }
             ?: emptyList()
     }
 
     @LogInputAndOutput
     override suspend fun <T> read(reference: SingleUseDirectiveReference<T>): T? {
         return redisCommands.rpop(reference.key)?.let {
-            serializer.deserialize<SingleUseDirective<T, SingleUseDirectiveReference<T>>>(it.encodeToByteArray()).value
+            serializer.deserialize<SingleUseDirective<T, SingleUseDirectiveReference<T>>>(it.encodeToByteArray())?.value
         }
     }
 

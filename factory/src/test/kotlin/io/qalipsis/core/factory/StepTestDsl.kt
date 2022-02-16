@@ -73,7 +73,11 @@ internal fun testScenario(
     configure: suspend Scenario.() -> Unit = {}
 ): Scenario {
     val scenario = ScenarioImpl(
-        id, rampUpStrategy = rampUpStrategy, minionsCount = minionsCount, feedbackFactoryChannel = relaxedMockk()
+        id,
+        rampUpStrategy = rampUpStrategy,
+        minionsCount = minionsCount,
+        feedbackFactoryChannel = relaxedMockk(),
+        factoryConfiguration = relaxedMockk()
     )
     runBlocking {
         scenario.configure()

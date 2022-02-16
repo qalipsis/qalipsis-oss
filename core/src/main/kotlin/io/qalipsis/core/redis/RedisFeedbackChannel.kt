@@ -77,7 +77,7 @@ internal class RedisFeedbackChannel(
     }
 
     private fun deserialize(value: String): Feedback {
-        return serializer.deserialize(value.toByteArray())
+        return serializer.deserialize(value.toByteArray())!!
     }
 
     @PreDestroy

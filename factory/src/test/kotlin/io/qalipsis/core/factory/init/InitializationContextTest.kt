@@ -234,7 +234,9 @@ internal class InitializationContextTest {
             broadcastDirectivesChannel = "the-broadcast-directive",
             feedbackChannel = "the-feedback-directive",
             heartbeatChannel = "the-heartbeat-directive",
-            heartbeatPeriod = Duration.ofMinutes(1)
+            heartbeatPeriod = Duration.ofMinutes(1),
+            unicastContextsChannel = "the-unicast-context",
+            broadcastContextsChannel = "the-broadcast-context"
         )
         val initializationContext = spyk(
             InitializationContext(

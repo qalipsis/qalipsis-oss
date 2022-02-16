@@ -96,7 +96,7 @@ internal class RedisBasedDirectiveConsumer(
     }
 
     private fun deserialize(value: String): Directive {
-        return serializer.deserialize(value.toByteArray())
+        return serializer.deserialize(value.toByteArray())!!
     }
 
     @PreDestroy
