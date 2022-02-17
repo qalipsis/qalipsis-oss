@@ -18,5 +18,4 @@ interface CompletionContext : MonitoringTags {
     val minionId: MinionId
     val lastExecutedStepId: StepId
     val errors: List<StepError>
-
 }

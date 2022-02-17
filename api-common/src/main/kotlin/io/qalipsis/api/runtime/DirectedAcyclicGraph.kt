@@ -59,6 +59,11 @@ data class DirectedAcyclicGraph(
     var rootStep: Slot<Step<*, *>> = Slot()
 
     /**
+     * Latest step to execute when running the DAG onto a minion.
+     */
+    lateinit var latestStep: Step<*, *>
+
+    /**
      * Steps are stored into slots, because they might be decorated or wrapped during the initialization process.
      */
     private val steps = ConcurrentHashMap<StepId, Slot<Step<*, *>>>()
@@ -80,6 +85,7 @@ data class DirectedAcyclicGraph(
             steps.computeIfAbsent(step.id) { Slot() }
         }.set(step)
         scenario.addStep(this, step)
+        latestStep = step
     }
 
     suspend fun findStep(stepId: StepId) = scenario.findStep(stepId)

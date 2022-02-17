@@ -55,12 +55,12 @@ interface Scenario {
     /**
      * Starts a new campaign on the scenario.
      */
-    fun start(campaignId: CampaignId)
+    suspend fun start(campaignId: CampaignId)
 
     /**
      * Stops a running campaign on the scenario.
      */
-    fun stop(campaignId: CampaignId)
+    suspend fun stop(campaignId: CampaignId)
 
     /**
      * Destroys the scenario and all its components recursively.

@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong
 class SuspendedCountLatch(
     private var initialCount: Long = 0,
     private val allowsNegative: Boolean = false,
-    private val onReleaseAction: suspend (() -> Unit) = {}
+    private val onReleaseAction: suspend (SuspendedCountLatch.() -> Unit) = {}
 ) {
 
     private var activityFlag = Channel<Unit>(1)
@@ -134,9 +134,7 @@ class SuspendedCountLatch(
         result
     }
 
-    fun blockingIncrement(value: Long = 1): Long = runBlocking {
-        increment(value)
-    }
+    fun blockingIncrement(value: Long = 1): Long = runBlocking { increment(value) }
 
     suspend fun decrement(value: Long = 1): Long {
         return mutex.withLock {
