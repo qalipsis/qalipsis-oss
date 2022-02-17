@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.annotation.Value
+import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -60,6 +61,14 @@ class InMemorySharedStateRegistry(
 
     override suspend fun contains(definition: SharedStateDefinition): Boolean {
         return cache.asMap().containsKey(definition)
+    }
+
+    override suspend fun clear() {
+        cache.invalidateAll()
+    }
+
+    override suspend fun clear(minionIds: Collection<MinionId>) {
+        cache.invalidateAll(cache.asMap().keys.filter { it.minionId in minionIds })
     }
 
     private class SharedStateDefinitionExpiry(private val timeToLive: Duration) :
