@@ -11,13 +11,13 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
+import java.time.Duration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
 
 /**
  * @author Svetlana Paliashchuk
@@ -51,7 +51,6 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         redisCoroutinesCommands.set("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}", serializer.serialize(payload1).decodeToString())
         redisCoroutinesCommands.set("$KEY_PREFIX:${definition2.minionId}:${definition2.sharedStateName}", serializer.serialize(payload2).decodeToString())
         redisCoroutinesCommands.set("$KEY_PREFIX:${definition3.minionId}:${definition3.sharedStateName}", serializer.serialize(payload3).decodeToString())
-
     }
 
     @AfterEach
@@ -331,6 +330,64 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
         val result2 = registry.contains(definition2)
         Assertions.assertFalse(result2)
+    }
+
+    @Test
+    @Timeout(10)
+    fun `should clear cache`() = testDispatcherProvider.run {
+        //given
+        val definition1 = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
+        val definition2 = SharedStateDefinition("minion-2", "state2", Duration.ofMillis(123))
+        val definition3 = SharedStateDefinition("minion-3", "state3", Duration.ofMillis(123))
+
+        val payload1 = Person("Ann", 22)
+        val payload2 = Person("Mike", 20)
+        val payload3 = Person("Paul", 25)
+
+        redisCoroutinesCommands.flushall()
+        // Using set() here to populate the map keysByMinions
+        registry.set(mapOf(definition1 to payload1, definition2 to payload2, definition3 to payload3))
+
+        // when
+        registry.clear()
+
+        // then
+        Assertions.assertFalse(registry.contains(definition1))
+        Assertions.assertFalse(registry.contains(definition2))
+        Assertions.assertFalse(registry.contains(definition3))
+    }
+
+    @Test
+    @Timeout(10)
+    fun `should clear cache by minionIds`() = testDispatcherProvider.run {
+        //given
+        val definition1 = SharedStateDefinition("minion-1", "state1", Duration.ofMillis(123))
+        val definition2 = SharedStateDefinition("minion-2", "state2", Duration.ofMillis(123))
+        val definition3 = SharedStateDefinition("minion-3", "state3", Duration.ofMillis(123))
+        val definition4 = SharedStateDefinition("minion-3", "state4", Duration.ofMillis(123))
+
+        val payload1 = Person("Ann", 22)
+        val payload2 = Person("Mike", 20)
+        val payload3 = Person("Paul", 25)
+
+        redisCoroutinesCommands.flushall()
+        // Using set() here to populate the map keysByMinions
+        registry.set(
+            mapOf(
+                definition1 to payload1,
+                definition2 to payload2,
+                definition3 to payload3,
+                definition4 to payload3
+            ))
+
+        // when
+        registry.clear(listOf(definition1.minionId, definition2.minionId))
+
+        // then
+        Assertions.assertFalse(registry.contains(definition1))
+        Assertions.assertFalse(registry.contains(definition2))
+        Assertions.assertTrue(registry.contains(definition3))
+        Assertions.assertTrue(registry.contains(definition4))
     }
 
     companion object{

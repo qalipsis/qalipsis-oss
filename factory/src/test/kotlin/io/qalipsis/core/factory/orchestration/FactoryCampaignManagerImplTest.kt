@@ -24,6 +24,7 @@ import io.qalipsis.api.rampup.MinionsStartingLine
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.rampup.RampUpStrategyIterator
 import io.qalipsis.api.runtime.Scenario
+import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
@@ -39,6 +40,7 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
+import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -49,7 +51,6 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
 
 @WithMockk
 internal class FactoryCampaignManagerImplTest {
@@ -81,6 +82,9 @@ internal class FactoryCampaignManagerImplTest {
 
     @RelaxedMockK
     private lateinit var factoryConfiguration: FactoryConfiguration
+
+    @RelaxedMockK
+    private lateinit var sharedStateRegistry: SharedStateRegistry
 
     @BeforeEach
     internal fun setUp() {
@@ -132,6 +136,7 @@ internal class FactoryCampaignManagerImplTest {
         feedbackFactoryChannel,
         idGenerator,
         factoryConfiguration,
+        sharedStateRegistry,
         this,
         scenarioShutdownTimeout = Duration.ofMillis(1)
     )
@@ -633,6 +638,7 @@ internal class FactoryCampaignManagerImplTest {
 
         // then
         coVerifyOnce {
+            sharedStateRegistry.clear(listOf("minion-1", "minion-2", "minion-3"))
             minionsKeeper.shutdownMinion("minion-1")
             minionsKeeper.shutdownMinion("minion-2")
             minionsKeeper.shutdownMinion("minion-3")
@@ -658,6 +664,7 @@ internal class FactoryCampaignManagerImplTest {
 
             // then
             coVerifyOnce {
+                sharedStateRegistry.clear(listOf("minion-1", "minion-2", "minion-3"))
                 minionsKeeper.shutdownMinion("minion-1")
                 minionsKeeper.shutdownMinion("minion-2")
                 minionsKeeper.shutdownMinion("minion-3")
@@ -677,6 +684,7 @@ internal class FactoryCampaignManagerImplTest {
                 feedbackFactoryChannel,
                 idGenerator,
                 factoryConfiguration,
+                sharedStateRegistry,
                 this,
                 minionShutdownTimeout = Duration.ofMillis(5)
             )
@@ -693,6 +701,7 @@ internal class FactoryCampaignManagerImplTest {
 
             // then
             coVerifyOnce {
+                sharedStateRegistry.clear(listOf("minion-1", "minion-2", "minion-3"))
                 minionsKeeper.shutdownMinion("minion-1")
                 minionsKeeper.shutdownMinion("minion-2")
                 minionsKeeper.shutdownMinion("minion-3")
@@ -732,6 +741,7 @@ internal class FactoryCampaignManagerImplTest {
             feedbackFactoryChannel,
             idGenerator,
             factoryConfiguration,
+            sharedStateRegistry,
             this,
             scenarioShutdownTimeout = Duration.ofMillis(1)
         )
@@ -764,6 +774,7 @@ internal class FactoryCampaignManagerImplTest {
             feedbackFactoryChannel,
             idGenerator,
             factoryConfiguration,
+            sharedStateRegistry,
             this
         )
 
@@ -814,12 +825,13 @@ internal class FactoryCampaignManagerImplTest {
             scenario1.stop("my-campaign")
             scenario2.stop("my-campaign")
             meterRegistry.clear()
+            sharedStateRegistry.clear()
         }
         assertThat(factoryCampaignManager).all {
             typedProp<Set<*>>("runningScenarios").isEmpty()
             typedProp<String>("runningCampaign").isEmpty()
         }
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper, sharedStateRegistry)
     }
 
     @Test

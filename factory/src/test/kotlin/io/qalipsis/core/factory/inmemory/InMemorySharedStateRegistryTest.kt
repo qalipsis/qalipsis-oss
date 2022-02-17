@@ -214,4 +214,56 @@ internal class InMemorySharedStateRegistryTest {
         Thread.sleep(40)
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
+
+    @Test
+    internal fun shouldClearCache() = testDispatcherProvider.run {
+        // Given
+        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50))
+        val definition1 = SharedStateDefinition("minion-1", "state-1", Duration.ofMillis(123))
+        val definition2 = SharedStateDefinition("minion-1", "state-2", Duration.ofMillis(123))
+
+        registry.set(mapOf(definition1 to "My value 1", definition2 to "My value 2"))
+
+        // When
+        registry.clear()
+
+        // The values cannot be read after removal.
+        assertNull(registry.get(SharedStateDefinition("minion-1", "state-1")))
+        assertNull(registry.get(SharedStateDefinition("minion-1", "state-2")))
+
+    }
+
+    @Test
+    internal fun shouldClearCacheByMinionIds() = testDispatcherProvider.run {
+        // Given
+        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50))
+        val definition1 = SharedStateDefinition("minion-1", "state-1", Duration.ofMillis(123))
+        val definition2 = SharedStateDefinition("minion-1", "state-2", Duration.ofMillis(123))
+        val definition3 = SharedStateDefinition("minion-2", "state-3", Duration.ofMillis(123))
+        val definition4 = SharedStateDefinition("minion-3", "state-4", Duration.ofMillis(123))
+        val definition5 = SharedStateDefinition("minion-4", "state-5", Duration.ofMillis(123))
+
+        registry.set(
+            mapOf(
+                definition1 to "My value 1",
+                definition2 to "My value 2",
+                definition3 to "My value 3",
+                definition4 to "My value 4",
+                definition5 to "My value 5"
+            ))
+
+        // When
+        registry.clear(listOf("minion-1", "minion-3"))
+
+        // Then
+        val allValues = registry.get(listOf(definition3, definition5))
+        assertEquals("My value 3", allValues["state-3"])
+        assertEquals("My value 5", allValues["state-5"])
+
+        // The values cannot be read after removal.
+        assertNull(registry.get(SharedStateDefinition("minion-1", "state-1")))
+        assertNull(registry.get(SharedStateDefinition("minion-1", "state-2")))
+        assertNull(registry.get(SharedStateDefinition("minion-3", "state-4")))
+
+    }
 }

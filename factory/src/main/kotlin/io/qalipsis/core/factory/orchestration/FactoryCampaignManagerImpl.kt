@@ -11,6 +11,7 @@ import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Scenario
+import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
@@ -20,13 +21,13 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.rampup.RampUpConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
-import java.time.Duration
 
 @Singleton
 internal class FactoryCampaignManagerImpl(
@@ -37,6 +38,7 @@ internal class FactoryCampaignManagerImpl(
     private val feedbackFactoryChannel: FeedbackFactoryChannel,
     private val idGenerator: IdGenerator,
     private val factoryConfiguration: FactoryConfiguration,
+    private val sharedStateRegistry: SharedStateRegistry,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
     @Property(
         name = "minion-shutdown-timeout",
@@ -155,6 +157,7 @@ internal class FactoryCampaignManagerImpl(
     }
 
     override suspend fun shutdownMinions(campaignId: CampaignId, minionIds: Collection<MinionId>) {
+        sharedStateRegistry.clear(minionIds)
         minionIds.map { minionId ->
             backgroundScope.async {
                 kotlin.runCatching {
@@ -193,6 +196,7 @@ internal class FactoryCampaignManagerImpl(
                 runningCampaign = ""
                 // Removes all the meters.
                 meterRegistry.clear()
+                sharedStateRegistry.clear()
             }
         }
     }
