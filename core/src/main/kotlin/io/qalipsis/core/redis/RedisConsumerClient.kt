@@ -97,7 +97,6 @@ class RedisConsumerClient<T>(
         }
     }
 
-
     private suspend fun processMessages(messages: List<StreamMessage<String, String>>) {
         messages.map {
             try {

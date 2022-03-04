@@ -9,25 +9,28 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.steps.ContextConsumer
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.rampup.RampUpConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
+import java.time.Duration
+import java.util.Optional
 
 @Singleton
 internal class FactoryCampaignManagerImpl(
@@ -39,6 +42,7 @@ internal class FactoryCampaignManagerImpl(
     private val idGenerator: IdGenerator,
     private val factoryConfiguration: FactoryConfiguration,
     private val sharedStateRegistry: SharedStateRegistry,
+    private val contextConsumer: Optional<ContextConsumer>,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
     @Property(
         name = "minion-shutdown-timeout",
@@ -89,6 +93,11 @@ internal class FactoryCampaignManagerImpl(
             log.info { "Starting campaign $campaignId on scenario $scenarioId" }
             scenarioRegistry[scenarioId]!!.start(campaignId)
             minionsKeeper.startSingletons(scenarioId)
+            if (contextConsumer.isPresent) {
+                tryAndLogOrNull(log) {
+                    contextConsumer.get().start()
+                }
+            }
         }
     }
 
@@ -177,6 +186,11 @@ internal class FactoryCampaignManagerImpl(
     override suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
         withCancellableTimeout(scenarioShutdownTimeout) {
             try {
+                if (contextConsumer.isPresent) {
+                    tryAndLogOrNull(log) {
+                        contextConsumer.get().stop()
+                    }
+                }
                 scenarioRegistry[scenarioId]!!.stop(campaignId)
             } catch (e: Exception) {
                 log.trace(e) { "The scenario $scenarioId was not successfully shut down: ${e.message}" }

@@ -18,15 +18,21 @@ internal class RecordDistributionSerializer(
     private val sortedSerializers = serializers.sortedBy(RecordSerializer::order)
 
     override fun <T> serialize(entity: T, serializationContext: SerializationContext): ByteArray {
-        val record = sortedSerializers.asSequence().filter { it.acceptsToSerialize(entity) }
-            .firstNotNullOfOrNull { kotlin.runCatching { it.serialize(entity) }.getOrNull() }
-            ?: throw SerializationException("The value of type ${entity?.let { it::class }} could not be serialized")
-
-        return Serializers.json.encodeToString(record).encodeToByteArray()
+        return Serializers.json.encodeToString(serializeAsRecord(entity, serializationContext)).encodeToByteArray()
     }
 
     override fun <T> deserialize(source: ByteArray, deserializationContext: DeserializationContext): T? {
         val record: SerializedRecord = Serializers.json.decodeFromString(source.decodeToString())
+        return deserializeRecord(record)
+    }
+
+    override fun <T> serializeAsRecord(entity: T, serializationContext: SerializationContext): SerializedRecord {
+        return sortedSerializers.asSequence().filter { it.acceptsToSerialize(entity) }
+            .firstNotNullOfOrNull { kotlin.runCatching { it.serialize(entity) }.getOrNull() }
+            ?: throw SerializationException("The value of type ${entity?.let { it::class }} could not be serialized")
+    }
+
+    override fun <T> deserializeRecord(record: SerializedRecord): T? {
         return sortedSerializers.asSequence().filter { it.acceptsToDeserialize(record) }
             .firstNotNullOfOrNull { kotlin.runCatching { it.deserialize(record) as T? }.getOrNull() }
     }

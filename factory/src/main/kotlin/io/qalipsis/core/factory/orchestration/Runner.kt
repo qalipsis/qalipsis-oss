@@ -1,5 +1,6 @@
 package io.qalipsis.core.factory.orchestration
 
+import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
@@ -32,15 +33,24 @@ interface Runner {
     )
 
     /**
-     * Makes [minion] executes [step] and its successors, calling .
+     * Makes [minion] executes [rootStep] and its successors, calling completionConsumer when all the steps are complete.
      *
      * @param minion the minion to launch
-     * @param step the first step of the chain to execute
+     * @param rootStep the first step of the chain to execute
      * @param stepContext the initial step context
      * @param completionConsumer action to execute after the lately executed step of the tree, which might have an output or not, be exhausted...
      */
     suspend fun execute(
-        minion: Minion, step: Step<*, *>, stepContext: StepContext<*, *>,
-        completionConsumer: (suspend (ctx: StepContext<*, *>) -> Unit)?
+        minion: Minion, rootStep: Step<*, *>, stepContext: StepContext<*, *>,
+        completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)? = null
     ): Job?
+
+    /**
+     * Notifies the [rootStep] and its successors of the completion of [minion].
+     *
+     * @param minion the minion to launch
+     * @param rootStep the first step of the chain to execute
+     * @param completionContext the completion context for the minion
+     */
+    suspend fun complete(minion: Minion, rootStep: Step<*, *>, completionContext: CompletionContext): Job?
 }

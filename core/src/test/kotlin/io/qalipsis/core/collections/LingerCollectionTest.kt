@@ -147,8 +147,9 @@ internal class LingerCollectionTest {
             // when
             received.clear()
             publicationCounter.reset()
+            publicationCounter.decrement()
             collection.addAll((1..400).toList())
-            publicationCounter.awaitActivity()
+            publicationCounter.await()
 
             // then
             assertThat(received).all {

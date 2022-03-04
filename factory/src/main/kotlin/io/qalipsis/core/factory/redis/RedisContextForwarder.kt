@@ -22,6 +22,7 @@ import io.qalipsis.core.factory.orchestration.TransportableContext
 import io.qalipsis.core.factory.orchestration.TransportableStepContext
 import io.qalipsis.core.factory.steps.ContextForwarder
 import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.SerializationContext
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +30,12 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import javax.validation.constraints.Positive
 
+/**
+ * Implementation of [ContextForwarder] using Redis Streams to transport the [TransportableContext]s between
+ * factories.
+ *
+ * @author Eric Jessé
+ */
 @Singleton
 @Requirements(
     Requires(notEnv = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY]),
@@ -46,28 +53,30 @@ internal class RedisContextForwarder(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val minionAssignmentKeeper: MinionAssignmentKeeper,
     private val distributionSerializer: DistributionSerializer,
-    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val campaignScope: CoroutineScope,
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
     @Positive @Property(name = "transport.contexts.batch-size", defaultValue = "500")
     private val batchSize: Int,
     @PositiveDuration @Property(name = "transport.contexts.linger-duration", defaultValue = "2s")
     private val bufferDuration: Duration
 ) : ContextForwarder {
 
-    // When 500 contexts are collected or 2 seconds passed, the buffered contexts are forwarded.
+    /**
+     * Buffers that releases [batchSize] elements when either [batchSize] is reached or [bufferDuration] time out was reached.
+     */
     private val contextsBuffer = LingerCollection<Pair<TransportableContext, Collection<DirectedAcyclicGraphId>>>(
         batchSize, bufferDuration
     ) { contexts ->
-        campaignScope.launch { forward(contexts) }
+        backgroundScope.launch { forward(contexts) }
     }
 
     override suspend fun forward(context: StepContext<*, *>, dags: Collection<DirectedAcyclicGraphId>) {
-        val input = if (context.hasInput) {
+        val record = if (context.hasInput) {
             val input = context.receive()
-            distributionSerializer.serialize(input)
+            distributionSerializer.serializeAsRecord(input)
         } else {
             null
         }
-        contextsBuffer.add(TransportableStepContext(context, input) to dags)
+        contextsBuffer.add(TransportableStepContext(context, record) to dags)
     }
 
     override suspend fun forward(context: CompletionContext, dags: Collection<DirectedAcyclicGraphId>) {
@@ -110,7 +119,7 @@ internal class RedisContextForwarder(
     @LogInput
     override suspend fun forward(factoryChannel: String, contexts: Collection<TransportableContext>) {
         redisCoroutinesCommands.xadd(factoryChannel, contexts.associate { context ->
-            idGenerator.short() to serializer.serialize(context).decodeToString()
+            idGenerator.short() to serializer.serialize(context, SerializationContext.CONTEXT).decodeToString()
         })
     }
 }

@@ -29,6 +29,7 @@ import io.qalipsis.core.factory.orchestration.TransportableStepContext
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.core.redis.RedisConsumerClient
 import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.SerializationContext
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
@@ -190,7 +191,7 @@ internal class RedisContextForwarderIntegrationTest : AbstractRedisIntegrationTe
             index(0).isDataClassEqualTo(
                 TransportableStepContext(
                     stepExecutionContext1,
-                    distributionSerializer.serialize(1)
+                    distributionSerializer.serializeAsRecord(1, SerializationContext.CONTEXT)
                 )
             )
         }
@@ -200,7 +201,7 @@ internal class RedisContextForwarderIntegrationTest : AbstractRedisIntegrationTe
                 it.isDataClassEqualTo(
                     TransportableStepContext(
                         stepExecutionContext2,
-                        distributionSerializer.serialize("The value")
+                        distributionSerializer.serializeAsRecord("The value", SerializationContext.CONTEXT)
                     )
                 )
             }
