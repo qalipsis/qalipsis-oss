@@ -13,6 +13,7 @@ import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.aerisconsulting.catadioptre.invokeInvisible
 import io.micronaut.context.ApplicationContext
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
@@ -36,6 +37,7 @@ import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.init.catadioptre.convertScenario
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
@@ -413,7 +415,8 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    internal fun `should convert scenario`() {
+    @Timeout(3)
+    internal fun `should convert scenario`() = testDispatcherProvider.run {
         // given
         val scenarioRootSteps = emptyList<StepSpecification<*, *, *>>()
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk {
@@ -424,11 +427,22 @@ internal class FactoryInitializerImplTest {
             every { rootSteps } returns scenarioRootSteps
         }
         every { initializationContext.feedbackFactoryChannel } returns feedbackFactoryChannel
+        val latch = Latch(true)
+        coEvery {
+            factoryInitializer["convertSteps"](
+                any<ConfiguredScenarioSpecification>(),
+                any<Scenario>(),
+                any<Step<*, *>>(),
+                any<DirectedAcyclicGraph>(),
+                any<List<StepSpecification<Any?, Any?, *>>>()
+            )
+        } coAnswers { latch.release() }
 
         // when
         val scenario = factoryInitializer.convertScenario("my-scenario", scenarioSpecification)
 
         // then
+        latch.await()
         assertThat(scenario).all {
             prop(Scenario::id).isEqualTo("my-scenario")
             prop(Scenario::minionsCount).isEqualTo(123)
@@ -437,7 +451,7 @@ internal class FactoryInitializerImplTest {
             prop("feedbackFactoryChannel").isSameAs(feedbackFactoryChannel)
         }
 
-        coVerifyOnce {
+        coVerify {
             factoryInitializer["convertSteps"](
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),

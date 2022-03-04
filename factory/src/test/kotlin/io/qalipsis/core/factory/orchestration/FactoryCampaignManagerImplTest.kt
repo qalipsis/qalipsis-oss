@@ -30,6 +30,7 @@ import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.catadioptre.runningCampaign
 import io.qalipsis.core.factory.orchestration.catadioptre.runningScenarios
+import io.qalipsis.core.factory.redis.RedisContextConsumer
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -40,7 +41,6 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
-import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -51,6 +51,8 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.util.Optional
 
 @WithMockk
 internal class FactoryCampaignManagerImplTest {
@@ -85,6 +87,9 @@ internal class FactoryCampaignManagerImplTest {
 
     @RelaxedMockK
     private lateinit var sharedStateRegistry: SharedStateRegistry
+
+    @RelaxedMockK
+    private lateinit var contextConsumer: RedisContextConsumer
 
     @BeforeEach
     internal fun setUp() {
@@ -137,6 +142,7 @@ internal class FactoryCampaignManagerImplTest {
         idGenerator,
         factoryConfiguration,
         sharedStateRegistry,
+        Optional.of(contextConsumer),
         this,
         scenarioShutdownTimeout = Duration.ofMillis(1)
     )
@@ -192,6 +198,7 @@ internal class FactoryCampaignManagerImplTest {
             scenarioRegistry["my-scenario"]
             scenario.start("my-campaign")
             minionsKeeper.startSingletons("my-scenario")
+            contextConsumer.start()
         }
         confirmVerified(
             feedbackFactoryChannel,
@@ -685,6 +692,7 @@ internal class FactoryCampaignManagerImplTest {
                 idGenerator,
                 factoryConfiguration,
                 sharedStateRegistry,
+                Optional.of(contextConsumer),
                 this,
                 minionShutdownTimeout = Duration.ofMillis(5)
             )
@@ -708,6 +716,28 @@ internal class FactoryCampaignManagerImplTest {
             }
         }
 
+
+    @Test
+    @Timeout(1)
+    internal fun `should shutdown the scenario even if the context consumer throws an exception`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val factoryCampaignManager = buildCampaignManager()
+            val scenario = relaxedMockk<Scenario>()
+            every { scenarioRegistry["my-scenario"] } returns scenario
+            coEvery { contextConsumer.stop() } throws RuntimeException()
+
+            // when
+            factoryCampaignManager.shutdownScenario("my-campaign", "my-scenario")
+
+            // then
+            coVerifyOrder {
+                contextConsumer.stop()
+                scenario.stop("my-campaign")
+            }
+            confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        }
+
     @Test
     @Timeout(1)
     internal fun `should shutdown the scenario`() = testCoroutineDispatcher.runTest {
@@ -720,7 +750,8 @@ internal class FactoryCampaignManagerImplTest {
         factoryCampaignManager.shutdownScenario("my-campaign", "my-scenario")
 
         // then
-        coVerifyOnce {
+        coVerifyOrder {
+            contextConsumer.stop()
             scenario.stop("my-campaign")
         }
         confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
@@ -742,6 +773,7 @@ internal class FactoryCampaignManagerImplTest {
             idGenerator,
             factoryConfiguration,
             sharedStateRegistry,
+            Optional.of(contextConsumer),
             this,
             scenarioShutdownTimeout = Duration.ofMillis(1)
         )
@@ -752,7 +784,8 @@ internal class FactoryCampaignManagerImplTest {
         }
 
         // then
-        coVerifyOnce {
+        coVerifyOrder {
+            contextConsumer.stop()
             scenario.stop("my-campaign")
         }
         confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
@@ -775,6 +808,7 @@ internal class FactoryCampaignManagerImplTest {
             idGenerator,
             factoryConfiguration,
             sharedStateRegistry,
+            Optional.of(contextConsumer),
             this
         )
 
@@ -785,7 +819,8 @@ internal class FactoryCampaignManagerImplTest {
 
         // then
         assertThat(exception.message).isEqualTo("There is an error")
-        coVerifyOnce {
+        coVerifyOrder {
+            contextConsumer.stop()
             scenario.stop("my-campaign")
         }
         confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)

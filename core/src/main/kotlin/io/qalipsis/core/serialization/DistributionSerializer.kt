@@ -16,4 +16,11 @@ interface DistributionSerializer {
         source: ByteArray,
         deserializationContext: DeserializationContext = DeserializationContext.EMPTY
     ): T?
+
+    fun <T> serializeAsRecord(
+        entity: T,
+        serializationContext: SerializationContext = SerializationContext.EMPTY
+    ): SerializedRecord
+
+    fun <T> deserializeRecord(record: SerializedRecord): T?
 }

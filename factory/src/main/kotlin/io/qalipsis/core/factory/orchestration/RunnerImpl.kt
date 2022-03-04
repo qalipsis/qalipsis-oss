@@ -108,14 +108,26 @@ internal class RunnerImpl(
 
     @LogInput
     override suspend fun execute(
-        minion: Minion, step: Step<*, *>, stepContext: StepContext<*, *>,
+        minion: Minion, rootStep: Step<*, *>, stepContext: StepContext<*, *>,
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ): Job? {
         minion.completeMdcContext()
         return try {
-            MDC.put("step", step.id)
+            MDC.put("step", rootStep.id)
             minion.launch(coroutineScope) {
-                propagateStepExecution(this, minion, step, stepContext, completionConsumer)
+                propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
+            }
+        } finally {
+            MDC.clear()
+        }
+    }
+
+    override suspend fun complete(minion: Minion, rootStep: Step<*, *>, completionContext: CompletionContext): Job? {
+        minion.completeMdcContext()
+        return try {
+            MDC.put("step", rootStep.id)
+            minion.launch(coroutineScope) {
+                propagatePrematureCompletion(this, completionContext, listOf(rootStep), minion)
             }
         } finally {
             MDC.clear()
@@ -242,8 +254,15 @@ internal class RunnerImpl(
     ) {
         nextSteps.forEach { step ->
             log.trace { "Propagating the minion's completion on step ${step.id} with context $completionContext" }
+
+            minion.completeMdcContext()
+            MDC.put("step", step.id)
             minion.launch(minionScope) {
-                step.complete(completionContext)
+                kotlin.runCatching {
+                    step.complete(completionContext)
+                }
+                minion.cleanMdcContext()
+                MDC.remove("step")
                 propagatePrematureCompletion(minionScope, completionContext, step.next, minion)
             }
         }

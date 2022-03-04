@@ -8,6 +8,7 @@ import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
 import io.qalipsis.core.factory.context.StepContextImpl
+import io.qalipsis.core.serialization.SerializedRecord
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
@@ -53,7 +54,7 @@ data class TransportableCompletionContext(
 @Serializable
 @SerialName("st")
 data class TransportableStepContext(
-    val input: ByteArray?,
+    val input: SerializedRecord?,
     override val campaignId: CampaignId,
     override val scenarioId: ScenarioId,
     override val minionId: MinionId,
@@ -67,7 +68,7 @@ data class TransportableStepContext(
     val errors: List<StepError>
 ) : TransportableContext() {
 
-    constructor(ctx: StepContext<*, *>, input: ByteArray?) : this(
+    constructor(ctx: StepContext<*, *>, input: SerializedRecord?) : this(
         input = input,
         campaignId = ctx.campaignId,
         scenarioId = ctx.scenarioId,
@@ -112,7 +113,7 @@ data class TransportableStepContext(
 
         if (input != null) {
             if (other.input == null) return false
-            if (!input.contentEquals(other.input)) return false
+            if (!input.value.contentEquals(other.input.value)) return false
         } else if (other.input != null) return false
         if (campaignId != other.campaignId) return false
         if (scenarioId != other.scenarioId) return false
@@ -130,7 +131,7 @@ data class TransportableStepContext(
     }
 
     override fun hashCode(): Int {
-        var result = input?.contentHashCode() ?: 0
+        var result = input?.value?.contentHashCode() ?: 0
         result = 31 * result + campaignId.hashCode()
         result = 31 * result + scenarioId.hashCode()
         result = 31 * result + minionId.hashCode()

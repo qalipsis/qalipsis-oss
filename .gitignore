@@ -41,4 +41,5 @@ hs_err_pid*
 /core/docker/elasticsearch/
 
 /**/id.meta
+/**/id.data
 .DS_Store
