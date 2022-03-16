@@ -17,6 +17,8 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
 
     suspend fun findIdByNameAndEndIsNull(campaignName: String): Long
 
+    suspend fun findIdByName(campaignName: String): Long
+
     /**
      * Marks the open campaign with the specified name [campaignName] as complete with the provided [result].
      */

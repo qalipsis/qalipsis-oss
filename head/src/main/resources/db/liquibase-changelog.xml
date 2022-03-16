@@ -13,4 +13,7 @@
   <include file="changelog/creation/07-create-campaign.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/08-create-campaign-scenario.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/09-create-campaign-factory.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/10-create-campaign-report.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/11-create-scenario-report.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/12-create-scenario-report-message.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
