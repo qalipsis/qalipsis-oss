@@ -3,6 +3,7 @@ package io.qalipsis.core.head.jdbc.entity
 import io.micronaut.data.annotation.GeneratedValue
 import io.micronaut.data.annotation.Id
 import io.micronaut.data.annotation.MappedEntity
+import io.micronaut.data.annotation.Relation
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
 import io.qalipsis.api.report.ExecutionStatus
@@ -32,7 +33,9 @@ internal data class CampaignEntity(
     val speedFactor: Double,
     val start: Instant,
     val end: Instant?,
-    val result: ExecutionStatus?
+    val result: ExecutionStatus?,
+    @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "campaignId")
+    val campaignReports: List<CampaignReportEntity>?
 ) : Entity {
 
     constructor(
@@ -41,9 +44,10 @@ internal data class CampaignEntity(
         start: Instant = Instant.now(),
         end: Instant? = null,
         result: ExecutionStatus? = null,
+        campaignReports: List<CampaignReportEntity>? = null
     ) : this(
         -1,
         Instant.EPOCH,
-        campaignId, speedFactor, start, end, result
+        campaignId, speedFactor, start, end, result, campaignReports
     )
 }

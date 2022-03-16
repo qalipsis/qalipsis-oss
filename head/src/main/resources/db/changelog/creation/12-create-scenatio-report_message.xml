@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="12" author="pbril">
+    <createSequence sequenceName="scenario_report_message_seq" schemaName="qalipsis"/>
+    <createTable tableName="scenario_report_message" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="scenario_report_message_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="scenario_report_message_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="scenario_report_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="scenario_report_message_id_fk"
+          referencedTableName="scenario_report"
+          referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+      <column name="stepId" type="VARCHAR(50)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="messageId" type="VARCHAR(50)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="severity" type="VARCHAR(50)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="message" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex schemaName="qalipsis" indexName="unique_scenario_report_message_by_scenario_report_idx"
+      tableName="scenario_report_message"
+      unique="true">
+      <column name="scenario_report_id"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>
