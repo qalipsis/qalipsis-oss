@@ -11,7 +11,4 @@ import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-internal interface CampaignReportRepository : CoroutineCrudRepository<CampaignReportEntity, Long> {
-
-
-}
+internal interface CampaignReportRepository : CoroutineCrudRepository<CampaignReportEntity, Long>

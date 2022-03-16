@@ -31,4 +31,19 @@ internal data class ScenarioReportMessageEntity(
     val message: String
 ) : VersionedEntity {
 
+    constructor(
+        scenarioReportId: Long,
+        stepId: String,
+        messageId: String,
+        severity: ReportMessageSeverity,
+        message: String
+    ) : this(
+        -1,
+        Instant.now(),
+        scenarioReportId,
+        stepId,
+        messageId,
+        severity,
+        message
+    )
 }

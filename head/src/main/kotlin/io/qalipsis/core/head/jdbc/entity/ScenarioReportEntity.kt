@@ -23,14 +23,37 @@ internal data class ScenarioReportEntity(
     override val version: Instant,
     val campaignReportId: Long,
     val start: Instant,
-    val end: Instant?,
+    val end: Instant,
     val startedMinions: Int,
     val completedMinions: Int,
     val successfulExecutions: Int,
     val failedExecutions: Int,
-    val status: ExecutionStatus?,
+    val status: ExecutionStatus,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "scenarioReportId")
-    val messages: List<ScenarioReportMessageEntity>
+    var messages: List<ScenarioReportMessageEntity>?
 ) : VersionedEntity {
 
+    constructor(
+        campaignReportId: Long,
+        start: Instant = Instant.now(),
+        end: Instant = Instant.now(),
+        startedMinions: Int = 0,
+        completedMinions: Int = 0,
+        successfulExecutions: Int = 0,
+        failedExecutions: Int = 0,
+        status: ExecutionStatus,
+        messages: List<ScenarioReportMessageEntity>? = null
+    ) : this(
+        -1,
+        Instant.now(),
+        campaignReportId,
+        start,
+        end,
+        startedMinions,
+        completedMinions,
+        successfulExecutions,
+        failedExecutions,
+        status,
+        messages
+    )
 }

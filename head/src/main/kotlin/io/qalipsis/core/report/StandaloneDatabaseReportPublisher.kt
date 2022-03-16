@@ -8,9 +8,8 @@ import io.qalipsis.api.report.ReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.head.campaign.AutostartCampaignConfiguration
+import io.qalipsis.core.head.campaign.PersistentCampaignReportService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import kotlinx.coroutines.runBlocking
-import javax.annotation.PreDestroy
 
 /**
  * Implementation of a [ReportPublisher] displaying the report in the console. It is mainly used when executing QALIPSIS
@@ -27,28 +26,12 @@ import javax.annotation.PreDestroy
 )
 internal class StandaloneDatabaseReportPublisher(
     private val campaign: AutostartCampaignConfiguration,
-    private val campaignReportStateKeeper: CampaignReportStateKeeper
+    private val campaignReportStateKeeper: CampaignReportStateKeeper,
+    private val campaignReportService: PersistentCampaignReportService
 ) : ReportPublisher {
 
     override suspend fun publish(campaignId: CampaignId) {
         val report = campaignReportStateKeeper.report(campaignId)
-        //todo
-
+        campaignReportService.save(report)
     }
-
-    @PreDestroy
-    fun publishOnLeave() {
-        runCatching {
-            runBlocking {
-//            publish(campaign.id)
-            }
-        }
-    }
-
-    companion object {
-
-        private const val RUNNING_INDICATOR = "<Running>"
-
-    }
-
 }

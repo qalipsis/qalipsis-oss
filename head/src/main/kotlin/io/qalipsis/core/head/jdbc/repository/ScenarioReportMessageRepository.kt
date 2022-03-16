@@ -11,7 +11,4 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-internal interface ScenarioReportMessageRepository : CoroutineCrudRepository<ScenarioReportMessageEntity, Long> {
-
-
-}
+internal interface ScenarioReportMessageRepository : CoroutineCrudRepository<ScenarioReportMessageEntity, Long>

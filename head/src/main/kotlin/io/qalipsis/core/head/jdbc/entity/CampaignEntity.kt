@@ -33,9 +33,7 @@ internal data class CampaignEntity(
     val speedFactor: Double,
     val start: Instant,
     val end: Instant?,
-    val result: ExecutionStatus?,
-    @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "campaignId")
-    val campaignReports: List<CampaignReportEntity>?
+    val result: ExecutionStatus?
 ) : Entity {
 
     constructor(
@@ -44,10 +42,9 @@ internal data class CampaignEntity(
         start: Instant = Instant.now(),
         end: Instant? = null,
         result: ExecutionStatus? = null,
-        campaignReports: List<CampaignReportEntity>? = null
-    ) : this(
+   ) : this(
         -1,
         Instant.EPOCH,
-        campaignId, speedFactor, start, end, result, campaignReports
+        campaignId, speedFactor, start, end, result
     )
 }

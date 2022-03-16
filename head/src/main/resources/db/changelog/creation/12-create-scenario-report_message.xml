@@ -20,13 +20,13 @@
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
       <column name="stepId" type="VARCHAR(50)">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="messageId" type="VARCHAR(50)">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="severity" type="VARCHAR(50)">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="message" type="VARCHAR(255)">
         <constraints nullable="false"/>

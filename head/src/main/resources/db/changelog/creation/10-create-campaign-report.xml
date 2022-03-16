@@ -19,16 +19,16 @@
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
       <column name="started_minions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="completed_minions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="successful_executions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="failed_executions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
     </createTable>
     <createIndex schemaName="qalipsis" indexName="unique_report_by_campaign_idx" tableName="campaign_report"

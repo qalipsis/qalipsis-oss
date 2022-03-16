@@ -22,22 +22,22 @@
         <constraints nullable="false"/>
       </column>
       <column name="end" type="timestamp">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="started_minions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="completed_minions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="successful_executions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="failed_executions" type="INT">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="status" type="varchar(20)">
-        <constraints nullable="true"/>
+        <constraints nullable="false"/>
       </column>
     </createTable>
     <createIndex schemaName="qalipsis" indexName="unique_scenario_report_by_campaign_report_idx" tableName="scenario_report"
