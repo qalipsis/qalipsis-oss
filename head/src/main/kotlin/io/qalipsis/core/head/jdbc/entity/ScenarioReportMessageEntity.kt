@@ -39,7 +39,7 @@ internal data class ScenarioReportMessageEntity(
         message: String
     ) : this(
         -1,
-        Instant.now(),
+        Instant.EPOCH,
         scenarioReportId,
         stepId,
         messageId,

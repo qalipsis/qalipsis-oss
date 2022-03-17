@@ -45,7 +45,7 @@ internal data class ScenarioReportEntity(
         messages: List<ScenarioReportMessageEntity>? = null
     ) : this(
         -1,
-        Instant.now(),
+        Instant.EPOCH,
         campaignReportId,
         start,
         end,

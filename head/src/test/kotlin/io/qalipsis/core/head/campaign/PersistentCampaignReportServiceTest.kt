@@ -13,7 +13,6 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
-import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
@@ -56,8 +55,16 @@ internal class PersistentCampaignReportServiceTest {
         // given
         val now = getTimeMock()
         coEvery { campaignRepository.findIdByName("my-campaign") } returns 8
-        coEvery { scenarioReportRepository.save(any()) } returns mockk { every { id } returns 10 }
-        coEvery { campaignReportRepository.save(any()) } returns mockk { every { id } returns 9 }
+        val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
+            every { id } returns 10
+            every { messages = any() } returns Unit
+        }
+        coEvery { scenarioReportRepository.save(any()) } returns mockedSavedScenarioReport
+        val mockedSavedCampaignReport = mockk<CampaignReportEntity>(relaxed = true) {
+            every { id } returns 9
+            every { scenariosReports = any() } returns Unit
+        }
+        coEvery { campaignReportRepository.save(any()) } returns mockedSavedCampaignReport
 
         val messageOne = ReportMessage(
             stepId = "my-step",
@@ -114,24 +121,26 @@ internal class PersistentCampaignReportServiceTest {
                     ExecutionStatus.SUCCESSFUL
                 )
             )
-            scenarioReportMessageRepository.save(
-                ScenarioReportMessageEntity(
-                    10,
-                    "stepId",
-                    "my-message-1",
-                    ReportMessageSeverity.INFO,
-                    "This is the first message"
+            scenarioReportMessageRepository.saveAll(
+                listOf(
+                    ScenarioReportMessageEntity(
+                        10,
+                        "my-step",
+                        "my-message-1",
+                        ReportMessageSeverity.INFO,
+                        "This is the first message"
+                    ),
+                    ScenarioReportMessageEntity(
+                        10,
+                        "my-step",
+                        "my-message-2",
+                        ReportMessageSeverity.ERROR,
+                        "This is the second message"
+                    )
                 )
             )
-            scenarioReportMessageRepository.save(
-                ScenarioReportMessageEntity(
-                    10,
-                    "stepId",
-                    "my-message-2",
-                    ReportMessageSeverity.INFO,
-                    "This is the second message"
-                )
-            )
+            scenarioReportRepository.update(mockedSavedScenarioReport)
+            campaignReportRepository.update(mockedSavedCampaignReport)
         }
         confirmVerified(campaignReportRepository, scenarioReportRepository, scenarioReportMessageRepository)
     }

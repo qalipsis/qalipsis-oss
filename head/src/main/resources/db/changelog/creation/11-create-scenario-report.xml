@@ -40,9 +40,5 @@
         <constraints nullable="false"/>
       </column>
     </createTable>
-    <createIndex schemaName="qalipsis" indexName="unique_scenario_report_by_campaign_report_idx" tableName="scenario_report"
-      unique="true">
-      <column name="campaign_report_id"/>
-    </createIndex>
   </changeSet>
 </databaseChangeLog>

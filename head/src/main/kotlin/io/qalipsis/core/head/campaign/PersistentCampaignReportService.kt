@@ -13,6 +13,7 @@ import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.toList
 
 @Singleton
 @Requires(notEnv = [ExecutionEnvironments.VOLATILE])
@@ -33,29 +34,27 @@ internal class PersistentCampaignReportService(
         campaignReport.scenariosReports.forEach { scenarioReport ->
             val scenarioReportEntity = saveScenarioReport(scenarioReport, campaignReportEntity.id)
             scenarioReportEntities.add(scenarioReportEntity)
-            scenarioReport.messages.forEach {
-                scenarioReportMessageEntities.add(saveMessage(it, scenarioReportEntity.id))
-            }
-//            scenarioReportEntity.messages = scenarioReportMessageEntities
-//            scenarioReportRepository.update(scenarioReportEntity)
+            scenarioReportMessageEntities.addAll(saveMessages(scenarioReport.messages, scenarioReportEntity.id))
+            scenarioReportEntity.messages = scenarioReportMessageEntities
+            scenarioReportRepository.update(scenarioReportEntity)
         }
-//        campaignReportEntity.scenariosReports = scenarioReportEntities
-//        campaignReportRepository.update(campaignReportEntity)
+        campaignReportEntity.scenariosReports = scenarioReportEntities
+        campaignReportRepository.update(campaignReportEntity)
     }
 
-    private suspend fun saveMessage(
-        reportMessage: ReportMessage,
+    private suspend fun saveMessages(
+        reportMessages: List<ReportMessage>,
         scenarioReportEntityId: Long
-    ): ScenarioReportMessageEntity {
-        return scenarioReportMessageRepository.save(
+    ): List<ScenarioReportMessageEntity> {
+        return scenarioReportMessageRepository.saveAll(reportMessages.map {
             ScenarioReportMessageEntity(
                 scenarioReportEntityId,
-                reportMessage.stepId,
-                reportMessage.messageId.toString(),
-                reportMessage.severity,
-                reportMessage.message
+                it.stepId,
+                it.messageId.toString(),
+                it.severity,
+                it.message
             )
-        )
+        }.toList()).toList()
     }
 
     private suspend fun saveScenarioReport(
