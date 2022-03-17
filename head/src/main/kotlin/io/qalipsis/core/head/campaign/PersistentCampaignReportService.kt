@@ -36,11 +36,11 @@ internal class PersistentCampaignReportService(
             scenarioReport.messages.forEach {
                 scenarioReportMessageEntities.add(saveMessage(it, scenarioReportEntity.id))
             }
-            scenarioReportEntity.messages = scenarioReportMessageEntities
-            scenarioReportRepository.update(scenarioReportEntity)
+//            scenarioReportEntity.messages = scenarioReportMessageEntities
+//            scenarioReportRepository.update(scenarioReportEntity)
         }
-        campaignReportEntity.scenariosReports = scenarioReportEntities
-        campaignReportRepository.update(campaignReportEntity)
+//        campaignReportEntity.scenariosReports = scenarioReportEntities
+//        campaignReportRepository.update(campaignReportEntity)
     }
 
     private suspend fun saveMessage(
