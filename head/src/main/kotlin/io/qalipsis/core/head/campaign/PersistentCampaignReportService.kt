@@ -1,10 +1,8 @@
 package io.qalipsis.core.head.campaign
 
-import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ScenarioReport
-import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
@@ -16,7 +14,6 @@ import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.toList
 
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
 internal class PersistentCampaignReportService(
     private val campaignRepository: CampaignRepository,
     private val campaignReportRepository: CampaignReportRepository,

@@ -12,7 +12,7 @@ import io.qalipsis.core.head.campaign.PersistentCampaignReportService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 
 /**
- * Implementation of a [ReportPublisher] displaying the report in the console. It is mainly used when executing QALIPSIS
+ * Implementation of a [ReportPublisher] persisting the report into the db. It is mainly used when executing QALIPSIS
  * as standalone.
  *
  * @author Palina Bril
