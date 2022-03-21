@@ -32,26 +32,25 @@ internal class PersistentCampaignReportService(
             val scenarioReportEntity = saveScenarioReport(scenarioReport, campaignReportEntity.id)
             scenarioReportEntities.add(scenarioReportEntity)
             scenarioReportMessageEntities.addAll(saveMessages(scenarioReport.messages, scenarioReportEntity.id))
-            scenarioReportEntity.messages = scenarioReportMessageEntities
+            scenarioReportEntity.messages.toMutableList().addAll(scenarioReportMessageEntities)
             scenarioReportRepository.update(scenarioReportEntity)
         }
-        campaignReportEntity.scenariosReports = scenarioReportEntities
+        campaignReportEntity.scenariosReports.toMutableList().addAll(scenarioReportEntities)
         campaignReportRepository.update(campaignReportEntity)
     }
 
-    private suspend fun saveMessages(
-        reportMessages: List<ReportMessage>,
-        scenarioReportEntityId: Long
-    ): List<ScenarioReportMessageEntity> {
-        return scenarioReportMessageRepository.saveAll(reportMessages.map {
-            ScenarioReportMessageEntity(
-                scenarioReportEntityId,
-                it.stepId,
-                it.messageId.toString(),
-                it.severity,
-                it.message
+    private suspend fun saveCampaignReport(
+        campaignReport: CampaignReport
+    ): CampaignReportEntity {
+        return campaignReportRepository.save(
+            CampaignReportEntity(
+                campaignRepository.findIdByName(campaignReport.campaignId),
+                campaignReport.startedMinions,
+                campaignReport.completedMinions,
+                campaignReport.successfulExecutions,
+                campaignReport.failedExecutions
             )
-        }.toList()).toList()
+        )
     }
 
     private suspend fun saveScenarioReport(
@@ -72,17 +71,18 @@ internal class PersistentCampaignReportService(
         )
     }
 
-    private suspend fun saveCampaignReport(
-        campaignReport: CampaignReport
-    ): CampaignReportEntity {
-        return campaignReportRepository.save(
-            CampaignReportEntity(
-                campaignRepository.findIdByName(campaignReport.campaignId),
-                campaignReport.startedMinions,
-                campaignReport.completedMinions,
-                campaignReport.successfulExecutions,
-                campaignReport.failedExecutions
+    private suspend fun saveMessages(
+        reportMessages: List<ReportMessage>,
+        scenarioReportEntityId: Long
+    ): List<ScenarioReportMessageEntity> {
+        return scenarioReportMessageRepository.saveAll(reportMessages.map {
+            ScenarioReportMessageEntity(
+                scenarioReportEntityId,
+                it.stepId,
+                it.messageId.toString(),
+                it.severity,
+                it.message
             )
-        )
+        }.toList()).toList()
     }
 }

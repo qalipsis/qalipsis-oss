@@ -35,9 +35,13 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
 
     private val scenarioReportPrototype =
         ScenarioReportEntity(
-            1, Instant.now().minusSeconds(900),
-            Instant.now().minusSeconds(600),
-            1000, 990, 990, 10,
+            campaignReportId = 1,
+            start = Instant.now().minusSeconds(900),
+            end = Instant.now().minusSeconds(600),
+            startedMinions = 1000,
+            completedMinions = 990,
+            successfulExecutions = 990,
+            failedExecutions = 10,
             ExecutionStatus.SUCCESSFUL
         )
 
@@ -46,11 +50,11 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     fun initial() = testDispatcherProvider.run {
         val campaignPrototype =
             CampaignEntity(
-                "the-campaign-id",
-                123.0,
-                Instant.now() - Duration.ofSeconds(173),
-                Instant.now(),
-                ExecutionStatus.SUCCESSFUL
+                campaignId = "the-campaign-id",
+                speedFactor = 123.0,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                result = ExecutionStatus.SUCCESSFUL
             )
         val campaingEntity = campaignRepository.save(campaignPrototype.copy())
         val campaignReportPrototype =
@@ -107,11 +111,11 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         // given
         val saved = scenarioReportRepository.save(scenarioReportPrototype.copy())
         val messagePrototype = ScenarioReportMessageEntity(
-            saved.id,
-            "my-step",
-            "my-message-1",
-            ReportMessageSeverity.INFO,
-            "This is the first message"
+            scenarioReportId = saved.id,
+            stepId = "my-step",
+            messageId = "my-message-1",
+            severity = ReportMessageSeverity.INFO,
+            message = "This is the first message"
         )
         scenarioReportMessageRepository.save(messagePrototype.copy())
         assertThat(scenarioReportRepository.findAll().count()).isEqualTo(1)

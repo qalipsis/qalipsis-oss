@@ -30,7 +30,7 @@ internal data class ScenarioReportEntity(
     val failedExecutions: Int,
     val status: ExecutionStatus,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "scenarioReportId")
-    var messages: List<ScenarioReportMessageEntity>?
+    val messages: List<ScenarioReportMessageEntity>
 ) : VersionedEntity {
 
     constructor(
@@ -42,7 +42,7 @@ internal data class ScenarioReportEntity(
         successfulExecutions: Int = 0,
         failedExecutions: Int = 0,
         status: ExecutionStatus,
-        messages: List<ScenarioReportMessageEntity>? = null
+        messages: List<ScenarioReportMessageEntity> = mutableListOf()
     ) : this(
         -1,
         Instant.EPOCH,

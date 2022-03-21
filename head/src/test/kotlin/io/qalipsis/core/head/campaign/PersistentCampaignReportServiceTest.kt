@@ -57,12 +57,12 @@ internal class PersistentCampaignReportServiceTest {
         coEvery { campaignRepository.findIdByName("my-campaign") } returns 8
         val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
             every { id } returns 10
-            every { messages = any() } returns Unit
+            every { messages.toMutableList() } returns mutableListOf<ScenarioReportMessageEntity>()
         }
         coEvery { scenarioReportRepository.save(any()) } returns mockedSavedScenarioReport
         val mockedSavedCampaignReport = mockk<CampaignReportEntity>(relaxed = true) {
             every { id } returns 9
-            every { scenariosReports = any() } returns Unit
+            every { scenariosReports.toMutableList() } returns mutableListOf<ScenarioReportEntity>()
         }
         coEvery { campaignReportRepository.save(any()) } returns mockedSavedCampaignReport
 

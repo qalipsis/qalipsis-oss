@@ -8,6 +8,7 @@ import io.qalipsis.api.report.ReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.head.campaign.AutostartCampaignConfiguration
+import io.qalipsis.core.head.campaign.CampaignReportService
 import io.qalipsis.core.head.campaign.PersistentCampaignReportService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 
@@ -27,7 +28,7 @@ import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 internal class StandaloneDatabaseReportPublisher(
     private val campaign: AutostartCampaignConfiguration,
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
-    private val campaignReportService: PersistentCampaignReportService
+    private val campaignReportService: CampaignReportService
 ) : ReportPublisher {
 
     override suspend fun publish(campaignId: CampaignId) {

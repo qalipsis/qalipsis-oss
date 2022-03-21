@@ -32,18 +32,22 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
 
     private val campaignReportPrototype =
         CampaignReportEntity(
-            1, 1000, 990, 990, 10
+            campaignId = 1,
+            startedMinions = 1000,
+            completedMinions = 990,
+            successfulExecutions = 990,
+            failedExecutions = 10
         )
 
     @BeforeEach
     fun init() = testDispatcherProvider.run {
         val campaignPrototype =
             CampaignEntity(
-                "the-campaign-id",
-                123.0,
-                Instant.now() - Duration.ofSeconds(173),
-                Instant.now(),
-                ExecutionStatus.SUCCESSFUL
+                campaignId = "the-campaign-id",
+                speedFactor = 123.0,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                result = ExecutionStatus.SUCCESSFUL
             )
         campaignRepository.save(campaignPrototype.copy())
     }
@@ -95,11 +99,14 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         // given
         val saved = campaignReportRepository.save(campaignReportPrototype.copy())
         val scenarioReportPrototype = ScenarioReportEntity(
-            saved.id,
-            Instant.now().minusSeconds(900),
-            Instant.now().minusSeconds(600),
-            1000, 990, 990, 10,
-            ExecutionStatus.SUCCESSFUL
+            campaignReportId = saved.id,
+            start = Instant.now().minusSeconds(900),
+            end = Instant.now().minusSeconds(600),
+            startedMinions = 1000,
+            completedMinions = 990,
+            successfulExecutions = 990,
+            failedExecutions = 10,
+            status = ExecutionStatus.SUCCESSFUL
         )
         scenarioReportRepository.save(scenarioReportPrototype.copy())
         assertThat(scenarioReportRepository.findAll().count()).isEqualTo(1)

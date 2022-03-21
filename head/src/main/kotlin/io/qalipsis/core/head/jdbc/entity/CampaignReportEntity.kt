@@ -7,6 +7,7 @@ import io.micronaut.data.annotation.Relation
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
 import java.time.Instant
+import javax.validation.constraints.NotNull
 
 /**
  * Details of a campaign report.
@@ -20,13 +21,18 @@ internal data class CampaignReportEntity(
     override val id: Long,
     @field:Version
     val version: Instant,
+    @field:NotNull
     val campaignId: Long,
+    @field:NotNull
     val startedMinions: Int,
+    @field:NotNull
     val completedMinions: Int,
+    @field:NotNull
     val successfulExecutions: Int,
+    @field:NotNull
     val failedExecutions: Int,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "campaignReportId")
-    var scenariosReports: List<ScenarioReportEntity>?
+    val scenariosReports: List<ScenarioReportEntity>
 ) : Entity {
 
     constructor(
@@ -35,7 +41,7 @@ internal data class CampaignReportEntity(
         completedMinions: Int = 0,
         successfulExecutions: Int = 0,
         failedExecutions: Int = 0,
-        scenariosReports: List<ScenarioReportEntity>? = null
+        scenariosReports: List<ScenarioReportEntity> = mutableListOf()
     ) : this(
         -1,
         Instant.EPOCH,

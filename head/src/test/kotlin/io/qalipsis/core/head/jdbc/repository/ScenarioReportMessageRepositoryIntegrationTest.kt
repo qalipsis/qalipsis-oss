@@ -35,35 +35,43 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     private lateinit var campaignRepository: CampaignRepository
 
     val messagePrototype = ScenarioReportMessageEntity(
-        1,
-        "my-step",
-        "my-message-1",
-        ReportMessageSeverity.INFO,
-        "This is the first message"
+        scenarioReportId = 1,
+        stepId = "my-step",
+        messageId = "my-message-1",
+        severity = ReportMessageSeverity.INFO,
+        message = "This is the first message"
     )
 
-   @BeforeEach
+    @BeforeEach
     fun initial() = testDispatcherProvider.run {
         val campaignPrototype =
             CampaignEntity(
-                "the-campaign-id",
-                123.0,
-                Instant.now() - Duration.ofSeconds(173),
-                Instant.now(),
-                ExecutionStatus.SUCCESSFUL
+                campaignId = "the-campaign-id",
+                speedFactor = 123.0,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                result = ExecutionStatus.SUCCESSFUL
             )
         val campaingEntity = campaignRepository.save(campaignPrototype.copy())
         val campaignReportPrototype =
             CampaignReportEntity(
-                campaingEntity.id, 1000, 990, 990, 10
+                campaignId = campaingEntity.id,
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10
             )
         val campaignReportEntity = campaignReportRepository.save(campaignReportPrototype)
         val scenarioReportPrototype =
             ScenarioReportEntity(
-                campaignReportEntity.id, Instant.now().minusSeconds(900),
-                Instant.now().minusSeconds(600),
-                1000, 990, 990, 10,
-                ExecutionStatus.SUCCESSFUL
+                campaignReportId = campaignReportEntity.id,
+                start = Instant.now().minusSeconds(900),
+                end = Instant.now().minusSeconds(600),
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                status = ExecutionStatus.SUCCESSFUL
             )
         scenarioReportRepository.save(scenarioReportPrototype)
     }
@@ -72,6 +80,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     fun tearDown() = testDispatcherProvider.run {
         scenarioReportMessageRepository.deleteAll()
     }
+
     @AfterAll
     fun tearDownAll() = testDispatcherProvider.run {
         scenarioReportRepository.deleteAll()
@@ -111,7 +120,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     }
 
     @Test
-    fun `should delete on delete`() = testDispatcherProvider.run {
+    fun `should delete scenario report message on deleteById`() = testDispatcherProvider.run {
         // given
         val saved = scenarioReportMessageRepository.save(messagePrototype.copy())
         assertThat(scenarioReportMessageRepository.findAll().count()).isEqualTo(1)
