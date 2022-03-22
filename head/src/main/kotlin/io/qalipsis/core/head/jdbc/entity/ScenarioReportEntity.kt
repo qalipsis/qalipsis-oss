@@ -21,6 +21,7 @@ internal data class ScenarioReportEntity(
     override val id: Long,
     @field:Version
     override val version: Instant,
+    val name: String,
     val campaignReportId: Long,
     val start: Instant,
     val end: Instant,
@@ -34,6 +35,7 @@ internal data class ScenarioReportEntity(
 ) : VersionedEntity {
 
     constructor(
+        name: String,
         campaignReportId: Long,
         start: Instant = Instant.now(),
         end: Instant = Instant.now(),
@@ -46,6 +48,7 @@ internal data class ScenarioReportEntity(
     ) : this(
         -1,
         Instant.EPOCH,
+        name,
         campaignReportId,
         start,
         end,

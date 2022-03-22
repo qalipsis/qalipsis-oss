@@ -99,6 +99,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         // given
         val saved = campaignReportRepository.save(campaignReportPrototype.copy())
         val scenarioReportPrototype = ScenarioReportEntity(
+            name = "first",
             campaignReportId = saved.id,
             start = Instant.now().minusSeconds(900),
             end = Instant.now().minusSeconds(600),

@@ -26,17 +26,21 @@ internal class PersistentCampaignReportService(
      */
     override suspend fun save(campaignReport: CampaignReport) {
         val campaignReportEntity = saveCampaignReport(campaignReport)
-        val scenarioReportEntities = mutableListOf<ScenarioReportEntity>()
-        val scenarioReportMessageEntities = mutableListOf<ScenarioReportMessageEntity>()
+        val scenarioReportEntitiesToSave = campaignReport.scenariosReports.map {
+            mapToScenarioReportEntity(it, campaignReportEntity.id)
+        }.toList()
+        val scenarioReportEntitiesSaved = scenarioReportRepository.saveAll(scenarioReportEntitiesToSave).toList()
+        val scenariosToFindMessages = scenarioReportEntitiesSaved.associate { it.name to it.id }
+        val scenarioReportMessageEntitiesToSave = mutableListOf<ScenarioReportMessageEntity>()
         campaignReport.scenariosReports.forEach { scenarioReport ->
-            val scenarioReportEntity = saveScenarioReport(scenarioReport, campaignReportEntity.id)
-            scenarioReportEntities.add(scenarioReportEntity)
-            scenarioReportMessageEntities.addAll(saveMessages(scenarioReport.messages, scenarioReportEntity.id))
-            scenarioReportEntity.messages.toMutableList().addAll(scenarioReportMessageEntities)
-            scenarioReportRepository.update(scenarioReportEntity)
+            scenarioReportMessageEntitiesToSave.addAll(
+                mapMessagesToScenarioReportMessageEntities(
+                    scenarioReport.messages,
+                    scenariosToFindMessages[scenarioReport.scenarioId]!!
+                )
+            )
         }
-        campaignReportEntity.scenariosReports.toMutableList().addAll(scenarioReportEntities)
-        campaignReportRepository.update(campaignReportEntity)
+        scenarioReportMessageRepository.saveAll(scenarioReportMessageEntitiesToSave).toList()
     }
 
     private suspend fun saveCampaignReport(
@@ -53,29 +57,28 @@ internal class PersistentCampaignReportService(
         )
     }
 
-    private suspend fun saveScenarioReport(
+    private fun mapToScenarioReportEntity(
         scenarioReport: ScenarioReport,
         campaignReportEntityId: Long
     ): ScenarioReportEntity {
-        return scenarioReportRepository.save(
-            ScenarioReportEntity(
-                campaignReportEntityId,
-                scenarioReport.start,
-                scenarioReport.end,
-                scenarioReport.startedMinions,
-                scenarioReport.completedMinions,
-                scenarioReport.successfulExecutions,
-                scenarioReport.failedExecutions,
-                scenarioReport.status
-            )
+        return ScenarioReportEntity(
+            scenarioReport.scenarioId,
+            campaignReportEntityId,
+            scenarioReport.start,
+            scenarioReport.end,
+            scenarioReport.startedMinions,
+            scenarioReport.completedMinions,
+            scenarioReport.successfulExecutions,
+            scenarioReport.failedExecutions,
+            scenarioReport.status
         )
     }
 
-    private suspend fun saveMessages(
+    private fun mapMessagesToScenarioReportMessageEntities(
         reportMessages: List<ReportMessage>,
         scenarioReportEntityId: Long
     ): List<ScenarioReportMessageEntity> {
-        return scenarioReportMessageRepository.saveAll(reportMessages.map {
+        return reportMessages.map {
             ScenarioReportMessageEntity(
                 scenarioReportEntityId,
                 it.stepId,
@@ -83,6 +86,6 @@ internal class PersistentCampaignReportService(
                 it.severity,
                 it.message
             )
-        }.toList()).toList()
+        }.toList()
     }
 }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils
 import java.time.Duration
 import java.time.Instant
 
@@ -64,6 +65,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
         val campaignReportEntity = campaignReportRepository.save(campaignReportPrototype)
         val scenarioReportPrototype =
             ScenarioReportEntity(
+                name = RandomStringUtils.randomAlphanumeric(7),
                 campaignReportId = campaignReportEntity.id,
                 start = Instant.now().minusSeconds(900),
                 end = Instant.now().minusSeconds(600),
