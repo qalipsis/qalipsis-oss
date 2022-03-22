@@ -22,11 +22,7 @@ import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
@@ -64,7 +60,9 @@ internal class PersistentCampaignReportServiceTest {
             every { id } returns 10L
             every { name } returns "my-scenario"
         }
-        coEvery { scenarioReportRepository.saveAll(any<Iterable<ScenarioReportEntity>>()) } returns flowOf(mockedSavedScenarioReport)
+        coEvery { scenarioReportRepository.saveAll(any<Iterable<ScenarioReportEntity>>()) } returns flowOf(
+            mockedSavedScenarioReport
+        )
         val mockedSavedCampaignReport = mockk<CampaignReportEntity>(relaxed = true) {
             every { id } returns 9
         }
