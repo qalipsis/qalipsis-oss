@@ -23,7 +23,11 @@ internal data class ScenarioReportMessageEntity(
     @field:Version
     override val version: Instant,
     val scenarioReportId: Long,
+    @field:NotBlank
+    @field:Size(min = 1, max = 20)
     val stepId: String,
+    @field:NotBlank
+    @field:Size(min = 1, max = 20)
     val messageId: String,
     val severity: ReportMessageSeverity,
     @field:NotBlank

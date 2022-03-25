@@ -30,13 +30,13 @@ internal class PersistentCampaignReportService(
             mapToScenarioReportEntity(it, campaignReportEntity.id)
         }.toList()
         val scenarioReportEntitiesSaved = scenarioReportRepository.saveAll(scenarioReportEntitiesToSave).toList()
-        val scenariosToFindMessages = scenarioReportEntitiesSaved.associate { it.name to it.id }
+        val scenariosIdsByName = scenarioReportEntitiesSaved.associate { it.name to it.id }
         val scenarioReportMessageEntitiesToSave = mutableListOf<ScenarioReportMessageEntity>()
         campaignReport.scenariosReports.forEach { scenarioReport ->
             scenarioReportMessageEntitiesToSave.addAll(
                 mapMessagesToScenarioReportMessageEntities(
                     scenarioReport.messages,
-                    scenariosToFindMessages[scenarioReport.scenarioId]!!
+                    scenariosIdsByName[scenarioReport.scenarioId]!!
                 )
             )
         }
@@ -86,6 +86,6 @@ internal class PersistentCampaignReportService(
                 it.severity,
                 it.message
             )
-        }.toList()
+        }
     }
 }
