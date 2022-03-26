@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.redis
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
@@ -17,11 +17,11 @@ import io.qalipsis.core.redis.RedisUtils
 import jakarta.inject.Singleton
 
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.STANDALONE])
+@Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalLettuceCoroutinesApi
 internal class RedisCampaignReportLiveStateRegistry(
     factoryConfiguration: FactoryConfiguration,
-    private val redisCommands: RedisCoroutinesCommands<String, String>,
+    private val redisCommands: RedisHashCoroutinesCommands<String, String>,
     private val idGenerator: IdGenerator
 ) : CampaignReportLiveStateRegistry {
 

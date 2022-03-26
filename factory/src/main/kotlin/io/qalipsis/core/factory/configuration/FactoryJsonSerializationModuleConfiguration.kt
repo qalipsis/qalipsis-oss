@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.JsonSerializationModuleConfiguration
+import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.factory.orchestration.TransportableCompletionContext
 import io.qalipsis.core.factory.orchestration.TransportableContext
 import io.qalipsis.core.factory.orchestration.TransportableStepContext
@@ -23,12 +24,17 @@ import kotlinx.serialization.modules.polymorphic
  * @author Gabriel Moraes
  */
 @Context
-@Requires(notEnv = [ExecutionEnvironments.STANDALONE])
+@Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalSerializationApi
 internal class FactoryJsonSerializationModuleConfiguration : JsonSerializationModuleConfiguration() {
 
     override fun configure(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
         return builderAction.apply {
+            polymorphic(Directive::class) {
+                subclass(TransportableContext::class, TransportableContext.serializer())
+                subclass(TransportableCompletionContext::class, TransportableCompletionContext.serializer())
+                subclass(TransportableStepContext::class, TransportableStepContext.serializer())
+            }
             polymorphic(TransportableContext::class) {
                 subclass(TransportableCompletionContext::class, TransportableCompletionContext.serializer())
                 subclass(TransportableStepContext::class, TransportableStepContext.serializer())

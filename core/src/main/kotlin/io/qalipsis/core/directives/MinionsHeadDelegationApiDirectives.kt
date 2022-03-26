@@ -21,13 +21,12 @@ import kotlinx.serialization.Serializable
 data class MinionsDeclarationDirective(
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val value: Int,
-    override val key: DirectiveKey,
+    val minionsCount: Int,
     override val channel: DispatcherChannel
-) : SingleUseDirective<Int, SingleUseDirectiveReference<Int>>(), CampaignManagementDirective {
+) : SingleUseDirective<MinionsDeclarationDirectiveReference>(), CampaignManagementDirective {
 
-    override fun toReference(): SingleUseDirectiveReference<Int> {
-        return MinionsDeclarationDirectiveReference(key, campaignId, scenarioId, channel)
+    override fun toReference(key: DirectiveKey): MinionsDeclarationDirectiveReference {
+        return MinionsDeclarationDirectiveReference(key, campaignId, scenarioId)
     }
 }
 
@@ -39,9 +38,8 @@ data class MinionsDeclarationDirective(
 data class MinionsDeclarationDirectiveReference(
     override val key: DirectiveKey,
     override val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
-    override val channel: DispatcherChannel
-) : SingleUseDirectiveReference<Int>(), CampaignManagementDirective
+    val scenarioId: ScenarioId
+) : SingleUseDirectiveReference(), CampaignManagementDirective
 
 /**
  * Directive to calculate the ramp-up of the minions given the scenario strategy.
@@ -51,14 +49,13 @@ data class MinionsDeclarationDirectiveReference(
 data class MinionsRampUpPreparationDirective(
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val value: RampUpConfiguration = RampUpConfiguration(3000, 1.0),
-    override val key: DirectiveKey,
+    val rampUpConfiguration: RampUpConfiguration = RampUpConfiguration(3000, 1.0),
     override val channel: DispatcherChannel
-) : SingleUseDirective<RampUpConfiguration, SingleUseDirectiveReference<RampUpConfiguration>>(),
+) : SingleUseDirective<MinionsRampUpPreparationDirectiveReference>(),
     CampaignManagementDirective {
 
-    override fun toReference(): SingleUseDirectiveReference<RampUpConfiguration> {
-        return MinionsRampUpPreparationDirectiveReference(key, campaignId, scenarioId, channel)
+    override fun toReference(key: DirectiveKey): MinionsRampUpPreparationDirectiveReference {
+        return MinionsRampUpPreparationDirectiveReference(key, campaignId, scenarioId)
     }
 }
 
@@ -70,6 +67,5 @@ data class MinionsRampUpPreparationDirective(
 data class MinionsRampUpPreparationDirectiveReference(
     override val key: DirectiveKey,
     override val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
-    override val channel: DispatcherChannel
-) : SingleUseDirectiveReference<RampUpConfiguration>(), CampaignManagementDirective
+    val scenarioId: ScenarioId
+) : SingleUseDirectiveReference(), CampaignManagementDirective

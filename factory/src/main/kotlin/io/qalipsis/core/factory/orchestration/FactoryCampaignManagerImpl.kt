@@ -3,22 +3,24 @@ package io.qalipsis.core.factory.orchestration
 import io.aerisconsulting.catadioptre.KTestable
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Property
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.MinionStartDefinition
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.campaign.Campaign
+import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.steps.ContextConsumer
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
-import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.rampup.RampUpConfiguration
 import jakarta.inject.Named
@@ -33,58 +35,48 @@ import java.time.Duration
 import java.util.Optional
 
 @Singleton
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryCampaignManagerImpl(
     private val minionsKeeper: MinionsKeeper,
     private val meterRegistry: MeterRegistry,
     private val scenarioRegistry: ScenarioRegistry,
     private val minionAssignmentKeeper: MinionAssignmentKeeper,
-    private val feedbackFactoryChannel: FeedbackFactoryChannel,
-    private val idGenerator: IdGenerator,
-    private val factoryConfiguration: FactoryConfiguration,
+    private val factoryChannel: FactoryChannel,
     private val sharedStateRegistry: SharedStateRegistry,
     private val contextConsumer: Optional<ContextConsumer>,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
-    @Property(
-        name = "minion-shutdown-timeout",
-        defaultValue = "1s"
-    ) private val minionShutdownTimeout: Duration = Duration.ofSeconds(1),
-    @Property(
-        name = "scenario-shutdown-timeout",
-        defaultValue = "10s"
-    ) private val scenarioShutdownTimeout: Duration = Duration.ofSeconds(10),
-    @Property(
-        name = "campaign-shutdown-timeout",
-        defaultValue = "60s"
-    ) private val campaignShutdownTimeout: Duration = Duration.ofSeconds(60)
+    @Property(name = "factory.graceful-shutdown.minion", defaultValue = "1s")
+    private val minionGracefulShutdown: Duration = Duration.ofSeconds(1),
+    @Property(name = "factory.graceful-shutdown.scenario", defaultValue = "10s")
+    private val scenarioGracefulShutdown: Duration = Duration.ofSeconds(10),
+    @Property(name = "factory.graceful-shutdown.campaign", defaultValue = "60s")
+    private val campaignGracefulShutdown: Duration = Duration.ofSeconds(60)
 ) : FactoryCampaignManager {
 
     @KTestable
-    override var runningCampaign: CampaignId = ""
+    override var runningCampaign: Campaign = EMPTY_CAMPAIGN
 
     @KTestable
-    private val runningScenarios = mutableSetOf<ScenarioId>()
-
-    override val feedbackNodeId: String
-        get() = factoryConfiguration.nodeId
-
-    @LogInput(Level.DEBUG)
-    override suspend fun initCampaign(campaignId: CampaignId, scenariosIds: Collection<ScenarioId>) {
-        runningScenarios.clear()
-        val eligibleScenarios = scenariosIds.filter { it in scenarioRegistry }
-        if (eligibleScenarios.isNotEmpty()) {
-            runningCampaign = campaignId
-            runningScenarios += eligibleScenarios
-        }
-    }
+    private val runningScenarios = concurrentSet<ScenarioId>()
 
     @LogInput
     override fun isLocallyExecuted(campaignId: CampaignId): Boolean {
-        return runningCampaign == campaignId
+        return runningCampaign.campaignId == campaignId
     }
 
     @LogInput
     override fun isLocallyExecuted(campaignId: CampaignId, scenarioId: ScenarioId): Boolean {
-        return runningCampaign == campaignId && scenarioId in runningScenarios
+        return runningCampaign.campaignId == campaignId && scenarioId in runningScenarios
+    }
+
+    @LogInput(Level.DEBUG)
+    override suspend fun init(campaign: Campaign) {
+        runningScenarios.clear()
+        val eligibleScenarios = campaign.assignedDagsByScenario.keys.filter { it in scenarioRegistry }
+        if (eligibleScenarios.isNotEmpty()) {
+            runningCampaign = campaign
+            runningScenarios += eligibleScenarios
+        }
     }
 
     @LogInput(Level.DEBUG)
@@ -141,7 +133,7 @@ internal class FactoryCampaignManagerImpl(
         log.trace { "Completing minion $minionId of scenario $scenarioId in campaign $campaignId returns $completionState" }
         // FIXME Generates CompleteMinionFeedbacks for several minions (based upon elapsed time and/or count), otherwise it makes the system overloaded.
         /*if (completionState.minionComplete) {
-            feedbackFactoryChannel.publish(
+            factoryChannel.publishFeedback(
                 CompleteMinionFeedback(
                     key = idGenerator.short(),
                     campaignId = campaignId,
@@ -153,12 +145,10 @@ internal class FactoryCampaignManagerImpl(
             )
         }*/
         if (completionState.scenarioComplete) {
-            feedbackFactoryChannel.publish(
+            factoryChannel.publishFeedback(
                 EndOfCampaignScenarioFeedback(
-                    key = idGenerator.short(),
                     campaignId = campaignId,
                     scenarioId = scenarioId,
-                    nodeId = factoryConfiguration.nodeId,
                     status = FeedbackStatus.COMPLETED
                 )
             )
@@ -170,7 +160,7 @@ internal class FactoryCampaignManagerImpl(
         minionIds.map { minionId ->
             backgroundScope.async {
                 kotlin.runCatching {
-                    withCancellableTimeout(minionShutdownTimeout) {
+                    withCancellableTimeout(minionGracefulShutdown) {
                         try {
                             minionsKeeper.shutdownMinion(minionId)
                         } catch (e: Exception) {
@@ -184,7 +174,7 @@ internal class FactoryCampaignManagerImpl(
 
     @LogInput(Level.DEBUG)
     override suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
-        withCancellableTimeout(scenarioShutdownTimeout) {
+        withCancellableTimeout(scenarioGracefulShutdown) {
             try {
                 if (contextConsumer.isPresent) {
                     tryAndLogOrNull(log) {
@@ -200,14 +190,13 @@ internal class FactoryCampaignManagerImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun shutdownCampaign(campaignId: CampaignId) {
-        if (runningCampaign == campaignId) {
-            withCancellableTimeout(campaignShutdownTimeout) {
+    override suspend fun close(campaign: Campaign) {
+        if (runningCampaign.campaignId == campaign.campaignId) {
+            withCancellableTimeout(campaignGracefulShutdown) {
                 minionsKeeper.shutdownAll()
-                runningScenarios.forEach { scenarioRegistry[it]!!.stop(campaignId) }
-
+                runningScenarios.forEach { scenarioRegistry[it]!!.stop(campaign.campaignId) }
                 runningScenarios.clear()
-                runningCampaign = ""
+                runningCampaign = EMPTY_CAMPAIGN
                 // Removes all the meters.
                 meterRegistry.clear()
                 sharedStateRegistry.clear()
@@ -229,9 +218,10 @@ internal class FactoryCampaignManagerImpl(
         }
     }
 
-    companion object {
+    private companion object {
 
-        @JvmStatic
-        private val log = logger()
+        val EMPTY_CAMPAIGN = Campaign("", "", "", emptyMap())
+
+        val log = logger()
     }
 }

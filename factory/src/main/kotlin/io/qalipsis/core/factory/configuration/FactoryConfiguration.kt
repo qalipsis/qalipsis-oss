@@ -4,11 +4,10 @@ import io.micronaut.context.annotation.ConfigurationProperties
 import io.qalipsis.api.constraints.PositiveDuration
 import java.time.Duration
 import javax.validation.constraints.NotEmpty
-import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 
 @ConfigurationProperties("factory")
-class FactoryConfiguration {
+internal class FactoryConfiguration {
 
     /**
      * ID of this factory, defaults to a random generated value which will be replaced after the registration
@@ -19,19 +18,7 @@ class FactoryConfiguration {
     /**
      * Set of selectors assigned to this factory, defaults to empty.
      */
-    var selectors: Map<String, String> = emptyMap()
-
-    /**
-     * Channel to use to register the factory to the head, defaults to "registration".
-     */
-    @field:NotEmpty
-    var handshakeRequestChannel: String = "handshake-request"
-
-    /**
-     * Channel to use to register the factory to the head, defaults to "registration".
-     */
-    @field:NotEmpty
-    var handshakeResponseChannel: String = "handshake-response"
+    var tags: Map<String, String> = emptyMap()
 
     /**
      * Folder where the metadata of the factory should be saved for later use.
@@ -44,8 +31,10 @@ class FactoryConfiguration {
      */
     var tenant: String = ""
 
-    @field:NotNull
-    var directiveRegistry: DirectiveRegistry = DirectiveRegistry()
+    /**
+     * Configuration of the handshake operations.
+     */
+    var handshake: HandshakeConfiguration = HandshakeConfiguration()
 
     /**
      * This object contains the settings applied to each key and value stored in cache.
@@ -53,46 +42,43 @@ class FactoryConfiguration {
     var cache: Cache = Cache()
 
     /**
-     * Channel the factory should consume to receive distributed step and completion contexts that are assigned to it.
+     * Configuration of the operations of assignment of minions to the factory.
      */
-    var unicastContextsChannel: String = ""
-
-    /**
-     * Channel the factory should consume and produce for unassigned step and completion contexts.
-     */
-    var broadcastContextsChannel: String = ""
-
     var assignment = Assignment()
+
+    override fun toString(): String {
+        return "FactoryConfiguration(nodeId='$nodeId', tags=$tags, metadataPath='$metadataPath', tenant='$tenant', handshake=$handshake, cache=$cache, assignment=$assignment)"
+    }
 
     /**
      * Directive registry configuration for a factory.
      */
-    @ConfigurationProperties("directive-registry")
-    class DirectiveRegistry {
+    @ConfigurationProperties("handshake")
+    class HandshakeConfiguration {
 
         /**
-         * Consumer group used by the factory to consumer from the unicast channel.
+         * Channel to use to register the factory to the head, defaults to "registration".
          */
-        var unicastConsumerGroup: String = "consumer-group-directives-unicast"
+        @field:NotEmpty
+        var requestChannel: String = "handshake-request"
 
         /**
-         * Consumer group used by the factory to consumer from the broadcast channel.
+         * Channel to use to register the factory to the head, defaults to "registration".
          */
-        var broadcastConsumerGroup: String = "consumer-group-directives-broadcast"
+        @field:NotEmpty
+        var responseChannel: String = "handshake-response"
 
         /**
-         * Unicast channel used by the factory to consume from.
-         * Values are set by the response of the handshake with the head.
+         * Maximal delay to wait for a positive handshake response..
          */
-        var unicastDirectivesChannel: String = ""
+        @field:PositiveDuration
+        var timeout: Duration = Duration.ofSeconds(30)
 
-        /**
-         * Broadcast channel used by the factory to consume from.
-         * Values are set by the response of the handshake with the head.
-         */
-        var broadcastDirectivesChannel: String = ""
+        override fun toString(): String {
+            return "HandshakeConfiguration(requestChannel='$requestChannel', responseChannel='$responseChannel', timeout=$timeout)"
+        }
+
     }
-
 
     @ConfigurationProperties("cache")
     class Cache {
@@ -107,6 +93,11 @@ class FactoryConfiguration {
          * The prefix of the keys in cache.
          */
         var keyPrefix: String = "shared-state-registry"
+
+        override fun toString(): String {
+            return "Cache(ttl=$ttl, keyPrefix='$keyPrefix')"
+        }
+
     }
 
     @ConfigurationProperties("assignment")
@@ -123,6 +114,10 @@ class FactoryConfiguration {
          */
         @field:PositiveDuration
         var timeout: Duration = Duration.ofSeconds(10)
+
+        override fun toString(): String {
+            return "Assignment(evaluationBatchSize=$evaluationBatchSize, timeout=$timeout)"
+        }
 
     }
 

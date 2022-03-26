@@ -11,10 +11,12 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
+import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 @WithMockk
 internal class InMemoryFactoryServiceTest {
@@ -31,9 +33,16 @@ internal class InMemoryFactoryServiceTest {
         val scenario1 = relaxedMockk<ScenarioSummary>()
         val scenario2 = relaxedMockk<ScenarioSummary>()
         val request = HandshakeRequest("", emptyMap(), "", listOf(scenario1, scenario2))
+        val response = HandshakeResponse(
+            handshakeNodeId = "testNodeId",
+            nodeId = "",
+            unicastChannel = "directives-unicast",
+            heartbeatChannel = "heartbeat",
+            heartbeatPeriod = Duration.ofMinutes(1)
+        )
 
         // when
-        inMemoryFactoryService.register("", request)
+        inMemoryFactoryService.register("", request, response)
 
         // then
         coVerify {

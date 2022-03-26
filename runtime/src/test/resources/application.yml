@@ -1,9 +1,15 @@
+monitoring.enabled: false
+
 micronaut:
   server:
     port: -1
 
 logging:
   console: true
+  level:
+    root: INFO
+    "io.qalipsis": INFO
+    "io.qalipsis.core.factory": INFO
 
 executors:
   global: -1

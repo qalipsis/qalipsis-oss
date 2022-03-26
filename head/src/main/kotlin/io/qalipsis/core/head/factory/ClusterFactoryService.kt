@@ -1,12 +1,17 @@
 package io.qalipsis.core.head.factory
 
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.NodeId
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
+import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.handshake.RegistrationDirectedAcyclicGraph
 import io.qalipsis.core.handshake.RegistrationScenario
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.head.jdbc.SelectorEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
@@ -25,13 +30,12 @@ import io.qalipsis.core.head.jdbc.repository.FactorySelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
 import java.time.Instant
-import javax.transaction.Transactional
 
 /**
  * FactoryService implementation for persistence implementation of factory-specific data
@@ -41,7 +45,10 @@ import javax.transaction.Transactional
  * @author rklymenko
  */
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE, ExecutionEnvironments.STANDALONE])
+@Requirements(
+    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
+    Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+)
 internal class ClusterFactoryService(
     private val factoryRepository: FactoryRepository,
     private val factorySelectorRepository: FactorySelectorRepository,
@@ -56,41 +63,53 @@ internal class ClusterFactoryService(
     /**
      * Creates and updates factory-specific information using handshakeRequest.
      */
-    @Transactional
-    override suspend fun register(actualNodeId: String, handshakeRequest: HandshakeRequest) {
-        val existingFactory = saveFactory(actualNodeId, handshakeRequest)
+    @LogInput
+    override suspend fun register(
+        actualNodeId: String,
+        handshakeRequest: HandshakeRequest,
+        handshakeResponse: HandshakeResponse
+    ) {
+        val existingFactory = saveFactory(actualNodeId, handshakeRequest, handshakeResponse)
         saveScenariosAndDependencies(handshakeRequest.scenarios, existingFactory)
     }
 
     /**
      * Updates or saves factory and factory_selector entities using handshakeRequest
      */
-    private suspend fun saveFactory(actualNodeId: String, handshakeRequest: HandshakeRequest) =
-        (updateFactory(actualNodeId, handshakeRequest) ?: saveNewFactory(
-            actualNodeId,
-            handshakeRequest
-        )).also { factoryEntity ->
-            // The state of the factory is changed to REGISTERED.
-            val now = Instant.now()
-            factoryStateRepository.save(
-                FactoryStateEntity(
-                    factoryId = factoryEntity.id,
-                    healthTimestamp = now,
-                    latency = 0,
-                    state = FactoryStateValue.REGISTERED
+    private suspend fun saveFactory(
+        actualNodeId: String,
+        handshakeRequest: HandshakeRequest,
+        handshakeResponse: HandshakeResponse
+    ) =
+        (updateFactory(actualNodeId, handshakeRequest, handshakeResponse)
+            ?: saveNewFactory(actualNodeId, handshakeRequest, handshakeResponse))
+            .also { factoryEntity ->
+                // The state of the factory is changed to REGISTERED.
+                val now = Instant.now()
+                factoryStateRepository.save(
+                    FactoryStateEntity(
+                        factoryId = factoryEntity.id,
+                        healthTimestamp = now,
+                        latency = 0,
+                        state = FactoryStateValue.REGISTERED
+                    )
                 )
-            )
-        }
+            }
 
     /**
      * Updates existing factory using factory_selector entities from handshakeRequest
      */
     private suspend fun updateFactory(
         actualNodeId: String,
-        handshakeRequest: HandshakeRequest
+        handshakeRequest: HandshakeRequest,
+        handshakeResponse: HandshakeResponse
     ) = factoryRepository.findByNodeIdIn(listOf(actualNodeId)).firstOrNull()?.also { entity ->
         // When the entity already exists, its selectors are updated.
-        mergeSelectors(factorySelectorRepository, handshakeRequest.selectors, entity.selectors, entity.id)
+        mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
+
+        if (entity.unicastChannel != handshakeResponse.unicastChannel) {
+            factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+        }
     }
 
     /**
@@ -98,19 +117,19 @@ internal class ClusterFactoryService(
      */
     private suspend fun saveNewFactory(
         actualNodeId: String,
-        handshakeRequest: HandshakeRequest
+        handshakeRequest: HandshakeRequest,
+        handshakeResponse: HandshakeResponse
     ): FactoryEntity {
         val factoryEntity = factoryRepository.save(
             FactoryEntity(
                 nodeId = actualNodeId,
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = handshakeRequest.nodeId,
-                unicastChannel = "directives-unicast-$actualNodeId",
-                broadcastChannel = DEFAULT_BROADCAST_CHANNEL
+                unicastChannel = handshakeResponse.unicastChannel
             )
         )
-        if (handshakeRequest.selectors.isNotEmpty()) {
-            factorySelectorRepository.saveAll(handshakeRequest.selectors.map { (key, value) ->
+        if (handshakeRequest.tags.isNotEmpty()) {
+            factorySelectorRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
                 FactorySelectorEntity(factoryEntity.id, key, value)
             })
         }
@@ -202,7 +221,7 @@ internal class ClusterFactoryService(
                 }
             }
             if (dagsSelectorsToSave.isNotEmpty()) {
-                directedAcyclicGraphSelectorRepository.saveAll(dagsSelectorsToSave).toList()
+                directedAcyclicGraphSelectorRepository.saveAll(dagsSelectorsToSave).collect()
             }
         }
     }
@@ -224,20 +243,18 @@ internal class ClusterFactoryService(
         val toUpdate = remaining.filter { it.value != newSelectors[it.key] }
             .map { it.withValue(mutableNewSelectors.remove(it.key)!!) }
         if (toUpdate.isNotEmpty()) {
-            repository.updateAll(toUpdate as List<T>)
+            repository.updateAll(toUpdate as List<T>).collect()
         }
         val toSave =
             mutableNewSelectors.filter { newSelector -> remaining.filter { it.key == newSelector.key }.isEmpty() }
                 .map { (key, value) -> FactorySelectorEntity(entityId, key, value) }
         if (toSave.isNotEmpty()) {
-            repository.saveAll(toSave as Iterable<T>)
+            repository.saveAll(toSave as Iterable<T>).collect()
         }
     }
 
-    /**
-     * updateHeartbeat method updates factory_state with given STATE
-     */
-    override suspend fun updateHeartbeat(heartbeat: Heartbeat) {
+    @LogInput
+    override suspend fun notify(heartbeat: Heartbeat) {
         val latency = Instant.now().toEpochMilli() - heartbeat.timestamp.toEpochMilli()
         val factoryId = factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)).first()
         factoryStateRepository.save(
@@ -251,6 +268,7 @@ internal class ClusterFactoryService(
         )
     }
 
+    @LogInputAndOutput
     override suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<String>): Collection<Factory> {
         val scenariosByFactories = scenarioRepository.findActiveByName(scenarioIds).groupBy { it.factoryId }
 
@@ -259,6 +277,7 @@ internal class ClusterFactoryService(
         }
     }
 
+    @LogInput
     override suspend fun lockFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
@@ -269,6 +288,7 @@ internal class ClusterFactoryService(
         }
     }
 
+    @LogInput
     override suspend fun releaseFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
@@ -285,7 +305,4 @@ internal class ClusterFactoryService(
     override suspend fun getActiveScenarios(ids: Collection<String>) =
         scenarioRepository.findActiveByName(ids).map(ScenarioEntity::toModel)
 
-    companion object {
-        private const val DEFAULT_BROADCAST_CHANNEL = "directives-broadcast"
-    }
 }

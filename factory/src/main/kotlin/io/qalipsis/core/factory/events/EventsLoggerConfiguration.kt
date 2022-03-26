@@ -1,9 +1,11 @@
 package io.qalipsis.core.factory.events
 
 import io.micronaut.context.annotation.ConfigurationProperties
+import io.micronaut.context.annotation.Requires
 import io.micronaut.context.env.Environment
 import io.micronaut.core.naming.conventions.StringConvention
 import io.qalipsis.api.events.EventLevel
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import javax.annotation.PostConstruct
 
 
@@ -15,6 +17,7 @@ import javax.annotation.PostConstruct
  *
  * @author Eric Jessé
  */
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("events")
 class EventsLoggerConfiguration(
     val environment: Environment

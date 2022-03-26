@@ -1,19 +1,35 @@
-# Configuration of the local head
+micronaut:
+  server:
+    port: 8080
+    cors:
+      enabled: true
+  session:
+    http:
+      cookie: false
+      header: false
+  security:
+    enabled: false
+
 head:
   handshake-request-channel: handshake-request
-  handshake-response-channel: handshake-response
-  broadcast-channel: broadcast
   unicast-channel-prefix: unicast-
-  feedback-channel: feedback
   heartbeat-channel: heartbeat
   heartbeat-duration: 30s
 
-# Configuration of the core
-core:
-  pending-key: pending-key
+distributed:
+  streaming:
+    platform: redis
 
 liquibase:
   enabled: true
   datasources:
     default:
       change-log: 'classpath:db/liquibase-changelog.xml'
+
+report:
+  export:
+    console:
+      enabled: false
+    junit:
+      enabled: false
+      folder: test-results

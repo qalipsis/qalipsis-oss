@@ -11,12 +11,11 @@ import assertk.assertions.isSameAs
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.core.directives.Directive
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -36,6 +35,8 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should return assignment directives on init`() = testDispatcherProvider.runTest {
         // given
+        every { campaign.broadcastChannel } returns "broadcast-channel"
+        every { campaign.feedbackChannel } returns "feedback-channel"
         every { campaign.factories } returns mutableMapOf(
             "node-1" to relaxedMockk {
                 every { unicastChannel } returns "unicast-channel-1"
@@ -55,7 +56,10 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         assertThat(state).typedProp<Collection<NodeId>>("expectedFeedbacks").containsOnly("node-1", "node-2")
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).all {
@@ -65,12 +69,14 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                     "my-campaign", mapOf(
                         "scenario-1" to listOf("dag-1", "dag-2"),
                         "scenario-2" to listOf("dag-A", "dag-B")
-                    ), "the-directive-1", "unicast-channel-1"
+                    ), "broadcast-channel", "feedback-channel",
+                    "unicast-channel-1"
                 ),
                 FactoryAssignmentDirective(
                     "my-campaign", mapOf(
                         "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
-                    ), "the-directive-2", "unicast-channel-2"
+                    ), "broadcast-channel", "feedback-channel",
+                    "unicast-channel-2"
                 )
             )
         }
@@ -81,7 +87,10 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
         val state = FactoryAssignmentState(campaign)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
         val feedback = mockk<FactoryAssignmentFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
@@ -104,7 +113,10 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = FactoryAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<FactoryAssignmentFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -127,25 +139,13 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = FactoryAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
-
-            // then
-            assertThat(newState).isSameAs(state)
-            confirmVerified(factoryService, campaignReportStateKeeper)
-        }
-
-    @Test
-    internal fun `should return itself in case of any unsupported directive`() =
-        testDispatcherProvider.runTest {
-            // given
-            val state = FactoryAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
-
-            // when
-            val newState = state.process(mockk<Directive>())
 
             // then
             assertThat(newState).isSameAs(state)
@@ -161,7 +161,10 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                 "node-2" to relaxedMockk()
             )
             val state = FactoryAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<FactoryAssignmentFeedback> {

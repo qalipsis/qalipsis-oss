@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.campaign
 
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.report.ExecutionStatus
 

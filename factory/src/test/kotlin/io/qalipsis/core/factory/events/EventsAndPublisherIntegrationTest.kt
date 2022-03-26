@@ -13,6 +13,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.events.EventsPublisher
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import jakarta.inject.Inject
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.Timeout
 internal class EventsAndPublisherIntegrationTest {
 
     @Nested
-    @MicronautTest(environments = ["nopublisher"])
+    @MicronautTest(environments = ["nopublisher", ExecutionEnvironments.FACTORY])
     inner class NoPublisher {
 
         @Inject
@@ -52,7 +53,7 @@ internal class EventsAndPublisherIntegrationTest {
     }
 
     @Nested
-    @MicronautTest(environments = ["slf4j-publisher"])
+    @MicronautTest(environments = ["slf4j-publisher", ExecutionEnvironments.FACTORY])
     inner class Slf4jPublisher {
 
         @Inject

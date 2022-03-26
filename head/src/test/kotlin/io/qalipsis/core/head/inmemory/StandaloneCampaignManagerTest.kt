@@ -12,33 +12,32 @@ import assertk.assertions.isTrue
 import assertk.assertions.key
 import assertk.assertions.prop
 import com.google.common.collect.ImmutableTable
-import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.coVerifyOrder
-import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.impl.annotations.SpyK
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.campaign.FactoryConfiguration
 import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.directives.CampaignManagementDirective
 import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.directives.DirectiveProducer
 import io.qalipsis.core.directives.FactoryAssignmentDirective
+import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
-import io.qalipsis.core.feedbacks.Feedback
-import io.qalipsis.core.feedbacks.FeedbackHeadChannel
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.head.campaign.CampaignService
-import io.qalipsis.core.head.campaign.FactoryConfiguration
+import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
+import io.qalipsis.core.head.campaign.states.EmptyState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
+import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import io.qalipsis.test.assertk.prop
@@ -46,6 +45,7 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -58,10 +58,7 @@ internal class StandaloneCampaignManagerTest {
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var feedbackHeadChannel: FeedbackHeadChannel
-
-    @RelaxedMockK
-    private lateinit var directiveProducer: DirectiveProducer
+    private lateinit var headChannel: HeadChannel
 
     @RelaxedMockK
     private lateinit var factoryService: FactoryService
@@ -73,131 +70,44 @@ internal class StandaloneCampaignManagerTest {
     private lateinit var campaignService: CampaignService
 
     @RelaxedMockK
-    private lateinit var idGenerator: IdGenerator
-
-    @RelaxedMockK
     private lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
 
-    @Test
-    internal fun `should execute the feedback only if it is a CampaignManagementFeedback`() =
-        testDispatcherProvider.run {
-            // given
-            val campaignManager = StandaloneCampaignManager(
-                feedbackHeadChannel,
-                this,
-                directiveProducer,
-                factoryService,
-                assignmentResolver,
-                campaignService,
-                idGenerator,
-                campaignReportStateKeeper
-            )
-            val directives = listOf<Directive>(relaxedMockk(), relaxedMockk())
-            val finalState = relaxedMockk<CampaignExecutionState> {
-                coEvery {
-                    init(
-                        refEq(factoryService),
-                        refEq(campaignReportStateKeeper),
-                        refEq(idGenerator)
-                    )
-                } returns directives
-            }
-            val originalState = relaxedMockk<CampaignExecutionState> {
-                coEvery { process(any<Feedback>()) } returns finalState
-            }
-            campaignManager.setProperty("currentCampaignState", originalState)
+    @RelaxedMockK
+    private lateinit var headConfiguration: HeadConfiguration
 
-            // when
-            val nonCampaignManagementFeedback = relaxedMockk<Feedback>()
-            campaignManager.coInvokeInvisible<Unit>("processFeedback", nonCampaignManagementFeedback)
+    @RelaxedMockK
+    private lateinit var campaignExecutionContext: CampaignExecutionContext
 
-            // then
-            assertThat(campaignManager).prop("currentCampaignState").isSameAs(originalState)
-            confirmVerified(originalState, directiveProducer, factoryService, campaignReportStateKeeper)
+    @InjectMockKs
+    @SpyK(recordPrivateCalls = true)
+    private lateinit var campaignManager: StandaloneCampaignManager
 
-            // when
-            val campaignManagementFeedback =
-                relaxedMockk<Feedback>(moreInterfaces = arrayOf(CampaignManagementFeedback::class))
-            campaignManager.coInvokeInvisible<Unit>("processFeedback", campaignManagementFeedback)
-            coVerify {
-                originalState.process(refEq(campaignManagementFeedback))
-                finalState.init(refEq(factoryService), refEq(campaignReportStateKeeper), refEq(idGenerator))
-                directiveProducer.publish(refEq(directives[0]))
-                directiveProducer.publish(refEq(directives[1]))
-            }
-            assertThat(campaignManager).prop("currentCampaignState").isSameAs(finalState)
-            confirmVerified(directiveProducer, factoryService, campaignReportStateKeeper)
-        }
+    @AfterEach
+    internal fun tearDown() {
+        campaignManager.currentCampaignState(EmptyState)
+    }
 
     @Test
-    internal fun `should accept and process the directive only if it is a CampaignManagementDirective`() =
-        testDispatcherProvider.run {
-            // given
-            val campaignManager = StandaloneCampaignManager(
-                feedbackHeadChannel,
-                this,
-                directiveProducer,
-                factoryService,
-                assignmentResolver,
-                campaignService,
-                idGenerator,
-                campaignReportStateKeeper
+    internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
+        assertThat(
+            campaignManager.accept(
+                relaxedMockk(
+                    "campaign-feedback",
+                    CampaignManagementFeedback::class
+                )
             )
-            val directives = listOf<Directive>(relaxedMockk(), relaxedMockk())
-            val finalState = relaxedMockk<CampaignExecutionState> {
-                coEvery {
-                    init(
-                        refEq(factoryService),
-                        refEq(campaignReportStateKeeper),
-                        refEq(idGenerator)
-                    )
-                } returns directives
-            }
-            val originalState = relaxedMockk<CampaignExecutionState> {
-                coEvery { process(any<Directive>()) } returns finalState
-            }
-            campaignManager.setProperty("currentCampaignState", originalState)
-
-            // when + then
-            assertThat(campaignManager.accept(relaxedMockk())).isFalse()
-            assertThat(campaignManager.accept(relaxedMockk(moreInterfaces = *arrayOf(CampaignManagementDirective::class)))).isTrue()
-
-
-            // when
-            val campaignManagementDirective =
-                relaxedMockk<Directive>(moreInterfaces = arrayOf(CampaignManagementDirective::class))
-            campaignManager.process(campaignManagementDirective)
-            coVerify {
-                originalState.process(refEq(campaignManagementDirective))
-                finalState.init(refEq(factoryService), refEq(campaignReportStateKeeper), refEq(idGenerator))
-                directiveProducer.publish(refEq(directives[0]))
-                directiveProducer.publish(refEq(directives[1]))
-            }
-            assertThat(campaignManager).prop("currentCampaignState").isSameAs(finalState)
-            confirmVerified(directiveProducer, factoryService, campaignReportStateKeeper)
-        }
+        ).isTrue()
+        assertThat(campaignManager.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
+    }
 
     @Test
     internal fun `should start a new campaign when all the scenarios are currently supported and release the unused factories`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = StandaloneCampaignManager(
-                feedbackHeadChannel,
-                this,
-                directiveProducer,
-                factoryService,
-                assignmentResolver,
-                campaignService,
-                idGenerator,
-                campaignReportStateKeeper
-            )
-
-            every { idGenerator.short() } returnsMany (1..10).map { "the-directive-$it" }
             val campaign = CampaignConfiguration(
                 id = "my-campaign",
-                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
-                broadcastChannel = "my-broadcast-channel"
-            )
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+            ).apply { broadcastChannel = "my-broadcast-channel" }
             val scenario1 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-2" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
@@ -247,7 +157,7 @@ internal class StandaloneCampaignManagerTest {
                     )
                 }
             }
-            assertThat(campaignManager).typedProp<CampaignExecutionState>("currentCampaignState")
+            assertThat(campaignManager).typedProp<CampaignExecutionState<CampaignExecutionContext>>("currentCampaignState")
                 .isInstanceOf(FactoryAssignmentState::class).all {
                     prop("campaign").isSameAs(campaign)
                     typedProp<Boolean>("initialized").isTrue()
@@ -264,8 +174,9 @@ internal class StandaloneCampaignManagerTest {
                     listOf(scenario1, scenario2)
                 )
                 factoryService.releaseFactories(refEq(campaign), listOf("factory-2"))
-                directiveProducer.publish(capture(sentDirectives))
-                directiveProducer.publish(capture(sentDirectives))
+                headChannel.subscribeFeedback("feedbacks")
+                headChannel.publishDirective(capture(sentDirectives))
+                headChannel.publishDirective(capture(sentDirectives))
             }
             assertThat(sentDirectives).all {
                 hasSize(2)
@@ -274,12 +185,12 @@ internal class StandaloneCampaignManagerTest {
                         "my-campaign", mapOf(
                             "scenario-1" to listOf("dag-1", "dag-2"),
                             "scenario-2" to listOf("dag-A", "dag-B")
-                        ), "the-directive-1", "unicast-channel-1"
+                        ), "directives-broadcast", "feedbacks", "unicast-channel-1"
                     ),
                     FactoryAssignmentDirective(
                         "my-campaign", mapOf(
                             "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
-                        ), "the-directive-2", "unicast-channel-3"
+                        ), "directives-broadcast", "feedbacks", "unicast-channel-3"
                     )
                 )
             }
@@ -289,23 +200,10 @@ internal class StandaloneCampaignManagerTest {
     internal fun `should not start a new campaign when some scenarios are currently not supported`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = StandaloneCampaignManager(
-                feedbackHeadChannel,
-                this,
-                directiveProducer,
-                factoryService,
-                assignmentResolver,
-                campaignService,
-                idGenerator,
-                campaignReportStateKeeper
-            )
-
-            every { idGenerator.short() } returnsMany (1..10).map { "the-directive-$it" }
             val campaign = CampaignConfiguration(
                 id = "my-campaign",
-                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
-                broadcastChannel = "my-broadcast-channel"
-            )
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+            ).apply { broadcastChannel = "my-broadcast-channel" }
             val scenario1 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
@@ -321,19 +219,10 @@ internal class StandaloneCampaignManagerTest {
     internal fun `should not start a new campaign when one is already running`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = StandaloneCampaignManager(
-                feedbackHeadChannel,
-                this,
-                directiveProducer,
-                factoryService,
-                assignmentResolver,
-                campaignService,
-                idGenerator,
-                campaignReportStateKeeper
-            )
-            campaignManager.setProperty("currentCampaignState", relaxedMockk<CampaignExecutionState> {
-                every { isCompleted } returns false
-            })
+            campaignManager.setProperty("currentCampaignState",
+                relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isCompleted } returns false
+                })
 
             // when + then
             assertThrows<IllegalArgumentException> {

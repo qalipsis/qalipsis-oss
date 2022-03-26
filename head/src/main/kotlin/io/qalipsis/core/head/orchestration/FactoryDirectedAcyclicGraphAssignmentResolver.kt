@@ -1,12 +1,12 @@
 package io.qalipsis.core.head.orchestration
 
 import com.google.common.collect.Table
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.NodeId
 
 /**
  * Service in charge of calculating the directed acyclic graphs to assign to factories in the context of a new campaign.

@@ -43,9 +43,10 @@ internal class WarmupStateTest : AbstractStateTest() {
             }
         )
         val state = WarmupState(campaign)
+        state.inject(campaignExecutionContext)
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.init()
 
         // then
         assertThat(directives).all {
@@ -54,19 +55,16 @@ internal class WarmupStateTest : AbstractStateTest() {
                 ScenarioWarmUpDirective(
                     "my-campaign",
                     "scenario-1",
-                    "the-directive-1",
                     "the-unicast-channel-1"
                 ),
                 ScenarioWarmUpDirective(
                     "my-campaign",
                     "scenario-2",
-                    "the-directive-2",
                     "the-unicast-channel-1"
                 ),
                 ScenarioWarmUpDirective(
                     "my-campaign",
                     "scenario-2",
-                    "the-directive-3",
                     "the-unicast-channel-2"
                 )
             )
@@ -78,10 +76,13 @@ internal class WarmupStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
         val state = WarmupState(campaign)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // when
-        var newState = state.process(mockk<ScenarioWarmUpFeedback> {
+        val newState = state.process(mockk<ScenarioWarmUpFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
             every { error } returns "this is the error 1"
@@ -101,7 +102,10 @@ internal class WarmupStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = WarmupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -124,7 +128,10 @@ internal class WarmupStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = WarmupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
@@ -152,7 +159,10 @@ internal class WarmupStateTest : AbstractStateTest() {
                 }
             )
             val state = WarmupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             every { campaign.contains("node-1") } returns false
 
             // when
@@ -190,7 +200,10 @@ internal class WarmupStateTest : AbstractStateTest() {
                 }
             )
             val state = WarmupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             every { campaign.contains("node-1") } returns true
 
             // when
@@ -229,7 +242,10 @@ internal class WarmupStateTest : AbstractStateTest() {
             )
             every { campaign.contains(any()) } returns true
             val state = WarmupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<ScenarioWarmUpFeedback> {

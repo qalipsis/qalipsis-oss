@@ -11,10 +11,10 @@ import assertk.assertions.isTrue
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -30,13 +30,16 @@ internal class CompletionStateTest : AbstractStateTest() {
     @Test
     fun `should return shutdown directive on init`() = testDispatcherProvider.runTest {
         // when
-        val directives = CompletionState(campaign).init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = CompletionState(campaign).run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).all {
             hasSize(1)
             containsOnly(
-                CampaignShutdownDirective("my-campaign", "the-directive-1", "my-broadcast-channel")
+                CampaignShutdownDirective("my-campaign", "my-broadcast-channel")
             )
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -51,7 +54,8 @@ internal class CompletionStateTest : AbstractStateTest() {
                 "node-2" to relaxedMockk()
             )
             val state = CompletionState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.inject(campaignExecutionContext)
+            state.init()
 
             // when
             var newState = state.process(mockk<CampaignShutdownFeedback> {

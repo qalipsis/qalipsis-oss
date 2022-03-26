@@ -2,6 +2,7 @@ package io.qalipsis.core.factory.orchestration
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
@@ -15,6 +16,7 @@ import io.qalipsis.api.runtime.Minion
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.collections.concurrentTableOf
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 @Singleton
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class MinionsKeeperImpl(
     private val scenarioRegistry: ScenarioRegistry,
     private val runner: Runner,
@@ -58,7 +61,7 @@ internal class MinionsKeeperImpl(
         return singletonMinionsByDagId[scenarioId, dagId]!!
     }
 
-    @LogInput(level = Level.DEBUG)
+    @LogInput
     override suspend fun create(
         campaignId: CampaignId, scenarioId: ScenarioId, dagIds: Collection<DirectedAcyclicGraphId>, minionId: MinionId
     ) {
@@ -145,8 +148,9 @@ internal class MinionsKeeperImpl(
             minion.reset(true)
             rootDagsOfMinions[minionId]?.let { rootDagId ->
                 coroutineScope.launch {
-                    log.trace { "Minion $minionId is restarting its execution from scratch by the DAG $rootDagId of scenario ${minion.scenarioId}" }
-                    runner.run(minion, scenarioRegistry[minion.scenarioId]!![rootDagId]!!)
+                    val scenarioId = minion.scenarioId
+                    log.trace { "Minion $minionId is restarting its execution from scratch by the DAG $rootDagId of scenario $scenarioId" }
+                    runner.run(minion, scenarioRegistry[scenarioId]!![rootDagId]!!)
                 }
             }
             minion.start()

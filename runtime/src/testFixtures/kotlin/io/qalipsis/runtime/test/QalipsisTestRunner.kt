@@ -1,6 +1,6 @@
 package io.qalipsis.runtime.test
 
-import io.qalipsis.runtime.Qalipsis
+import io.aerisconsulting.catadioptre.invokeInvisible
 
 /**
  * Utils to execute scenarios in a concrete runtime.
@@ -77,7 +77,7 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
     }
 
     override fun execute(vararg args: String): Int {
-        val allArgs = mutableListOf("standalone")
+        val allArgs = mutableListOf("standalone", "--autostart")
         if (scenarios.isNotEmpty()) {
             allArgs += "-s"
             allArgs += scenarios.joinToString(separator = ",", transform = String::trim)
@@ -99,6 +99,16 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
         }
 
         allArgs += args.toList()
-        return Qalipsis.start(allArgs.toTypedArray())
+        return bootstrapClassConstructor.newInstance().invokeInvisible("start", allArgs.toTypedArray())
+    }
+
+    private companion object {
+
+        /**
+         * Default constructor of [io.qalipsis.runtime.bootstrap.QalipsisBootstrap], not accessible outside the module.
+         */
+        val bootstrapClassConstructor =
+            Class.forName("io.qalipsis.runtime.bootstrap.QalipsisBootstrap").constructors.first()
+
     }
 }

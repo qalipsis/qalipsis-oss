@@ -3,51 +3,57 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.Executors
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.directives.DirectiveProducer
-import io.qalipsis.core.feedbacks.FeedbackHeadChannel
+import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
+import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
-import jakarta.inject.Named
 import jakarta.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 
+/**
+ * Component to manage a new Campaign for all the known scenarios when the campaign management is shared across
+ * several heads.
+ *
+ * @author Eric Jessé
+ */
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.STANDALONE])
+@Requirements(
+    Requires(env = [ExecutionEnvironments.HEAD]),
+    Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
+)
 internal class RedisCampaignManager(
-    feedbackHeadChannel: FeedbackHeadChannel,
-    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
-    directiveProducer: DirectiveProducer,
+    headChannel: HeadChannel,
     factoryService: FactoryService,
     assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver,
     campaignService: CampaignService,
-    idGenerator: IdGenerator,
     campaignReportStateKeeper: CampaignReportStateKeeper,
-    private val redisOperations: CampaignRedisOperations
-) : AbstractCampaignManager(
-    feedbackHeadChannel,
-    coroutineScope,
-    directiveProducer,
+    headConfiguration: HeadConfiguration,
+    private val campaignExecutionContext: CampaignExecutionContext,
+    private val redisOperations: CampaignRedisOperations,
+) : AbstractCampaignManager<CampaignExecutionContext>(
+    headChannel,
     factoryService,
     assignmentResolver,
     campaignService,
-    idGenerator,
-    campaignReportStateKeeper
+    campaignReportStateKeeper,
+    headConfiguration,
+    campaignExecutionContext
 ) {
 
-    override suspend fun create(campaign: CampaignConfiguration): CampaignExecutionState =
+    override suspend fun create(campaign: CampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> =
         RedisFactoryAssignmentState(campaign, redisOperations)
 
-    override suspend fun get(campaignId: CampaignId): CampaignExecutionState {
+    override suspend fun get(campaignId: CampaignId): CampaignExecutionState<CampaignExecutionContext> {
         val currentState = redisOperations.getState(campaignId)
         val executionState = when (currentState?.second) {
             CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE -> RedisFactoryAssignmentState(
@@ -63,8 +69,10 @@ internal class RedisCampaignManager(
             CampaignRedisState.RUNNING_STATE -> RedisRunningState(currentState.first, redisOperations)
             CampaignRedisState.COMPLETION_STATE -> RedisCompletionState(currentState.first, redisOperations)
             CampaignRedisState.FAILURE_STATE -> RedisFailureState(currentState.first, redisOperations)
-            null -> throw IllegalStateException("The state of the campaign execution is unknown")
+            else -> throw IllegalStateException("The state of the campaign execution is unknown")
         }
+        executionState.inject(campaignExecutionContext)
+
         // Since the state is rebuilt, it is marked as already initialized.
         executionState.initialized = true
 
@@ -74,6 +82,11 @@ internal class RedisCampaignManager(
     /**
      * Nothing to do, since the
      */
-    override suspend fun set(state: CampaignExecutionState) = Unit
+    override suspend fun set(state: CampaignExecutionState<CampaignExecutionContext>) = Unit
 
+    private companion object {
+
+        val log = logger()
+
+    }
 }

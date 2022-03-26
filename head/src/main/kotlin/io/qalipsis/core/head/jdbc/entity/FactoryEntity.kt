@@ -28,8 +28,6 @@ internal data class FactoryEntity(
     val registrationNodeId: String,
     @field:NotBlank
     val unicastChannel: String,
-    @field:NotBlank
-    val broadcastChannel: String,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "factoryId")
     val selectors: List<FactorySelectorEntity>
 ) : Entity {
@@ -39,7 +37,6 @@ internal data class FactoryEntity(
         registrationTimestamp: Instant,
         registrationNodeId: String,
         unicastChannel: String,
-        broadcastChannel: String,
         selectors: List<FactorySelectorEntity> = emptyList()
     ) : this(
         -1,
@@ -48,7 +45,6 @@ internal data class FactoryEntity(
         registrationTimestamp,
         registrationNodeId,
         unicastChannel,
-        broadcastChannel,
         selectors
     )
 
@@ -57,7 +53,6 @@ internal data class FactoryEntity(
             nodeId = nodeId,
             registrationTimestamp = registrationTimestamp,
             unicastChannel = unicastChannel,
-            broadcastChannel = broadcastChannel,
             version = version,
             selectors = selectors.associate { it.key to it.value },
             activeScenarios = activeScenarios

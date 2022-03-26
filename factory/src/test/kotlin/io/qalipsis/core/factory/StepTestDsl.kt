@@ -76,8 +76,7 @@ internal fun testScenario(
         id,
         rampUpStrategy = rampUpStrategy,
         minionsCount = minionsCount,
-        feedbackFactoryChannel = relaxedMockk(),
-        factoryConfiguration = relaxedMockk()
+        factoryChannel = relaxedMockk()
     )
     runBlocking {
         scenario.configure()

@@ -20,13 +20,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("md")
 data class MinionsDeclarationFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+}
 
 /**
  * Feedback to a [io.qalipsis.core.directives.MinionsRampUpPreparationDirective].
@@ -43,10 +44,12 @@ data class MinionsDeclarationFeedback(
 @Serializable
 @SerialName("mrp")
 data class MinionsRampUpPreparationFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}

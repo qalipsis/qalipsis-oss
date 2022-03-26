@@ -3,6 +3,8 @@ package io.qalipsis.core.factory.init
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Property
+import io.micronaut.context.annotation.Requires
+import io.micronaut.core.order.Ordered
 import io.micronaut.validation.Validated
 import io.qalipsis.api.Executors
 import io.qalipsis.api.constraints.PositiveDuration
@@ -27,13 +29,15 @@ import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.factory.steps.MinionsKeeperAware
 import io.qalipsis.core.factory.steps.RunnerAware
+import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.core.lifetime.FactoryStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
@@ -45,6 +49,7 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import javax.annotation.Nullable
 import javax.annotation.PreDestroy
 import javax.validation.Valid
 
@@ -55,6 +60,7 @@ import javax.validation.Valid
  */
 @Singleton
 @Validated
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryInitializerImpl(
     private val applicationContext: ApplicationContext,
     @Named(Executors.GLOBAL_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
@@ -64,15 +70,23 @@ internal class FactoryInitializerImpl(
     private val stepSpecificationConverters: List<StepSpecificationConverter<*>>,
     stepSpecificationDecoratorConverters: List<StepSpecificationDecoratorConverter<*>>,
     private val runner: Runner,
-    private val factoryConfiguration: FactoryConfiguration,
     private val minionsKeeper: MinionsKeeper,
     private val idGenerator: IdGenerator,
     private val dagTransitionStepFactory: DagTransitionStepFactory,
-    @PositiveDuration @Property(name = "campaign.step.start-timeout", defaultValue = "30s")
+    private val factoryChannel: FactoryChannel,
+    @Nullable private val handshakeBlocker: HandshakeBlocker?,
+    @PositiveDuration
+    @Property(name = "campaign.step.start-timeout", defaultValue = "30s")
     private val stepStartTimeout: Duration,
-    @PositiveDuration @Property(name = "scenario.conversion.timeout", defaultValue = "5s")
+    @PositiveDuration
+    @Property(name = "scenario.conversion.timeout", defaultValue = "5s")
     private val conversionTimeout: Duration
 ) : ScenariosInitializer, FactoryStartupComponent {
+
+    init {
+        require(stepSpecificationConverters.isNotEmpty()) { "No step specification converter was found" }
+        require(stepSpecificationDecoratorConverters.isNotEmpty()) { "No step decorator converter was found" }
+    }
 
     /**
      * Collection of DAGs accessible by scenario and DAG ID.
@@ -85,11 +99,20 @@ internal class FactoryInitializerImpl(
 
     private lateinit var scenarioSpecs: Map<ScenarioId, ConfiguredScenarioSpecification>
 
-    override fun getStartupOrder() = Int.MAX_VALUE
+    override fun getStartupOrder() = Ordered.LOWEST_PRECEDENCE
 
     override fun init() {
-        initializationContext.init()
-        refresh()
+        try {
+            refresh()
+        } catch (e: Exception) {
+            if (e is IllegalArgumentException || e.cause is IllegalArgumentException) {
+                log.error { "${e.message}" }
+            } else {
+                log.error(e) { "${e.message}" }
+            }
+            handshakeBlocker?.cancel()
+            throw e
+        }
     }
 
     override fun refresh() {
@@ -101,6 +124,11 @@ internal class FactoryInitializerImpl(
                 ServicesLoader.loadServices<Any>("scenarios", applicationContext)
 
                 scenarioSpecs = scenarioSpecificationsKeeper.asMap()
+
+                if (scenarioSpecs.isEmpty()) {
+                    throw ExitStatusException(IllegalArgumentException("No enabled scenario could be found"), 102)
+                }
+
                 val allScenarios = mutableListOf<Scenario>()
                 scenarioSpecs.forEach { (scenarioId, scenarioSpecification) ->
                     log.info { "Converting the scenario specification $scenarioId" }
@@ -109,12 +137,16 @@ internal class FactoryInitializerImpl(
                     scenario.dags.forEach { dag ->
                         dagsByScenario.computeIfAbsent(scenarioId) { ConcurrentHashMap() }[dag.id] = dag
                     }
+                    log.info { "Conversion of the scenario specification $scenarioId is complete" }
                 }
-                initializationContext.startHandshake(allScenarios)
+                runBlocking(coroutineDispatcher) {
+                    initializationContext.startHandshake(allScenarios)
+                }
                 Result.success(Unit)
-            } catch (e: Exception) {
-                log.error(e) { "${e.message}" }
+            } catch (e: ExitStatusException) {
                 Result.failure(e)
+            } catch (e: Exception) {
+                Result.failure(ExitStatusException(e, 103))
             }
         }.get(conversionTimeout.toMillis(), TimeUnit.MILLISECONDS).getOrThrow()
     }
@@ -149,9 +181,8 @@ internal class FactoryInitializerImpl(
             rampUpStrategy = rampUpStrategy,
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,
-            feedbackFactoryChannel = initializationContext.feedbackFactoryChannel,
             stepStartTimeout = stepStartTimeout,
-            factoryConfiguration = factoryConfiguration
+            factoryChannel = factoryChannel
         )
         scenarioRegistry.add(scenario)
 
@@ -286,8 +317,14 @@ internal class FactoryInitializerImpl(
 
     private suspend fun convertSingleStep(@Valid context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         stepSpecificationConverters
-            .firstOrNull { it.support(context.stepSpecification) }
-            ?.let { converter ->
+            .firstOrNull {
+                try {
+                    it.support(context.stepSpecification)
+                } catch (e: Exception) {
+                    log.error(e) { e.message }
+                    false
+                }
+            }?.let { converter ->
                 addMissingStepName(context.stepSpecification)
                 @Suppress("UNCHECKED_CAST")
                 (converter as StepSpecificationConverter<StepSpecification<Any?, Any?, *>>).convert<Any?, Any?>(context)

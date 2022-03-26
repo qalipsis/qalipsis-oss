@@ -7,6 +7,8 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepId
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.factory.context.StepContextImpl
 import io.qalipsis.core.serialization.SerializedRecord
 import kotlinx.coroutines.channels.Channel
@@ -16,10 +18,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @Polymorphic
-abstract class TransportableContext {
+abstract class TransportableContext : Directive() {
     abstract val campaignId: CampaignId
     abstract val scenarioId: ScenarioId
     abstract val minionId: MinionId
+    override var channel: DispatcherChannel = ""
 }
 
 @Serializable
@@ -105,6 +108,7 @@ data class TransportableStepContext(
         }
     }
 
+    @Suppress("kotlin:S3776")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

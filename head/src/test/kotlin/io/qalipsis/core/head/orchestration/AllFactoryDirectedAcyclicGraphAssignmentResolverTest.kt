@@ -6,9 +6,9 @@ import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.key
 import io.mockk.every
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.head.campaign.CampaignConfiguration
-import io.qalipsis.core.head.campaign.ScenarioConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
@@ -22,7 +22,6 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
         // given
         val campaign = CampaignConfiguration(
             id = "my-campaign",
-            broadcastChannel = "",
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(
                     minionsCount = 54

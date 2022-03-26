@@ -15,7 +15,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
@@ -43,7 +42,10 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
         every { campaign.scenarios } returns mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).all {
@@ -53,14 +55,12 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
                     "my-campaign",
                     "scenario-1",
                     RampUpConfiguration(1234L, 153.42),
-                    "the-directive-1",
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
                     RampUpConfiguration(1234L, 153.42),
-                    "the-directive-2",
                     "my-broadcast-channel"
                 )
             )
@@ -72,7 +72,10 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
         val state = MinionsStartupState(campaign)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // when
         var newState = state.process(mockk<MinionsDeclarationFeedback> {
@@ -121,7 +124,10 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = MinionsStartupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<MinionsStartFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -144,7 +150,10 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = MinionsStartupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
@@ -155,14 +164,18 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
         }
 
     @Test
-    internal fun `should return a new RunningState when a MinionsStartDirective is received`() =
+    internal fun `should return a new RunningState when a MinionsStartFeedback is received`() =
         testDispatcherProvider.runTest {
             // given
             val state = MinionsStartupState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
-            val newState = state.process(mockk<MinionsStartDirective>())
+            val newState =
+                state.process(mockk<MinionsStartFeedback> { every { status } returns FeedbackStatus.COMPLETED })
 
             // then
             assertThat(newState).isInstanceOf(RunningState::class).all {

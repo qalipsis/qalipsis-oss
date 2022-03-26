@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -15,19 +16,18 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 
 internal open class RunningState(
     protected val campaign: CampaignConfiguration,
     private val directivesForInit: List<Directive> = emptyList(),
     private val expectedScenariosToComplete: MutableSet<ScenarioId> = concurrentSet(campaign.scenarios.keys)
-) : AbstractCampaignExecutionState(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
 
     override suspend fun doInit(): List<Directive> {
         return directivesForInit
     }
 
-    override suspend fun process(feedback: Feedback): CampaignExecutionState {
+    override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         // The failure management is let to doProcess.
         when {
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
@@ -43,7 +43,7 @@ internal open class RunningState(
         return doTransition(feedback)
     }
 
-    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return when {
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED -> {
                 FailureState(campaign, feedback.error ?: "")
@@ -61,24 +61,22 @@ internal open class RunningState(
                 RunningState(
                     campaign, listOf(
                         MinionsShutdownDirective(
-                            campaign.id,
-                            feedback.scenarioId,
-                            listOf(feedback.minionId),
-                            idGenerator.short(),
-                            campaign.broadcastChannel
+                            campaignId = campaign.id,
+                            scenarioId = feedback.scenarioId,
+                            minionIds = listOf(feedback.minionId),
+                            channel = campaign.broadcastChannel
                         )
                     )
                 )
             }
             feedback is EndOfCampaignScenarioFeedback -> {
-                campaignReportStateKeeper.complete(feedback.campaignId, feedback.scenarioId)
+                context.campaignReportStateKeeper.complete(feedback.campaignId, feedback.scenarioId)
                 RunningState(
                     campaign, listOf(
                         CampaignScenarioShutdownDirective(
-                            campaign.id,
-                            feedback.scenarioId,
-                            idGenerator.short(),
-                            campaign.broadcastChannel
+                            campaignId = campaign.id,
+                            scenarioId = feedback.scenarioId,
+                            channel = campaign.broadcastChannel
                         )
                     )
                 )
@@ -86,7 +84,7 @@ internal open class RunningState(
             feedback is CampaignScenarioShutdownFeedback -> {
                 expectedScenariosToComplete.remove(feedback.scenarioId)
                 if (expectedScenariosToComplete.isEmpty()) {
-                    campaignReportStateKeeper.complete(feedback.campaignId)
+                    context.campaignReportStateKeeper.complete(feedback.campaignId)
                     CompletionState(campaign)
                 } else {
                     this

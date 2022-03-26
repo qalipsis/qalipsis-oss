@@ -39,8 +39,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 nodeId = "the-node",
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = "test",
-                unicastChannel = "unicast-channel",
-                broadcastChannel = "broadcast-channel"
+                unicastChannel = "unicast-channel"
             )
         )
         scenario = ScenarioEntity(factory.id, "test", 1)
@@ -137,8 +136,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
 
@@ -159,8 +157,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             val factory2 = factoryRepository.save(
@@ -168,8 +165,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "any",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             val scenario1 = repository.save(scenario.copy())
@@ -194,8 +190,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             val scenario1 = repository.save(scenario.copy())
@@ -217,8 +212,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             repository.save(scenario.copy(factoryId = factory.id))

@@ -1,14 +1,17 @@
 package io.qalipsis.core.factory.orchestration
 
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.core.collections.Table
 import io.qalipsis.core.collections.concurrentTableOf
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 
 @Singleton
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class LocalAssignmentStoreImpl(
     private val scenarioRegistry: ScenarioRegistry
 ) : LocalAssignmentStore {

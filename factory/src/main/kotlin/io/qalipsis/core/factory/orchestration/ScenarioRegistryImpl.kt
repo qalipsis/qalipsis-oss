@@ -1,11 +1,17 @@
 package io.qalipsis.core.factory.orchestration
 
+import io.micronaut.context.annotation.Requires
+import io.micronaut.core.order.Ordered
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.collections.concurrentTableOf
+import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.lifetime.ProcessExitCodeSupplier
 import jakarta.inject.Singleton
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -14,7 +20,8 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 @Singleton
-internal class ScenarioRegistryImpl : ScenarioRegistry {
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
+internal class ScenarioRegistryImpl : ScenarioRegistry, ProcessExitCodeSupplier {
 
     private val scenarios = ConcurrentHashMap<ScenarioId, Scenario>()
 
@@ -40,4 +47,21 @@ internal class ScenarioRegistryImpl : ScenarioRegistry {
     }
 
     override fun all() = scenarios.values
+
+    override suspend fun await(): Optional<Int> {
+        // Returns the code 2 when no scenario was found.
+        return if (scenarios.isEmpty()) {
+            log.error { "No enabled scenario could be found in the classpath" }
+            Optional.of(102)
+        } else {
+            Optional.empty()
+        }
+    }
+
+    override fun getOrder() = Ordered.HIGHEST_PRECEDENCE
+
+    private companion object {
+        val log = logger()
+    }
+
 }

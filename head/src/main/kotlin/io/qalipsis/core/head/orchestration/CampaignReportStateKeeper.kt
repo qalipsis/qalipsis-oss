@@ -9,7 +9,7 @@ import io.qalipsis.api.report.CampaignReport
  *
  * @author Eric Jessé
  */
-interface CampaignReportStateKeeper {
+internal interface CampaignReportStateKeeper {
 
     /**
      * Cleans all the states and messages kept into the registry for the provided campaign.

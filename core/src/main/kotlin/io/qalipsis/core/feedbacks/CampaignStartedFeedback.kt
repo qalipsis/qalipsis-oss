@@ -1,6 +1,5 @@
 package io.qalipsis.core.feedbacks
 
-import cool.graph.cuid.Cuid
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.ScenarioId
@@ -25,6 +24,5 @@ data class CampaignStartedForDagFeedback(
     /**
      * Error message.
      */
-    val error: String? = null,
-    override val key: FeedbackKey = Cuid.createCuid()
+    val error: String? = null
 ) : Feedback()

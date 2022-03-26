@@ -4,6 +4,8 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
+import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -13,11 +15,13 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.slot
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
+import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.handshake.RegistrationScenario
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
@@ -47,6 +51,7 @@ import org.junit.Assert
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -91,16 +96,20 @@ internal class ClusterFactoryServiceTest {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
-            HandshakeRequest(nodeId = "testNodeId", selectors = emptyMap(), replyTo = "", scenarios = emptyList())
+            HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList())
         val now = getTimeMock()
         coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns emptyList()
         coEvery { factoryRepository.save(any()) } returns relaxedMockk { every { id } returns 123 }
+        val handshakeResponse = relaxedMockk<HandshakeResponse> {
+            every { unicastChannel } returns "directives-unicast-boo"
+        }
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "saveFactory",
             actualNodeId,
-            handshakeRequest
+            handshakeRequest,
+            handshakeResponse
         )
 
         //then
@@ -111,8 +120,7 @@ internal class ClusterFactoryServiceTest {
                     nodeId = actualNodeId,
                     registrationTimestamp = now,
                     registrationNodeId = handshakeRequest.nodeId,
-                    unicastChannel = "directives-unicast-boo",
-                    broadcastChannel = "directives-broadcast"
+                    unicastChannel = "directives-unicast-boo"
                 )
             )
             factoryStateRepository.save(FactoryStateEntity(now, 123, now, 0, FactoryStateValue.REGISTERED))
@@ -128,10 +136,13 @@ internal class ClusterFactoryServiceTest {
         val selectorValue = "test-selector-value"
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorValue),
+            tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = emptyList()
         )
+        val handshakeResponse = relaxedMockk<HandshakeResponse> {
+            every { unicastChannel } returns "directives-unicast-boo"
+        }
         val now = getTimeMock()
         coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns emptyList()
         coEvery { factoryRepository.save(any()) } returns relaxedMockk { every { id } returns 123 }
@@ -140,7 +151,8 @@ internal class ClusterFactoryServiceTest {
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "saveFactory",
             actualNodeId,
-            handshakeRequest
+            handshakeRequest,
+            handshakeResponse
         )
 
         //then
@@ -151,8 +163,7 @@ internal class ClusterFactoryServiceTest {
                     nodeId = actualNodeId,
                     registrationTimestamp = now,
                     registrationNodeId = handshakeRequest.nodeId,
-                    unicastChannel = "directives-unicast-boo",
-                    broadcastChannel = "directives-broadcast"
+                    unicastChannel = "directives-unicast-boo"
                 )
             )
             factorySelectorRepository.saveAll(listOf(FactorySelectorEntity(123, selectorKey, selectorValue)))
@@ -166,31 +177,42 @@ internal class ClusterFactoryServiceTest {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
-            HandshakeRequest(nodeId = "testNodeId", selectors = emptyMap(), replyTo = "", scenarios = emptyList())
+            HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList())
         val now = getTimeMock()
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
-            unicastChannel = "unicast",
-            broadcastChannel = "broadcast"
+            unicastChannel = "unicast"
         )
+        val handshakeResponse = relaxedMockk<HandshakeResponse> {
+            every { unicastChannel } returns "directives-unicast-boo"
+        }
 
+        val savedFactoryEntity = slot<FactoryEntity>()
+        coEvery { factoryRepository.save(capture(savedFactoryEntity)) } returnsArgument 0
         coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "saveFactory",
             actualNodeId,
-            handshakeRequest
+            handshakeRequest,
+            handshakeResponse
         )
 
         //then
+        assertThat(savedFactoryEntity.captured).all {
+            prop(FactoryEntity::nodeId).isEqualTo(actualNodeId)
+            prop(FactoryEntity::registrationNodeId).isEqualTo(handshakeRequest.nodeId)
+            prop(FactoryEntity::registrationTimestamp).isEqualTo(now)
+            prop(FactoryEntity::unicastChannel).isEqualTo("directives-unicast-boo")
+        }
         coVerifyOrder {
             factoryRepository.findByNodeIdIn(listOf(actualNodeId))
+            factoryRepository.save(any())
         }
         coVerifyNever {
-            factoryRepository.save(any())
             factorySelectorRepository.saveAll(any<Iterable<FactorySelectorEntity>>())
             factorySelectorRepository.updateAll(any<Iterable<FactorySelectorEntity>>())
             factorySelectorRepository.deleteAll(any())
@@ -206,7 +228,7 @@ internal class ClusterFactoryServiceTest {
         val selectorValue = "test-selector-value"
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorValue),
+            tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = emptyList()
         )
@@ -216,7 +238,6 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
             selectors = listOf()
         )
         val newSelector = FactorySelectorEntity(factoryEntity.id, selectorKey, selectorValue)
@@ -227,7 +248,7 @@ internal class ClusterFactoryServiceTest {
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "mergeSelectors",
             factorySelectorRepository,
-            handshakeRequest.selectors,
+            handshakeRequest.tags,
             factoryEntity.selectors,
             factoryEntity.id
         )
@@ -253,7 +274,7 @@ internal class ClusterFactoryServiceTest {
         val selectorNewValue = "test-selector-new-value"
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorNewValue),
+            tags = mapOf(selectorKey to selectorNewValue),
             replyTo = "",
             scenarios = emptyList()
         )
@@ -264,7 +285,6 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
             selectors = listOf(selector)
         )
 
@@ -274,7 +294,7 @@ internal class ClusterFactoryServiceTest {
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "mergeSelectors",
             factorySelectorRepository,
-            handshakeRequest.selectors,
+            handshakeRequest.tags,
             factoryEntity.selectors,
             factoryEntity.id
         )
@@ -298,7 +318,7 @@ internal class ClusterFactoryServiceTest {
         val selectorKey = "test-selector-key"
         val selectorValue = "test-selector-value"
         val handshakeRequest =
-            HandshakeRequest(nodeId = "testNodeId", selectors = emptyMap(), replyTo = "", scenarios = emptyList())
+            HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList())
         val now = getTimeMock()
         val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
@@ -306,7 +326,6 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
             selectors = listOf(selector)
         )
 
@@ -316,7 +335,7 @@ internal class ClusterFactoryServiceTest {
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "mergeSelectors",
             factorySelectorRepository,
-            handshakeRequest.selectors,
+            handshakeRequest.tags,
             factoryEntity.selectors,
             factoryEntity.id
         )
@@ -341,7 +360,7 @@ internal class ClusterFactoryServiceTest {
             val selectorValue = "test-selector-value"
             val handshakeRequest = HandshakeRequest(
                 nodeId = "testNodeId",
-                selectors = mapOf(selectorKey to selectorValue),
+                tags = mapOf(selectorKey to selectorValue),
                 replyTo = "",
                 scenarios = emptyList()
             )
@@ -352,7 +371,6 @@ internal class ClusterFactoryServiceTest {
                 registrationTimestamp = now,
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = "unicast",
-                broadcastChannel = "broadcast",
                 selectors = listOf(selector)
             )
 
@@ -360,7 +378,7 @@ internal class ClusterFactoryServiceTest {
             clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
                 "mergeSelectors",
                 factorySelectorRepository,
-                handshakeRequest.selectors,
+                handshakeRequest.tags,
                 factoryEntity.selectors,
                 factoryEntity.id
             )
@@ -383,7 +401,7 @@ internal class ClusterFactoryServiceTest {
                 mapOf("test1key" to "test1value", "test2key" to "test2value", "test4key" to "test4value")
             val handshakeRequest = HandshakeRequest(
                 nodeId = "testNodeId",
-                selectors = newSelectorsMap,
+                tags = newSelectorsMap,
                 replyTo = "",
                 scenarios = emptyList()
             )
@@ -394,7 +412,6 @@ internal class ClusterFactoryServiceTest {
                 registrationTimestamp = now,
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = "unicast",
-                broadcastChannel = "broadcast",
                 selectors = existingSelectors
             )
 
@@ -426,7 +443,7 @@ internal class ClusterFactoryServiceTest {
             clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
                 "mergeSelectors",
                 factorySelectorRepository,
-                handshakeRequest.selectors,
+                handshakeRequest.tags,
                 factoryEntity.selectors,
                 factoryEntity.id
             )
@@ -471,7 +488,7 @@ internal class ClusterFactoryServiceTest {
         )
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorValue),
+            tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = listOf(newRegistrationScenario)
         )
@@ -482,7 +499,6 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
             selectors = listOf(selector)
         )
         val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
@@ -533,7 +549,7 @@ internal class ClusterFactoryServiceTest {
         )
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorValue),
+            tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = listOf(newRegistrationScenario)
         )
@@ -544,7 +560,6 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
             selectors = listOf(selector)
         )
         val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
@@ -606,7 +621,7 @@ internal class ClusterFactoryServiceTest {
         )
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorValue),
+            tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = listOf(newRegistrationScenario)
         )
@@ -617,7 +632,6 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
             selectors = listOf(selector)
         )
         val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
@@ -799,9 +813,8 @@ internal class ClusterFactoryServiceTest {
         )
     }
 
-
     @Test
-    fun `should update existing scenario and dags`() = testDispatcherProvider.run {
+    fun `should update existing channels, scenario and dags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -812,9 +825,16 @@ internal class ClusterFactoryServiceTest {
             RegistrationScenario(id = "test", minionsCount = 1, directedAcyclicGraphs = listOf(graphSummary))
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
-            selectors = mapOf(selectorKey to selectorValue),
+            tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = listOf(newRegistrationScenario)
+        )
+        val handshakeResponse = HandshakeResponse(
+            handshakeNodeId = "testNodeId",
+            nodeId = actualNodeId,
+            unicastChannel = "directives-unicast",
+            heartbeatChannel = "heartbeat",
+            heartbeatPeriod = Duration.ofMinutes(1)
         )
         val now = getTimeMock()
         val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
@@ -822,27 +842,35 @@ internal class ClusterFactoryServiceTest {
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
-            unicastChannel = "unicast",
-            broadcastChannel = "broadcast",
+            unicastChannel = "unicast-before",
             selectors = listOf(selector)
         )
 
         val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
-        val expectedDagEntity = convertDagSummaryToEntity(dag)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, true)
 
         coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
         coEvery { scenarioRepository.findByFactoryId(factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
+        coEvery { factoryRepository.save(any()) } returnsArgument 0
+        val savedFactoryEntity = slot<FactoryEntity>()
+        coEvery { factoryRepository.save(capture(savedFactoryEntity)) } returnsArgument 0
         coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
         coEvery { scenarioRepository.updateAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
 
         // when
-        clusterFactoryService.register(actualNodeId, handshakeRequest)
+        clusterFactoryService.register(actualNodeId, handshakeRequest, handshakeResponse)
 
         //then
+        assertThat(savedFactoryEntity.captured).all {
+            prop(FactoryEntity::nodeId).isEqualTo(actualNodeId)
+            prop(FactoryEntity::registrationNodeId).isEqualTo(handshakeRequest.nodeId)
+            prop(FactoryEntity::registrationTimestamp).isEqualTo(now)
+            prop(FactoryEntity::unicastChannel).isEqualTo("directives-unicast")
+        }
         coVerifyOrder {
             factoryRepository.findByNodeIdIn(listOf(actualNodeId))
+            factoryRepository.save(any())
             factoryStateRepository.save(any())
             scenarioRepository.findByFactoryId(factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
@@ -922,12 +950,12 @@ internal class ClusterFactoryServiceTest {
         val now = getTimeMock()
         val factoryId = 1L
         val heartbeat =
-            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.STATE.UNREGISTERED, campaignId = "1")
+            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.UNREGISTERED, campaignId = "1")
 
         coEvery { factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)) } returns listOf(factoryId)
 
         //when
-        clusterFactoryService.updateHeartbeat(heartbeat)
+        clusterFactoryService.notify(heartbeat)
 
         //then
         coVerifyOrder {

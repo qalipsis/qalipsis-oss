@@ -2,14 +2,16 @@ package io.qalipsis.core.head.orchestration
 
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.NodeId
 import jakarta.inject.Singleton
 
 /**
@@ -19,7 +21,10 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-@Requires(missingBeans = [FactoryDirectedAcyclicGraphAssignmentResolver::class])
+@Requirements(
+    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
+    Requires(missingBeans = [FactoryDirectedAcyclicGraphAssignmentResolver::class])
+)
 internal class AllFactoryDirectedAcyclicGraphAssignmentResolver : FactoryDirectedAcyclicGraphAssignmentResolver {
 
     override fun resolveFactoriesAssignments(

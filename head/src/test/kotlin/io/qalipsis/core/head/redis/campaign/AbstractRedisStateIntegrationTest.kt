@@ -1,15 +1,17 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
-import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
-import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.factory.communication.HeadChannel
+import io.qalipsis.core.head.campaign.CampaignAutoStarter
+import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
@@ -32,39 +34,57 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    protected lateinit var idGenerator: IdGenerator
-
-    @RelaxedMockK
     protected lateinit var factoryService: FactoryService
 
     @RelaxedMockK
     protected lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
+
+    @RelaxedMockK
+    protected lateinit var headChannel: HeadChannel
+
+    @RelaxedMockK
+    protected lateinit var campaignAutoStarter: CampaignAutoStarter
+
+    @InjectMockKs
+    protected lateinit var campaignExecutionContext: CampaignExecutionContext
+
+    @RelaxedMockK
+    protected lateinit var reportPublisher1: CampaignReportPublisher
+
+    @RelaxedMockK
+    protected lateinit var reportPublisher2: CampaignReportPublisher
+
+    protected val reportPublishers: Collection<CampaignReportPublisher> by lazy {
+        listOf(reportPublisher1, reportPublisher2)
+    }
 
     protected lateinit var campaign: CampaignConfiguration
 
     @Inject
     protected lateinit var operations: CampaignRedisOperations
 
-    @Inject
-    protected lateinit var redisCommands: RedisCoroutinesCommands<String, String>
-
     @MockBean(FactoryService::class)
     fun factoryService(): FactoryService = factoryService
 
+    @MockBean(HeadChannel::class)
+    fun headChannel(): HeadChannel = headChannel
+
+    @MockBean(CampaignAutoStarter::class)
+    fun campaignAutoStarter(): CampaignAutoStarter = campaignAutoStarter
+
+    @MockBean(CampaignExecutionContext::class)
+    fun campaignExecutionContext(): CampaignExecutionContext = campaignExecutionContext
+
     @BeforeEach
     internal fun setUp() {
-        campaign = spyk(
-            CampaignConfiguration(
-                id = "my-campaign",
-                broadcastChannel = "my-broadcast-channel"
-            )
-        )
-
-        every { idGenerator.short() } returnsMany (1..10).map { "the-directive-$it" }
+        campaign = spyk(CampaignConfiguration(id = "my-campaign").also {
+            it.broadcastChannel = "my-broadcast-channel"
+            it.feedbackChannel = "my-feedback-channel"
+        })
     }
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
-        redisCommands.flushdb()
+        connection.sync().flushdb()
     }
 }

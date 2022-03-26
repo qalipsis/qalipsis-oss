@@ -19,12 +19,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("fa")
 data class FactoryAssignmentFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
+
 
 /**
  * Feedback to a [io.qalipsis.core.directives.ScenarioWarmUpDirective].
@@ -41,13 +44,15 @@ data class FactoryAssignmentFeedback(
 @Serializable
 @SerialName("wup")
 data class ScenarioWarmUpFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 
 /**
@@ -59,13 +64,15 @@ data class ScenarioWarmUpFeedback(
 @Serializable
 @SerialName("eocsf")
 data class EndOfCampaignScenarioFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 
 /**
@@ -76,12 +83,14 @@ data class EndOfCampaignScenarioFeedback(
 @Serializable
 @SerialName("eocf")
 data class EndOfCampaignFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 /**
  * Feedback to a [io.qalipsis.core.directives.CampaignScenarioShutdownDirective].
@@ -98,13 +107,15 @@ data class EndOfCampaignFeedback(
 @Serializable
 @SerialName("ssd")
 data class CampaignScenarioShutdownFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 /**
  * Feedback to a [io.qalipsis.core.directives.CampaignShutdownDirective].
@@ -120,9 +131,11 @@ data class CampaignScenarioShutdownFeedback(
 @Serializable
 @SerialName("csd")
 data class CampaignShutdownFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}

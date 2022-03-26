@@ -102,8 +102,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     "the-node-id",
                     Instant.now(),
                     "the-registration-node-id",
-                    "unicast-channel",
-                    "broadcast-channel"
+                    "unicast-channel"
                 )
             )
         campagnScenarioRepository.save(CampaignScenarioEntity(saved.id, "the-scenario", 231))

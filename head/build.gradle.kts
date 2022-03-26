@@ -71,14 +71,18 @@ dependencies {
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
+    implementation("io.micronaut:micronaut-http-server-netty")
+    implementation("io.micronaut.reactor:micronaut-reactor")
+    implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
+    implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
+    implementation("io.micronaut.rxjava3:micronaut-rxjava3")
 
-    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
     kapt("io.qalipsis:api-processors:${project.version}")
     kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
-    kapt("io.micronaut.data:micronaut-data-processor:${micronautVersion}")
+    kapt("io.micronaut.data:micronaut-data-processor")
 
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
@@ -92,7 +96,6 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:${testContainersVersion}")
     testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
 
-    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }

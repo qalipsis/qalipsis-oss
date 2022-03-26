@@ -7,6 +7,8 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.key
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.campaign.FactoryConfiguration
 import org.junit.jupiter.api.Test
 
 internal class CampaignConfigurationTest {
@@ -16,20 +18,19 @@ internal class CampaignConfigurationTest {
         // given
         val campaign = CampaignConfiguration(
             id = "my-campaign",
-            broadcastChannel = "",
-            factories = mutableMapOf(
-                "factory-1" to FactoryConfiguration(
-                    "",
-                    mutableMapOf(
-                        "scenario-1" to listOf("dag-1", "dag-2", "dag-3"),
-                        "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
-                    )
-                ),
-                "factory-2" to FactoryConfiguration(
-                    "",
-                    mutableMapOf(
-                        "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
-                    )
+        )
+        campaign.factories += mapOf(
+            "factory-1" to FactoryConfiguration(
+                "",
+                mutableMapOf(
+                    "scenario-1" to listOf("dag-1", "dag-2", "dag-3"),
+                    "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
+                )
+            ),
+            "factory-2" to FactoryConfiguration(
+                "",
+                mutableMapOf(
+                    "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
                 )
             )
         )
@@ -84,21 +85,20 @@ internal class CampaignConfigurationTest {
     internal fun `should unassign the factory`() {
         // given
         val campaign = CampaignConfiguration(
-            id = "my-campaign",
-            broadcastChannel = "",
-            factories = mutableMapOf(
-                "factory-1" to FactoryConfiguration(
-                    "",
-                    mutableMapOf(
-                        "scenario-1" to listOf("dag-1", "dag-2", "dag-3"),
-                        "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
-                    )
-                ),
-                "factory-2" to FactoryConfiguration(
-                    "",
-                    mutableMapOf(
-                        "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
-                    )
+            id = "my-campaign"
+        )
+        campaign.factories += mapOf(
+            "factory-1" to FactoryConfiguration(
+                "",
+                mutableMapOf(
+                    "scenario-1" to listOf("dag-1", "dag-2", "dag-3"),
+                    "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
+                )
+            ),
+            "factory-2" to FactoryConfiguration(
+                "",
+                mutableMapOf(
+                    "scenario-2" to listOf("dag-a", "dag-b", "dag-c")
                 )
             )
         )

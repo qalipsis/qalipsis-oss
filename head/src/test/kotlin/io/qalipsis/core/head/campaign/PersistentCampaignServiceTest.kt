@@ -8,6 +8,8 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
@@ -52,8 +54,7 @@ internal class PersistentCampaignServiceTest {
                 "scenario-2" to ScenarioConfiguration(
                     12321
                 )
-            ),
-            broadcastChannel = "my-broadcast-channel"
+            )
         )
         coEvery { campaignRepository.save(any()) } returns mockk { every { id } returns 8126 }
 

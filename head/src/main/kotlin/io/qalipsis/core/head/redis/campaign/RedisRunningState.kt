@@ -1,6 +1,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
@@ -13,7 +14,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.RunningState
 
@@ -33,7 +34,7 @@ internal class RedisRunningState(
         return super.doInit()
     }
 
-    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return when {
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
@@ -52,19 +53,17 @@ internal class RedisRunningState(
                         campaign.id,
                         feedback.scenarioId,
                         listOf(feedback.minionId),
-                        idGenerator.short(),
                         campaign.broadcastChannel
                     )
                 )
             )
             feedback is EndOfCampaignScenarioFeedback -> {
-                campaignReportStateKeeper.complete(feedback.campaignId, feedback.scenarioId)
+                context.campaignReportStateKeeper.complete(feedback.campaignId, feedback.scenarioId)
                 RedisRunningState(
                     campaign, operations, true, listOf(
                         CampaignScenarioShutdownDirective(
                             campaign.id,
                             feedback.scenarioId,
-                            idGenerator.short(),
                             campaign.broadcastChannel
                         )
                     )
@@ -72,7 +71,7 @@ internal class RedisRunningState(
             }
             feedback is CampaignScenarioShutdownFeedback -> {
                 if (operations.markFeedbackForScenario(feedback.campaignId, feedback.scenarioId)) {
-                    campaignReportStateKeeper.complete(feedback.campaignId)
+                    context.campaignReportStateKeeper.complete(feedback.campaignId)
                     RedisCompletionState(campaign, operations)
                 } else {
                     this

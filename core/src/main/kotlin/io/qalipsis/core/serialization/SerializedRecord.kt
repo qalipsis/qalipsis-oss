@@ -1,6 +1,7 @@
 package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.SerializableClass
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.reflect.KClass
 
@@ -15,10 +16,10 @@ import kotlin.reflect.KClass
  */
 @Serializable
 class SerializedRecord(
-    val value: ByteArray,
-    val type: SerializableClass,
-    val serializer: String,
-    val metadata: Map<String, String> = emptyMap()
+    @SerialName("v") @Serializable(with = ByteArrayKotlinSerializer::class) val value: ByteArray,
+    @SerialName("t") val type: SerializableClass,
+    @SerialName("s") val serializer: String,
+    @SerialName("m") val metadata: Map<String, String> = emptyMap()
 ) {
 
     override fun equals(other: Any?): Boolean {

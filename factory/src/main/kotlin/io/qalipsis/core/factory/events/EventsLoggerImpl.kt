@@ -1,6 +1,7 @@
 package io.qalipsis.core.factory.events
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.events.Event
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventTag
@@ -8,6 +9,7 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.events.EventsPublisher
 import io.qalipsis.api.events.toTags
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -18,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 @Singleton
 internal class EventsLoggerImpl(
     configuration: EventsLoggerConfiguration,

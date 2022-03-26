@@ -12,11 +12,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("fail")
 data class FailedCampaignFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
-    override val nodeId: String,
     override val error: String
 ) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
 
     override val status: FeedbackStatus = FeedbackStatus.FAILED
 

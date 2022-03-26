@@ -44,7 +44,10 @@ internal class RunningStateTest : AbstractStateTest() {
         val state = RunningState(campaign, initDirectives)
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).isSameAs(initDirectives)
@@ -55,7 +58,10 @@ internal class RunningStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
         val state = RunningState(campaign)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // when
         var newState = state.process(mockk<MinionsDeclarationFeedback> {
@@ -117,7 +123,10 @@ internal class RunningStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = RunningState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<MinionsStartFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -140,25 +149,13 @@ internal class RunningStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = RunningState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
-
-            // then
-            assertThat(newState).isSameAs(state)
-            confirmVerified(factoryService, campaignReportStateKeeper)
-        }
-
-    @Test
-    internal fun `should return itself in case of any unsupported directive`() =
-        testDispatcherProvider.runTest {
-            // given
-            val state = RunningState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
-
-            // when
-            val newState = state.process(mockk<Directive>())
 
             // then
             assertThat(newState).isSameAs(state)
@@ -170,7 +167,10 @@ internal class RunningStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = RunningState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<CompleteMinionFeedback> {
@@ -190,7 +190,6 @@ internal class RunningStateTest : AbstractStateTest() {
                             "my-campaign",
                             "the scenario",
                             listOf("the minion"),
-                            "the-directive-1",
                             "my-broadcast-channel"
                         )
                     )
@@ -204,7 +203,10 @@ internal class RunningStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = RunningState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<EndOfCampaignScenarioFeedback> {
@@ -223,7 +225,6 @@ internal class RunningStateTest : AbstractStateTest() {
                         CampaignScenarioShutdownDirective(
                             "my-campaign",
                             "the scenario",
-                            "the-directive-1",
                             "my-broadcast-channel"
                         )
                     )
@@ -239,7 +240,10 @@ internal class RunningStateTest : AbstractStateTest() {
             // given
             every { campaign.scenarios } returns mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             val state = RunningState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<CampaignScenarioShutdownFeedback> {

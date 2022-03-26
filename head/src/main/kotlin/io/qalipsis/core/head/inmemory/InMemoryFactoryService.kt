@@ -1,66 +1,129 @@
 package io.qalipsis.core.head.inmemory
 
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.NodeId
+import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
-import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
+import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Implementation of the [FactoryService] to keep the data in-memory only.
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.STANDALONE])
+@Requirements(
+    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
+    Requires(env = [ExecutionEnvironments.VOLATILE])
+)
 internal class InMemoryFactoryService(
     private val scenarioSummaryRepository: ScenarioSummaryRepository
 ) : FactoryService {
 
-    override suspend fun register(actualNodeId: String, handshakeRequest: HandshakeRequest) {
+    private val factoriesByNodeId = ConcurrentHashMap<NodeId, LockableFactory>()
+
+    private val factoriesByScenarios = ConcurrentHashMap<ScenarioId, MutableCollection<NodeId>>()
+
+    @LogInput
+    override suspend fun register(
+        actualNodeId: NodeId,
+        handshakeRequest: HandshakeRequest,
+        handshakeResponse: HandshakeResponse
+    ) {
+        factoriesByNodeId[actualNodeId] = LockableFactory(
+            nodeId = actualNodeId,
+            registrationTimestamp = Instant.now(),
+            unicastChannel = handshakeResponse.unicastChannel,
+            version = Instant.now(),
+            selectors = handshakeRequest.tags,
+            activeScenarios = handshakeRequest.scenarios.map { it.id }
+        )
+        handshakeRequest.scenarios.forEach { scenario ->
+            factoriesByScenarios.computeIfAbsent(scenario.id) { concurrentSet() } += actualNodeId
+        }
         scenarioSummaryRepository.saveAll(handshakeRequest.scenarios)
     }
 
-    override suspend fun updateHeartbeat(heartbeat: Heartbeat) {
-        // Nothing to do.
+    @LogInput
+    override suspend fun notify(heartbeat: Heartbeat) {
+        if (heartbeat.state == Heartbeat.State.UNREGISTERED) {
+            factoriesByNodeId.remove(heartbeat.nodeId)?.activeScenarios?.forEach { scenarioId ->
+                factoriesByScenarios.computeIfPresent(scenarioId) { _, factories ->
+                    // Delete the factory from the set of factories supporting the scenario.
+                    factories.remove(heartbeat.nodeId)
+                    // If the set of factories is now empty, it is removed from the map.
+                    factories.takeIf(Collection<String>::isNotEmpty)
+                }
+            }
+        } else {
+            factoriesByNodeId[heartbeat.nodeId]?.healthState?.set(heartbeat)
+        }
     }
 
-    override suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<String>): Collection<Factory> {
-        return listOf(FACTORY)
+    @LogInputAndOutput
+    override suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<ScenarioId>): Collection<Factory> {
+        return scenarioIds.flatMap { scenarioId ->
+            factoriesByScenarios[scenarioId]
+                ?.mapNotNull { nodeId -> factoriesByNodeId[nodeId]?.takeIf(::isAvailableAndHealthy) } ?: emptyList()
+        }.distinctBy { it.nodeId }
     }
 
+    /**
+     * Verifies whether the factory is not already locked and sent a healthy heartbeat in the last [HEALTH_QUERY_INTERVAL].
+     */
+    private fun isAvailableAndHealthy(factory: LockableFactory): Boolean {
+        return !factory.locked.get()
+                && factory.healthState.get()
+            .run { (state == Heartbeat.State.HEALTHY || state == Heartbeat.State.REGISTERED) && timestamp >= Instant.now() - HEALTH_QUERY_INTERVAL }
+    }
+
+    @LogInput
     override suspend fun lockFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
-        // Nothing to do.
+        factories.forEach { nodeId -> factoriesByNodeId[nodeId]?.locked?.set(true) }
     }
 
+    @LogInput
     override suspend fun releaseFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
-        // Nothing to do.
+        factories.forEach { nodeId -> factoriesByNodeId[nodeId]?.locked?.set(false) }
     }
 
-    override suspend fun getActiveScenarios(ids: Collection<String>): Collection<ScenarioSummary> {
+    @LogInputAndOutput
+    override suspend fun getActiveScenarios(ids: Collection<ScenarioId>): Collection<ScenarioSummary> {
         return scenarioSummaryRepository.getAll(ids)
     }
 
-    private class MutableFactory(
-        nodeId: String,
-        override var version: Instant,
-        override var activeScenarios: Collection<String> = emptySet()
-    ) : Factory(nodeId, "", "")
-
-    companion object {
-
-        /**
-         * Name of the internal factory when
-         */
-        const val STANDALONE_FACTORY_NAME = "_embedded_"
-
-        private val FACTORY = MutableFactory(
-            nodeId = STANDALONE_FACTORY_NAME,
-            version = Instant.now()
+    /**
+     * Internal representation of a factory for the in-memory starage, that can be locked.
+     */
+    private class LockableFactory(
+        nodeId: NodeId,
+        registrationTimestamp: Instant,
+        unicastChannel: String,
+        version: Instant,
+        selectors: Map<String, String> = emptyMap(),
+        activeScenarios: Collection<String> = emptySet(),
+        val locked: AtomicBoolean = AtomicBoolean(false),
+        val healthState: AtomicReference<Heartbeat> = AtomicReference(
+            Heartbeat(nodeId, Instant.now(), Heartbeat.State.REGISTERED)
         )
+    ) : Factory(nodeId, registrationTimestamp, unicastChannel, version, selectors, activeScenarios)
+
+    private companion object {
+
+        val HEALTH_QUERY_INTERVAL = Duration.ofMinutes(2)
     }
 }

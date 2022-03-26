@@ -57,8 +57,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
                     nodeId = "the-node",
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             scenario = scenarioRepository.save(ScenarioEntity(factory.id, "test", 123))

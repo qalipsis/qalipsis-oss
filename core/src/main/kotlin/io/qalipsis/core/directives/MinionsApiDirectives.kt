@@ -14,9 +14,7 @@ import kotlinx.serialization.Serializable
 @SerialName("ma")
 data class MinionsAssignmentDirective(
     override val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
-    override val key: DirectiveKey,
-    override val channel: DispatcherChannel
+    val scenarioId: ScenarioId
 ) : DescriptiveDirective(), CampaignManagementDirective
 
 /**
@@ -35,10 +33,13 @@ data class MinionStartDefinition(val minionId: MinionId, val timestamp: Long)
 data class MinionsStartDirective(
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    val startDefinitions: List<MinionStartDefinition>,
-    override val key: DirectiveKey,
-    override val channel: DispatcherChannel
-) : DescriptiveDirective(), CampaignManagementDirective
+    val startDefinitions: List<MinionStartDefinition>
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override fun toString(): String {
+        return "MinionsStartDirective(campaignId='$campaignId', scenarioId='$scenarioId', startDefinitionsCount=${startDefinitions.size})"
+    }
+}
 
 /**
  * Directive to shutdown all the components of a minion.
@@ -49,6 +50,5 @@ data class MinionsShutdownDirective(
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
     val minionIds: List<MinionId>,
-    override val key: DirectiveKey,
     override val channel: DispatcherChannel
 ) : DescriptiveDirective(), CampaignManagementDirective

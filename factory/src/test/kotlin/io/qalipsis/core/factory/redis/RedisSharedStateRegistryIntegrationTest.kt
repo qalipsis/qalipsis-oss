@@ -4,30 +4,29 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.hasSize
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.states.SharedStateDefinition
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
-import java.time.Duration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 /**
  * @author Svetlana Paliashchuk
  */
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
 internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegrationTest() {
-
-    @Inject
-    private lateinit var redisCoroutinesCommands: RedisCoroutinesCommands<String, String>
 
     @Inject
     private lateinit var serializer: DistributionSerializer

@@ -10,31 +10,27 @@ import assertk.assertions.isTrue
 import assertk.assertions.key
 import assertk.assertions.prop
 import com.google.common.io.Files
-import io.aerisconsulting.catadioptre.coInvokeInvisible
-import io.mockk.coEvery
 import io.mockk.coJustRun
+import io.mockk.coVerifyOrder
 import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.impl.annotations.SpyK
 import io.mockk.justRun
 import io.mockk.slot
-import io.mockk.spyk
 import io.qalipsis.api.runtime.Scenario
-import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
-import io.qalipsis.core.directives.DirectiveConsumer
+import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.configuration.CommunicationChannelConfiguration
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.init.catadioptre.persistNodeIdIfDifferent
-import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
-import io.qalipsis.core.handshake.HandshakeFactoryChannel
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.handshake.RegistrationScenario
-import io.qalipsis.core.heartbeat.HeartbeatEmitter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.Job
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -48,21 +44,25 @@ internal class InitializationContextTest {
     private val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var handshakeFactoryChannel: HandshakeFactoryChannel
+    private lateinit var factoryConfiguration: FactoryConfiguration
 
     @RelaxedMockK
-    private lateinit var feedbackFactoryChannel: FeedbackFactoryChannel
+    private lateinit var communicationChannelConfiguration: CommunicationChannelConfiguration
 
     @RelaxedMockK
-    private lateinit var heartbeatEmitter: HeartbeatEmitter
+    private lateinit var factoryChannel: FactoryChannel
 
-    @RelaxedMockK
-    private lateinit var directiveConsumer: DirectiveConsumer
+    @InjectMockKs
+    @SpyK(recordPrivateCalls = true)
+    private lateinit var initializationContext: InitializationContext
 
     @Test
     @Timeout(3)
     internal fun `should publish handshake request for all scenarios`() = testDispatcherProvider.runTest {
         // given
+        every { factoryConfiguration.nodeId } returns "the-node-id"
+        every { factoryConfiguration.tags } returns mapOf("key1" to "value1", "key2" to "value2")
+        every { factoryConfiguration.handshake.responseChannel } returns "the-handshake-response-channel"
         val scenario1: Scenario = relaxedMockk {
             every { id } returns "scenario-1"
             every { minionsCount } returns 2
@@ -98,32 +98,18 @@ internal class InitializationContextTest {
             )
         }
         val request = slot<HandshakeRequest>()
-        coJustRun { handshakeFactoryChannel.send(capture(request)) }
-        val factoryConfiguration = FactoryConfiguration().apply {
-            nodeId = "the-node-id"
-            selectors = mapOf("key1" to "value1", "key2" to "value2")
-            handshakeResponseChannel = "the-handshake-response-channel"
-        }
-        val initializationContext = InitializationContext(
-            factoryConfiguration,
-            feedbackFactoryChannel,
-            directiveConsumer,
-            handshakeFactoryChannel,
-            heartbeatEmitter,
-            testDispatcherProvider.default(),
-            this
-        )
+        coJustRun { factoryChannel.publishHandshakeRequest(capture(request)) }
 
         // when
         initializationContext.startHandshake(listOf(scenario1, scenario2))
 
         // then
         coVerifyOnce {
-            handshakeFactoryChannel.send(any())
+            factoryChannel.publishHandshakeRequest(any())
         }
         assertThat(request.captured).all {
             prop(HandshakeRequest::nodeId).isEqualTo("the-node-id")
-            prop(HandshakeRequest::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+            prop(HandshakeRequest::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(HandshakeRequest::replyTo).isEqualTo("the-handshake-response-channel")
             prop(HandshakeRequest::scenarios).all {
                 hasSize(2)
@@ -181,109 +167,39 @@ internal class InitializationContextTest {
     }
 
     @Test
-    @Timeout(3)
-    internal fun `should consume and process the handshake response`() = testDispatcherProvider.run {
+    internal fun `should update the node ID`() = testDispatcherProvider.run {
         // given
-        val handshakeResponse = relaxedMockk<HandshakeResponse>()
-        val factoryConfiguration = FactoryConfiguration().apply {
-            nodeId = "the-node-id"
-            metadataPath = Files.createTempDir().path
-        }
-        val initializationContext = spyk(
-            InitializationContext(
-                factoryConfiguration,
-                feedbackFactoryChannel,
-                directiveConsumer,
-                handshakeFactoryChannel,
-                heartbeatEmitter,
-                testDispatcherProvider.default(),
-                this
-            ), recordPrivateCalls = true
-        )
-        val latch = Latch(true)
-        val consumerJob = relaxedMockk<Job>()
-        coEvery { initializationContext["configureFactoryAfterHandshake"](any<HandshakeResponse>()) } coAnswers { latch.release() }
-        coEvery { handshakeFactoryChannel.onReceiveResponse(any(), any()) } coAnswers {
-            secondArg<suspend (HandshakeResponse) -> Unit>().invoke(handshakeResponse)
-            consumerJob
-        }
-
-        // when
-        initializationContext.init()
-        latch.await()
-
-        // then
-        coVerifyOnce {
-            initializationContext["configureFactoryAfterHandshake"](refEq(handshakeResponse))
-        }
-
-        initializationContext.close()
-    }
-
-    @Test
-    internal fun `should update the node ID and start the consumers`() = testDispatcherProvider.run {
-        // given
-        val factoryConfiguration = FactoryConfiguration().apply {
-            nodeId = "the-node-id"
-            metadataPath = Files.createTempDir().path
-        }
+        every { factoryConfiguration.nodeId } returns "the-node-id"
+        every { factoryConfiguration.handshake.responseChannel } returns "the-response-channel"
         val handshakeResponse = HandshakeResponse(
             handshakeNodeId = "the-node-id",
             nodeId = "the-actual-node-id",
-            unicastDirectivesChannel = "the-unicast-directive",
-            broadcastDirectivesChannel = "the-broadcast-directive",
-            feedbackChannel = "the-feedback-directive",
-            heartbeatChannel = "the-heartbeat-directive",
-            heartbeatPeriod = Duration.ofMinutes(1),
-            unicastContextsChannel = "the-unicast-context",
-            broadcastContextsChannel = "the-broadcast-context"
-        )
-        val initializationContext = spyk(
-            InitializationContext(
-                factoryConfiguration,
-                feedbackFactoryChannel,
-                directiveConsumer,
-                handshakeFactoryChannel,
-                heartbeatEmitter,
-                testDispatcherProvider.default(),
-                this
-            ), recordPrivateCalls = true
+            unicastChannel = "the-actual-channel",
+            heartbeatChannel = "the-heartbeat-channel",
+            heartbeatPeriod = Duration.ofMinutes(1)
         )
         justRun { initializationContext["persistNodeIdIfDifferent"]("the-actual-node-id") }
 
         // when
-        initializationContext.coInvokeInvisible<Unit>("configureFactoryAfterHandshake", handshakeResponse)
+        initializationContext.notify(handshakeResponse)
 
         // then
-        assertThat(factoryConfiguration.nodeId).isEqualTo("the-actual-node-id")
-        coVerifyOnce {
+        coVerifyOrder {
             initializationContext["persistNodeIdIfDifferent"]("the-actual-node-id")
-            heartbeatEmitter.start("the-actual-node-id", "the-heartbeat-directive", Duration.ofMinutes(1))
-            feedbackFactoryChannel.start("the-feedback-directive")
-            directiveConsumer.start("the-unicast-directive", "the-broadcast-directive")
-            handshakeFactoryChannel.close()
+            factoryConfiguration setProperty "nodeId" value "the-actual-node-id"
+            communicationChannelConfiguration setProperty "unicastChannel" value "the-actual-channel"
+            factoryChannel.subscribeDirective("the-actual-channel")
+            factoryChannel.unsubscribeHandshakeResponse("the-response-channel")
         }
     }
 
     @Test
     internal fun `should not persist the ID in the file if it is the same`() = testDispatcherProvider.run {
         // given
+        every { factoryConfiguration.nodeId } returns "the-node-id"
         val directory = Files.createTempDir()
-        val factoryConfiguration = FactoryConfiguration().apply {
-            nodeId = "the-node-id"
-            metadataPath = directory.path
-        }
-        val initializationContext = spyk(
-            InitializationContext(
-                factoryConfiguration,
-                feedbackFactoryChannel,
-                directiveConsumer,
-                handshakeFactoryChannel,
-                heartbeatEmitter,
-                testDispatcherProvider.default(),
-                relaxedMockk()
-            ), recordPrivateCalls = true
-        )
+        every { factoryConfiguration.metadataPath } returns directory.path
+
         val idFileContent = """# This is the ID
 the-node-id""".trimIndent()
         val idFile = File(directory, FactoryConfiguration.NODE_ID_FILE_NAME)
@@ -300,20 +216,9 @@ the-node-id""".trimIndent()
     @Test
     internal fun `should persist the ID in the file if different`() = testDispatcherProvider.runTest {
         // given
+        every { factoryConfiguration.nodeId } returns "the-persisted-id"
         val directory = Files.createTempDir()
-        val factoryConfiguration = FactoryConfiguration().apply {
-            nodeId = "the-persisted-id"
-            metadataPath = directory.path
-        }
-        val initializationContext = InitializationContext(
-            factoryConfiguration,
-            feedbackFactoryChannel,
-            directiveConsumer,
-            handshakeFactoryChannel,
-            heartbeatEmitter,
-            testDispatcherProvider.default(),
-            relaxedMockk()
-        )
+        every { factoryConfiguration.metadataPath } returns directory.path
         val idFileContent = """
 # This is the ID
 the-persisted-id
@@ -332,20 +237,9 @@ the-persisted-id
     @Test
     internal fun `should persist the ID in the file if it does not exist`() = testDispatcherProvider.run {
         // given
+        every { factoryConfiguration.nodeId } returns "the-node-id"
         val directory = File(Files.createTempDir(), "metadata")
-        val factoryConfiguration = FactoryConfiguration().apply {
-            nodeId = "the-node-id"
-            metadataPath = directory.path
-        }
-        val initializationContext = InitializationContext(
-            factoryConfiguration,
-            feedbackFactoryChannel,
-            directiveConsumer,
-            handshakeFactoryChannel,
-            heartbeatEmitter,
-            testDispatcherProvider.default(),
-            relaxedMockk()
-        )
+        every { factoryConfiguration.metadataPath } returns directory.path
 
         // when
         initializationContext.persistNodeIdIfDifferent("the-actual-id")

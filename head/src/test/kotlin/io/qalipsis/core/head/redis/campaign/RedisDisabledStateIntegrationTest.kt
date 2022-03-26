@@ -7,10 +7,13 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.mockk.coEvery
+import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.core.directives.CompleteCampaignDirective
-import kotlinx.coroutines.flow.count
+import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 
 @ExperimentalLettuceCoroutinesApi
@@ -22,20 +25,22 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
     }
 
     @Test
-    internal fun `should return CompleteCampaignDirective with success on init`() =
+    internal fun `should return CompleteCampaignDirective with success on init and publish with all publishers despite error`() =
         testDispatcherProvider.run {
             // given
             operations.saveConfiguration(campaign)
             operations.setState(campaign.id, CampaignRedisState.COMPLETION_STATE)
             operations.prepareAssignmentsForFeedbackExpectations(campaign)
+            val report = relaxedMockk<CampaignReport>()
+            coEvery { campaignReportStateKeeper.report(any()) } returns report
+            coEvery { reportPublisher1.publish(any(), any()) } throws RuntimeException()
 
             // when
             every { campaign.message } returns "this is a message"
-            val directives = RedisDisabledState(campaign, true, operations).init(
-                factoryService,
-                campaignReportStateKeeper,
-                idGenerator
-            )
+            val directives = RedisDisabledState(campaign, true, operations).run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // then
             assertThat(directives).all {
@@ -45,29 +50,36 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                         "my-campaign",
                         true,
                         "this is a message",
-                        "the-directive-1",
                         "my-broadcast-channel"
                     )
                 )
             }
-            assertThat(redisCommands.keys("*").count()).isEqualTo(0)
-            confirmVerified(factoryService, campaignReportStateKeeper)
+            assertThat(connection.sync().keys("*").count()).isEqualTo(0)
+            coVerifyOrder {
+                headChannel.unsubscribeFeedback("my-feedback-channel")
+                campaignReportStateKeeper.report("my-campaign")
+                reportPublisher1.publish(refEq(campaign), refEq(report))
+                reportPublisher2.publish(refEq(campaign), refEq(report))
+                campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
+            }
+            confirmVerified(factoryService, campaignReportStateKeeper, campaignAutoStarter)
         }
 
     @Test
-    internal fun `should return CompleteCampaignDirective with failure on init`() =
+    internal fun `should return CompleteCampaignDirective with failure on init and publish`() =
         testDispatcherProvider.run {
             // given
             operations.saveConfiguration(campaign)
             operations.setState(campaign.id, CampaignRedisState.FAILURE_STATE)
             operations.prepareAssignmentsForFeedbackExpectations(campaign)
+            val report = relaxedMockk<CampaignReport>()
+            coEvery { campaignReportStateKeeper.report(any()) } returns report
             // when
             every { campaign.message } returns "this is a message"
-            val directives = RedisDisabledState(campaign, false, operations).init(
-                factoryService,
-                campaignReportStateKeeper,
-                idGenerator
-            )
+            val directives = RedisDisabledState(campaign, false, operations).run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // then
             assertThat(directives).all {
@@ -77,12 +89,18 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                         "my-campaign",
                         false,
                         "this is a message",
-                        "the-directive-1",
                         "my-broadcast-channel"
                     )
                 )
             }
-            assertThat(redisCommands.keys("*").count()).isEqualTo(0)
-            confirmVerified(factoryService, campaignReportStateKeeper)
+            coVerifyOrder {
+                headChannel.unsubscribeFeedback("my-feedback-channel")
+                campaignReportStateKeeper.report("my-campaign")
+                reportPublisher1.publish(refEq(campaign), refEq(report))
+                reportPublisher2.publish(refEq(campaign), refEq(report))
+                campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
+            }
+            assertThat(connection.sync().keys("*").count()).isEqualTo(0)
+            confirmVerified(factoryService, campaignReportStateKeeper, campaignAutoStarter)
         }
 }

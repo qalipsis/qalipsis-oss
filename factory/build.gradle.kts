@@ -64,7 +64,6 @@ dependencies {
     implementation("io.micronaut:micronaut-runtime")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
 
-    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
@@ -83,7 +82,6 @@ dependencies {
     testImplementation(testFixtures(project(":core")))
     testImplementation(project(":head"))
 
-    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }

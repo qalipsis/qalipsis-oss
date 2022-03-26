@@ -1,34 +1,30 @@
 package io.qalipsis.core.head.factory
 
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
-import io.qalipsis.core.head.campaign.CampaignConfiguration
+import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.NodeId
-import io.qalipsis.core.heartbeat.Heartbeat
 
 /**
  * Service to proceed with the factories data and states in the head.
  *
  * @author Eric Jessé
  */
-internal interface FactoryService {
+internal interface FactoryService : HeartbeatListener {
 
     /**
      * Registers a new factory and updates an existing one.
      */
-    suspend fun register(actualNodeId: String, handshakeRequest: HandshakeRequest)
-
-    /**
-     * Update the state of a factory considering the received [Heartbeat].
-     */
-    suspend fun updateHeartbeat(heartbeat: Heartbeat)
+    suspend fun register(actualNodeId: NodeId, handshakeRequest: HandshakeRequest, handshakeResponse: HandshakeResponse)
 
     /**
      * Returns all factories supporting the scenarios with the given identifiers.
      */
-    suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<String>): Collection<Factory>
+    suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<ScenarioId>): Collection<Factory>
 
     /**
      * Marks all the specified factories as busy and lock them for future use.
