@@ -1,11 +1,14 @@
 package io.qalipsis.api.sync
 
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.time.QalipsisTimeAssertions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 /**
@@ -13,8 +16,12 @@ import java.time.Instant
  */
 internal class LatchTest {
 
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
+
     @Test
-    internal fun `should block calls at start until release`() = runBlockingTest {
+    @Timeout(3)
+    internal fun `should block calls at start until release`() = testDispatcherProvider.run {
         // given
         val latch = Latch(true)
         Assertions.assertTrue(latch.isLocked)
@@ -30,7 +37,7 @@ internal class LatchTest {
         }
 
         // when
-        Thread.sleep(50)
+        delay(50)
         val now = Instant.now()
         latch.release()
         suspendedCountLatch.await()
@@ -41,7 +48,8 @@ internal class LatchTest {
     }
 
     @Test
-    internal fun `should not block calls at start until release`() = runBlockingTest {
+    @Timeout(3)
+    internal fun `should not block calls at start until release`() = testDispatcherProvider.run {
         // given
         val latch = Latch(false)
         Assertions.assertFalse(latch.isLocked)
@@ -57,7 +65,7 @@ internal class LatchTest {
         }
 
         // when
-        Thread.sleep(50)
+        delay(50)
         val now = Instant.now()
         latch.release()
         suspendedCountLatch.await()
@@ -68,7 +76,36 @@ internal class LatchTest {
     }
 
     @Test
-    internal fun `should lock and release and lock and release`() = runBlockingTest {
+    @Timeout(3)
+    internal fun `should not block calls at start until cancel`() = testDispatcherProvider.run {
+        // given
+        val latch = Latch(false)
+        Assertions.assertFalse(latch.isLocked)
+        val releaseTimes = concurrentSet<Instant>()
+        val suspendedCountLatch = SuspendedCountLatch(3)
+
+        repeat(3) {
+            launch {
+                latch.await()
+                releaseTimes.add(Instant.now())
+                suspendedCountLatch.decrement()
+            }
+        }
+
+        // when
+        delay(50)
+        val now = Instant.now()
+        latch.cancel()
+        suspendedCountLatch.await()
+
+        // then
+        Assertions.assertFalse(latch.isLocked)
+        releaseTimes.forEach { releaseTime -> QalipsisTimeAssertions.assertBefore(now, releaseTime) }
+    }
+
+    @Test
+    @Timeout(3)
+    internal fun `should lock and release and lock and release`() = testDispatcherProvider.run {
         // given
         val latch = Latch(false)
         val releaseTimes = concurrentSet<Instant>()
@@ -88,7 +125,7 @@ internal class LatchTest {
                 suspendedCountLatch.decrement()
             }
         }
-        Thread.sleep(50)
+        delay(50)
         var now = Instant.now()
         latch.release()
         suspendedCountLatch.await()
@@ -113,7 +150,7 @@ internal class LatchTest {
                 suspendedCountLatch.decrement()
             }
         }
-        Thread.sleep(50)
+        delay(50)
         now = Instant.now()
         latch.release()
         suspendedCountLatch.await()

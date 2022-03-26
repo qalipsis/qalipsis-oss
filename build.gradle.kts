@@ -129,13 +129,13 @@ allprojects {
 
         named<Test>("test") {
             ignoreFailures = System.getProperty("ignoreUnitTestFailures", "false").toBoolean()
-            this.exclude("**/*IntegrationTest.*", "**/*IntegrationTest$*")
+            exclude("**/*IntegrationTest*", "**/*IntegrationTest$*")
         }
 
         val integrationTest = register<Test>("integrationTest") {
             this.group = "verification"
             ignoreFailures = System.getProperty("ignoreIntegrationTestFailures", "false").toBoolean()
-            include("**/*IntegrationTest.*", "**/*IntegrationTest$*")
+            include("**/*IntegrationTest*", "**/*IntegrationTest$*")
         }
 
         named<Task>("check") {

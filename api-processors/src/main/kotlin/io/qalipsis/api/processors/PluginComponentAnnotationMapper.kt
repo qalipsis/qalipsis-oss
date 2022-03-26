@@ -8,7 +8,7 @@ import jakarta.inject.Singleton
 /**
  * Annotation mapper abstracting Micronaut from plugin implementation.
  */
-internal class PluginComponentAnnotationMapper : NamedAnnotationMapper {
+class PluginComponentAnnotationMapper : NamedAnnotationMapper {
 
     override fun getName(): String {
         return "io.qalipsis.api.annotations.PluginComponent"

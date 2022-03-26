@@ -8,7 +8,7 @@ import jakarta.inject.Singleton
 /**
  * Annotation mapper abstracting Micronaut from plugin implementation.
  */
-internal class StepDecoratorAnnotationMapper : NamedAnnotationMapper {
+class StepDecoratorAnnotationMapper : NamedAnnotationMapper {
 
     override fun getName(): String {
         return "io.qalipsis.api.annotations.StepDecorator"

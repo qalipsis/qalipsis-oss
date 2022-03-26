@@ -1,10 +1,5 @@
 package io.qalipsis.api.context
 
-/**
- *
- * @author Eric Jessé
- */
-
 typealias Identifier = String
 
 typealias MinionId = Identifier
@@ -20,3 +15,5 @@ typealias DirectedAcyclicGraphId = Identifier
 typealias SharedStateName = Identifier
 
 typealias CampaignId = Identifier
+
+typealias NodeId = String
