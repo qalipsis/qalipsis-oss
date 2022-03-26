@@ -1,9 +1,8 @@
 package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.context.NodeId
 import java.time.Instant
-
-typealias NodeId = String
 
 /**
  * Model of a factory able to execute scenarios.
@@ -15,7 +14,6 @@ internal open class Factory(
     val nodeId: NodeId,
     val registrationTimestamp: Instant,
     val unicastChannel: String,
-    val broadcastChannel: String,
     open val version: Instant,
     val selectors: Map<String, String> = emptyMap(),
     open val activeScenarios: Collection<String> = emptySet()
@@ -25,7 +23,6 @@ internal open class Factory(
         nodeId,
         Instant.now(),
         unicastChannel,
-        broadcastChannel,
         Instant.now()
     )
 

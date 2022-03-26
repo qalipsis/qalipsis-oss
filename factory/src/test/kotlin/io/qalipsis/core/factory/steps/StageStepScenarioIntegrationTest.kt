@@ -35,11 +35,12 @@ internal class StageStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(30)
     internal fun `should call all the steps of the stage several times`() {
         val exitCode = QalipsisTestRunner.withScenarios("stage-scenario-test")
             .withConfiguration(
-                "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
+                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "logging.level.io.qalipsis.core.head.campaign=TRACE",
                 "logging.level.io.qalipsis.core.factory.inmemory=TRACE"
             )
@@ -52,11 +53,12 @@ internal class StageStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(30)
     internal fun `should call all the steps of the stage several times even when there is no output from stage`() {
         val exitCode = QalipsisTestRunner.withScenarios("stage-scenario-test-without-output")
             .withConfiguration(
-                "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
+                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "logging.level.io.qalipsis.core.head.campaign=TRACE",
                 "logging.level.io.qalipsis.core.factory.inmemory=TRACE"
             )
@@ -69,17 +71,18 @@ internal class StageStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(20)
+    @Timeout(30)
     internal fun `should call all the steps of the stage several times until the failure`() {
         val exitCode = QalipsisTestRunner.withScenarios("stage-scenario-test-with-failure")
             .withConfiguration(
-                "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
+                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "logging.level.io.qalipsis.core.head.campaign=TRACE",
                 "logging.level.io.qalipsis.core.factory.inmemory=TRACE"
             )
             .execute()
 
-        assertThat(exitCode).isEqualTo(1)
+        assertThat(exitCode).isEqualTo(201)
         assertThat(StageStepScenario.capturedValues).all {
             hasSize(StageStepScenario.minionsNumber * 3) // The values are captured 2 in the same Stage: once before and once after the potentially failing step.
         }

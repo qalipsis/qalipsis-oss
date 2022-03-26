@@ -1,6 +1,8 @@
 package io.qalipsis.core.head.campaign
 
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -12,7 +14,10 @@ import jakarta.inject.Singleton
 import java.time.Instant
 
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requirements(
+    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
+    Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+)
 internal class PersistentCampaignService(
     private val campaignRepository: CampaignRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository

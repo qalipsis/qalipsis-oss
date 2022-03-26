@@ -15,9 +15,8 @@ import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.annotations.LogInput
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
-import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -28,14 +27,13 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Implementation of a [Scenario].
  */
-class ScenarioImpl(
+internal class ScenarioImpl(
     override val id: ScenarioId,
     override val rampUpStrategy: RampUpStrategy,
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
-    private val feedbackFactoryChannel: FeedbackFactoryChannel,
-    private val stepStartTimeout: Duration = Duration.ofSeconds(30),
-    private val factoryConfiguration: FactoryConfiguration
+    private val factoryChannel: FactoryChannel,
+    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepId, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
@@ -97,7 +95,7 @@ class ScenarioImpl(
                 status = FeedbackStatus.IN_PROGRESS
             ).also {
                 log.trace { "Sending feedback: $it" }
-                feedbackFactoryChannel.publish(it)
+                factoryChannel.publishFeedback(it)
             }
 
             val step = dag.rootStep.get()
@@ -118,7 +116,7 @@ class ScenarioImpl(
                     status = FeedbackStatus.COMPLETED
                 ).also {
                     log.trace { "Sending feedback: $it" }
-                    feedbackFactoryChannel.publish(it)
+                    factoryChannel.publishFeedback(it)
                 }
             } catch (e: Exception) {
                 CampaignStartedForDagFeedback(
@@ -129,7 +127,7 @@ class ScenarioImpl(
                     error = "The start of the DAG ${dag.id} failed: ${e.message}"
                 ).also {
                     log.trace { "Sending feedback: $it" }
-                    feedbackFactoryChannel.publish(it)
+                    factoryChannel.publishFeedback(it)
                 }
                 throw e
             }

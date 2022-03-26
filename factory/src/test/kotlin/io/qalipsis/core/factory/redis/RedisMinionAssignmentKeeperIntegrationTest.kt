@@ -11,15 +11,16 @@ import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.verify
 import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
@@ -28,7 +29,6 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
@@ -41,6 +41,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
 internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegrationTest() {
 
     @RegisterExtension
@@ -59,8 +60,8 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     fun localAssignmentStore() = localAssignmentStore
 
     @AfterAll
-    internal fun tearDownAll(redisCoroutinesCommands: RedisCoroutinesCommands<*, *>): Unit = runBlocking {
-        redisCoroutinesCommands.flushdb()
+    internal fun tearDownAll() {
+        connection.sync().flushdb()
     }
 
     @Test
@@ -186,6 +187,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
             val assignedFactory2Scenario2 = assignedFactory2Scenario2Job.await()
 
             // then
+            verify(exactly = 2) { localAssignmentStore.reset() }
 
             // Verifies that all the DAGs are assigned only once.
             val allAssignments = mutableMapOf<String, MutableSet<String>>()

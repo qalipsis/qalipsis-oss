@@ -9,7 +9,7 @@ import io.qalipsis.api.context.CampaignId
  */
 interface CampaignManagementFeedback {
     val campaignId: CampaignId
-    val nodeId: String
+    var nodeId: String
     val status: FeedbackStatus
     val error: String?
 }

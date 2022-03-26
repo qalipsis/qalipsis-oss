@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsDeclarationDirective
@@ -7,14 +8,13 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 
 internal open class MinionsAssignmentState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
 
     private val expectedFeedbacks =
         ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })
@@ -24,16 +24,15 @@ internal open class MinionsAssignmentState(
     override suspend fun doInit(): List<Directive> {
         return campaign.scenarios.map { (scenarioId, config) ->
             MinionsDeclarationDirective(
-                campaignId,
-                scenarioId,
-                config.minionsCount,
-                channel = campaign.broadcastChannel,
-                key = idGenerator.short()
+                campaignId = campaignId,
+                scenarioId = scenarioId,
+                minionsCount = config.minionsCount,
+                channel = campaign.broadcastChannel
             )
         }
     }
 
-    override suspend fun process(feedback: Feedback): CampaignExecutionState {
+    override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         if (feedback is MinionsDeclarationFeedback) {
             if (feedback.status == FeedbackStatus.FAILED) {
                 // The failure management is let to doProcess.
@@ -43,7 +42,7 @@ internal open class MinionsAssignmentState(
             if (feedback.status == FeedbackStatus.IGNORED) {
                 campaign.unassignScenarioOfFactory(feedback.scenarioId, feedback.nodeId)
                 if (feedback.nodeId !in campaign) {
-                    factoryService.releaseFactories(campaign, listOf(feedback.nodeId))
+                    context.factoryService.releaseFactories(campaign, listOf(feedback.nodeId))
                 }
             } else if (feedback.status == FeedbackStatus.FAILED) {
                 // The failure management is let to doProcess.
@@ -53,7 +52,7 @@ internal open class MinionsAssignmentState(
         return doTransition(feedback)
     }
 
-    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
             FailureState(campaign, feedback.error ?: "")
         } else if (feedback is MinionsAssignmentFeedback && feedback.status.isDone) {

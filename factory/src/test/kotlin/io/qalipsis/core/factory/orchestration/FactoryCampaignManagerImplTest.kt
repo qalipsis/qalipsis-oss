@@ -8,6 +8,7 @@ import assertk.assertions.isBetween
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isNotSameAs
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
 import assertk.assertions.prop
@@ -19,7 +20,6 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.rampup.MinionsStartingLine
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.rampup.RampUpStrategyIterator
@@ -27,12 +27,13 @@ import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.directives.MinionStartDefinition
+import io.qalipsis.core.factory.campaign.Campaign
+import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.catadioptre.runningCampaign
 import io.qalipsis.core.factory.orchestration.catadioptre.runningScenarios
-import io.qalipsis.core.factory.redis.RedisContextConsumer
+import io.qalipsis.core.factory.steps.ContextConsumer
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
-import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.rampup.RampUpConfiguration
 import io.qalipsis.test.assertk.typedProp
@@ -77,10 +78,7 @@ internal class FactoryCampaignManagerImplTest {
     private lateinit var minionAssignmentKeeper: MinionAssignmentKeeper
 
     @RelaxedMockK
-    private lateinit var feedbackFactoryChannel: FeedbackFactoryChannel
-
-    @RelaxedMockK
-    private lateinit var idGenerator: IdGenerator
+    private lateinit var factoryChannel: FactoryChannel
 
     @RelaxedMockK
     private lateinit var factoryConfiguration: FactoryConfiguration
@@ -89,11 +87,17 @@ internal class FactoryCampaignManagerImplTest {
     private lateinit var sharedStateRegistry: SharedStateRegistry
 
     @RelaxedMockK
-    private lateinit var contextConsumer: RedisContextConsumer
+    private lateinit var contextConsumer: ContextConsumer
+
+    @RelaxedMockK
+    private lateinit var campaign: Campaign
+
+    @RelaxedMockK
+    private lateinit var contextConsumerOptional: Optional<ContextConsumer>
 
     @BeforeEach
     internal fun setUp() {
-        every { factoryConfiguration.nodeId } returns "my-factory"
+        every { contextConsumerOptional.get() } returns contextConsumer
     }
 
     @Test
@@ -104,9 +108,13 @@ internal class FactoryCampaignManagerImplTest {
             every { scenarioRegistry.contains("scenario-1") } returns true
             every { scenarioRegistry.contains("scenario-2") } returns true
             every { scenarioRegistry.contains("scenario-3") } returns false
+            every { campaign.campaignId } returns "my-campaign"
+            every { campaign.assignedDagsByScenario } returns mapOf(
+                "scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk(), "scenario-3" to relaxedMockk()
+            )
 
             // when
-            factoryCampaignManager.initCampaign("my-campaign", listOf("scenario-1", "scenario-2", "scenario-3"))
+            factoryCampaignManager.init(campaign)
 
             // then
             verifyOnce {
@@ -116,15 +124,9 @@ internal class FactoryCampaignManagerImplTest {
             }
             assertThat(factoryCampaignManager).all {
                 typedProp<Set<*>>("runningScenarios").isEqualTo(mutableSetOf("scenario-1", "scenario-2"))
-                typedProp<String>("runningCampaign").isEqualTo("my-campaign")
+                typedProp<String>("runningCampaign").isSameAs(campaign)
             }
-            confirmVerified(
-                feedbackFactoryChannel,
-                minionAssignmentKeeper,
-                minionsKeeper,
-                scenarioRegistry,
-                feedbackFactoryChannel
-            )
+            confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
 
             // when + then
             assertThat(factoryCampaignManager.isLocallyExecuted("my-campaign", "scenario-1")).isTrue()
@@ -138,23 +140,24 @@ internal class FactoryCampaignManagerImplTest {
         meterRegistry,
         scenarioRegistry,
         minionAssignmentKeeper,
-        feedbackFactoryChannel,
-        idGenerator,
-        factoryConfiguration,
+        factoryChannel,
         sharedStateRegistry,
         Optional.of(contextConsumer),
-        this,
-        scenarioShutdownTimeout = Duration.ofMillis(1)
+        this
     )
 
     @Test
     internal fun `should ignore init the campaign when no scenario is known`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
+        every { campaign.campaignId } returns "my-campaign"
         every { scenarioRegistry.contains(any()) } returns false
+        every { campaign.assignedDagsByScenario } returns mapOf(
+            "scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk(), "scenario-3" to relaxedMockk()
+        )
 
         // when
-        factoryCampaignManager.initCampaign("my-campaign", listOf("scenario-1", "scenario-2", "scenario-3"))
+        factoryCampaignManager.init(campaign)
 
         // then
         verifyOnce {
@@ -164,15 +167,9 @@ internal class FactoryCampaignManagerImplTest {
         }
         assertThat(factoryCampaignManager).all {
             typedProp<Set<*>>("runningScenarios").isEmpty()
-            typedProp<String>("runningCampaign").isEmpty()
+            typedProp<String>("runningCampaign").isNotSameAs(campaign)
         }
-        confirmVerified(
-            feedbackFactoryChannel,
-            minionAssignmentKeeper,
-            minionsKeeper,
-            scenarioRegistry,
-            feedbackFactoryChannel
-        )
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
 
         // when + then
         assertThat(factoryCampaignManager.isLocallyExecuted("my-campaign", "scenario-1")).isFalse()
@@ -185,7 +182,8 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should warmup campaign successfully`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        factoryCampaignManager.runningCampaign("my-campaign")
+        every { campaign.campaignId } returns "my-campaign"
+        factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
         val scenario = relaxedMockk<Scenario>()
         every { scenarioRegistry["my-scenario"] } returns scenario
@@ -200,13 +198,7 @@ internal class FactoryCampaignManagerImplTest {
             minionsKeeper.startSingletons("my-scenario")
             contextConsumer.start()
         }
-        confirmVerified(
-            feedbackFactoryChannel,
-            minionAssignmentKeeper,
-            minionsKeeper,
-            scenarioRegistry,
-            feedbackFactoryChannel
-        )
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
     }
 
     @Test
@@ -214,47 +206,38 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
-            factoryCampaignManager.runningCampaign("my-other-campaign")
+            every { campaign.campaignId } returns "my-other-campaign"
+            factoryCampaignManager.runningCampaign(campaign)
             factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
 
             // when
             factoryCampaignManager.warmUpCampaignScenario("my-campaign", "my-scenario")
 
             // then
-            confirmVerified(
-                feedbackFactoryChannel,
-                minionAssignmentKeeper,
-                minionsKeeper,
-                scenarioRegistry,
-                feedbackFactoryChannel
-            )
+            confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
         }
 
     @Test
     internal fun `should ignore warmup campaign when the scenario is not running`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        factoryCampaignManager.runningCampaign("my-campaign")
+        every { campaign.campaignId } returns "my-campaign"
+        factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-other-scenario"))
 
         // when
         factoryCampaignManager.warmUpCampaignScenario("my-campaign", "my-scenario")
 
         // then
-        confirmVerified(
-            feedbackFactoryChannel,
-            minionAssignmentKeeper,
-            minionsKeeper,
-            scenarioRegistry,
-            feedbackFactoryChannel
-        )
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
     }
 
     @Test
     internal fun `should warmup campaign with failure`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        factoryCampaignManager.runningCampaign("my-campaign")
+        every { campaign.campaignId } returns "my-campaign"
+        factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
         val exception = RuntimeException()
         val scenario = relaxedMockk<Scenario> {
@@ -273,13 +256,7 @@ internal class FactoryCampaignManagerImplTest {
             scenarioRegistry["my-scenario"]
             scenario.start("my-campaign")
         }
-        confirmVerified(
-            feedbackFactoryChannel,
-            minionAssignmentKeeper,
-            minionsKeeper,
-            scenarioRegistry,
-            feedbackFactoryChannel
-        )
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
     }
 
     @Test
@@ -515,12 +492,12 @@ internal class FactoryCampaignManagerImplTest {
                 listOf("my-dag")
             )
         }
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
     @Timeout(1)
-    @Disabled("The emission of CompleteMinionFeedback are disabled until they can be grouped to reduce the load they generate")
+    @Disabled("The emission of CompleteMinionFeedback is disabled until they can be grouped to reduce the load they generate")
     internal fun `should mark the dag complete for the minion and notify the minion completion`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -534,8 +511,6 @@ internal class FactoryCampaignManagerImplTest {
             } returns CampaignCompletionState(minionComplete = true)
             factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
 
-            every { idGenerator.short() } returns "1"
-
             // when
             factoryCampaignManager.notifyCompleteMinion("my-minion", "my-campaign", "my-scenario", "my-dag")
 
@@ -548,7 +523,7 @@ internal class FactoryCampaignManagerImplTest {
                     listOf("my-dag")
                 )
             }
-            confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -565,7 +540,6 @@ internal class FactoryCampaignManagerImplTest {
                 )
             } returns CampaignCompletionState(minionComplete = true, scenarioComplete = true)
             factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
-            every { idGenerator.short() } returnsMany listOf("1", "2", "3")
 
             // when
             factoryCampaignManager.notifyCompleteMinion("my-minion", "my-campaign", "my-scenario", "my-dag")
@@ -578,17 +552,15 @@ internal class FactoryCampaignManagerImplTest {
                     "my-minion",
                     listOf("my-dag")
                 )
-                feedbackFactoryChannel.publish(
+                factoryChannel.publishFeedback(
                     EndOfCampaignScenarioFeedback(
-                        "1",
                         "my-campaign",
                         "my-scenario",
-                        "my-factory",
                         FeedbackStatus.COMPLETED
                     )
                 )
             }
-            confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -605,7 +577,6 @@ internal class FactoryCampaignManagerImplTest {
                 )
             } returns CampaignCompletionState(minionComplete = true, scenarioComplete = true, campaignComplete = true)
             factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
-            every { idGenerator.short() } returnsMany listOf("1", "2", "3")
 
             // when
             factoryCampaignManager.notifyCompleteMinion("my-minion", "my-campaign", "my-scenario", "my-dag")
@@ -618,17 +589,15 @@ internal class FactoryCampaignManagerImplTest {
                     "my-minion",
                     listOf("my-dag")
                 )
-                feedbackFactoryChannel.publish(
+                factoryChannel.publishFeedback(
                     EndOfCampaignScenarioFeedback(
-                        "1",
                         "my-campaign",
                         "my-scenario",
-                        "my-factory",
                         FeedbackStatus.COMPLETED
                     )
                 )
             }
-            confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -688,13 +657,11 @@ internal class FactoryCampaignManagerImplTest {
                 meterRegistry,
                 scenarioRegistry,
                 minionAssignmentKeeper,
-                feedbackFactoryChannel,
-                idGenerator,
-                factoryConfiguration,
+                factoryChannel,
                 sharedStateRegistry,
                 Optional.of(contextConsumer),
                 this,
-                minionShutdownTimeout = Duration.ofMillis(5)
+                minionGracefulShutdown = Duration.ofMillis(5)
             )
             val countLatch = SuspendedCountLatch(3)
             coEvery { minionsKeeper.shutdownMinion(any()) } coAnswers { countLatch.decrement() }
@@ -735,7 +702,7 @@ internal class FactoryCampaignManagerImplTest {
                 contextConsumer.stop()
                 scenario.stop("my-campaign")
             }
-            confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -754,7 +721,7 @@ internal class FactoryCampaignManagerImplTest {
             contextConsumer.stop()
             scenario.stop("my-campaign")
         }
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -769,13 +736,11 @@ internal class FactoryCampaignManagerImplTest {
             meterRegistry,
             scenarioRegistry,
             minionAssignmentKeeper,
-            feedbackFactoryChannel,
-            idGenerator,
-            factoryConfiguration,
+            factoryChannel,
             sharedStateRegistry,
             Optional.of(contextConsumer),
             this,
-            scenarioShutdownTimeout = Duration.ofMillis(1)
+            scenarioGracefulShutdown = Duration.ofMillis(1)
         )
 
         // when
@@ -788,7 +753,7 @@ internal class FactoryCampaignManagerImplTest {
             contextConsumer.stop()
             scenario.stop("my-campaign")
         }
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -804,9 +769,7 @@ internal class FactoryCampaignManagerImplTest {
             meterRegistry,
             scenarioRegistry,
             minionAssignmentKeeper,
-            feedbackFactoryChannel,
-            idGenerator,
-            factoryConfiguration,
+            factoryChannel,
             sharedStateRegistry,
             Optional.of(contextConsumer),
             this
@@ -823,7 +786,7 @@ internal class FactoryCampaignManagerImplTest {
             contextConsumer.stop()
             scenario.stop("my-campaign")
         }
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -836,7 +799,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
         // then
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -846,13 +809,14 @@ internal class FactoryCampaignManagerImplTest {
         val factoryCampaignManager = buildCampaignManager()
         val scenario1 = relaxedMockk<Scenario>()
         val scenario2 = relaxedMockk<Scenario>()
-        factoryCampaignManager.runningCampaign("my-campaign")
+        every { campaign.campaignId } returns "my-campaign"
+        factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario-1", "my-scenario-2"))
         every { scenarioRegistry["my-scenario-1"] } returns scenario1
         every { scenarioRegistry["my-scenario-2"] } returns scenario2
 
         // when
-        factoryCampaignManager.shutdownCampaign("my-campaign")
+        factoryCampaignManager.close(campaign)
 
         // then
         coVerifyOnce {
@@ -864,9 +828,9 @@ internal class FactoryCampaignManagerImplTest {
         }
         assertThat(factoryCampaignManager).all {
             typedProp<Set<*>>("runningScenarios").isEmpty()
-            typedProp<String>("runningCampaign").isEmpty()
+            typedProp<String>("runningCampaign").isNotSameAs(campaign)
         }
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper, sharedStateRegistry)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper, sharedStateRegistry)
     }
 
     @Test
@@ -874,14 +838,16 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should ignore to shutdown an unknown campaign`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        factoryCampaignManager.runningCampaign("my-other-campaign")
+        factoryCampaignManager.runningCampaign(campaign)
 
         // when
         assertDoesNotThrow {
-            factoryCampaignManager.shutdownCampaign("my-campaign")
+            factoryCampaignManager.close(relaxedMockk {
+                every { campaignId } returns "my-other-campaign"
+            })
         }
 
         // then
-        confirmVerified(feedbackFactoryChannel, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, minionAssignmentKeeper, minionsKeeper)
     }
 }

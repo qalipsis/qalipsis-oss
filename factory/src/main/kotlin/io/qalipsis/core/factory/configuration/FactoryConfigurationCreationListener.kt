@@ -1,9 +1,11 @@
 package io.qalipsis.core.factory.configuration
 
+import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.BeanCreatedEvent
 import io.micronaut.context.event.BeanCreatedEventListener
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 import java.io.File
 
@@ -11,6 +13,7 @@ import java.io.File
  * Implementation of [BeanCreatedEventListener] in order to complete the configuration from additional files.
  */
 @Singleton
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryConfigurationCreationListener(
     private val idGenerator: IdGenerator
 ) : BeanCreatedEventListener<FactoryConfiguration> {

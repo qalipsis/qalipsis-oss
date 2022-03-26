@@ -21,13 +21,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("ma")
 data class MinionsAssignmentFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 /**
  * Feedback to a [io.qalipsis.core.directives.MinionsStartDirective].
@@ -44,13 +46,15 @@ data class MinionsAssignmentFeedback(
 @Serializable
 @SerialName("ms")
 data class MinionsStartFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 /**
  * Notification sent from the factory to the head, when the execution of all the minions under load of a scenario
@@ -61,14 +65,16 @@ data class MinionsStartFeedback(
 @Serializable
 @SerialName("cmf")
 data class CompleteMinionFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
     val minionId: MinionId,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}
 
 /**
  * Feedback to a [io.qalipsis.core.directives.MinionsStartDirective].
@@ -86,11 +92,13 @@ data class CompleteMinionFeedback(
 @Serializable
 @SerialName("msd")
 data class MinionsShutdownFeedback(
-    override val key: FeedbackKey,
     override val campaignId: CampaignId,
     val scenarioId: ScenarioId,
     val minionIds: List<MinionId>,
-    override val nodeId: String,
     override val status: FeedbackStatus,
     override val error: String? = null
-) : Feedback(), CampaignManagementFeedback
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+}

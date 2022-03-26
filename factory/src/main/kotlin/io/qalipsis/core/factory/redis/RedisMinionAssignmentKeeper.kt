@@ -9,7 +9,11 @@ import io.lettuce.core.ScanArgs
 import io.lettuce.core.ScriptOutputType
 import io.lettuce.core.ValueScanCursor
 import io.lettuce.core.api.StatefulRedisConnection
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisScriptingCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.DirectedAcyclicGraphId
@@ -17,6 +21,8 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.factory.configuration.CommunicationChannelConfiguration
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
@@ -28,14 +34,21 @@ import kotlinx.coroutines.withTimeout
 
 @ExperimentalLettuceCoroutinesApi
 @Singleton
-@Requires(beans = [StatefulRedisConnection::class])
+@Requirements(
+    Requires(beans = [StatefulRedisConnection::class]),
+    Requires(env = [ExecutionEnvironments.FACTORY])
+)
 internal class RedisMinionAssignmentKeeper(
     private val factoryConfiguration: FactoryConfiguration,
-    private val redisCommands: RedisCoroutinesCommands<String, String>,
+    private val communicationChannelConfiguration: CommunicationChannelConfiguration,
+    private val redisScriptingCommands: RedisScriptingCoroutinesCommands<String, String>,
+    private val redisSetCommands: RedisSetCoroutinesCommands<String, String>,
+    private val redisHashCommands: RedisHashCoroutinesCommands<String, String>,
+    private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,
     private val localAssignmentStore: LocalAssignmentStore
 ) : MinionAssignmentKeeper {
 
-    val keysPrefix = RedisUtils.buildKeysPrefixForTenant(factoryConfiguration.tenant)
+    private val keysPrefix = RedisUtils.buildKeysPrefixForTenant(factoryConfiguration.tenant)
 
     /**
      * Script to register the minions.
@@ -99,9 +112,10 @@ internal class RedisMinionAssignmentKeeper(
         dagsByScenarios: Map<ScenarioId, Collection<DirectedAcyclicGraphId>>,
         factoryNodeId: String
     ) {
+        localAssignmentStore.reset()
         dagsByScenarios.forEach { (scenarioId, dagIds) ->
             val keyForFactoryAssignment = buildRedisKeyPrefix(campaignId, scenarioId) + factoryNodeId
-            redisCommands.sadd(keyForFactoryAssignment, *dagIds.toTypedArray())
+            redisSetCommands.sadd(keyForFactoryAssignment, *dagIds.toTypedArray())
         }
     }
 
@@ -135,7 +149,7 @@ internal class RedisMinionAssignmentKeeper(
 
         // Create the set with the minions to register.
         val minionsSet = scenarioRelatedKeyPrefix + Math.random()
-        redisCommands.sadd(minionsSet, *minionIds.toTypedArray())
+        redisSetCommands.sadd(minionsSet, *minionIds.toTypedArray())
 
         val unassignedMinionsSetKey = scenarioRelatedKeyPrefix + UNASSIGNED_MINIONS
         val underLoadMinionsSetKey = scenarioRelatedKeyPrefix + UNDERLOAD_MINIONS
@@ -159,6 +173,7 @@ internal class RedisMinionAssignmentKeeper(
      * Executes the script to complete the DAGS of a minion from the SHA key of the script.
      * If the SHA key is not valid, the script is first loaded into Redis before a new attempt.
      */
+    @Suppress("kotlin:S107")
     private suspend fun executeRegistration(
         minionsSetKey: String,
         unassignedMinionsSetKey: String,
@@ -171,7 +186,7 @@ internal class RedisMinionAssignmentKeeper(
         underLoad: Boolean
     ): Boolean {
         return try {
-            redisCommands.evalsha(
+            redisScriptingCommands.evalsha(
                 minionRegistrationScriptSha, ScriptOutputType.BOOLEAN,
                 arrayOf(
                     minionsSetKey,
@@ -184,7 +199,7 @@ internal class RedisMinionAssignmentKeeper(
                 scenarioId, dagIds.joinToString(separator = ","), underLoad.toString()
             )!!
         } catch (e: RedisNoScriptException) {
-            minionRegistrationScriptSha = redisCommands.scriptLoad(minionRegistrationScript)!!
+            minionRegistrationScriptSha = redisScriptingCommands.scriptLoad(minionRegistrationScript)!!
             log.debug { "Registration script was loaded with SHA $minionRegistrationScriptSha" }
             executeRegistration(
                 minionsSetKey,
@@ -208,8 +223,8 @@ internal class RedisMinionAssignmentKeeper(
         val minionsIds = mutableListOf<MinionId>()
         var scanResult: ValueScanCursor<String>? = null
         do {
-            scanResult = scanResult?.let { redisCommands.sscan(unassignedMinionsSetKey, it) }
-                ?: redisCommands.sscan(unassignedMinionsSetKey)
+            scanResult = scanResult?.let { redisSetCommands.sscan(unassignedMinionsSetKey, it) }
+                ?: redisSetCommands.sscan(unassignedMinionsSetKey)
 
             scanResult?.let { minionsIds += it.values }
         } while (scanResult?.isFinished != true)
@@ -219,14 +234,14 @@ internal class RedisMinionAssignmentKeeper(
     override suspend fun completeUnassignedMinionsRegistration(campaignId: CampaignId, scenarioId: ScenarioId) {
         // Updates the number active scenarios in the campaign.
         val countersHashKey = buildRedisKeyPrefix(campaignId) + CAMPAIGN_COUNTERS
-        redisCommands.hincrby(countersHashKey, SCENARIOS_COUNT_FIELD, 1)
+        redisHashCommands.hincrby(countersHashKey, SCENARIOS_COUNT_FIELD, 1)
     }
 
     @LogInputAndOutput
     override suspend fun assign(
         campaignId: CampaignId,
         scenarioId: ScenarioId
-    ) = assign(campaignId, scenarioId, factoryConfiguration.nodeId, factoryConfiguration.unicastContextsChannel)
+    ) = assign(campaignId, scenarioId, factoryConfiguration.nodeId, communicationChannelConfiguration.unicastChannel)
 
     /**
      * Factory-configurable version of [assign] for testing purpose.
@@ -268,7 +283,12 @@ internal class RedisMinionAssignmentKeeper(
                 } while (evaluatedMinionsCount > 0)
             }
         } finally {
-            redisCommands.unlink(keyForFactoryAssignment)
+            redisKeyCommands.unlink(keyForFactoryAssignment)
+        }
+        if (log.isDebugEnabled) {
+            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignId and scenario $scenarioId" }
+        } else if (log.isTraceEnabled) {
+            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignId and scenario $scenarioId (${assignments.size} minions assigned): $assignments" }
         }
 
         localAssignmentStore.save(scenarioId, assignments)
@@ -288,7 +308,7 @@ internal class RedisMinionAssignmentKeeper(
         keyPrefixForAssignedDags: String
     ): List<*> {
         return try {
-            redisCommands.evalsha(
+            redisScriptingCommands.evalsha(
                 minionAssignmentScriptSha, ScriptOutputType.MULTI,
                 arrayOf(keyPrefixForUnassignedMinions, keyForFactoryAssignment),
 
@@ -298,7 +318,7 @@ internal class RedisMinionAssignmentKeeper(
                 keyPrefixForAssignedDags
             )!!
         } catch (e: RedisNoScriptException) {
-            minionAssignmentScriptSha = redisCommands.scriptLoad(minionAssignmentScript)!!
+            minionAssignmentScriptSha = redisScriptingCommands.scriptLoad(minionAssignmentScript)!!
             log.debug { "Assignment script was loaded with SHA $minionAssignmentScriptSha" }
             executeAssignment(
                 keyPrefixForUnassignedMinions,
@@ -330,6 +350,8 @@ internal class RedisMinionAssignmentKeeper(
         if (state.campaignComplete) {
             cleanCampaignKeys(campaignId)
         }
+        log.trace { "$state" }
+        localAssignmentStore.reset()
         return state
     }
 
@@ -366,14 +388,14 @@ internal class RedisMinionAssignmentKeeper(
         dagsIds: Collection<DirectedAcyclicGraphId>
     ): List<*> {
         return try {
-            redisCommands.evalsha(
+            redisScriptingCommands.evalsha(
                 minionFetchFactoryChannelScriptSha, ScriptOutputType.MULTI,
                 arrayOf(keyPrefixForUnassignedMinions),
                 minionIds.joinToString(","),
                 dagsIds.joinToString(",")
             )!!
         } catch (e: RedisNoScriptException) {
-            minionFetchFactoryChannelScriptSha = redisCommands.scriptLoad(minionFetchFactoryChannelScript)!!
+            minionFetchFactoryChannelScriptSha = redisScriptingCommands.scriptLoad(minionFetchFactoryChannelScript)!!
             log.debug { "Factory channel fetching script was loaded with SHA $minionFetchFactoryChannelScriptSha" }
             executeFetchFactoryChannels(keyPrefixForUnassignedMinions, minionIds, dagsIds)
         }
@@ -387,13 +409,13 @@ internal class RedisMinionAssignmentKeeper(
         val scanArgs = ScanArgs().match(campaignKeysPattern)
         var scanResult: KeyScanCursor<String>? = null
         do {
-            scanResult = scanResult?.let { redisCommands.scan(it, scanArgs) }
-                ?: redisCommands.scan(scanArgs)
+            scanResult = scanResult?.let { redisKeyCommands.scan(it, scanArgs) }
+                ?: redisKeyCommands.scan(scanArgs)
 
             scanResult?.keys?.takeIf(List<String>::isNotEmpty)
                 ?.let {
                     log.trace { "Deleting the campaign keys $it" }
-                    redisCommands.unlink(*it.toTypedArray())
+                    redisKeyCommands.unlink(*it.toTypedArray())
                 }
         } while (scanResult?.isFinished != true)
     }
@@ -411,13 +433,13 @@ internal class RedisMinionAssignmentKeeper(
         dagIdsCount: Int
     ): List<*> {
         return try {
-            redisCommands.evalsha(
+            redisScriptingCommands.evalsha(
                 minionCompletionScriptSha, ScriptOutputType.MULTI,
                 arrayOf(singletonsHashKey, countersHashKey, keyForAssignedDags),
                 scenarioId, minionId, dagIdsCount.toString()
             )!!
         } catch (e: RedisNoScriptException) {
-            minionCompletionScriptSha = redisCommands.scriptLoad(minionCompletionScript)!!
+            minionCompletionScriptSha = redisScriptingCommands.scriptLoad(minionCompletionScript)!!
             log.debug { "Completion script was loaded with SHA $minionCompletionScriptSha" }
             executeCompletion(singletonsHashKey, countersHashKey, keyForAssignedDags, scenarioId, minionId, dagIdsCount)
         }

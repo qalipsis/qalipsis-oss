@@ -30,15 +30,13 @@ internal class InnerJoinStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should call execute the inner join scenario with singleton`() {
         val exitCode = QalipsisTestRunner.withScenarios("inner-join-scenario-test")
             .withConfiguration(
-                "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
+                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.core.factory.inmemory.InMemoryMinionAssignmentKeeper=TRACE",
-                "logging.level.io.qalipsis.core.factory.steps.topicrelatedsteps=TRACE",
-                "logging.level.io.qalipsis.core.inmemory.InMemoryFeedbackChannel=TRACE",
                 "logging.level.io.qalipsis.api.messaging=TRACE",
                 "logging.level.io.qalipsis.api.messaging.subscriptions=TRACE"
             )
@@ -50,15 +48,13 @@ internal class InnerJoinStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should call execute the inner join scenario with singleton when all records are discarded`() {
         val exitCode = QalipsisTestRunner.withScenarios("inner-join-scenario-test-without-output")
             .withConfiguration(
-                "logging.level.io.qalipsis.core.factory.orchestration=TRACE",
+                "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
+                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.core.factory.inmemory.InMemoryMinionAssignmentKeeper=TRACE",
-                "logging.level.io.qalipsis.core.factory.steps.topicrelatedsteps=TRACE",
-                "logging.level.io.qalipsis.core.inmemory.InMemoryFeedbackChannel=TRACE",
                 "logging.level.io.qalipsis.api.messaging=TRACE",
                 "logging.level.io.qalipsis.api.messaging.subscriptions=TRACE"
             )

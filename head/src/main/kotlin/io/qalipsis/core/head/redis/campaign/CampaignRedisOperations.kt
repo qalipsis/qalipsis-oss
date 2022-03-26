@@ -1,11 +1,13 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.core.head.campaign.CampaignConfiguration
-import io.qalipsis.core.head.model.NodeId
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.decodeFromString
@@ -15,11 +17,13 @@ import kotlinx.serialization.json.Json
 @ExperimentalLettuceCoroutinesApi
 @Singleton
 internal class CampaignRedisOperations(
-    private val redisCommands: RedisCoroutinesCommands<String, String>
+    private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,
+    private val redisSetCommands: RedisSetCoroutinesCommands<String, String>,
+    private val redisHashCommands: RedisHashCoroutinesCommands<String, String>
 ) {
 
     suspend fun saveConfiguration(campaign: CampaignConfiguration) {
-        redisCommands.hset(
+        redisHashCommands.hset(
             "campaign-management:{${campaign.id}}",
             mapOf("configuration" to Json.encodeToString(campaign))
         )
@@ -30,9 +34,9 @@ internal class CampaignRedisOperations(
      */
     suspend fun prepareFactoriesForFeedbackExpectations(campaign: CampaignConfiguration) {
         val key = buildExpectedFeedbackKey(campaign.id)
-        redisCommands.unlink(key)
+        redisKeyCommands.unlink(key)
         if (campaign.factories.isNotEmpty()) {
-            redisCommands.sadd(key, *campaign.factories.keys.toTypedArray())
+            redisSetCommands.sadd(key, *campaign.factories.keys.toTypedArray())
         }
     }
 
@@ -41,9 +45,9 @@ internal class CampaignRedisOperations(
      */
     suspend fun prepareScenariosForFeedbackExpectations(campaign: CampaignConfiguration) {
         val key = buildExpectedFeedbackKey(campaign.id)
-        redisCommands.unlink(key)
+        redisKeyCommands.unlink(key)
         if (campaign.scenarios.isNotEmpty()) {
-            redisCommands.sadd(key, *campaign.scenarios.keys.toTypedArray())
+            redisSetCommands.sadd(key, *campaign.scenarios.keys.toTypedArray())
         }
     }
 
@@ -54,9 +58,9 @@ internal class CampaignRedisOperations(
         prepareFactoriesForFeedbackExpectations(campaign)
         campaign.factories.forEach { (factory, config) ->
             val key = buildFactoryAssignmentFeedbackKey(campaign.id, factory)
-            redisCommands.unlink(key)
+            redisKeyCommands.unlink(key)
             if (config.assignment.isNotEmpty()) {
-                redisCommands.sadd(key, *config.assignment.keys.toTypedArray())
+                redisSetCommands.sadd(key, *config.assignment.keys.toTypedArray())
             }
         }
     }
@@ -68,7 +72,7 @@ internal class CampaignRedisOperations(
      */
     suspend fun markFeedbackForFactory(campaignId: CampaignId, factory: NodeId): Boolean {
         val feedbackKey = buildExpectedFeedbackKey(campaignId)
-        redisCommands.srem(feedbackKey, factory)
+        redisSetCommands.srem(feedbackKey, factory)
         return !exists(feedbackKey)
     }
 
@@ -79,7 +83,7 @@ internal class CampaignRedisOperations(
      */
     suspend fun markFeedbackForScenario(campaignId: CampaignId, scenarioId: ScenarioId): Boolean {
         val feedbackKey = buildExpectedFeedbackKey(campaignId)
-        redisCommands.srem(feedbackKey, scenarioId)
+        redisSetCommands.srem(feedbackKey, scenarioId)
         return !exists(feedbackKey)
     }
 
@@ -94,7 +98,7 @@ internal class CampaignRedisOperations(
         scenarioId: ScenarioId
     ): Boolean {
         val feedbackKey = buildFactoryAssignmentFeedbackKey(campaignId, factory)
-        redisCommands.srem(feedbackKey, scenarioId)
+        redisSetCommands.srem(feedbackKey, scenarioId)
         return if (!exists(feedbackKey)) {
             markFeedbackForFactory(campaignId, factory)
         } else {
@@ -106,7 +110,7 @@ internal class CampaignRedisOperations(
      * Updates the state of the campaign.
      */
     suspend fun setState(campaignId: CampaignId, state: CampaignRedisState) {
-        redisCommands.hset("campaign-management:{$campaignId}", mapOf("state" to "$state"))
+        redisHashCommands.hset("campaign-management:{$campaignId}", mapOf("state" to "$state"))
     }
 
     /**
@@ -114,7 +118,7 @@ internal class CampaignRedisOperations(
      */
     suspend fun getState(campaignId: CampaignId): Pair<CampaignConfiguration, CampaignRedisState>? {
         val campaignDetails = mutableMapOf<String, String>()
-        redisCommands.hgetall("campaign-management:{$campaignId}")
+        redisHashCommands.hgetall("campaign-management:{$campaignId}")
             .collect { campaignDetails[it.key] = it.value }
         val state = campaignDetails["state"]?.let { CampaignRedisState.valueOf(it) }
         val campaign = campaignDetails["configuration"]?.let { Json.decodeFromString<CampaignConfiguration>(it) }
@@ -125,10 +129,10 @@ internal class CampaignRedisOperations(
      * Cleans all the data used for the campaign.
      */
     suspend fun clean(campaign: CampaignConfiguration) {
-        redisCommands.unlink("campaign-management:{${campaign.id}}")
-        redisCommands.unlink(buildExpectedFeedbackKey(campaign.id))
+        redisKeyCommands.unlink("campaign-management:{${campaign.id}}")
+        redisKeyCommands.unlink(buildExpectedFeedbackKey(campaign.id))
         campaign.factories.keys.forEach { factory ->
-            redisCommands.unlink(buildFactoryAssignmentFeedbackKey(campaign.id, factory))
+            redisKeyCommands.unlink(buildFactoryAssignmentFeedbackKey(campaign.id, factory))
         }
     }
 
@@ -138,6 +142,6 @@ internal class CampaignRedisOperations(
         "campaign-management:{$campaignId}:factory:feedback:$factory"
 
     private suspend fun exists(key: String): Boolean {
-        return (redisCommands.exists(key) ?: 0L) > 0L
+        return (redisKeyCommands.exists(key) ?: 0L) > 0L
     }
 }

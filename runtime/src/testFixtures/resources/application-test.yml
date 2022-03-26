@@ -38,12 +38,14 @@ logging:
 
 campaign:
   id: campaign-${random.shortuuid}
+  required-factories: 1
   minions-count-per-scenario: 0
   minions-factor: 1.0
   speed-factor: 1.0
-  start-offset-ms: 500
-  scenarios: ""
+  start-offset: 500ms
 
-minion-shutdown-timeout: 500ms
-scenario-shutdown-timeout: 1s
-campaign-shutdown-timeout: 3s
+factory:
+  graceful-shutdown:
+    minion: 500ms
+    scenario: 1s
+    campaign: 3s

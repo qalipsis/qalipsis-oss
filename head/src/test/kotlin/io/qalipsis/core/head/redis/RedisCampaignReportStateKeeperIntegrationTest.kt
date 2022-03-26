@@ -12,7 +12,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.context.CampaignId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.context.StepId
@@ -21,17 +21,17 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
-import kotlinx.coroutines.flow.count
-import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD])
 internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisIntegrationTest() {
 
     @RegisterExtension
@@ -40,12 +40,9 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     @Inject
     private lateinit var registry: RedisCampaignReportStateKeeper
 
-    @Inject
-    private lateinit var redisCommands: RedisCoroutinesCommands<String, String>
-
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
-        redisCommands.flushdb()
+        connection.sync().flushdb()
     }
 
     @Test
@@ -246,17 +243,15 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
             initCampaignReportData("my-campaign-1")
             initCampaignReportData("my-campaign-2")
 
-            println(redisCommands.keys("my-campaign-1*").toList(mutableListOf()))
-
-            assertThat(redisCommands.keys("my-campaign-1*").count()).isEqualTo(8)
-            assertThat(redisCommands.keys("my-campaign-2*").count()).isEqualTo(8)
+            assertThat(connection.sync().keys("my-campaign-1*").count()).isEqualTo(8)
+            assertThat(connection.sync().keys("my-campaign-2*").count()).isEqualTo(8)
 
             // when
             registry.clear("my-campaign-2")
 
             // then
-            assertThat(redisCommands.keys("my-campaign-1*").count()).isEqualTo(8)
-            assertThat(redisCommands.keys("my-campaign-2*").count()).isEqualTo(0)
+            assertThat(connection.sync().keys("my-campaign-1*").count()).isEqualTo(8)
+            assertThat(connection.sync().keys("my-campaign-2*").count()).isEqualTo(0)
         }
 
     private suspend fun initCampaignReportData(campaign: String) {
@@ -302,16 +297,16 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         val key = "$campaignId-report:$scenarioId"
         val field = "${stepId}/${messageId}"
         val value = "${severity}/${message.trim()}"
-        redisCommands.hset(key, field, value)
+        connection.sync().hset(key, field, value)
     }
 
     private suspend fun setMinionsCounts(campaignId: CampaignId, scenarioId: ScenarioId, started: Int, completed: Int) {
         val key = "$campaignId-report:$scenarioId"
         if (started > 0) {
-            redisCommands.hset(key, "__started-minions", started.toString())
+            connection.sync().hset(key, "__started-minions", started.toString())
         }
         if (completed > 0) {
-            redisCommands.hset(key, "__completed-minions", completed.toString())
+            connection.sync().hset(key, "__completed-minions", completed.toString())
         }
     }
 
@@ -323,14 +318,14 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         failed: Int
     ) {
         if (successful > 0) {
-            redisCommands.hset(
+            connection.sync().hset(
                 "$campaignId-report:$scenarioId:successful-step-executions",
                 stepId,
                 successful.toString()
             )
         }
         if (failed > 0) {
-            redisCommands.hset("$campaignId-report:$scenarioId:failed-step-executions", stepId, failed.toString())
+            connection.sync().hset("$campaignId-report:$scenarioId:failed-step-executions", stepId, failed.toString())
         }
     }
 }

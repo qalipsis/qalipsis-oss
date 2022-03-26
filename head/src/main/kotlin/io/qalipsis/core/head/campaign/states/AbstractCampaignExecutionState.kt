@@ -1,40 +1,29 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
-import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 
 /**
  * Parent class of all implementations of [CampaignExecutionState].
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractCampaignExecutionState(
+internal abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
     override val campaignId: CampaignId
-) : CampaignExecutionState {
+) : CampaignExecutionState<C> {
 
     var initialized: Boolean = false
 
-    protected lateinit var factoryService: FactoryService
-
-    protected lateinit var idGenerator: IdGenerator
-
-    protected lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
+    protected lateinit var context: C
 
     override val isCompleted: Boolean = false
 
-    override suspend fun init(
-        factoryService: FactoryService,
-        campaignReportStateKeeper: CampaignReportStateKeeper,
-        idGenerator: IdGenerator
-    ): List<Directive> {
-        this.factoryService = factoryService
-        this.campaignReportStateKeeper = campaignReportStateKeeper
-        this.idGenerator = idGenerator
+    override fun inject(context: C) {
+        this.context = context
+    }
 
+    override suspend fun init(): List<Directive> {
         return if (!initialized) {
             val directives = doInit()
             initialized = true
@@ -46,19 +35,11 @@ internal abstract class AbstractCampaignExecutionState(
 
     protected open suspend fun doInit(): List<Directive> = emptyList()
 
-    override suspend fun process(directive: Directive): CampaignExecutionState {
-        return doTransition(directive)
-    }
-
-    protected open suspend fun doTransition(directive: Directive): CampaignExecutionState {
-        return this
-    }
-
-    override suspend fun process(feedback: Feedback): CampaignExecutionState {
+    override suspend fun process(feedback: Feedback): CampaignExecutionState<C> {
         return doTransition(feedback)
     }
 
-    protected open suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    protected open suspend fun doTransition(feedback: Feedback): CampaignExecutionState<C> {
         return this
     }
 

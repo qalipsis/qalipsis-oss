@@ -40,7 +40,7 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
         )
 
     private val factoryPrototype =
-        FactoryEntity("the-node-id", Instant.now(), "the-registration-node-id", "unicast-channel", "broadcast-channel")
+        FactoryEntity("the-node-id", Instant.now(), "the-registration-node-id", "unicast-channel")
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {

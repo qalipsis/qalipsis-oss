@@ -23,14 +23,29 @@ object ExecutionEnvironments {
     const val STANDALONE = "standalone"
 
     /**
-     * Starts an instance of factory that does not distribute the execution with other ones.
+     * Enables a factory when it is unique in the cluster.
      */
     const val SINGLE_FACTORY = "single-factory"
+
+    /**
+     * Enables a head when it is unique in the cluster.
+     */
+    const val SINGLE_HEAD = "single-head"
 
     /**
      * Enables the integration with Redis to support data caching and messaging.
      */
     const val REDIS = "redis"
+
+    /**
+     * Enables the integration with PostgreSQL to support data persistence.
+     */
+    const val POSTGRESQL = "pgsql"
+
+    /**
+     * Enables the default configuration for a head.
+     */
+    const val HEAD = "head"
 
     /**
      * Enables the default configuration for a factory.

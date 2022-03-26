@@ -16,12 +16,11 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.core.directives.Directive
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -59,7 +58,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
         val state = RedisFactoryAssignmentState(campaign, operations)
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).all {
@@ -69,12 +71,12 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                     "my-campaign", mapOf(
                         "scenario-1" to listOf("dag-1", "dag-2"),
                         "scenario-2" to listOf("dag-A", "dag-B")
-                    ), "the-directive-1", "unicast-channel-1"
+                    ), "my-broadcast-channel", "my-feedback-channel", "unicast-channel-1"
                 ),
                 FactoryAssignmentDirective(
                     "my-campaign", mapOf(
                         "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
-                    ), "the-directive-2", "unicast-channel-2"
+                    ), "my-broadcast-channel", "my-feedback-channel", "unicast-channel-2"
                 )
             )
         }
@@ -89,7 +91,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
         val state = RedisFactoryAssignmentState(campaign, operations)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
         val feedback = mockk<FactoryAssignmentFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
@@ -112,7 +117,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
         testDispatcherProvider.run {
             // given
             val state = RedisFactoryAssignmentState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<FactoryAssignmentFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -135,25 +143,13 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
         testDispatcherProvider.run {
             // given
             val state = RedisFactoryAssignmentState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
-
-            // then
-            assertThat(newState).isSameAs(state)
-            confirmVerified(factoryService, campaignReportStateKeeper)
-        }
-
-    @Test
-    internal fun `should return itself in case of any unsupported directive`() =
-        testDispatcherProvider.run {
-            // given
-            val state = RedisFactoryAssignmentState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
-
-            // when
-            val newState = state.process(mockk<Directive>())
 
             // then
             assertThat(newState).isSameAs(state)
@@ -169,7 +165,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                 "node-2" to relaxedMockk()
             )
             var state = RedisFactoryAssignmentState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<FactoryAssignmentFeedback> {
@@ -187,7 +186,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             // when
             state = RedisFactoryAssignmentState(campaign, operations)
             state.initialized = true
-            assertThat(state.init(factoryService, campaignReportStateKeeper, idGenerator)).isEmpty()
+            assertThat(state.run {
+                inject(campaignExecutionContext)
+                init()
+            }).isEmpty()
             newState = state.process(mockk<FactoryAssignmentFeedback> {
                 every { nodeId } returns "node-2"
                 every { status } returns FeedbackStatus.COMPLETED

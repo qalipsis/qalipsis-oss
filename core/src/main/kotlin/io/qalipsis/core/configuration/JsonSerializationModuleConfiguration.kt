@@ -1,6 +1,6 @@
 package io.qalipsis.core.configuration
 
-import io.micronaut.context.annotation.Context
+import io.micronaut.context.annotation.Factory
 import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
@@ -10,8 +10,8 @@ import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.DescriptiveDirective
 import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.directives.DirectiveReference
 import io.qalipsis.core.directives.FactoryAssignmentDirective
+import io.qalipsis.core.directives.FactoryShutdownDirective
 import io.qalipsis.core.directives.MinionsAssignmentDirective
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.directives.MinionsDeclarationDirectiveReference
@@ -31,7 +31,6 @@ import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
-import io.qalipsis.core.feedbacks.FeedbackJsonModule
 import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
@@ -43,7 +42,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.SerializersModuleBuilder
-import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
 
 /**
@@ -56,7 +54,7 @@ import kotlinx.serialization.modules.polymorphic
  *
  * @author Gabriel Moraes
  */
-@Context
+@Factory
 @Requirements(
     Requires(notEnv = [ExecutionEnvironments.STANDALONE]),
     Requires(missingBeans = [JsonSerializationModuleConfiguration::class])
@@ -67,15 +65,13 @@ open class JsonSerializationModuleConfiguration {
     @Singleton
     @Primary
     fun json() = Json(from = Serializers.json) {
-        serializersModule = serializersModuleConfiguration + FeedbackJsonModule.serializersModule
-    }
-
-    private val serializersModuleConfiguration = SerializersModule {
-        feedbacksSerializer(this)
-        factoryApiDirectives(this)
-        minionApiDirectives(this)
-        minionHeadDelegationApiDirectives(this)
-        configure(this)
+        serializersModule = SerializersModule {
+            factoryApiDirectives(this)
+            minionApiDirectives(this)
+            minionHeadDelegationApiDirectives(this)
+            feedbacksSerializer(this)
+            configure(this)
+        }
     }
 
     /**
@@ -84,27 +80,6 @@ open class JsonSerializationModuleConfiguration {
     protected open fun configure(builderAction: SerializersModuleBuilder): SerializersModuleBuilder =
         builderAction
 
-    private fun feedbacksSerializer(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
-            polymorphic(Feedback::class) {
-                subclass(CampaignStartedForDagFeedback::class, CampaignStartedForDagFeedback.serializer())
-                subclass(FactoryAssignmentFeedback::class, FactoryAssignmentFeedback.serializer())
-                subclass(ScenarioWarmUpFeedback::class, ScenarioWarmUpFeedback.serializer())
-                subclass(EndOfCampaignScenarioFeedback::class, EndOfCampaignScenarioFeedback.serializer())
-                subclass(EndOfCampaignFeedback::class, EndOfCampaignFeedback.serializer())
-                subclass(CampaignScenarioShutdownFeedback::class, CampaignScenarioShutdownFeedback.serializer())
-                subclass(CampaignShutdownFeedback::class, CampaignShutdownFeedback.serializer())
-                subclass(MinionsAssignmentFeedback::class, MinionsAssignmentFeedback.serializer())
-                subclass(MinionsStartFeedback::class, MinionsStartFeedback.serializer())
-                subclass(CompleteMinionFeedback::class, CompleteMinionFeedback.serializer())
-                subclass(MinionsShutdownFeedback::class, MinionsShutdownFeedback.serializer())
-                subclass(MinionsDeclarationFeedback::class, MinionsDeclarationFeedback.serializer())
-                subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
-                subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
-            }
-        }
-    }
-
     private fun factoryApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
         return builderAction.apply {
             polymorphic(Directive::class) {
@@ -112,14 +87,17 @@ open class JsonSerializationModuleConfiguration {
                 subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
                 subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
                 subclass(CampaignScenarioShutdownDirective::class, CampaignScenarioShutdownDirective.serializer())
+                subclass(CompleteCampaignDirective::class, CompleteCampaignDirective.serializer())
+                subclass(FactoryShutdownDirective::class, FactoryShutdownDirective.serializer())
             }
 
             polymorphic(DescriptiveDirective::class) {
-                subclass(FactoryAssignmentDirective::class, FactoryAssignmentDirective.serializer())
-                subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
-                subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
                 subclass(CampaignScenarioShutdownDirective::class, CampaignScenarioShutdownDirective.serializer())
+                subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
+                subclass(FactoryAssignmentDirective::class, FactoryAssignmentDirective.serializer())
+                subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
                 subclass(CompleteCampaignDirective::class, CompleteCampaignDirective.serializer())
+                subclass(FactoryShutdownDirective::class, FactoryShutdownDirective.serializer())
             }
         }
     }
@@ -158,14 +136,6 @@ open class JsonSerializationModuleConfiguration {
                 )
             }
 
-            polymorphic(DirectiveReference::class) {
-                subclass(MinionsDeclarationDirectiveReference::class, MinionsDeclarationDirectiveReference.serializer())
-                subclass(
-                    MinionsRampUpPreparationDirectiveReference::class,
-                    MinionsRampUpPreparationDirectiveReference.serializer()
-                )
-            }
-
             polymorphic(SingleUseDirective::class) {
                 subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
                 subclass(MinionsRampUpPreparationDirective::class, MinionsRampUpPreparationDirective.serializer())
@@ -179,6 +149,27 @@ open class JsonSerializationModuleConfiguration {
                 )
             }
         }
-
     }
+
+    private fun feedbacksSerializer(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
+        return builderAction.apply {
+            polymorphic(Feedback::class) {
+                subclass(CampaignStartedForDagFeedback::class, CampaignStartedForDagFeedback.serializer())
+                subclass(FactoryAssignmentFeedback::class, FactoryAssignmentFeedback.serializer())
+                subclass(ScenarioWarmUpFeedback::class, ScenarioWarmUpFeedback.serializer())
+                subclass(EndOfCampaignScenarioFeedback::class, EndOfCampaignScenarioFeedback.serializer())
+                subclass(EndOfCampaignFeedback::class, EndOfCampaignFeedback.serializer())
+                subclass(CampaignScenarioShutdownFeedback::class, CampaignScenarioShutdownFeedback.serializer())
+                subclass(CampaignShutdownFeedback::class, CampaignShutdownFeedback.serializer())
+                subclass(MinionsAssignmentFeedback::class, MinionsAssignmentFeedback.serializer())
+                subclass(MinionsStartFeedback::class, MinionsStartFeedback.serializer())
+                subclass(CompleteMinionFeedback::class, CompleteMinionFeedback.serializer())
+                subclass(MinionsShutdownFeedback::class, MinionsShutdownFeedback.serializer())
+                subclass(MinionsDeclarationFeedback::class, MinionsDeclarationFeedback.serializer())
+                subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
+                subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
+            }
+        }
+    }
+
 }

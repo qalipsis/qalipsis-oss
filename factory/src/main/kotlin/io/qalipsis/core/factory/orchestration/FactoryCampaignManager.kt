@@ -6,18 +6,13 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioId
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.directives.MinionStartDefinition
+import io.qalipsis.core.factory.campaign.Campaign
+import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.rampup.RampUpConfiguration
 
-internal interface FactoryCampaignManager {
+internal interface FactoryCampaignManager : CampaignLifeCycleAware {
 
-    val feedbackNodeId: String
-
-    val runningCampaign: String
-
-    /**
-     * Initializes the state for the start of a new campaign.
-     */
-    suspend fun initCampaign(campaignId: CampaignId, scenariosIds: Collection<ScenarioId>)
+    val runningCampaign: Campaign
 
     /**
      * Verifies whether the campaign is locally executed.
@@ -60,8 +55,4 @@ internal interface FactoryCampaignManager {
      */
     suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId)
 
-    /**
-     * Stops all the steps for a campaign and the related singleton minions.
-     */
-    suspend fun shutdownCampaign(campaignId: CampaignId)
 }

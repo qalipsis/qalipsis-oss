@@ -7,38 +7,30 @@ package io.qalipsis.core.directives
  */
 interface DirectiveRegistry {
 
+    suspend fun prepareBeforeSend(channel: DispatcherChannel, directive: Directive): Directive {
+        return if (directive is SingleUseDirective<*>) {
+            save(channel, directive)
+        } else {
+            directive
+        }
+    }
+
+    suspend fun prepareAfterReceived(directive: Directive): Directive? {
+        return if (directive is SingleUseDirectiveReference) {
+            get(directive)
+        } else {
+            directive
+        }
+    }
+
     /**
      * Persist a [Directive] into the registry.
      */
-    suspend fun save(key: DirectiveKey, directive: Directive)
+    suspend fun save(channel: DispatcherChannel, directive: SingleUseDirective<*>): SingleUseDirectiveReference
 
     /**
-     * Keeps a [Directive] into the registry for later use with [get] and [remove].
+     * Fetches and deletes the value of the [SingleUseDirective] if it was not yet read.
      */
-    suspend fun keep(directive: Directive)
+    suspend fun <T : SingleUseDirectiveReference> get(reference: T): Directive?
 
-    /**
-     * Pop first value from a [QueueDirective].
-     */
-    suspend fun <T> pop(reference: QueueDirectiveReference<T>): T?
-
-    /**
-     * Return the full set of records from a [ListDirective].
-     */
-    suspend fun <T> list(reference: ListDirectiveReference<T>): List<T>
-
-    /**
-     * Deletes and returns the value of the [SingleUseDirective] if it was not yet read.
-     */
-    suspend fun <T> read(reference: SingleUseDirectiveReference<T>): T?
-
-    /**
-     * Gets a non reference directive that was previously saved.
-     */
-    suspend fun get(key: DirectiveKey): Directive?
-
-    /**
-     * Removes a non reference directive that was previously saved.
-     */
-    suspend fun remove(key: DirectiveKey)
 }

@@ -17,6 +17,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
@@ -29,7 +30,6 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -52,7 +52,10 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         operations.saveConfiguration(campaign)
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).isSameAs(initDirectives)
@@ -73,7 +76,10 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
             operations.saveConfiguration(campaign)
 
             // when
-            val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            val directives = state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // then
             assertThat(directives).isSameAs(initDirectives)
@@ -85,7 +91,10 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
         val state = RedisRunningState(campaign, operations)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // when
         var newState = state.process(mockk<MinionsDeclarationFeedback> {
@@ -147,7 +156,10 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         testDispatcherProvider.run {
             // given
             val state = RedisRunningState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<MinionsStartFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -170,25 +182,13 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         testDispatcherProvider.run {
             // given
             val state = RedisRunningState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
-
-            // then
-            assertThat(newState).isSameAs(state)
-            confirmVerified(factoryService, campaignReportStateKeeper)
-        }
-
-    @Test
-    internal fun `should return itself in case of any unsupported directive`() =
-        testDispatcherProvider.run {
-            // given
-            val state = RedisRunningState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
-
-            // when
-            val newState = state.process(mockk<Directive>())
 
             // then
             assertThat(newState).isSameAs(state)
@@ -200,7 +200,10 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         testDispatcherProvider.run {
             // given
             val state = RedisRunningState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<CompleteMinionFeedback> {
@@ -221,7 +224,6 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
                             "my-campaign",
                             "the scenario",
                             listOf("the minion"),
-                            "the-directive-1",
                             "my-broadcast-channel"
                         )
                     )
@@ -235,7 +237,10 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         testDispatcherProvider.run {
             // given
             val state = RedisRunningState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<EndOfCampaignScenarioFeedback> {
@@ -255,7 +260,6 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
                         CampaignScenarioShutdownDirective(
                             "my-campaign",
                             "the scenario",
-                            "the-directive-1",
                             "my-broadcast-channel"
                         )
                     )
@@ -269,9 +273,15 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
     internal fun `should return a new RedisCompletionState when all the scenarios are complete`() =
         testDispatcherProvider.run {
             // given
-            every { campaign.scenarios } returns mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+            every { campaign.scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk(),
+                "scenario-2" to relaxedMockk()
+            )
             val state = RedisRunningState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<CampaignScenarioShutdownFeedback> {

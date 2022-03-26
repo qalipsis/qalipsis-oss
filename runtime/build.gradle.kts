@@ -28,12 +28,16 @@ allOpen {
     )
 }
 
+val testContainersVersion: String by project
 val micronautVersion: String by project
+val mockkVersion: String by project
+val catadioptreVersion: String by project
+val awaitilityVersion: String by project
 
 dependencies {
     compileOnly(kotlin("stdlib"))
 
-    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    compileOnly(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
 
     api("io.qalipsis:api-common:${project.version}")
@@ -43,7 +47,7 @@ dependencies {
     compileOnly(project(":factory"))
     compileOnly(project(":head"))
 
-    api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    api(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     api("ch.qos.logback:logback-classic")
     api("info.picocli:picocli")
     api("io.micronaut.picocli:micronaut-picocli")
@@ -51,25 +55,29 @@ dependencies {
     api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("io.micronaut:micronaut-management")
     api("io.micronaut:micronaut-validation")
-    api("io.micronaut:micronaut-http-server-netty")
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
 
-    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kapt(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
     testFixturesCompileOnly(kotlin("stdlib"))
+    testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin:$catadioptreVersion")
 
-    testRuntimeOnly(project(":head"))
-    testRuntimeOnly(project(":factory"))
+    testImplementation(project(":head"))
+    testImplementation(project(":factory"))
+    testImplementation(testFixtures(project(":core")))
+    testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
+    testImplementation("org.testcontainers:postgresql:$testContainersVersion")
+    testImplementation("org.awaitility:awaitility-kotlin:$awaitilityVersion")
 
-    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }

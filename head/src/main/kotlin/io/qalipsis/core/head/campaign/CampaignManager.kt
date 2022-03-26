@@ -1,5 +1,7 @@
 package io.qalipsis.core.head.campaign
 
+import io.qalipsis.api.campaign.CampaignConfiguration
+
 
 /**
  * Component to manage the execution of campaigns.

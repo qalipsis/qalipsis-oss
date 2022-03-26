@@ -1,13 +1,27 @@
 # Configuration of the local factory
 factory:
   node-id: ""
-  selectors: ""
+  tags:
   metadata-path: "./metadata"
-  handshake-request-channel: handshake-request
-  handshake-response-channel: handshake-response
+
+  handshake:
+    request-channel: handshake-request
+    response-channel: handshake-response
+    timeout: 30s
+
   cache:
-    ttl: PT1M
+    ttl: 60s
     key-prefix: "shared-state-registry"
-minion-shutdown-timeout: 2s
-scenario-shutdown-timeout: 10s
-campaign-shutdown-timeout: 30s
+
+  assignment:
+    evaluation-batch-size: 100
+    timeout: 10s
+
+  graceful-shutdown:
+    minion: 2s
+    scenario: 10s
+    campaign: 30s
+
+distributed:
+  streaming:
+    platform: redis

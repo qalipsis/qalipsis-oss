@@ -1,9 +1,11 @@
 package io.qalipsis.core.factory.events
 
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.events.Event
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.api.events.EventsPublisher
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,7 +21,10 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 @Singleton
-@Requires(property = "events.export.slf4j.enabled", value = "true")
+@Requirements(
+    Requires(property = "events.export.slf4j.enabled", defaultValue = "false", value = "true"),
+    Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
+)
 internal class Slf4JEventsPublisher : EventsPublisher {
 
     private val loggers = ConcurrentHashMap<String, Logger>()

@@ -7,10 +7,9 @@ import io.qalipsis.api.context.DirectedAcyclicGraphId
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.AbstractStep
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.testDag
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
-import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -35,10 +34,7 @@ internal class ScenarioImplTest {
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
-    lateinit var feedbackFactoryChannel: FeedbackFactoryChannel
-
-    @RelaxedMockK
-    lateinit var factoryConfiguration: FactoryConfiguration
+    lateinit var factoryChannel: FactoryChannel
 
     @Test
     internal fun `should destroy all steps`() {
@@ -75,33 +71,28 @@ internal class ScenarioImplTest {
         // then
         assertEquals(mockedSteps.size, calledStart.get())
         coVerifyOnce {
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1",
+                    "my-scenario",
+                    "dag-1",
+                    FeedbackStatus.IN_PROGRESS
+                )
             )
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1", "my-scenario", "dag-2", FeedbackStatus.IN_PROGRESS
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1", "my-scenario", "dag-2", FeedbackStatus.IN_PROGRESS
+                )
             )
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.COMPLETED
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1", "my-scenario", "dag-1", FeedbackStatus.COMPLETED
+                )
             )
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1", "my-scenario", "dag-2", FeedbackStatus.COMPLETED
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1", "my-scenario", "dag-2", FeedbackStatus.COMPLETED
+                )
             )
         }
         mockedSteps.forEach { step ->
@@ -129,23 +120,19 @@ internal class ScenarioImplTest {
 
         // then
         coVerifyOnce {
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
+                )
             )
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1",
-                        "my-scenario",
-                        "dag-1",
-                        FeedbackStatus.FAILED,
-                        "The start of the DAG dag-1 failed: Timed out waiting for 100 ms"
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1",
+                    "my-scenario",
+                    "dag-1",
+                    FeedbackStatus.FAILED,
+                    "The start of the DAG dag-1 failed: Timed out waiting for 100 ms"
+                )
             )
         }
         mockedSteps.subList(0, 2).forEach { step ->
@@ -184,23 +171,19 @@ internal class ScenarioImplTest {
 
         // then
         coVerifyOnce {
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
+                )
             )
-            feedbackFactoryChannel.publish(
-                match {
-                    it == CampaignStartedForDagFeedback(
-                        "camp-1",
-                        "my-scenario",
-                        "dag-1",
-                        FeedbackStatus.FAILED,
-                        "The start of the DAG dag-1 failed: this is the error"
-                    ).copy(key = it.key)
-                }
+            factoryChannel.publishFeedback(
+                CampaignStartedForDagFeedback(
+                    "camp-1",
+                    "my-scenario",
+                    "dag-1",
+                    FeedbackStatus.FAILED,
+                    "The start of the DAG dag-1 failed: this is the error"
+                )
             )
         }
         mockedSteps.subList(0, 2).forEach { step ->
@@ -265,9 +248,8 @@ internal class ScenarioImplTest {
         val scenarioImpl = ScenarioImpl(
             id = "my-scenario",
             rampUpStrategy = relaxedMockk(),
-            feedbackFactoryChannel = feedbackFactoryChannel,
-            stepStartTimeout = stepStartTimeout,
-            factoryConfiguration = factoryConfiguration
+            factoryChannel = factoryChannel,
+            stepStartTimeout = stepStartTimeout
         )
 
         scenarioImpl.createIfAbsent("dag-1") {

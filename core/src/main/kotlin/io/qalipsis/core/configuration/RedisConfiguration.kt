@@ -3,59 +3,65 @@ package io.qalipsis.core.configuration
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.coroutines
+import io.lettuce.core.api.coroutines.BaseRedisCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
-import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
+import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisListCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisScriptingCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisSortedSetCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisStreamCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisStringCoroutinesCommands
+import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
+import io.lettuce.core.cluster.api.coroutines
+import io.lettuce.core.cluster.api.coroutines.RedisClusterCoroutinesCommands
+import io.micronaut.context.annotation.Bean
 import io.micronaut.context.annotation.Factory
-import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import jakarta.inject.Named
-import jakarta.inject.Singleton
 
-@ExperimentalLettuceCoroutinesApi
 @Factory
-@Requirements(
-    Requires(env = [ExecutionEnvironments.REDIS]),
-    Requires(beans = [StatefulRedisConnection::class])
-)
-class RedisConfiguration {
+@Requirements(Requires(env = [ExecutionEnvironments.REDIS]))
+@ExperimentalLettuceCoroutinesApi
+internal class RedisConfiguration {
 
     /**
-     * For each kind of connection created by the Micronaut framework, we create the equivalent set of commands.
-     *
-     * See the implementations of [StatefulRedisConnection] for more details.
+     * Coroutine commands for a Redis standalone.
      */
-    @Singleton
-    @Primary
-    @Named(DEFAULT)
-    fun coroutineRedisCommands(connection: StatefulRedisConnection<*, *>): RedisCoroutinesCommands<*, *> {
+    @Bean(
+        typed = [BaseRedisCoroutinesCommands::class,
+            RedisHashCoroutinesCommands::class,
+            RedisKeyCoroutinesCommands::class,
+            RedisListCoroutinesCommands::class,
+            RedisScriptingCoroutinesCommands::class,
+            RedisSetCoroutinesCommands::class,
+            RedisSortedSetCoroutinesCommands::class,
+            RedisStreamCoroutinesCommands::class,
+            RedisStringCoroutinesCommands::class]
+    )
+    @Requires(beans = [StatefulRedisConnection::class])
+    fun coroutineRedisCommands(connection: StatefulRedisConnection<String, String>): RedisCoroutinesCommands<String, String> {
         return connection.coroutines()
     }
 
-
     /**
-     * For each kind of connection created by the Micronaut framework, we create the equivalent set of commands.
-     *
-     * See the implementations of [StatefulRedisConnection] for more details.
+     * Coroutine commands for a Redis cluster.
      */
-    @Singleton
-    @Named(PUB_SUB)
-    fun coroutineRedisPubSubCommands(connection: StatefulRedisPubSubConnection<*, *>): RedisCoroutinesCommands<*, *> {
+    @Bean(
+        typed = [BaseRedisCoroutinesCommands::class,
+            RedisHashCoroutinesCommands::class,
+            RedisKeyCoroutinesCommands::class,
+            RedisListCoroutinesCommands::class,
+            RedisScriptingCoroutinesCommands::class,
+            RedisSetCoroutinesCommands::class,
+            RedisSortedSetCoroutinesCommands::class,
+            RedisStreamCoroutinesCommands::class,
+            RedisStringCoroutinesCommands::class]
+    )
+    @Requires(beans = [StatefulRedisClusterConnection::class])
+    fun coroutineRedisClusterCommands(connection: StatefulRedisClusterConnection<String, String>): RedisClusterCoroutinesCommands<String, String> {
         return connection.coroutines()
-    }
-
-    companion object {
-
-        /**
-         * Name of the default [RedisCoroutinesCommands].
-         */
-        const val DEFAULT = "default"
-
-        /**
-         * Name of the [RedisCoroutinesCommands] for pub/sub.
-         */
-        const val PUB_SUB = "pubsub"
-
     }
 
 }

@@ -1,42 +1,32 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.rampup.RampUpConfiguration
 
 internal open class MinionsStartupState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
 
     override suspend fun doInit(): List<Directive> {
         return campaign.scenarios.keys.map { scenarioId ->
             MinionsRampUpPreparationDirective(
-                campaignId,
-                scenarioId,
-                RampUpConfiguration(campaign.startOffsetMs, campaign.speedFactor),
-                idGenerator.short(),
-                campaign.broadcastChannel
+                campaignId = campaignId,
+                scenarioId = scenarioId,
+                rampUpConfiguration = RampUpConfiguration(campaign.startOffsetMs, campaign.speedFactor),
+                channel = campaign.broadcastChannel
             )
         }
     }
 
-    override suspend fun doTransition(directive: Directive): CampaignExecutionState {
-        return if (directive is MinionsStartDirective) {
-            RunningState(campaign)
-        } else {
-            this
-        }
-    }
-
-    override suspend fun process(feedback: Feedback): CampaignExecutionState {
+    override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         // The failure management is let to doProcess.
         if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
             log.error { "The creation of the minions for the scenario ${feedback.scenarioId} failed: ${feedback.error}" }
@@ -48,13 +38,15 @@ internal open class MinionsStartupState(
         return doTransition(feedback)
     }
 
-    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
             FailureState(campaign, feedback.error ?: "")
         } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
             FailureState(campaign, feedback.error ?: "")
         } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED) {
             FailureState(campaign, feedback.error ?: "")
+        } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.COMPLETED) {
+            RunningState(campaign)
         } else {
             this
         }

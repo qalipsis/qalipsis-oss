@@ -13,7 +13,9 @@ import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.aerisconsulting.catadioptre.invokeInvisible
 import io.micronaut.context.ApplicationContext
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerify
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
@@ -22,6 +24,7 @@ import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
+import io.mockk.verifyOrder
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -38,7 +41,7 @@ import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.api.sync.Latch
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.init.catadioptre.convertScenario
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
@@ -47,8 +50,7 @@ import io.qalipsis.core.factory.steps.DagTransitionStep
 import io.qalipsis.core.factory.steps.DeadEndStep
 import io.qalipsis.core.factory.steps.PipeStep
 import io.qalipsis.core.factory.testScenario
-import io.qalipsis.core.feedbacks.FeedbackFactoryChannel
-import io.qalipsis.test.assertk.prop
+import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
@@ -56,6 +58,7 @@ import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.CoroutineDispatcher
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -74,14 +77,22 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class FactoryInitializerImplTest {
 
+    @RegisterExtension
+    private val testDispatcherProvider = TestDispatcherProvider()
+
     @RelaxedMockK
-    private lateinit var scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper
+    private lateinit var applicationContext: ApplicationContext
+
+    private val coroutineDispatcher: CoroutineDispatcher = testDispatcherProvider.default()
+
+    @RelaxedMockK
+    private lateinit var initializationContext: InitializationContext
 
     @RelaxedMockK
     private lateinit var scenarioRegistry: ScenarioRegistry
 
     @RelaxedMockK
-    private lateinit var feedbackFactoryChannel: FeedbackFactoryChannel
+    private lateinit var scenarioSpecificationsKeeper: ScenarioSpecificationsKeeper
 
     @RelaxedMockK
     private lateinit var stepConverter1: StepSpecificationConverter<StepSpecification<Any?, Any?, *>>
@@ -101,23 +112,21 @@ internal class FactoryInitializerImplTest {
     @RelaxedMockK
     private lateinit var minionsKeeper: MinionsKeeper
 
-    @RelaxedMockK
-    private lateinit var applicationContext: ApplicationContext
+    @SpyK
+    private var idGenerator = TestIdGenerator
 
     @RelaxedMockK
     private lateinit var dagTransitionStepFactory: DagTransitionStepFactory
 
     @RelaxedMockK
-    private lateinit var factoryConfiguration: FactoryConfiguration
-
-    @RegisterExtension
-    private val testDispatcherProvider = TestDispatcherProvider()
-
-    @SpyK
-    private var idGenerator = TestIdGenerator
+    private lateinit var factoryChannel: FactoryChannel
 
     @RelaxedMockK
-    private lateinit var initializationContext: InitializationContext
+    private lateinit var handshakeBlocker: HandshakeBlocker
+
+    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
+
+    private val conversionTimeout: Duration = Duration.ofSeconds(1)
 
     private val factoryInitializer: FactoryInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
         spyk(
@@ -130,19 +139,58 @@ internal class FactoryInitializerImplTest {
                 listOf(stepConverter1, stepConverter2),
                 listOf(stepDecorator1, stepDecorator2),
                 runner,
-                factoryConfiguration,
                 minionsKeeper,
                 idGenerator,
                 dagTransitionStepFactory,
+                factoryChannel,
+                handshakeBlocker,
                 Duration.ofSeconds(30),
                 Duration.ofSeconds(1)
             ), recordPrivateCalls = true
         )
     }
 
+
     @AfterEach
     internal fun tearDown() {
         unmockkObject(ServicesLoader)
+    }
+
+    @Test
+    internal fun `should successfully init the factory`() {
+        // given
+        justRun { factoryInitializer.refresh() }
+
+        // when
+        factoryInitializer.init()
+
+        // then
+        verifyOrder {
+            factoryInitializer.refresh()
+        }
+        confirmVerified(handshakeBlocker, initializationContext, factoryChannel, runner)
+    }
+
+    @Test
+    @Timeout(2)
+    internal fun `should fail to init the factory`() {
+        // given
+        val exception = RuntimeException()
+        every { factoryInitializer.refresh() } throws exception
+        coJustRun { handshakeBlocker.cancel() }
+
+        // when
+        val caught = assertThrows<Exception> {
+            factoryInitializer.init()
+        }
+
+        // then
+        assertThat(caught).isSameAs(exception)
+        verifyOrder {
+            factoryInitializer.refresh()
+            handshakeBlocker.cancel()
+        }
+        confirmVerified(handshakeBlocker, initializationContext, factoryChannel, runner)
     }
 
     @Test
@@ -426,7 +474,6 @@ internal class FactoryInitializerImplTest {
             every { minionsCount } returns 123
             every { rootSteps } returns scenarioRootSteps
         }
-        every { initializationContext.feedbackFactoryChannel } returns feedbackFactoryChannel
         val latch = Latch(true)
         coEvery {
             factoryInitializer["convertSteps"](
@@ -448,7 +495,6 @@ internal class FactoryInitializerImplTest {
             prop(Scenario::minionsCount).isEqualTo(123)
             prop(Scenario::rampUpStrategy).isSameAs(scenarioSpecification.rampUpStrategy)
             prop(Scenario::defaultRetryPolicy).isSameAs(scenarioSpecification.retryPolicy)
-            prop("feedbackFactoryChannel").isSameAs(feedbackFactoryChannel)
         }
 
         coVerify {
@@ -515,7 +561,7 @@ internal class FactoryInitializerImplTest {
                 refEq(scenarioSpecification2)
             )
         } returns scenario2
-        justRun { initializationContext.startHandshake(any()) }
+        coJustRun { initializationContext.startHandshake(any()) }
 
         // when
         factoryInitializer.refresh()
@@ -527,7 +573,7 @@ internal class FactoryInitializerImplTest {
             scenarioSpecificationsKeeper.asMap()
             factoryInitializer["convertScenario"](eq("scenario-2"), refEq(scenarioSpecification2))
             factoryInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
-            initializationContext.startHandshake(capture(publishedScenarios))
+            initializationContext["startHandshake"](capture(publishedScenarios))
         }
         publishedScenarios.toSet().let {
             assertEquals(2, it.flatten().size)
@@ -573,12 +619,37 @@ internal class FactoryInitializerImplTest {
         mockkObject(ServicesLoader)
         every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf("scenario-1" to relaxedMockk { })
-        every { factoryInitializer.convertScenario(any(), any()) } throws RuntimeException()
+        val exception = relaxedMockk<Exception>()
+        every { factoryInitializer.convertScenario(any(), any()) } throws exception
 
         // when
-        assertThrows<RuntimeException> {
+        val caught = assertThrows<ExitStatusException> {
             factoryInitializer.refresh()
         }
+
+        // then
+        assertThat(caught).all {
+            prop(ExitStatusException::cause).isNotNull().isSameAs(exception)
+            prop(ExitStatusException::exitStatus).isEqualTo(103)
+        }
+    }
+
+
+    @Test
+    @Timeout(4)
+    internal fun `should generate an exit status exception when there is no scenario to convert`() {
+        // given
+        mockkObject(ServicesLoader)
+        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
+        every { scenarioSpecificationsKeeper.asMap() } returns emptyMap()
+
+        // when
+        val caught = assertThrows<ExitStatusException> {
+            factoryInitializer.refresh()
+        }
+
+        // then
+        assertThat(caught).prop(ExitStatusException::exitStatus).isEqualTo(102)
     }
 
     @Test

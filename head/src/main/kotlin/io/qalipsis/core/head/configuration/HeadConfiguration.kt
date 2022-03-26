@@ -1,10 +1,13 @@
 package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
+import io.micronaut.context.annotation.Requires
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import java.time.Duration
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
 
+@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("head")
 internal interface HeadConfiguration {
 
@@ -15,22 +18,10 @@ internal interface HeadConfiguration {
     val handshakeRequestChannel: String
 
     /**
-     * Channel to use to register the factory to the head, defaults to "registration".
-     */
-    @get:NotBlank
-    val handshakeResponseChannel: String
-
-    /**
      * Prefix of the channel name to provide to the factories, where they receive the broadcast directives.
      */
     @get:NotBlank
     val unicastChannelPrefix: String
-
-    /**
-     * Channel name to provide to the factories, where they receive the broadcast directives.
-     */
-    @get:NotBlank
-    val broadcastChannel: String
 
     /**
      * Channel to send the heartbeats to.
@@ -43,11 +34,5 @@ internal interface HeadConfiguration {
      */
     @get:Positive
     val heartbeatDuration: Duration
-
-    /**
-     * Channel to send the heartbeats to.
-     */
-    @get:NotBlank
-    val feedbackChannel: String
 
 }

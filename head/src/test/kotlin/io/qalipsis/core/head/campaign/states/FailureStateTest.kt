@@ -11,10 +11,10 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -30,15 +30,17 @@ internal class FailureStateTest : AbstractStateTest() {
     @Test
     internal fun `should return shutdown directive on init`() = testDispatcherProvider.runTest {
         // when
-        val directives =
-            FailureState(campaign, "this error").init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = FailureState(campaign, "this error").run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         verify { campaign setProperty "message" value "this error" }
         assertThat(directives).all {
             hasSize(1)
             containsOnly(
-                CampaignShutdownDirective("my-campaign", "the-directive-1", "my-broadcast-channel")
+                CampaignShutdownDirective("my-campaign", "my-broadcast-channel")
             )
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -53,7 +55,10 @@ internal class FailureStateTest : AbstractStateTest() {
                 "node-2" to relaxedMockk()
             )
             val state = FailureState(campaign, "this error")
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<CampaignShutdownFeedback> {

@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.Directive
@@ -7,12 +8,10 @@ import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 
 internal open class FactoryAssignmentState(
     protected val campaign: CampaignConfiguration
-) :
-    AbstractCampaignExecutionState(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
@@ -21,19 +20,20 @@ internal open class FactoryAssignmentState(
         return campaign.factories.map { (factoryId, configuration) ->
             val factory = campaign.factories[factoryId]!!
             FactoryAssignmentDirective(
-                campaign.id,
-                configuration.assignment,
-                idGenerator.short(),
-                factory.unicastChannel
+                campaignId = campaign.id,
+                assignedDagsByScenario = configuration.assignment,
+                broadcastChannel = campaign.broadcastChannel,
+                feedbackChannel = campaign.feedbackChannel,
+                channel = factory.unicastChannel
             )
         }
     }
 
-    override suspend fun process(feedback: Feedback): CampaignExecutionState {
+    override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         if (feedback is FactoryAssignmentFeedback) {
             if (feedback.status == FeedbackStatus.IGNORED) {
                 campaign.unassignFactory(feedback.nodeId)
-                factoryService.releaseFactories(campaign, listOf(feedback.nodeId))
+                context.factoryService.releaseFactories(campaign, listOf(feedback.nodeId))
             } else if (feedback.status == FeedbackStatus.FAILED) {
                 // The failure management is let to doProcess.
                 log.error { "The assignment of DAGs to the factory ${feedback.nodeId} failed: ${feedback.error}" }
@@ -42,7 +42,7 @@ internal open class FactoryAssignmentState(
         return doTransition(feedback)
     }
 
-    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is FactoryAssignmentFeedback && feedback.status.isDone) {
             if (feedback.status == FeedbackStatus.FAILED) {
                 FailureState(campaign, feedback.error ?: "")

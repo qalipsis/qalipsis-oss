@@ -28,7 +28,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
 
     private val factory = FactoryEntity(
         nodeId = "the-node", registrationTimestamp = Instant.now(), registrationNodeId = "test",
-        unicastChannel = "unicast-channel", broadcastChannel = "broadcast-channel",
+        unicastChannel = "unicast-channel",
         selectors = listOf(
             FactorySelectorEntity(-1, "key-1", "value-1"),
             FactorySelectorEntity(-1, "key-2", "value-2")

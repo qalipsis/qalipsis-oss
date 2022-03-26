@@ -1,8 +1,8 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.core.head.campaign.states.DisabledState
 
 @ExperimentalLettuceCoroutinesApi

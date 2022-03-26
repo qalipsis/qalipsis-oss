@@ -17,11 +17,11 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -53,7 +53,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
         operations.saveConfiguration(campaign)
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).all {
@@ -62,19 +65,16 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
                 ScenarioWarmUpDirective(
                     "my-campaign",
                     "scenario-1",
-                    "the-directive-1",
                     "the-unicast-channel-1"
                 ),
                 ScenarioWarmUpDirective(
                     "my-campaign",
                     "scenario-2",
-                    "the-directive-2",
                     "the-unicast-channel-1"
                 ),
                 ScenarioWarmUpDirective(
                     "my-campaign",
                     "scenario-2",
-                    "the-directive-3",
                     "the-unicast-channel-2"
                 )
             )
@@ -90,7 +90,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
         val state = RedisWarmupState(campaign, operations)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // when
         var newState = state.process(mockk<ScenarioWarmUpFeedback> {
@@ -113,7 +116,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
         testDispatcherProvider.run {
             // given
             val state = RedisWarmupState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -136,7 +142,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
         testDispatcherProvider.run {
             // given
             val state = RedisWarmupState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
@@ -164,7 +173,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
                 }
             )
             val state = RedisWarmupState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             every { campaign.contains("node-1") } returns false
 
             // when
@@ -202,7 +214,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
                 }
             )
             val state = RedisWarmupState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             every { campaign.contains("node-1") } returns true
 
             // when
@@ -241,7 +256,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             )
             every { campaign.contains(any()) } returns true
             var state = RedisWarmupState(campaign, operations)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<ScenarioWarmUpFeedback> {
@@ -256,7 +274,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             // when
             state = RedisWarmupState(campaign, operations)
             state.initialized = true
-            assertThat(state.init(factoryService, campaignReportStateKeeper, idGenerator)).isEmpty()
+            assertThat(state.run {
+                inject(campaignExecutionContext)
+                init()
+            }).isEmpty()
             newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-2"
                 every { scenarioId } returns "scenario-2"
@@ -269,7 +290,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             // when
             state = RedisWarmupState(campaign, operations)
             state.initialized = true
-            assertThat(state.init(factoryService, campaignReportStateKeeper, idGenerator)).isEmpty()
+            assertThat(state.run {
+                inject(campaignExecutionContext)
+                init()
+            }).isEmpty()
             newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
                 every { scenarioId } returns "scenario-1"

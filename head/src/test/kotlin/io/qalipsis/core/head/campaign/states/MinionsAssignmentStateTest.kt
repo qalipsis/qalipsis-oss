@@ -13,14 +13,13 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
-import io.qalipsis.core.head.model.NodeId
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -57,17 +56,20 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
         }
 
         // when
-        val directives = state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        val directives = state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
 
         // then
         assertThat(directives).all {
             hasSize(2)
             containsOnly(
                 MinionsDeclarationDirective(
-                    "my-campaign", "scenario-1", 54, "the-directive-1", "my-broadcast-channel"
+                    "my-campaign", "scenario-1", 54, "my-broadcast-channel"
                 ),
                 MinionsDeclarationDirective(
-                    "my-campaign", "scenario-2", 43, "the-directive-2", "my-broadcast-channel"
+                    "my-campaign", "scenario-2", 43, "my-broadcast-channel"
                 )
             )
         }
@@ -78,7 +80,10 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
         val state = MinionsAssignmentState(campaign)
-        state.init(factoryService, campaignReportStateKeeper, idGenerator)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
         val feedback = mockk<MinionsDeclarationFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
@@ -101,7 +106,10 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = MinionsAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             val feedback = mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
@@ -124,25 +132,13 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
         testDispatcherProvider.runTest {
             // given
             val state = MinionsAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             val newState = state.process(mockk<Feedback>())
-
-            // then
-            assertThat(newState).isSameAs(state)
-            confirmVerified(factoryService, campaignReportStateKeeper)
-        }
-
-    @Test
-    internal fun `should return itself in case of any unsupported directive`() =
-        testDispatcherProvider.runTest {
-            // given
-            val state = MinionsAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
-
-            // when
-            val newState = state.process(mockk<Directive>())
 
             // then
             assertThat(newState).isSameAs(state)
@@ -167,7 +163,10 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
                 }
             )
             val state = MinionsAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             every { campaign.contains("node-1") } returns false
 
             // when
@@ -205,7 +204,10 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
                 }
             )
             val state = MinionsAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
             every { campaign.contains("node-1") } returns true
 
             // when
@@ -243,7 +245,10 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             )
             every { campaign.contains(any()) } returns true
             val state = MinionsAssignmentState(campaign)
-            state.init(factoryService, campaignReportStateKeeper, idGenerator)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<MinionsAssignmentFeedback> {

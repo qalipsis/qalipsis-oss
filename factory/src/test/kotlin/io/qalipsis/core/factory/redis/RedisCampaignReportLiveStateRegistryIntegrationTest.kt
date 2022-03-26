@@ -7,8 +7,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.key
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @ExperimentalLettuceCoroutinesApi
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
 internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
     @RegisterExtension
@@ -26,12 +28,9 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
     @Inject
     private lateinit var registry: RedisCampaignReportLiveStateRegistry
 
-    @Inject
-    private lateinit var redisCommands: RedisCoroutinesCommands<String, String>
-
     @AfterEach
-    internal fun tearDown() = testDispatcherProvider.run {
-        redisCommands.flushdb()
+    internal fun tearDown() {
+        connection.sync().flushdb()
     }
 
     @Test
@@ -61,9 +60,11 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
 
         // then
         var messagesOfScenario1 =
-            redisCommands.hgetall("my-campaign-report:my-scenario-1").toList().associate { it.key to it.value }
+            redisCoroutinesCommands.hgetall("my-campaign-report:my-scenario-1").toList()
+                .associate { it.key to it.value }
         var messagesOfScenario2 =
-            redisCommands.hgetall("my-campaign-report:my-scenario-2").toList().associate { it.key to it.value }
+            redisCoroutinesCommands.hgetall("my-campaign-report:my-scenario-2").toList()
+                .associate { it.key to it.value }
         assertThat(messagesOfScenario1).all {
             hasSize(2)
             key("my-step/$message1").isEqualTo("INFO/This is the first message")
@@ -87,9 +88,11 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
         // then
         assertThat(updatedMessage).isEqualTo(message1)
         messagesOfScenario1 =
-            redisCommands.hgetall("my-campaign-report:my-scenario-1").toList().associate { it.key to it.value }
+            redisCoroutinesCommands.hgetall("my-campaign-report:my-scenario-1").toList()
+                .associate { it.key to it.value }
         messagesOfScenario2 =
-            redisCommands.hgetall("my-campaign-report:my-scenario-2").toList().associate { it.key to it.value }
+            redisCoroutinesCommands.hgetall("my-campaign-report:my-scenario-2").toList()
+                .associate { it.key to it.value }
         assertThat(messagesOfScenario1).all {
             hasSize(2)
             key("my-step/$message1").isEqualTo("WARN/This is the first updated message")
@@ -105,9 +108,11 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
 
         // then
         messagesOfScenario1 =
-            redisCommands.hgetall("my-campaign-report:my-scenario-1").toList().associate { it.key to it.value }
+            redisCoroutinesCommands.hgetall("my-campaign-report:my-scenario-1").toList()
+                .associate { it.key to it.value }
         messagesOfScenario2 =
-            redisCommands.hgetall("my-campaign-report:my-scenario-2").toList().associate { it.key to it.value }
+            redisCoroutinesCommands.hgetall("my-campaign-report:my-scenario-2").toList()
+                .associate { it.key to it.value }
         assertThat(messagesOfScenario1).all {
             hasSize(1)
             key("my-step/$message1").isEqualTo("WARN/This is the first updated message")
@@ -211,5 +216,5 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
         assertThat(getCounter("my-campaign-report:my-scenario-2:failed-step-executions", "my-step-3")).isNull()
     }
 
-    private suspend fun getCounter(key: String, field: String): Int? = redisCommands.hget(key, field)?.toInt()
+    private suspend fun getCounter(key: String, field: String): Int? = redisCoroutinesCommands.hget(key, field)?.toInt()
 }

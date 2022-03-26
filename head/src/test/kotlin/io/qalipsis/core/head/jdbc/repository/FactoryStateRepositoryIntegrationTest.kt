@@ -41,8 +41,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                 nodeId = "the-node",
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = "test",
-                unicastChannel = "unicast-channel",
-                broadcastChannel = "broadcast-channel"
+                unicastChannel = "unicast-channel"
             )
         )
         state =
@@ -81,8 +80,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                     nodeId = "factory-1",
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "random-node",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             val factory2 = factoryRepository.save(
@@ -90,8 +88,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                     nodeId = "factory-2",
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "random-node",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             repository.saveAll(
@@ -176,8 +173,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel",
-                    broadcastChannel = "broadcast-channel"
+                    unicastChannel = "unicast-channel"
                 )
             )
             repository.save(state.copy(factoryId = factory.id))

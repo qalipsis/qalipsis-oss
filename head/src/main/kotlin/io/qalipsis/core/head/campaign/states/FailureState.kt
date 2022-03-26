@@ -1,16 +1,16 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 
 internal open class FailureState(
     protected val campaign: CampaignConfiguration,
     private val error: String
-) : AbstractCampaignExecutionState(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
@@ -18,14 +18,13 @@ internal open class FailureState(
         campaign.message = error
         return listOf(
             CampaignShutdownDirective(
-                campaignId,
-                idGenerator.short(),
-                campaign.broadcastChannel
+                campaignId = campaignId,
+                channel = campaign.broadcastChannel
             )
         )
     }
 
-    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState {
+    override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             expectedFeedbacks -= feedback.nodeId
             if (expectedFeedbacks.isEmpty()) {

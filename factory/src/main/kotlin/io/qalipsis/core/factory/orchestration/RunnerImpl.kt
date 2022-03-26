@@ -1,6 +1,7 @@
 package io.qalipsis.core.factory.orchestration
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.StepContext
@@ -16,6 +17,7 @@ import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.context.StepContextBuilder
 import io.qalipsis.core.factory.context.StepContextImpl
@@ -41,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 @Singleton
+@Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class RunnerImpl(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,

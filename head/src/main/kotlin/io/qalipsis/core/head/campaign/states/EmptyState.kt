@@ -1,29 +1,20 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
-import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 
-internal object EmptyState : CampaignExecutionState {
+internal object EmptyState : CampaignExecutionState<CampaignExecutionContext> {
 
     override val isCompleted: Boolean = true
 
     override val campaignId: CampaignId = ""
 
-    override suspend fun init(
-        factoryService: FactoryService,
-        campaignReportStateKeeper: CampaignReportStateKeeper,
-        idGenerator: IdGenerator
-    ): List<Directive> = emptyList()
+    override fun inject(context: CampaignExecutionContext) = Unit
 
-    override suspend fun process(directive: Directive): CampaignExecutionState {
-        throw IllegalStateException()
-    }
+    override suspend fun init(): List<Directive> = emptyList()
 
-    override suspend fun process(feedback: Feedback): CampaignExecutionState {
+    override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         throw IllegalStateException()
     }
 }

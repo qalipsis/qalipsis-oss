@@ -1,30 +1,45 @@
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.lang.tryAndLogOrNull
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.head.campaign.CampaignConfiguration
 
 internal open class DisabledState(
     protected val campaign: CampaignConfiguration,
     private val isSuccessful: Boolean = true
-) : AbstractCampaignExecutionState(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
 
     override val isCompleted: Boolean = true
 
     override suspend fun doInit(): List<Directive> {
-        return listOf(
-            CompleteCampaignDirective(
-                campaignId,
-                isSuccessful = isSuccessful,
-                message = campaign.message,
-                idGenerator.short(),
-                campaign.broadcastChannel
-            )
+        context.headChannel.unsubscribeFeedback(campaign.feedbackChannel)
+
+        if (context.reportPublishers.isNotEmpty()) {
+            val report = context.campaignReportStateKeeper.report(campaignId)
+            context.reportPublishers.forEach { publisher ->
+                tryAndLogOrNull(log) {
+                    publisher.publish(campaign, report)
+                }
+            }
+        }
+
+        val directive = CompleteCampaignDirective(
+            campaignId = campaignId,
+            isSuccessful = isSuccessful,
+            message = campaign.message,
+            channel = campaign.broadcastChannel
         )
+        context.campaignAutoStarter?.completeCampaign(directive)
+        return listOf(directive)
     }
 
     override fun toString(): String {
         return "DisabledState(campaign=$campaign, isSuccessful=$isSuccessful, isCompleted=$isCompleted)"
     }
 
+    private companion object {
+        val log = logger()
+    }
 }
