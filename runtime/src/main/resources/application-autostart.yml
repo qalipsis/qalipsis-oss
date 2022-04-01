@@ -1,5 +1,5 @@
 campaign:
-  id: campaign-${random.shortuuid}
+  name: campaign-${random.shortuuid}
   required-factories: 1
   minions-count-per-scenario: 0
   minions-factor: 1.0

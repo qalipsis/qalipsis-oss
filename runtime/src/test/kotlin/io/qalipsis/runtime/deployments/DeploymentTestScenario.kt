@@ -11,7 +11,7 @@ object DeploymentTestScenario {
     @Scenario
     fun scenario() {
         scenario("deployment-test") {
-            minionsCount = 10000
+            minionsCount = 10_000
             rampUp { regular(1000, 2000) }
         }.start()
             .returns(Unit)
