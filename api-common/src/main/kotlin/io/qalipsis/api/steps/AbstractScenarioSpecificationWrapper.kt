@@ -1,6 +1,6 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -27,7 +27,7 @@ abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecificat
     override val rootSteps: List<StepSpecification<*, *, *>>
         get() = wrappedScenario.rootSteps
 
-    override val dagsUnderLoad: Collection<DirectedAcyclicGraphId>
+    override val dagsUnderLoad: Collection<DirectedAcyclicGraphName>
         get() = wrappedScenario.dagsUnderLoad
 
     override fun add(step: StepSpecification<*, *, *>) {
@@ -50,7 +50,7 @@ abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecificat
         return wrappedScenario.exists(stepName)
     }
 
-    override fun buildDagId(parent: DirectedAcyclicGraphId?): DirectedAcyclicGraphId {
+    override fun buildDagId(parent: DirectedAcyclicGraphName?): DirectedAcyclicGraphName {
         return wrappedScenario.buildDagId()
     }
 

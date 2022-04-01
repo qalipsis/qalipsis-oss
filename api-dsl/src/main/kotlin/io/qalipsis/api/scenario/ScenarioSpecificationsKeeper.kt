@@ -1,6 +1,6 @@
 package io.qalipsis.api.scenario
 
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 
 /**
  * Service providing an access to the scenario specifications to load at startup.
@@ -17,5 +17,5 @@ interface ScenarioSpecificationsKeeper {
     /**
      * Returns the map of specifications in the factory.
      */
-    fun asMap(): Map<ScenarioId, ConfiguredScenarioSpecification>
+    fun asMap(): Map<ScenarioName, ConfiguredScenarioSpecification>
 }

@@ -1,7 +1,7 @@
 package io.qalipsis.api.report
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.ScenarioName
 import java.time.Instant
 
 /**
@@ -10,8 +10,8 @@ import java.time.Instant
  * @author Eric Jessé
  */
 data class ScenarioReport(
-    val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
+    val campaignName: CampaignName,
+    val scenarioName: ScenarioName,
     val start: Instant,
     val end: Instant,
     val startedMinions: Int,

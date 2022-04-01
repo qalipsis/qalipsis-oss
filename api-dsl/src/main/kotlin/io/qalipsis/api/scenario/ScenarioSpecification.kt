@@ -1,6 +1,6 @@
 package io.qalipsis.api.scenario
 
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 
 /**
  * Overall interface for a scenario specification, as visible by the scenario developers.
@@ -28,10 +28,10 @@ interface StartScenarioSpecification : ScenarioSpecification {
 
 }
 
-internal val scenariosSpecifications = mutableMapOf<ScenarioId, ConfiguredScenarioSpecification>()
+internal val scenariosSpecifications = mutableMapOf<ScenarioName, ConfiguredScenarioSpecification>()
 
 fun scenario(
-    name: ScenarioId,
+    name: ScenarioName,
     configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }
 ): StartScenarioSpecification {
     val scenario = ScenarioSpecificationImplementation(name)

@@ -3,7 +3,7 @@ package io.qalipsis.api.steps
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
@@ -20,7 +20,7 @@ import io.qalipsis.api.runtime.Minion
  */
 interface Step<I, O> {
 
-    val id: StepId
+    val name: StepName
 
     var retryPolicy: RetryPolicy?
 

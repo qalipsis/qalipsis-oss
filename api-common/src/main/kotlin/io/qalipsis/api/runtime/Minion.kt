@@ -1,8 +1,8 @@
 package io.qalipsis.api.runtime
 
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -18,9 +18,9 @@ interface Minion {
 
     val id: MinionId
 
-    val campaignId: CampaignId
+    val campaignName: CampaignName
 
-    val scenarioId: ScenarioId
+    val scenarioName: ScenarioName
 
     fun onComplete(block: suspend (() -> Unit))
 
@@ -43,8 +43,8 @@ interface Minion {
      * Configures the [MDC] context for the execution of the minion.
      */
     fun completeMdcContext() {
-        MDC.put("campaign", this.campaignId)
-        MDC.put("scenario", this.scenarioId)
+        MDC.put("campaign", this.campaignName)
+        MDC.put("scenario", this.scenarioName)
         MDC.put("minion", this.id)
     }
 

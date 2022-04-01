@@ -1,6 +1,6 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.ScenarioSpecification
@@ -33,7 +33,7 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     /**
      * ID of the directed acyclic graph attached to the step.
      */
-    var directedAcyclicGraphId: DirectedAcyclicGraphId
+    var directedAcyclicGraphName: DirectedAcyclicGraphName
 
     /**
      * Defines the delay after which a non completed execution triggers a failure.
@@ -71,7 +71,7 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     val nextSteps: MutableList<StepSpecification<*, *, *>>
 
     /**
-     * Adds the [StepSpecification] as next step of the current one, declare it in the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
+     * Adds the [StepSpecification] as next step of the current one, declare it in the scenario and assign a relevant [StepSpecification.directedAcyclicGraphName].
      */
     fun add(step: StepSpecification<*, *, *>)
 

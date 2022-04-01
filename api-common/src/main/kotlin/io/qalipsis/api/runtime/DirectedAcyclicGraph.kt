@@ -1,7 +1,7 @@
 package io.qalipsis.api.runtime
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
 import java.util.concurrent.ConcurrentHashMap
@@ -25,7 +25,7 @@ data class DirectedAcyclicGraph(
     /**
      * ID of the Directed Acyclic Graph.
      */
-    val id: DirectedAcyclicGraphId,
+    val name: DirectedAcyclicGraphName,
 
     /**
      * Scenario to which the DAG owns.
@@ -66,7 +66,7 @@ data class DirectedAcyclicGraph(
     /**
      * Steps are stored into slots, because they might be decorated or wrapped during the initialization process.
      */
-    private val steps = ConcurrentHashMap<StepId, Slot<Step<*, *>>>()
+    private val steps = ConcurrentHashMap<StepName, Slot<Step<*, *>>>()
 
     val stepsCount: Int
         get() = steps.size
@@ -74,19 +74,19 @@ data class DirectedAcyclicGraph(
     /**
      * Verifies if the step belongs to the DAG.
      */
-    fun hasStep(stepId: StepId) = steps.containsKey(stepId)
+    fun hasStep(stepName: StepName) = steps.containsKey(stepName)
 
     suspend fun addStep(step: Step<*, *>) {
         if (rootStep.isEmpty()) {
             rootStep.also {
-                steps[step.id] = it
+                steps[step.name] = it
             }
         } else {
-            steps.computeIfAbsent(step.id) { Slot() }
+            steps.computeIfAbsent(step.name) { Slot() }
         }.set(step)
         scenario.addStep(this, step)
         latestStep = step
     }
 
-    suspend fun findStep(stepId: StepId) = scenario.findStep(stepId)
+    suspend fun findStep(stepName: StepName) = scenario.findStep(stepName)
 }

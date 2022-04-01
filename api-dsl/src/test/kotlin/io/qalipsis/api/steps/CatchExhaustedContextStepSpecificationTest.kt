@@ -34,8 +34,8 @@ internal class CatchExhaustedContextStepSpecificationTest {
             (previousStep.nextSteps[0] as CatchExhaustedContextStepSpecification).block as (suspend (context: StepContext<*, Unit>) -> Unit)
         val stepContext = StepTestHelper.createStepContext<Any?, Unit>(
             minionId = "",
-            scenarioId = "",
-            stepId = "",
+            scenarioName = "",
+            stepName = "",
             isExhausted = true
         )
         stepSpecification(stepContext as StepContext<*, Unit>)

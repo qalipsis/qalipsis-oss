@@ -1,14 +1,14 @@
 package io.qalipsis.test.steps
 
 import io.micrometer.core.instrument.Tags
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.sync.Latch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -27,11 +27,11 @@ class TestStepContext<IN, OUT>(
     val input: ReceiveChannel<IN> = Channel(1),
     val output: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(1),
     private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),
-    override val campaignId: CampaignId = "",
+    override val campaignName: CampaignName = "",
     override val minionId: MinionId,
-    override val scenarioId: ScenarioId,
-    override val previousStepId: StepId? = null,
-    override var stepId: StepId,
+    override val scenarioName: ScenarioName,
+    override val previousStepName: StepName? = null,
+    override var stepName: StepName,
     override var stepType: String? = null,
     override var stepFamily: String? = null,
     override var stepIterationIndex: Long = 0,
@@ -58,10 +58,10 @@ class TestStepContext<IN, OUT>(
 
     override val equivalentCompletionContext: CompletionContext
         get() = DefaultCompletionContext(
-            campaignId = campaignId,
-            scenarioId = scenarioId,
+            campaignName = campaignName,
+            scenarioName = scenarioName,
             minionId = minionId,
-            lastExecutedStepId = stepId,
+            lastExecutedStepName = stepName,
             errors = errors
         )
 
@@ -104,8 +104,8 @@ class TestStepContext<IN, OUT>(
         latch?.release()
     }
 
-    override fun <T : Any?> next(input: OUT, stepId: StepId): TestStepContext<OUT, T> {
-        return this.next<T>(stepId).also {
+    override fun <T : Any?> next(input: OUT, stepName: StepName): TestStepContext<OUT, T> {
+        return this.next<T>(stepName).also {
             (it.input as Channel<OUT>).trySend(input)
         }
     }
@@ -119,11 +119,11 @@ class TestStepContext<IN, OUT>(
         return TestStepContext(
             input = inputChannel ?: this.input,
             output = outputChannel ?: this.output,
-            campaignId = campaignId,
+            campaignName = campaignName,
             minionId = minionId,
-            scenarioId = scenarioId,
-            previousStepId = this.stepId,
-            stepId = stepId,
+            scenarioName = scenarioName,
+            previousStepName = this.stepName,
+            stepName = stepName,
             isExhausted = isExhausted,
             isTail = isTail,
             stepIterationIndex = stepIterationIndex
@@ -139,15 +139,15 @@ class TestStepContext<IN, OUT>(
         }
     }
 
-    override fun <T : Any?> next(stepId: StepId): TestStepContext<OUT, T> {
+    override fun <T : Any?> next(stepName: StepName): TestStepContext<OUT, T> {
         return TestStepContext(
             input = Channel(1),
             internalErrors = LinkedHashSet(internalErrors),
-            campaignId = campaignId,
+            campaignName = campaignName,
             minionId = minionId,
-            scenarioId = scenarioId,
-            previousStepId = this.stepId,
-            stepId = stepId,
+            scenarioName = scenarioName,
+            previousStepName = this.stepName,
+            stepName = stepName,
             isExhausted = isExhausted,
             isTail = isTail
         )
@@ -156,12 +156,12 @@ class TestStepContext<IN, OUT>(
     override fun toEventTags(): Map<String, String> {
         if (immutableEventTags == null) {
             val tags = mutableMapOf(
-                "campaign" to campaignId,
+                "campaign" to campaignName,
                 "minion" to minionId,
-                "scenario" to scenarioId,
+                "scenario" to scenarioName,
                 "iteration" to "$stepIterationIndex"
             )
-            previousStepId?.let { tags["previous-step"] = it }
+            previousStepName?.let { tags["previous-step"] = it }
             stepType?.let { tags["step-type"] = it }
             stepFamily?.let { tags["step-family"] = it }
             immutableEventTags = tags
@@ -175,11 +175,11 @@ class TestStepContext<IN, OUT>(
     override fun toMetersTags(): Tags {
         if (immutableMetersTags == null) {
             var tags = Tags.of(
-                "campaign", campaignId,
-                "scenario", scenarioId,
-                "step", stepId
+                "campaign", campaignName,
+                "scenario", scenarioName,
+                "step", stepName
             )
-            previousStepId?.let { tags = tags.and("parent-step", it) }
+            previousStepName?.let { tags = tags.and("parent-step", it) }
             immutableMetersTags = tags
         }
         return immutableMetersTags!!

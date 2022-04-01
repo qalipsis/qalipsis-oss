@@ -7,12 +7,11 @@ import kotlinx.coroutines.channels.SendChannel
  * Context of a unique execution of a minion on a step.
  * When the same minion repeats the same step in a raw, several contexts should be used.
  *
- * @property campaignId Identifier of the test campaign owning the context
+ * @property campaignName Identifier of the test campaign owning the context
  * @property minionId Identifier of the Minion owning the context
- * @property scenarioId Identifier of the Scenario being executed
- * @property directedAcyclicGraphId Identifier of the DirectedAcyclicGraph being executed
- * @property previousStepId First ancestor step
- * @property stepId Step executing the context
+ * @property scenarioName Identifier of the Scenario being executed
+ * @property previousStepName First ancestor step
+ * @property stepName Step executing the context
  * @property stepType Nature of the executed step, if defined
  * @property stepFamily Family or plugin the executed step belongs, if defined
  * @property stepIterationIndex Index of the current iteration for the same step and context
@@ -25,11 +24,11 @@ import kotlinx.coroutines.channels.SendChannel
  *
  */
 interface StepContext<IN, OUT> : StepOutput<OUT>, MonitoringTags {
-    val campaignId: CampaignId
+    val campaignName: CampaignName
     val minionId: MinionId
-    val scenarioId: ScenarioId
-    val previousStepId: StepId?
-    val stepId: StepId
+    val scenarioName: ScenarioName
+    val previousStepName: StepName?
+    val stepName: StepName
     var stepType: String?
     var stepFamily: String?
     val stepIterationIndex: Long
@@ -62,15 +61,15 @@ interface StepContext<IN, OUT> : StepOutput<OUT>, MonitoringTags {
     suspend fun release()
 
     /**
-     * Creates the [StepContext] for the next step with ID [stepId] and initializes the input of the
+     * Creates the [StepContext] for the next step with ID [stepName] and initializes the input of the
      * new context with [input].
      */
-    fun <T> next(input: OUT, stepId: StepId): StepContext<OUT, T>
+    fun <T> next(input: OUT, stepName: StepName): StepContext<OUT, T>
 
     /**
-     * Creates the [StepContext] for the next step with ID [stepId] without any input.
+     * Creates the [StepContext] for the next step with ID [stepName] without any input.
      */
-    fun <T> next(stepId: StepId): StepContext<OUT, T>
+    fun <T> next(stepName: StepName): StepContext<OUT, T>
 
     /**
      * Duplicates this [StepContext], specifying new channels and step iteration index.

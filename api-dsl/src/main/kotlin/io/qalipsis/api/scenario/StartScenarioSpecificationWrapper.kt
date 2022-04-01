@@ -1,6 +1,6 @@
 package io.qalipsis.api.scenario
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.StepSpecification
 
@@ -12,13 +12,13 @@ import io.qalipsis.api.steps.StepSpecification
  */
 internal class StartScenarioSpecificationWrapper(
     private val delegated: StepSpecificationRegistry,
-    private val dagId: DirectedAcyclicGraphId
+    private val dagId: DirectedAcyclicGraphName
 ) : StepSpecificationRegistry {
 
     override val rootSteps: List<StepSpecification<*, *, *>>
         get() = delegated.rootSteps
 
-    override val dagsUnderLoad: Collection<DirectedAcyclicGraphId>
+    override val dagsUnderLoad: Collection<DirectedAcyclicGraphName>
         get() = delegated.dagsUnderLoad
 
     override suspend fun <O> find(stepName: StepName): StepSpecification<*, O, *>? {
@@ -29,17 +29,17 @@ internal class StartScenarioSpecificationWrapper(
         return delegated.exists(stepName)
     }
 
-    override fun buildDagId(parent: DirectedAcyclicGraphId?): DirectedAcyclicGraphId {
+    override fun buildDagId(parent: DirectedAcyclicGraphName?): DirectedAcyclicGraphName {
         return delegated.buildDagId(parent)
     }
 
     override fun add(step: StepSpecification<*, *, *>) {
-        step.directedAcyclicGraphId = dagId
+        step.directedAcyclicGraphName = dagId
         delegated.add(step)
     }
 
     override fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>) {
-        newRoot.directedAcyclicGraphId = dagId
+        newRoot.directedAcyclicGraphName = dagId
         delegated.insertRoot(newRoot, rootToShift)
     }
 

@@ -1,6 +1,6 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -28,7 +28,7 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
     override lateinit var scenario: StepSpecificationRegistry
 
     @field:NotBlank
-    override var directedAcyclicGraphId: DirectedAcyclicGraphId = ""
+    override var directedAcyclicGraphName: DirectedAcyclicGraphName = ""
 
     override var timeout: Duration? = null
 

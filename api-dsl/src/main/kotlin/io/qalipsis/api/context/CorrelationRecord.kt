@@ -10,6 +10,6 @@ package io.qalipsis.api.context
  */
 data class CorrelationRecord<I : Any?>(
     val minionId: MinionId,
-    val stepId: StepId,
+    val stepName: StepName,
     val value: I
 )

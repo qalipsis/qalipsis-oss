@@ -1,6 +1,6 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
 
 /**
@@ -8,7 +8,7 @@ import io.qalipsis.api.retry.RetryPolicy
  *
  * @author Eric Jessé
  */
-abstract class AbstractStep<I, O>(override val id: StepId, override var retryPolicy: RetryPolicy?) : Step<I, O> {
+abstract class AbstractStep<I, O>(override val name: StepName, override var retryPolicy: RetryPolicy?) : Step<I, O> {
 
     override val next: MutableList<Step<O, *>> = mutableListOf()
 

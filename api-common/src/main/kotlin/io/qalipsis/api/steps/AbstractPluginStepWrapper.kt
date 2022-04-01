@@ -1,6 +1,6 @@
 package io.qalipsis.api.steps
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.retry.RetryPolicy
@@ -35,10 +35,10 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
             wrappedStepSpec.scenario = value
         }
 
-    override var directedAcyclicGraphId: DirectedAcyclicGraphId
-        get() = wrappedStepSpec.directedAcyclicGraphId
+    override var directedAcyclicGraphName: DirectedAcyclicGraphName
+        get() = wrappedStepSpec.directedAcyclicGraphName
         set(value) {
-            wrappedStepSpec.directedAcyclicGraphId = value
+            wrappedStepSpec.directedAcyclicGraphName = value
         }
 
     override val timeout: Duration?

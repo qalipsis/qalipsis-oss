@@ -1,6 +1,6 @@
 package io.qalipsis.api.scenario
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.StepSpecification
 
@@ -21,7 +21,7 @@ interface StepSpecificationRegistry : ScenarioSpecification {
     /**
      * IDs of all the DAGs receiving the load of the minions.
      */
-    val dagsUnderLoad: Collection<DirectedAcyclicGraphId>
+    val dagsUnderLoad: Collection<DirectedAcyclicGraphName>
 
     /**
      * Finds a [StepSpecification] that already exists or will soon exist.
@@ -34,14 +34,14 @@ interface StepSpecificationRegistry : ScenarioSpecification {
     fun exists(stepName: StepName): Boolean
 
     /**
-     * Provides a unique [DirectedAcyclicGraphId].
+     * Provides a unique [DirectedAcyclicGraphName].
      *
      * @param parent when the DAG follows another one, the ancestor is provided
      */
-    fun buildDagId(parent: DirectedAcyclicGraphId? = null): DirectedAcyclicGraphId
+    fun buildDagId(parent: DirectedAcyclicGraphName? = null): DirectedAcyclicGraphName
 
     /**
-     * Adds the step as root of the scenario and assign a relevant [StepSpecification.directedAcyclicGraphId].
+     * Adds the step as root of the scenario and assign a relevant [StepSpecification.directedAcyclicGraphName].
      */
     fun add(step: StepSpecification<*, *, *>)
 
@@ -51,7 +51,7 @@ interface StepSpecificationRegistry : ScenarioSpecification {
     fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>)
 
     /**
-     * [register] [nextStep] in the scenario and assigns it a relevant [StepSpecification.directedAcyclicGraphId].
+     * [register] [nextStep] in the scenario and assigns it a relevant [StepSpecification.directedAcyclicGraphName].
      *
      * This does not add [nextStep] to the list of [previousStep]'s next steps.
      */

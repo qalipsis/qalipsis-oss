@@ -120,17 +120,17 @@ internal class ScenarioSpecificationImplementationTest {
         val scenarioWithStart = scenario.start() as StepSpecificationRegistry
 
         scenarioWithStart.add(step)
-        assertNotNull(step.directedAcyclicGraphId)
+        assertNotNull(step.directedAcyclicGraphName)
 
         val singletonStep = SingletonTestStep()
         step.add(singletonStep)
-        assertThat(singletonStep.directedAcyclicGraphId).all {
+        assertThat(singletonStep.directedAcyclicGraphName).all {
             isNotNull()
-            isNotEqualTo(step.directedAcyclicGraphId)
+            isNotEqualTo(step.directedAcyclicGraphName)
         }
         assertThat(scenario.dagsUnderLoad).containsAll(
-            step.directedAcyclicGraphId,
-            singletonStep.directedAcyclicGraphId
+            step.directedAcyclicGraphName,
+            singletonStep.directedAcyclicGraphName
         )
     }
 
@@ -141,7 +141,7 @@ internal class ScenarioSpecificationImplementationTest {
         val previous = relaxedMockk<StepSpecification<*, *, *>>(
             moreInterfaces = arrayOf(SingletonStepSpecification::class)
         ) {
-            every { directedAcyclicGraphId } returns "my-dag"
+            every { directedAcyclicGraphName } returns "my-dag"
         }
         val next = relaxedMockk<StepSpecification<*, *, *>>()
 
@@ -149,7 +149,7 @@ internal class ScenarioSpecificationImplementationTest {
         scenario.registerNext(previous, next)
 
         // then
-        every { next setProperty "directedAcyclicGraphId" value "dag-1" }
+        every { next setProperty "directedAcyclicGraphName" value "dag-1" }
     }
 
     @Test
@@ -157,7 +157,7 @@ internal class ScenarioSpecificationImplementationTest {
         // given
         val scenario = ScenarioSpecificationImplementation("my-scenario")
         val previous = relaxedMockk<StepSpecification<*, *, *>> {
-            every { directedAcyclicGraphId } returns "my-dag"
+            every { directedAcyclicGraphName } returns "my-dag"
         }
         val next = relaxedMockk<StepSpecification<*, *, *>>(
             moreInterfaces = arrayOf(SingletonStepSpecification::class)
@@ -167,7 +167,7 @@ internal class ScenarioSpecificationImplementationTest {
         scenario.registerNext(previous, next)
 
         // then
-        every { next setProperty "directedAcyclicGraphId" value "dag-1" }
+        every { next setProperty "directedAcyclicGraphName" value "dag-1" }
     }
 
     @Test
@@ -175,7 +175,7 @@ internal class ScenarioSpecificationImplementationTest {
         // given
         val scenario = ScenarioSpecificationImplementation("my-scenario")
         val previous = relaxedMockk<StepSpecification<*, *, *>> {
-            every { directedAcyclicGraphId } returns "my-dag"
+            every { directedAcyclicGraphName } returns "my-dag"
             every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val next = relaxedMockk<StepSpecification<*, *, *>> {
@@ -186,7 +186,7 @@ internal class ScenarioSpecificationImplementationTest {
         scenario.registerNext(previous, next)
 
         // then
-        every { next setProperty "directedAcyclicGraphId" value "dag-1" }
+        every { next setProperty "directedAcyclicGraphName" value "dag-1" }
     }
 
     @Test
@@ -194,7 +194,7 @@ internal class ScenarioSpecificationImplementationTest {
         // given
         val scenario = ScenarioSpecificationImplementation("my-scenario")
         val previous = relaxedMockk<StepSpecification<*, *, *>> {
-            every { directedAcyclicGraphId } returns "my-dag"
+            every { directedAcyclicGraphName } returns "my-dag"
             every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val next = relaxedMockk<StepSpecification<*, *, *>> {
@@ -205,7 +205,7 @@ internal class ScenarioSpecificationImplementationTest {
         scenario.registerNext(previous, next)
 
         // then
-        every { next setProperty "directedAcyclicGraphId" value "my-dag" }
+        every { next setProperty "directedAcyclicGraphName" value "my-dag" }
     }
 
     private inner class TestStep : AbstractStepSpecification<Unit, Unit, TestStep>()

@@ -1,7 +1,7 @@
 package io.qalipsis.api.scenario
 
 import io.aerisconsulting.catadioptre.KTestable
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
@@ -36,31 +36,31 @@ internal class ScenarioSpecificationImplementation(
 
     override var dagsCount = 0
 
-    override var dagsUnderLoad = concurrentSet<DirectedAcyclicGraphId>()
+    override var dagsUnderLoad = concurrentSet<DirectedAcyclicGraphName>()
 
     override fun add(step: StepSpecification<*, *, *>) {
         step.scenario = this
         rootSteps.add(step)
         register(step)
-        if (step.directedAcyclicGraphId.isBlank()) {
-            step.directedAcyclicGraphId = this.buildDagId()
+        if (step.directedAcyclicGraphName.isBlank()) {
+            step.directedAcyclicGraphName = this.buildDagId()
         }
     }
 
     override fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>) {
         rootSteps.removeIf { it === rootToShift }
-        newRoot.directedAcyclicGraphId = rootToShift.directedAcyclicGraphId
+        newRoot.directedAcyclicGraphName = rootToShift.directedAcyclicGraphName
         add(newRoot)
         newRoot.add(rootToShift)
     }
 
     override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
         register(nextStep)
-        if (nextStep.directedAcyclicGraphId.isBlank()) {
+        if (nextStep.directedAcyclicGraphName.isBlank()) {
             if (isNewDag(previousStep, nextStep)) {
-                nextStep.directedAcyclicGraphId = buildDagId(previousStep.directedAcyclicGraphId)
+                nextStep.directedAcyclicGraphName = buildDagId(previousStep.directedAcyclicGraphName)
             } else {
-                nextStep.directedAcyclicGraphId = previousStep.directedAcyclicGraphId
+                nextStep.directedAcyclicGraphName = previousStep.directedAcyclicGraphName
             }
         }
     }
@@ -105,7 +105,7 @@ internal class ScenarioSpecificationImplementation(
         this.retryPolicy = retryPolicy
     }
 
-    override fun buildDagId(parent: DirectedAcyclicGraphId?): DirectedAcyclicGraphId {
+    override fun buildDagId(parent: DirectedAcyclicGraphName?): DirectedAcyclicGraphName {
         val newDag = "dag-${++dagsCount}"
         // If the parent DAG is part of the loaded branch, the new one also.
         parent?.let {

@@ -1,10 +1,10 @@
 package io.qalipsis.test.steps
 
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 
@@ -20,10 +20,10 @@ object StepTestHelper {
         outputChannel: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(100),
         errors: MutableList<StepError> = mutableListOf(),
         minionId: MinionId = "my-minion",
-        campaignId: ScenarioId = "",
-        scenarioId: ScenarioId = "",
-        previousStepId: StepId = "my-previous-step",
-        stepId: StepId = "my-step",
+        campaignName: ScenarioName = "",
+        scenarioName: ScenarioName = "",
+        previousStepName: StepName = "my-previous-step",
+        stepName: StepName = "my-step",
         stepIterationIndex: Long = 0,
         isExhausted: Boolean = false,
         isTail: Boolean = false
@@ -36,11 +36,11 @@ object StepTestHelper {
             inputChannel,
             outputChannel,
             errors,
-            campaignId,
+            campaignName,
             minionId,
-            scenarioId,
-            previousStepId,
-            stepId,
+            scenarioName,
+            previousStepName,
+            stepName,
             "",
             "",
             stepIterationIndex,

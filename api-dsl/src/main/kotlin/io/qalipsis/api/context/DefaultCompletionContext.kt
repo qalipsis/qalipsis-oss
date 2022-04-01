@@ -8,23 +8,23 @@ import io.micrometer.core.instrument.Tags
  * @author Eric Jessé
  */
 data class DefaultCompletionContext(
-    override val campaignId: CampaignId,
-    override val scenarioId: ScenarioId,
+    override val campaignName: CampaignName,
+    override val scenarioName: ScenarioName,
     override val minionId: MinionId,
-    override val lastExecutedStepId: StepId,
+    override val lastExecutedStepName: StepName,
     override val errors: List<StepError>
 ) : CompletionContext {
 
     private var eventTags = mapOf(
-        "campaign" to campaignId,
+        "campaign" to campaignName,
         "minion" to minionId,
-        "scenario" to scenarioId,
-        "last-executed-step" to lastExecutedStepId,
+        "scenario" to scenarioName,
+        "last-executed-step" to lastExecutedStepName,
     )
 
     private var metersTag = Tags.of(
-        "campaign", campaignId,
-        "scenario", scenarioId
+        "campaign", campaignName,
+        "scenario", scenarioName
     )
 
     override fun toEventTags() = eventTags
