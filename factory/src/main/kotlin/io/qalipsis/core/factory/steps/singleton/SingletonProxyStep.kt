@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps.singleton
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.steps.AbstractStep
@@ -14,19 +14,19 @@ import io.qalipsis.api.steps.AbstractStep
  * @author Eric Jessé
  */
 internal class SingletonProxyStep<I>(
-        id: StepId,
+    id: StepName,
 
-        /**
-         * Topic used to provide data to all the minions running the step.
-         */
-        private val topic: Topic<I>,
+    /**
+     * Topic used to provide data to all the minions running the step.
+     */
+    private val topic: Topic<I>,
 
-        /**
-         * Specification to filter the record from the remote step.
-         *
-         * By default, all the records are accepted.
-         */
-        private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true }
+    /**
+     * Specification to filter the record from the remote step.
+     *
+     * By default, all the records are accepted.
+     */
+    private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true }
 
 ) : AbstractStep<I, I>(id, null) {
 
@@ -35,7 +35,7 @@ internal class SingletonProxyStep<I>(
     }
 
     override suspend fun execute(context: StepContext<I, I>) {
-        val valueFromTopic = topic.subscribe("${context.minionId}-${context.stepId}").pollValue()
+        val valueFromTopic = topic.subscribe("${context.minionId}-${context.stepName}").pollValue()
         if (filter(valueFromTopic)) {
             context.send(valueFromTopic)
         }

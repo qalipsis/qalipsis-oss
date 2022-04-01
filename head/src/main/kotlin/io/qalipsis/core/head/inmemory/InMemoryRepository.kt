@@ -1,13 +1,13 @@
 package io.qalipsis.core.head.inmemory
 
-import io.qalipsis.core.persistence.Entity
+import io.qalipsis.core.persistence.InMemoryEntity
 
 /**
  * Interface to store and provide persistent entities.
  *
  * @author Eric Jessé
  */
-interface InMemoryRepository<ENTITY : Entity<ID>, ID : Any> {
+interface InMemoryRepository<ENTITY : InMemoryEntity<ID>, ID : Any> {
 
     fun save(entity: ENTITY): ENTITY
 

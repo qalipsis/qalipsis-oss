@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.inmemory
 
-import io.qalipsis.core.persistence.Entity
+import io.qalipsis.core.persistence.InMemoryEntity
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -12,7 +12,7 @@ internal class AbstractInMemoryRepositoryTest {
 
     @Test
     internal fun `save then get and delete`() {
-        val entity = TestEntity(123)
+        val entity = TestInMemoryEntity(123)
         val repository = TestEntityRepository()
 
         var saved = repository.save(entity)
@@ -21,7 +21,7 @@ internal class AbstractInMemoryRepositoryTest {
         val fetched = repository.get(123)
         Assertions.assertSame(entity, fetched)
 
-        val newEntityWithSameId = TestEntity(123)
+        val newEntityWithSameId = TestInMemoryEntity(123)
         saved = repository.save(newEntityWithSameId)
         Assertions.assertSame(newEntityWithSameId, saved)
 
@@ -31,9 +31,9 @@ internal class AbstractInMemoryRepositoryTest {
 
     @Test
     internal fun `save all then get by ids and get all`() {
-        val entity1 = TestEntity(123)
-        val entity2 = TestEntity(456)
-        val entity3 = TestEntity(789)
+        val entity1 = TestInMemoryEntity(123)
+        val entity2 = TestInMemoryEntity(456)
+        val entity3 = TestInMemoryEntity(789)
         val repository = TestEntityRepository()
 
         val entities = listOf(entity1, entity2, entity3)
@@ -41,7 +41,7 @@ internal class AbstractInMemoryRepositoryTest {
         Assertions.assertEquals(3, result.size)
         Assertions.assertSame(entities, result)
 
-        result = repository.getAll(listOf(123, 789)) as List<TestEntity>
+        result = repository.getAll(listOf(123, 789)) as List<TestInMemoryEntity>
         Assertions.assertEquals(2, result.size)
         Assertions.assertSame(entity1, result[0])
         Assertions.assertSame(entity3, result[1])
@@ -51,9 +51,9 @@ internal class AbstractInMemoryRepositoryTest {
         Assertions.assertEquals(entities.toSet(), result)
     }
 
-    data class TestEntity(
-        override var id: Long
-    ) : Entity<Long>
+    data class TestInMemoryEntity(
+        override var name: Long
+    ) : InMemoryEntity<Long>
 
-    class TestEntityRepository : AbstractInMemoryRepository<Entity<Long>, Long>()
+    class TestEntityRepository : AbstractInMemoryRepository<InMemoryEntity<Long>, Long>()
 }

@@ -45,7 +45,7 @@ internal class DatabaseCampaignReportPublisher(
             scenarioReportMessageEntitiesToSave.addAll(
                 mapMessagesToScenarioReportMessageEntities(
                     scenarioReport.messages,
-                    scenariosIdsByName[scenarioReport.scenarioId]!!
+                    scenariosIdsByName[scenarioReport.scenarioName]!!
                 )
             )
         }
@@ -57,7 +57,7 @@ internal class DatabaseCampaignReportPublisher(
     ): CampaignReportEntity {
         return campaignReportRepository.save(
             CampaignReportEntity(
-                campaignRepository.findIdByName(campaignReport.campaignId),
+                campaignRepository.findIdByName(campaignReport.campaignName),
                 campaignReport.startedMinions,
                 campaignReport.completedMinions,
                 campaignReport.successfulExecutions,
@@ -71,7 +71,7 @@ internal class DatabaseCampaignReportPublisher(
         campaignReportEntityId: Long
     ): ScenarioReportEntity {
         return ScenarioReportEntity(
-            scenarioReport.scenarioId,
+            scenarioReport.scenarioName,
             campaignReportEntityId,
             scenarioReport.start,
             scenarioReport.end,
@@ -90,7 +90,7 @@ internal class DatabaseCampaignReportPublisher(
         return reportMessages.map {
             ScenarioReportMessageEntity(
                 scenarioReportEntityId,
-                it.stepId,
+                it.stepName,
                 it.messageId.toString(),
                 it.severity,
                 it.message

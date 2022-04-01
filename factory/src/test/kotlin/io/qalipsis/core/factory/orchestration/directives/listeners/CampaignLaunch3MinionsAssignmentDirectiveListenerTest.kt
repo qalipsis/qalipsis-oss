@@ -93,8 +93,8 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
@@ -103,8 +103,8 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListenerTest {
             minionsKeeper.create("my-campaign", "my-scenario", listOf("dag-2", "dag-3"), "minion-2")
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
             )
@@ -127,16 +127,16 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
             minionAssignmentKeeper.assign("my-campaign", "my-scenario")
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IGNORED
                 )
             )
@@ -164,16 +164,16 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
             minionAssignmentKeeper.assign("my-campaign", "my-scenario")
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
                     error = "A problem occurred"
                 )

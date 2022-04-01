@@ -1,7 +1,7 @@
 package io.qalipsis.core.directives
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.rampup.RampUpConfiguration
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,14 +19,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("md")
 data class MinionsDeclarationDirective(
-    override val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
+    override val campaignName: CampaignName,
+    val scenarioName: ScenarioName,
     val minionsCount: Int,
     override val channel: DispatcherChannel
 ) : SingleUseDirective<MinionsDeclarationDirectiveReference>(), CampaignManagementDirective {
 
     override fun toReference(key: DirectiveKey): MinionsDeclarationDirectiveReference {
-        return MinionsDeclarationDirectiveReference(key, campaignId, scenarioId)
+        return MinionsDeclarationDirectiveReference(key, campaignName, scenarioName)
     }
 }
 
@@ -37,8 +37,8 @@ data class MinionsDeclarationDirective(
 @SerialName("mdRef")
 data class MinionsDeclarationDirectiveReference(
     override val key: DirectiveKey,
-    override val campaignId: CampaignId,
-    val scenarioId: ScenarioId
+    override val campaignName: CampaignName,
+    val scenarioName: ScenarioName
 ) : SingleUseDirectiveReference(), CampaignManagementDirective
 
 /**
@@ -47,15 +47,15 @@ data class MinionsDeclarationDirectiveReference(
 @Serializable
 @SerialName("mrp")
 data class MinionsRampUpPreparationDirective(
-    override val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
+    override val campaignName: CampaignName,
+    val scenarioName: ScenarioName,
     val rampUpConfiguration: RampUpConfiguration = RampUpConfiguration(3000, 1.0),
     override val channel: DispatcherChannel
 ) : SingleUseDirective<MinionsRampUpPreparationDirectiveReference>(),
     CampaignManagementDirective {
 
     override fun toReference(key: DirectiveKey): MinionsRampUpPreparationDirectiveReference {
-        return MinionsRampUpPreparationDirectiveReference(key, campaignId, scenarioId)
+        return MinionsRampUpPreparationDirectiveReference(key, campaignName, scenarioName)
     }
 }
 
@@ -66,6 +66,6 @@ data class MinionsRampUpPreparationDirective(
 @SerialName("mrpRef")
 data class MinionsRampUpPreparationDirectiveReference(
     override val key: DirectiveKey,
-    override val campaignId: CampaignId,
-    val scenarioId: ScenarioId
+    override val campaignName: CampaignName,
+    val scenarioName: ScenarioName
 ) : SingleUseDirectiveReference(), CampaignManagementDirective

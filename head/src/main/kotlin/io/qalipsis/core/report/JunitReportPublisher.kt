@@ -31,7 +31,7 @@ internal class JunitReportPublisher(
 
     override suspend fun publish(campaign: CampaignConfiguration, report: CampaignReport) {
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }!!
-        val dir = File(reportFolder, campaign.id)
+        val dir = File(reportFolder, campaign.name)
         dir.mkdirs()
 
         report.scenariosReports.forEach {
@@ -40,7 +40,7 @@ internal class JunitReportPublisher(
     }
 
     private fun writeScenarioToFile(directory: File, scenarioReport: ScenarioReport, duration: Long) {
-        File(directory, "${scenarioReport.scenarioId}.xml").writeText(
+        File(directory, "${scenarioReport.scenarioName}.xml").writeText(
             REPORT_HEADER + scenarioReportToText(
                 scenarioReport,
                 duration
@@ -68,7 +68,7 @@ $err
 
     private fun buildConsoleMessage(it: ReportMessage): String {
         val severity = "${it.severity}".padEnd(5)
-        return "$severity Step ${it.stepId}: ${it.message}"
+        return "$severity Step ${it.stepName}: ${it.message}"
     }
 
     private fun generateTestSuiteHeader(scenarioReport: ScenarioReport, duration: Long): String {
@@ -76,16 +76,16 @@ $err
         val failures = scenarioReport.messages.filter { it.severity == ReportMessageSeverity.ABORT }.size
         val errors = scenarioReport.messages.filter { it.severity == ReportMessageSeverity.ERROR }.size
         val timestamp = Instant.now()
-        return """<testsuite name="${scenarioReport.scenarioId}" tests="$tests" skipped="0" failures="$failures" errors="$errors" timestamp="$timestamp" hostname="Qalipsis" time="$duration">"""
+        return """<testsuite name="${scenarioReport.scenarioName}" tests="$tests" skipped="0" failures="$failures" errors="$errors" timestamp="$timestamp" hostname="Qalipsis" time="$duration">"""
     }
 
     private fun generateTestSuites(scenarioReport: ScenarioReport): String {
         val time = scenarioReport.end.let { Duration.between(scenarioReport.start, it).toSeconds() }
         return scenarioReport.messages.joinToString("\n  ") { message ->
-            if (isFailedTestCase(message)) """<testcase name="${message.stepId}" time="$time">
+            if (isFailedTestCase(message)) """<testcase name="${message.stepName}" time="$time">
     <failure message="${message.message}" type="${message.severity}"/>
   </testcase>"""
-            else """<testcase name="${message.stepId}" time="$time"/>"""
+            else """<testcase name="${message.stepName}" time="$time"/>"""
         }
     }
 

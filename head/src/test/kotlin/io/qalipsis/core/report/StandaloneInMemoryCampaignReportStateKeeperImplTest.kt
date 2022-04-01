@@ -10,7 +10,7 @@ import assertk.assertions.isNull
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.getProperty
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -45,10 +45,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions).isEqualTo(0)
@@ -70,10 +70,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.complete("the campaign", "the scenario")
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -105,10 +105,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         )
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -123,7 +123,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
                     hasSize(1)
                     key(messageId).all {
                         prop(ReportMessage::messageId).isEqualTo(messageId)
-                        prop(ReportMessage::stepId).isEqualTo("the step")
+                        prop(ReportMessage::stepName).isEqualTo("the step")
                         prop(ReportMessage::severity).isEqualTo(ReportMessageSeverity.INFO)
                         prop(ReportMessage::message).isEqualTo("The message")
                     }
@@ -149,10 +149,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.delete("the campaign", "the scenario", "the step", messageId)
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -179,10 +179,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordStartedMinion("the campaign", "the scenario", 3)
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -209,10 +209,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordCompletedMinion("the campaign", "the scenario", 3)
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -240,10 +240,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordSuccessfulStepExecution("the campaign", "the scenario", "the other step", 10)
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -271,10 +271,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "the other step", 10)
 
         // then
-        assertThat(campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
+        assertThat(campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")).all {
             hasSize(1)
             key("the scenario").all {
-                prop(InMemoryScenarioReportingExecutionState::scenarioId).isEqualTo("the scenario")
+                prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
                 prop(InMemoryScenarioReportingExecutionState::start).isNotNull()
                 prop(InMemoryScenarioReportingExecutionState::end).isNull()
                 prop(InMemoryScenarioReportingExecutionState::startedMinions)
@@ -332,7 +332,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
         // then
         assertThat(report).all {
-            prop(CampaignReport::campaignId).isEqualTo("the campaign")
+            prop(CampaignReport::campaignName).isEqualTo("the campaign")
             prop(CampaignReport::start).isNotNull()
             prop(CampaignReport::end).isNotNull()
             prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)
@@ -350,7 +350,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
             val states =
-                campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>("scenarioStates")
+                campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>("scenarioStates")
             val state1 = states["the scenario 1"]!!
             val state2 = states["the scenario 2"]!!
 
@@ -380,7 +380,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignId).isEqualTo("the campaign")
+                prop(CampaignReport::campaignName).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state1.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
@@ -403,7 +403,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
             val states =
-                campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>(
+                campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>(
                     "scenarioStates"
                 )
             val state1 = states["the scenario 1"]!!
@@ -435,7 +435,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignId).isEqualTo("the campaign")
+                prop(CampaignReport::campaignName).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state1.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.WARNING)
@@ -458,7 +458,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
             val states =
-                campaignStateKeeper.getProperty<Map<ScenarioId, InMemoryScenarioReportingExecutionState>>(
+                campaignStateKeeper.getProperty<Map<ScenarioName, InMemoryScenarioReportingExecutionState>>(
                     "scenarioStates"
                 )
             val state1 = states["the scenario 1"]!!
@@ -490,7 +490,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignId).isEqualTo("the campaign")
+                prop(CampaignReport::campaignName).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state2.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.FAILED)
@@ -542,7 +542,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignId).isEqualTo("the campaign")
+                prop(CampaignReport::campaignName).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state2.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)

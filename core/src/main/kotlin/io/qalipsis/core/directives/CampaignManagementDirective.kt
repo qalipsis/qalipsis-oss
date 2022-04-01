@@ -1,6 +1,6 @@
 package io.qalipsis.core.directives
 
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 
 /**
  * Interface for [io.qalipsis.api.orchestration.directives.Directive]s linked to a campaign.
@@ -9,5 +9,5 @@ import io.qalipsis.api.context.CampaignId
  */
 interface CampaignManagementDirective {
 
-    val campaignId: CampaignId
+    val campaignName: CampaignName
 }

@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.FactoryConfiguration
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -44,14 +45,13 @@ internal class RedisCompletionStateIntegrationTest : AbstractRedisStateIntegrati
         campaign.factories += mapOf(
             "node-1" to FactoryConfiguration(
                 "", mutableMapOf(
-                    "scenario-1" to emptyList(),
-                    "scenario-2" to emptyList()
+                    "scenario-1" to FactoryScenarioAssignment("scenario-1", emptyList()),
+                    "scenario-2" to FactoryScenarioAssignment("scenario-2", emptyList())
                 )
             ),
             "node-2" to FactoryConfiguration(
-                "", mutableMapOf(
-                    "scenario-2" to emptyList()
-                )
+                "",
+                mutableMapOf("scenario-2" to FactoryScenarioAssignment("scenario-2", emptyList()))
             )
         )
         operations.saveConfiguration(campaign)
@@ -70,7 +70,7 @@ internal class RedisCompletionStateIntegrationTest : AbstractRedisStateIntegrati
                 CampaignShutdownDirective("my-campaign", "my-broadcast-channel")
             )
         }
-        assertThat(operations.getState(campaign.id)).isNotNull().all {
+        assertThat(operations.getState(campaign.name)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.COMPLETION_STATE)
         }

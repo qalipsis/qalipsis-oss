@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
@@ -16,7 +16,7 @@ import io.qalipsis.api.steps.AbstractStep
  * @property specification the closure generating a map of values to push to the shared registry from the context input
  */
 internal class ShelveStep<I>(
-    id: StepId,
+    id: StepName,
     private val sharedStateRegistry: SharedStateRegistry,
     private val specification: (input: I) -> Map<String, Any?>
 ) : AbstractStep<I, I>(id, null) {

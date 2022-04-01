@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 
@@ -13,7 +13,7 @@ import io.qalipsis.api.steps.AbstractStep
  * @author Eric Jessé
  */
 internal class CatchExhaustedContextStep<O>(
-    id: StepId,
+    id: StepName,
     private val block: (suspend (context: StepContext<*, O>) -> Unit)
 ) : AbstractStep<Any?, O>(id, null) {
 

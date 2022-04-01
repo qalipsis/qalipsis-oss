@@ -31,19 +31,19 @@ internal class CampaignScenarioShutdownDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is CampaignScenarioShutdownDirective
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignId, directive.scenarioId)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: CampaignScenarioShutdownDirective) {
         val feedback = CampaignScenarioShutdownFeedback(
-            campaignId = directive.campaignId,
-            scenarioId = directive.scenarioId,
+            campaignName = directive.campaignName,
+            scenarioName = directive.scenarioName,
             status = FeedbackStatus.IN_PROGRESS
         )
         factoryChannel.publishFeedback(feedback)
         try {
-            factoryCampaignManager.shutdownScenario(directive.campaignId, directive.scenarioId)
+            factoryCampaignManager.shutdownScenario(directive.campaignName, directive.scenarioName)
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         } catch (e: Exception) {
             log.error(e) { e.message }

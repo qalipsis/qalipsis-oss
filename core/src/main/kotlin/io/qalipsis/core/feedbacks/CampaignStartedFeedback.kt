@@ -1,8 +1,8 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
+import io.qalipsis.api.context.ScenarioName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -14,9 +14,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("csfd")
 data class CampaignStartedForDagFeedback(
-    val campaignId: CampaignId,
-    val scenarioId: ScenarioId,
-    val dagId: DirectedAcyclicGraphId,
+    val campaignName: CampaignName,
+    val scenarioName: ScenarioName,
+    val dagId: DirectedAcyclicGraphName,
     /**
      * Status of the directive processing.
      */

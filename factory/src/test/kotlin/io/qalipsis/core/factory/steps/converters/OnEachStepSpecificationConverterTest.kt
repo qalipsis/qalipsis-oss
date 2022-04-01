@@ -54,7 +54,7 @@ internal class OnEachStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(OnEachStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(OnEachStep<*>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("statement").isSameAs(blockSpecification)
         }
@@ -75,7 +75,7 @@ internal class OnEachStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(OnEachStep::class).all {
-            prop(OnEachStep<*>::id).isEmpty()
+            prop(OnEachStep<*>::name).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("statement").isSameAs(blockSpecification)
         }

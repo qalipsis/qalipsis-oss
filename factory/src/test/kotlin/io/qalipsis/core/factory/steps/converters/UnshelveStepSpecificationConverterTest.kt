@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
  * @author Eric Jessé
  */
 @Suppress("UNCHECKED_CAST")
-internal class UnUnshelveStepSpecificationConverterTest :
+internal class UnshelveStepSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<UnshelveStepSpecificationConverter>() {
 
     @RelaxedMockK
@@ -56,7 +56,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
 
         // then
         creationContext.createdStep!!.let {
-            assertEquals("my-step", it.id)
+            assertEquals("my-step", it.name)
             assertThat(it).isInstanceOf(UnshelveStep::class).all {
                 prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
                 prop("names").isSameAs(keys)
@@ -77,7 +77,7 @@ internal class UnUnshelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(UnshelveStep::class).all {
-            prop(UnshelveStep<*>::id).isEmpty()
+            prop(UnshelveStep<*>::name).isEmpty()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("names").isSameAs(keys)
             prop("delete").isEqualTo(false)
@@ -99,9 +99,9 @@ internal class UnUnshelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SingularUnshelveStep::class).all {
-            prop(SingularUnshelveStep<*,*>::id).isEmpty()
+            prop(SingularUnshelveStep<*, *>::name).isEmpty()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-            prop("name").isEqualTo("value-1")
+            prop("shelveName").isEqualTo("value-1")
             prop("delete").isEqualTo(true)
         }
     }

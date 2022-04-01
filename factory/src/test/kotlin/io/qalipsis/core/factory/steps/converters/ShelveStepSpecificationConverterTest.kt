@@ -56,7 +56,7 @@ internal class ShelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(ShelveStep<*>::name).isEqualTo("my-step")
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("specification").isSameAs(blockSpecification)
         }
@@ -74,7 +74,7 @@ internal class ShelveStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
-            prop(ShelveStep<*>::id).isEmpty()
+            prop(ShelveStep<*>::name).isEmpty()
             prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
             prop("specification").isSameAs(blockSpecification)
         }

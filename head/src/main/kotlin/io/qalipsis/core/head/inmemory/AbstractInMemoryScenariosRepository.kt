@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.inmemory
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
@@ -14,5 +14,5 @@ import jakarta.inject.Singleton
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.VOLATILE])
-internal class AbstractInMemoryScenariosRepository : AbstractInMemoryRepository<ScenarioSummary, ScenarioId>(),
+internal class AbstractInMemoryScenariosRepository : AbstractInMemoryRepository<ScenarioSummary, ScenarioName>(),
     ScenarioSummaryRepository

@@ -2,6 +2,7 @@ package io.qalipsis.core.head
 
 import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.core.configuration.JsonSerializationModuleConfiguration
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.CampaignShutdownDirective
@@ -23,7 +24,10 @@ internal class FactoryApiDirectivesTest {
     fun `should encode and decode FactoryAssignmentDirective as directive`() {
         val directive: Directive = FactoryAssignmentDirective(
             "my-campaign",
-            mapOf("my-scenario-1" to listOf("dag-1", "dag-2"), "my-scenario-2" to listOf("dag-3", "dag-4")),
+            listOf(
+                FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
+            ),
             broadcastChannel = "broadcast-channel",
             feedbackChannel = "feedback-channel",
             channel = "broadcast"

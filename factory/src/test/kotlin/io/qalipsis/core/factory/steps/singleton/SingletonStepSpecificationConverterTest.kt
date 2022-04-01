@@ -193,7 +193,7 @@ internal class SingletonStepSpecificationConverterTest :
 
         // then
         creationContext.createdStep!!.let { step ->
-            assertNotNull(step.id)
+            assertNotNull(step.name)
             assertThat(step).isInstanceOf(SingletonProxyStep::class).all {
                 typedProp<Topic<String>>("topic").isSameAs(dataTransferTopic)
             }
@@ -220,9 +220,9 @@ internal class SingletonStepSpecificationConverterTest :
 
         // then
         creationContext.createdStep!!.let { step ->
-            assertNotNull(step.id)
+            assertNotNull(step.name)
             assertThat(step).isInstanceOf(TopicDataPushStep::class).all {
-                prop("parentStepId").isEqualTo("my-singleton")
+                prop("parentStepName").isEqualTo("my-singleton")
                 prop("topic").isSameAs(dataTransferTopic)
                 prop("coroutineScope").isSameAs(campaignCoroutineScope)
             }

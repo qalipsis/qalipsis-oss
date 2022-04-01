@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.inmemory
 
-import io.qalipsis.core.persistence.Entity
+import io.qalipsis.core.persistence.InMemoryEntity
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -8,12 +8,13 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractInMemoryRepository<ENTITY : Entity<ID>, ID : Any> : InMemoryRepository<ENTITY, ID> {
+internal abstract class AbstractInMemoryRepository<ENTITY : InMemoryEntity<ID>, ID : Any> :
+    InMemoryRepository<ENTITY, ID> {
 
     private val entities = ConcurrentHashMap<ID, ENTITY>()
 
     override fun save(entity: ENTITY): ENTITY {
-        entities[entity.id] = entity
+        entities[entity.name] = entity
         return entity
     }
 

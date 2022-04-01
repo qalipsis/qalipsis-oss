@@ -3,7 +3,7 @@ package io.qalipsis.core.factory.orchestration
 import io.mockk.coEvery
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.AbstractStep
@@ -97,10 +97,10 @@ internal class ScenarioImplTest {
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignId = "camp-1",
-                scenarioId = "my-scenario",
+                campaignName = "camp-1",
+                scenarioName = "my-scenario",
                 dagId = step.dagId,
-                stepId = step.id
+                stepName = step.name
             )
             coVerifyOnce {
                 step.start(eq(context))
@@ -137,10 +137,10 @@ internal class ScenarioImplTest {
         }
         mockedSteps.subList(0, 2).forEach { step ->
             val context = StepStartStopContext(
-                campaignId = "camp-1",
-                scenarioId = "my-scenario",
+                campaignName = "camp-1",
+                scenarioName = "my-scenario",
                 dagId = step.dagId,
-                stepId = step.id
+                stepName = step.name
             )
             coVerifyOnce {
                 step.start(eq(context))
@@ -148,10 +148,10 @@ internal class ScenarioImplTest {
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignId = "camp-1",
-                scenarioId = "my-scenario",
+                campaignName = "camp-1",
+                scenarioName = "my-scenario",
                 dagId = step.dagId,
-                stepId = step.id
+                stepName = step.name
             )
             coVerifyOnce {
                 step.stop(eq(context))
@@ -188,10 +188,10 @@ internal class ScenarioImplTest {
         }
         mockedSteps.subList(0, 2).forEach { step ->
             val context = StepStartStopContext(
-                campaignId = "camp-1",
-                scenarioId = "my-scenario",
+                campaignName = "camp-1",
+                scenarioName = "my-scenario",
                 dagId = step.dagId,
-                stepId = step.id
+                stepName = step.name
             )
             coVerifyOnce {
                 step.start(eq(context))
@@ -199,10 +199,10 @@ internal class ScenarioImplTest {
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignId = "camp-1",
-                scenarioId = "my-scenario",
+                campaignName = "camp-1",
+                scenarioName = "my-scenario",
                 dagId = step.dagId,
-                stepId = step.id
+                stepName = step.name
             )
             coVerifyOnce {
                 step.stop(eq(context))
@@ -230,10 +230,10 @@ internal class ScenarioImplTest {
         assertEquals(mockedSteps.size, calledStop.get())
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignId = "camp-1",
-                scenarioId = "my-scenario",
+                campaignName = "camp-1",
+                scenarioName = "my-scenario",
                 dagId = step.dagId,
-                stepId = step.id
+                stepName = step.name
             )
             coVerifyOnce {
                 step.stop(eq(context))
@@ -246,7 +246,7 @@ internal class ScenarioImplTest {
         stepStartTimeout: Duration = Duration.ofSeconds(30)
     ): ScenarioImpl {
         val scenarioImpl = ScenarioImpl(
-            id = "my-scenario",
+            name = "my-scenario",
             rampUpStrategy = relaxedMockk(),
             factoryChannel = factoryChannel,
             stepStartTimeout = stepStartTimeout
@@ -279,7 +279,7 @@ internal class ScenarioImplTest {
     }
 
 
-    private data class StartableStoppableStep(val dagId: DirectedAcyclicGraphId) :
+    private data class StartableStoppableStep(val dagId: DirectedAcyclicGraphName) :
         AbstractStep<Any?, Any?>("", null) {
 
         override suspend fun execute(context: StepContext<Any?, Any?>) {

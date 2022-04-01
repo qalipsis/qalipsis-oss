@@ -25,7 +25,7 @@ internal class SingletonProxyStepTest {
         }
         val ctx = StepTestHelper.createStepContext<Long, Long>()
         val topic = mockk<Topic<Long>>(relaxed = true) {
-            coEvery { subscribe("${ctx.minionId}-${ctx.stepId}") } returns subscription
+            coEvery { subscribe("${ctx.minionId}-${ctx.stepName}") } returns subscription
         }
         val step = SingletonProxyStep("", topic)
 
@@ -35,7 +35,7 @@ internal class SingletonProxyStepTest {
         // then
         Assertions.assertEquals(123L, ctx.consumeOutputValue())
         coVerifyOrder {
-            topic.subscribe("${ctx.minionId}-${ctx.stepId}")
+            topic.subscribe("${ctx.minionId}-${ctx.stepName}")
             subscription.pollValue()
         }
         confirmVerified(topic, subscription)

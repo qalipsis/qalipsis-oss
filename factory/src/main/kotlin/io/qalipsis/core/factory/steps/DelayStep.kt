@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import kotlinx.coroutines.delay
@@ -13,7 +13,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 internal class DelayStep<I>(
-    id: StepId,
+    id: StepName,
     private val delay: Duration
 ) : AbstractStep<I, I>(id, null) {
 

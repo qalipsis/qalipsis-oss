@@ -53,7 +53,7 @@ internal class FilterStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(FilterStep<*>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }
@@ -73,7 +73,7 @@ internal class FilterStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {
-            prop(FilterStep<*>::id).isEmpty()
+            prop(FilterStep<*>::name).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }

@@ -29,24 +29,24 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is MinionsAssignmentDirective
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignId, directive.scenarioId)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsAssignmentDirective) {
         val feedback = MinionsAssignmentFeedback(
-            campaignId = directive.campaignId,
-            scenarioId = directive.scenarioId,
+            campaignName = directive.campaignName,
+            scenarioName = directive.scenarioName,
             status = FeedbackStatus.IN_PROGRESS
         )
         factoryChannel.publishFeedback(feedback)
         try {
-            val assignedMinions = minionAssignmentKeeper.assign(directive.campaignId, directive.scenarioId)
+            val assignedMinions = minionAssignmentKeeper.assign(directive.campaignName, directive.scenarioName)
             if (assignedMinions.isEmpty()) {
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.IGNORED))
             } else {
                 assignedMinions.forEach { (minionId, dags) ->
-                    minionsKeeper.create(directive.campaignId, directive.scenarioId, dags, minionId)
+                    minionsKeeper.create(directive.campaignName, directive.scenarioName, dags, minionId)
                 }
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
             }

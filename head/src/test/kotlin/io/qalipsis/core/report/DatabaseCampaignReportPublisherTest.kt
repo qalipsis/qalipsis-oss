@@ -71,13 +71,13 @@ internal class DatabaseCampaignReportPublisherTest {
 
 
         val messageOne = ReportMessage(
-            stepId = "my-step",
+            stepName = "my-step",
             messageId = "my-message-1",
             severity = ReportMessageSeverity.INFO,
             message = "This is the first message"
         )
         val messageTwo = ReportMessage(
-            stepId = "my-step",
+            stepName = "my-step",
             messageId = "my-message-2",
             severity = ReportMessageSeverity.ERROR,
             message = "This is the second message"
@@ -85,8 +85,8 @@ internal class DatabaseCampaignReportPublisherTest {
         val messages = mutableListOf(messageOne, messageTwo)
 
         val scenarioReport = ScenarioReport(
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario",
             start = now.minusSeconds(900),
             end = now.minusSeconds(600),
             startedMinions = 1000,
@@ -97,7 +97,7 @@ internal class DatabaseCampaignReportPublisherTest {
             messages = messages
         )
         val campaignReport = CampaignReport(
-            campaignId = "my-campaign",
+            campaignName = "my-campaign",
             start = now.minusSeconds(1000),
             end = now.minusSeconds(500),
             startedMinions = 1000,
@@ -141,14 +141,14 @@ internal class DatabaseCampaignReportPublisherTest {
                 listOf(
                     ScenarioReportMessageEntity(
                         scenarioReportId = 10,
-                        stepId = "my-step",
+                        stepName = "my-step",
                         messageId = "my-message-1",
                         severity = ReportMessageSeverity.INFO,
                         message = "This is the first message"
                     ),
                     ScenarioReportMessageEntity(
                         scenarioReportId = 10,
-                        stepId = "my-step",
+                        stepName = "my-step",
                         messageId = "my-message-2",
                         severity = ReportMessageSeverity.ERROR,
                         message = "This is the second message"

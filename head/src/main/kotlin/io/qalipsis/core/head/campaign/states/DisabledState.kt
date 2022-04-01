@@ -9,7 +9,7 @@ import io.qalipsis.core.directives.Directive
 internal open class DisabledState(
     protected val campaign: CampaignConfiguration,
     private val isSuccessful: Boolean = true
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
 
     override val isCompleted: Boolean = true
 
@@ -17,7 +17,7 @@ internal open class DisabledState(
         context.headChannel.unsubscribeFeedback(campaign.feedbackChannel)
 
         if (context.reportPublishers.isNotEmpty()) {
-            val report = context.campaignReportStateKeeper.report(campaignId)
+            val report = context.campaignReportStateKeeper.report(campaignName)
             context.reportPublishers.forEach { publisher ->
                 tryAndLogOrNull(log) {
                     publisher.publish(campaign, report)
@@ -26,7 +26,7 @@ internal open class DisabledState(
         }
 
         val directive = CompleteCampaignDirective(
-            campaignId = campaignId,
+            campaignName = campaignName,
             isSuccessful = isSuccessful,
             message = campaign.message,
             channel = campaign.broadcastChannel

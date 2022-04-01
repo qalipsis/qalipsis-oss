@@ -1,8 +1,7 @@
 package io.qalipsis.core.factory.campaign
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.core.directives.DispatcherChannel
 
 /**
@@ -11,8 +10,8 @@ import io.qalipsis.core.directives.DispatcherChannel
  * @author Eric Jessé
  */
 data class Campaign(
-    val campaignId: CampaignId,
+    val campaignName: CampaignName,
     val broadcastChannel: DispatcherChannel,
     val feedbackChannel: DispatcherChannel,
-    val assignedDagsByScenario: Map<ScenarioId, Collection<DirectedAcyclicGraphId>>
+    val assignments: Collection<FactoryScenarioAssignment>
 )

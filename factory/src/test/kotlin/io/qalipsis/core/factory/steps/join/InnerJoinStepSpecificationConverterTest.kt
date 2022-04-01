@@ -70,7 +70,7 @@ internal class InnerJoinStepSpecificationConverterTest :
         spec.cacheTimeout = Duration.ofMillis(123)
 
         val otherStep: Step<*, *> = relaxedMockk {
-            every { id } returns "the-other-step"
+            every { name } returns "the-other-step"
         }
         val scenarioSpec: StepSpecificationRegistry = relaxedMockk {
             every { exists("other-step") } returns true
@@ -98,14 +98,14 @@ internal class InnerJoinStepSpecificationConverterTest :
         val topic: Topic<*> = consumer.captured.getProperty("topic")
 
         creationContext.createdStep!!.let {
-            assertEquals("my-step", it.id)
+            assertEquals("my-step", it.name)
             assertThat(it).isInstanceOf(InnerJoinStep::class).all {
                 prop("coroutineScope").isSameAs(coroutineScope)
                 prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
-                        prop("sourceStepId").isEqualTo("the-other-step")
+                        prop("sourceStepName").isEqualTo("the-other-step")
                         prop("topic").isSameAs(topic)
                         prop("keyExtractor").isSameAs(rightKeyExtractor)
                     }
@@ -123,10 +123,10 @@ internal class InnerJoinStepSpecificationConverterTest :
         spec.cacheTimeout = Duration.ofMillis(123)
 
         val otherDecoratedStep: Step<*, *> = relaxedMockk {
-            every { id } returns "the-other-step"
+            every { name } returns "the-other-step"
         }
         val otherStep: NoMoreNextStepDecorator<*, *> = relaxedMockk {
-            every { id } returns "the-other-step"
+            every { name } returns "the-other-step"
             every { decorated } returns otherDecoratedStep
         }
         val scenarioSpec: StepSpecificationRegistry = relaxedMockk {
@@ -159,13 +159,13 @@ internal class InnerJoinStepSpecificationConverterTest :
         val topic: Topic<*> = consumer.captured.getProperty("topic")
 
         creationContext.createdStep!!.let {
-            assertNotNull(it.id)
+            assertNotNull(it.name)
             assertThat(it).isInstanceOf(InnerJoinStep::class).all {
                 prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
-                        prop("sourceStepId").isEqualTo("the-other-step")
+                        prop("sourceStepName").isEqualTo("the-other-step")
                         prop("topic").isSameAs(topic)
                         prop("keyExtractor").isSameAs(rightKeyExtractor)
                     }

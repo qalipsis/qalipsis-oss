@@ -2,6 +2,7 @@ package io.qalipsis.core.head.inmemory
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.any
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
@@ -21,9 +22,9 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.FactoryConfiguration
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
@@ -105,12 +106,12 @@ internal class StandaloneCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                id = "my-campaign",
+                name = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             ).apply { broadcastChannel = "my-broadcast-channel" }
-            val scenario1 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
-            val scenario2 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-2" }
-            val scenario3 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+            val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
+            val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario2, scenario3)
             val factory1 =
@@ -120,10 +121,15 @@ internal class StandaloneCampaignManagerTest {
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
             coEvery { factoryService.getAvailableFactoriesForScenarios(setOf("scenario-1", "scenario-2")) } returns
                     listOf(factory1, factory2, factory3)
-            val assignments = ImmutableTable.builder<NodeId, ScenarioId, Collection<DirectedAcyclicGraphId>>()
-                .put("factory-1", "scenario-1", listOf("dag-1", "dag-2"))
-                .put("factory-1", "scenario-2", listOf("dag-A", "dag-B"))
-                .put("factory-3", "scenario-2", listOf("dag-A", "dag-B", "dag-C"))
+
+            val assignments = ImmutableTable.builder<NodeId, ScenarioName, FactoryScenarioAssignment>()
+                .put("factory-1", "scenario-1", FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")))
+                .put("factory-1", "scenario-2", FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762))
+                .put(
+                    "factory-3",
+                    "scenario-2",
+                    FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
+                )
                 .build()
             coEvery {
                 assignmentResolver.resolveFactoriesAssignments(
@@ -142,17 +148,21 @@ internal class StandaloneCampaignManagerTest {
                 key("factory-1").all {
                     prop(FactoryConfiguration::unicastChannel).isEqualTo("unicast-channel-1")
                     prop(FactoryConfiguration::assignment).isEqualTo(
-                        mutableMapOf(
-                            "scenario-1" to listOf("dag-1", "dag-2"),
-                            "scenario-2" to listOf("dag-A", "dag-B")
+                        linkedMapOf(
+                            "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")),
+                            "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762)
                         )
                     )
                 }
                 key("factory-3").all {
                     prop(FactoryConfiguration::unicastChannel).isEqualTo("unicast-channel-3")
                     prop(FactoryConfiguration::assignment).isEqualTo(
-                        mutableMapOf(
-                            "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
+                        linkedMapOf(
+                            "scenario-2" to FactoryScenarioAssignment(
+                                "scenario-2",
+                                listOf("dag-A", "dag-B", "dag-C"),
+                                254
+                            )
                         )
                     )
                 }
@@ -180,19 +190,49 @@ internal class StandaloneCampaignManagerTest {
             }
             assertThat(sentDirectives).all {
                 hasSize(2)
-                containsOnly(
-                    FactoryAssignmentDirective(
-                        "my-campaign", mapOf(
-                            "scenario-1" to listOf("dag-1", "dag-2"),
-                            "scenario-2" to listOf("dag-A", "dag-B")
-                        ), "directives-broadcast", "feedbacks", "unicast-channel-1"
-                    ),
-                    FactoryAssignmentDirective(
-                        "my-campaign", mapOf(
-                            "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
-                        ), "directives-broadcast", "feedbacks", "unicast-channel-3"
-                    )
-                )
+                any {
+                    it.isInstanceOf(FactoryAssignmentDirective::class).all {
+                        prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                        prop(FactoryAssignmentDirective::assignments).all {
+                            hasSize(2)
+                            any {
+                                it.all {
+                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-1")
+                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-1", "dag-2")
+                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(Int.MAX_VALUE)
+                                }
+                            }
+                            any {
+                                it.all {
+                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
+                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B")
+                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(1762)
+                                }
+                            }
+                        }
+                        prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("directives-broadcast")
+                        prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedbacks")
+                        prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
+                    }
+                }
+                any {
+                    it.isInstanceOf(FactoryAssignmentDirective::class).all {
+                        prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                        prop(FactoryAssignmentDirective::assignments).all {
+                            hasSize(1)
+                            any {
+                                it.all {
+                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
+                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B", "dag-C")
+                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(254)
+                                }
+                            }
+                        }
+                        prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("directives-broadcast")
+                        prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedbacks")
+                        prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-3")
+                    }
+                }
             }
         }
 
@@ -201,11 +241,11 @@ internal class StandaloneCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                id = "my-campaign",
+                name = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             ).apply { broadcastChannel = "my-broadcast-channel" }
-            val scenario1 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
-            val scenario3 = relaxedMockk<ScenarioSummary> { every { id } returns "scenario-1" }
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+            val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario3)
 

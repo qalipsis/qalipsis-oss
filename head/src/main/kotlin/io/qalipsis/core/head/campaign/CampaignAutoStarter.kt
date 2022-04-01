@@ -6,7 +6,7 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.Latch
@@ -68,7 +68,7 @@ internal class CampaignAutoStarter(
     /**
      * Set of all the declared scenarios.
      */
-    private val registeredScenarios = concurrentSet<ScenarioId>()
+    private val registeredScenarios = concurrentSet<ScenarioName>()
 
     /**
      * Ensures that the campaign cannot be started before the required [HandshakeRequest] were all received.
@@ -86,7 +86,7 @@ internal class CampaignAutoStarter(
 
     @LogInput(Level.DEBUG)
     override suspend fun notify(handshakeRequest: HandshakeRequest) {
-        registeredScenarios += handshakeRequest.scenarios.map { it.id }
+        registeredScenarios += handshakeRequest.scenarios.map { it.name }
         registrationCount.decrement()
     }
 
@@ -99,14 +99,14 @@ internal class CampaignAutoStarter(
                 if (healthyFactories.size >= autostartCampaignConfiguration.requiredFactories && !runningCampaign) {
                     if (registeredScenarios.isNotEmpty()) {
                         delay(autostartCampaignConfiguration.triggerOffset.toMillis())
-                        log.info { "Starting the campaign ${autostartCampaignConfiguration.id} for the scenario(s) ${registeredScenarios.joinToString()}" }
+                        log.info { "Starting the campaign ${autostartCampaignConfiguration.name} for the scenario(s) ${registeredScenarios.joinToString()}" }
                         campaignLatch.lock()
                         val scenariosConfigs =
                             factoryService.getActiveScenarios(registeredScenarios).associate { scenario ->
-                                scenario.id to ScenarioConfiguration(calculateMinionsCount(scenario))
+                                scenario.name to ScenarioConfiguration(calculateMinionsCount(scenario))
                             }
                         campaign = CampaignConfiguration(
-                            id = autostartCampaignConfiguration.id,
+                            name = autostartCampaignConfiguration.name,
                             speedFactor = autostartCampaignConfiguration.speedFactor,
                             startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
                             scenarios = scenariosConfigs
@@ -116,7 +116,7 @@ internal class CampaignAutoStarter(
                     } else {
                         log.error { "No executable scenario was found" }
                         error = "No executable scenario was found"
-                        campaignReportStateKeeper.abort(autostartCampaignConfiguration.id)
+                        campaignReportStateKeeper.abort(autostartCampaignConfiguration.name)
                         campaignLatch.release()
                     }
                 }
@@ -131,9 +131,9 @@ internal class CampaignAutoStarter(
     @LogInput
     suspend fun completeCampaign(directive: CompleteCampaignDirective) {
         if (directive.isSuccessful) {
-            log.info { "The campaign ${directive.campaignId} was completed successfully: ${directive.message ?: "<no detail>"}" }
+            log.info { "The campaign ${directive.campaignName} was completed successfully: ${directive.message ?: "<no detail>"}" }
         } else {
-            log.error { "The campaign ${directive.campaignId} failed: ${directive.message ?: "<no detail>"}" }
+            log.error { "The campaign ${directive.campaignName} failed: ${directive.message ?: "<no detail>"}" }
             error = directive.message
         }
         campaign.factories.forEach { (_, factory) ->

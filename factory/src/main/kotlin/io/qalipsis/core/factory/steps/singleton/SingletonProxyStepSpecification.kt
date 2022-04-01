@@ -1,7 +1,6 @@
 package io.qalipsis.core.factory.steps.singleton
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.retry.RetryPolicy
@@ -21,12 +20,12 @@ import javax.validation.constraints.Positive
  * @author Eric Jessé
  */
 internal open class SingletonProxyStepSpecification<T>(
-    val singletonStepId: StepId,
+    val singletonStepName: StepName,
     val next: StepSpecification<T, *, *>,
     val topic: Topic<T>,
 ) : StepSpecification<T, T, SingletonProxyStepSpecification<T>> {
 
-    override var name: StepName = singletonStepId
+    override var name: StepName = singletonStepName
 
     override var scenario: StepSpecificationRegistry = next.scenario
 
@@ -39,7 +38,7 @@ internal open class SingletonProxyStepSpecification<T>(
 
     override var retryPolicy: RetryPolicy? = null
 
-    override var directedAcyclicGraphId: DirectedAcyclicGraphId = next.directedAcyclicGraphId
+    override var directedAcyclicGraphName: DirectedAcyclicGraphName = next.directedAcyclicGraphName
 
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = mutableListOf(next)

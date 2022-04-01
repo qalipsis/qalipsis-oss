@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 
@@ -10,7 +10,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal open class PipeStep<I>(id: StepId) : AbstractStep<I, I>(id, null) {
+internal open class PipeStep<I>(id: StepName) : AbstractStep<I, I>(id, null) {
 
     override suspend fun execute(context: StepContext<I, I>) {
         log.trace { "Waiting for input..." }

@@ -3,7 +3,7 @@ package io.qalipsis.core.head.campaign
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
@@ -26,18 +26,18 @@ internal class PersistentCampaignService(
     override suspend fun save(campaignConfiguration: CampaignConfiguration) {
         val campaign = campaignRepository.save(
             CampaignEntity(
-                campaignId = campaignConfiguration.id,
+                campaignName = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
                 start = Instant.now()
             )
         )
-        campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioId, scenario) ->
-            CampaignScenarioEntity(campaign.id, scenarioId, scenario.minionsCount)
+        campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->
+            CampaignScenarioEntity(campaign.id, scenarioName, scenario.minionsCount)
         })
     }
 
-    override suspend fun close(campaignId: CampaignId, result: ExecutionStatus) {
-        campaignRepository.close(campaignId, result)
+    override suspend fun close(campaignName: CampaignName, result: ExecutionStatus) {
+        campaignRepository.close(campaignName, result)
     }
 
 }

@@ -11,7 +11,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 
 internal open class FactoryAssignmentState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
@@ -20,8 +20,8 @@ internal open class FactoryAssignmentState(
         return campaign.factories.map { (factoryId, configuration) ->
             val factory = campaign.factories[factoryId]!!
             FactoryAssignmentDirective(
-                campaignId = campaign.id,
-                assignedDagsByScenario = configuration.assignment,
+                campaignName = campaign.name,
+                assignments = configuration.assignment.values,
                 broadcastChannel = campaign.broadcastChannel,
                 feedbackChannel = campaign.feedbackChannel,
                 channel = factory.unicastChannel

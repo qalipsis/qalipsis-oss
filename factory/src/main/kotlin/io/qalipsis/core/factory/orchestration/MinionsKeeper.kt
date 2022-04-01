@@ -1,9 +1,9 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.runtime.Minion
 import java.time.Instant
 
@@ -21,7 +21,7 @@ interface MinionsKeeper {
     /**
      * Returns the singleton minion attached to a singleton DAG or DAG not under load.
      */
-    fun getSingletonMinion(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): Minion
+    fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion
 
     /**
      * Verifies if the minion with the expected ID exists.
@@ -31,24 +31,24 @@ interface MinionsKeeper {
     /**
      * Creates a new Minion for the given scenario and directed acyclic graph.
      *
-     * @param campaignId the ID of the campaign to execute.
-     * @param scenarioId the ID of the scenario to execute.
+     * @param campaignName the ID of the campaign to execute.
+     * @param scenarioName the ID of the scenario to execute.
      * @param dagIds the IDs of the directed acyclic graphs the minion will execute.
      * @param minionId the ID of the minion.
      */
     suspend fun create(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        dagIds: Collection<DirectedAcyclicGraphId>,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        dagIds: Collection<DirectedAcyclicGraphName>,
         minionId: MinionId
     )
 
     /**
      * Starts all the singletons minions of the given scenario.
      *
-     * @param scenarioId the ID of the scenario in execution to which the minions belong.
+     * @param scenarioName the ID of the scenario in execution to which the minions belong.
      */
-    suspend fun startSingletons(scenarioId: ScenarioId)
+    suspend fun startSingletons(scenarioName: ScenarioName)
 
     /**
      * Starts a minion at the specified instant.

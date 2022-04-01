@@ -13,13 +13,13 @@ import io.qalipsis.core.rampup.RampUpConfiguration
 
 internal open class MinionsStartupState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
 
     override suspend fun doInit(): List<Directive> {
-        return campaign.scenarios.keys.map { scenarioId ->
+        return campaign.scenarios.keys.map { scenarioName ->
             MinionsRampUpPreparationDirective(
-                campaignId = campaignId,
-                scenarioId = scenarioId,
+                campaignName = campaignName,
+                scenarioName = scenarioName,
                 rampUpConfiguration = RampUpConfiguration(campaign.startOffsetMs, campaign.speedFactor),
                 channel = campaign.broadcastChannel
             )
@@ -29,11 +29,11 @@ internal open class MinionsStartupState(
     override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         // The failure management is let to doProcess.
         if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            log.error { "The creation of the minions for the scenario ${feedback.scenarioId} failed: ${feedback.error}" }
+            log.error { "The creation of the minions for the scenario ${feedback.scenarioName} failed: ${feedback.error}" }
         } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioId} failed: ${feedback.error}" }
+            log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioName} failed: ${feedback.error}" }
         } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED) {
-            log.error { "The start of minions of scenario ${feedback.scenarioId} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
+            log.error { "The start of minions of scenario ${feedback.scenarioName} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
         }
         return doTransition(feedback)
     }

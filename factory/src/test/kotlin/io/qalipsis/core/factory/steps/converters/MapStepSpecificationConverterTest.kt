@@ -53,7 +53,7 @@ internal class MapStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(MapStep<*, *>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }
@@ -72,7 +72,7 @@ internal class MapStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapStep::class).all {
-            prop(MapStep<*,*>::id).isEmpty()
+            prop(MapStep<*, *>::name).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }

@@ -22,9 +22,9 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -132,20 +132,20 @@ internal class MinionsKeeperImplTest {
 
             assertThat(minionSlot.captured).all {
                 prop(MinionImpl::id).isEqualTo("my-minion")
-                prop(MinionImpl::campaignId).isEqualTo("my-campaign")
-                prop(MinionImpl::scenarioId).isEqualTo("my-scenario")
+                prop(MinionImpl::campaignName).isEqualTo("my-campaign")
+                prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
                 prop(MinionImpl::isSingleton).isFalse()
                 prop("executingStepsGauge").isSameAs(executingStepsGauge)
                 prop(MinionImpl::isStarted).isFalse()
             }
             assertThat(minionsKeeper).all {
                 typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameAs(minionSlot.captured)
-                typedProp<Map<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions").key("my-minion")
+                typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").key("my-minion")
                     .isEqualTo("my-dag-2")
-                typedProp<Map<ScenarioId, MutableCollection<MinionImpl>>>("idleSingletonsMinions").isEmpty()
-                typedProp<Table<ScenarioId, DirectedAcyclicGraphId, MinionImpl>>("singletonMinionsByDagId").transform { it.isEmpty() }
+                typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").isEmpty()
+                typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it.isEmpty() }
                     .isTrue()
-                typedProp<Map<MinionId, Pair<ScenarioId, DirectedAcyclicGraphId>>>("dagIdsBySingletonMinionId").isEmpty()
+                typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").isEmpty()
             }
         }
 
@@ -188,17 +188,17 @@ internal class MinionsKeeperImplTest {
             assertThat(minionsKeeper).all {
                 typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isNotNull().all {
                     prop(MinionImpl::id).isEqualTo("my-minion")
-                    prop(MinionImpl::campaignId).isEqualTo("my-campaign")
-                    prop(MinionImpl::scenarioId).isEqualTo("my-scenario")
+                    prop(MinionImpl::campaignName).isEqualTo("my-campaign")
+                    prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
                     prop(MinionImpl::isSingleton).isFalse()
                     prop("executingStepsGauge").isSameAs(executingStepsGauge)
                     prop(MinionImpl::isStarted).isTrue()
                 }
-                typedProp<Map<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions").isEmpty()
-                typedProp<Map<ScenarioId, MutableCollection<MinionImpl>>>("idleSingletonsMinions").isEmpty()
-                typedProp<Table<ScenarioId, DirectedAcyclicGraphId, MinionImpl>>("singletonMinionsByDagId").transform { it.isEmpty() }
+                typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").isEmpty()
+                typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").isEmpty()
+                typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it.isEmpty() }
                     .isTrue()
-                typedProp<Map<MinionId, Pair<ScenarioId, DirectedAcyclicGraphId>>>("dagIdsBySingletonMinionId").isEmpty()
+                typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").isEmpty()
             }
             Assertions.assertTrue(
                 minionsKeeper.getProperty<Map<MinionId, MinionImpl>>("minions").containsKey("my-minion")
@@ -249,20 +249,21 @@ internal class MinionsKeeperImplTest {
 
         assertThat(minionSlot.captured).all {
             prop(MinionImpl::id).isEqualTo("my-minion")
-            prop(MinionImpl::campaignId).isEqualTo("my-campaign")
-            prop(MinionImpl::scenarioId).isEqualTo("my-scenario")
+            prop(MinionImpl::campaignName).isEqualTo("my-campaign")
+            prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
             prop(MinionImpl::isSingleton).isTrue()
             prop("executingStepsGauge").isSameAs(executingStepsGauge)
             prop(MinionImpl::isStarted).isTrue()
         }
         assertThat(minionsKeeper).all {
             typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameAs(minionSlot.captured)
-            typedProp<Map<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions").key("my-minion").isEqualTo("my-dag-1")
-            typedProp<Map<ScenarioId, MutableCollection<MinionImpl>>>("idleSingletonsMinions").key("my-scenario")
+            typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").key("my-minion")
+                .isEqualTo("my-dag-1")
+            typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").key("my-scenario")
                 .containsOnly(minionSlot.captured)
-            typedProp<Table<ScenarioId, DirectedAcyclicGraphId, MinionImpl>>("singletonMinionsByDagId").transform { it["my-scenario", "my-dag-1"] }
+            typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it["my-scenario", "my-dag-1"] }
                 .isSameAs(minionSlot.captured)
-            typedProp<Map<MinionId, Pair<ScenarioId, DirectedAcyclicGraphId>>>("dagIdsBySingletonMinionId").key("my-minion")
+            typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").key("my-minion")
                 .isEqualTo("my-scenario" to "my-dag-1")
         }
     }
@@ -282,11 +283,11 @@ internal class MinionsKeeperImplTest {
         val minion1: MinionImpl = relaxedMockk()
         val minion2: MinionImpl = relaxedMockk()
         listOf(minion1, minion2).forEach {
-            every { it.campaignId } returns "my-campaign"
-            every { it.scenarioId } returns "my-scenario"
+            every { it.campaignName } returns "my-campaign"
+            every { it.scenarioName } returns "my-scenario"
         }
         val idleSingletonsMinions =
-            minionsKeeper.getProperty<MutableMap<ScenarioId, List<MinionImpl>>>("idleSingletonsMinions")
+            minionsKeeper.getProperty<MutableMap<ScenarioName, List<MinionImpl>>>("idleSingletonsMinions")
         idleSingletonsMinions["my-scenario"] = mutableListOf(minion1, minion2)
 
         // when
@@ -341,8 +342,8 @@ internal class MinionsKeeperImplTest {
         val minionToStart = relaxedMockk<MinionImpl> { every { id } returns "my-minion" }
         val minionToIgnore = relaxedMockk<MinionImpl> { every { id } returns "my-other" }
         listOf(minionToStart, minionToIgnore).forEach {
-            every { it.campaignId } returns "my-campaign"
-            every { it.scenarioId } returns "my-scenario"
+            every { it.campaignName } returns "my-campaign"
+            every { it.scenarioName } returns "my-scenario"
             coEvery { it.start() } coAnswers {
                 startTime.set(System.currentTimeMillis())
                 latch.release()
@@ -388,8 +389,8 @@ internal class MinionsKeeperImplTest {
         val minionToStart = relaxedMockk<MinionImpl> { every { id } returns "my-minion" }
         val minionToIgnore = relaxedMockk<MinionImpl> { every { id } returns "my-other" }
         listOf(minionToStart, minionToIgnore).forEach {
-            every { it.campaignId } returns "my-campaign"
-            every { it.scenarioId } returns "my-scenario"
+            every { it.campaignName } returns "my-campaign"
+            every { it.scenarioName } returns "my-scenario"
             coEvery { it.start() } coAnswers {
                 startTime.set(System.currentTimeMillis())
                 latch.release()
@@ -431,11 +432,11 @@ internal class MinionsKeeperImplTest {
         )
         val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
         val minion = relaxedMockk<MinionImpl> {
-            every { scenarioId } returns "my-scenario"
+            every { scenarioName } returns "my-scenario"
         }
         minions["my-minion"] = minion
         val rootDagsOfMinions =
-            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions")
+            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
         rootDagsOfMinions["my-minion"] = "my-dag"
         val dag = relaxedMockk<DirectedAcyclicGraph>()
         every { scenarioRegistry["my-scenario"]!!["my-dag"] } returns dag
@@ -447,7 +448,7 @@ internal class MinionsKeeperImplTest {
         coVerifyOrder {
             minion.cancel()
             minion.reset(true)
-            minion.scenarioId
+            minion.scenarioName
             runner.run(refEq(minion), refEq(dag))
             minion.start()
         }
@@ -467,12 +468,12 @@ internal class MinionsKeeperImplTest {
         )
         val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
         val minion = relaxedMockk<MinionImpl> {
-            every { scenarioId } returns "my-scenario"
+            every { scenarioName } returns "my-scenario"
             coEvery { cancel() } throws RuntimeException()
         }
         minions["my-minion"] = minion
         val rootDagsOfMinions =
-            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions")
+            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
         rootDagsOfMinions["my-minion"] = "my-dag"
         val dag = relaxedMockk<DirectedAcyclicGraph>()
         every { scenarioRegistry["my-scenario"]!!["my-dag"] } returns dag
@@ -484,7 +485,7 @@ internal class MinionsKeeperImplTest {
         coVerifyOrder {
             minion.cancel()
             minion.reset(true)
-            minion.scenarioId
+            minion.scenarioName
             runner.run(refEq(minion), refEq(dag))
             minion.start()
         }
@@ -526,7 +527,7 @@ internal class MinionsKeeperImplTest {
             )
             val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
             val minion = relaxedMockk<MinionImpl> {
-                every { scenarioId } returns "my-scenario"
+                every { scenarioName } returns "my-scenario"
             }
             minions["my-minion"] = minion
 
@@ -556,18 +557,18 @@ internal class MinionsKeeperImplTest {
         val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
         val minion = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion"
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
         }
         minions["my-minion"] = minion
         val rootDagsOfMinions =
-            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions")
+            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
         rootDagsOfMinions["my-minion"] = "my-dag"
         val dagIdsBySingletonMinionId =
-            minionsKeeper.getProperty<MutableMap<MinionId, Pair<ScenarioId, DirectedAcyclicGraphId>>>("dagIdsBySingletonMinionId")
+            minionsKeeper.getProperty<MutableMap<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId")
         dagIdsBySingletonMinionId["my-minion"] = "my-scenario" to "my-dag"
         val singletonMinionsByDagId =
-            minionsKeeper.getProperty<ConcurrentTable<ScenarioId, DirectedAcyclicGraphId, MinionImpl>>("singletonMinionsByDagId")
+            minionsKeeper.getProperty<ConcurrentTable<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId")
         singletonMinionsByDagId.put("my-scenario", "my-dag", relaxedMockk())
 
         // when
@@ -576,8 +577,8 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOrder {
             minion.id
-            minion.campaignId
-            minion.scenarioId
+            minion.campaignName
+            minion.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
                 timestamp = any(),
@@ -611,13 +612,13 @@ internal class MinionsKeeperImplTest {
         val theException = RuntimeException()
         val minion = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion"
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
             coEvery { cancel() } throws theException
         }
         minions["my-minion"] = minion
         val rootDagsOfMinions =
-            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions")
+            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
         rootDagsOfMinions["my-minion"] = "my-dag"
 
         // when
@@ -626,8 +627,8 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOrder {
             minion.id
-            minion.campaignId
-            minion.scenarioId
+            minion.campaignName
+            minion.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
                 timestamp = any(),
@@ -681,31 +682,31 @@ internal class MinionsKeeperImplTest {
         val theException = RuntimeException()
         val minion1 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion1"
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
             coEvery { cancel() } throws theException
         }
         val minion2 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion2"
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
         }
         val minion3 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion3"
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
         }
         minions["my-minion1"] = minion1
         minions["my-minion2"] = minion2
         minions["my-minion3"] = minion3
         val rootDagsOfMinions =
-            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphId>>("rootDagsOfMinions")
+            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
         rootDagsOfMinions["my-minion1"] = "my-dag"
         val dagIdsBySingletonMinionId =
-            minionsKeeper.getProperty<MutableMap<MinionId, Pair<ScenarioId, DirectedAcyclicGraphId>>>("dagIdsBySingletonMinionId")
+            minionsKeeper.getProperty<MutableMap<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId")
         dagIdsBySingletonMinionId["my-minion1"] = "my-scenario" to "my-dag"
         val singletonMinionsByDagId =
-            minionsKeeper.getProperty<ConcurrentTable<ScenarioId, DirectedAcyclicGraphId, MinionImpl>>("singletonMinionsByDagId")
+            minionsKeeper.getProperty<ConcurrentTable<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId")
         singletonMinionsByDagId.put("my-scenario", "my-dag", relaxedMockk())
 
         // when
@@ -714,8 +715,8 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOnce {
             minion1.id
-            minion1.campaignId
-            minion1.scenarioId
+            minion1.campaignName
+            minion1.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
                 timestamp = any(),
@@ -730,8 +731,8 @@ internal class MinionsKeeperImplTest {
             )
 
             minion2.id
-            minion2.campaignId
-            minion2.scenarioId
+            minion2.campaignName
+            minion2.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
                 timestamp = any(),
@@ -745,8 +746,8 @@ internal class MinionsKeeperImplTest {
             )
 
             minion3.id
-            minion3.campaignId
-            minion3.scenarioId
+            minion3.campaignName
+            minion3.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
                 timestamp = any(),

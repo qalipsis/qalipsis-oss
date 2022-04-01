@@ -1,8 +1,8 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.collections.Table
 
 /**
@@ -18,41 +18,41 @@ interface LocalAssignmentStore {
      * Table of the minions assigned to the local factory for the current campaign, keyed by scenario and attached
      * to the DAGs, which the minion locally executes.
      */
-    val assignments: Table<ScenarioId, MinionId, out Collection<DirectedAcyclicGraphId>>
+    val assignments: Table<ScenarioName, MinionId, out Collection<DirectedAcyclicGraphName>>
 
     /**
-     * Verifies whether minions are applied to the current factory for the scenario [scenarioId].
+     * Verifies whether minions are applied to the current factory for the scenario [scenarioName].
      */
-    fun hasMinionsAssigned(scenarioId: ScenarioId): Boolean
+    fun hasMinionsAssigned(scenarioName: ScenarioName): Boolean
 
     /**
      * Registers new minions assigned to the local factory for the current campaign.
      *
-     * @param scenarioId the scenario for which the minions run
+     * @param scenarioName the scenario for which the minions run
      * @param assignments all the minions that are locally assigned and the DAGs they locally execute
      */
-    fun save(scenarioId: ScenarioId, assignments: Map<MinionId, Collection<DirectedAcyclicGraphId>>)
+    fun save(scenarioName: ScenarioName, assignments: Map<MinionId, Collection<DirectedAcyclicGraphName>>)
 
     /**
      * Verifies whether a minion is executing a DAG in the local factory.
      *
-     * @param scenarioId the scenario for which the minions run
+     * @param scenarioName the scenario for which the minions run
      * @param minionId the minion to verify
      * @param dagId the DAG, for which the local execution of [minionId] is to verify
      *
      * @return [true] when the minion with ID [minionId] executes the DAG [dagId] in the current factory, [false] otherwise
      */
-    fun isLocal(scenarioId: ScenarioId, minionId: MinionId, dagId: DirectedAcyclicGraphId): Boolean
+    fun isLocal(scenarioName: ScenarioName, minionId: MinionId, dagId: DirectedAcyclicGraphName): Boolean
 
     /**
      * Verifies whether a minion under load has its root DAG in the current factory.
      *
-     * @param scenarioId the scenario for which the minions run
+     * @param scenarioName the scenario for which the minions run
      * @param minionId the minion to verify
      *
      * @return [true] when the minion with ID [minionId] executes the root DAG under load in the current factory, [false] otherwise
      */
-    fun hasRootUnderLoadLocally(scenarioId: ScenarioId, minionId: MinionId): Boolean
+    fun hasRootUnderLoadLocally(scenarioName: ScenarioName, minionId: MinionId): Boolean
 
     /**
      * Clears all the local assignments.

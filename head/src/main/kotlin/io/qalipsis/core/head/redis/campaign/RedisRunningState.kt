@@ -28,7 +28,7 @@ internal class RedisRunningState(
 
     override suspend fun doInit(): List<Directive> {
         if (!doNotPersistStateOnInit) {
-            operations.setState(campaignId, CampaignRedisState.RUNNING_STATE)
+            operations.setState(campaignName, CampaignRedisState.RUNNING_STATE)
             operations.prepareScenariosForFeedbackExpectations(campaign)
         }
         return super.doInit()
@@ -50,28 +50,28 @@ internal class RedisRunningState(
             feedback is CompleteMinionFeedback -> RedisRunningState(
                 campaign, operations, true, listOf(
                     MinionsShutdownDirective(
-                        campaign.id,
-                        feedback.scenarioId,
+                        campaign.name,
+                        feedback.scenarioName,
                         listOf(feedback.minionId),
                         campaign.broadcastChannel
                     )
                 )
             )
             feedback is EndOfCampaignScenarioFeedback -> {
-                context.campaignReportStateKeeper.complete(feedback.campaignId, feedback.scenarioId)
+                context.campaignReportStateKeeper.complete(feedback.campaignName, feedback.scenarioName)
                 RedisRunningState(
                     campaign, operations, true, listOf(
                         CampaignScenarioShutdownDirective(
-                            campaign.id,
-                            feedback.scenarioId,
+                            campaign.name,
+                            feedback.scenarioName,
                             campaign.broadcastChannel
                         )
                     )
                 )
             }
             feedback is CampaignScenarioShutdownFeedback -> {
-                if (operations.markFeedbackForScenario(feedback.campaignId, feedback.scenarioId)) {
-                    context.campaignReportStateKeeper.complete(feedback.campaignId)
+                if (operations.markFeedbackForScenario(feedback.campaignName, feedback.scenarioName)) {
+                    context.campaignReportStateKeeper.complete(feedback.campaignName)
                     RedisCompletionState(campaign, operations)
                 } else {
                     this

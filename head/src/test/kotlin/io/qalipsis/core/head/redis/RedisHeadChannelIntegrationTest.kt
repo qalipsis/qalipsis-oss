@@ -134,8 +134,8 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
                 // Dereferences the received directive.
                 .transform { runBlocking { directiveRegistry.get(it) } }.isNotNull()
                 .isInstanceOf(MinionsDeclarationDirective::class).all {
-                    prop(MinionsDeclarationDirective::campaignId).isEqualTo("the campaign")
-                    prop(MinionsDeclarationDirective::scenarioId).isEqualTo("the scenario")
+                    prop(MinionsDeclarationDirective::campaignName).isEqualTo("the campaign")
+                    prop(MinionsDeclarationDirective::scenarioName).isEqualTo("the scenario")
                     prop(MinionsDeclarationDirective::minionsCount).isEqualTo(1000)
                 }
         }

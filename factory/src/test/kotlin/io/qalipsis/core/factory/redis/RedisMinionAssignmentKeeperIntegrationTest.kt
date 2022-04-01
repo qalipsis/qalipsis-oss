@@ -4,8 +4,10 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
@@ -17,12 +19,14 @@ import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verify
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.redis.catadioptre.maxMinionsCountsByScenario
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -117,14 +121,22 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
             minionAssignmentKeeper.coInvokeInvisible<Unit>(
                 "assignFactoryDags",
                 CAMPAIGN,
-                mapOf(
-                    SCENARIO_1 to listOf(
-                        SCENARIO_1_DAG_1,
-                        SCENARIO_1_DAG_2,
-                        SCENARIO_1_DAG_3,
-                        SCENARIO_1_DAG_SINGLETON_1
+                listOf(
+                    FactoryScenarioAssignment(
+                        SCENARIO_1, listOf(
+                            SCENARIO_1_DAG_1,
+                            SCENARIO_1_DAG_2,
+                            SCENARIO_1_DAG_3,
+                            SCENARIO_1_DAG_SINGLETON_1
+                        ),
+                        maximalMinionCount = Int.MAX_VALUE
                     ),
-                    SCENARIO_2 to listOf(SCENARIO_2_DAG_2, SCENARIO_2_DAG_3)
+                    FactoryScenarioAssignment(
+                        SCENARIO_2, listOf(
+                            SCENARIO_2_DAG_2, SCENARIO_2_DAG_3
+                        ),
+                        maximalMinionCount = Int.MAX_VALUE
+                    )
                 ),
                 factory1
             )
@@ -132,52 +144,64 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
             minionAssignmentKeeper.coInvokeInvisible<Unit>(
                 "assignFactoryDags",
                 CAMPAIGN,
-                mapOf(
-                    SCENARIO_1 to listOf(
-                        SCENARIO_1_DAG_3,
-                        SCENARIO_1_DAG_4,
-                        SCENARIO_1_DAG_5,
-                        SCENARIO_1_DAG_SINGLETON_2
+                listOf(
+                    FactoryScenarioAssignment(
+                        SCENARIO_1, listOf(
+                            SCENARIO_1_DAG_3,
+                            SCENARIO_1_DAG_4,
+                            SCENARIO_1_DAG_5,
+                            SCENARIO_1_DAG_SINGLETON_2
+                        ),
+                        maximalMinionCount = Int.MAX_VALUE
                     ),
-                    SCENARIO_2 to listOf(SCENARIO_2_DAG_1, SCENARIO_2_DAG_3, SCENARIO_2_DAG_4)
+                    FactoryScenarioAssignment(
+                        SCENARIO_2, listOf(
+                            SCENARIO_2_DAG_1, SCENARIO_2_DAG_3, SCENARIO_2_DAG_4
+                        ),
+                        maximalMinionCount = Int.MAX_VALUE
+                    )
                 ),
                 factory2
             )
-            val assignedFactory1Scenario1Job = this.async {
-                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphId>>>(
+            val assignedFactory1Scenario1Job = async {
+                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphName>>>(
                     "assign",
                     CAMPAIGN,
                     SCENARIO_1,
                     factory1,
-                    "the-factory-1-channel"
+                    "the-factory-1-channel",
+                    Int.MAX_VALUE
                 )
             }
-            val assignedFactory2Scenario1Job = this.async {
-                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphId>>>(
+            val assignedFactory2Scenario1Job = async {
+                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphName>>>(
                     "assign",
                     CAMPAIGN,
                     SCENARIO_1,
                     factory2,
-                    "the-factory-2-channel"
+                    "the-factory-2-channel",
+                    Int.MAX_VALUE
                 )
             }
 
-            val assignedFactory1Scenario2Job = this.async {
-                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphId>>>(
+            val assignedFactory1Scenario2Job = async {
+                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphName>>>(
                     "assign",
                     CAMPAIGN,
                     SCENARIO_2,
                     factory1,
-                    "the-factory-1-channel"
+                    "the-factory-1-channel",
+                    Int.MAX_VALUE
                 )
             }
-            val assignedFactory2Scenario2Job = this.async {
-                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphId>>>(
+            val assignedFactory2Scenario2Job = async {
+                minionAssignmentKeeper.coInvokeInvisible<Map<MinionId, Collection<DirectedAcyclicGraphName>>>(
                     "assign",
                     CAMPAIGN,
                     SCENARIO_2,
                     factory2,
-                    "the-factory-2-channel"
+                    "the-factory-2-channel",
+                    Int.MAX_VALUE
                 )
             }
 
@@ -406,11 +430,74 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Order(-1)
     internal fun `should assign until the timeout`(minionAssignmentKeeper: RedisMinionAssignmentKeeper) =
         testDispatcherProvider.run {
+            // given
+            minionAssignmentKeeper.maxMinionsCountsByScenario().apply {
+                clear()
+                this["scenario"] = 1543
+            }
+
             // when
             assertThrows<TimeoutCancellationException> {
                 minionAssignmentKeeper.assign("campaign", "scenario")
             }
         }
+
+    @Test
+    @Timeout(10)
+    @Order(Order.DEFAULT)
+    @MicronautTest
+    @PropertySource(
+        Property(name = "factory.assignment.timeout", value = "2s"),
+        Property(name = "factoryConfiguration.assignment.evaluation-batch-size", value = "61")
+    )
+    internal fun `should assign allowed count of minions`(minionAssignmentKeeper: RedisMinionAssignmentKeeper) =
+        testDispatcherProvider.run {
+            // given
+            val campaign = "the-campaign-${(100 * Math.random()).toInt()}"
+            minionAssignmentKeeper.registerMinionsToAssign(
+                campaign,
+                SCENARIO_1,
+                listOf(SCENARIO_1_DAG_SINGLETON_1),
+                (1..350).map { "minion-singleton-$it" },
+                false
+            )
+            minionAssignmentKeeper.registerMinionsToAssign(
+                campaign,
+                SCENARIO_1,
+                listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4, SCENARIO_1_DAG_5),
+                (1..350).map { "minion-$it" },
+                true
+            )
+            minionAssignmentKeeper.completeUnassignedMinionsRegistration(campaign, SCENARIO_1)
+
+            // when
+            minionAssignmentKeeper.assignFactoryDags(
+                campaign, listOf(
+                    FactoryScenarioAssignment(
+                        SCENARIO_1,
+                        listOf(
+                            SCENARIO_1_DAG_SINGLETON_1,
+                            SCENARIO_1_DAG_1,
+                            SCENARIO_1_DAG_2,
+                            SCENARIO_1_DAG_3,
+                            SCENARIO_1_DAG_4,
+                            SCENARIO_1_DAG_5
+                        ),
+                        337
+                    )
+                )
+            )
+            val assignedMinions = minionAssignmentKeeper.assign(campaign, SCENARIO_1)
+
+            // then
+            assertThat(assignedMinions).all {
+                prop(Map<*, *>::size).isGreaterThan(337) // All the minions, includinf the singletons.
+
+                transform("Minions under load") { assignedMinions.keys.filterNot { it.contains("-singleton-") } }
+                    .hasSize(337)
+            }
+        }
+
 
     private companion object {
 

@@ -60,8 +60,8 @@ internal class HandshakeManagerTest {
                 tags = mapOf("key1" to "value1", "key2" to "value2"),
                 replyTo = "reply-channel",
                 scenarios = listOf(
-                    relaxedMockk { every { id } returns "scen-1" },
-                    relaxedMockk { every { id } returns "scen-2" })
+                    relaxedMockk { every { name } returns "scen-1" },
+                    relaxedMockk { every { name } returns "scen-2" })
             )
             every { idGenerator.short() } returns "this-id-the-actual-id"
             val latch = Latch(true)
@@ -97,8 +97,8 @@ internal class HandshakeManagerTest {
                     tags = mapOf("key1" to "value1", "key2" to "value2"),
                     replyTo = "reply-channel",
                     scenarios = listOf(
-                        relaxedMockk { every { id } returns "scen-1" },
-                        relaxedMockk { every { id } returns "scen-2" })
+                        relaxedMockk { every { name } returns "scen-1" },
+                        relaxedMockk { every { name } returns "scen-2" })
                 )
 
                 // when

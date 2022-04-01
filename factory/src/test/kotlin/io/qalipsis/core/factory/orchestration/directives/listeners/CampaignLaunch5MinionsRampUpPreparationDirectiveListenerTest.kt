@@ -86,7 +86,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         val directive =
             MinionsRampUpPreparationDirective("my-campaign", "my-scenario", rampUpConfiguration, "")
         val scenario = relaxedMockk<Scenario> {
-            every { id } returns "my-scenario"
+            every { name } returns "my-scenario"
         }
         every { scenarioRegistry.get("my-scenario") } returns scenario
         val minionsStartDefinitions = (1..650).map { relaxedMockk<MinionStartDefinition>() }
@@ -101,8 +101,8 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
@@ -110,22 +110,22 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
             factoryChannel.publishDirective(
                 MinionsStartDirective(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     minionsStartDefinitions.subList(0, 400)
                 )
             )
             factoryChannel.publishDirective(
                 MinionsStartDirective(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     minionsStartDefinitions.subList(400, 650)
                 )
             )
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
             )
@@ -141,7 +141,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         val directive =
             MinionsRampUpPreparationDirective("my-campaign", "my-scenario", rampUpConfiguration, "")
         val scenario = relaxedMockk<Scenario> {
-            every { id } returns "my-scenario"
+            every { name } returns "my-scenario"
         }
         every { scenarioRegistry["my-scenario"] } returns scenario
         coEvery {
@@ -155,8 +155,8 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
@@ -164,8 +164,8 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
                     error = "A problem occurred"
                 )

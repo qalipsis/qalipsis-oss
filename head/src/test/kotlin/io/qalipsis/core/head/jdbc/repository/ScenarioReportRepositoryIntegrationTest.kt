@@ -52,7 +52,7 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     fun initial() = testDispatcherProvider.run {
         val campaignPrototype =
             CampaignEntity(
-                campaignId = "the-campaign-id",
+                campaignName = "the-campaign-id",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
@@ -114,7 +114,7 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val saved = scenarioReportRepository.save(scenarioReportPrototype.copy())
         val messagePrototype = ScenarioReportMessageEntity(
             scenarioReportId = saved.id,
-            stepId = "my-step",
+            stepName = "my-step",
             messageId = "my-message-1",
             severity = ReportMessageSeverity.INFO,
             message = "This is the first message"

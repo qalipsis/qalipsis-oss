@@ -45,7 +45,7 @@ internal class CollectionStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CollectionStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(CollectionStep<*>::name).isEqualTo("my-step")
             prop("retryPolicy").isNull()
             prop("timeout").isNull()
             prop("batchSize").isEqualTo(Int.MAX_VALUE)
@@ -65,7 +65,7 @@ internal class CollectionStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CollectionStep::class).all {
-            prop(CollectionStep<*>::id).isEmpty()
+            prop(CollectionStep<*>::name).isEmpty()
             prop("retryPolicy").isNull()
             prop("timeout").isEqualTo(Duration.ofSeconds(123))
             prop("batchSize").isEqualTo(7127654)

@@ -46,7 +46,7 @@ internal class StageStepSpecificationConverter : StepSpecificationConverter<Stag
     private fun <I, O> convertGroupStartBoundary(spec: StageStepStartSpecification<I>,
                                                  retryPolicy: RetryPolicy?): StageStep<I, O> {
         return StageStep<I, O>(spec.name, retryPolicy).also {
-            startStepsById[it.id] = it
+            startStepsById[it.name] = it
         }
     }
 

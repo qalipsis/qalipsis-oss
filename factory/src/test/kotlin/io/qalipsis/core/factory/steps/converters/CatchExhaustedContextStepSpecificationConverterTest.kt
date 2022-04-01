@@ -54,7 +54,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(CatchExhaustedContextStep<*>::name).isEqualTo("my-step")
             prop("block").isSameAs(blockSpecification)
         }
     }
@@ -73,7 +73,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
-            prop(CatchExhaustedContextStep<*>::id).isEmpty()
+            prop(CatchExhaustedContextStep<*>::name).isEmpty()
             prop("block").isSameAs(blockSpecification)
         }
     }

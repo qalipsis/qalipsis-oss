@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 internal open class WarmupState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
 
     private val expectedFeedbacks =
         ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })
@@ -22,10 +22,10 @@ internal open class WarmupState(
 
     override suspend fun doInit(): List<Directive> {
         return campaign.factories.values.flatMap { config ->
-            config.assignment.keys.map { scenarioId ->
+            config.assignment.keys.map { scenarioName ->
                 ScenarioWarmUpDirective(
-                    campaignId = campaignId,
-                    scenarioId = scenarioId,
+                    campaignName = campaignName,
+                    scenarioName = scenarioName,
                     channel = config.unicastChannel
                 )
             }
@@ -35,7 +35,7 @@ internal open class WarmupState(
     override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         if (feedback is ScenarioWarmUpFeedback) {
             if (feedback.status == FeedbackStatus.IGNORED) {
-                campaign.unassignScenarioOfFactory(feedback.scenarioId, feedback.nodeId)
+                campaign.unassignScenarioOfFactory(feedback.scenarioName, feedback.nodeId)
                 if (feedback.nodeId !in campaign) {
                     context.factoryService.releaseFactories(campaign, listOf(feedback.nodeId))
                 }
@@ -54,7 +54,7 @@ internal open class WarmupState(
             } else {
                 mutex.withLock {
                     expectedFeedbacks.computeIfPresent(feedback.nodeId) { _, scenarios ->
-                        (scenarios - feedback.scenarioId).ifEmpty { null }
+                        (scenarios - feedback.scenarioName).ifEmpty { null }
                     }
                     if (expectedFeedbacks.isEmpty()) {
                         MinionsStartupState(campaign)

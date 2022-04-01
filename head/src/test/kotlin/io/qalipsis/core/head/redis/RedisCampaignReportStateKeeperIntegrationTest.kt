@@ -13,9 +13,9 @@ import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -64,7 +64,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
 
         // then
         assertThat(report).all {
-            prop(CampaignReport::campaignId).isEqualTo("my-campaign")
+            prop(CampaignReport::campaignName).isEqualTo("my-campaign")
             prop(CampaignReport::start).isBetween(beforeStart, afterStart)
             prop(CampaignReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
             prop(CampaignReport::status).isEqualTo(ExecutionStatus.WARNING)
@@ -74,7 +74,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
             prop(CampaignReport::failedExecutions).isEqualTo(22 + 32)
             prop(CampaignReport::scenariosReports).all {
                 hasSize(3)
-                transform { it.associateBy { it.scenarioId } }.all {
+                transform { it.associateBy { it.scenarioName } }.all {
                     key("my-scenario-1").all {
                         prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull()
@@ -158,7 +158,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
 
         // then
         assertThat(report).all {
-            prop(CampaignReport::campaignId).isEqualTo("my-campaign")
+            prop(CampaignReport::campaignName).isEqualTo("my-campaign")
             prop(CampaignReport::start).isBetween(beforeStart, afterStart)
             prop(CampaignReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
             prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)
@@ -168,7 +168,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
             prop(CampaignReport::failedExecutions).isEqualTo(22 + 32)
             prop(CampaignReport::scenariosReports).all {
                 hasSize(3)
-                transform { it.associateBy { it.scenarioId } }.all {
+                transform { it.associateBy { it.scenarioName } }.all {
                     key("my-scenario-1").all {
                         prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
@@ -287,21 +287,26 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
 
 
     private suspend fun putMessage(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         severity: ReportMessageSeverity,
         messageId: Any? = null,
         message: String
     ) {
-        val key = "$campaignId-report:$scenarioId"
-        val field = "${stepId}/${messageId}"
+        val key = "$campaignName-report:$scenarioName"
+        val field = "${stepName}/${messageId}"
         val value = "${severity}/${message.trim()}"
         connection.sync().hset(key, field, value)
     }
 
-    private suspend fun setMinionsCounts(campaignId: CampaignId, scenarioId: ScenarioId, started: Int, completed: Int) {
-        val key = "$campaignId-report:$scenarioId"
+    private suspend fun setMinionsCounts(
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        started: Int,
+        completed: Int
+    ) {
+        val key = "$campaignName-report:$scenarioName"
         if (started > 0) {
             connection.sync().hset(key, "__started-minions", started.toString())
         }
@@ -311,21 +316,22 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     }
 
     private suspend fun setExecutionsCounts(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         successful: Int,
         failed: Int
     ) {
         if (successful > 0) {
             connection.sync().hset(
-                "$campaignId-report:$scenarioId:successful-step-executions",
-                stepId,
+                "$campaignName-report:$scenarioName:successful-step-executions",
+                stepName,
                 successful.toString()
             )
         }
         if (failed > 0) {
-            connection.sync().hset("$campaignId-report:$scenarioId:failed-step-executions", stepId, failed.toString())
+            connection.sync()
+                .hset("$campaignName-report:$scenarioName:failed-step-executions", stepName, failed.toString())
         }
     }
 }

@@ -8,8 +8,8 @@ import io.micronaut.core.order.Ordered
 import io.micronaut.validation.Validated
 import io.qalipsis.api.Executors
 import io.qalipsis.api.constraints.PositiveDuration
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -91,13 +91,13 @@ internal class FactoryInitializerImpl(
     /**
      * Collection of DAGs accessible by scenario and DAG ID.
      */
-    private val dagsByScenario: MutableMap<ScenarioId, MutableMap<DirectedAcyclicGraphId, DirectedAcyclicGraph>> =
+    private val dagsByScenario: MutableMap<ScenarioName, MutableMap<DirectedAcyclicGraphName, DirectedAcyclicGraph>> =
         ConcurrentHashMap()
 
     // Sort the decorator converters in the expected order.
     private val stepSpecificationDecoratorConverters = stepSpecificationDecoratorConverters.sortedBy { it.order }
 
-    private lateinit var scenarioSpecs: Map<ScenarioId, ConfiguredScenarioSpecification>
+    private lateinit var scenarioSpecs: Map<ScenarioName, ConfiguredScenarioSpecification>
 
     override fun getStartupOrder() = Ordered.LOWEST_PRECEDENCE
 
@@ -130,14 +130,14 @@ internal class FactoryInitializerImpl(
                 }
 
                 val allScenarios = mutableListOf<Scenario>()
-                scenarioSpecs.forEach { (scenarioId, scenarioSpecification) ->
-                    log.info { "Converting the scenario specification $scenarioId" }
-                    val scenario = convertScenario(scenarioId, scenarioSpecification)
+                scenarioSpecs.forEach { (scenarioName, scenarioSpecification) ->
+                    log.info { "Converting the scenario specification $scenarioName" }
+                    val scenario = convertScenario(scenarioName, scenarioSpecification)
                     allScenarios.add(scenario)
                     scenario.dags.forEach { dag ->
-                        dagsByScenario.computeIfAbsent(scenarioId) { ConcurrentHashMap() }[dag.id] = dag
+                        dagsByScenario.computeIfAbsent(scenarioName) { ConcurrentHashMap() }[dag.name] = dag
                     }
-                    log.info { "Conversion of the scenario specification $scenarioId is complete" }
+                    log.info { "Conversion of the scenario specification $scenarioName is complete" }
                 }
                 runBlocking(coroutineDispatcher) {
                     initializationContext.startHandshake(allScenarios)
@@ -163,21 +163,21 @@ internal class FactoryInitializerImpl(
     @LogInputAndOutput
     @KTestable
     protected fun convertScenario(
-        scenarioId: ScenarioId,
+        scenarioName: ScenarioName,
         scenarioSpecification: ConfiguredScenarioSpecification
     ): Scenario {
         if (scenarioSpecification.dagsUnderLoad.isEmpty()) {
             throw InvalidSpecificationException(
-                "There is no main branch defined in scenario $scenarioId, please prefix at least one root branch with 'start()'"
+                "There is no main branch defined in scenario $scenarioName, please prefix at least one root branch with 'start()'"
             )
         }
 
         val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
-            "The scenario $scenarioId requires a ramp-up strategy"
+            "The scenario $scenarioName requires a ramp-up strategy"
         )
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario = ScenarioImpl(
-            scenarioId,
+            scenarioName,
             rampUpStrategy = rampUpStrategy,
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,
@@ -194,7 +194,7 @@ internal class FactoryInitializerImpl(
             )
         }
         require(scenario.dags.size >= scenarioSpecification.dagsCount) {
-            "Not all the DAGs were created, only ${scenario.dags.joinToString(", ") { it.id }} were found"
+            "Not all the DAGs were created, only ${scenario.dags.joinToString(", ") { it.name }} were found"
         }
         return scenario
     }
@@ -234,7 +234,7 @@ internal class FactoryInitializerImpl(
     ) {
         if (parentDag != null && parentStep != null && stepsSpecifications.isEmpty()) {
             // Adds a DeadEndStep step at the end of a DAG to notify that there is nothing after.
-            val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName(), parentDag.id)
+            val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName(), parentDag.name)
             parentDag.addStep(deadEndStep)
             parentStep.addNext(deadEndStep)
         }
@@ -248,16 +248,16 @@ internal class FactoryInitializerImpl(
         stepSpecification: StepSpecification<Any?, Any?, *>
     ) {
         log.debug {
-            "Creating step ${stepSpecification.name.takeIf(String::isNotBlank) ?: "<no specified name>"} specified by ${stepSpecification::class.qualifiedName} with parent ${parentStep?.id ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphId}"
+            "Creating step ${stepSpecification.name.takeIf(String::isNotBlank) ?: "<no specified name>"} specified by ${stepSpecification::class.qualifiedName} with parent ${parentStep?.name ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphName}"
         }
 
         val actualParent =
-            if (parentDag != null && parentStep != null && stepSpecification.directedAcyclicGraphId != parentDag.id) {
+            if (parentDag != null && parentStep != null && stepSpecification.directedAcyclicGraphName != parentDag.name) {
                 // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
                 val dagTransitionStep = dagTransitionStepFactory.createTransition(
                     buildNewStepName(),
-                    parentDag.id,
-                    stepSpecification.directedAcyclicGraphId
+                    parentDag.name,
+                    stepSpecification.directedAcyclicGraphName
                 )
                 parentDag.addStep(dagTransitionStep)
                 parentStep.addNext(dagTransitionStep)
@@ -267,7 +267,7 @@ internal class FactoryInitializerImpl(
             }
 
         // Get or create the DAG to attach the step.
-        val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphId) { dagId ->
+        val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphName) { dagId ->
             DirectedAcyclicGraph(
                 dagId, scenario,
                 isRoot = (actualParent == null),

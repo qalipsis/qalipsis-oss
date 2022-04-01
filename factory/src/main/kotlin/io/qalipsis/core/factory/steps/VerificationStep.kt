@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Eric Jessé
  */
 internal class VerificationStep<I, O>(
-    id: StepId,
+    id: StepName,
     private val eventsLogger: EventsLogger,
     private val meterRegistry: MeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
@@ -42,9 +42,9 @@ internal class VerificationStep<I, O>(
 
     override suspend fun start(context: StepStartStopContext) {
         val tags = context.toMetersTags()
-        successMeter = meterRegistry.counter("step-${id}-assertion", tags.and("status", "success"))
-        failureMeter = meterRegistry.counter("step-${id}-assertion", tags.and("status", "failure"))
-        errorMeter = meterRegistry.counter("step-${id}-assertion", tags.and("status", "error"))
+        successMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "success"))
+        failureMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "failure"))
+        errorMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "error"))
         super.start(context)
     }
 
@@ -59,13 +59,13 @@ internal class VerificationStep<I, O>(
         } catch (e: Error) {
             failureCount.incrementAndGet()
             context.isExhausted = true
-            context.addError(StepError(e, this.id))
+            context.addError(StepError(e, this.name))
             failureMeter.increment()
             eventsLogger.warn("step.assertion.failure", value = e.message) { context.toEventTags() }
         } catch (t: Throwable) {
             errorCount.incrementAndGet()
             context.isExhausted = true
-            context.addError(StepError(t, this.id))
+            context.addError(StepError(t, this.name))
             errorMeter.increment()
             eventsLogger.warn("step.assertion.error", value = t.message) { context.toEventTags() }
         }
@@ -80,8 +80,8 @@ internal class VerificationStep<I, O>(
         } else {
             ReportMessageSeverity.INFO
         }
-        reportLiveStateRegistry.put(context.campaignId, context.scenarioId, this.id, severity, result)
-        log.info { "Stopping the verification step ${this.id} for the campaign ${context.campaignId}: $result" }
+        reportLiveStateRegistry.put(context.campaignName, context.scenarioName, this.name, severity, result)
+        log.info { "Stopping the verification step ${this.name} for the campaign ${context.campaignName}: $result" }
         super.stop(context)
     }
 

@@ -39,17 +39,17 @@ internal class JunitReportPublisherTest {
         //given
         val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
 
-        val campaignId = "foo"
+        val campaignName = "foo"
 
         val timeDiffSeconds = 10L
         val start = Instant.now().minusSeconds(timeDiffSeconds)
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignId = campaignId, start = start, end = end, scenariosReports = listOf(
+            campaignName = campaignName, start = start, end = end, scenariosReports = listOf(
                 ScenarioReport(
-                    campaignId = campaignId,
-                    scenarioId = "bar",
+                    campaignName = campaignName,
+                    scenarioName = "bar",
                     start = start,
                     end = end,
                     startedMinions = 1,
@@ -59,7 +59,7 @@ internal class JunitReportPublisherTest {
                     status = ExecutionStatus.SUCCESSFUL,
                     messages = listOf(
                         ReportMessage(
-                            stepId = "normal test",
+                            stepName = "normal test",
                             messageId = 1,
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
@@ -72,13 +72,13 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { id } returns campaignId }, campaignReport)
+        junitReportPublisher.publish(relaxedMockk { every { name } returns campaignName }, campaignReport)
 
         //then
         val generatedReport =
-            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioId}.xml").readText()
+            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml").readText()
         val expectedReport =
-            File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioId}.xml").readText()
+            File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml").readText()
                 .replace("__time__", time.toString())
 
         Assert.assertEquals(expectedReport, generatedReport)
@@ -89,17 +89,17 @@ internal class JunitReportPublisherTest {
         //given
         val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
 
-        val campaignId = "foo"
+        val campaignName = "foo"
 
         val timeDiffSeconds = 10L
         val start = Instant.now().minusSeconds(timeDiffSeconds)
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignId = campaignId, start = start, end = end, scenariosReports = listOf(
+            campaignName = campaignName, start = start, end = end, scenariosReports = listOf(
                 ScenarioReport(
-                    campaignId = campaignId,
-                    scenarioId = "bar2",
+                    campaignName = campaignName,
+                    scenarioName = "bar2",
                     start = start,
                     end = end,
                     startedMinions = 1,
@@ -109,13 +109,13 @@ internal class JunitReportPublisherTest {
                     status = ExecutionStatus.SUCCESSFUL,
                     messages = listOf(
                         ReportMessage(
-                            stepId = "normal test",
+                            stepName = "normal test",
                             messageId = 1,
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         ),
                         ReportMessage(
-                            stepId = "failed test",
+                            stepName = "failed test",
                             messageId = 2,
                             severity = ReportMessageSeverity.ERROR,
                             message = "failed"
@@ -128,13 +128,14 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { id } returns campaignId }, campaignReport)
+        junitReportPublisher.publish(relaxedMockk { every { name } returns campaignName }, campaignReport)
 
 
         //then
-        val generatedReport = File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioId}.xml")
-            .readText()
-        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioId}.xml")
+        val generatedReport =
+            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
+                .readText()
+        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
             .readText()
             .replace("__time__", time.toString())
 
@@ -145,18 +146,18 @@ internal class JunitReportPublisherTest {
     fun `should write few reports with errors`() = testCoroutineDispatcher.run {
         //given
         val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
-        val campaignId1 = "foo"
-        val campaignId2 = "foo2"
+        val campaignName1 = "foo"
+        val campaignName2 = "foo2"
 
         val timeDiffSeconds = 10L
         val start = Instant.now().minusSeconds(timeDiffSeconds)
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignId = campaignId1, start = start, end = end, scenariosReports = listOf(
+            campaignName = campaignName1, start = start, end = end, scenariosReports = listOf(
                 ScenarioReport(
-                    campaignId = campaignId1,
-                    scenarioId = "bar3",
+                    campaignName = campaignName1,
+                    scenarioName = "bar3",
                     start = start,
                     end = end,
                     startedMinions = 1,
@@ -166,13 +167,13 @@ internal class JunitReportPublisherTest {
                     status = ExecutionStatus.SUCCESSFUL,
                     messages = listOf(
                         ReportMessage(
-                            stepId = "normal test",
+                            stepName = "normal test",
                             messageId = 1,
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         ),
                         ReportMessage(
-                            stepId = "failed test",
+                            stepName = "failed test",
                             messageId = 2,
                             severity = ReportMessageSeverity.ERROR,
                             message = "failed"
@@ -180,8 +181,8 @@ internal class JunitReportPublisherTest {
                     )
                 ),
                 ScenarioReport(
-                    campaignId = campaignId2,
-                    scenarioId = "bar4",
+                    campaignName = campaignName2,
+                    scenarioName = "bar4",
                     start = start,
                     end = end,
                     startedMinions = 1,
@@ -191,13 +192,13 @@ internal class JunitReportPublisherTest {
                     status = ExecutionStatus.SUCCESSFUL,
                     messages = listOf(
                         ReportMessage(
-                            stepId = "normal test",
+                            stepName = "normal test",
                             messageId = 1,
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         ),
                         ReportMessage(
-                            stepId = "failed test",
+                            stepName = "failed test",
                             messageId = 2,
                             severity = ReportMessageSeverity.ERROR,
                             message = "failed"
@@ -209,14 +210,14 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { id } returns "foo" }, campaignReport)
+        junitReportPublisher.publish(relaxedMockk { every { name } returns "foo" }, campaignReport)
 
         //then
         campaignReport.scenariosReports.forEach {
-            val generatedReport = File(generatedReportFolder + "/foo/${it.scenarioId}.xml")
+            val generatedReport = File(generatedReportFolder + "/foo/${it.scenarioName}.xml")
                 .readText()
                 .replace(Regex("""timestamp="[^"]+""""), """timestamp="$time"""")
-            val expectedReport = File(expectedReportFolder + "/${it.scenarioId}.xml")
+            val expectedReport = File(expectedReportFolder + "/${it.scenarioName}.xml")
                 .readText()
                 .replace("__time__", time.toString())
             Assert.assertEquals(expectedReport, generatedReport)

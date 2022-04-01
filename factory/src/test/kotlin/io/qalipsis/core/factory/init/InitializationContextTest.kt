@@ -64,18 +64,18 @@ internal class InitializationContextTest {
         every { factoryConfiguration.tags } returns mapOf("key1" to "value1", "key2" to "value2")
         every { factoryConfiguration.handshake.responseChannel } returns "the-handshake-response-channel"
         val scenario1: Scenario = relaxedMockk {
-            every { id } returns "scenario-1"
+            every { name } returns "scenario-1"
             every { minionsCount } returns 2
             every { dags } returns mutableListOf(
                 relaxedMockk {
-                    every { id } returns "dag-1"
+                    every { name } returns "dag-1"
                     every { isSingleton } returns false
                     every { isRoot } returns true
                     every { stepsCount } returns 12
                     every { selectors } returns mutableMapOf("key1" to "value1")
                 },
                 relaxedMockk {
-                    every { id } returns "dag-2"
+                    every { name } returns "dag-2"
                     every { isSingleton } returns true
                     every { isRoot } returns false
                     every { stepsCount } returns 4
@@ -84,11 +84,11 @@ internal class InitializationContextTest {
             )
         }
         val scenario2: Scenario = relaxedMockk {
-            every { id } returns "scenario-2"
+            every { name } returns "scenario-2"
             every { minionsCount } returns 1
             every { dags } returns mutableListOf(
                 relaxedMockk {
-                    every { id } returns "dag-3"
+                    every { name } returns "dag-3"
                     every { isSingleton } returns false
                     every { isRoot } returns true
                     every { isUnderLoad } returns true
@@ -114,12 +114,12 @@ internal class InitializationContextTest {
             prop(HandshakeRequest::scenarios).all {
                 hasSize(2)
                 index(0).all {
-                    prop(RegistrationScenario::id).isEqualTo("scenario-1")
+                    prop(RegistrationScenario::name).isEqualTo("scenario-1")
                     prop(RegistrationScenario::minionsCount).isEqualTo(2)
                     prop(RegistrationScenario::directedAcyclicGraphs).all {
                         hasSize(2)
                         index(0).all {
-                            prop(DirectedAcyclicGraphSummary::id).isEqualTo("dag-1")
+                            prop(DirectedAcyclicGraphSummary::name).isEqualTo("dag-1")
                             prop(DirectedAcyclicGraphSummary::isSingleton).isFalse()
                             prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
@@ -130,7 +130,7 @@ internal class InitializationContextTest {
                             }
                         }
                         index(1).all {
-                            prop(DirectedAcyclicGraphSummary::id).isEqualTo("dag-2")
+                            prop(DirectedAcyclicGraphSummary::name).isEqualTo("dag-2")
                             prop(DirectedAcyclicGraphSummary::isSingleton).isTrue()
                             prop(DirectedAcyclicGraphSummary::isRoot).isFalse()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
@@ -144,12 +144,12 @@ internal class InitializationContextTest {
                 }
 
                 index(1).all {
-                    prop(RegistrationScenario::id).isEqualTo("scenario-2")
+                    prop(RegistrationScenario::name).isEqualTo("scenario-2")
                     prop(RegistrationScenario::minionsCount).isEqualTo(1)
                     prop(RegistrationScenario::directedAcyclicGraphs).all {
                         hasSize(1)
                         index(0).all {
-                            prop(DirectedAcyclicGraphSummary::id).isEqualTo("dag-3")
+                            prop(DirectedAcyclicGraphSummary::name).isEqualTo("dag-3")
                             prop(DirectedAcyclicGraphSummary::isSingleton).isFalse()
                             prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isTrue()

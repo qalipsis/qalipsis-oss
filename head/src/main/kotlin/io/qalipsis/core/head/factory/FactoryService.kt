@@ -2,7 +2,7 @@ package io.qalipsis.core.head.factory
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
@@ -24,7 +24,7 @@ internal interface FactoryService : HeartbeatListener {
     /**
      * Returns all factories supporting the scenarios with the given identifiers.
      */
-    suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<ScenarioId>): Collection<Factory>
+    suspend fun getAvailableFactoriesForScenarios(scenarioNames: Collection<ScenarioName>): Collection<Factory>
 
     /**
      * Marks all the specified factories as busy and lock them for future use.
@@ -39,5 +39,5 @@ internal interface FactoryService : HeartbeatListener {
     /**
      * Returns all the scenario currently available in the cluster with the given identifiers.
      */
-    suspend fun getActiveScenarios(ids: Collection<ScenarioId>): Collection<ScenarioSummary>
+    suspend fun getActiveScenarios(ids: Collection<ScenarioName>): Collection<ScenarioSummary>
 }

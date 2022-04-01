@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.report
 
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
@@ -14,7 +14,7 @@ import java.time.Instant
  */
 interface ScenarioReportingExecutionState {
 
-    val scenarioId: ScenarioId
+    val scenarioName: ScenarioName
 
     val start: Instant
 
@@ -34,7 +34,7 @@ interface ScenarioReportingExecutionState {
 
     val messages: Map<Any, ReportMessage>
 
-    fun toReport(campaignId: String): ScenarioReport {
+    fun toReport(campaignName: String): ScenarioReport {
         val endTimestamp = end
         val abortTimestamp = abort
         val scenarioEnd = if (abortTimestamp != null && endTimestamp != null) {
@@ -50,8 +50,8 @@ interface ScenarioReportingExecutionState {
         }
 
         return ScenarioReport(
-            campaignId,
-            scenarioId,
+            campaignName,
+            scenarioName,
             start,
             scenarioEnd,
             startedMinions,

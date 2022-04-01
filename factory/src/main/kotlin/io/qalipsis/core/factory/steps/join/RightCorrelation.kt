@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps.join
 
 import io.qalipsis.api.context.CorrelationRecord
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.messaging.Topic
 
 /**
@@ -16,7 +16,7 @@ internal class RightCorrelation<T : Any>(
     /**
      * ID of the [io.qalipsis.api.steps.Step] providing the remote data.
      */
-    val sourceStepId: StepId,
+    val sourceStepName: StepName,
 
     /**
      * [Topic] from a [io.qalipsis.core.factory.steps.decorators.OutputTopicStepDecorator] to forward the records.

@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.campaign
 
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
 
 /**
@@ -19,6 +19,6 @@ interface CampaignService {
     /**
      * Marks a campaign as complete.
      */
-    suspend fun close(campaignId: CampaignId, result: ExecutionStatus)
+    suspend fun close(campaignName: CampaignName, result: ExecutionStatus)
 
 }

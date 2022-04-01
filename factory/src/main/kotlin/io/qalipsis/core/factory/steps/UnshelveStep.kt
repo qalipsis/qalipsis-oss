@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
@@ -17,7 +17,7 @@ import io.qalipsis.api.steps.AbstractStep
  * @property delete when set to true, the values are removed from the registry after use
  */
 internal class UnshelveStep<I>(
-    id: StepId,
+    id: StepName,
     private val sharedStateRegistry: SharedStateRegistry,
     private val names: List<String>,
     private val delete: Boolean
@@ -42,19 +42,19 @@ internal class UnshelveStep<I>(
  * @author Eric Jessé
  *
  * @property sharedStateRegistry the bean to keep and retrieve shared states
- * @property name the key of the value to fetch from the registry
+ * @property shelveName the key of the value to fetch from the registry
  * @property delete when set to true, the value is removed from the registry after use
  */
 internal class SingularUnshelveStep<I, O>(
-    id: StepId,
+    name: StepName,
     private val sharedStateRegistry: SharedStateRegistry,
-    private val name: String,
+    private val shelveName: String,
     private val delete: Boolean
-) : AbstractStep<I, Pair<I, O?>>(id, null) {
+) : AbstractStep<I, Pair<I, O?>>(name, null) {
 
     override suspend fun execute(context: StepContext<I, Pair<I, O?>>) {
         val input = context.receive()
-        val definition = SharedStateDefinition(context.minionId, name)
+        val definition = SharedStateDefinition(context.minionId, shelveName)
         val value = if (delete) sharedStateRegistry.remove<O>(definition) else sharedStateRegistry.get<O>(definition)
         context.send(input to value)
     }

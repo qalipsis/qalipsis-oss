@@ -32,8 +32,8 @@ internal class DeadEndStepTest {
             val step = DeadEndStep<Int>("", "this-is-my-dag", factoryCampaignManager)
             val ctx = StepTestHelper.createStepContext<Int, Unit>(
                 input = 1,
-                campaignId = "my-campaign",
-                scenarioId = "my-scenario",
+                campaignName = "my-campaign",
+                scenarioName = "my-scenario",
                 minionId = "my-minion"
             )
 
@@ -54,10 +54,10 @@ internal class DeadEndStepTest {
             // given
             val step = DeadEndStep<Int>("", "this-is-my-dag", factoryCampaignManager)
             val ctx = DefaultCompletionContext(
-                campaignId = "my-campaign",
-                scenarioId = "my-scenario",
+                campaignName = "my-campaign",
+                scenarioName = "my-scenario",
                 minionId = "my-minion",
-                lastExecutedStepId = "step-1",
+                lastExecutedStepName = "step-1",
                 errors = emptyList()
             )
 

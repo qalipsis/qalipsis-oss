@@ -80,7 +80,7 @@ internal class StageStepTest {
     internal fun `should execute all steps and forward the output`() = testCoroutineDispatcher.runTest {
         val minion = MinionImpl("", "", "", false, false, relaxedMockk())
         val tailStep: Step<Int, String> = relaxedMockk {
-            every { id } returns "<tail>"
+            every { name } returns "<tail>"
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
                 repeat(ctx.receive()) {
@@ -93,7 +93,7 @@ internal class StageStepTest {
         }
 
         val headStep: Step<Double, Int> = relaxedMockk {
-            every { id } returns "<head>"
+            every { name } returns "<head>"
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Double, Int>>()
                 val input = ctx.receive().toInt()

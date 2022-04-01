@@ -17,7 +17,7 @@ internal class RedisWarmupState(
 ) : WarmupState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
-        operations.setState(campaignId, CampaignRedisState.WARMUP_STATE)
+        operations.setState(campaignName, CampaignRedisState.WARMUP_STATE)
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
         return super.doInit()
     }
@@ -30,7 +30,7 @@ internal class RedisWarmupState(
                 if (feedback.status == FeedbackStatus.IGNORED) {
                     operations.saveConfiguration(campaign)
                 }
-                if (operations.markFeedbackForFactoryScenario(campaignId, feedback.nodeId, feedback.scenarioId)) {
+                if (operations.markFeedbackForFactoryScenario(campaignName, feedback.nodeId, feedback.scenarioName)) {
                     RedisMinionsStartupState(campaign, operations)
                 } else {
                     this

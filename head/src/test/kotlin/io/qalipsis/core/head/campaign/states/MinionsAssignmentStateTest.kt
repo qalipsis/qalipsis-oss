@@ -14,7 +14,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -42,14 +42,17 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
         )
         every { campaign.factories } returns mutableMapOf(
             "node-1" to relaxedMockk {
-                every { assignment } returns mutableMapOf("scenario-1" to emptyList(), "scenario-2" to emptyList())
+                every { assignment } returns mutableMapOf(
+                    "scenario-1" to relaxedMockk(),
+                    "scenario-2" to relaxedMockk()
+                )
             },
             "node-2" to relaxedMockk {
-                every { assignment } returns mutableMapOf("scenario-2" to emptyList())
+                every { assignment } returns mutableMapOf("scenario-2" to relaxedMockk())
             }
         )
         val state = MinionsAssignmentState(campaign)
-        assertThat(state).typedProp<Map<NodeId, Collection<ScenarioId>>>("expectedFeedbacks").all {
+        assertThat(state).typedProp<Map<NodeId, Collection<ScenarioName>>>("expectedFeedbacks").all {
             hasSize(2)
             key("node-1").containsOnly("scenario-1", "scenario-2")
             key("node-2").containsOnly("scenario-2")
@@ -152,13 +155,13 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -172,7 +175,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             // when
             val newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -193,13 +196,13 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -213,7 +216,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             // when
             val newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -233,13 +236,13 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -253,7 +256,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             // when
             var newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -263,7 +266,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             // when
             newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-2"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.COMPLETED
             })
 
@@ -273,7 +276,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             // when
             newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-1"
+                every { scenarioName } returns "scenario-1"
                 every { status } returns FeedbackStatus.COMPLETED
             })
 

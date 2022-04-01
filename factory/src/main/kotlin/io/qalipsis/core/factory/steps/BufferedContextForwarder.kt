@@ -7,7 +7,7 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.context.CompletionContext
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.core.collections.LingerCollection
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -53,13 +53,13 @@ internal class BufferedContextForwarder(
     /**
      * Buffers that releases [batchSize] elements when either [batchSize] is reached or [bufferDuration] time out was reached.
      */
-    private val contextsBuffer = LingerCollection<Pair<TransportableContext, Collection<DirectedAcyclicGraphId>>>(
+    private val contextsBuffer = LingerCollection<Pair<TransportableContext, Collection<DirectedAcyclicGraphName>>>(
         batchSize, bufferDuration
     ) { contexts ->
         backgroundScope.launch { forward(contexts) }
     }
 
-    override suspend fun forward(context: StepContext<*, *>, dags: Collection<DirectedAcyclicGraphId>) {
+    override suspend fun forward(context: StepContext<*, *>, dags: Collection<DirectedAcyclicGraphName>) {
         val record = if (context.hasInput) {
             val input = context.receive()
             distributionSerializer.serializeAsRecord(input, SerializationContext.CONTEXT)
@@ -69,22 +69,22 @@ internal class BufferedContextForwarder(
         contextsBuffer.add(TransportableStepContext(context, record) to dags)
     }
 
-    override suspend fun forward(context: CompletionContext, dags: Collection<DirectedAcyclicGraphId>) {
+    override suspend fun forward(context: CompletionContext, dags: Collection<DirectedAcyclicGraphName>) {
         contextsBuffer.add(TransportableCompletionContext(context) to dags)
     }
 
     /**
      * Forwards the relevant context to the next step.
      */
-    private suspend fun forward(contexts: List<Pair<TransportableContext, Collection<DirectedAcyclicGraphId>>>) {
+    private suspend fun forward(contexts: List<Pair<TransportableContext, Collection<DirectedAcyclicGraphName>>>) {
         // Lists the factories channels for all the minions and DAGs.
-        val factoriesChannels = contexts.groupBy { it.first.scenarioId }.mapValues { (scenarioId, ctx) ->
+        val factoriesChannels = contexts.groupBy { it.first.scenarioName }.mapValues { (scenarioName, ctx) ->
             val minions = ctx.map { it.first.minionId }.toSet()
             val nextDagsIds = ctx.flatMap { it.second }.toSet()
 
             minionAssignmentKeeper.getFactoriesChannels(
-                factoryCampaignManager.runningCampaign.campaignId,
-                scenarioId,
+                factoryCampaignManager.runningCampaign.campaignName,
+                scenarioName,
                 minions,
                 nextDagsIds
             )
@@ -93,7 +93,7 @@ internal class BufferedContextForwarder(
         // Groups the contexts by channel.
         contexts.forEach { (context, dags) ->
             dags.forEach { dag ->
-                val channel = factoriesChannels[context.scenarioId]?.get(context.minionId, dag)
+                val channel = factoriesChannels[context.scenarioName]?.get(context.minionId, dag)
                     ?: factoryCampaignManager.runningCampaign.broadcastChannel
                 factoryChannel.publishDirective(channel, context)
             }

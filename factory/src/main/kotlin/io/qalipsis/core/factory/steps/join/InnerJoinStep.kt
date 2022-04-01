@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.CorrelationRecord
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 internal class InnerJoinStep<I, O>(
-    id: StepId,
+    id: StepName,
     private val coroutineScope: CoroutineScope,
     /**
      * Specification of the key extractor based upon the value received from the left step.
@@ -49,7 +49,7 @@ internal class InnerJoinStep<I, O>(
     /**
      * Statement to convert the list of values into the output.
      */
-    private val outputSupplier: (I, Map<StepId, Any?>) -> O
+    private val outputSupplier: (I, Map<StepName, Any?>) -> O
 
 ) : AbstractStep<I, O>(id, null) {
 
@@ -69,20 +69,20 @@ internal class InnerJoinStep<I, O>(
 
     override suspend fun start(context: StepStartStopContext) {
         // Starts the coroutines to buffer the data coming from the right steps into the local cache.
-        val stepId = this.id
+        val stepName = this.name
         rightCorrelations.forEach { corr ->
             @Suppress("UNCHECKED_CAST")
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
             consumptionJobs.add(
                 coroutineScope.launch {
-                    log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepId}" }
-                    val subscription = corr.topic.subscribe(stepId)
+                    log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepName}" }
+                    val subscription = corr.topic.subscribe(stepName)
                     while (subscription.isActive()) {
                         val record = subscription.pollValue()
                         keyExtractor(record)?.let { key ->
                             log.trace { "Adding right record to cache with key '$key' as ${key::class}" }
                             cache.get(key).thenAccept { entry ->
-                                coroutineScope.launch { entry.addValue(record.stepId, record.value) }
+                                coroutineScope.launch { entry.addValue(record.stepName, record.value) }
                             }
                         }
                     }
@@ -104,11 +104,11 @@ internal class InnerJoinStep<I, O>(
 
         val input = context.receive()
         // Extract the key from the left side and search or wait for an available equivalent value coming from the right side.
-        leftKeyExtractor(CorrelationRecord(context.minionId, context.previousStepId!!, input))
+        leftKeyExtractor(CorrelationRecord(context.minionId, context.previousStepName!!, input))
             ?.let { key ->
                 try {
                     log.trace { "Searching correlation values for key '$key' as ${key::class}" }
-                    val latch = Latch(true, "inner-join-step-${id}")
+                    val latch = Latch(true, "inner-join-step-${name}")
                     cache.get(key).thenAccept { entry ->
                         coroutineScope.launch {
                             val secondaryValues = entry.get()
@@ -152,18 +152,18 @@ internal class InnerJoinStep<I, O>(
         private val countLatch = SuspendedCountLatch(secondaryValuesCount.toLong())
 
         /**
-         * Values received from the secondary [io.qalipsis.api.steps.Step]s so far, indexed by the source [StepId].
+         * Values received from the secondary [io.qalipsis.api.steps.Step]s so far, indexed by the source [StepName].
          */
-        private val secondaryValues: MutableMap<StepId, Any?> = ConcurrentHashMap()
+        private val secondaryValues: MutableMap<StepName, Any?> = ConcurrentHashMap()
 
         /**
          * Adds a value coming from a secondary [io.qalipsis.api.steps.Step].
          *
-         * @param stepId ID of the [io.qalipsis.api.steps.Step] that generated the value.
+         * @param stepName ID of the [io.qalipsis.api.steps.Step] that generated the value.
          * @param value Actual value to provide for the correlation.
          */
-        suspend fun addValue(stepId: StepId, value: Any?) {
-            secondaryValues[stepId] = value
+        suspend fun addValue(stepName: StepName, value: Any?) {
+            secondaryValues[stepName] = value
             countLatch.decrement()
         }
 
@@ -172,7 +172,7 @@ internal class InnerJoinStep<I, O>(
          *
          * This method suspends the call until all the values are received.
          */
-        suspend fun get(): Map<StepId, Any?> {
+        suspend fun get(): Map<StepName, Any?> {
             if (secondaryValues.size < secondaryValuesCount) {
                 countLatch.await()
             }

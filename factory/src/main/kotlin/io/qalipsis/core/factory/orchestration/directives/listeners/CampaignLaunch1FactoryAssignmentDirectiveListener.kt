@@ -38,21 +38,21 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override suspend fun notify(directive: FactoryAssignmentDirective) {
         val feedback = FactoryAssignmentFeedback(
-            campaignId = directive.campaignId,
+            campaignName = directive.campaignName,
             status = FeedbackStatus.IN_PROGRESS
         )
         try {
             val campaign = Campaign(
-                campaignId = directive.campaignId,
+                campaignName = directive.campaignName,
                 broadcastChannel = directive.broadcastChannel,
                 feedbackChannel = directive.feedbackChannel,
-                assignedDagsByScenario = directive.assignedDagsByScenario
+                assignments = directive.assignments
             )
             campaignLifeCycleAwares.forEach {
                 it.init(campaign)
             }
             factoryChannel.publishFeedback(feedback)
-            minionAssignmentKeeper.assignFactoryDags(directive.campaignId, directive.assignedDagsByScenario)
+            minionAssignmentKeeper.assignFactoryDags(directive.campaignName, directive.assignments)
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         } catch (e: Exception) {
             log.error(e) { e.message }

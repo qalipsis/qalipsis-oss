@@ -52,7 +52,7 @@ internal abstract class AbstractStateTest {
 
     @BeforeEach
     internal fun setUp() {
-        every { campaign.id } returns "my-campaign"
+        every { campaign.name } returns "my-campaign"
         every { campaign.broadcastChannel } returns "my-broadcast-channel"
         every { campaign.feedbackChannel } returns "my-feedback-channel"
     }

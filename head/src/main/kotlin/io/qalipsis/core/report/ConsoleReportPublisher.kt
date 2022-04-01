@@ -32,7 +32,7 @@ internal class ConsoleReportPublisher : CampaignReportPublisher {
 =====================  CAMPAIGN REPORT =====================
 ============================================================   
 
-Campaign...........................${report.campaignId}
+Campaign...........................${report.campaignName}
 Start..............................${report.start}
 End................................${report.end ?: RUNNING_INDICATOR}
 Duration...........................${duration?.let { "$it seconds" } ?: RUNNING_INDICATOR} 
@@ -50,7 +50,7 @@ Status.............................${report.status}
             println(
                 """
 =====================  SCENARIO REPORT =====================
-Scenario...........................${scenarioReport.scenarioId}
+Scenario...........................${scenarioReport.scenarioName}
 Start..............................${scenarioReport.start}
 End................................${scenarioReport.end}
 Duration...........................${scenarioDuration.let { "$it seconds" }} 
@@ -64,7 +64,7 @@ ${
                     if (scenarioReport.messages.isEmpty()) "\tNone" else scenarioReport.messages.joinToString(
                         "\n"
                     ) {
-                        "- ${it.severity}:".padEnd(10) + "step '${it.stepId}' - ${it.message}"
+                        "- ${it.severity}:".padEnd(10) + "step '${it.stepName}' - ${it.message}"
                     }
                 }
         """

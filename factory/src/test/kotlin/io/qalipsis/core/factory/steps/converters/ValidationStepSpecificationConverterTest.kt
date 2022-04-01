@@ -54,7 +54,7 @@ internal class ValidationStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ValidationStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(ValidationStep<*>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(spec.retryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }
@@ -74,7 +74,7 @@ internal class ValidationStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ValidationStep::class).all {
-            prop(ValidationStep<*>::id).isEmpty()
+            prop(ValidationStep<*>::name).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }

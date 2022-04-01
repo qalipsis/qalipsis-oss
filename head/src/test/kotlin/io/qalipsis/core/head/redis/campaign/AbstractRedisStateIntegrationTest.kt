@@ -77,7 +77,7 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
 
     @BeforeEach
     internal fun setUp() {
-        campaign = spyk(CampaignConfiguration(id = "my-campaign").also {
+        campaign = spyk(CampaignConfiguration(name = "my-campaign").also {
             it.broadcastChannel = "my-broadcast-channel"
             it.feedbackChannel = "my-feedback-channel"
         })

@@ -2,12 +2,12 @@ package io.qalipsis.core.factory
 
 import io.mockk.every
 import io.qalipsis.api.context.CompletionContext
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -36,10 +36,10 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
     input: IN? = null, outputChannel: SendChannel<StepContext.StepOutputRecord<OUT>?> = Channel(100),
     errors: MutableList<StepError> = mutableListOf(),
     minionId: MinionId = "my-minion",
-    scenarioId: ScenarioId = "",
-    directedAcyclicGraphId: DirectedAcyclicGraphId = "",
-    parentStepId: StepId = "my-parent-step",
-    stepId: StepId = "my-step", stepIterationIndex: Long = 0,
+    scenarioName: ScenarioName = "",
+    directedAcyclicGraphName: DirectedAcyclicGraphName = "",
+    parentStepName: StepName = "my-parent-step",
+    stepName: StepName = "my-step", stepIterationIndex: Long = 0,
     attemptsAfterFailure: Long = 0, isExhausted: Boolean = false,
     completed: Boolean = false
 ): StepContextImpl<IN, OUT> {
@@ -55,9 +55,9 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
         errors,
         "",
         minionId,
-        scenarioId,
-        parentStepId,
-        stepId,
+        scenarioName,
+        parentStepName,
+        stepName,
         "",
         "",
         stepIterationIndex,
@@ -67,7 +67,7 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
 }
 
 internal fun testScenario(
-    id: ScenarioId = "my-scenario",
+    id: ScenarioName = "my-scenario",
     rampUpStrategy: RampUpStrategy = relaxedMockk(),
     minionsCount: Int = 1,
     configure: suspend Scenario.() -> Unit = {}
@@ -85,7 +85,7 @@ internal fun testScenario(
 }
 
 internal fun testDag(
-    id: DirectedAcyclicGraphId = "my-dag",
+    id: DirectedAcyclicGraphName = "my-dag",
     scenario: Scenario = testScenario(),
     root: Boolean = false,
     isSingleton: Boolean = false,
@@ -133,10 +133,10 @@ internal fun <O> DirectedAcyclicGraph.noOutput(
 }
 
 
-internal fun DirectedAcyclicGraph.steps(): Map<StepId, TestStep<*, *>> {
-    val steps = mutableMapOf<StepId, TestStep<*, *>>()
+internal fun DirectedAcyclicGraph.steps(): Map<StepName, TestStep<*, *>> {
+    val steps = mutableMapOf<StepName, TestStep<*, *>>()
     val rootStep = this.rootStep.forceGet() as TestStep<*, *>
-    steps[rootStep.id] = rootStep
+    steps[rootStep.name] = rootStep
     rootStep.collectChildren(steps)
     return steps
 }
@@ -163,7 +163,7 @@ internal open class TestStep<I, O>(
 
     protected suspend fun doExecute(context: StepContext<I, O>) {
         executionCount.incrementAndGet()
-        Assertions.assertEquals("my-scenario", context.scenarioId)
+        Assertions.assertEquals("my-scenario", context.scenarioName)
         singleCaptured.set(context)
 
         delay?.let {
@@ -265,12 +265,12 @@ internal open class TestStep<I, O>(
         this.block()
     }
 
-    fun assertHasParent(expectedParentStepId: StepId?) {
-        Assertions.assertEquals(expectedParentStepId, singleCaptured.get().previousStepId)
+    fun assertHasParent(expectedParentStepName: StepName?) {
+        Assertions.assertEquals(expectedParentStepName, singleCaptured.get().previousStepName)
     }
 
     fun assertExecuted() {
-        Assertions.assertTrue(executionCount.get() > 0, "step $id should have been executed")
+        Assertions.assertTrue(executionCount.get() > 0, "step $name should have been executed")
     }
 
     fun assertNotExecuted() {
@@ -281,12 +281,12 @@ internal open class TestStep<I, O>(
         Assertions.assertEquals(
             count,
             executionCount.get(),
-            "step $id should have been executed $count time(s) but was ${executionCount.get()} time(s)"
+            "step $name should have been executed $count time(s) but was ${executionCount.get()} time(s)"
         )
     }
 
     fun assertCompleted() {
-        Assertions.assertTrue(completionCount.get() > 0, "step $id should have been completed")
+        Assertions.assertTrue(completionCount.get() > 0, "step $name should have been completed")
     }
 
     fun assertNotCompleted() {
@@ -297,25 +297,25 @@ internal open class TestStep<I, O>(
         Assertions.assertEquals(
             count,
             completionCount.get(),
-            "step $id should have been completed $count time(s) but was ${completionCount.get()} time(s)"
+            "step $name should have been completed $count time(s) but was ${completionCount.get()} time(s)"
         )
     }
 
     fun assertExhaustedContext() {
-        Assertions.assertTrue(singleCaptured.get().isExhausted, "step $id should have received an exhausted context")
+        Assertions.assertTrue(singleCaptured.get().isExhausted, "step $name should have received an exhausted context")
     }
 
     fun assertNotExhaustedContext() {
         Assertions.assertFalse(
             singleCaptured.get().isExhausted,
-            "step $id should have not received an exhausted context"
+            "step $name should have not received an exhausted context"
         )
     }
 
-    fun collectChildren(steps: MutableMap<StepId, TestStep<*, *>>) {
+    fun collectChildren(steps: MutableMap<StepName, TestStep<*, *>>) {
         next.forEach {
             val step = it as TestStep<*, *>
-            steps[it.id] = step
+            steps[it.name] = step
             step.collectChildren(steps)
         }
     }

@@ -1,12 +1,12 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.factory.context.StepContextImpl
@@ -19,8 +19,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Polymorphic
 abstract class TransportableContext : Directive() {
-    abstract val campaignId: CampaignId
-    abstract val scenarioId: ScenarioId
+    abstract val campaignName: CampaignName
+    abstract val scenarioName: ScenarioName
     abstract val minionId: MinionId
     override var channel: DispatcherChannel = ""
 }
@@ -28,28 +28,28 @@ abstract class TransportableContext : Directive() {
 @Serializable
 @SerialName("co")
 data class TransportableCompletionContext(
-    override val campaignId: CampaignId,
-    override val scenarioId: ScenarioId,
+    override val campaignName: CampaignName,
+    override val scenarioName: ScenarioName,
     override val minionId: MinionId,
-    val lastExecutedStepId: StepId,
+    val lastExecutedStepName: StepName,
     val errors: List<StepError>
 ) : TransportableContext() {
 
     constructor(ctx: CompletionContext) : this(
-        ctx.campaignId,
-        ctx.scenarioId,
+        ctx.campaignName,
+        ctx.scenarioName,
         ctx.minionId,
-        ctx.lastExecutedStepId,
-        ctx.errors.map { StepError(it.message, it.stepId) }
+        ctx.lastExecutedStepName,
+        ctx.errors.map { StepError(it.message, it.stepName) }
     )
 
     fun toContext(): CompletionContext {
         return DefaultCompletionContext(
-            campaignId,
-            scenarioId,
+            campaignName,
+            scenarioName,
             minionId,
-            lastExecutedStepId,
-            errors.map { io.qalipsis.api.context.StepError(it.message, it.stepId) }
+            lastExecutedStepName,
+            errors.map { io.qalipsis.api.context.StepError(it.message, it.stepName) }
         )
     }
 }
@@ -58,11 +58,11 @@ data class TransportableCompletionContext(
 @SerialName("st")
 data class TransportableStepContext(
     val input: SerializedRecord?,
-    override val campaignId: CampaignId,
-    override val scenarioId: ScenarioId,
+    override val campaignName: CampaignName,
+    override val scenarioName: ScenarioName,
     override val minionId: MinionId,
-    val previousStepId: StepId,
-    val stepId: StepId,
+    val previousStepName: StepName,
+    val stepName: StepName,
     var stepType: String?,
     var stepFamily: String?,
     val stepIterationIndex: Long,
@@ -73,17 +73,17 @@ data class TransportableStepContext(
 
     constructor(ctx: StepContext<*, *>, input: SerializedRecord?) : this(
         input = input,
-        campaignId = ctx.campaignId,
-        scenarioId = ctx.scenarioId,
+        campaignName = ctx.campaignName,
+        scenarioName = ctx.scenarioName,
         minionId = ctx.minionId,
-        previousStepId = ctx.previousStepId!!,
-        stepId = ctx.stepId,
+        previousStepName = ctx.previousStepName!!,
+        stepName = ctx.stepName,
         stepType = ctx.stepType,
         stepFamily = ctx.stepFamily,
         stepIterationIndex = ctx.stepIterationIndex,
         isExhausted = ctx.isExhausted,
         isTail = ctx.isTail,
-        ctx.errors.map { StepError(it.message, it.stepId) }
+        ctx.errors.map { StepError(it.message, it.stepName) }
     )
 
     suspend fun toContext(input: Any?, generatedOutput: Boolean): StepContext<*, *> {
@@ -91,11 +91,11 @@ data class TransportableStepContext(
             input = if (generatedOutput) {
                 Channel<Any?>(1).also { it.send(input) }
             } else Channel(Channel.RENDEZVOUS),
-            campaignId = campaignId,
-            scenarioId = scenarioId,
+            campaignName = campaignName,
+            scenarioName = scenarioName,
             minionId = minionId,
-            previousStepId = previousStepId,
-            stepId = stepId,
+            previousStepName = previousStepName,
+            stepName = stepName,
             stepType = stepType,
             stepFamily = stepFamily,
             stepIterationIndex = stepIterationIndex,
@@ -103,7 +103,7 @@ data class TransportableStepContext(
             isTail = isTail
         ).also { ctx ->
             this.errors.forEach {
-                ctx.addError(io.qalipsis.api.context.StepError(it.message, it.stepId))
+                ctx.addError(io.qalipsis.api.context.StepError(it.message, it.stepName))
             }
         }
     }
@@ -119,11 +119,11 @@ data class TransportableStepContext(
             if (other.input == null) return false
             if (!input.value.contentEquals(other.input.value)) return false
         } else if (other.input != null) return false
-        if (campaignId != other.campaignId) return false
-        if (scenarioId != other.scenarioId) return false
+        if (campaignName != other.campaignName) return false
+        if (scenarioName != other.scenarioName) return false
         if (minionId != other.minionId) return false
-        if (previousStepId != other.previousStepId) return false
-        if (stepId != other.stepId) return false
+        if (previousStepName != other.previousStepName) return false
+        if (stepName != other.stepName) return false
         if (stepType != other.stepType) return false
         if (stepFamily != other.stepFamily) return false
         if (stepIterationIndex != other.stepIterationIndex) return false
@@ -136,11 +136,11 @@ data class TransportableStepContext(
 
     override fun hashCode(): Int {
         var result = input?.value?.contentHashCode() ?: 0
-        result = 31 * result + campaignId.hashCode()
-        result = 31 * result + scenarioId.hashCode()
+        result = 31 * result + campaignName.hashCode()
+        result = 31 * result + scenarioName.hashCode()
         result = 31 * result + minionId.hashCode()
-        result = 31 * result + previousStepId.hashCode()
-        result = 31 * result + stepId.hashCode()
+        result = 31 * result + previousStepName.hashCode()
+        result = 31 * result + stepName.hashCode()
         result = 31 * result + (stepType?.hashCode() ?: 0)
         result = 31 * result + (stepFamily?.hashCode() ?: 0)
         result = 31 * result + stepIterationIndex.hashCode()
@@ -154,4 +154,4 @@ data class TransportableStepContext(
 }
 
 @Serializable
-data class StepError(val message: String, var stepId: String)
+data class StepError(val message: String, var stepName: String)

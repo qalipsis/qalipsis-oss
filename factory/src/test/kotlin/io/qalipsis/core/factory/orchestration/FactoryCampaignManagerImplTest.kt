@@ -19,7 +19,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.rampup.MinionsStartingLine
 import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.rampup.RampUpStrategyIterator
@@ -108,9 +108,11 @@ internal class FactoryCampaignManagerImplTest {
             every { scenarioRegistry.contains("scenario-1") } returns true
             every { scenarioRegistry.contains("scenario-2") } returns true
             every { scenarioRegistry.contains("scenario-3") } returns false
-            every { campaign.campaignId } returns "my-campaign"
-            every { campaign.assignedDagsByScenario } returns mapOf(
-                "scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk(), "scenario-3" to relaxedMockk()
+            every { campaign.campaignName } returns "my-campaign"
+            every { campaign.assignments } returns listOf(
+                relaxedMockk { every { scenarioName } returns "scenario-1" },
+                relaxedMockk { every { scenarioName } returns "scenario-2" },
+                relaxedMockk { every { scenarioName } returns "scenario-3" }
             )
 
             // when
@@ -150,10 +152,12 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should ignore init the campaign when no scenario is known`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignId } returns "my-campaign"
+        every { campaign.campaignName } returns "my-campaign"
         every { scenarioRegistry.contains(any()) } returns false
-        every { campaign.assignedDagsByScenario } returns mapOf(
-            "scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk(), "scenario-3" to relaxedMockk()
+        every { campaign.assignments } returns listOf(
+            relaxedMockk { every { scenarioName } returns "scenario-1" },
+            relaxedMockk { every { scenarioName } returns "scenario-2" },
+            relaxedMockk { every { scenarioName } returns "scenario-3" }
         )
 
         // when
@@ -182,7 +186,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should warmup campaign successfully`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignId } returns "my-campaign"
+        every { campaign.campaignName } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
         val scenario = relaxedMockk<Scenario>()
@@ -206,7 +210,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
-            every { campaign.campaignId } returns "my-other-campaign"
+            every { campaign.campaignName } returns "my-other-campaign"
             factoryCampaignManager.runningCampaign(campaign)
             factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
 
@@ -221,7 +225,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should ignore warmup campaign when the scenario is not running`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignId } returns "my-campaign"
+        every { campaign.campaignName } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-other-scenario"))
 
@@ -236,7 +240,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should warmup campaign with failure`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignId } returns "my-campaign"
+        every { campaign.campaignName } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
         val exception = RuntimeException()
@@ -267,7 +271,7 @@ internal class FactoryCampaignManagerImplTest {
             val factoryCampaignManager = buildCampaignManager()
             val rampUpConfiguration = RampUpConfiguration(2000, 3.0)
             val scenario = relaxedMockk<Scenario> {
-                every { id } returns "my-scenario"
+                every { name } returns "my-scenario"
                 every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
             }
             coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
@@ -296,7 +300,7 @@ internal class FactoryCampaignManagerImplTest {
         val factoryCampaignManager = buildCampaignManager()
         val rampUpConfiguration = RampUpConfiguration(2000, 2.0)
         val scenario = relaxedMockk<Scenario> {
-            every { id } returns "my-scenario"
+            every { name } returns "my-scenario"
             every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
         }
         val allMinionsUnderLoad = (0..2).map { "minion-$it" }
@@ -326,7 +330,7 @@ internal class FactoryCampaignManagerImplTest {
         val factoryCampaignManager = buildCampaignManager()
         val rampUpConfiguration = RampUpConfiguration(2000, 1.0)
         val scenario = relaxedMockk<Scenario> {
-            every { id } returns "my-scenario"
+            every { name } returns "my-scenario"
             every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
         }
         val allMinionsUnderLoad = (0..9).map { "minion-$it" }
@@ -356,7 +360,7 @@ internal class FactoryCampaignManagerImplTest {
         val factoryCampaignManager = buildCampaignManager()
         val rampUpConfiguration = RampUpConfiguration(2000, 2.0)
         val scenario = relaxedMockk<Scenario> {
-            every { id } returns "my-scenario"
+            every { name } returns "my-scenario"
             every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
         }
         val allMinionsUnderLoad = (0..27).map { "minion-$it" }
@@ -419,7 +423,7 @@ internal class FactoryCampaignManagerImplTest {
             val factoryCampaignManager = buildCampaignManager()
             val rampUpConfiguration = RampUpConfiguration(2000, 2.0)
             val scenario = relaxedMockk<Scenario> {
-                every { id } returns "my-scenario"
+                every { name } returns "my-scenario"
                 every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
             }
             val allMinionsUnderLoad = (0..27).map { "minion-$it" }
@@ -478,7 +482,7 @@ internal class FactoryCampaignManagerImplTest {
                 listOf("my-dag")
             )
         } returns CampaignCompletionState()
-        factoryCampaignManager.getProperty<MutableSet<ScenarioId>>("runningScenarios").add("my-scenario")
+        factoryCampaignManager.getProperty<MutableSet<ScenarioName>>("runningScenarios").add("my-scenario")
 
         // when
         factoryCampaignManager.notifyCompleteMinion("my-minion", "my-campaign", "my-scenario", "my-dag")
@@ -809,7 +813,7 @@ internal class FactoryCampaignManagerImplTest {
         val factoryCampaignManager = buildCampaignManager()
         val scenario1 = relaxedMockk<Scenario>()
         val scenario2 = relaxedMockk<Scenario>()
-        every { campaign.campaignId } returns "my-campaign"
+        every { campaign.campaignName } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario-1", "my-scenario-2"))
         every { scenarioRegistry["my-scenario-1"] } returns scenario1
@@ -843,7 +847,7 @@ internal class FactoryCampaignManagerImplTest {
         // when
         assertDoesNotThrow {
             factoryCampaignManager.close(relaxedMockk {
-                every { campaignId } returns "my-other-campaign"
+                every { campaignName } returns "my-other-campaign"
             })
         }
 

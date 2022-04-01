@@ -42,7 +42,7 @@ internal class ContextDirectiveListener(
      */
     private suspend fun executeStep(transportableContext: TransportableStepContext) {
         val minion = minionsKeeper[transportableContext.minionId]
-        val step = scenarioRegistry[transportableContext.scenarioId]!!.findStep(transportableContext.stepId)!!.first
+        val step = scenarioRegistry[transportableContext.scenarioName]!!.findStep(transportableContext.stepName)!!.first
         val input = transportableContext.input?.let { distributionSerializer.deserializeRecord<Any?>(it) }
         val stepExecutionContext = transportableContext.toContext(input, transportableContext.input != null)
         runner.runMinion(minion, step, stepExecutionContext)
@@ -55,8 +55,8 @@ internal class ContextDirectiveListener(
         val minion = minionsKeeper[transportableContext.minionId]
         val completionContext = transportableContext.toContext()
 
-        scenarioRegistry[transportableContext.scenarioId]?.dags?.asSequence()?.filter {
-            localAssignmentStore.isLocal(transportableContext.scenarioId, transportableContext.minionId, it.id)
+        scenarioRegistry[transportableContext.scenarioName]?.dags?.asSequence()?.filter {
+            localAssignmentStore.isLocal(transportableContext.scenarioName, transportableContext.minionId, it.name)
         }?.forEach { dag ->
             runner.complete(minion, dag.rootStep.forceGet(), completionContext)
         }

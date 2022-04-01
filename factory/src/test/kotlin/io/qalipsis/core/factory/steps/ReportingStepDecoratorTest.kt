@@ -91,10 +91,10 @@ internal class ReportingStepDecoratorTest {
     internal fun `should stop the decorated step and send the report with errors`() = runBlockingTest {
         // given
         val startContext: StepStartStopContext = relaxedMockk {
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
         }
-        every { decorated.id } returns "the decorated"
+        every { decorated.name } returns "the decorated"
         reportingStepDecorator.getProperty<AtomicLong>("successCount").set(12)
         reportingStepDecorator.getProperty<AtomicLong>("errorCount").set(3)
 
@@ -118,10 +118,10 @@ internal class ReportingStepDecoratorTest {
     internal fun `should stop the decorated step and send the report with information`() = runBlockingTest {
         // given
         val startContext: StepStartStopContext = relaxedMockk {
-            every { campaignId } returns "my-campaign"
-            every { scenarioId } returns "my-scenario"
+            every { campaignName } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
         }
-        every { decorated.id } returns "the decorated"
+        every { decorated.name } returns "the decorated"
         reportingStepDecorator.getProperty<AtomicLong>("successCount").set(12)
         reportingStepDecorator.getProperty<AtomicLong>("errorCount").set(0)
 

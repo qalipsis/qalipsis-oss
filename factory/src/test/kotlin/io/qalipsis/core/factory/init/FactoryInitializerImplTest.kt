@@ -285,16 +285,16 @@ internal class FactoryInitializerImplTest {
         )
         val scenario = testScenario()
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
-            every { directedAcyclicGraphId } returns "dag-1"
+            every { directedAcyclicGraphName } returns "dag-1"
             every { selectors } returns emptyMap()
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
-            every { directedAcyclicGraphId } returns "dag-2"
+            every { directedAcyclicGraphName } returns "dag-2"
 
         }
         val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification2)
-            every { directedAcyclicGraphId } returns "dag-2"
+            every { directedAcyclicGraphName } returns "dag-2"
             every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val atomicInteger = AtomicInteger()
@@ -352,17 +352,17 @@ internal class FactoryInitializerImplTest {
         )
         val scenario = testScenario()
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
-            every { directedAcyclicGraphId } returns "dag-1"
+            every { directedAcyclicGraphName } returns "dag-1"
             every { selectors } returns emptyMap()
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification1)
-            every { directedAcyclicGraphId } returns "dag-2"
+            every { directedAcyclicGraphName } returns "dag-2"
 
         }
         val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification2)
-            every { directedAcyclicGraphId } returns "dag-2"
+            every { directedAcyclicGraphName } returns "dag-2"
             every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val atomicInteger = AtomicInteger()
@@ -421,23 +421,23 @@ internal class FactoryInitializerImplTest {
         val scenario = spyk(testScenario())
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { name } returns "step-1"
-            every { directedAcyclicGraphId } returns "dag-1"
+            every { directedAcyclicGraphName } returns "dag-1"
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { name } returns "step-2"
-            every { directedAcyclicGraphId } returns "dag-2"
+            every { directedAcyclicGraphName } returns "dag-2"
 
         }
         val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { name } returns "step-3"
-            every { directedAcyclicGraphId } returns "dag-2"
+            every { directedAcyclicGraphName } returns "dag-2"
             every { nextSteps } returns mutableListOf(stepSpecification2)
         }
         coEvery { factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {
             val context: StepCreationContext<*> = firstArg()
             if (context.stepSpecification.name != "step-3") {
                 context.createdStep(relaxedMockk {
-                    every { id } returns context.stepSpecification.name
+                    every { name } returns context.stepSpecification.name
                 })
             }
         }
@@ -491,7 +491,7 @@ internal class FactoryInitializerImplTest {
         // then
         latch.await()
         assertThat(scenario).all {
-            prop(Scenario::id).isEqualTo("my-scenario")
+            prop(Scenario::name).isEqualTo("my-scenario")
             prop(Scenario::minionsCount).isEqualTo(123)
             prop(Scenario::rampUpStrategy).isSameAs(scenarioSpecification.rampUpStrategy)
             prop(Scenario::defaultRetryPolicy).isSameAs(scenarioSpecification.retryPolicy)

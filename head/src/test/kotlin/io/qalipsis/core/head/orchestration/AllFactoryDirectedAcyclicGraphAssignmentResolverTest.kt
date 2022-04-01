@@ -2,11 +2,12 @@ package io.qalipsis.core.head.orchestration
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.key
 import io.mockk.every
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.head.model.Factory
@@ -21,7 +22,7 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
     internal fun `should assign all the scenarios to all the factories`() {
         // given
         val campaign = CampaignConfiguration(
-            id = "my-campaign",
+            name = "my-campaign",
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(
                     minionsCount = 54
@@ -33,21 +34,21 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
         )
         val scenarios = listOf(
             ScenarioSummary(
-                id = "scenario-1",
+                name = "scenario-1",
                 minionsCount = 54,
                 directedAcyclicGraphs = listOf(
-                    relaxedMockk { every { id } returns "dag-1" },
-                    relaxedMockk { every { id } returns "dag-2" },
-                    relaxedMockk { every { id } returns "dag-3" }
+                    relaxedMockk { every { name } returns "dag-1" },
+                    relaxedMockk { every { name } returns "dag-2" },
+                    relaxedMockk { every { name } returns "dag-3" }
                 )
             ),
             ScenarioSummary(
-                id = "scenario-2",
+                name = "scenario-2",
                 minionsCount = 433,
                 directedAcyclicGraphs = listOf(
-                    relaxedMockk { every { id } returns "dag-a" },
-                    relaxedMockk { every { id } returns "dag-b" },
-                    relaxedMockk { every { id } returns "dag-c" }
+                    relaxedMockk { every { name } returns "dag-a" },
+                    relaxedMockk { every { name } returns "dag-b" },
+                    relaxedMockk { every { name } returns "dag-c" }
                 )
             )
         )
@@ -60,17 +61,20 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
         val assignments = resolver.resolveFactoriesAssignments(campaign, factories, scenarios)
 
         // then
+        val expectedAssignmentScenario1 = FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2", "dag-3"), 27)
+        val expectedAssignmentScenario2 =
+            FactoryScenarioAssignment("scenario-2", listOf("dag-a", "dag-b", "dag-c"), 217)
         assertThat(assignments.rowMap()).all {
             hasSize(2)
             key("factory-1").all {
                 hasSize(2)
-                key("scenario-1").containsOnly("dag-1", "dag-2", "dag-3")
-                key("scenario-2").containsOnly("dag-a", "dag-b", "dag-c")
+                key("scenario-1").isDataClassEqualTo(expectedAssignmentScenario1)
+                key("scenario-2").isDataClassEqualTo(expectedAssignmentScenario2)
             }
             key("factory-2").all {
                 hasSize(2)
-                key("scenario-1").containsOnly("dag-1", "dag-2", "dag-3")
-                key("scenario-2").containsOnly("dag-a", "dag-b", "dag-c")
+                key("scenario-1").isDataClassEqualTo(expectedAssignmentScenario1)
+                key("scenario-2").isDataClassEqualTo(expectedAssignmentScenario2)
             }
         }
     }
