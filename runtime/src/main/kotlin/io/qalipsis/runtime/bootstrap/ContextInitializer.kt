@@ -7,6 +7,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.processors.ServicesLoader
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.runtime.MicronautBootstrap
+import java.io.File
 import java.util.Properties
 
 /**
@@ -31,7 +32,9 @@ internal class ContextInitializer(
     fun build(): ApplicationContextBuilder {
         val properties = mutableMapOf<String, Any>()
         // Adds the build properties to the application context.
-        properties.putAll(executionProperties.mapKeys { "qalipsis.${it.key}" })
+        properties.putAll(BUILD_PROPERTIES.mapKeys { "qalipsis.${it.key}" })
+
+        addFileSystemConfigurationFiles()
 
         val environments = linkedSetOf<String>()
         when (role) {
@@ -59,6 +62,29 @@ internal class ContextInitializer(
             .properties(properties)
             .deduceEnvironment(false)
             .args(*(commandLineConfiguration.map { "--$it" }.toTypedArray()))
+    }
+
+    /**
+     * Verifies the existence of the configuration files in the file system, and make them accessible to the
+     * application context.
+     *
+     * See (Micronaut documentation)(https://docs.micronaut.io/latest/guide/#propertySource).
+     */
+    private fun addFileSystemConfigurationFiles() {
+        val configurationFiles = mutableListOf<String>()
+        CONFIGURATION_ROOTS.forEach { root ->
+            val rootFile = File(System.getProperty("user.dir"), root)
+            CONFIGURATION_EXTENSIONS.forEach { ext ->
+                val configFile = File(rootFile, "${CONFIGURATION_FILE_NAME}.$ext")
+                if (configFile.exists() && configFile.canRead()) {
+                    configurationFiles += configFile.absolutePath
+                }
+            }
+        }
+
+        if (configurationFiles.isNotEmpty()) {
+            System.setProperty(Environment.PROPERTY_SOURCES_KEY, configurationFiles.joinToString())
+        }
     }
 
     /**
@@ -216,9 +242,24 @@ internal class ContextInitializer(
         return choice
     }
 
-    companion object {
+    private companion object {
 
-        val executionProperties = Properties().apply {
+        /**
+         * Name of the configuration file.
+         */
+        const val CONFIGURATION_FILE_NAME = "qalipsis"
+
+        /**
+         * List of root folders where to look for configuration files.
+         */
+        val CONFIGURATION_ROOTS = listOf("./config", ".")
+
+        /**
+         * List of extensions for configuration files.
+         */
+        val CONFIGURATION_EXTENSIONS = listOf("properties", "json", "yml", "yaml")
+
+        val BUILD_PROPERTIES = Properties().apply {
             load(ContextInitializer::class.java.getResourceAsStream("/build.properties"))
         }
 

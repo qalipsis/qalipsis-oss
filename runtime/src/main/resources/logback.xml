@@ -15,9 +15,8 @@
     </filter>
   </appender>
 
-  <logger name="events" additivity="false"/>
+  <logger name="events" level="TRACE" additivity="false"/>
 
-  <!-- When events are saved as logs. -->
   <root level="${LOGGING_LEVEL:-INFO}">
     <appender-ref ref="console"/>
   </root>
