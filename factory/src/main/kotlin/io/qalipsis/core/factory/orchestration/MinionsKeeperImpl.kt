@@ -4,10 +4,10 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -45,38 +45,45 @@ internal class MinionsKeeperImpl(
 
     private val minions: MutableMap<MinionId, MinionImpl> = ConcurrentHashMap()
 
-    private val rootDagsOfMinions: MutableMap<MinionId, DirectedAcyclicGraphId> = ConcurrentHashMap()
+    private val rootDagsOfMinions: MutableMap<MinionId, DirectedAcyclicGraphName> = ConcurrentHashMap()
 
-    private val idleSingletonsMinions: MutableMap<ScenarioId, MutableCollection<MinionImpl>> = ConcurrentHashMap()
+    private val idleSingletonsMinions: MutableMap<ScenarioName, MutableCollection<MinionImpl>> = ConcurrentHashMap()
 
-    private val singletonMinionsByDagId = concurrentTableOf<ScenarioId, DirectedAcyclicGraphId, MinionImpl>()
+    private val singletonMinionsByDagId = concurrentTableOf<ScenarioName, DirectedAcyclicGraphName, MinionImpl>()
 
-    private val dagIdsBySingletonMinionId = ConcurrentHashMap<MinionId, Pair<ScenarioId, DirectedAcyclicGraphId>>()
+    private val dagIdsBySingletonMinionId = ConcurrentHashMap<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>()
 
     override fun contains(minionId: MinionId) = minions.containsKey(minionId)
 
     override fun get(minionId: MinionId) = minions[minionId]!!
 
-    override fun getSingletonMinion(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): Minion {
-        return singletonMinionsByDagId[scenarioId, dagId]!!
+    override fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion {
+        return singletonMinionsByDagId[scenarioName, dagId]!!
     }
 
     @LogInput
     override suspend fun create(
-        campaignId: CampaignId, scenarioId: ScenarioId, dagIds: Collection<DirectedAcyclicGraphId>, minionId: MinionId
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        dagIds: Collection<DirectedAcyclicGraphName>,
+        minionId: MinionId
     ) {
-        scenarioRegistry[scenarioId]?.let { scenario ->
+        scenarioRegistry[scenarioName]?.let { scenario ->
             // Extracts the DAG being the entry to the scenario for the minion.
             val rootDag = dagIds.asSequence().map { dagId -> scenario[dagId]!! }.firstOrNull { it.isRoot }
             val minion = MinionImpl(
                 minionId,
-                campaignId,
-                scenarioId,
+                campaignName,
+                scenarioName,
                 rootDag != null && rootDag.isUnderLoad, // Minions that have no root or are under load should not be started yet.
                 rootDag?.isSingleton == true,
                 meterRegistry.gauge(
                     "minion-running-steps",
-                    listOf(Tag.of("campaign", campaignId), Tag.of("scenario", scenarioId), Tag.of("minion", minionId)),
+                    listOf(
+                        Tag.of("campaign", campaignName),
+                        Tag.of("scenario", scenarioName),
+                        Tag.of("minion", minionId)
+                    ),
                     AtomicInteger()
                 )
             )
@@ -84,11 +91,11 @@ internal class MinionsKeeperImpl(
 
             if (minion.isSingleton || rootDag?.isUnderLoad == false) {
                 val dagId = dagIds.first()
-                idleSingletonsMinions.computeIfAbsent(scenarioId) { concurrentSet() } += minion
-                singletonMinionsByDagId.put(scenarioId, dagId, minion)
-                dagIdsBySingletonMinionId[minionId] = scenarioId to dagId
+                idleSingletonsMinions.computeIfAbsent(scenarioName) { concurrentSet() } += minion
+                singletonMinionsByDagId.put(scenarioName, dagId, minion)
+                dagIdsBySingletonMinionId[minionId] = scenarioName to dagId
                 minion.onComplete {
-                    singletonMinionsByDagId.remove(scenarioId, dagId)
+                    singletonMinionsByDagId.remove(scenarioName, dagId)
                     dagIdsBySingletonMinionId.remove(minionId)
                 }
             } else {
@@ -99,23 +106,23 @@ internal class MinionsKeeperImpl(
             }
 
             if (rootDag != null) {
-                rootDagsOfMinions[minionId] = rootDag.id
+                rootDagsOfMinions[minionId] = rootDag.name
                 eventsLogger.info(
                     "minion.created",
-                    tags = mapOf("campaign" to campaignId, "scenario" to scenarioId, "minion" to minionId)
+                    tags = mapOf("campaign" to campaignName, "scenario" to scenarioName, "minion" to minionId)
                 )
                 // When the minion is not under load or executes the root DAG locally, it is started and kept idle.
                 // Otherwise, it will be the responsibility of the "DAG input step" to perform the execution when
                 // a step context will be received for that minion.
                 coroutineScope.launch { runner.run(minion, rootDag) }
-                log.trace { "Minion $minionId for DAG ${rootDag.id} of scenario $scenarioId is ready to start and idle" }
+                log.trace { "Minion $minionId for DAG ${rootDag.name} of scenario $scenarioName is ready to start and idle" }
             }
         }
     }
 
     @LogInputAndOutput(level = Level.DEBUG)
-    override suspend fun startSingletons(scenarioId: ScenarioId) {
-        idleSingletonsMinions.remove(scenarioId)?.forEach { minion ->
+    override suspend fun startSingletons(scenarioName: ScenarioName) {
+        idleSingletonsMinions.remove(scenarioName)?.forEach { minion ->
             log.debug { "Starting singleton minion ${minion.id}" }
             minion.start()
         }
@@ -131,10 +138,14 @@ internal class MinionsKeeperImpl(
                 delay(waitingDelay)
             }
             minion.start()
-            reportLiveStateRegistry.recordStartedMinion(minion.campaignId, minion.scenarioId, 1)
+            reportLiveStateRegistry.recordStartedMinion(minion.campaignName, minion.scenarioName, 1)
             eventsLogger.info(
                 "minion.started",
-                tags = mapOf("campaign" to minion.campaignId, "scenario" to minion.scenarioId, "minion" to minion.id)
+                tags = mapOf(
+                    "campaign" to minion.campaignName,
+                    "scenario" to minion.scenarioName,
+                    "minion" to minion.id
+                )
             )
         }
     }
@@ -148,9 +159,9 @@ internal class MinionsKeeperImpl(
             minion.reset(true)
             rootDagsOfMinions[minionId]?.let { rootDagId ->
                 coroutineScope.launch {
-                    val scenarioId = minion.scenarioId
-                    log.trace { "Minion $minionId is restarting its execution from scratch by the DAG $rootDagId of scenario $scenarioId" }
-                    runner.run(minion, scenarioRegistry[scenarioId]!![rootDagId]!!)
+                    val scenarioName = minion.scenarioName
+                    log.trace { "Minion $minionId is restarting its execution from scratch by the DAG $rootDagId of scenario $scenarioName" }
+                    runner.run(minion, scenarioRegistry[scenarioName]!![rootDagId]!!)
                 }
             }
             minion.start()
@@ -181,10 +192,10 @@ internal class MinionsKeeperImpl(
     private suspend fun shutdownMinion(minion: MinionImpl) {
         val minionId = minion.id
         val eventsTags =
-            mapOf("campaign" to minion.campaignId, "scenario" to minion.scenarioId, "minion" to minionId)
+            mapOf("campaign" to minion.campaignName, "scenario" to minion.scenarioName, "minion" to minionId)
         eventsLogger.info("minion.cancellation.started", tags = eventsTags)
         dagIdsBySingletonMinionId.remove(minionId)
-            ?.let { (scenarioId, dagId) -> singletonMinionsByDagId.remove(scenarioId, dagId) }
+            ?.let { (scenarioName, dagId) -> singletonMinionsByDagId.remove(scenarioName, dagId) }
         rootDagsOfMinions.remove(minionId)
         try {
             minion.cancel()

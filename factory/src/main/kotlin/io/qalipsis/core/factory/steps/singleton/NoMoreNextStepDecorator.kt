@@ -1,6 +1,6 @@
 package io.qalipsis.core.factory.steps.singleton
 
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
 
@@ -13,7 +13,7 @@ class NoMoreNextStepDecorator<I, O>(
     override val decorated: Step<I, O>
 ) : Step<I, O>, StepDecorator<I, O> {
 
-    override val id: StepId = decorated.id
+    override val name: StepName = decorated.name
 
     override var retryPolicy = decorated.retryPolicy
 

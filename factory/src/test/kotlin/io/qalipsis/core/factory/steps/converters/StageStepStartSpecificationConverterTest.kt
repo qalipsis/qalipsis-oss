@@ -10,6 +10,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.key
+import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.every
 import io.qalipsis.api.steps.StageStepEndSpecification
@@ -65,14 +66,14 @@ internal class StageStepStartSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(StageStep::class).all {
-            prop("id").isNotNull()
+            prop(StageStep<*, *>::name).isNotNull()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
         }
         // The name is set in the spec.
-        assertThat(spec.name).isEqualTo(creationContext.createdStep!!.id)
+        assertThat(spec.name).isEqualTo(creationContext.createdStep!!.name)
         assertThat(converter).typedProp<Map<String, StageStep<*, *>>>("startStepsById").all {
             hasSize(1)
-            key(creationContext.createdStep!!.id).isSameAs(creationContext.createdStep)
+            key(creationContext.createdStep!!.name).isSameAs(creationContext.createdStep)
         }
     }
 
@@ -90,7 +91,7 @@ internal class StageStepStartSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(StageStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(StageStep<*, *>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
         }
         assertThat(spec.name).isEqualTo("my-step")
@@ -120,7 +121,7 @@ internal class StageStepStartSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(StageStepSpecificationConverter.GroupEndProxy::class)
             .all {
-                prop("id").isNotNull()
+                prop(StageStepSpecificationConverter.GroupEndProxy<*>::name).isNotNull()
                 prop("retryPolicy").isNull()
                 prop("start").isSameAs(stageStep)
             }
@@ -149,7 +150,7 @@ internal class StageStepStartSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(StageStepSpecificationConverter.GroupEndProxy::class)
             .all {
-                prop("id").isNotNull()
+                prop(StageStepSpecificationConverter.GroupEndProxy<*>::name).isNotNull()
                 prop("retryPolicy").isNull()
                 prop("start").isSameAs(stageStep)
             }

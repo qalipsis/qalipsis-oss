@@ -54,7 +54,7 @@ internal class VerificationStepSpecificationConverterTest :
         // then
         assertThat(spec.reporting.reportErrors).isFalse()
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(VerificationStep<*, *>::name).isEqualTo("my-step")
             prop("reportLiveStateRegistry").isSameAs(campaignReportLiveStateRegistry)
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
@@ -74,7 +74,7 @@ internal class VerificationStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
-            prop(VerificationStep<*,*>::id).isEmpty()
+            prop(VerificationStep<*, *>::name).isEmpty()
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
             prop("assertionBlock").isSameAs(blockSpecification)

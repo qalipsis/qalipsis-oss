@@ -10,7 +10,7 @@ import io.qalipsis.core.feedbacks.Feedback
 internal open class FailureState(
     protected val campaign: CampaignConfiguration,
     private val error: String
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
@@ -18,7 +18,7 @@ internal open class FailureState(
         campaign.message = error
         return listOf(
             CampaignShutdownDirective(
-                campaignId = campaignId,
+                campaignName = campaignName,
                 channel = campaign.broadcastChannel
             )
         )

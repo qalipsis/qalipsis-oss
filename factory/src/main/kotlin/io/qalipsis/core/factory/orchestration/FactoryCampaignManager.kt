@@ -1,9 +1,9 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.campaign.Campaign
@@ -17,42 +17,42 @@ internal interface FactoryCampaignManager : CampaignLifeCycleAware {
     /**
      * Verifies whether the campaign is locally executed.
      */
-    fun isLocallyExecuted(campaignId: CampaignId): Boolean
+    fun isLocallyExecuted(campaignName: CampaignName): Boolean
 
     /**
      * Verifies whether the scenario is locally executed.
      */
-    fun isLocallyExecuted(campaignId: CampaignId, scenarioId: ScenarioId): Boolean
+    fun isLocallyExecuted(campaignName: CampaignName, scenarioName: ScenarioName): Boolean
 
     /**
      * Starts all the steps for a campaign and the related singleton minions.
      */
-    suspend fun warmUpCampaignScenario(campaignId: CampaignId, scenarioId: ScenarioId)
+    suspend fun warmUpCampaignScenario(campaignName: CampaignName, scenarioName: ScenarioName)
 
     /**
      * Calculates the ramping of all the minions under load for the given scenario.
      */
     suspend fun prepareMinionsRampUp(
-        campaignId: CampaignId,
+        campaignName: CampaignName,
         scenario: Scenario,
         rampUpConfiguration: RampUpConfiguration
     ): List<MinionStartDefinition>
 
     suspend fun notifyCompleteMinion(
         minionId: MinionId,
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        dagId: DirectedAcyclicGraphId
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        dagId: DirectedAcyclicGraphName
     )
 
     /**
      * Shutdown the related minions of the specified campaign.
      */
-    suspend fun shutdownMinions(campaignId: CampaignId, minionIds: Collection<MinionId>)
+    suspend fun shutdownMinions(campaignName: CampaignName, minionIds: Collection<MinionId>)
 
     /**
      * Stops all the components of a scenario in a campaign.
      */
-    suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId)
+    suspend fun shutdownScenario(campaignName: CampaignName, scenarioName: ScenarioName)
 
 }

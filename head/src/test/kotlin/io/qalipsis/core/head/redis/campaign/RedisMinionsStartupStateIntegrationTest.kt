@@ -79,7 +79,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
                 )
             )
         }
-        assertThat(operations.getState(campaign.id)).isNotNull().all {
+        assertThat(operations.getState(campaign.name)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaignConfiguration)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.MINIONS_STARTUP_STATE)
         }

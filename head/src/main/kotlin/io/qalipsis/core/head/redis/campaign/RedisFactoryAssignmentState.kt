@@ -18,7 +18,7 @@ internal class RedisFactoryAssignmentState(
 
     override suspend fun doInit(): List<Directive> {
         // Persists the current state.
-        operations.setState(campaignId, CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
+        operations.setState(campaignName, CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
         operations.saveConfiguration(campaign)
         // Prepared the feedback expectations.
         operations.prepareFactoriesForFeedbackExpectations(campaign)
@@ -33,7 +33,7 @@ internal class RedisFactoryAssignmentState(
                 if (feedback.status == FeedbackStatus.IGNORED) {
                     operations.saveConfiguration(campaign)
                 }
-                if (operations.markFeedbackForFactory(campaignId, feedback.nodeId)) {
+                if (operations.markFeedbackForFactory(campaignName, feedback.nodeId)) {
                     RedisMinionsAssignmentState(campaign, operations)
                 } else {
                     this

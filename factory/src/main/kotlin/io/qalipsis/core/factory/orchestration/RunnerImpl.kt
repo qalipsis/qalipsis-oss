@@ -76,10 +76,10 @@ internal class RunnerImpl(
         val step = dag.rootStep.get()
         val stepContext = StepContextImpl<Unit, Any>(
             input = Channel<Unit>(1).also { it.send(Unit) },
-            campaignId = minion.campaignId,
+            campaignName = minion.campaignName,
             minionId = minion.id,
-            scenarioId = dag.scenario.id,
-            stepId = step.id
+            scenarioName = dag.scenario.name,
+            stepName = step.name
         )
 
         @Suppress("UNCHECKED_CAST")
@@ -98,7 +98,7 @@ internal class RunnerImpl(
 
         log.trace { "Running minion" }
         try {
-            MDC.put("step", rootStep.id)
+            MDC.put("step", rootStep.name)
             minion.launch(coroutineScope) {
                 log.trace { "Starting the execution of a subtree of tasks for the minion" }
                 propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
@@ -116,7 +116,7 @@ internal class RunnerImpl(
     ): Job? {
         minion.completeMdcContext()
         return try {
-            MDC.put("step", rootStep.id)
+            MDC.put("step", rootStep.name)
             minion.launch(coroutineScope) {
                 propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
             }
@@ -128,7 +128,7 @@ internal class RunnerImpl(
     override suspend fun complete(minion: Minion, rootStep: Step<*, *>, completionContext: CompletionContext): Job? {
         minion.completeMdcContext()
         return try {
-            MDC.put("step", rootStep.id)
+            MDC.put("step", rootStep.name)
             minion.launch(coroutineScope) {
                 propagatePrematureCompletion(this, completionContext, listOf(rootStep), minion)
             }
@@ -158,7 +158,7 @@ internal class RunnerImpl(
         if (step.next.isEmpty() && completionConsumer != null) {
             // If the step is the latest one of the chain and a completion operation is provided, the output channel
             // is provided to completion operation.
-            log.trace { "Launching the completionConsumer for the latest step of the graph ${step.id}" }
+            log.trace { "Launching the completionConsumer for the latest step of the graph ${step.name}" }
             MDC.put("step", "_completion")
             latch = Latch(true, "step-execution-propagation")
             minion.launch(minionScope) {
@@ -205,13 +205,13 @@ internal class RunnerImpl(
                     StepContextBuilder.next<Any?, Any?, Any?>(
                         outputRecord.value,
                         stepContext as StepContext<Any?, Any?>,
-                        nextStep.id
+                        nextStep.name
                     )
                 nextContext.isTail = outputRecord.isTail
 
-                MDC.put("step", nextStep.id)
+                MDC.put("step", nextStep.name)
                 minion.launch(minionScope) {
-                    log.trace { "Launching the coroutine for the next step ${nextStep.id}" }
+                    log.trace { "Launching the coroutine for the next step ${nextStep.name}" }
                     propagateStepExecution(minionScope, minion, nextStep, nextContext, completionConsumer)
                 }
             }
@@ -220,10 +220,10 @@ internal class RunnerImpl(
         if (stepContext.isExhausted) {
             log.trace { "The context is exhausted" }
             nextSteps.forEach { nextStep ->
-                val nextContext = StepContextBuilder.next(stepContext, nextStep.id)
-                MDC.put("step", nextStep.id)
+                val nextContext = StepContextBuilder.next(stepContext, nextStep.name)
+                MDC.put("step", nextStep.name)
                 minion.launch(minionScope) {
-                    log.trace { "Launching the coroutine for the next error processing step ${nextStep.id}" }
+                    log.trace { "Launching the coroutine for the next error processing step ${nextStep.name}" }
                     propagateStepExecution(minionScope, minion, nextStep, nextContext, completionConsumer)
                 }
             }
@@ -256,10 +256,10 @@ internal class RunnerImpl(
         minion: Minion
     ) {
         nextSteps.forEach { step ->
-            log.trace { "Propagating the minion's completion on step ${step.id} with context $completionContext" }
+            log.trace { "Propagating the minion's completion on step ${step.name} with context $completionContext" }
 
             minion.completeMdcContext()
-            MDC.put("step", step.id)
+            MDC.put("step", step.name)
             minion.launch(minionScope) {
                 kotlin.runCatching {
                     step.complete(completionContext)
@@ -277,7 +277,7 @@ internal class RunnerImpl(
     private suspend fun executeSingleStep(minion: Minion, step: Step<*, *>, stepContext: StepContext<*, *>) {
         if (!stepContext.isExhausted || isErrorProcessingStep(step)) {
             log.trace { "Performing the execution of the step..." }
-            stepContext.stepType = stepTypes.computeIfAbsent(step.id) { getStepType(step) }
+            stepContext.stepType = stepTypes.computeIfAbsent(step.name) { getStepType(step) }
             eventsLogger.info("step.execution.started", tagsSupplier = { stepContext.toEventTags() })
             runningStepsGauge.incrementAndGet()
             val start = System.nanoTime()
@@ -286,20 +286,24 @@ internal class RunnerImpl(
                 executeStep(minion, step as Step<Any?, Any?>, stepContext as StepContext<Any?, Any?>)
                 Duration.ofNanos(System.nanoTime() - start).let { duration ->
                     eventsLogger.info("step.execution.complete", tagsSupplier = { stepContext.toEventTags() })
-                    meterRegistry.timer("step-execution", "step", step.id, "status", "completed").record(duration)
+                    meterRegistry.timer("step-execution", "step", step.name, "status", "completed").record(duration)
                 }
                 reportLiveStateRegistry.recordSuccessfulStepExecution(
-                    stepContext.campaignId,
-                    minion.scenarioId,
-                    step.id
+                    stepContext.campaignName,
+                    minion.scenarioName,
+                    step.name
                 )
                 log.trace { "Step completed with success" }
             } catch (t: Throwable) {
                 val duration = Duration.ofNanos(System.nanoTime() - start)
-                reportLiveStateRegistry.recordFailedStepExecution(stepContext.campaignId, minion.scenarioId, step.id)
+                reportLiveStateRegistry.recordFailedStepExecution(
+                    stepContext.campaignName,
+                    minion.scenarioName,
+                    step.name
+                )
                 val cause = getFailureCause(t, stepContext, step)
                 eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { stepContext.toEventTags() })
-                meterRegistry.timer("step-execution", "step", step.id, "status", "failed").record(duration)
+                meterRegistry.timer("step-execution", "step", step.name, "status", "failed").record(duration)
                 log.warn(t) { "Step completed with an exception, the context is marked as exhausted" }
                 stepContext.isExhausted = true
             }
@@ -324,11 +328,11 @@ internal class RunnerImpl(
      */
     private fun getFailureCause(t: Throwable, stepContext: StepContext<*, *>, step: Step<*, *>) = when {
         t !is StepExecutionException -> {
-            stepContext.addError(StepError(t, step.id))
+            stepContext.addError(StepError(t, step.name))
             t
         }
         t.cause != null -> {
-            stepContext.addError(StepError(t.cause!!, step.id))
+            stepContext.addError(StepError(t.cause!!, step.name))
             t.cause!!
         }
         else -> stepContext.errors.lastOrNull()?.message

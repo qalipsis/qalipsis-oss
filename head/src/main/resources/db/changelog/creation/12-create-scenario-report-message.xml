@@ -19,7 +19,7 @@
           referencedTableName="scenario_report"
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
-      <column name="step_id" type="VARCHAR(50)">
+      <column name="step_name" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
       <column name="message_id" type="VARCHAR(50)">

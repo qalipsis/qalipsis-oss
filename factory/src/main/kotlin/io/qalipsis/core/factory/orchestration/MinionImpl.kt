@@ -1,8 +1,8 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -31,8 +31,8 @@ import kotlin.coroutines.CoroutineContext
  */
 internal open class MinionImpl(
     override val id: MinionId,
-    override val campaignId: CampaignId,
-    override val scenarioId: ScenarioId,
+    override val campaignName: CampaignName,
+    override val scenarioName: ScenarioName,
     pauseAtStart: Boolean = true,
     val isSingleton: Boolean = true,
     private val executingStepsGauge: AtomicInteger
@@ -209,14 +209,14 @@ internal open class MinionImpl(
         if (other !is MinionImpl) return false
 
         if (id != other.id) return false
-        if (campaignId != other.campaignId) return false
+        if (campaignName != other.campaignName) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + campaignId.hashCode()
+        result = 31 * result + campaignName.hashCode()
         return result
     }
 

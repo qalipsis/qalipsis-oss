@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
 
@@ -10,7 +10,7 @@ import io.qalipsis.core.feedbacks.Feedback
  * @author Eric Jessé
  */
 internal abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
-    override val campaignId: CampaignId
+    override val campaignName: CampaignName
 ) : CampaignExecutionState<C> {
 
     var initialized: Boolean = false

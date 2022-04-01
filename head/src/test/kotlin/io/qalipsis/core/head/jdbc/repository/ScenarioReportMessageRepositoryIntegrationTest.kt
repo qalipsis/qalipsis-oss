@@ -37,7 +37,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
 
     val messagePrototype = ScenarioReportMessageEntity(
         scenarioReportId = 1,
-        stepId = "my-step",
+        stepName = "my-step",
         messageId = "my-message-1",
         severity = ReportMessageSeverity.INFO,
         message = "This is the first message"
@@ -47,7 +47,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     fun initial() = testDispatcherProvider.run {
         val campaignPrototype =
             CampaignEntity(
-                campaignId = "the-campaign-id",
+                campaignName = "the-campaign-id",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
@@ -102,7 +102,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
         assertThat(fetched).all {
             prop(ScenarioReportMessageEntity::id).isEqualTo(saved.id)
             prop(ScenarioReportMessageEntity::scenarioReportId).isEqualTo(saved.scenarioReportId)
-            prop(ScenarioReportMessageEntity::stepId).isEqualTo(saved.stepId)
+            prop(ScenarioReportMessageEntity::stepName).isEqualTo(saved.stepName)
             prop(ScenarioReportMessageEntity::messageId).isEqualTo(saved.messageId)
             prop(ScenarioReportMessageEntity::severity).isEqualTo(saved.severity)
             prop(ScenarioReportMessageEntity::message).isEqualTo(saved.message)

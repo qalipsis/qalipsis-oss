@@ -2,7 +2,7 @@ package io.qalipsis.core.factory.steps.topicrelatedsteps
 
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.steps.AbstractStep
@@ -20,7 +20,7 @@ import io.qalipsis.api.steps.Step
  * @author Eric Jessé
  */
 internal open class TopicMirrorStep<I, T>(
-    id: StepId,
+    id: StepName,
     private val topic: Topic<T>,
     private val predicate: (context: StepContext<I, I>, value: Any?) -> Boolean = { _, _ -> true },
     @Suppress("UNCHECKED_CAST") private val wrap: (context: StepContext<I, I>, value: Any?) -> T = { _, value -> value as T }

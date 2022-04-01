@@ -55,7 +55,7 @@ internal class FlatMapStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(FlatMapStep<*, *>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }
@@ -75,7 +75,7 @@ internal class FlatMapStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
-            prop(FlatMapStep<*,*>::id).isEmpty()
+            prop(FlatMapStep<*, *>::name).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }

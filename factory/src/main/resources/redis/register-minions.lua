@@ -24,7 +24,7 @@ local keyPrefixForUnassignedDags = KEYS[4]
 local counters = KEYS[5]
 local singletonRegistry = KEYS[6]
 
-local scenarioId = ARGV[1]
+local scenarioName = ARGV[1]
 local dagIds = {}
 for dagId in string.gmatch(ARGV[2], '([^,]+)') do
     table.insert(dagIds, dagId)
@@ -59,11 +59,11 @@ end
 
 if underLoad then
   -- Updates the counter of minions by scenarios.
-  redis.call('hincrby', counters, scenarioId, #allMinions)
+  redis.call('hincrby', counters, scenarioName, #allMinions)
 else
   -- Updates the counters of DAGS for the singleton.
   for _, minion in pairs(allMinions) do
-    redis.call('hset', singletonRegistry, scenarioId .. '-' .. minion, '1')
+    redis.call('hset', singletonRegistry, scenarioName .. '-' .. minion, '1')
   end
 end
 

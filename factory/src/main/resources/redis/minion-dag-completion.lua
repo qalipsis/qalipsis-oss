@@ -26,7 +26,7 @@ local singletonRegistry = KEYS[1]
 local counters = KEYS[2]
 local minionAssignedDag = KEYS[3]
 
-local scenarioId = ARGV[1]
+local scenarioName = ARGV[1]
 local minionId = ARGV[2]
 local completeDagsCount = tonumber(ARGV[3])
 
@@ -34,7 +34,7 @@ local completedMinion = 0
 local completedScenario = 0
 local completedCampaign = 0
 
-local deletedSingleton = redis.call('hdel', singletonRegistry, scenarioId .. '-' .. minionId)
+local deletedSingleton = redis.call('hdel', singletonRegistry, scenarioName .. '-' .. minionId)
 if deletedSingleton > 0 then
   -- A singleton minion is complete, it does not affect the completion of the scenario.
   completedMinion = 1
@@ -44,7 +44,7 @@ else
     -- The minion is complete, let's check if other minion run in the scenario.
     completedMinion = 1
     redis.call('unlink', minionAssignedDag)
-    local remainingMinionsInScenario = redis.call('hincrby', counters, scenarioId, -1)
+    local remainingMinionsInScenario = redis.call('hincrby', counters, scenarioName, -1)
     if remainingMinionsInScenario == 0 then
       -- The scenario is complete, let's check if other scenarios run in the campaign.
       completedScenario = 1

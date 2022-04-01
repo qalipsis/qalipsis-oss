@@ -46,10 +46,10 @@ internal class TopicMirrorStepTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
         val ctx = DefaultCompletionContext(
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario",
             minionId = "my-minion",
-            lastExecutedStepId = "step-1",
+            lastExecutedStepName = "step-1",
             errors = emptyList()
         )
 

@@ -1,9 +1,9 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
+import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Implementation of a [Scenario].
  */
 internal class ScenarioImpl(
-    override val id: ScenarioId,
+    override val name: ScenarioName,
     override val rampUpStrategy: RampUpStrategy,
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
@@ -36,24 +36,24 @@ internal class ScenarioImpl(
     private val stepStartTimeout: Duration = Duration.ofSeconds(30)
 ) : Scenario {
 
-    private val steps = ConcurrentHashMap<StepId, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
+    private val steps = ConcurrentHashMap<StepName, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
 
-    private val internalDags = ConcurrentHashMap<DirectedAcyclicGraphId, DirectedAcyclicGraph>()
+    private val internalDags = ConcurrentHashMap<DirectedAcyclicGraphName, DirectedAcyclicGraph>()
 
     override val dags: Collection<DirectedAcyclicGraph>
         get() = internalDags.values
 
-    override operator fun contains(dagId: DirectedAcyclicGraphId): Boolean {
+    override operator fun contains(dagId: DirectedAcyclicGraphName): Boolean {
         return dagId in internalDags.keys
     }
 
-    override operator fun get(dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph? {
+    override operator fun get(dagId: DirectedAcyclicGraphName): DirectedAcyclicGraph? {
         return internalDags[dagId]
     }
 
     override fun createIfAbsent(
-        dagId: DirectedAcyclicGraphId,
-        dagSupplier: (DirectedAcyclicGraphId) -> DirectedAcyclicGraph
+        dagId: DirectedAcyclicGraphName,
+        dagSupplier: (DirectedAcyclicGraphName) -> DirectedAcyclicGraph
     ): DirectedAcyclicGraph {
         return internalDags.computeIfAbsent(dagId, dagSupplier)
     }
@@ -62,36 +62,36 @@ internal class ScenarioImpl(
      * Adds a step to the scenario.
      */
     override suspend fun addStep(dag: DirectedAcyclicGraph, step: Step<*, *>) {
-        steps.computeIfAbsent(step.id) { Slot() }.set(step to dag)
+        steps.computeIfAbsent(step.name) { Slot() }.set(step to dag)
     }
 
     /**
      * Finds a step with the expected ID or suspend until it is created or a timeout of 10 seconds happens.
      */
-    override suspend fun findStep(stepId: StepId): Pair<Step<*, *>, DirectedAcyclicGraph> {
-        return steps.computeIfAbsent(stepId) { Slot() }.get()
+    override suspend fun findStep(stepName: StepName): Pair<Step<*, *>, DirectedAcyclicGraph> {
+        return steps.computeIfAbsent(stepName) { Slot() }.get()
     }
 
     @LogInput(level = Level.DEBUG)
-    override suspend fun start(campaignId: CampaignId) {
-        val scenarioId = this.id
+    override suspend fun start(campaignName: CampaignName) {
+        val scenarioName = this.name
         try {
-            startAllDags(scenarioId, campaignId)
+            startAllDags(scenarioName, campaignName)
         } catch (e: Exception) {
-            log.error(e) { "An error occurred while starting the scenario $scenarioId: ${e.message}" }
-            stopAllDags(campaignId, scenarioId)
+            log.error(e) { "An error occurred while starting the scenario $scenarioName: ${e.message}" }
+            stopAllDags(campaignName, scenarioName)
         }
     }
 
     private suspend fun startAllDags(
-        scenarioId: ScenarioId,
-        campaignId: CampaignId
+        scenarioName: ScenarioName,
+        campaignName: CampaignName
     ) {
         internalDags.values.forEach { dag ->
             CampaignStartedForDagFeedback(
-                scenarioId = scenarioId,
-                dagId = dag.id,
-                campaignId = campaignId,
+                scenarioName = scenarioName,
+                dagId = dag.name,
+                campaignName = campaignName,
                 status = FeedbackStatus.IN_PROGRESS
             ).also {
                 log.trace { "Sending feedback: $it" }
@@ -102,17 +102,17 @@ internal class ScenarioImpl(
             try {
                 startStepRecursively(
                     step, StepStartStopContext(
-                        campaignId = campaignId,
-                        scenarioId = scenarioId,
-                        dagId = dag.id,
-                        stepId = step.id
+                        campaignName = campaignName,
+                        scenarioName = scenarioName,
+                        dagId = dag.name,
+                        stepName = step.name
                     )
                 )
 
                 CampaignStartedForDagFeedback(
-                    scenarioId = scenarioId,
-                    dagId = dag.id,
-                    campaignId = campaignId,
+                    scenarioName = scenarioName,
+                    dagId = dag.name,
+                    campaignName = campaignName,
                     status = FeedbackStatus.COMPLETED
                 ).also {
                     log.trace { "Sending feedback: $it" }
@@ -120,11 +120,11 @@ internal class ScenarioImpl(
                 }
             } catch (e: Exception) {
                 CampaignStartedForDagFeedback(
-                    scenarioId = scenarioId,
-                    dagId = dag.id,
-                    campaignId = campaignId,
+                    scenarioName = scenarioName,
+                    dagId = dag.name,
+                    campaignName = campaignName,
                     status = FeedbackStatus.FAILED,
-                    error = "The start of the DAG ${dag.id} failed: ${e.message}"
+                    error = "The start of the DAG ${dag.name} failed: ${e.message}"
                 ).also {
                     log.trace { "Sending feedback: $it" }
                     factoryChannel.publishFeedback(it)
@@ -146,19 +146,19 @@ internal class ScenarioImpl(
     }
 
     @LogInput(level = Level.DEBUG)
-    override suspend fun stop(campaignId: CampaignId) {
-        val scenarioId = this.id
-        stopAllDags(campaignId, scenarioId)
+    override suspend fun stop(campaignName: CampaignName) {
+        val scenarioName = this.name
+        stopAllDags(campaignName, scenarioName)
     }
 
-    private suspend fun stopAllDags(campaignId: CampaignId, scenarioId: ScenarioId) {
-        internalDags.values.map { it.id to it.rootStep.get() }.forEach {
+    private suspend fun stopAllDags(campaignName: CampaignName, scenarioName: ScenarioName) {
+        internalDags.values.map { it.name to it.rootStep.get() }.forEach {
             stopStepRecursively(
                 it.second, StepStartStopContext(
-                    campaignId = campaignId,
-                    scenarioId = scenarioId,
+                    campaignName = campaignName,
+                    scenarioName = scenarioName,
                     dagId = it.first,
-                    stepId = it.second.id
+                    stepName = it.second.name
                 )
             )
         }

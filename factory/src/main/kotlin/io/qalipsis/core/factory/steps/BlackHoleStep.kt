@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.factory.context.StepContextImpl
 
@@ -11,7 +11,7 @@ import io.qalipsis.core.factory.context.StepContextImpl
  * @author Eric Jessé
  */
 internal open class BlackHoleStep<I>(
-    id: StepId
+    id: StepName
 ) : AbstractStep<I, Unit>(id, null) {
 
     override suspend fun execute(context: StepContext<I, Unit>) {

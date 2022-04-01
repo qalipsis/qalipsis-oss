@@ -5,6 +5,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.campaign.Campaign
@@ -52,7 +53,10 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
     fun `should accept factory assignment directive`() {
         val directive = FactoryAssignmentDirective(
             "my-campaign",
-            mapOf("my-scenario-1" to listOf("dag-1", "dag-2"), "my-scenario-2" to listOf("dag-3", "dag-4")),
+            listOf(
+                FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
+            ),
             broadcastChannel = "broadcast-channel",
             feedbackChannel = "feedback-channel",
             channel = "broadcast"
@@ -71,7 +75,10 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
     fun `should process the directive and confirm when all is right`() = testCoroutineDispatcher.runTest {
         val directive = FactoryAssignmentDirective(
             "my-campaign",
-            mapOf("my-scenario-1" to listOf("dag-1", "dag-2"), "my-scenario-2" to listOf("dag-3", "dag-4")),
+            listOf(
+                FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
+            ),
             broadcastChannel = "broadcast-channel",
             feedbackChannel = "feedback-channel",
             channel = "broadcast"
@@ -82,26 +89,29 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
 
         // then
         val expectedCampaign = Campaign(
-            campaignId = "my-campaign",
+            campaignName = "my-campaign",
             broadcastChannel = "broadcast-channel",
             feedbackChannel = "feedback-channel",
-            assignedDagsByScenario = mapOf(
-                "my-scenario-1" to listOf("dag-1", "dag-2"),
-                "my-scenario-2" to listOf("dag-3", "dag-4")
+            assignments = listOf(
+                FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
             )
         )
         coVerifyOrder {
             campaignLifeCycleAware1.init(expectedCampaign)
             campaignLifeCycleAware2.init(expectedCampaign)
             factoryChannel.publishFeedback(
-                FactoryAssignmentFeedback(campaignId = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
+                FactoryAssignmentFeedback(campaignName = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
             )
             minionAssignmentKeeper.assignFactoryDags(
                 "my-campaign",
-                mapOf("my-scenario-1" to listOf("dag-1", "dag-2"), "my-scenario-2" to listOf("dag-3", "dag-4"))
+                listOf(
+                    FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                    FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
+                )
             )
             factoryChannel.publishFeedback(
-                FactoryAssignmentFeedback(campaignId = "my-campaign", status = FeedbackStatus.COMPLETED)
+                FactoryAssignmentFeedback(campaignName = "my-campaign", status = FeedbackStatus.COMPLETED)
             )
         }
         confirmVerified(factoryChannel, minionAssignmentKeeper, campaignLifeCycleAware1, campaignLifeCycleAware2)
@@ -112,7 +122,10 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
         testCoroutineDispatcher.runTest {
             val directive = FactoryAssignmentDirective(
                 "my-campaign",
-                mapOf("my-scenario-1" to listOf("dag-1", "dag-2"), "my-scenario-2" to listOf("dag-3", "dag-4")),
+                listOf(
+                    FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                    FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
+                ),
                 broadcastChannel = "broadcast-channel",
                 feedbackChannel = "feedback-channel",
                 channel = "broadcast"
@@ -124,19 +137,19 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
 
             // then
             val expectedCampaign = Campaign(
-                campaignId = "my-campaign",
+                campaignName = "my-campaign",
                 broadcastChannel = "broadcast-channel",
                 feedbackChannel = "feedback-channel",
-                assignedDagsByScenario = mapOf(
-                    "my-scenario-1" to listOf("dag-1", "dag-2"),
-                    "my-scenario-2" to listOf("dag-3", "dag-4")
+                assignments = listOf(
+                    FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
+                    FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
                 )
             )
             coVerifyOrder {
                 campaignLifeCycleAware1.init(expectedCampaign)
                 factoryChannel.publishFeedback(
                     FactoryAssignmentFeedback(
-                        campaignId = "my-campaign",
+                        campaignName = "my-campaign",
                         status = FeedbackStatus.FAILED,
                         error = "A problem occurred"
                     )

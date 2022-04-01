@@ -45,7 +45,7 @@ internal class PersistentCampaignServiceTest {
         // given
         val now = getTimeMock()
         val campaign = CampaignConfiguration(
-            id = "my-campaign",
+            name = "my-campaign",
             speedFactor = 123.2,
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(
@@ -65,7 +65,7 @@ internal class PersistentCampaignServiceTest {
         coVerifyOrder {
             campaignRepository.save(
                 CampaignEntity(
-                    campaignId = "my-campaign",
+                    campaignName = "my-campaign",
                     speedFactor = 123.2,
                     start = now
                 )

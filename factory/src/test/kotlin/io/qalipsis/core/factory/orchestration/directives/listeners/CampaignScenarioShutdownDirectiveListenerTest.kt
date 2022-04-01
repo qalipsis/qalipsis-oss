@@ -70,16 +70,16 @@ internal class CampaignScenarioShutdownDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 CampaignScenarioShutdownFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
             factoryCampaignManager.shutdownScenario("my-campaign", "my-scenario")
             factoryChannel.publishFeedback(
                 CampaignScenarioShutdownFeedback(
-                    campaignId = "my-campaign",
-                    scenarioId = "my-scenario",
+                    campaignName = "my-campaign",
+                    scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
             )
@@ -105,16 +105,16 @@ internal class CampaignScenarioShutdownDirectiveListenerTest {
             coVerifyOrder {
                 factoryChannel.publishFeedback(
                     CampaignScenarioShutdownFeedback(
-                        campaignId = "my-campaign",
-                        scenarioId = "my-scenario",
+                        campaignName = "my-campaign",
+                        scenarioName = "my-scenario",
                         status = FeedbackStatus.IN_PROGRESS
                     )
                 )
                 factoryCampaignManager.shutdownScenario("my-campaign", "my-scenario")
                 factoryChannel.publishFeedback(
                     CampaignScenarioShutdownFeedback(
-                        campaignId = "my-campaign",
-                        scenarioId = "my-scenario",
+                        campaignName = "my-campaign",
+                        scenarioName = "my-scenario",
                         status = FeedbackStatus.FAILED,
                         error = "A problem occurred"
                     )

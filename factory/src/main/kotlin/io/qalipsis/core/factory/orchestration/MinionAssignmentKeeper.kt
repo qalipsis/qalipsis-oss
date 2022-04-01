@@ -1,10 +1,11 @@
 package io.qalipsis.core.factory.orchestration
 
 import com.google.common.collect.Table
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 
 /**
  * Maintains a registry of the triple assignment of the minions to the DAGs and the factories.
@@ -16,11 +17,12 @@ import io.qalipsis.api.context.ScenarioId
 internal interface MinionAssignmentKeeper {
 
     /**
-     * Registers the [dagIds] assigned to the current factory when a new campaign starts.
+     * Registers the Directed Acyclic Graphs assigned to the current factory when the currently prepared
+     * campaign will start.
      */
     suspend fun assignFactoryDags(
-        campaignId: CampaignId,
-        dagsByScenarios: Map<ScenarioId, Collection<DirectedAcyclicGraphId>>
+        campaignName: CampaignName,
+        assignments: Collection<FactoryScenarioAssignment>
     )
 
     /**
@@ -28,9 +30,9 @@ internal interface MinionAssignmentKeeper {
      * This function is called only in the factory processing the [io.qalipsis.core.directives.MinionsAssignmentDirective].
      */
     suspend fun registerMinionsToAssign(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        dagIds: Collection<DirectedAcyclicGraphId>,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        dagIds: Collection<DirectedAcyclicGraphName>,
         minionIds: Collection<MinionId>,
         underLoad: Boolean = true
     )
@@ -40,14 +42,14 @@ internal interface MinionAssignmentKeeper {
      * This function is called only in the factory processing the [io.qalipsis.core.directives.MinionsAssignmentDirective]
      * and aims at cleaning potential cache used during the registration process.
      */
-    suspend fun completeUnassignedMinionsRegistration(campaignId: CampaignId, scenarioId: ScenarioId)
+    suspend fun completeUnassignedMinionsRegistration(campaignName: CampaignName, scenarioName: ScenarioName)
 
     /**
      * Returns all the IDs for the minions under load.
      */
     suspend fun getIdsOfMinionsUnderLoad(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId
+        campaignName: CampaignName,
+        scenarioName: ScenarioName
     ): Collection<MinionId>
 
     /**
@@ -57,9 +59,9 @@ internal interface MinionAssignmentKeeper {
      * @return a set of assignment of minions to DAGs
      */
     suspend fun assign(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-    ): Map<MinionId, Collection<DirectedAcyclicGraphId>>
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+    ): Map<MinionId, Collection<DirectedAcyclicGraphName>>
 
     /**
      * Marks the execution of a minion identified by [minionId] as complete for DAGs identified by [dagIds].
@@ -67,19 +69,19 @@ internal interface MinionAssignmentKeeper {
      * @return a state of the completion of the minion, scenario and campaign.
      */
     suspend fun executionComplete(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
         minionId: MinionId,
-        dagIds: Collection<DirectedAcyclicGraphId>
+        dagIds: Collection<DirectedAcyclicGraphName>
     ): CampaignCompletionState
 
     /**
      * Returns the channels to use to forward data to the DAGs identified by [dagsIds] for the specified [minionIds].
      */
     suspend fun getFactoriesChannels(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
         minionIds: Collection<MinionId>,
-        dagsIds: Collection<DirectedAcyclicGraphId>
-    ): Table<MinionId, DirectedAcyclicGraphId, String>
+        dagsIds: Collection<DirectedAcyclicGraphName>
+    ): Table<MinionId, DirectedAcyclicGraphName, String>
 }

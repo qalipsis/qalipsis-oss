@@ -6,7 +6,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.HeadChannel
@@ -53,8 +53,8 @@ internal class RedisCampaignManager(
     override suspend fun create(campaign: CampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> =
         RedisFactoryAssignmentState(campaign, redisOperations)
 
-    override suspend fun get(campaignId: CampaignId): CampaignExecutionState<CampaignExecutionContext> {
-        val currentState = redisOperations.getState(campaignId)
+    override suspend fun get(campaignName: CampaignName): CampaignExecutionState<CampaignExecutionContext> {
+        val currentState = redisOperations.getState(campaignName)
         val executionState = when (currentState?.second) {
             CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE -> RedisFactoryAssignmentState(
                 currentState.first,

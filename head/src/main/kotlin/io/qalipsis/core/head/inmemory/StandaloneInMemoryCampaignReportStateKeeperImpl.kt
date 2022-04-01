@@ -2,9 +2,9 @@ package io.qalipsis.core.head.inmemory
 
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
@@ -31,7 +31,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
 ) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker {
 
     @KTestable
-    private val scenarioStates = ConcurrentHashMap<ScenarioId, InMemoryScenarioReportingExecutionState>()
+    private val scenarioStates = ConcurrentHashMap<ScenarioName, InMemoryScenarioReportingExecutionState>()
 
     /**
      * Counter for the running scenarios to block the process until the campaign is completed.
@@ -50,22 +50,22 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun start(campaignId: CampaignId, scenarioId: ScenarioId) {
-        scenarioStates[scenarioId] = InMemoryScenarioReportingExecutionState(scenarioId)
+    override suspend fun start(campaignName: CampaignName, scenarioName: ScenarioName) {
+        scenarioStates[scenarioName] = InMemoryScenarioReportingExecutionState(scenarioName)
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun complete(campaignId: CampaignId, scenarioId: ScenarioId) {
-        scenarioStates[scenarioId]!!.end = Instant.now()
+    override suspend fun complete(campaignName: CampaignName, scenarioName: ScenarioName) {
+        scenarioStates[scenarioName]!!.end = Instant.now()
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun complete(campaignId: CampaignId) {
+    override suspend fun complete(campaignName: CampaignName) {
         runningCampaignLatch.cancel()
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun abort(campaignId: CampaignId) {
+    override suspend fun abort(campaignName: CampaignName) {
         val abortTimestamp = Instant.now()
         scenarioStates.filterValues { state -> state.end == null && state.abort == null }
             .forEach { (_, state) ->
@@ -77,63 +77,72 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
 
     @LogInputAndOutput
     override suspend fun put(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         severity: ReportMessageSeverity,
         messageId: Any?,
         message: String
     ): Any {
         return (messageId?.toString()?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
-            scenarioStates[scenarioId]!!.messages[id] = ReportMessage(stepId, id, severity, message)
+            scenarioStates[scenarioName]!!.messages[id] = ReportMessage(stepName, id, severity, message)
         }
     }
 
-    override suspend fun clear(campaignId: CampaignId) {
+    override suspend fun clear(campaignName: CampaignName) {
         scenarioStates.clear()
         runningCampaignLatch.lock()
     }
 
     @LogInput
-    override suspend fun delete(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, messageId: Any) {
-        scenarioStates[scenarioId]!!.messages.remove(messageId)
+    override suspend fun delete(
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        messageId: Any
+    ) {
+        scenarioStates[scenarioName]!!.messages.remove(messageId)
     }
 
     @LogInput
-    override suspend fun recordStartedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int): Long {
-        return scenarioStates[scenarioId]!!.startedMinionsCounter.addAndGet(count).toLong()
+    override suspend fun recordStartedMinion(campaignName: CampaignName, scenarioName: ScenarioName, count: Int): Long {
+        return scenarioStates[scenarioName]!!.startedMinionsCounter.addAndGet(count).toLong()
     }
 
     @LogInput
-    override suspend fun recordCompletedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int): Long {
-        return scenarioStates[scenarioId]!!.completedMinionsCounter.addAndGet(count).toLong()
+    override suspend fun recordCompletedMinion(
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        count: Int
+    ): Long {
+        return scenarioStates[scenarioName]!!.completedMinionsCounter.addAndGet(count).toLong()
     }
 
     @LogInput
     override suspend fun recordSuccessfulStepExecution(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         count: Int
     ): Long {
-        return scenarioStates[scenarioId]!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
+        return scenarioStates[scenarioName]!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
     }
 
     @LogInput
     override suspend fun recordFailedStepExecution(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         count: Int
     ): Long {
-        return scenarioStates[scenarioId]!!.failedStepExecutionsCounter.addAndGet(count).toLong()
+        return scenarioStates[scenarioName]!!.failedStepExecutionsCounter.addAndGet(count).toLong()
     }
 
     @LogInputAndOutput
-    override suspend fun report(campaignId: CampaignId): CampaignReport {
+    override suspend fun report(campaignName: CampaignName): CampaignReport {
         join()
         return scenarioStates.map { (_, runningScenarioCampaign) ->
-            runningScenarioCampaign.toReport(campaignId)
+            runningScenarioCampaign.toReport(campaignName)
         }.toCampaignReport()
     }
 

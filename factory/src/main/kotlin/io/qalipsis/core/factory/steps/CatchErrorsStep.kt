@@ -2,7 +2,7 @@ package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.ErrorProcessingStep
@@ -15,7 +15,7 @@ import io.qalipsis.api.steps.ErrorProcessingStep
  * @author Eric Jessé
  */
 internal class CatchErrorsStep<I>(
-    id: StepId,
+    id: StepName,
     private val block: ((errors: Collection<StepError>) -> Unit)
 ) : AbstractStep<I, I>(id, null), ErrorProcessingStep<I, I> {
 

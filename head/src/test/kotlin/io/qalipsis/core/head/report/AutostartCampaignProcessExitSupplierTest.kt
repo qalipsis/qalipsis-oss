@@ -34,7 +34,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     @Test
     internal fun `should not return any code when campaign was in success`() = testDispatcherProvider.runTest {
         // given
-        every { autostartCampaignConfiguration.id } returns "my-campaign"
+        every { autostartCampaignConfiguration.name } returns "my-campaign"
         coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.SUCCESSFUL
 
         // when
@@ -47,7 +47,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     @Test
     internal fun `should not return any code when campaign was with warning`() = testDispatcherProvider.runTest {
         // given
-        every { autostartCampaignConfiguration.id } returns "my-campaign"
+        every { autostartCampaignConfiguration.name } returns "my-campaign"
         coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.WARNING
 
         // when
@@ -60,7 +60,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     @Test
     internal fun `should return 201 when campaign failed`() = testDispatcherProvider.runTest {
         // given
-        every { autostartCampaignConfiguration.id } returns "my-campaign"
+        every { autostartCampaignConfiguration.name } returns "my-campaign"
         coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.FAILED
 
         // when
@@ -73,7 +73,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     @Test
     internal fun `should return 202 when campaign was aborted`() = testDispatcherProvider.runTest {
         // given
-        every { autostartCampaignConfiguration.id } returns "my-campaign"
+        every { autostartCampaignConfiguration.name } returns "my-campaign"
         coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.ABORTED
 
         // when

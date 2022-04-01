@@ -54,7 +54,7 @@ internal class TopicDataPushStepTest {
         step.minionsKeeper = minionsKeeper
         step.runner = runner
 
-        every { nextStep.id } returns "my-next-step"
+        every { nextStep.name } returns "my-next-step"
         every { minionsKeeper.getSingletonMinion("my-scenario", "my-dag") } returns minion
         every { minion.id } returns "my-minion"
         val countDownLatch = SuspendedCountLatch(3)
@@ -76,10 +76,10 @@ internal class TopicDataPushStepTest {
 
         assertThat(contexts).all {
             index(0).all {
-                prop(StepContext<String, String>::campaignId).isEqualTo("my-campaign")
-                prop(StepContext<String, String>::scenarioId).isEqualTo("my-scenario")
-                prop(StepContext<String, String>::previousStepId).isEqualTo("my-parent-step")
-                prop(StepContext<String, String>::stepId).isEqualTo("my-next-step")
+                prop(StepContext<String, String>::campaignName).isEqualTo("my-campaign")
+                prop(StepContext<String, String>::scenarioName).isEqualTo("my-scenario")
+                prop(StepContext<String, String>::previousStepName).isEqualTo("my-parent-step")
+                prop(StepContext<String, String>::stepName).isEqualTo("my-next-step")
                 prop(StepContext<String, String>::minionId).isEqualTo("my-minion")
                 prop(StepContext<String, String>::isTail).isFalse()
                 transform { (it as StepContextImpl).output.isClosedForSend }.isFalse()
@@ -100,7 +100,7 @@ internal class TopicDataPushStepTest {
         step.minionsKeeper = minionsKeeper
         step.runner = runner
 
-        every { nextStep.id } returns "my-next-step"
+        every { nextStep.name } returns "my-next-step"
         every { minionsKeeper.getSingletonMinion("my-scenario", "my-dag") } returns minion
         every { minion.id } returns "my-minion"
         val countDownLatch = SuspendedCountLatch(3)

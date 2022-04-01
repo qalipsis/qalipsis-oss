@@ -51,7 +51,7 @@ internal class MapWithContextStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapWithContextStep::class).all {
-            prop(MapWithContextStep<*, *>::id).isEqualTo("my-step")
+            prop(MapWithContextStep<*, *>::name).isEqualTo("my-step")
             prop(MapWithContextStep<*, *>::retryPolicy).isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }
@@ -71,7 +71,7 @@ internal class MapWithContextStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapWithContextStep::class).all {
-            prop(MapWithContextStep<*, *>::id).isEmpty()
+            prop(MapWithContextStep<*, *>::name).isEmpty()
             prop(MapWithContextStep<*, *>::retryPolicy).isSameAs(mockedRetryPolicy)
             prop("block").isSameAs(blockSpecification)
         }

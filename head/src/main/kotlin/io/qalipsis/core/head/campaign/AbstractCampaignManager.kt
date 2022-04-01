@@ -2,7 +2,7 @@ package io.qalipsis.core.head.campaign
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.FactoryConfiguration
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.lang.tryAndLog
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
@@ -48,7 +48,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         tryAndLog(log) {
             feedback as CampaignManagementFeedback
             processingMutex.withLock {
-                val sourceCampaignState = get(feedback.campaignId)
+                val sourceCampaignState = get(feedback.campaignName)
                 log.trace { "Processing $feedback on $sourceCampaignState" }
                 val campaignState = sourceCampaignState.process(feedback)
                 log.trace { "New campaign state $campaignState" }
@@ -64,8 +64,8 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
 
     override suspend fun start(campaign: CampaignConfiguration) {
         val selectedScenarios = campaign.scenarios.keys.toSet()
-        val scenarios = factoryService.getActiveScenarios(selectedScenarios).distinctBy { it.id }
-        val missingScenarios = selectedScenarios - scenarios.map { it.id }.toSet()
+        val scenarios = factoryService.getActiveScenarios(selectedScenarios).distinctBy { it.name }
+        val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
         require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
 
         val factories = factoryService.getAvailableFactoriesForScenarios(selectedScenarios)
@@ -73,14 +73,14 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
 
         campaignService.save(campaign)
         selectedScenarios.forEach {
-            campaignReportStateKeeper.start(campaign.id, it)
+            campaignReportStateKeeper.start(campaign.name, it)
         }
         try {
-            log.trace { "Factories to evaluate for campaign ${campaign.id}: ${factories.map(Factory::nodeId)}" }
+            log.trace { "Factories to evaluate for campaign ${campaign.name}: ${factories.map(Factory::nodeId)}" }
             // Locks all the factories from a concurrent assignment resolution.
             factoryService.lockFactories(campaign, factories.map(Factory::nodeId))
             val assignments = assignmentResolver.resolveFactoriesAssignments(campaign, factories, scenarios)
-            log.trace { "Factory assignment for campaign ${campaign.id}: $assignments" }
+            log.trace { "Factory assignment for campaign ${campaign.name}: $assignments" }
 
             // Releases the unassigned factories to make them available for other campaigns.
             factoryService.releaseFactories(campaign, (factories.map(Factory::nodeId) - assignments.rowKeySet()))
@@ -105,7 +105,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 headChannel.publishDirective(it)
             }
         } catch (e: Exception) {
-            campaignService.close(campaign.id, ExecutionStatus.FAILED)
+            campaignService.close(campaign.name, ExecutionStatus.FAILED)
             throw e
         }
     }
@@ -115,7 +115,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     ): CampaignExecutionState<C>
 
     @LogInputAndOutput
-    abstract suspend fun get(campaignId: CampaignId): CampaignExecutionState<C>
+    abstract suspend fun get(campaignName: CampaignName): CampaignExecutionState<C>
 
     @LogInput
     abstract suspend fun set(state: CampaignExecutionState<C>)

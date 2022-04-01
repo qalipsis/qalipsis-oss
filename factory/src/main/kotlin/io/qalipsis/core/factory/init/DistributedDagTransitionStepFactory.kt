@@ -1,8 +1,8 @@
 package io.qalipsis.core.factory.init
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
@@ -25,17 +25,17 @@ internal class DistributedDagTransitionStepFactory(
     private val contextForwarder: ContextForwarder
 ) : DagTransitionStepFactory {
 
-    override fun createDeadEnd(stepId: StepId, sourceDagId: DirectedAcyclicGraphId): DeadEndStep<*> {
-        return DeadEndStep<Any?>(stepId, sourceDagId, factoryCampaignManager)
+    override fun createDeadEnd(stepName: StepName, sourceDagId: DirectedAcyclicGraphName): DeadEndStep<*> {
+        return DeadEndStep<Any?>(stepName, sourceDagId, factoryCampaignManager)
     }
 
     override fun createTransition(
-        stepId: StepId,
-        sourceDagId: DirectedAcyclicGraphId,
-        targetDagId: DirectedAcyclicGraphId
+        stepName: StepName,
+        sourceDagId: DirectedAcyclicGraphName,
+        targetDagId: DirectedAcyclicGraphName
     ): Step<*, Any?> {
         return DistributedDagTransitionStep(
-            stepId,
+            stepName,
             sourceDagId,
             targetDagId,
             factoryCampaignManager,

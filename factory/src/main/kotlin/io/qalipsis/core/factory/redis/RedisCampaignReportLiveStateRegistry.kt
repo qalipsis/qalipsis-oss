@@ -3,9 +3,9 @@ package io.qalipsis.core.factory.redis
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.ScenarioId
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
@@ -28,24 +28,29 @@ internal class RedisCampaignReportLiveStateRegistry(
     val keysPrefix = RedisUtils.buildKeysPrefixForTenant(factoryConfiguration.tenant)
 
     @LogInput
-    override suspend fun delete(campaignId: CampaignId, scenarioId: ScenarioId, stepId: StepId, messageId: Any) {
-        val field = "${stepId}/${messageId}"
-        redisCommands.hdel(buildRedisReportKey(campaignId, scenarioId), field)
+    override suspend fun delete(
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        messageId: Any
+    ) {
+        val field = "${stepName}/${messageId}"
+        redisCommands.hdel(buildRedisReportKey(campaignName, scenarioName), field)
     }
 
     @LogInputAndOutput
     override suspend fun put(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         severity: ReportMessageSeverity,
         messageId: Any?,
         message: String
     ): Any {
         return (messageId?.toString()?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
-            val field = "${stepId}/${id}"
+            val field = "${stepName}/${id}"
             val value = "${severity}/${message.trim()}"
-            redisCommands.hset(buildRedisReportKey(campaignId, scenarioId), field, value)
+            redisCommands.hset(buildRedisReportKey(campaignName, scenarioName), field, value)
         }
     }
 
@@ -55,15 +60,19 @@ internal class RedisCampaignReportLiveStateRegistry(
      * A Hash tag is used in the key prefix to locate all the values related to the same campaign.
      */
     private fun buildRedisReportKey(
-        campaignId: CampaignId, scenarioId: ScenarioId
-    ) = "${keysPrefix}${campaignId}-report:${scenarioId}"
+        campaignName: CampaignName, scenarioName: ScenarioName
+    ) = "${keysPrefix}${campaignName}-report:${scenarioName}"
 
 
     @LogInput
-    override suspend fun recordCompletedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int): Long {
-        redisCommands.hincrby(buildRedisReportKey(campaignId, scenarioId), COMPLETED_MINIONS_FIELD, count.toLong())
+    override suspend fun recordCompletedMinion(
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        count: Int
+    ): Long {
+        redisCommands.hincrby(buildRedisReportKey(campaignName, scenarioName), COMPLETED_MINIONS_FIELD, count.toLong())
         return redisCommands.hincrby(
-            buildRedisReportKey(campaignId, scenarioId),
+            buildRedisReportKey(campaignName, scenarioName),
             RUNNING_MINIONS_FIELD,
             -1 * count.toLong()
         ) ?: 0
@@ -71,31 +80,35 @@ internal class RedisCampaignReportLiveStateRegistry(
 
     @LogInput
     override suspend fun recordFailedStepExecution(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         count: Int
     ): Long {
-        val key = buildRedisReportKey(campaignId, scenarioId) + FAILED_STEP_EXECUTION_KEY_POSTFIX
-        return redisCommands.hincrby(key, stepId, count.toLong()) ?: 0
+        val key = buildRedisReportKey(campaignName, scenarioName) + FAILED_STEP_EXECUTION_KEY_POSTFIX
+        return redisCommands.hincrby(key, stepName, count.toLong()) ?: 0
     }
 
     @LogInput
-    override suspend fun recordStartedMinion(campaignId: CampaignId, scenarioId: ScenarioId, count: Int): Long {
-        redisCommands.hincrby(buildRedisReportKey(campaignId, scenarioId), STARTED_MINIONS_FIELD, count.toLong())
-        return redisCommands.hincrby(buildRedisReportKey(campaignId, scenarioId), RUNNING_MINIONS_FIELD, count.toLong())
+    override suspend fun recordStartedMinion(campaignName: CampaignName, scenarioName: ScenarioName, count: Int): Long {
+        redisCommands.hincrby(buildRedisReportKey(campaignName, scenarioName), STARTED_MINIONS_FIELD, count.toLong())
+        return redisCommands.hincrby(
+            buildRedisReportKey(campaignName, scenarioName),
+            RUNNING_MINIONS_FIELD,
+            count.toLong()
+        )
             ?: 0
     }
 
     @LogInput
     override suspend fun recordSuccessfulStepExecution(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        stepId: StepId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        stepName: StepName,
         count: Int
     ): Long {
-        val key = buildRedisReportKey(campaignId, scenarioId) + SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX
-        return redisCommands.hincrby(key, stepId, count.toLong()) ?: 0
+        val key = buildRedisReportKey(campaignName, scenarioName) + SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX
+        return redisCommands.hincrby(key, stepName, count.toLong()) ?: 0
     }
 
     private companion object {

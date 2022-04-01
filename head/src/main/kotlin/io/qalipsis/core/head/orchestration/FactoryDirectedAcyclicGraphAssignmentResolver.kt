@@ -2,9 +2,9 @@ package io.qalipsis.core.head.orchestration
 
 import com.google.common.collect.Table
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.head.model.Factory
 
@@ -26,6 +26,6 @@ internal interface FactoryDirectedAcyclicGraphAssignmentResolver {
         campaignConfiguration: CampaignConfiguration,
         factories: Collection<Factory>,
         scenarios: Collection<ScenarioSummary>
-    ): Table<NodeId, ScenarioId, Collection<DirectedAcyclicGraphId>>
+    ): Table<NodeId, ScenarioName, FactoryScenarioAssignment>
 
 }

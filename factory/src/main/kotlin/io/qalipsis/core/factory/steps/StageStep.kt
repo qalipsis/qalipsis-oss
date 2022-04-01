@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
@@ -21,7 +21,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
  * @author Eric Jessé
  */
 internal class StageStep<I, O>(
-    id: StepId,
+    id: StepName,
     retryPolicy: RetryPolicy?,
 ) : AbstractStep<I, O>(id, retryPolicy), RunnerAware {
 
@@ -100,7 +100,7 @@ internal class StageStep<I, O>(
                 }
             } else if (ctx.isExhausted) {
                 failure = true
-                log.trace { "The stage ${this.id} finished with error(s): ${ctx.errors.joinToString { it.message }}" }
+                log.trace { "The stage ${this.name} finished with error(s): ${ctx.errors.joinToString { it.message }}" }
                 // Errors have to be forwarded.
                 ctx.errors.forEach(context::addError)
             }

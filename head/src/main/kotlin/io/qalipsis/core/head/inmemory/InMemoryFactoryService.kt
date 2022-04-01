@@ -4,7 +4,7 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -36,7 +36,7 @@ internal class InMemoryFactoryService(
 
     private val factoriesByNodeId = ConcurrentHashMap<NodeId, LockableFactory>()
 
-    private val factoriesByScenarios = ConcurrentHashMap<ScenarioId, MutableCollection<NodeId>>()
+    private val factoriesByScenarios = ConcurrentHashMap<ScenarioName, MutableCollection<NodeId>>()
 
     @LogInput
     override suspend fun register(
@@ -50,10 +50,10 @@ internal class InMemoryFactoryService(
             unicastChannel = handshakeResponse.unicastChannel,
             version = Instant.now(),
             selectors = handshakeRequest.tags,
-            activeScenarios = handshakeRequest.scenarios.map { it.id }
+            activeScenarios = handshakeRequest.scenarios.map { it.name }
         )
         handshakeRequest.scenarios.forEach { scenario ->
-            factoriesByScenarios.computeIfAbsent(scenario.id) { concurrentSet() } += actualNodeId
+            factoriesByScenarios.computeIfAbsent(scenario.name) { concurrentSet() } += actualNodeId
         }
         scenarioSummaryRepository.saveAll(handshakeRequest.scenarios)
     }
@@ -61,8 +61,8 @@ internal class InMemoryFactoryService(
     @LogInput
     override suspend fun notify(heartbeat: Heartbeat) {
         if (heartbeat.state == Heartbeat.State.UNREGISTERED) {
-            factoriesByNodeId.remove(heartbeat.nodeId)?.activeScenarios?.forEach { scenarioId ->
-                factoriesByScenarios.computeIfPresent(scenarioId) { _, factories ->
+            factoriesByNodeId.remove(heartbeat.nodeId)?.activeScenarios?.forEach { scenarioName ->
+                factoriesByScenarios.computeIfPresent(scenarioName) { _, factories ->
                     // Delete the factory from the set of factories supporting the scenario.
                     factories.remove(heartbeat.nodeId)
                     // If the set of factories is now empty, it is removed from the map.
@@ -75,9 +75,9 @@ internal class InMemoryFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getAvailableFactoriesForScenarios(scenarioIds: Collection<ScenarioId>): Collection<Factory> {
-        return scenarioIds.flatMap { scenarioId ->
-            factoriesByScenarios[scenarioId]
+    override suspend fun getAvailableFactoriesForScenarios(scenarioNames: Collection<ScenarioName>): Collection<Factory> {
+        return scenarioNames.flatMap { scenarioName ->
+            factoriesByScenarios[scenarioName]
                 ?.mapNotNull { nodeId -> factoriesByNodeId[nodeId]?.takeIf(::isAvailableAndHealthy) } ?: emptyList()
         }.distinctBy { it.nodeId }
     }
@@ -102,7 +102,7 @@ internal class InMemoryFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getActiveScenarios(ids: Collection<ScenarioId>): Collection<ScenarioSummary> {
+    override suspend fun getActiveScenarios(ids: Collection<ScenarioName>): Collection<ScenarioSummary> {
         return scenarioSummaryRepository.getAll(ids)
     }
 

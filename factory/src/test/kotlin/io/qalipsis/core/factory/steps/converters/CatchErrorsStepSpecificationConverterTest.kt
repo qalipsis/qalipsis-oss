@@ -52,7 +52,7 @@ internal class CatchErrorsStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchErrorsStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(CatchErrorsStep<*>::name).isEqualTo("my-step")
             prop("block").isSameAs(blockSpecification)
         }
     }
@@ -69,7 +69,7 @@ internal class CatchErrorsStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchErrorsStep::class).all {
-            prop(CatchErrorsStep<*>::id).isEmpty()
+            prop(CatchErrorsStep<*>::name).isEmpty()
             prop("block").isSameAs(blockSpecification)
         }
     }

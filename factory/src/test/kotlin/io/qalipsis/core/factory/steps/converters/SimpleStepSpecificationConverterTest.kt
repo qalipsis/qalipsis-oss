@@ -54,7 +54,7 @@ internal class SimpleStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SimpleStep::class).all {
-            prop("id").isEqualTo("my-step")
+            prop(SimpleStep<*, *>::name).isEqualTo("my-step")
             prop("retryPolicy").isSameAs(spec.retryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }
@@ -73,7 +73,7 @@ internal class SimpleStepSpecificationConverterTest :
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SimpleStep::class).all {
-            prop(SimpleStep<*,*>::id).isEmpty()
+            prop(SimpleStep<*, *>::name).isEmpty()
             prop("retryPolicy").isSameAs(mockedRetryPolicy)
             prop("specification").isSameAs(blockSpecification)
         }

@@ -16,14 +16,14 @@ internal class RedisCompletionState(
 ) : CompletionState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
-        operations.setState(campaignId, CampaignRedisState.COMPLETION_STATE)
+        operations.setState(campaignName, CampaignRedisState.COMPLETION_STATE)
         operations.prepareFactoriesForFeedbackExpectations(campaign)
         return super.doInit()
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
-            if (operations.markFeedbackForFactory(campaignId, feedback.nodeId)) {
+            if (operations.markFeedbackForFactory(campaignName, feedback.nodeId)) {
                 RedisDisabledState(campaign, true, operations)
             } else {
                 this

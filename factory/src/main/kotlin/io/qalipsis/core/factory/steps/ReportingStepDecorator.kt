@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
@@ -24,8 +24,8 @@ internal class ReportingStepDecorator<I, O>(
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
-    override val id: StepId
-        get() = decorated.id
+    override val name: StepName
+        get() = decorated.name
 
     override var retryPolicy: RetryPolicy? = decorated.retryPolicy
 
@@ -48,8 +48,8 @@ internal class ReportingStepDecorator<I, O>(
         } else {
             ReportMessageSeverity.INFO
         }
-        reportLiveStateRegistry.put(context.campaignId, context.scenarioId, this.id, severity, result)
-        log.info { "Stopping the step ${this.id} for the campaign ${context.campaignId}: $result" }
+        reportLiveStateRegistry.put(context.campaignName, context.scenarioName, this.name, severity, result)
+        log.info { "Stopping the step ${this.name} for the campaign ${context.campaignName}: $result" }
         super<StepDecorator>.stop(context)
     }
 

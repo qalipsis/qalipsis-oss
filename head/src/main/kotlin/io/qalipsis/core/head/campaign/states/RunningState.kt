@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
@@ -20,8 +20,8 @@ import io.qalipsis.core.feedbacks.MinionsStartFeedback
 internal open class RunningState(
     protected val campaign: CampaignConfiguration,
     private val directivesForInit: List<Directive> = emptyList(),
-    private val expectedScenariosToComplete: MutableSet<ScenarioId> = concurrentSet(campaign.scenarios.keys)
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.id) {
+    private val expectedScenariosToComplete: MutableSet<ScenarioName> = concurrentSet(campaign.scenarios.keys)
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
 
     override suspend fun doInit(): List<Directive> {
         return directivesForInit
@@ -31,13 +31,13 @@ internal open class RunningState(
         // The failure management is let to doProcess.
         when {
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
-                log.error { "The creation of the minions for the scenario ${feedback.scenarioId} failed: ${feedback.error}" }
+                log.error { "The creation of the minions for the scenario ${feedback.scenarioName} failed: ${feedback.error}" }
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED ->
-                log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioId} failed: ${feedback.error}" }
+                log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioName} failed: ${feedback.error}" }
             feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED ->
-                log.error { "The start of minions of scenario ${feedback.scenarioId} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
+                log.error { "The start of minions of scenario ${feedback.scenarioName} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
             feedback is FailedCampaignFeedback ->
-                log.error { "The campaign ${feedback.campaignId} failed in the factory ${feedback.nodeId}: ${feedback.error}" }
+                log.error { "The campaign ${feedback.campaignName} failed in the factory ${feedback.nodeId}: ${feedback.error}" }
         }
 
         return doTransition(feedback)
@@ -61,8 +61,8 @@ internal open class RunningState(
                 RunningState(
                     campaign, listOf(
                         MinionsShutdownDirective(
-                            campaignId = campaign.id,
-                            scenarioId = feedback.scenarioId,
+                            campaignName = campaign.name,
+                            scenarioName = feedback.scenarioName,
                             minionIds = listOf(feedback.minionId),
                             channel = campaign.broadcastChannel
                         )
@@ -70,21 +70,21 @@ internal open class RunningState(
                 )
             }
             feedback is EndOfCampaignScenarioFeedback -> {
-                context.campaignReportStateKeeper.complete(feedback.campaignId, feedback.scenarioId)
+                context.campaignReportStateKeeper.complete(feedback.campaignName, feedback.scenarioName)
                 RunningState(
                     campaign, listOf(
                         CampaignScenarioShutdownDirective(
-                            campaignId = campaign.id,
-                            scenarioId = feedback.scenarioId,
+                            campaignName = campaign.name,
+                            scenarioName = feedback.scenarioName,
                             channel = campaign.broadcastChannel
                         )
                     )
                 )
             }
             feedback is CampaignScenarioShutdownFeedback -> {
-                expectedScenariosToComplete.remove(feedback.scenarioId)
+                expectedScenariosToComplete.remove(feedback.scenarioName)
                 if (expectedScenariosToComplete.isEmpty()) {
-                    context.campaignReportStateKeeper.complete(feedback.campaignId)
+                    context.campaignReportStateKeeper.complete(feedback.campaignName)
                     CompletionState(campaign)
                 } else {
                     this

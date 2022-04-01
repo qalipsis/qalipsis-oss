@@ -2,15 +2,18 @@ package io.qalipsis.core.head.campaign.states
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.any
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
@@ -37,18 +40,18 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         // given
         every { campaign.broadcastChannel } returns "broadcast-channel"
         every { campaign.feedbackChannel } returns "feedback-channel"
-        every { campaign.factories } returns mutableMapOf(
+        every { campaign.factories } returns linkedMapOf(
             "node-1" to relaxedMockk {
                 every { unicastChannel } returns "unicast-channel-1"
-                every { assignment } returns mutableMapOf(
-                    "scenario-1" to listOf("dag-1", "dag-2"),
-                    "scenario-2" to listOf("dag-A", "dag-B")
+                every { assignment } returns linkedMapOf(
+                    "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")),
+                    "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762)
                 )
             },
             "node-2" to relaxedMockk {
                 every { unicastChannel } returns "unicast-channel-2"
-                every { assignment } returns mutableMapOf(
-                    "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
+                every { assignment } returns linkedMapOf(
+                    "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
                 )
             }
         )
@@ -64,21 +67,49 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         // then
         assertThat(directives).all {
             hasSize(2)
-            containsOnly(
-                FactoryAssignmentDirective(
-                    "my-campaign", mapOf(
-                        "scenario-1" to listOf("dag-1", "dag-2"),
-                        "scenario-2" to listOf("dag-A", "dag-B")
-                    ), "broadcast-channel", "feedback-channel",
-                    "unicast-channel-1"
-                ),
-                FactoryAssignmentDirective(
-                    "my-campaign", mapOf(
-                        "scenario-2" to listOf("dag-A", "dag-B", "dag-C")
-                    ), "broadcast-channel", "feedback-channel",
-                    "unicast-channel-2"
-                )
-            )
+            any {
+                it.isInstanceOf(FactoryAssignmentDirective::class).all {
+                    prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                    prop(FactoryAssignmentDirective::assignments).all {
+                        hasSize(2)
+                        any {
+                            it.all {
+                                prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-1")
+                                prop(FactoryScenarioAssignment::dags).containsOnly("dag-1", "dag-2")
+                                prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(Int.MAX_VALUE)
+                            }
+                        }
+                        any {
+                            it.all {
+                                prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
+                                prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B")
+                                prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(1762)
+                            }
+                        }
+                    }
+                    prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("broadcast-channel")
+                    prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedback-channel")
+                    prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
+                }
+            }
+            any {
+                it.isInstanceOf(FactoryAssignmentDirective::class).all {
+                    prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                    prop(FactoryAssignmentDirective::assignments).all {
+                        hasSize(1)
+                        any {
+                            it.all {
+                                prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
+                                prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B", "dag-C")
+                                prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(254)
+                            }
+                        }
+                    }
+                    prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("broadcast-channel")
+                    prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedback-channel")
+                    prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-2")
+                }
+            }
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }

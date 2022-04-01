@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
@@ -12,7 +12,7 @@ import io.qalipsis.api.steps.AbstractStep
  * @author Eric Jessé
  */
 internal class SimpleStep<I, O>(
-    id: StepId,
+    id: StepName,
     retryPolicy: RetryPolicy?,
     private val specification: (suspend (context: StepContext<I, O>) -> Unit)
 ) : AbstractStep<I, O>(id, retryPolicy) {

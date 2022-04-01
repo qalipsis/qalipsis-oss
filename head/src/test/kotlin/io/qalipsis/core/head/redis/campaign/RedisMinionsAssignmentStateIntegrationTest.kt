@@ -46,10 +46,13 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
         )
         every { campaign.factories } returns mutableMapOf(
             "node-1" to relaxedMockk {
-                every { assignment } returns mutableMapOf("scenario-1" to emptyList(), "scenario-2" to emptyList())
+                every { assignment } returns mutableMapOf(
+                    "scenario-1" to relaxedMockk(),
+                    "scenario-2" to relaxedMockk()
+                )
             },
             "node-2" to relaxedMockk {
-                every { assignment } returns mutableMapOf("scenario-2" to emptyList())
+                every { assignment } returns mutableMapOf("scenario-2" to relaxedMockk())
             }
         )
         operations.saveConfiguration(campaign)
@@ -73,7 +76,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
                 )
             )
         }
-        assertThat(operations.getState(campaign.id)).isNotNull().all {
+        assertThat(operations.getState(campaign.name)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
         }
@@ -156,13 +159,13 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -176,7 +179,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             // when
             val newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -197,13 +200,13 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -217,7 +220,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             // when
             val newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -237,13 +240,13 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -257,7 +260,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             // when
             var newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -273,7 +276,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             }).isEmpty()
             newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-2"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.COMPLETED
             })
 
@@ -289,7 +292,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             }).isEmpty()
             newState = state.process(mockk<MinionsAssignmentFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-1"
+                every { scenarioName } returns "scenario-1"
                 every { status } returns FeedbackStatus.COMPLETED
             })
 

@@ -33,19 +33,19 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
 
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
-        return directive is MinionsStartDirective && localAssignmentStore.hasMinionsAssigned(directive.scenarioId)
+        return directive is MinionsStartDirective && localAssignmentStore.hasMinionsAssigned(directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsStartDirective) {
         try {
             val relevantMinions = directive.startDefinitions.filter {
-                localAssignmentStore.hasRootUnderLoadLocally(directive.scenarioId, it.minionId)
+                localAssignmentStore.hasRootUnderLoadLocally(directive.scenarioName, it.minionId)
             }
             if (relevantMinions.isNotEmpty()) {
                 val feedback = MinionsStartFeedback(
-                    campaignId = directive.campaignId,
-                    scenarioId = directive.scenarioId,
+                    campaignName = directive.campaignName,
+                    scenarioName = directive.scenarioName,
                     status = FeedbackStatus.IN_PROGRESS
                 )
                 factoryChannel.publishFeedback(feedback)
@@ -55,8 +55,8 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
             } else {
                 val feedback = MinionsStartFeedback(
-                    campaignId = directive.campaignId,
-                    scenarioId = directive.scenarioId,
+                    campaignName = directive.campaignName,
+                    scenarioName = directive.scenarioName,
                     status = FeedbackStatus.IGNORED
                 )
                 factoryChannel.publishFeedback(feedback)
@@ -65,8 +65,8 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
             log.error(e) { e.message }
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
-                    campaignId = directive.campaignId,
-                    scenarioId = directive.scenarioId,
+                    campaignName = directive.campaignName,
+                    scenarioName = directive.scenarioName,
                     status = FeedbackStatus.FAILED,
                     error = e.message
                 )

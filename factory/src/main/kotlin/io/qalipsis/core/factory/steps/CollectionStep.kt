@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.lang.pollFirst
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -24,7 +24,7 @@ import kotlin.math.min
 
 
 internal class CollectionStep<I>(
-    id: StepId,
+    id: StepName,
     private val timeout: Duration?,
     private val batchSize: Int,
     private val coroutineScope: CoroutineScope
@@ -48,7 +48,7 @@ internal class CollectionStep<I>(
 
         // If there is a timeout, a background coroutine with a ticker forwards the values periodically.
         timeout?.let {
-            val latch = Latch(true, "collection-step-${id}")
+            val latch = Latch(true, "collection-step-${name}")
             log.debug { "Starting the background coroutine to forward data on timeout" }
             publicationJob = coroutineScope.launch {
                 latch.release()

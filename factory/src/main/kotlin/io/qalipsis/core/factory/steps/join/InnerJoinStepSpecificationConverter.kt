@@ -3,7 +3,7 @@ package io.qalipsis.core.factory.steps.join
 import io.qalipsis.api.Executors
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.context.CorrelationRecord
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.messaging.Topic
@@ -52,11 +52,11 @@ internal class InnerJoinStepSpecificationConverter(
         val topic = createRightDataSupplier<O>(secondaryStep)
 
         // For now, only two-source joins are supported.
-        val outputSupplier: (I, Map<StepId, Any?>) -> O = { left, right -> (left to right.values.first()) as O }
+        val outputSupplier: (I, Map<StepName, Any?>) -> O = { left, right -> (left to right.values.first()) as O }
         val step = InnerJoinStep(
             spec.name, coroutineScope, spec.primaryKeyExtractor,
             listOf(
-                RightCorrelation(secondaryStep.id, topic as Topic<CorrelationRecord<Any>>, spec.secondaryKeyExtractor)
+                RightCorrelation(secondaryStep.name, topic as Topic<CorrelationRecord<Any>>, spec.secondaryKeyExtractor)
             ), spec.cacheTimeout, outputSupplier
         )
         creationContext.createdStep(step)
@@ -66,9 +66,9 @@ internal class InnerJoinStepSpecificationConverter(
         val topic = broadcastTopic<CorrelationRecord<*>>()
         // A step is added as output to forward the data to the topic.
         val dataSupplier = TopicMirrorStep<O, CorrelationRecord<*>>(
-            "${secondaryStep.id}-topic-mirror-step-${idGenerator.short()}",
+            "${secondaryStep.name}-topic-mirror-step-${idGenerator.short()}",
             topic, { _, value -> value != null },
-            { context, value -> CorrelationRecord(context.minionId, context.stepId, value) }
+            { context, value -> CorrelationRecord(context.minionId, context.stepName, value) }
         )
         if (secondaryStep is NoMoreNextStepDecorator<*, *>) {
             secondaryStep.decorated.addNext(dataSupplier)

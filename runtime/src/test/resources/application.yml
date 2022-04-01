@@ -17,5 +17,3 @@ executors:
   io: 4
   background: global
   orchestration: global
-
-campaign.id: campaign-${random.shortuuid}

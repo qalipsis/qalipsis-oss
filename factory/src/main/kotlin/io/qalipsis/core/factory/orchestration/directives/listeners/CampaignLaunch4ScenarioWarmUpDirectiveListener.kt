@@ -33,20 +33,20 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is ScenarioWarmUpDirective
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignId, directive.scenarioId)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: ScenarioWarmUpDirective) {
-        if (localAssignmentStore.hasMinionsAssigned(directive.scenarioId)) {
+        if (localAssignmentStore.hasMinionsAssigned(directive.scenarioName)) {
             val feedback = ScenarioWarmUpFeedback(
-                campaignId = directive.campaignId,
-                scenarioId = directive.scenarioId,
+                campaignName = directive.campaignName,
+                scenarioName = directive.scenarioName,
                 status = FeedbackStatus.IN_PROGRESS
             )
             factoryChannel.publishFeedback(feedback)
             try {
-                factoryCampaignManager.warmUpCampaignScenario(directive.campaignId, directive.scenarioId)
+                factoryCampaignManager.warmUpCampaignScenario(directive.campaignName, directive.scenarioName)
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
             } catch (e: Exception) {
                 log.error(e) { e.message }
@@ -54,8 +54,8 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListener(
             }
         } else {
             val feedback = ScenarioWarmUpFeedback(
-                campaignId = directive.campaignId,
-                scenarioId = directive.scenarioId,
+                campaignName = directive.campaignName,
+                scenarioName = directive.scenarioName,
                 status = FeedbackStatus.IGNORED
             )
             factoryChannel.publishFeedback(feedback)

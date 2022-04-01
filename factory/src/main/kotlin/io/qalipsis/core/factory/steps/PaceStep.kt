@@ -2,7 +2,7 @@ package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import kotlinx.coroutines.delay
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 internal class PaceStep<I>(
-    id: StepId,
+    id: StepName,
     private val specification: (pastPeriodMs: Long) -> Long
 ) : AbstractStep<I, I>(id, null) {
 

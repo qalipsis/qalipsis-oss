@@ -52,7 +52,7 @@ internal data class DirectedAcyclicGraphEntity(
 
     fun toModel(): DirectedAcyclicGraphSummary {
         return DirectedAcyclicGraphSummary(
-            id = name,
+            name = name,
             isSingleton = singleton,
             isRoot = root,
             isUnderLoad = underLoad,

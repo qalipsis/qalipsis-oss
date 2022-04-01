@@ -87,7 +87,7 @@ internal class SingletonStepSpecificationConverter(
             // This DAG is not receiving any minion, so the next step has to be forced to be executed.
             TopicDataPushStep(
                 "${spec.name}-topic-data-push-${idGenerator.short()}",
-                spec.singletonStepId,
+                spec.singletonStepName,
                 spec.topic,
                 coroutineScope = coroutineScope
             )

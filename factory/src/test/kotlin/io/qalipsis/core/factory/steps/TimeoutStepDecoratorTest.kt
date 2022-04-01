@@ -51,7 +51,7 @@ internal class TimeoutStepDecoratorTest {
     fun `should succeed when decorated step is faster than timeout`() {
         val decoratedStep: Step<Any, Any> = mockk {
             coEvery { execute(any(), any()) } answers { }
-            every { id } answers { "my-step" }
+            every { name } answers { "my-step" }
             every { retryPolicy } returns null
             every { next } returns mutableListOf()
         }
@@ -74,7 +74,7 @@ internal class TimeoutStepDecoratorTest {
         val timeout = 10L
         val decoratedStep: Step<Any, Any> = mockk {
             coEvery { execute(any(), any()) } coAnswers { delay(timeout + 10) }
-            every { id } answers { "my-step" }
+            every { name } answers { "my-step" }
             every { retryPolicy } returns null
             every { next } returns mutableListOf()
         }

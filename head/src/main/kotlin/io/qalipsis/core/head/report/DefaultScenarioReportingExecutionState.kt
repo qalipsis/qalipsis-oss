@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.report
 
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import java.time.Instant
@@ -11,7 +11,7 @@ import java.time.Instant
  * @author Eric Jessé
  */
 internal data class DefaultScenarioReportingExecutionState(
-    override val scenarioId: ScenarioId,
+    override val scenarioName: ScenarioName,
     override val start: Instant,
     override val startedMinions: Int,
     override val completedMinions: Int,

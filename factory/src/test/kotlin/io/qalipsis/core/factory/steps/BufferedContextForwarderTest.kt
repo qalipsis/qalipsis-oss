@@ -10,7 +10,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.DefaultCompletionContext
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -60,33 +60,33 @@ internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
         // given
         val stepExecutionContext = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario-1",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario-1",
             minionId = "my-minion-1"
         )
         val stepExecutionContextWithError = StepTestHelper.createStepContext<Int, Int>(
             input = 2,
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario-1",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario-1",
             minionId = "my-minion-2",
             isExhausted = true,
             errors = mutableListOf(StepError("This is an error"))
         )
         val completionContext = DefaultCompletionContext(
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario-2",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario-2",
             minionId = "my-minion-3",
-            lastExecutedStepId = "step-1",
+            lastExecutedStepName = "step-1",
             errors = emptyList()
         )
         val completionContextWithError = DefaultCompletionContext(
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario-1",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario-1",
             minionId = "my-minion-4",
-            lastExecutedStepId = "step-3",
+            lastExecutedStepName = "step-3",
             errors = listOf(StepError("This is an error"))
         )
-        every { factoryCampaignManager.runningCampaign.campaignId } returns "my-campaign"
+        every { factoryCampaignManager.runningCampaign.campaignName } returns "my-campaign"
         every { factoryCampaignManager.runningCampaign.broadcastChannel } returns "the-broadcast-channel"
 
         coEvery {
@@ -96,7 +96,7 @@ internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
                 setOf("my-minion-1", "my-minion-2", "my-minion-4"),
                 setOf("dag-1", "dag-2", "dag-4")
             )
-        } returns com.google.common.collect.HashBasedTable.create<MinionId, DirectedAcyclicGraphId, String>().also {
+        } returns com.google.common.collect.HashBasedTable.create<MinionId, DirectedAcyclicGraphName, String>().also {
             it.put("my-minion-1", "dag-1", "factory-1")
             it.put("my-minion-2", "dag-2", "factory-2")
         }
@@ -107,7 +107,7 @@ internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
                 setOf("my-minion-3"),
                 setOf("dag-3")
             )
-        } returns com.google.common.collect.HashBasedTable.create<MinionId, DirectedAcyclicGraphId, String>().also {
+        } returns com.google.common.collect.HashBasedTable.create<MinionId, DirectedAcyclicGraphName, String>().also {
             it.put("my-minion-3", "dag-3", "factory-2")
         }
         val countLatch = SuspendedCountLatch(4)

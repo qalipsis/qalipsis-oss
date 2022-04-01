@@ -18,7 +18,7 @@ internal class StepContextImplTest {
     @Test
     internal fun `should confirm no input when none was added`() {
         // given
-        val context = StepContextImpl<String, Int>(minionId = "", scenarioId = "", stepId = "")
+        val context = StepContextImpl<String, Int>(minionId = "", scenarioName = "", stepName = "")
 
         // when+then
         assertFalse(context.hasInput)
@@ -30,8 +30,8 @@ internal class StepContextImplTest {
         val context = StepContextImpl<String, Int>(
             input = Channel<String>(1).also { it.trySend("Test") },
             minionId = "",
-            scenarioId = "",
-            stepId = ""
+            scenarioName = "",
+            stepName = ""
         )
 
         // when+then
@@ -44,7 +44,7 @@ internal class StepContextImplTest {
         testDispatcherProvider.runTest {
             // given
             val output = Channel<StepContext.StepOutputRecord<Int>>(1)
-            val context = StepContextImpl<String, Int>(output = output, minionId = "", scenarioId = "", stepId = "")
+            val context = StepContextImpl<String, Int>(output = output, minionId = "", scenarioName = "", stepName = "")
 
             // when+then
             assertFalse(context.generatedOutput)

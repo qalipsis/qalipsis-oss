@@ -60,7 +60,7 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         // then
         assertThat(directives).isSameAs(initDirectives)
 
-        assertThat(operations.getState(campaign.id)).isNotNull().all {
+        assertThat(operations.getState(campaign.name)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.RUNNING_STATE)
         }
@@ -207,7 +207,7 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             val newState = state.process(mockk<CompleteMinionFeedback> {
-                every { scenarioId } returns "the scenario"
+                every { scenarioName } returns "the scenario"
                 every { minionId } returns "the minion"
             })
 
@@ -244,8 +244,8 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             val newState = state.process(mockk<EndOfCampaignScenarioFeedback> {
-                every { campaignId } returns "my-campaign"
-                every { scenarioId } returns "the scenario"
+                every { campaignName } returns "my-campaign"
+                every { scenarioName } returns "the scenario"
             })
 
             // then
@@ -285,8 +285,8 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             var newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
-                every { campaignId } returns "my-campaign"
-                every { scenarioId } returns "scenario-1"
+                every { campaignName } returns "my-campaign"
+                every { scenarioName } returns "scenario-1"
             })
 
             // then
@@ -295,8 +295,8 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
-                every { campaignId } returns "my-campaign"
-                every { scenarioId } returns "scenario-2"
+                every { campaignName } returns "my-campaign"
+                every { scenarioName } returns "scenario-2"
             })
 
             // then

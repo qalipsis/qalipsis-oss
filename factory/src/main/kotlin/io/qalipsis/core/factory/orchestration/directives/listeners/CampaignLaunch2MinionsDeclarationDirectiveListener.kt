@@ -1,9 +1,9 @@
 package io.qalipsis.core.factory.orchestration.directives.listeners
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Scenario
@@ -43,19 +43,19 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is MinionsDeclarationDirectiveReference
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignId, directive.scenarioId)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsDeclarationDirective) {
         val feedback = MinionsDeclarationFeedback(
-            campaignId = directive.campaignId,
-            scenarioId = directive.scenarioId,
+            campaignName = directive.campaignName,
+            scenarioName = directive.scenarioName,
             status = FeedbackStatus.IN_PROGRESS
         )
         factoryChannel.publishFeedback(feedback)
         try {
-            declareMinions(directive.minionsCount, directive, scenarioRegistry[directive.scenarioId]!!)
+            declareMinions(directive.minionsCount, directive, scenarioRegistry[directive.scenarioName]!!)
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         } catch (e: Exception) {
             log.error(e) { e.message }
@@ -68,48 +68,48 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
         directive: MinionsDeclarationDirective,
         scenario: Scenario
     ) {
-        log.debug { "Creating $minionsCount minions IDs for the scenario ${directive.scenarioId}" }
+        log.debug { "Creating $minionsCount minions IDs for the scenario ${directive.scenarioName}" }
         val minionsUnderLoad = mutableListOf<MinionId>()
         for (i in 0 until minionsCount) {
-            minionsUnderLoad.add(generateMinionId(scenario.id))
+            minionsUnderLoad.add(generateMinionId(scenario.name))
         }
-        val dagsUnderLoad = mutableListOf<DirectedAcyclicGraphId>()
+        val dagsUnderLoad = mutableListOf<DirectedAcyclicGraphName>()
         scenario.dags.forEach { dag ->
             val minions = mutableListOf<MinionId>()
             if (dag.isSingleton || !dag.isUnderLoad) {
                 // DAGs not under load receive a unique minion.
-                val minion = scenario.id + "-lonely-" + idGenerator.short()
+                val minion = scenario.name + "-lonely-" + idGenerator.short()
                 minions.add(minion)
                 minionAssignmentKeeper.registerMinionsToAssign(
-                    directive.campaignId,
-                    directive.scenarioId,
-                    listOf(dag.id),
+                    directive.campaignName,
+                    directive.scenarioName,
+                    listOf(dag.name),
                     listOf(minion),
                     false
                 )
             } else {
-                dagsUnderLoad += dag.id
+                dagsUnderLoad += dag.name
                 minions += minionsUnderLoad
             }
         }
         // Registers all the non-singleton minions at once.
         minionAssignmentKeeper.registerMinionsToAssign(
-            directive.campaignId,
-            directive.scenarioId,
+            directive.campaignName,
+            directive.scenarioName,
             dagsUnderLoad,
             minionsUnderLoad
         )
-        minionAssignmentKeeper.completeUnassignedMinionsRegistration(directive.campaignId, directive.scenarioId)
+        minionAssignmentKeeper.completeUnassignedMinionsRegistration(directive.campaignName, directive.scenarioName)
 
         val minionsAssignmentDirective = MinionsAssignmentDirective(
-            directive.campaignId,
-            scenario.id
+            directive.campaignName,
+            scenario.name
         )
         factoryChannel.publishDirective(minionsAssignmentDirective)
     }
 
-    private fun generateMinionId(scenarioId: ScenarioId): MinionId {
-        return scenarioId + "-" + idGenerator.short()
+    private fun generateMinionId(scenarioName: ScenarioName): MinionId {
+        return scenarioName + "-" + idGenerator.short()
     }
 
     companion object {

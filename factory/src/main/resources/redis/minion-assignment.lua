@@ -21,7 +21,8 @@
 -- 1. The name of the channel assigned to the factory 
 -- 2. The size of the random minions to be evaluated
 -- 3. The prefix for the keys of the sets storing the unassigned DAGs of a minion
--- 3. The prefix for the keys of the hash storing the assigned DAGs of a minion
+-- 4. The prefix for the keys of the hash storing the assigned DAGs of a minion
+-- 5. The maximal number of minions that can be assigned in that batch
 
 -- Resources:
 -- - https://redis.io/commands/eval
@@ -35,6 +36,7 @@ local factoryChannelName = ARGV[1]
 local randomEvaluationSize = tonumber(ARGV[2])
 local minionUnassignedDagsKeyPrefix = ARGV[3]
 local minionAssignedDagsKeyPrefix = ARGV[4]
+local maxMinionsCount = tonumber(ARGV[5])
 
 -- Tries the assignment of DAGs of a minion to the factory and returns a table with their count and IDs, 
 local function evaluateAssignment(minionId)
@@ -76,12 +78,19 @@ local randMinions = redis.call('srandmember', minionsIdsList, randomEvaluationSi
 local evaluated = #randMinions
 local assignments = {}
 
+local assigned = 0
 if evaluated > 0 then
     for _, minionId in pairs(randMinions) do
         local minionAssignment = evaluateAssignment(minionId)
         if minionAssignment['count'] > 0 then
             table.insert(assignments, minionId)
             table.insert(assignments, minionAssignment['dags'])
+
+            -- Stop the evaluation if the maximal count of minions is reached.
+            assigned = assigned + 1
+            if assigned >= maxMinionsCount then
+                break
+            end
         end
     end
 end

@@ -2,6 +2,7 @@ package io.qalipsis.core.factory.redis
 
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
+import io.aerisconsulting.catadioptre.KTestable
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.KeyScanCursor
 import io.lettuce.core.RedisNoScriptException
@@ -15,10 +16,11 @@ import io.lettuce.core.api.coroutines.RedisScriptingCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -90,6 +92,12 @@ internal class RedisMinionAssignmentKeeper(
      */
     private var minionFetchFactoryChannelScriptSha: String = "1842437f4e1b3a2942b3fcdc1100f44a86b29c83"
 
+    /**
+     * Maximal counts of minions that can be assigned to each scenario.
+     */
+    @KTestable
+    private val maxMinionsCountsByScenario = mutableMapOf<ScenarioName, Int>()
+
     @PostConstruct
     fun init() {
         minionAssignmentScript = RedisUtils.loadScript("/redis/minion-assignment.lua")
@@ -100,21 +108,23 @@ internal class RedisMinionAssignmentKeeper(
 
     @LogInputAndOutput
     override suspend fun assignFactoryDags(
-        campaignId: CampaignId,
-        dagsByScenarios: Map<ScenarioId, Collection<DirectedAcyclicGraphId>>
-    ) = assignFactoryDags(campaignId, dagsByScenarios, factoryConfiguration.nodeId)
+        campaignName: CampaignName,
+        assignments: Collection<FactoryScenarioAssignment>
+    ) = assignFactoryDags(campaignName, assignments, factoryConfiguration.nodeId)
 
     /**
      * Factory-configurable version of [assignFactoryDags] for testing purpose.
      */
     private suspend fun assignFactoryDags(
-        campaignId: CampaignId,
-        dagsByScenarios: Map<ScenarioId, Collection<DirectedAcyclicGraphId>>,
+        campaignName: CampaignName,
+        assignments: Collection<FactoryScenarioAssignment>,
         factoryNodeId: String
     ) {
         localAssignmentStore.reset()
-        dagsByScenarios.forEach { (scenarioId, dagIds) ->
-            val keyForFactoryAssignment = buildRedisKeyPrefix(campaignId, scenarioId) + factoryNodeId
+        maxMinionsCountsByScenario.clear()
+        assignments.forEach { (scenarioName, dagIds, maxMinionsCount) ->
+            maxMinionsCountsByScenario[scenarioName] = maxMinionsCount
+            val keyForFactoryAssignment = buildRedisKeyPrefix(campaignName, scenarioName) + factoryNodeId
             redisSetCommands.sadd(keyForFactoryAssignment, *dagIds.toTypedArray())
         }
     }
@@ -123,9 +133,9 @@ internal class RedisMinionAssignmentKeeper(
      * Creates the common prefix of all the keys used in the assignment process.
      */
     private fun buildRedisKeyPrefix(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId
-    ) = buildRedisKeyPrefix(campaignId) + "$scenarioId:"
+        campaignName: CampaignName,
+        scenarioName: ScenarioName
+    ) = buildRedisKeyPrefix(campaignName) + "$scenarioName:"
 
     /**
      * Creates the common prefix of all the keys used in the assignment process.
@@ -133,19 +143,19 @@ internal class RedisMinionAssignmentKeeper(
      * A Hash tag is used in the key prefix to locate all the values related to the same campaign.
      */
     private fun buildRedisKeyPrefix(
-        campaignId: CampaignId
-    ) = "${keysPrefix}{$campaignId}-assignment:"
+        campaignName: CampaignName
+    ) = "${keysPrefix}{$campaignName}-assignment:"
 
     @LogInputAndOutput
     override suspend fun registerMinionsToAssign(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        dagIds: Collection<DirectedAcyclicGraphId>,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        dagIds: Collection<DirectedAcyclicGraphName>,
         minionIds: Collection<MinionId>,
         underLoad: Boolean
     ) {
-        val campaignRelatedKeyPrefix = buildRedisKeyPrefix(campaignId)
-        val scenarioRelatedKeyPrefix = buildRedisKeyPrefix(campaignId, scenarioId)
+        val campaignRelatedKeyPrefix = buildRedisKeyPrefix(campaignName)
+        val scenarioRelatedKeyPrefix = buildRedisKeyPrefix(campaignName, scenarioName)
 
         // Create the set with the minions to register.
         val minionsSet = scenarioRelatedKeyPrefix + Math.random()
@@ -163,7 +173,7 @@ internal class RedisMinionAssignmentKeeper(
             keyPrefixForUnassignedDags,
             countersHashKey,
             singletonsHashKey,
-            scenarioId,
+            scenarioName,
             dagIds,
             underLoad
         )
@@ -181,7 +191,7 @@ internal class RedisMinionAssignmentKeeper(
         keyPrefixForUnassignedDags: String,
         countersHashKey: String,
         singletonsHashKey: String,
-        scenarioId: String,
+        scenarioName: String,
         dagIds: Collection<String>,
         underLoad: Boolean
     ): Boolean {
@@ -196,7 +206,7 @@ internal class RedisMinionAssignmentKeeper(
                     countersHashKey,
                     singletonsHashKey
                 ),
-                scenarioId, dagIds.joinToString(separator = ","), underLoad.toString()
+                scenarioName, dagIds.joinToString(separator = ","), underLoad.toString()
             )!!
         } catch (e: RedisNoScriptException) {
             minionRegistrationScriptSha = redisScriptingCommands.scriptLoad(minionRegistrationScript)!!
@@ -208,7 +218,7 @@ internal class RedisMinionAssignmentKeeper(
                 keyPrefixForUnassignedDags,
                 countersHashKey,
                 singletonsHashKey,
-                scenarioId,
+                scenarioName,
                 dagIds,
                 underLoad
             )
@@ -216,10 +226,10 @@ internal class RedisMinionAssignmentKeeper(
     }
 
     override suspend fun getIdsOfMinionsUnderLoad(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId
+        campaignName: CampaignName,
+        scenarioName: ScenarioName
     ): Collection<MinionId> {
-        val unassignedMinionsSetKey = buildRedisKeyPrefix(campaignId, scenarioId) + UNDERLOAD_MINIONS
+        val unassignedMinionsSetKey = buildRedisKeyPrefix(campaignName, scenarioName) + UNDERLOAD_MINIONS
         val minionsIds = mutableListOf<MinionId>()
         var scanResult: ValueScanCursor<String>? = null
         do {
@@ -231,67 +241,82 @@ internal class RedisMinionAssignmentKeeper(
         return minionsIds
     }
 
-    override suspend fun completeUnassignedMinionsRegistration(campaignId: CampaignId, scenarioId: ScenarioId) {
+    override suspend fun completeUnassignedMinionsRegistration(campaignName: CampaignName, scenarioName: ScenarioName) {
         // Updates the number active scenarios in the campaign.
-        val countersHashKey = buildRedisKeyPrefix(campaignId) + CAMPAIGN_COUNTERS
+        val countersHashKey = buildRedisKeyPrefix(campaignName) + CAMPAIGN_COUNTERS
         redisHashCommands.hincrby(countersHashKey, SCENARIOS_COUNT_FIELD, 1)
     }
 
     @LogInputAndOutput
     override suspend fun assign(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId
-    ) = assign(campaignId, scenarioId, factoryConfiguration.nodeId, communicationChannelConfiguration.unicastChannel)
+        campaignName: CampaignName,
+        scenarioName: ScenarioName
+    ) = assign(
+        campaignName,
+        scenarioName,
+        factoryConfiguration.nodeId,
+        communicationChannelConfiguration.unicastChannel,
+        maxMinionsCountsByScenario[scenarioName]!!
+    )
 
     /**
      * Factory-configurable version of [assign] for testing purpose.
      */
     @Suppress("UNCHECKED_CAST")
     private suspend fun assign(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
         factoryNodeId: String,
-        factoryChannelName: String
-    ): Map<MinionId, Collection<DirectedAcyclicGraphId>> {
-        val allKeysPrefix = buildRedisKeyPrefix(campaignId, scenarioId)
+        factoryChannelName: String,
+        maximalMinionsCount: Int
+    ): Map<MinionId, Collection<DirectedAcyclicGraphName>> {
+        val allKeysPrefix = buildRedisKeyPrefix(campaignName, scenarioName)
         val keyForFactoryAssignment = allKeysPrefix + factoryNodeId
         val keyPrefixForUnassignedMinions = allKeysPrefix + UNASSIGNED_MINIONS
         val keyPrefixForUnassignedDags = allKeysPrefix + MINION_UNASSIGNED_DAGS_PREFIX
         val keyPrefixForAssignedDags = allKeysPrefix + MINION_ASSIGNED_DAGS_PREFIX
 
         var evaluatedMinionsCount: Long
+        val minionsUnderLoad = getIdsOfMinionsUnderLoad(campaignName, scenarioName).toSet()
 
         val assignments = mutableMapOf<String, List<String>>()
+        var assignedUnderLoad = 0
         try {
             withTimeout(factoryConfiguration.assignment.timeout.toMillis()) {
                 val evaluationBatchSize = "${factoryConfiguration.assignment.evaluationBatchSize}"
                 do {
                     val assignedMinions = executeAssignment(
                         keyPrefixForUnassignedMinions, keyForFactoryAssignment,
-                        factoryChannelName, evaluationBatchSize, keyPrefixForUnassignedDags, keyPrefixForAssignedDags
+                        factoryChannelName, evaluationBatchSize, keyPrefixForUnassignedDags, keyPrefixForAssignedDags,
+                        "${maximalMinionsCount - assignedUnderLoad}"
                     )
                     // Number of minions that were evaluated for assignment. When it is 0, it means that all the minions
                     // were assigned.
                     evaluatedMinionsCount = assignedMinions[1] as Long
 
                     // Actual assignments to add to the local factory, identifier by a succession of minion IDs / list of DAGs.
-                    assignments += (assignedMinions[3] as List<*>).windowed(2, 2).map {
+                    val newlyAssignedMinions = (assignedMinions[3] as List<*>).windowed(2, 2).map {
                         val minionId = it[0] as String
                         val dags = it[1] as List<String>
                         minionId to dags
-                    }
-                } while (evaluatedMinionsCount > 0)
+                    }.toMap()
+
+                    // Counts the assigned under load to respect the limit, the singletons being ignored here.
+                    assignedUnderLoad += newlyAssignedMinions.keys.intersect(minionsUnderLoad).size
+
+                    assignments += newlyAssignedMinions
+                } while (evaluatedMinionsCount > 0 && assignedUnderLoad < maximalMinionsCount)
             }
         } finally {
             redisKeyCommands.unlink(keyForFactoryAssignment)
         }
         if (log.isDebugEnabled) {
-            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignId and scenario $scenarioId" }
+            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignName and scenario $scenarioName" }
         } else if (log.isTraceEnabled) {
-            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignId and scenario $scenarioId (${assignments.size} minions assigned): $assignments" }
+            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignName and scenario $scenarioName (${assignments.size} minions assigned): $assignments" }
         }
 
-        localAssignmentStore.save(scenarioId, assignments)
+        localAssignmentStore.save(scenarioName, assignments)
         return assignments
     }
 
@@ -305,7 +330,8 @@ internal class RedisMinionAssignmentKeeper(
         factoryChannelName: String,
         evaluationBatchSize: String,
         keyPrefixForUnassignedDags: String,
-        keyPrefixForAssignedDags: String
+        keyPrefixForAssignedDags: String,
+        maximalMinionsCount: String
     ): List<*> {
         return try {
             redisScriptingCommands.evalsha(
@@ -315,7 +341,8 @@ internal class RedisMinionAssignmentKeeper(
                 factoryChannelName,
                 evaluationBatchSize,
                 keyPrefixForUnassignedDags,
-                keyPrefixForAssignedDags
+                keyPrefixForAssignedDags,
+                maximalMinionsCount
             )!!
         } catch (e: RedisNoScriptException) {
             minionAssignmentScriptSha = redisScriptingCommands.scriptLoad(minionAssignmentScript)!!
@@ -326,29 +353,38 @@ internal class RedisMinionAssignmentKeeper(
                 factoryChannelName,
                 evaluationBatchSize,
                 keyPrefixForUnassignedDags,
-                keyPrefixForAssignedDags
+                keyPrefixForAssignedDags,
+                maximalMinionsCount
             )
         }
     }
 
     @LogInputAndOutput
     override suspend fun executionComplete(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
         minionId: MinionId,
-        dagIds: Collection<DirectedAcyclicGraphId>
+        dagIds: Collection<DirectedAcyclicGraphName>
     ): CampaignCompletionState {
-        val singletonsHashKey = buildRedisKeyPrefix(campaignId) + SINGLETON_REGISTRY
-        val countersHashKey = buildRedisKeyPrefix(campaignId) + CAMPAIGN_COUNTERS
-        val keyForAssignedDags = buildRedisKeyPrefix(campaignId, scenarioId) + MINION_ASSIGNED_DAGS_PREFIX + minionId
+        val singletonsHashKey = buildRedisKeyPrefix(campaignName) + SINGLETON_REGISTRY
+        val countersHashKey = buildRedisKeyPrefix(campaignName) + CAMPAIGN_COUNTERS
+        val keyForAssignedDags =
+            buildRedisKeyPrefix(campaignName, scenarioName) + MINION_ASSIGNED_DAGS_PREFIX + minionId
         val completionsFlags =
-            executeCompletion(singletonsHashKey, countersHashKey, keyForAssignedDags, scenarioId, minionId, dagIds.size)
+            executeCompletion(
+                singletonsHashKey,
+                countersHashKey,
+                keyForAssignedDags,
+                scenarioName,
+                minionId,
+                dagIds.size
+            )
         val state = CampaignCompletionState()
         state.minionComplete = (completionsFlags[1] as Number).toInt() > 0
         state.scenarioComplete = (completionsFlags[3] as Number).toInt() > 0
         state.campaignComplete = (completionsFlags[5] as Number).toInt() > 0
         if (state.campaignComplete) {
-            cleanCampaignKeys(campaignId)
+            cleanCampaignKeys(campaignName)
         }
         log.trace { "$state" }
         localAssignmentStore.reset()
@@ -356,15 +392,15 @@ internal class RedisMinionAssignmentKeeper(
     }
 
     override suspend fun getFactoriesChannels(
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
         minionIds: Collection<MinionId>,
-        dagsIds: Collection<DirectedAcyclicGraphId>
-    ): Table<MinionId, DirectedAcyclicGraphId, String> {
-        val keyPrefixForAssignedDags = buildRedisKeyPrefix(campaignId, scenarioId) + MINION_ASSIGNED_DAGS_PREFIX
+        dagsIds: Collection<DirectedAcyclicGraphName>
+    ): Table<MinionId, DirectedAcyclicGraphName, String> {
+        val keyPrefixForAssignedDags = buildRedisKeyPrefix(campaignName, scenarioName) + MINION_ASSIGNED_DAGS_PREFIX
         val dagsAsList = dagsIds.toList()
         val factoriesChannels = executeFetchFactoryChannels(keyPrefixForAssignedDags, minionIds, dagsAsList)
-        val result = HashBasedTable.create<MinionId, DirectedAcyclicGraphId, String>()
+        val result = HashBasedTable.create<MinionId, DirectedAcyclicGraphName, String>()
         val channelsIterator = factoriesChannels.iterator()
         while (channelsIterator.hasNext()) {
             val minionId = channelsIterator.next() as String
@@ -385,7 +421,7 @@ internal class RedisMinionAssignmentKeeper(
     private suspend fun executeFetchFactoryChannels(
         keyPrefixForUnassignedMinions: String,
         minionIds: Collection<MinionId>,
-        dagsIds: Collection<DirectedAcyclicGraphId>
+        dagsIds: Collection<DirectedAcyclicGraphName>
     ): List<*> {
         return try {
             redisScriptingCommands.evalsha(
@@ -404,8 +440,8 @@ internal class RedisMinionAssignmentKeeper(
     /**
      * Deletes all the remaining keys created for a campaign.
      */
-    private suspend fun cleanCampaignKeys(campaignId: CampaignId) {
-        val campaignKeysPattern = buildRedisKeyPrefix(campaignId) + "*"
+    private suspend fun cleanCampaignKeys(campaignName: CampaignName) {
+        val campaignKeysPattern = buildRedisKeyPrefix(campaignName) + "*"
         val scanArgs = ScanArgs().match(campaignKeysPattern)
         var scanResult: KeyScanCursor<String>? = null
         do {
@@ -428,7 +464,7 @@ internal class RedisMinionAssignmentKeeper(
         singletonsHashKey: String,
         countersHashKey: String,
         keyForAssignedDags: String,
-        scenarioId: String,
+        scenarioName: String,
         minionId: String,
         dagIdsCount: Int
     ): List<*> {
@@ -436,12 +472,19 @@ internal class RedisMinionAssignmentKeeper(
             redisScriptingCommands.evalsha(
                 minionCompletionScriptSha, ScriptOutputType.MULTI,
                 arrayOf(singletonsHashKey, countersHashKey, keyForAssignedDags),
-                scenarioId, minionId, dagIdsCount.toString()
+                scenarioName, minionId, dagIdsCount.toString()
             )!!
         } catch (e: RedisNoScriptException) {
             minionCompletionScriptSha = redisScriptingCommands.scriptLoad(minionCompletionScript)!!
             log.debug { "Completion script was loaded with SHA $minionCompletionScriptSha" }
-            executeCompletion(singletonsHashKey, countersHashKey, keyForAssignedDags, scenarioId, minionId, dagIdsCount)
+            executeCompletion(
+                singletonsHashKey,
+                countersHashKey,
+                keyForAssignedDags,
+                scenarioName,
+                minionId,
+                dagIdsCount
+            )
         }
     }
 

@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.inmemory
 
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.ScenarioSummary
 
 /**
@@ -8,4 +8,4 @@ import io.qalipsis.core.campaigns.ScenarioSummary
  *
  * @author Eric Jessé
  */
-interface ScenarioSummaryRepository : InMemoryRepository<ScenarioSummary, ScenarioId>
+interface ScenarioSummaryRepository : InMemoryRepository<ScenarioSummary, ScenarioName>

@@ -47,7 +47,7 @@ internal data class ScenarioEntity(
 
     fun toModel(): ScenarioSummary {
         return ScenarioSummary(
-            id = name,
+            name = name,
             minionsCount = defaultMinionsCount,
             directedAcyclicGraphs = dags.map(DirectedAcyclicGraphEntity::toModel)
         )

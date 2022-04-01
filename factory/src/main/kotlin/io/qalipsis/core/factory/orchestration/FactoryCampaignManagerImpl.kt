@@ -5,10 +5,10 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.DirectedAcyclicGraphId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -57,22 +57,23 @@ internal class FactoryCampaignManagerImpl(
     override var runningCampaign: Campaign = EMPTY_CAMPAIGN
 
     @KTestable
-    private val runningScenarios = concurrentSet<ScenarioId>()
+    private val runningScenarios = concurrentSet<ScenarioName>()
 
     @LogInput
-    override fun isLocallyExecuted(campaignId: CampaignId): Boolean {
-        return runningCampaign.campaignId == campaignId
+    override fun isLocallyExecuted(campaignName: CampaignName): Boolean {
+        return runningCampaign.campaignName == campaignName
     }
 
     @LogInput
-    override fun isLocallyExecuted(campaignId: CampaignId, scenarioId: ScenarioId): Boolean {
-        return runningCampaign.campaignId == campaignId && scenarioId in runningScenarios
+    override fun isLocallyExecuted(campaignName: CampaignName, scenarioName: ScenarioName): Boolean {
+        return runningCampaign.campaignName == campaignName && scenarioName in runningScenarios
     }
 
     @LogInput(Level.DEBUG)
     override suspend fun init(campaign: Campaign) {
         runningScenarios.clear()
-        val eligibleScenarios = campaign.assignedDagsByScenario.keys.filter { it in scenarioRegistry }
+        val eligibleScenarios =
+            campaign.assignments.asSequence().map { it.scenarioName }.filter { it in scenarioRegistry }.toList()
         if (eligibleScenarios.isNotEmpty()) {
             runningCampaign = campaign
             runningScenarios += eligibleScenarios
@@ -80,11 +81,11 @@ internal class FactoryCampaignManagerImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun warmUpCampaignScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
-        if (isLocallyExecuted(campaignId, scenarioId)) {
-            log.info { "Starting campaign $campaignId on scenario $scenarioId" }
-            scenarioRegistry[scenarioId]!!.start(campaignId)
-            minionsKeeper.startSingletons(scenarioId)
+    override suspend fun warmUpCampaignScenario(campaignName: CampaignName, scenarioName: ScenarioName) {
+        if (isLocallyExecuted(campaignName, scenarioName)) {
+            log.info { "Starting campaign $campaignName on scenario $scenarioName" }
+            scenarioRegistry[scenarioName]!!.start(campaignName)
+            minionsKeeper.startSingletons(scenarioName)
             if (contextConsumer.isPresent) {
                 tryAndLogOrNull(log) {
                     contextConsumer.get().start()
@@ -95,17 +96,18 @@ internal class FactoryCampaignManagerImpl(
 
     @LogInput(Level.DEBUG)
     override suspend fun prepareMinionsRampUp(
-        campaignId: CampaignId,
+        campaignName: CampaignName,
         scenario: Scenario,
         rampUpConfiguration: RampUpConfiguration
     ): List<MinionStartDefinition> {
         val minionsStartDefinitions = mutableListOf<MinionStartDefinition>()
-        val minionsUnderLoad = minionAssignmentKeeper.getIdsOfMinionsUnderLoad(campaignId, scenario.id).toMutableList()
+        val minionsUnderLoad =
+            minionAssignmentKeeper.getIdsOfMinionsUnderLoad(campaignName, scenario.name).toMutableList()
         val rampUpStrategyIterator =
             scenario.rampUpStrategy.iterator(minionsUnderLoad.size, rampUpConfiguration.speedFactor)
         var start = System.currentTimeMillis() + rampUpConfiguration.startOffsetMs
 
-        log.debug { "Creating the ramp-up for ${minionsUnderLoad.size} minions on campaign $campaignId of scenario ${scenario.id}" }
+        log.debug { "Creating the ramp-up for ${minionsUnderLoad.size} minions on campaign $campaignName of scenario ${scenario.name}" }
         while (minionsUnderLoad.isNotEmpty()) {
             val nextStartingLine = rampUpStrategyIterator.next()
             require(nextStartingLine.count >= 0) { "The number of minions to start at next starting line cannot be negative, but was ${nextStartingLine.count}" }
@@ -117,27 +119,27 @@ internal class FactoryCampaignManagerImpl(
             }
         }
 
-        log.debug { "Ramp-up creation is complete on campaign $campaignId of scenario ${scenario.id}" }
+        log.debug { "Ramp-up creation is complete on campaign $campaignName of scenario ${scenario.name}" }
         return minionsStartDefinitions
     }
 
     @LogInput
     override suspend fun notifyCompleteMinion(
         minionId: MinionId,
-        campaignId: CampaignId,
-        scenarioId: ScenarioId,
-        dagId: DirectedAcyclicGraphId
+        campaignName: CampaignName,
+        scenarioName: ScenarioName,
+        dagId: DirectedAcyclicGraphName
     ) {
         val completionState =
-            minionAssignmentKeeper.executionComplete(campaignId, scenarioId, minionId, listOf(dagId))
-        log.trace { "Completing minion $minionId of scenario $scenarioId in campaign $campaignId returns $completionState" }
+            minionAssignmentKeeper.executionComplete(campaignName, scenarioName, minionId, listOf(dagId))
+        log.trace { "Completing minion $minionId of scenario $scenarioName in campaign $campaignName returns $completionState" }
         // FIXME Generates CompleteMinionFeedbacks for several minions (based upon elapsed time and/or count), otherwise it makes the system overloaded.
         /*if (completionState.minionComplete) {
             factoryChannel.publishFeedback(
                 CompleteMinionFeedback(
                     key = idGenerator.short(),
-                    campaignId = campaignId,
-                    scenarioId = scenarioId,
+                    campaignName = campaignName,
+                    scenarioName = scenarioName,
                     minionId = minionId,
                     nodeId = factoryConfiguration.nodeId,
                     status = FeedbackStatus.COMPLETED
@@ -147,15 +149,15 @@ internal class FactoryCampaignManagerImpl(
         if (completionState.scenarioComplete) {
             factoryChannel.publishFeedback(
                 EndOfCampaignScenarioFeedback(
-                    campaignId = campaignId,
-                    scenarioId = scenarioId,
+                    campaignName = campaignName,
+                    scenarioName = scenarioName,
                     status = FeedbackStatus.COMPLETED
                 )
             )
         }
     }
 
-    override suspend fun shutdownMinions(campaignId: CampaignId, minionIds: Collection<MinionId>) {
+    override suspend fun shutdownMinions(campaignName: CampaignName, minionIds: Collection<MinionId>) {
         sharedStateRegistry.clear(minionIds)
         minionIds.map { minionId ->
             backgroundScope.async {
@@ -173,7 +175,7 @@ internal class FactoryCampaignManagerImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun shutdownScenario(campaignId: CampaignId, scenarioId: ScenarioId) {
+    override suspend fun shutdownScenario(campaignName: CampaignName, scenarioName: ScenarioName) {
         withCancellableTimeout(scenarioGracefulShutdown) {
             try {
                 if (contextConsumer.isPresent) {
@@ -181,9 +183,9 @@ internal class FactoryCampaignManagerImpl(
                         contextConsumer.get().stop()
                     }
                 }
-                scenarioRegistry[scenarioId]!!.stop(campaignId)
+                scenarioRegistry[scenarioName]!!.stop(campaignName)
             } catch (e: Exception) {
-                log.trace(e) { "The scenario $scenarioId was not successfully shut down: ${e.message}" }
+                log.trace(e) { "The scenario $scenarioName was not successfully shut down: ${e.message}" }
                 throw e
             }
         }
@@ -191,10 +193,10 @@ internal class FactoryCampaignManagerImpl(
 
     @LogInput(Level.DEBUG)
     override suspend fun close(campaign: Campaign) {
-        if (runningCampaign.campaignId == campaign.campaignId) {
+        if (runningCampaign.campaignName == campaign.campaignName) {
             withCancellableTimeout(campaignGracefulShutdown) {
                 minionsKeeper.shutdownAll()
-                runningScenarios.forEach { scenarioRegistry[it]!!.stop(campaign.campaignId) }
+                runningScenarios.forEach { scenarioRegistry[it]!!.stop(campaign.campaignName) }
                 runningScenarios.clear()
                 runningCampaign = EMPTY_CAMPAIGN
                 // Removes all the meters.
@@ -220,7 +222,7 @@ internal class FactoryCampaignManagerImpl(
 
     private companion object {
 
-        val EMPTY_CAMPAIGN = Campaign("", "", "", emptyMap())
+        val EMPTY_CAMPAIGN = Campaign("", "", "", emptyList())
 
         val log = logger()
     }

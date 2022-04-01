@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
@@ -23,8 +23,8 @@ internal class IterativeStepDecorator<I, O>(
     override val decorated: Step<I, O>
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
-    override val id: StepId
-        get() = decorated.id
+    override val name: StepName
+        get() = decorated.name
 
     override var retryPolicy: RetryPolicy? = null
 
@@ -63,14 +63,14 @@ internal class IterativeStepDecorator<I, O>(
             } catch (t: Throwable) {
                 // Resets the isTail flag before leaving.
                 context.isTail = isDecoratingContextTail
-                log.debug(t) { "The repeated step ${decorated.id} failed: ${t.message}" }
+                log.debug(t) { "The repeated step ${decorated.name} failed: ${t.message}" }
                 throw t
             }
 
             if (internalContext.isExhausted) {
                 // Resets the isTail flag before leaving.
                 context.isTail = isDecoratingContextTail
-                log.debug { "The repeated step ${decorated.id} failed." }
+                log.debug { "The repeated step ${decorated.name} failed." }
                 context.isExhausted = true
             } else {
                 remainingIterations--

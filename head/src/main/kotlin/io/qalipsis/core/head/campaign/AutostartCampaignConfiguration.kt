@@ -13,7 +13,7 @@ import javax.validation.constraints.PositiveOrZero
  * Configuration of a campaign to start. When the environment [ExecutionEnvironments.AUTOSTART] is active,
  * a bean of that type is created.
  *
- * @property id technical identifier of the campaign
+ * @property name technical identifier of the campaign
  * @property requiredFactories number of fact
  * @property triggerOffset time to wait before the campaign is triggered, to let the factories process the handshake response
  * @property minionsCountPerScenario when set to a non-null value, specifies the number of minions to create for each scenario
@@ -28,7 +28,7 @@ import javax.validation.constraints.PositiveOrZero
 internal interface AutostartCampaignConfiguration {
 
     @get:NotBlank
-    val id: String
+    val name: String
 
     @get:Positive
     @get:Bindable(defaultValue = "1")

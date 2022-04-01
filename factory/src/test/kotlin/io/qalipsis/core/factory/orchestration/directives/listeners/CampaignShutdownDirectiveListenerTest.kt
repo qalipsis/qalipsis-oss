@@ -84,13 +84,13 @@ internal class CampaignShutdownDirectiveListenerTest {
         // then
         coVerifyOrder {
             factoryChannel.publishFeedback(
-                CampaignShutdownFeedback(campaignId = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
+                CampaignShutdownFeedback(campaignName = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
             )
             factoryCampaignManager.runningCampaign
             campaignLifeCycleAware1.close(refEq(campaign))
             campaignLifeCycleAware2.close(refEq(campaign))
             factoryChannel.publishFeedback(
-                CampaignShutdownFeedback(campaignId = "my-campaign", status = FeedbackStatus.COMPLETED)
+                CampaignShutdownFeedback(campaignName = "my-campaign", status = FeedbackStatus.COMPLETED)
             )
         }
         confirmVerified(factoryCampaignManager, factoryChannel, campaignLifeCycleAware1, campaignLifeCycleAware2)
@@ -110,13 +110,13 @@ internal class CampaignShutdownDirectiveListenerTest {
             // then
             coVerifyOrder {
                 factoryChannel.publishFeedback(
-                    CampaignShutdownFeedback(campaignId = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
+                    CampaignShutdownFeedback(campaignName = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
                 )
                 factoryCampaignManager.runningCampaign
                 campaignLifeCycleAware1.close(refEq(campaign))
                 factoryChannel.publishFeedback(
                     CampaignShutdownFeedback(
-                        campaignId = "my-campaign",
+                        campaignName = "my-campaign",
                         status = FeedbackStatus.FAILED,
                         error = "A problem occurred"
                     )

@@ -34,11 +34,14 @@ internal class WarmupStateTest : AbstractStateTest() {
         // given
         every { campaign.factories } returns mutableMapOf(
             "node-1" to relaxedMockk {
-                every { assignment } returns mutableMapOf("scenario-1" to emptyList(), "scenario-2" to emptyList())
+                every { assignment } returns mutableMapOf(
+                    "scenario-1" to relaxedMockk(),
+                    "scenario-2" to relaxedMockk()
+                )
                 every { unicastChannel } returns "the-unicast-channel-1"
             },
             "node-2" to relaxedMockk {
-                every { assignment } returns mutableMapOf("scenario-2" to emptyList())
+                every { assignment } returns mutableMapOf("scenario-2" to relaxedMockk())
                 every { unicastChannel } returns "the-unicast-channel-2"
             }
         )
@@ -148,13 +151,13 @@ internal class WarmupStateTest : AbstractStateTest() {
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -168,7 +171,7 @@ internal class WarmupStateTest : AbstractStateTest() {
             // when
             val newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -189,13 +192,13 @@ internal class WarmupStateTest : AbstractStateTest() {
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -209,7 +212,7 @@ internal class WarmupStateTest : AbstractStateTest() {
             // when
             val newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -230,13 +233,13 @@ internal class WarmupStateTest : AbstractStateTest() {
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-1" to emptyList(),
-                        "scenario-2" to emptyList()
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
                     )
                 },
                 "node-2" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
-                        "scenario-2" to emptyList()
+                        "scenario-2" to relaxedMockk()
                     )
                 }
             )
@@ -250,7 +253,7 @@ internal class WarmupStateTest : AbstractStateTest() {
             // when
             var newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.IGNORED
             })
 
@@ -260,7 +263,7 @@ internal class WarmupStateTest : AbstractStateTest() {
             // when
             newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-2"
-                every { scenarioId } returns "scenario-2"
+                every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.COMPLETED
             })
 
@@ -270,7 +273,7 @@ internal class WarmupStateTest : AbstractStateTest() {
             // when
             newState = state.process(mockk<ScenarioWarmUpFeedback> {
                 every { nodeId } returns "node-1"
-                every { scenarioId } returns "scenario-1"
+                every { scenarioName } returns "scenario-1"
                 every { status } returns FeedbackStatus.COMPLETED
             })
 

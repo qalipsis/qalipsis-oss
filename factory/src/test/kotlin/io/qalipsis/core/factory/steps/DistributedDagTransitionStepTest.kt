@@ -49,8 +49,8 @@ internal class DistributedDagTransitionStepTest {
         )
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario",
             minionId = "my-minion"
         )
         every { localAssignmentStore.isLocal("my-scenario", "my-minion", "this-is-the-next-dag") } returns true
@@ -85,8 +85,8 @@ internal class DistributedDagTransitionStepTest {
         )
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario",
             minionId = "my-minion"
         )
         every { localAssignmentStore.isLocal("my-scenario", "my-minion", "this-is-the-next-dag") } returns false
@@ -119,10 +119,10 @@ internal class DistributedDagTransitionStepTest {
             contextForwarder
         )
         val ctx = DefaultCompletionContext(
-            campaignId = "my-campaign",
-            scenarioId = "my-scenario",
+            campaignName = "my-campaign",
+            scenarioName = "my-scenario",
             minionId = "my-minion",
-            lastExecutedStepId = "step-1",
+            lastExecutedStepName = "step-1",
             errors = emptyList()
         )
         every { localAssignmentStore.isLocal("my-scenario", "my-minion", "this-is-the-next-dag") } returns true
@@ -157,10 +157,10 @@ internal class DistributedDagTransitionStepTest {
                 contextForwarder
             )
             val ctx = DefaultCompletionContext(
-                campaignId = "my-campaign",
-                scenarioId = "my-scenario",
+                campaignName = "my-campaign",
+                scenarioName = "my-scenario",
                 minionId = "my-minion",
-                lastExecutedStepId = "step-1",
+                lastExecutedStepName = "step-1",
                 errors = emptyList()
             )
             every { localAssignmentStore.isLocal("my-scenario", "my-minion", "this-is-the-next-dag") } returns false

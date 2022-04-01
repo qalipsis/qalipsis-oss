@@ -5,8 +5,8 @@ import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.CampaignId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -36,8 +36,8 @@ internal class RedisCampaignReportStateKeeper(
     private val redisHashCommands: RedisHashCoroutinesCommands<String, String>
 ) : CampaignReportStateKeeper {
 
-    override suspend fun clear(campaignId: CampaignId) {
-        redisKeyCommands.keys("$campaignId-report:*").onEach {
+    override suspend fun clear(campaignName: CampaignName) {
+        redisKeyCommands.keys("$campaignName-report:*").onEach {
             // Since not all the keys are on the same node of a Redis cluster (no Hash tag is used in the keys),
             // we have to delete them one by one.
             // This is done on purpose to distribute the load implied by all the concurrent scenarios.
@@ -45,41 +45,45 @@ internal class RedisCampaignReportStateKeeper(
         }.count()
     }
 
-    override suspend fun start(campaignId: CampaignId, scenarioId: ScenarioId) {
-        val key = "$campaignId-report:$RUNNING_SCENARIOS_KEY_POSTFIX"
-        redisSetCommands.sadd(key, scenarioId)
+    override suspend fun start(campaignName: CampaignName, scenarioName: ScenarioName) {
+        val key = "$campaignName-report:$RUNNING_SCENARIOS_KEY_POSTFIX"
+        redisSetCommands.sadd(key, scenarioName)
         redisHashCommands.hset(
-            buildRedisReportKey(campaignId, scenarioId),
+            buildRedisReportKey(campaignName, scenarioName),
             START_TIMESTAMP_FIELD,
             Instant.now().toString()
         )
     }
 
-    override suspend fun complete(campaignId: CampaignId, scenarioId: ScenarioId) {
+    override suspend fun complete(campaignName: CampaignName, scenarioName: ScenarioName) {
         redisHashCommands.hset(
-            buildRedisReportKey(campaignId, scenarioId),
+            buildRedisReportKey(campaignName, scenarioName),
             END_TIMESTAMP_FIELD,
             Instant.now().toString()
         )
     }
 
-    override suspend fun complete(campaignId: CampaignId) = Unit
+    override suspend fun complete(campaignName: CampaignName) = Unit
 
-    override suspend fun abort(campaignId: CampaignId) {
+    override suspend fun abort(campaignName: CampaignName) {
         val scenarios =
-            redisSetCommands.smembers("$campaignId-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
+            redisSetCommands.smembers("$campaignName-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
         val abortTimestamp = Instant.now().toString()
-        scenarios.forEach { scenarioId ->
-            redisHashCommands.hset(buildRedisReportKey(campaignId, scenarioId), ABORTED_TIMESTAMP_FIELD, abortTimestamp)
+        scenarios.forEach { scenarioName ->
+            redisHashCommands.hset(
+                buildRedisReportKey(campaignName, scenarioName),
+                ABORTED_TIMESTAMP_FIELD,
+                abortTimestamp
+            )
         }
     }
 
-    override suspend fun report(campaignId: CampaignId): CampaignReport {
+    override suspend fun report(campaignName: CampaignName): CampaignReport {
         val scenarios =
-            redisSetCommands.smembers("$campaignId-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
+            redisSetCommands.smembers("$campaignName-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
 
-        return scenarios.map { scenarioId ->
-            val rootKey = buildRedisReportKey(campaignId, scenarioId)
+        return scenarios.map { scenarioName ->
+            val rootKey = buildRedisReportKey(campaignName, scenarioName)
             val scenarioData =
                 redisHashCommands.hgetall(rootKey).toList(mutableListOf()).associate { kv -> kv.key to kv.value }
                     .toMutableMap()
@@ -100,14 +104,14 @@ internal class RedisCampaignReportStateKeeper(
                 .filterKeys { it.contains("/") }
                 .map { (key, value) ->
                     val messageId = key.substringAfterLast("/")
-                    val stepId = key.substringBefore("/$messageId")
+                    val stepName = key.substringBefore("/$messageId")
                     val severity = ReportMessageSeverity.valueOf(value.substringBefore("/"))
                     val message = value.substringAfter("/")
-                    (messageId as Any) to ReportMessage(stepId, messageId, severity, message)
+                    (messageId as Any) to ReportMessage(stepName, messageId, severity, message)
                 }.toMap()
 
             DefaultScenarioReportingExecutionState(
-                scenarioId = scenarioId,
+                scenarioName = scenarioName,
                 start = startTimestamp,
                 startedMinions = scenarioData[STARTED_MINIONS_FIELD]?.toInt() ?: 0,
                 completedMinions = scenarioData[COMPLETED_MINIONS_FIELD]?.toInt() ?: 0,
@@ -117,7 +121,7 @@ internal class RedisCampaignReportStateKeeper(
                 abort = abortTimestamp,
                 status = status,
                 messages = messages
-            ).toReport(campaignId)
+            ).toReport(campaignName)
         }.toCampaignReport()
     }
 
@@ -127,8 +131,8 @@ internal class RedisCampaignReportStateKeeper(
      * A Hash tag is used in the key prefix to locate all the values related to the same campaign.
      */
     private fun buildRedisReportKey(
-        campaignId: CampaignId, scenarioId: ScenarioId
-    ) = "$campaignId-report:${scenarioId}"
+        campaignName: CampaignName, scenarioName: ScenarioName
+    ) = "$campaignName-report:${scenarioName}"
 
     private companion object {
 

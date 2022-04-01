@@ -28,20 +28,20 @@ internal class LocalAssignmentStoreImplTest {
         val scenarios = mutableListOf<Scenario>()
         (1..3).map { index ->
             scenarios += mockk<Scenario>(name = "scenario-$index") {
-                every { id } returns "scenario-$index"
+                every { name } returns "scenario-$index"
                 every { dags } returns listOf(
                     relaxedMockk {
-                        every { id } returns "root-underload-$index"
+                        every { name } returns "root-underload-$index"
                         every { isRoot } returns true
                         every { isUnderLoad } returns true
                     },
                     relaxedMockk {
-                        every { id } returns "root-noload-$index"
+                        every { name } returns "root-noload-$index"
                         every { isRoot } returns true
                         every { isUnderLoad } returns false
                     },
                     relaxedMockk {
-                        every { id } returns "non-root-underload-$index"
+                        every { name } returns "non-root-underload-$index"
                         every { isRoot } returns false
                         every { isUnderLoad } returns true
                     }

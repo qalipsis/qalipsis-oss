@@ -43,7 +43,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     fun init() = testDispatcherProvider.run {
         val campaignPrototype =
             CampaignEntity(
-                campaignId = "the-campaign-id",
+                campaignName = "the-campaign-id",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),

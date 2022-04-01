@@ -2,7 +2,7 @@ package io.qalipsis.core.factory.steps
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
@@ -24,8 +24,8 @@ internal class TimeoutStepDecorator<I, O>(
     private val meterRegistry: MeterRegistry
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
-    override val id: StepId
-        get() = decorated.id
+    override val name: StepName
+        get() = decorated.name
 
     override var retryPolicy: RetryPolicy? = null
 
@@ -37,7 +37,7 @@ internal class TimeoutStepDecorator<I, O>(
                 executeStep(minion, decorated, context)
             }
         } catch (e: TimeoutCancellationException) {
-            meterRegistry.counter("step-${id}-timeout", "minion", context.minionId).increment()
+            meterRegistry.counter("step-${name}-timeout", "minion", context.minionId).increment()
             context.isExhausted = true
             throw e
         }

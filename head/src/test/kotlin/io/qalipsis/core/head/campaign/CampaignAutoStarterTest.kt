@@ -60,7 +60,7 @@ internal class CampaignAutoStarterTest {
     private lateinit var headChannel: HeadChannel
 
     private val autostartConfiguration = object : AutostartCampaignConfiguration {
-        override val id: String = "my-campaign"
+        override val name: String = "my-campaign"
         override val requiredFactories: Int = 1
         override val triggerOffset: Duration = Duration.ofMillis(456)
         override val minionsCountPerScenario: Int = 0
@@ -89,7 +89,7 @@ internal class CampaignAutoStarterTest {
                 campaignManagerProvider,
                 campaignReportStateKeeper,
                 object : AutostartCampaignConfiguration {
-                    override val id: String = "my-campaign"
+                    override val name: String = "my-campaign"
                     override val requiredFactories: Int = 2
                     override val triggerOffset: Duration = Duration.ofMillis(456)
                     override val minionsCountPerScenario: Int = 0
@@ -100,11 +100,11 @@ internal class CampaignAutoStarterTest {
                 headChannel
             )
             val scenario1 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-1"
+                every { name } returns "scenario-1"
                 every { minionsCount } returns 10
             }
             val scenario2 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-3"
+                every { name } returns "scenario-3"
                 every { minionsCount } returns 100
             }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2", "scenario-3")) } returns
@@ -112,12 +112,12 @@ internal class CampaignAutoStarterTest {
 
             // when
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
-                every { scenarios } returns listOf(relaxedMockk { every { id } returns "scenario-1" })
+                every { scenarios } returns listOf(relaxedMockk { every { name } returns "scenario-1" })
             })
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
                 every { scenarios } returns listOf(
-                    relaxedMockk { every { id } returns "scenario-2" },
-                    relaxedMockk { every { id } returns "scenario-3" })
+                    relaxedMockk { every { name } returns "scenario-2" },
+                    relaxedMockk { every { name } returns "scenario-3" })
             })
             campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
 
@@ -134,7 +134,7 @@ internal class CampaignAutoStarterTest {
             coVerifyOnce {
                 campaignManager.start(
                     CampaignConfiguration(
-                        id = "my-campaign",
+                        name = "my-campaign",
                         speedFactor = 54.87,
                         startOffsetMs = 12367,
                         scenarios = mapOf(
@@ -215,11 +215,11 @@ internal class CampaignAutoStarterTest {
                 headChannel
             )
             val scenario1 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-1"
+                every { name } returns "scenario-1"
                 every { minionsCount } returns 10
             }
             val scenario2 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-2"
+                every { name } returns "scenario-2"
                 every { minionsCount } returns 100
             }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns listOf(
@@ -228,8 +228,8 @@ internal class CampaignAutoStarterTest {
             )
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
                 every { scenarios } returns listOf(
-                    relaxedMockk { every { id } returns "scenario-1" },
-                    relaxedMockk { every { id } returns "scenario-2" }
+                    relaxedMockk { every { name } returns "scenario-1" },
+                    relaxedMockk { every { name } returns "scenario-2" }
                 )
             })
             campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
@@ -245,7 +245,7 @@ internal class CampaignAutoStarterTest {
             // when
             campaignAutoStarter.completeCampaign(
                 CompleteCampaignDirective(
-                    campaignId = "my-campaign",
+                    campaignName = "my-campaign",
                     isSuccessful = true,
                     "", "the-broadcast-channel"
                 )
@@ -275,19 +275,19 @@ internal class CampaignAutoStarterTest {
                 headChannel
             )
             val scenario1 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-1"
+                every { name } returns "scenario-1"
                 every { minionsCount } returns 10
             }
             val scenario2 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-2"
+                every { name } returns "scenario-2"
                 every { minionsCount } returns 100
             }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario2)
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
                 every { scenarios } returns listOf(
-                    relaxedMockk { every { id } returns "scenario-1" },
-                    relaxedMockk { every { id } returns "scenario-2" }
+                    relaxedMockk { every { name } returns "scenario-1" },
+                    relaxedMockk { every { name } returns "scenario-2" }
                 )
             })
             campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
@@ -303,7 +303,7 @@ internal class CampaignAutoStarterTest {
             // when
             campaignAutoStarter.completeCampaign(
                 CompleteCampaignDirective(
-                    campaignId = "my-campaign",
+                    campaignName = "my-campaign",
                     isSuccessful = false,
                     "There is an error", "the-broadcast-channel"
                 )
@@ -339,11 +339,11 @@ internal class CampaignAutoStarterTest {
                 headChannel
             )
             val scenario1 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-1"
+                every { name } returns "scenario-1"
                 every { minionsCount } returns 10
             }
             val scenario2 = relaxedMockk<ScenarioSummary> {
-                every { id } returns "scenario-2"
+                every { name } returns "scenario-2"
                 every { minionsCount } returns 100
             }
             coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
@@ -352,8 +352,8 @@ internal class CampaignAutoStarterTest {
             // when
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
                 every { scenarios } returns listOf(
-                    relaxedMockk { every { id } returns "scenario-1" },
-                    relaxedMockk { every { id } returns "scenario-2" }
+                    relaxedMockk { every { name } returns "scenario-1" },
+                    relaxedMockk { every { name } returns "scenario-2" }
                 )
             })
             campaignAutoStarter.notify(relaxedMockk<Heartbeat> { every { nodeId } returns "node-1" })

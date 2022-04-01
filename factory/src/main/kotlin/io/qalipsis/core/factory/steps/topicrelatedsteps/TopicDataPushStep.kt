@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.steps.topicrelatedsteps
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepId
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.messaging.Topic
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 /**
  * Step forcing the execution of next step after a record was received from [topic].
  *
- * @property parentStepId step providing data to the current one via the topic
+ * @property parentStepName step providing data to the current one via the topic
  * @property topic topic to receive data from the "parent" step
  * @property minionsKeeper provides the minions and information about them
  * @property runner executes a minion on a step, using a new context
@@ -31,8 +31,8 @@ import kotlinx.coroutines.launch
  * @author Eric Jessé
  */
 internal class TopicDataPushStep<I>(
-    id: StepId,
-    private val parentStepId: StepId,
+    id: StepName,
+    private val parentStepName: StepName,
     private val topic: Topic<I>,
     private val filter: (suspend (remoteRecord: I) -> Boolean) = { _ -> true },
     private val coroutineScope: CoroutineScope
@@ -51,23 +51,23 @@ internal class TopicDataPushStep<I>(
     override suspend fun start(context: StepStartStopContext) {
         running = true
         val nextStep = next.first()
-        val stepId = nextStep.id
-        val minion = minionsKeeper.getSingletonMinion(context.scenarioId, context.dagId)
+        val stepName = nextStep.name
+        val minion = minionsKeeper.getSingletonMinion(context.scenarioName, context.dagId)
         log.debug { "Starting to push data with the minion $minion" }
 
         // Starts the coroutines that consumes the topic and pass the values to the step after.
         consumingJob = coroutineScope.launch {
-            topicSubscription = topic.subscribe(nextStep.id)
+            topicSubscription = topic.subscribe(nextStep.name)
             try {
                 while (running) {
                     val valueFromTopic = topicSubscription.pollValue()
                     if (filter(valueFromTopic)) {
                         val ctx = StepContextImpl<I, I>(
                             input = Channel<I>(1).also { it.send(valueFromTopic) },
-                            campaignId = context.campaignId,
-                            scenarioId = context.scenarioId,
-                            previousStepId = parentStepId,
-                            stepId = stepId,
+                            campaignName = context.campaignName,
+                            scenarioName = context.scenarioName,
+                            previousStepName = parentStepName,
+                            stepName = stepName,
                             minionId = minion.id,
                             isTail = false // We actually never know when the tail will come.
                         )

@@ -480,9 +480,9 @@ internal class ClusterFactoryServiceTest {
         val selectorKey = "test-selector-key"
         val selectorValue = "test-selector-value"
 
-        val graphSummary = DirectedAcyclicGraphSummary(id = "new-test-dag-id")
+        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario = RegistrationScenario(
-            id = "new-test-scenario",
+            name = "new-test-scenario",
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )
@@ -501,8 +501,8 @@ internal class ClusterFactoryServiceTest {
             unicastChannel = "unicast",
             selectors = listOf(selector)
         )
-        val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
-        val scenarioEntity = createScenario(now, factoryEntity.id, dag, name = newRegistrationScenario.id)
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
+        val scenarioEntity = createScenario(now, factoryEntity.id, dag, name = newRegistrationScenario.name)
 
         coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
         coEvery { scenarioRepository.findByFactoryId(factoryEntity.id) } returns emptyList()
@@ -541,9 +541,9 @@ internal class ClusterFactoryServiceTest {
         val selectorKey = "test-selector-key"
         val selectorValue = "test-selector-value"
 
-        val graphSummary = DirectedAcyclicGraphSummary(id = "new-test-dag-id")
+        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario = RegistrationScenario(
-            id = "test",
+            name = "test",
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )
@@ -562,7 +562,7 @@ internal class ClusterFactoryServiceTest {
             unicastChannel = "unicast",
             selectors = listOf(selector)
         )
-        val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag)
 
         coEvery { scenarioRepository.findByFactoryId(factoryEntity.id) } returns listOf(scenarioEntity)
@@ -588,7 +588,7 @@ internal class ClusterFactoryServiceTest {
                 .map { dag ->
                     DirectedAcyclicGraphEntity(
                         scenarioId = 1,
-                        name = dag.id,
+                        name = dag.name,
                         singleton = dag.isSingleton,
                         underLoad = dag.isUnderLoad,
                         numberOfSteps = dag.numberOfSteps,
@@ -611,11 +611,11 @@ internal class ClusterFactoryServiceTest {
         val selectorValue = "test-selector-value"
 
         val graphSummary = DirectedAcyclicGraphSummary(
-            id = "new-test-dag-id",
+            name = "new-test-dag-id",
             selectors = mapOf("test_dag_selector1" to "test_dag_selector_value1")
         )
         val newRegistrationScenario = RegistrationScenario(
-            id = "test",
+            name = "test",
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )
@@ -634,11 +634,11 @@ internal class ClusterFactoryServiceTest {
             unicastChannel = "unicast",
             selectors = listOf(selector)
         )
-        val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag)
         val savedDag = DirectedAcyclicGraphEntity(
             scenarioId = scenarioEntity.id,
-            name = graphSummary.id,
+            name = graphSummary.name,
             isRoot = graphSummary.isRoot,
             singleton = true,
             underLoad = true,
@@ -672,7 +672,7 @@ internal class ClusterFactoryServiceTest {
                 .map { dag ->
                     DirectedAcyclicGraphEntity(
                         scenarioId = 1,
-                        name = dag.id,
+                        name = dag.name,
                         singleton = dag.isSingleton,
                         underLoad = dag.isUnderLoad,
                         numberOfSteps = dag.numberOfSteps,
@@ -704,13 +704,13 @@ internal class ClusterFactoryServiceTest {
         val now = getTimeMock()
 
         val graphSummary = DirectedAcyclicGraphSummary(
-            id = "new-test-dag-id",
+            name = "new-test-dag-id",
             selectors = mapOf("test_dag_selector1" to "test_dag_selector_value1")
         )
         val directedAcyclicGraphs = listOf(graphSummary)
         val savedDag = DirectedAcyclicGraphEntity(
             scenarioId = 1,
-            name = graphSummary.id,
+            name = graphSummary.name,
             isRoot = false,
             singleton = true,
             underLoad = true,
@@ -767,11 +767,11 @@ internal class ClusterFactoryServiceTest {
         //given
         val now = getTimeMock()
 
-        val graphSummary = DirectedAcyclicGraphSummary(id = "new-test-dag-id")
+        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val directedAcyclicGraphs = listOf(graphSummary)
         val savedDag = DirectedAcyclicGraphEntity(
             scenarioId = 1,
-            name = graphSummary.id,
+            name = graphSummary.name,
             isRoot = false,
             singleton = true,
             underLoad = true,
@@ -820,9 +820,9 @@ internal class ClusterFactoryServiceTest {
         val selectorKey = "test-selector-key"
         val selectorValue = "test-selector-value"
 
-        val graphSummary = DirectedAcyclicGraphSummary(id = "new-test-dag-id")
+        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario =
-            RegistrationScenario(id = "test", minionsCount = 1, directedAcyclicGraphs = listOf(graphSummary))
+            RegistrationScenario(name = "test", minionsCount = 1, directedAcyclicGraphs = listOf(graphSummary))
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
             tags = mapOf(selectorKey to selectorValue),
@@ -846,7 +846,7 @@ internal class ClusterFactoryServiceTest {
             selectors = listOf(selector)
         )
 
-        val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, true)
 
         coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
@@ -890,7 +890,7 @@ internal class ClusterFactoryServiceTest {
         //given
         val now = getTimeMock()
 
-        val dag = DirectedAcyclicGraphSummary(id = "test", isSingleton = true, isUnderLoad = true)
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntities = listOf(
             ScenarioEntity(
                 id = 1,
@@ -902,7 +902,7 @@ internal class ClusterFactoryServiceTest {
                 dags = listOf(
                     DirectedAcyclicGraphEntity(
                         -1,
-                        dag.id,
+                        dag.name,
                         dag.isRoot,
                         dag.isSingleton,
                         dag.isUnderLoad,
@@ -926,11 +926,12 @@ internal class ClusterFactoryServiceTest {
 
         Assert.assertEquals(
             scenarioEntities.map { scenario ->
-                ScenarioSummary(id = scenario.name,
+                ScenarioSummary(
+                    name = scenario.name,
                     minionsCount = scenario.defaultMinionsCount,
                     directedAcyclicGraphs = scenario.dags.map { dag ->
                         DirectedAcyclicGraphSummary(
-                            id = dag.name,
+                            name = dag.name,
                             isSingleton = dag.singleton,
                             isRoot = false,
                             isUnderLoad = dag.underLoad,
@@ -950,7 +951,7 @@ internal class ClusterFactoryServiceTest {
         val now = getTimeMock()
         val factoryId = 1L
         val heartbeat =
-            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.UNREGISTERED, campaignId = "1")
+            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.UNREGISTERED, campaignName = "1")
 
         coEvery { factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)) } returns listOf(factoryId)
 
@@ -1015,7 +1016,7 @@ internal class ClusterFactoryServiceTest {
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
         coEvery { campaignRepository.findIdByNameAndEndIsNull("my-campaign") } returns 765
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { id } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
 
         // when
         clusterFactoryService.lockFactories(campaignConfiguration, factories)
@@ -1040,7 +1041,7 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns emptyList()
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { id } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
 
         // when
         clusterFactoryService.lockFactories(campaignConfiguration, factories)
@@ -1067,7 +1068,7 @@ internal class ClusterFactoryServiceTest {
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
         coEvery { campaignRepository.findIdByNameAndEndIsNull("my-campaign") } returns 765
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { id } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
 
         // when
         clusterFactoryService.releaseFactories(campaignConfiguration, factories)
@@ -1086,7 +1087,7 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns emptyList()
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { id } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
 
         // when
         clusterFactoryService.releaseFactories(campaignConfiguration, factories)
@@ -1132,7 +1133,7 @@ internal class ClusterFactoryServiceTest {
             dags = listOf(
                 DirectedAcyclicGraphEntity(
                     -1,
-                    dag.id,
+                    dag.name,
                     dag.isRoot,
                     dag.isSingleton,
                     dag.isUnderLoad,
@@ -1144,7 +1145,7 @@ internal class ClusterFactoryServiceTest {
     private fun convertDagSummaryToEntity(dag: DirectedAcyclicGraphSummary) =
         DirectedAcyclicGraphEntity(
             -1,
-            dag.id,
+            dag.name,
             dag.isRoot,
             dag.isSingleton,
             dag.isUnderLoad,

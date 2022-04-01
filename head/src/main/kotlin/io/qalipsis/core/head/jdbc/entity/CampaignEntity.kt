@@ -36,7 +36,7 @@ internal data class CampaignEntity(
 ) : Entity {
 
     constructor(
-        campaignId: String,
+        campaignName: String,
         speedFactor: Double = 1.0,
         start: Instant = Instant.now(),
         end: Instant? = null,
@@ -44,6 +44,6 @@ internal data class CampaignEntity(
     ) : this(
         -1,
         Instant.EPOCH,
-        campaignId, speedFactor, start, end, result
+        campaignName, speedFactor, start, end, result
     )
 }

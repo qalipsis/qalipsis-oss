@@ -25,7 +25,7 @@ internal data class ScenarioReportMessageEntity(
     val scenarioReportId: Long,
     @field:NotBlank
     @field:Size(min = 1, max = 20)
-    val stepId: String,
+    val stepName: String,
     @field:NotBlank
     @field:Size(min = 1, max = 20)
     val messageId: String,
@@ -37,7 +37,7 @@ internal data class ScenarioReportMessageEntity(
 
     constructor(
         scenarioReportId: Long,
-        stepId: String,
+        stepName: String,
         messageId: String,
         severity: ReportMessageSeverity,
         message: String
@@ -45,7 +45,7 @@ internal data class ScenarioReportMessageEntity(
         -1,
         Instant.EPOCH,
         scenarioReportId,
-        stepId,
+        stepName,
         messageId,
         severity,
         message

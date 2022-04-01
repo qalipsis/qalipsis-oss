@@ -10,7 +10,7 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isLessThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.runtime.test.JvmProcessUtils
@@ -47,7 +47,7 @@ internal abstract class AbstractDeploymentIntegrationTest {
         assertThat(scenarioReports).all {
             hasSize(1)
             index(0).all {
-                prop(ScenarioReport::scenarioId).isEqualTo("deployment-test")
+                prop(ScenarioReport::scenarioName).isEqualTo("deployment-test")
                 prop(ScenarioReport::start).isBetween(before, after)
                 prop(ScenarioReport::end).isNotNull().isBetween(before, after)
                 prop(ScenarioReport::duration).isNotNull().all {
@@ -84,7 +84,7 @@ internal abstract class AbstractDeploymentIntegrationTest {
 
         return executedScenarios.mapIndexed { index, scenario ->
             ScenarioReport(
-                scenarioId = scenario,
+                scenarioName = scenario,
                 start = starts[index],
                 end = ends[index],
                 duration = Duration.between(starts[index], ends[index]),
@@ -100,7 +100,7 @@ internal abstract class AbstractDeploymentIntegrationTest {
     }
 
     data class ScenarioReport(
-        val scenarioId: ScenarioId,
+        val scenarioName: ScenarioName,
         val start: Instant,
         val startedMinions: Int,
         val completedMinions: Int,

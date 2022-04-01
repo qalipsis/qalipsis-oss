@@ -140,8 +140,8 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
                 // Dereferences the received directive.
                 .transform { runBlocking { directiveRegistry.get(it) } }.isNotNull()
                 .isInstanceOf(MinionsDeclarationDirective::class).all {
-                    prop(MinionsDeclarationDirective::campaignId).isEqualTo("the campaign")
-                    prop(MinionsDeclarationDirective::scenarioId).isEqualTo("the scenario")
+                    prop(MinionsDeclarationDirective::campaignName).isEqualTo("the campaign")
+                    prop(MinionsDeclarationDirective::scenarioName).isEqualTo("the scenario")
                     prop(MinionsDeclarationDirective::minionsCount).isEqualTo(1000)
                 }
         }
@@ -202,7 +202,7 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(FEEDBACK_CHANNEL)
             transform("message") { serializer.deserialize<Feedback>(it.message) }.isNotNull()
                 .isInstanceOf(EndOfCampaignFeedback::class).all {
-                    prop(EndOfCampaignFeedback::campaignId).isEqualTo("campaign-1")
+                    prop(EndOfCampaignFeedback::campaignName).isEqualTo("campaign-1")
                     prop(EndOfCampaignFeedback::status).isEqualTo(FeedbackStatus.COMPLETED)
                     prop(EndOfCampaignFeedback::error).isEqualTo("the error")
                 }
@@ -215,9 +215,9 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
         val selectorKey = "test-selector-key"
         val selectorValue = "test-selector-value"
 
-        val graphSummary = DirectedAcyclicGraphSummary(id = "new-test-dag-id")
+        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario = RegistrationScenario(
-            id = "new-test-scenario",
+            name = "new-test-scenario",
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )

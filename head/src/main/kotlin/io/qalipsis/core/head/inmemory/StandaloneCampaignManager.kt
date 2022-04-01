@@ -3,7 +3,7 @@ package io.qalipsis.core.head.inmemory
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
@@ -57,7 +57,7 @@ internal class StandaloneCampaignManager(
         return FactoryAssignmentState(campaign)
     }
 
-    override suspend fun get(campaignId: CampaignId): CampaignExecutionState<CampaignExecutionContext> {
+    override suspend fun get(campaignName: CampaignName): CampaignExecutionState<CampaignExecutionContext> {
         return currentCampaignState
     }
 

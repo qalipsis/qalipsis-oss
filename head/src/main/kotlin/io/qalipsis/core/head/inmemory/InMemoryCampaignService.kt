@@ -3,7 +3,7 @@ package io.qalipsis.core.head.inmemory
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignId
+import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
@@ -20,7 +20,7 @@ internal class InMemoryCampaignService : CampaignService {
         // Nothing to do.
     }
 
-    override suspend fun close(campaignId: CampaignId, result: ExecutionStatus) {
+    override suspend fun close(campaignName: CampaignName, result: ExecutionStatus) {
         // Nothing to do.
     }
 

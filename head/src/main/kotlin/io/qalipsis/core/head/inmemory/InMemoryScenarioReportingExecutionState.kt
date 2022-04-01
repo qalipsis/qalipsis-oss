@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.inmemory
 
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.core.head.report.ScenarioReportingExecutionState
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 data class InMemoryScenarioReportingExecutionState(
-    override val scenarioId: ScenarioId
+    override val scenarioName: ScenarioName
 ) : ScenarioReportingExecutionState {
     override val start: Instant = Instant.now()
 

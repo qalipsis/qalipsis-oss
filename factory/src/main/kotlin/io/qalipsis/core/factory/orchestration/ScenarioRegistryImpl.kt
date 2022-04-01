@@ -2,8 +2,8 @@ package io.qalipsis.core.factory.orchestration
 
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.order.Ordered
-import io.qalipsis.api.context.DirectedAcyclicGraphId
-import io.qalipsis.api.context.ScenarioId
+import io.qalipsis.api.context.DirectedAcyclicGraphName
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
@@ -23,26 +23,26 @@ import java.util.concurrent.ConcurrentHashMap
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class ScenarioRegistryImpl : ScenarioRegistry, ProcessExitCodeSupplier {
 
-    private val scenarios = ConcurrentHashMap<ScenarioId, Scenario>()
+    private val scenarios = ConcurrentHashMap<ScenarioName, Scenario>()
 
-    private val dags = concurrentTableOf<ScenarioId, DirectedAcyclicGraphId, DirectedAcyclicGraph>()
+    private val dags = concurrentTableOf<ScenarioName, DirectedAcyclicGraphName, DirectedAcyclicGraph>()
 
-    override fun contains(scenarioId: ScenarioId): Boolean {
-        return scenarios.keys.contains(scenarioId)
+    override fun contains(scenarioName: ScenarioName): Boolean {
+        return scenarios.keys.contains(scenarioName)
     }
 
-    override fun get(scenarioId: ScenarioId): Scenario? {
-        return scenarios[scenarioId]
+    override fun get(scenarioName: ScenarioName): Scenario? {
+        return scenarios[scenarioName]
     }
 
-    override fun get(scenarioId: ScenarioId, dagId: DirectedAcyclicGraphId): DirectedAcyclicGraph? {
-        return dags.get(scenarioId, dagId)
+    override fun get(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): DirectedAcyclicGraph? {
+        return dags.get(scenarioName, dagId)
     }
 
     override fun add(scenario: Scenario) {
-        scenarios[scenario.id] = scenario
+        scenarios[scenario.name] = scenario
         scenario.dags.forEach {
-            dags.put(scenario.id, it.id, it)
+            dags.put(scenario.name, it.name, it)
         }
     }
 
