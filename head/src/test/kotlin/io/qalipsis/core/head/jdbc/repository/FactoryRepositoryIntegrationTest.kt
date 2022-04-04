@@ -63,9 +63,10 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Test
     internal fun `should not save factories twice with the same node ID`() = testDispatcherProvider.run {
-        factoryRepository.save(factoryPrototype.copy())
+        val savedTenant = tenantRepository.save(tenantPrototype.copy())
+        factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
         assertThrows<DataAccessException> {
-            factoryRepository.save(factoryPrototype.copy())
+            factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
         }
     }
 

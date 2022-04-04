@@ -83,14 +83,11 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when + then
         assertThrows<EmptyResultException> {
-            campaignRepository.findIdByNameAndEndIsNull(saved.name)
+            campaignRepository.findIdByNameAndEndIsNull(saved.name, "qalipsis")
         }
 
         // when
         campaignRepository.update(saved.copy(end = null))
-        assertThrows<EmptyResultException> {
-            campaignRepository.findIdByNameAndEndIsNull(saved.name)
-        }
 
         assertThat(campaignRepository.findIdByNameAndEndIsNull(saved.name, "qalipsis")).isEqualTo(saved.id)
     }
