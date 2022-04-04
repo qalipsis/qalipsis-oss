@@ -29,6 +29,10 @@
       <column name="result" type="varchar(20)">
         <constraints nullable="true"/>
       </column>
+      <column name="tenant_id" type="BIGINT">
+        <constraints nullable="true" foreignKeyName="campaign_id_fk" referencedTableName="tenant"
+          referencedColumnNames="id" deleteCascade="true"/>
+      </column>
     </createTable>
   </changeSet>
 </databaseChangeLog>

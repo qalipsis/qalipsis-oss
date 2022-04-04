@@ -26,10 +26,15 @@
       <column name="unicast_channel" type="varchar(50)">
         <constraints nullable="false"/>
       </column>
+      <column name="tenant_id" type="BIGINT">
+      <constraints nullable="true" foreignKeyName="factory_id_fk" referencedTableName="tenant"
+        referencedColumnNames="id" deleteCascade="true"/>
+      </column>
     </createTable>
 
     <createIndex schemaName="qalipsis" indexName="unique_factory_node_idx" tableName="factory" unique="true">
       <column name="node_id"/>
+      <column name="tenant_id"/>
     </createIndex>
   </changeSet>
 </databaseChangeLog>

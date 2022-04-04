@@ -14,6 +14,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
@@ -36,6 +37,10 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Inject
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
+
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
+
     private val campaignPrototype =
         CampaignEntity(
             "the-campaign-id",
@@ -45,6 +50,12 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ExecutionStatus.SUCCESSFUL
         )
 
+    private val tenantPrototype =
+        TenantEntity(
+            Instant.now(),
+            "qalipsis",
+            "test-tenant",
+        )
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
@@ -67,7 +78,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should find the ID of the running campaign`() = testDispatcherProvider.run {
         // given
-        val saved = campaignRepository.save(campaignPrototype.copy())
+        val savedTenant = tenantRepository.save(tenantPrototype.copy())
+        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = savedTenant.id))
 
         // when + then
         assertThrows<EmptyResultException> {
@@ -76,7 +88,11 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when
         campaignRepository.update(saved.copy(end = null))
-        assertThat(campaignRepository.findIdByNameAndEndIsNull(saved.name)).isEqualTo(saved.id)
+        assertThrows<EmptyResultException> {
+            campaignRepository.findIdByNameAndEndIsNull(saved.name)
+        }
+
+        assertThat(campaignRepository.findIdByNameAndEndIsNull(saved.name, "qalipsis")).isEqualTo(saved.id)
     }
 
 

@@ -13,6 +13,7 @@ import java.time.Duration
  * @property tags list of selectors configured in the factory
  * @property replyTo channel to use for the registration response
  * @property scenarios set of scenarios supported by the factory
+ * @property tenant tenant identifier of the factory sending the feedback
  *
  * @author Eric Jessé
  */
@@ -21,8 +22,18 @@ data class HandshakeRequest(
     val nodeId: String,
     val tags: Map<String, String>,
     val replyTo: String,
-    val scenarios: List<RegistrationScenario>
-)
+    val scenarios: List<RegistrationScenario>,
+    val tenant: String
+) {
+    constructor(
+        nodeId: String,
+        tags: Map<String, String>,
+        replyTo: String,
+        scenarios: List<RegistrationScenario>
+    ) : this(
+        nodeId, tags, replyTo, scenarios, ""
+    )
+}
 
 typealias RegistrationScenario = ScenarioSummary
 typealias RegistrationDirectedAcyclicGraph = DirectedAcyclicGraphSummary

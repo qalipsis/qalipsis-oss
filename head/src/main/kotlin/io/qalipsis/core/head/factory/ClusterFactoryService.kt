@@ -103,14 +103,15 @@ internal class ClusterFactoryService(
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
-    ) = factoryRepository.findByNodeIdIn(listOf(actualNodeId)).firstOrNull()?.also { entity ->
-        // When the entity already exists, its selectors are updated.
-        mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
+    ) = factoryRepository.findByNodeIdIn(listOf(actualNodeId), handshakeRequest.tenant)
+        .firstOrNull()?.also { entity ->
+            // When the entity already exists, its selectors are updated.
+            mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
 
-        if (entity.unicastChannel != handshakeResponse.unicastChannel) {
-            factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+            if (entity.unicastChannel != handshakeResponse.unicastChannel) {
+                factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+            }
         }
-    }
 
     /**
      * Persists new factory and factory_selector entities

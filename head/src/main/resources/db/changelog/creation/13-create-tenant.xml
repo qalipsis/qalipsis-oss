@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="13" author="pbril">
+    <createSequence sequenceName="tenant_seq" schemaName="qalipsis"/>
+    <createTable tableName="tenant" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="tenant_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="tenant_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="creation" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="reference" type="VARCHAR(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="display_name" type="VARCHAR(200)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="TEXT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="parent" type="BIGINT">
+        <constraints nullable="true" foreignKeyName="tenant_id_fk"
+          referencedTableName="tenant"
+          referencedColumnNames="id" deleteCascade="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>

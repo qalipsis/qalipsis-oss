@@ -49,7 +49,8 @@ internal open class InitializationContext(
             factoryConfiguration.nodeId,
             factoryConfiguration.tags,
             factoryConfiguration.handshake.responseChannel,
-            feedbackScenarios
+            feedbackScenarios,
+            factoryConfiguration.tenant
         )
         factoryChannel.publishHandshakeRequest(request)
     }

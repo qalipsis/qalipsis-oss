@@ -98,7 +98,7 @@ internal class ClusterFactoryServiceTest {
         val handshakeRequest =
             HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList())
         val now = getTimeMock()
-        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns emptyList()
+        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId), any()) } returns emptyList()
         coEvery { factoryRepository.save(any()) } returns relaxedMockk { every { id } returns 123 }
         val handshakeResponse = relaxedMockk<HandshakeResponse> {
             every { unicastChannel } returns "directives-unicast-boo"
@@ -114,7 +114,7 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn(listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn(listOf(actualNodeId), "")
             factoryRepository.save(
                 FactoryEntity(
                     nodeId = actualNodeId,
@@ -144,7 +144,7 @@ internal class ClusterFactoryServiceTest {
             every { unicastChannel } returns "directives-unicast-boo"
         }
         val now = getTimeMock()
-        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns emptyList()
+        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId), any()) } returns emptyList()
         coEvery { factoryRepository.save(any()) } returns relaxedMockk { every { id } returns 123 }
 
         // when
@@ -157,7 +157,7 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn(listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn(listOf(actualNodeId), "")
             factoryRepository.save(
                 FactoryEntity(
                     nodeId = actualNodeId,
@@ -191,7 +191,7 @@ internal class ClusterFactoryServiceTest {
 
         val savedFactoryEntity = slot<FactoryEntity>()
         coEvery { factoryRepository.save(capture(savedFactoryEntity)) } returnsArgument 0
-        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
+        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId), any()) } returns listOf(factoryEntity)
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
@@ -209,7 +209,7 @@ internal class ClusterFactoryServiceTest {
             prop(FactoryEntity::unicastChannel).isEqualTo("directives-unicast-boo")
         }
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn(listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn(listOf(actualNodeId), "")
             factoryRepository.save(any())
         }
         coVerifyNever {
@@ -504,7 +504,7 @@ internal class ClusterFactoryServiceTest {
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, name = newRegistrationScenario.name)
 
-        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
+        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId), any()) } returns listOf(factoryEntity)
         coEvery { scenarioRepository.findByFactoryId(factoryEntity.id) } returns emptyList()
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
@@ -849,7 +849,7 @@ internal class ClusterFactoryServiceTest {
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, true)
 
-        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId)) } returns listOf(factoryEntity)
+        coEvery { factoryRepository.findByNodeIdIn(listOf(actualNodeId), any()) } returns listOf(factoryEntity)
         coEvery { scenarioRepository.findByFactoryId(factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { factoryRepository.save(any()) } returnsArgument 0
@@ -869,7 +869,7 @@ internal class ClusterFactoryServiceTest {
             prop(FactoryEntity::unicastChannel).isEqualTo("directives-unicast")
         }
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn(listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn(listOf(actualNodeId), "")
             factoryRepository.save(any())
             factoryStateRepository.save(any())
             scenarioRepository.findByFactoryId(factoryEntity.id)

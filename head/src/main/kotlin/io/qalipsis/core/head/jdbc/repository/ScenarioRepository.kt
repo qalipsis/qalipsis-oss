@@ -31,4 +31,15 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
     @Join(value = "dags", type = Join.Type.LEFT)
     suspend fun findByFactoryId(factoryId: Long): List<ScenarioEntity>
 
+    @Query(
+        "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE name in (:names) AND enabled = true AND EXISTS (SELECT * FROM tenant WHERE reference = :reference AND id = factory.tenant_id)"
+    )
+    @Join(value = "dags", type = Join.Type.LEFT)
+    suspend fun findActiveByName(names: Collection<String>, reference: String): List<ScenarioEntity>
+
+    @Query(
+        "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE factory_id in (:factoryId) AND EXISTS (SELECT * FROM tenant WHERE reference = :reference AND id = factory.tenant_id)"
+    )
+    @Join(value = "dags", type = Join.Type.LEFT)
+    suspend fun findByFactoryId(factoryId: Long, reference: String): List<ScenarioEntity>
 }
