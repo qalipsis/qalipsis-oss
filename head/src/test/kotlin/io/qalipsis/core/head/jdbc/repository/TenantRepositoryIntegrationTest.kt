@@ -5,12 +5,16 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.prop
+import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import io.qalipsis.core.head.jdbc.entity.FactoryEntity
+import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
-import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.time.Instant
 
 internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
@@ -63,15 +67,46 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    fun `should delete scenario report message on deleteById`() = testDispatcherProvider.run {
+    fun `should delete scenario report message on deleteById`(
+        factoryRepository: FactoryRepository,
+        campaignRepository: CampaignRepository,
+        scenarioRepository: ScenarioRepository
+    ) = testDispatcherProvider.run {
         // given
         val saved = tenantRepository.save(tenantPrototype.copy())
+        campaignRepository.save(
+            CampaignEntity(
+                "the-campaign-id",
+                123.0,
+                Instant.now() - Duration.ofSeconds(173),
+                Instant.now(),
+                ExecutionStatus.SUCCESSFUL,
+                saved.id
+            )
+        )
+        val factory = factoryRepository.save(
+            FactoryEntity(
+                nodeId = "the-node",
+                registrationTimestamp = Instant.now(),
+                registrationNodeId = "test",
+                unicastChannel = "unicast-channel",
+                tenantId = saved.id
+            )
+        )
+        scenarioRepository.save(ScenarioEntity(factory.id, "test", 1))
+
         assertThat(tenantRepository.findAll().count()).isEqualTo(1)
+        assertThat(scenarioRepository.findAll().count()).isEqualTo(1)
+        assertThat(campaignRepository.findAll().count()).isEqualTo(1)
+        assertThat(factoryRepository.findAll().count()).isEqualTo(1)
 
         // when
         tenantRepository.deleteById(saved.id)
 
         // then
         assertThat(tenantRepository.findAll().count()).isEqualTo(0)
+        assertThat(scenarioRepository.findAll().count()).isEqualTo(0)
+        assertThat(campaignRepository.findAll().count()).isEqualTo(0)
+        assertThat(factoryRepository.findAll().count()).isEqualTo(0)
     }
 }

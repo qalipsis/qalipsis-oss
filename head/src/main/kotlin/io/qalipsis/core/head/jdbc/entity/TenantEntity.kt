@@ -12,6 +12,9 @@ import javax.validation.constraints.Size
 
 /**
  * Tenant details.
+ * @property reference of the tenant used for searching scenario, factories and campaign with other criterias than
+ * their id (primary key).
+ * @property parent is a foreign key to id of the same table, can be null.
  *
  * @author Palina Bril
  */

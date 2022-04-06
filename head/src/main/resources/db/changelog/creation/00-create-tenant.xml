@@ -5,7 +5,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
-  <changeSet id="13" author="pbril">
+  <changeSet id="00" author="pbril">
     <createSequence sequenceName="tenant_seq" schemaName="qalipsis"/>
     <createTable tableName="tenant" schemaName="qalipsis">
       <column name="id" type="BIGINT" valueSequenceNext="tenant_seq">
@@ -27,7 +27,7 @@
         <constraints nullable="true"/>
       </column>
       <column name="parent" type="BIGINT">
-        <constraints nullable="true" foreignKeyName="tenant_id_fk"
+        <constraints nullable="true" foreignKeyName="parent_tenant_id_fk"
           referencedTableName="tenant"
           referencedColumnNames="id" deleteCascade="false"/>
       </column>

@@ -57,7 +57,7 @@ internal class ClusterFactoryService(
     private val directedAcyclicGraphRepository: DirectedAcyclicGraphRepository,
     private val directedAcyclicGraphSelectorRepository: DirectedAcyclicGraphSelectorRepository,
     private val campaignRepository: CampaignRepository,
-    private val campaignFactoryRepository: CampaignFactoryRepository
+    private val campaignFactoryRepository: CampaignFactoryRepository,
 ) : FactoryService {
 
     /**
@@ -103,7 +103,7 @@ internal class ClusterFactoryService(
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
-    ) = factoryRepository.findByNodeIdIn(listOf(actualNodeId), handshakeRequest.tenant)
+    ) = factoryRepository.findByNodeIdIn(handshakeRequest.tenant, listOf(actualNodeId))
         .firstOrNull()?.also { entity ->
             // When the entity already exists, its selectors are updated.
             mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
@@ -145,7 +145,10 @@ internal class ClusterFactoryService(
         existingFactory: FactoryEntity
     ) {
         val inputScenarios = registrationScenarios.associateBy { it.name }.toMutableMap()
-        val existingScenarios = scenarioRepository.findByFactoryId(existingFactory.id)
+        val existingScenarios = scenarioRepository.findByFactoryId(
+            factoryRepository.findTenantReferenceByFactoryIdIn(listOf(existingFactory.id)),
+            existingFactory.id
+        )
         if (existingScenarios.isNotEmpty()) {
             directedAcyclicGraphRepository.deleteByScenarioIdIn(existingScenarios.map { it.id })
             directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(existingScenarios.flatMap { it.dags }
@@ -272,10 +275,11 @@ internal class ClusterFactoryService(
     @LogInputAndOutput
     override suspend fun getAvailableFactoriesForScenarios(scenarioNames: Collection<String>): Collection<Factory> {
         val scenariosByFactories = scenarioRepository.findActiveByName(scenarioNames).groupBy { it.factoryId }
-
-        return factoryRepository.getAvailableFactoriesForScenarios(scenarioNames).map { entity ->
-            entity.toModel(scenariosByFactories[entity.id]!!.map { it.name })
-        }
+        val tenantReferencesByFactoryIds = factoryRepository.findTenantReferenceByFactoryIdIn(scenariosByFactories.keys)
+        return factoryRepository.getAvailableFactoriesForScenarios(tenantReferencesByFactoryIds, scenarioNames)
+            .map { entity ->
+                entity.toModel(scenariosByFactories[entity.id]!!.map { it.name })
+            }
     }
 
     @LogInput
@@ -283,7 +287,9 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignName = campaignRepository.findIdByNameAndEndIsNull(campaignConfiguration.name)
+                val campaignName = campaignRepository.findIdByNameAndEndIsNull(
+                    factoryRepository.findTenantReferenceByFactoryIdIn(factoryIds), campaignConfiguration.name
+                )
                 campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignName, it) }).count()
             }
         }
@@ -294,7 +300,9 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignName = campaignRepository.findIdByNameAndEndIsNull(campaignConfiguration.name)
+                val campaignName = campaignRepository.findIdByNameAndEndIsNull(
+                    factoryRepository.findTenantReferenceByFactoryIdIn(factoryIds), campaignConfiguration.name
+                )
                 campaignFactoryRepository.discard(campaignName, factoryIds)
             }
         }

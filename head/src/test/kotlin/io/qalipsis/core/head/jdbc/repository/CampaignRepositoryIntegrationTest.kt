@@ -83,15 +83,40 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when + then
         assertThrows<EmptyResultException> {
-            campaignRepository.findIdByNameAndEndIsNull(saved.name, "qalipsis")
+            campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved.name)
         }
 
         // when
         campaignRepository.update(saved.copy(end = null))
 
-        assertThat(campaignRepository.findIdByNameAndEndIsNull(saved.name, "qalipsis")).isEqualTo(saved.id)
+        assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved.name)).isEqualTo(saved.id)
     }
 
+    @Test
+    fun `should find the ID of the running campaign and different tenants aren't mixed up`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
+            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = savedTenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant2.id))
+
+            // when + then
+            assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved.name)).isEqualTo(saved.id)
+            assertThat(
+                campaignRepository.findIdByNameAndEndIsNull(
+                    listOf("qalipsis-2"),
+                    saved2.name
+                )
+            ).isEqualTo(saved2.id)
+            assertThrows<EmptyResultException> {
+                assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved2.name))
+            }
+            assertThrows<EmptyResultException> {
+                assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis-2"), saved.name))
+            }
+        }
 
     @Test
     fun `should update the version when the campaign is updated`() = testDispatcherProvider.run {

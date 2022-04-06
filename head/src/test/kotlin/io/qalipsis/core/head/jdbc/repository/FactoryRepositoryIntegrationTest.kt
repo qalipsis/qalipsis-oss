@@ -3,6 +3,7 @@ package io.qalipsis.core.head.jdbc.repository
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.any
+import assertk.assertions.containsAll
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
@@ -83,33 +84,6 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    internal fun `should find the factory by node id`() = testDispatcherProvider.run {
-        // given
-        val factory = factoryRepository.save(factoryPrototype.copy())
-        val selectors = mutableListOf<FactorySelectorEntity>()
-        factorySelectorRepository.saveAll(
-            listOf(
-                FactorySelectorEntity(factory.id, "key-1", "value-1"),
-                FactorySelectorEntity(factory.id, "key-2", "value-2")
-            )
-        ).collect { selectors.add(it) }
-
-        // when + then
-        assertThat(factoryRepository.findByNodeIdIn(listOf("the-node-id")).first()).isDataClassEqualTo(
-            factory.copy(selectors = selectors)
-        )
-        assertThat(factoryRepository.findByNodeIdIn(listOf("the-other-node-id"))).isEmpty()
-
-        assertThat(factoryRepository.findIdByNodeIdIn(listOf("the-node-id"))).containsOnly(factory.id)
-        assertThat(
-            factoryRepository.findIdByNodeIdIn(
-                listOf("the-node-id", "the-other-node-id")
-            )
-        ).containsOnly(factory.id)
-        assertThat(factoryRepository.findIdByNodeIdIn(listOf("the-other-node-id"))).isEmpty()
-    }
-
-    @Test
     internal fun `should find the factory by node id with tenant reference`() = testDispatcherProvider.run {
         // given
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
@@ -123,27 +97,78 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         ).collect { selectors.add(it) }
 
         // when + then
-        assertThat(factoryRepository.findByNodeIdIn(listOf("the-node-id"), "qalipsis").first()).isDataClassEqualTo(
+        assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-node-id")).first()).isDataClassEqualTo(
             factory.copy(selectors = selectors)
         )
-        assertThat(factoryRepository.findByNodeIdIn(listOf("the-other-node-id"), "qalipsis")).isEmpty()
+        assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-other-node-id"))).isEmpty()
 
-        assertThat(factoryRepository.findIdByNodeIdIn(listOf("the-node-id"), "qalipsis")).containsOnly(factory.id)
+        assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-node-id"))).containsOnly(factory.id)
         assertThat(
             factoryRepository.findIdByNodeIdIn(
-                listOf("the-node-id", "the-other-node-id"), "qalipsis"
+                "qalipsis", listOf("the-node-id", "the-other-node-id")
             )
         ).containsOnly(factory.id)
-        assertThat(factoryRepository.findIdByNodeIdIn(listOf("the-other-node-id"), "qalipsis")).isEmpty()
+        assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-other-node-id"))).isEmpty()
+    }
+
+    @Test
+    fun `should find the factory by node id with tenant reference and different tenants aren't mixed up`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
+            val factory = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
+            val factory2 = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant2.id))
+
+            // when + then
+            assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-node-id"))).hasSize(1)
+            assertThat(factoryRepository.findByNodeIdIn("qalipsis-2", listOf("the-node-id"))).hasSize(1)
+            assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-other-node-id"))).hasSize(0)
+
+            assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-node-id"))).containsOnly(factory.id)
+            assertThat(
+                factoryRepository.findIdByNodeIdIn(
+                    "qalipsis-2",
+                    listOf("the-node-id")
+                )
+            ).containsOnly(factory2.id)
+            assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-other-node-id"))).isEmpty()
+            assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-node-id")).first()).isDataClassEqualTo(
+                factory.copy()
+            )
+            assertThat(
+                factoryRepository.findByNodeIdIn("qalipsis-2", listOf("the-node-id")).first()
+            ).isDataClassEqualTo(
+                factory2.copy()
+            )
+        }
+
+    @Test
+    internal fun `should find the tenant reference by factory id`() = testDispatcherProvider.run {
+        // given
+        val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+        val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
+        val factory1 = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant1.id))
+        val factory2 = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant2.id))
+
+        // when + then
+        assertThat(factoryRepository.findTenantReferenceByFactoryIdIn(setOf(factory1.id, factory2.id)))
+            .containsAll("qalipsis", "qalipsis-2")
     }
 
     @Test
     internal fun `should find the healthy unused factories that supports the enabled scenarios with factory selectors`() =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-two"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
             val selectors = mutableListOf<FactorySelectorEntity>()
             factorySelectorRepository.saveAll(
@@ -154,7 +179,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).collect { selectors.add(it) }
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -182,7 +211,10 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "qalipsis-two"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {
@@ -200,7 +232,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1", tenantId = savedTenant1.id)
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
             val selectors = mutableListOf<FactorySelectorEntity>()
             factorySelectorRepository.saveAll(
@@ -211,7 +247,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).collect { selectors.add(it) }
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2", tenantId = savedTenant2.id)
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -239,7 +279,10 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"), listOf("qalipsis", "new-qalipsis"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "new-qalipsis"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {
@@ -253,13 +296,23 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should not find the healthy factory that supports the enabled scenarios when attached to a running scenario`() =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -285,12 +338,16 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             ).count()
 
-            val campaign = campaignRepository.save(CampaignEntity("the-campaign-1", end = null))
+            val campaign =
+                campaignRepository.save(CampaignEntity("the-campaign-1", end = null, tenantId = savedTenant2.id))
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "qalipsis-two"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {
@@ -303,13 +360,23 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should find the healthy factory that supports the enabled scenarios when attached to a completed scenario`() =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -335,12 +402,21 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             ).count()
 
-            val campaign = campaignRepository.save(CampaignEntity("the-campaign-1", end = Instant.now()))
+            val campaign = campaignRepository.save(
+                CampaignEntity(
+                    "the-campaign-1",
+                    end = Instant.now(),
+                    tenantId = savedTenant2.id
+                )
+            )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "new-qalipsis"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {
@@ -353,14 +429,24 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should find the healthy factory that supports the enabled scenarios when discarded in a running scenario`() =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
 
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -386,12 +472,16 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             ).count()
 
-            val campaign = campaignRepository.save(CampaignEntity("the-campaign-1", end = null))
+            val campaign =
+                campaignRepository.save(CampaignEntity("the-campaign-1", end = null, tenantId = savedTenant2.id))
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = true))
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "new-qalipsis"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {
@@ -404,13 +494,23 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should not find the healthy factories that supports the disabled scenarios`() =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -438,7 +538,10 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "new-qalipsis"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {
@@ -451,13 +554,23 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should not find the unhealthy factories that supports the enabled scenarios`() =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-1", registrationNodeId = "the-registration-node-id-1")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
                 )
             val factory2 =
                 factoryRepository.save(
-                    factoryPrototype.copy(nodeId = "the-node-id-2", registrationNodeId = "the-registration-node-id-2")
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant2.id
+                    )
                 )
             factoryStateRepository.saveAll(
                 listOf(
@@ -491,7 +604,10 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             // when
             val factoriesForScenarios =
-                factoryRepository.getAvailableFactoriesForScenarios(listOf("scenario-1", "scenario-2"))
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    listOf("qalipsis", "new-qalipsis"),
+                    listOf("scenario-1", "scenario-2")
+                )
 
             // then
             assertThat(factoriesForScenarios).all {

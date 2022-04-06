@@ -33,7 +33,7 @@ internal data class CampaignEntity(
     val start: Instant,
     val end: Instant?,
     val result: ExecutionStatus?,
-    val tenantId: Long?
+    val tenantId: Long
 ) : Entity {
 
     constructor(
@@ -42,7 +42,7 @@ internal data class CampaignEntity(
         start: Instant = Instant.now(),
         end: Instant? = null,
         result: ExecutionStatus? = null,
-        tenantId: Long? = null
+        tenantId: Long = -1
     ) : this(
         -1,
         Instant.EPOCH,

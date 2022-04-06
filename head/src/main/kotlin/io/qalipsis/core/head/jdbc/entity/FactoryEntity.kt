@@ -30,7 +30,7 @@ internal data class FactoryEntity(
     val unicastChannel: String,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "factoryId")
     val selectors: List<FactorySelectorEntity>,
-    val tenantId: Long?
+    val tenantId: Long
 ) : Entity {
 
     constructor(
@@ -39,7 +39,7 @@ internal data class FactoryEntity(
         registrationNodeId: String,
         unicastChannel: String,
         selectors: List<FactorySelectorEntity> = emptyList(),
-        tenantId: Long? = null
+        tenantId: Long = -1
     ) : this(
         -1,
         Instant.EPOCH,

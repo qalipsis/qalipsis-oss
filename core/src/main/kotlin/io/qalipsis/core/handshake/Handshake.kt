@@ -23,17 +23,8 @@ data class HandshakeRequest(
     val tags: Map<String, String>,
     val replyTo: String,
     val scenarios: List<RegistrationScenario>,
-    val tenant: String
-) {
-    constructor(
-        nodeId: String,
-        tags: Map<String, String>,
-        replyTo: String,
-        scenarios: List<RegistrationScenario>
-    ) : this(
-        nodeId, tags, replyTo, scenarios, ""
-    )
-}
+    val tenant: String = ""
+)
 
 typealias RegistrationScenario = ScenarioSummary
 typealias RegistrationDirectedAcyclicGraph = DirectedAcyclicGraphSummary

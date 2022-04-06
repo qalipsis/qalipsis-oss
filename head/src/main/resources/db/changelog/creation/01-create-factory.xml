@@ -27,7 +27,7 @@
         <constraints nullable="false"/>
       </column>
       <column name="tenant_id" type="BIGINT">
-      <constraints nullable="true" foreignKeyName="factory_id_fk" referencedTableName="tenant"
+      <constraints nullable="false" foreignKeyName="factory_tenant_id_fk" referencedTableName="tenant"
         referencedColumnNames="id" deleteCascade="true"/>
       </column>
     </createTable>
