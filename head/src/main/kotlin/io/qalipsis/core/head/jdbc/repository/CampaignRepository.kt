@@ -23,8 +23,6 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     )
     suspend fun findIdByNameAndEndIsNull(tenant: Collection<String>, campaignName: String): Long
 
-    suspend fun findIdByName(campaignName: String): Long
-
     @Query(
         """SELECT campaign.id
             FROM campaign
