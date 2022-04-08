@@ -34,7 +34,7 @@ internal class DatabaseCampaignReportPublisher(
 ) : CampaignReportPublisher {
 
     override suspend fun publish(campaign: CampaignConfiguration, report: CampaignReport) {
-        val campaignReportEntity = saveCampaignReport(report)
+        val campaignReportEntity = saveCampaignReport(report, campaign.tenant)
         val scenarioReportEntitiesToSave = report.scenariosReports.map {
             mapToScenarioReportEntity(it, campaignReportEntity.id)
         }.toList()
@@ -53,11 +53,12 @@ internal class DatabaseCampaignReportPublisher(
     }
 
     private suspend fun saveCampaignReport(
-        campaignReport: CampaignReport
+        campaignReport: CampaignReport,
+        tenant: String
     ): CampaignReportEntity {
         return campaignReportRepository.save(
             CampaignReportEntity(
-                campaignRepository.findIdByName(campaignReport.campaignName),
+                campaignRepository.findIdByName(tenant, campaignReport.campaignName),
                 campaignReport.startedMinions,
                 campaignReport.completedMinions,
                 campaignReport.successfulExecutions,

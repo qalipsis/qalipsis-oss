@@ -56,7 +56,7 @@ internal class DatabaseCampaignReportPublisherTest {
     internal fun `should save the new campaign`() = testDispatcherProvider.run {
         // given
         val now = getTimeMock()
-        coEvery { campaignRepository.findIdByName("my-campaign") } returns 8
+        coEvery { campaignRepository.findIdByName(any(), "my-campaign") } returns 8
         val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
             every { id } returns 10L
             every { name } returns "my-scenario"
