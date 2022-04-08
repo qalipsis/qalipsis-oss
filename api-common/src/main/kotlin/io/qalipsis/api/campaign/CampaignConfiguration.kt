@@ -10,6 +10,7 @@ import javax.validation.constraints.NotEmpty
 
 @Serializable
 data class CampaignConfiguration(
+    val tenant: String = "",
     val name: CampaignName,
     val speedFactor: Double = 1.0,
     val startOffsetMs: Long = 1000,
