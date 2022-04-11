@@ -112,14 +112,19 @@ internal class StandaloneCampaignManagerTest {
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
-            coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario2, scenario3)
             val factory1 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-1"; every { unicastChannel } returns "unicast-channel-1" }
             val factory2 = relaxedMockk<Factory> { every { nodeId } returns "factory-2" };
             val factory3 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
-            coEvery { factoryService.getAvailableFactoriesForScenarios(setOf("scenario-1", "scenario-2")) } returns
+            coEvery {
+                factoryService.getAvailableFactoriesForScenarios(
+                    campaign.tenant,
+                    setOf("scenario-1", "scenario-2")
+                )
+            } returns
                     listOf(factory1, factory2, factory3)
 
             val assignments = ImmutableTable.builder<NodeId, ScenarioName, FactoryScenarioAssignment>()
@@ -174,8 +179,8 @@ internal class StandaloneCampaignManagerTest {
                 }
             val sentDirectives = mutableListOf<Directive>()
             coVerifyOrder {
-                factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2"))
-                factoryService.getAvailableFactoriesForScenarios(setOf("scenario-1", "scenario-2"))
+                factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
+                factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
                 campaignService.save(refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
@@ -242,11 +247,11 @@ internal class StandaloneCampaignManagerTest {
             // given
             val campaign = CampaignConfiguration(
                 name = "my-campaign",
-                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
             ).apply { broadcastChannel = "my-broadcast-channel" }
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
-            coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario3)
 
             // when + then

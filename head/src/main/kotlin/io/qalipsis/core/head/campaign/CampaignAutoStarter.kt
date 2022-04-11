@@ -102,7 +102,10 @@ internal class CampaignAutoStarter(
                         log.info { "Starting the campaign ${autostartCampaignConfiguration.name} for the scenario(s) ${registeredScenarios.joinToString()}" }
                         campaignLatch.lock()
                         val scenariosConfigs =
-                            factoryService.getActiveScenarios(registeredScenarios).associate { scenario ->
+                            factoryService.getActiveScenarios(
+                                autostartCampaignConfiguration.tenant,
+                                registeredScenarios
+                            ).associate { scenario ->
                                 scenario.name to ScenarioConfiguration(calculateMinionsCount(scenario))
                             }
                         campaign = CampaignConfiguration(

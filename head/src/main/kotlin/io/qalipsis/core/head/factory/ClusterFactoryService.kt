@@ -29,6 +29,7 @@ import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactorySelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
@@ -58,6 +59,7 @@ internal class ClusterFactoryService(
     private val directedAcyclicGraphSelectorRepository: DirectedAcyclicGraphSelectorRepository,
     private val campaignRepository: CampaignRepository,
     private val campaignFactoryRepository: CampaignFactoryRepository,
+    private val tenantRepository: TenantRepository
 ) : FactoryService {
 
     /**
@@ -126,7 +128,8 @@ internal class ClusterFactoryService(
                 nodeId = actualNodeId,
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = handshakeRequest.nodeId,
-                unicastChannel = handshakeResponse.unicastChannel
+                unicastChannel = handshakeResponse.unicastChannel,
+                tenantId = tenantRepository.findIdByReference(handshakeRequest.tenant)
             )
         )
         if (handshakeRequest.tags.isNotEmpty()) {
@@ -146,7 +149,7 @@ internal class ClusterFactoryService(
     ) {
         val inputScenarios = registrationScenarios.associateBy { it.name }.toMutableMap()
         val existingScenarios = scenarioRepository.findByFactoryId(
-            factoryRepository.findTenantReferenceByFactoryIdIn(listOf(existingFactory.id)),
+            tenantRepository.findReferenceById(existingFactory.tenantId),
             existingFactory.id
         )
         if (existingScenarios.isNotEmpty()) {
@@ -273,10 +276,12 @@ internal class ClusterFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getAvailableFactoriesForScenarios(scenarioNames: Collection<String>): Collection<Factory> {
-        val scenariosByFactories = scenarioRepository.findActiveByName(scenarioNames).groupBy { it.factoryId }
-        val tenantReferencesByFactoryIds = factoryRepository.findTenantReferenceByFactoryIdIn(scenariosByFactories.keys)
-        return factoryRepository.getAvailableFactoriesForScenarios(tenantReferencesByFactoryIds, scenarioNames)
+    override suspend fun getAvailableFactoriesForScenarios(
+        tenant: String,
+        scenarioNames: Collection<String>
+    ): Collection<Factory> {
+        val scenariosByFactories = scenarioRepository.findActiveByName(tenant, scenarioNames).groupBy { it.factoryId }
+        return factoryRepository.getAvailableFactoriesForScenarios(tenant, scenarioNames)
             .map { entity ->
                 entity.toModel(scenariosByFactories[entity.id]!!.map { it.name })
             }
@@ -288,7 +293,7 @@ internal class ClusterFactoryService(
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
                 val campaignName = campaignRepository.findIdByNameAndEndIsNull(
-                    factoryRepository.findTenantReferenceByFactoryIdIn(factoryIds), campaignConfiguration.name
+                    campaignConfiguration.tenant, campaignConfiguration.name
                 )
                 campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignName, it) }).count()
             }
@@ -301,7 +306,7 @@ internal class ClusterFactoryService(
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
                 val campaignName = campaignRepository.findIdByNameAndEndIsNull(
-                    factoryRepository.findTenantReferenceByFactoryIdIn(factoryIds), campaignConfiguration.name
+                    campaignConfiguration.tenant, campaignConfiguration.name
                 )
                 campaignFactoryRepository.discard(campaignName, factoryIds)
             }
@@ -311,7 +316,7 @@ internal class ClusterFactoryService(
     /**
      * getAllScenarios method finds all active scenarios by given ids
      */
-    override suspend fun getActiveScenarios(ids: Collection<String>) =
-        scenarioRepository.findActiveByName(ids).map(ScenarioEntity::toModel)
+    override suspend fun getActiveScenarios(tenant: String, ids: Collection<String>) =
+        scenarioRepository.findActiveByName(tenant, ids).map(ScenarioEntity::toModel)
 
 }

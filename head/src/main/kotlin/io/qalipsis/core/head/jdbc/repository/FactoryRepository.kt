@@ -50,20 +50,11 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
                 (SELECT * FROM campaign WHERE "end" IS NULL 
                     AND EXISTS (SELECT * FROM campaign_factory WHERE factory_id = factory.id AND campaign_id = campaign.id AND discarded = false)
                 )
-            AND EXISTS (SELECT * FROM tenant WHERE reference IN (:tenant) AND id = factory.tenant_id)
+            AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
                 """
     )
     @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
-    suspend fun getAvailableFactoriesForScenarios(
-        tenant: Collection<String>,
-        names: Collection<String>
-    ): List<FactoryEntity>
-
-    @Query(
-        """SELECT tenant.reference
-            FROM factory LEFT JOIN tenant ON tenant.id = factory.tenant_id WHERE factory.id IN (:factoryIds)"""
-    )
-    suspend fun findTenantReferenceByFactoryIdIn(factoryIds: Collection<Long>): List<String>
+    suspend fun getAvailableFactoriesForScenarios(tenant: String, names: Collection<String>): List<FactoryEntity>
 
     private companion object {
 

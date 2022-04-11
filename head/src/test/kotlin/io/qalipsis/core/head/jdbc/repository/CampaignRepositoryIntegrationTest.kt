@@ -83,13 +83,13 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when + then
         assertThrows<EmptyResultException> {
-            campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved.name)
+            campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved.name)
         }
 
         // when
         campaignRepository.update(saved.copy(end = null))
 
-        assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved.name)).isEqualTo(saved.id)
+        assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved.name)).isEqualTo(saved.id)
     }
 
     @Test
@@ -103,18 +103,15 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant2.id))
 
             // when + then
-            assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved.name)).isEqualTo(saved.id)
+            assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved.name)).isEqualTo(saved.id)
             assertThat(
-                campaignRepository.findIdByNameAndEndIsNull(
-                    listOf("qalipsis-2"),
-                    saved2.name
-                )
+                campaignRepository.findIdByNameAndEndIsNull("qalipsis-2", saved2.name)
             ).isEqualTo(saved2.id)
             assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), saved2.name))
+                assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved2.name))
             }
             assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis-2"), saved.name))
+                assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis-2", saved.name))
             }
         }
 

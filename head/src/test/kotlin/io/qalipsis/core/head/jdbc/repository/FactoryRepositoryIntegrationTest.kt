@@ -3,7 +3,6 @@ package io.qalipsis.core.head.jdbc.repository
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.any
-import assertk.assertions.containsAll
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
@@ -74,7 +73,8 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should update the version when the factory is updated`() = testDispatcherProvider.run {
         // given
-        val saved = factoryRepository.save(factoryPrototype.copy())
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val saved = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
 
         // when
         val updated = factoryRepository.update(saved)
@@ -144,20 +144,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
 
     @Test
-    internal fun `should find the tenant reference by factory id`() = testDispatcherProvider.run {
-        // given
-        val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
-        val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
-        val factory1 = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant1.id))
-        val factory2 = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant2.id))
-
-        // when + then
-        assertThat(factoryRepository.findTenantReferenceByFactoryIdIn(setOf(factory1.id, factory2.id)))
-            .containsAll("qalipsis", "qalipsis-2")
-    }
-
-    @Test
-    internal fun `should find the healthy unused factories that supports the enabled scenarios with factory selectors`() =
+    fun `should find the healthy unused factories that supports the enabled scenarios with factory selectors`() =
         testDispatcherProvider.run {
             // given
             val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
@@ -212,15 +199,15 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "qalipsis-two"),
+                    "qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 
             // then
             assertThat(factoriesForScenarios).all {
-                hasSize(2)
+                hasSize(1)
                 any { it.transform { factory -> factory.id == factory1.id && factory.selectors.isNotEmpty() } }
-                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id, factory2.id)
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
             }
         }
 
@@ -278,17 +265,28 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
 
             // when
-            val factoriesForScenarios =
+            val factoriesForScenarios1 =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "new-qalipsis"),
+                    "qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 
+            val factoriesForScenarios2 =
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    "new-qalipsis",
+                    listOf("scenario-1", "scenario-2")
+                )
             // then
-            assertThat(factoriesForScenarios).all {
-                hasSize(2)
+            assertThat(factoriesForScenarios1).all {
+                hasSize(1)
                 any { it.transform { factory -> factory.id == factory1.id && factory.selectors.isNotEmpty() } }
-                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id, factory2.id)
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
+            }
+
+            assertThat(factoriesForScenarios2).all {
+                hasSize(1)
+                any { it.transform { factory -> factory.id == factory2.id && factory.selectors.isNotEmpty() } }
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory2.id)
             }
         }
 
@@ -345,7 +343,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "qalipsis-two"),
+                    "qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 
@@ -412,16 +410,26 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
 
             // when
-            val factoriesForScenarios =
+            val factoriesForScenarios1 =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "new-qalipsis"),
+                    "qalipsis",
+                    listOf("scenario-1", "scenario-2")
+                )
+
+            val factoriesForScenarios2 =
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    "new-qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 
             // then
-            assertThat(factoriesForScenarios).all {
-                hasSize(2)
-                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id, factory2.id)
+            assertThat(factoriesForScenarios1).all {
+                hasSize(1)
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
+            }
+            assertThat(factoriesForScenarios2).all {
+                hasSize(1)
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory2.id)
             }
         }
 
@@ -477,16 +485,25 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = true))
 
             // when
-            val factoriesForScenarios =
+            val factoriesForScenarios1 =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "new-qalipsis"),
+                    "qalipsis",
+                    listOf("scenario-1", "scenario-2")
+                )
+            val factoriesForScenarios2 =
+                factoryRepository.getAvailableFactoriesForScenarios(
+                    "new-qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 
             // then
-            assertThat(factoriesForScenarios).all {
-                hasSize(2)
-                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id, factory2.id)
+            assertThat(factoriesForScenarios1).all {
+                hasSize(1)
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
+            }
+            assertThat(factoriesForScenarios2).all {
+                hasSize(1)
+                transform { it.map(FactoryEntity::id) }.containsOnly(factory2.id)
             }
         }
 
@@ -539,7 +556,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "new-qalipsis"),
+                    "qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 
@@ -605,7 +622,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    listOf("qalipsis", "new-qalipsis"),
+                    "new-qalipsis",
                     listOf("scenario-1", "scenario-2")
                 )
 

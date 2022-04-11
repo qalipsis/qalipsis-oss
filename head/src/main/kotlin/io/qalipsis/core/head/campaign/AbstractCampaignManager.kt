@@ -64,11 +64,11 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
 
     override suspend fun start(campaign: CampaignConfiguration) {
         val selectedScenarios = campaign.scenarios.keys.toSet()
-        val scenarios = factoryService.getActiveScenarios(selectedScenarios).distinctBy { it.name }
+        val scenarios = factoryService.getActiveScenarios(campaign.tenant, selectedScenarios).distinctBy { it.name }
         val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
         require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
 
-        val factories = factoryService.getAvailableFactoriesForScenarios(selectedScenarios)
+        val factories = factoryService.getAvailableFactoriesForScenarios(campaign.tenant, selectedScenarios)
         require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
 
         campaignService.save(campaign)

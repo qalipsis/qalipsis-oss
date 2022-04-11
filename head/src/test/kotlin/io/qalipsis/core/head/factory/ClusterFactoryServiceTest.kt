@@ -38,6 +38,7 @@ import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactorySelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -61,8 +62,9 @@ import java.time.ZoneId
 @WithMockk
 internal class ClusterFactoryServiceTest {
 
+    @JvmField
     @RegisterExtension
-    private val testDispatcherProvider = TestDispatcherProvider()
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
     private lateinit var factoryRepository: FactoryRepository
@@ -88,6 +90,9 @@ internal class ClusterFactoryServiceTest {
     @RelaxedMockK
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
+    @RelaxedMockK
+    private lateinit var tenantRepository: TenantRepository
+
     @InjectMockKs
     private lateinit var clusterFactoryService: ClusterFactoryService
 
@@ -96,13 +101,21 @@ internal class ClusterFactoryServiceTest {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
-            HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList(), tenant = "qalipsis")
+            HandshakeRequest(
+                nodeId = "testNodeId",
+                tags = emptyMap(),
+                replyTo = "",
+                scenarios = emptyList(),
+                tenant = "qalipsis"
+            )
         val now = getTimeMock()
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns emptyList()
         coEvery { factoryRepository.save(any()) } returns relaxedMockk { every { id } returns 123 }
         val handshakeResponse = relaxedMockk<HandshakeResponse> {
             every { unicastChannel } returns "directives-unicast-boo"
         }
+        coEvery { tenantRepository.findIdByReference("qalipsis") } returns 1
+
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
@@ -120,7 +133,8 @@ internal class ClusterFactoryServiceTest {
                     nodeId = actualNodeId,
                     registrationTimestamp = now,
                     registrationNodeId = handshakeRequest.nodeId,
-                    unicastChannel = "directives-unicast-boo"
+                    unicastChannel = "directives-unicast-boo",
+                    tenantId = 1
                 )
             )
             factoryStateRepository.save(FactoryStateEntity(now, 123, now, 0, FactoryStateValue.REGISTERED))
@@ -147,6 +161,8 @@ internal class ClusterFactoryServiceTest {
         val now = getTimeMock()
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns emptyList()
         coEvery { factoryRepository.save(any()) } returns relaxedMockk { every { id } returns 123 }
+        coEvery { tenantRepository.findIdByReference("qalipsis") } returns 1
+
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
@@ -164,7 +180,8 @@ internal class ClusterFactoryServiceTest {
                     nodeId = actualNodeId,
                     registrationTimestamp = now,
                     registrationNodeId = handshakeRequest.nodeId,
-                    unicastChannel = "directives-unicast-boo"
+                    unicastChannel = "directives-unicast-boo",
+                    tenantId = 1
                 )
             )
             factorySelectorRepository.saveAll(listOf(FactorySelectorEntity(123, selectorKey, selectorValue)))
@@ -178,7 +195,13 @@ internal class ClusterFactoryServiceTest {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
-            HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList(), tenant = "qalipsis")
+            HandshakeRequest(
+                nodeId = "testNodeId",
+                tags = emptyMap(),
+                replyTo = "",
+                scenarios = emptyList(),
+                tenant = "qalipsis"
+            )
         val now = getTimeMock()
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
@@ -500,13 +523,14 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            selectors = listOf(selector),
+            tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, name = newRegistrationScenario.name)
 
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns listOf(factoryEntity)
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis")
+        coEvery { tenantRepository.findReferenceById(any()) } returns "qalipsis"
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns emptyList()
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
@@ -524,13 +548,13 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            factoryRepository.findTenantReferenceByFactoryIdIn(listOf(factoryEntity.id))
-            scenarioRepository.findByFactoryId(listOf("qalipsis"), factoryEntity.id)
+            tenantRepository.findReferenceById(factoryEntity.tenantId)
+            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
             scenarioRepository.saveAll(any<Iterable<ScenarioEntity>>())
             directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>())
         }
         confirmVerified(
-            factoryRepository,
+            tenantRepository,
             scenarioRepository,
             factoryStateRepository,
             directedAcyclicGraphRepository
@@ -563,13 +587,14 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            selectors = listOf(selector),
+            tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag)
 
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis")
+        coEvery { tenantRepository.findReferenceById(any()) } returns "qalipsis"
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
         coEvery { scenarioRepository.updateAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
@@ -585,8 +610,8 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            factoryRepository.findTenantReferenceByFactoryIdIn(listOf(factoryEntity.id))
-            scenarioRepository.findByFactoryId(listOf("qalipsis"), factoryEntity.id)
+            tenantRepository.findReferenceById(factoryEntity.tenantId)
+            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
             scenarioRepository.updateAll(listOf(scenarioEntity.copy(enabled = true)))
             directedAcyclicGraphRepository.saveAll(handshakeRequest.scenarios.flatMap { it.directedAcyclicGraphs }
@@ -637,7 +662,8 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            selectors = listOf(selector),
+            tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag)
@@ -653,7 +679,7 @@ internal class ClusterFactoryServiceTest {
 
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis")
+        coEvery { tenantRepository.findReferenceById(any()) } returns "qalipsis"
         coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
         coEvery { scenarioRepository.updateAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
         coEvery { directedAcyclicGraphRepository.deleteAll(any()) } returns 1
@@ -670,7 +696,7 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            scenarioRepository.findByFactoryId(listOf("qalipsis"), factoryEntity.id)
+            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
             directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(scenarioEntity.dags.map { it.id })
             scenarioRepository.updateAll(listOf(scenarioEntity.copy(enabled = true)))
@@ -857,7 +883,7 @@ internal class ClusterFactoryServiceTest {
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, true)
 
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns listOf(factoryEntity)
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis")
+        coEvery { tenantRepository.findReferenceById(any()) } returns "qalipsis"
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { factoryRepository.save(any()) } returnsArgument 0
@@ -880,14 +906,15 @@ internal class ClusterFactoryServiceTest {
             factoryRepository.findByNodeIdIn("qalipsis", listOf(actualNodeId))
             factoryRepository.save(any())
             factoryStateRepository.save(any())
-            factoryRepository.findTenantReferenceByFactoryIdIn(any())
-            scenarioRepository.findByFactoryId(listOf("qalipsis"), factoryEntity.id)
+            tenantRepository.findReferenceById(any())
+            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
             scenarioRepository.updateAll(listOf(scenarioEntity))
             directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>())
         }
         confirmVerified(
             factoryRepository,
+            tenantRepository,
             scenarioRepository,
             factoryStateRepository,
             directedAcyclicGraphRepository
@@ -922,15 +949,15 @@ internal class ClusterFactoryServiceTest {
             )
         )
         val ids = scenarioEntities.map { it.name }
-        coEvery { scenarioRepository.findActiveByName(ids) } returns scenarioEntities
+        coEvery { scenarioRepository.findActiveByName(any(), ids) } returns scenarioEntities
 
 
         //when
-        val scenarios = clusterFactoryService.getActiveScenarios(ids)
+        val scenarios = clusterFactoryService.getActiveScenarios("", ids)
 
         //then
         coVerifyOnce {
-            scenarioRepository.findActiveByName(ids)
+            scenarioRepository.findActiveByName(any(), ids)
         }
 
         Assert.assertEquals(
@@ -988,7 +1015,7 @@ internal class ClusterFactoryServiceTest {
     internal fun `should return the available factories by scenarios`() = testDispatcherProvider.run {
         // given
         val scenarios = listOf("scenario-1", "scenario-2")
-        coEvery { scenarioRepository.findActiveByName(refEq(scenarios)) } returns listOf(
+        coEvery { scenarioRepository.findActiveByName(any(), refEq(scenarios)) } returns listOf(
             mockk { every { name } returns "scenario-1"; every { factoryId } returns 1 },
             mockk { every { name } returns "scenario-2"; every { factoryId } returns 1 },
             mockk { every { name } returns "scenario-2"; every { factoryId } returns 2 }
@@ -1001,13 +1028,12 @@ internal class ClusterFactoryServiceTest {
         val factoryEntity2 = mockk<FactoryEntity> {
             every { id } returns 2; every { toModel(any()) } returns factory2
         }
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis", "new-qalipsis")
         coEvery { factoryRepository.getAvailableFactoriesForScenarios(any(), refEq(scenarios)) } returns listOf(
             factoryEntity1, factoryEntity2
         )
 
         // when
-        val result = clusterFactoryService.getAvailableFactoriesForScenarios(scenarios)
+        val result = clusterFactoryService.getAvailableFactoriesForScenarios("campaign.tenant", scenarios)
 
         // then
         assertThat(result).all {
@@ -1025,9 +1051,11 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis")
         coEvery { campaignRepository.findIdByNameAndEndIsNull(any(), "my-campaign") } returns 765
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> {
+            every { name } returns "my-campaign"
+            every { tenant } returns "qalipsis"
+        }
 
         // when
         clusterFactoryService.lockFactories(campaignConfiguration, factories)
@@ -1035,8 +1063,7 @@ internal class ClusterFactoryServiceTest {
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            factoryRepository.findTenantReferenceByFactoryIdIn(listOf(12, 32))
-            campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), "my-campaign")
+            campaignRepository.findIdByNameAndEndIsNull("qalipsis", "my-campaign")
             campaignFactoryRepository.saveAll(
                 listOf(
                     CampaignFactoryEntity(765, 12),
@@ -1079,9 +1106,11 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { factoryRepository.findTenantReferenceByFactoryIdIn(any()) } returns listOf("qalipsis")
         coEvery { campaignRepository.findIdByNameAndEndIsNull(any(), "my-campaign") } returns 765
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> {
+            every { name } returns "my-campaign"
+            every { tenant } returns "qalipsis"
+        }
 
         // when
         clusterFactoryService.releaseFactories(campaignConfiguration, factories)
@@ -1089,8 +1118,7 @@ internal class ClusterFactoryServiceTest {
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            factoryRepository.findTenantReferenceByFactoryIdIn(listOf(12, 32))
-            campaignRepository.findIdByNameAndEndIsNull(listOf("qalipsis"), "my-campaign")
+            campaignRepository.findIdByNameAndEndIsNull("qalipsis", "my-campaign")
             campaignFactoryRepository.discard(765, listOf(12, 32))
         }
         confirmVerified(factoryRepository, campaignRepository, campaignFactoryRepository)

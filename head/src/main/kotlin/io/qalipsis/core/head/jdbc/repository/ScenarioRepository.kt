@@ -24,10 +24,6 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
     @Query("UPDATE scenario SET enabled = FALSE WHERE id IN (:id)")
     override suspend fun deleteAll(entities: Iterable<ScenarioEntity>): Int
 
-    @Query("SELECT * FROM scenario WHERE name in (:names) AND enabled = true")
-    @Join(value = "dags", type = Join.Type.LEFT)
-    suspend fun findActiveByName(names: Collection<String>): List<ScenarioEntity>
-
     @Query(
         "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE name in (:names) AND enabled = true AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)"
     )
@@ -35,8 +31,8 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
     suspend fun findActiveByName(tenant: String, names: Collection<String>): List<ScenarioEntity>
 
     @Query(
-        "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE factory_id in (:factoryId) AND EXISTS (SELECT * FROM tenant WHERE reference IN (:tenant) AND id = factory.tenant_id)"
+        "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE factory_id = :factoryId AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)"
     )
     @Join(value = "dags", type = Join.Type.LEFT)
-    suspend fun findByFactoryId(tenant: Collection<String>, factoryId: Long): List<ScenarioEntity>
+    suspend fun findByFactoryId(tenant: String, factoryId: Long): List<ScenarioEntity>
 }

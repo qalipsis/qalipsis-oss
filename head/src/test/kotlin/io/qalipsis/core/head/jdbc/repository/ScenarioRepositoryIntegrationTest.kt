@@ -145,12 +145,14 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should save two scenarios with the same name on different factories`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
 
@@ -166,12 +168,15 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should list the enabled scenarios for the provided names`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
+            val tenant1 = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy())
             val factory1 = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant1.id
                 )
             )
             val factory2 = factoryRepository.save(
@@ -179,20 +184,22 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "any",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant2.id
                 )
             )
             val scenario1 = repository.save(scenario.copy())
-            val scenario2 = repository.save(scenario.copy(name = "another-name"))
+            val scenario2 = repository.save(scenario.copy(name = "another-name", factoryId = factory2.id))
             val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
             repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
 
             // when + then
-            assertThat(repository.findActiveByName(listOf("test")).map { it.id }).containsOnly(
-                scenario1.id,
+            assertThat(repository.findActiveByName("qalipsis", listOf("test")).map { it.id }).containsOnly(
                 scenario3.id
             )
-            assertThat(repository.findActiveByName(listOf("another-name")).map { it.id }).containsOnly(scenario2.id)
+            assertThat(repository.findActiveByName("qalipsis", listOf("another-name")).map { it.id }).containsOnly(
+                scenario2.id
+            )
         }
 
     @Test
@@ -252,13 +259,15 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario3 = repository.save(scenario.copy(factoryId = factory.id))
 
             // when + then
-            assertThat(repository.findByFactoryId(listOf("qalipsis"), scenario1.factoryId)).isEmpty()
+            assertThat(repository.findByFactoryId("qalipsis", scenario1.factoryId)).isEmpty()
             assertThat(
-                repository.findByFactoryId(listOf("qalipsis"), factory.id).map { it.id }).containsOnly(scenario3.id)
+                repository.findByFactoryId("qalipsis", factory.id).map { it.id }).containsOnly(scenario3.id)
         }
 
     @Test
-    fun `should list the scenarios of the provided factory with tenant reference and different tenants aren't mixed up`(factoryRepository: FactoryRepository) =
+    fun `should list the scenarios of the provided factory with tenant reference and different tenants aren't mixed up`(
+        factoryRepository: FactoryRepository
+    ) =
         testDispatcherProvider.run {
             // given
             val savedTenant = tenantRepository.save(tenantPrototype.copy())
@@ -286,12 +295,12 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario2 = repository.save(scenario.copy(factoryId = factory2.id))
 
             // when + then
-            assertThat(repository.findByFactoryId(listOf("qalipsis"), scenario2.factoryId)).isEmpty()
-            assertThat(repository.findByFactoryId(listOf("qalipsis-2"), scenario1.factoryId)).isEmpty()
+            assertThat(repository.findByFactoryId("qalipsis", scenario2.factoryId)).isEmpty()
+            assertThat(repository.findByFactoryId("qalipsis-2", scenario1.factoryId)).isEmpty()
             assertThat(
-                repository.findByFactoryId(listOf("qalipsis"), factory.id).map { it.id }).containsOnly(scenario1.id)
+                repository.findByFactoryId("qalipsis", factory.id).map { it.id }).containsOnly(scenario1.id)
             assertThat(
-                repository.findByFactoryId(listOf("qalipsis-2"), factory2.id).map { it.id }).containsOnly(scenario2.id)
+                repository.findByFactoryId("qalipsis-2", factory2.id).map { it.id }).containsOnly(scenario2.id)
         }
 
 
@@ -299,12 +308,14 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should delete the scenarios attached to a deleted factory`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
             repository.save(scenario.copy(factoryId = factory.id))

@@ -55,6 +55,31 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
+    fun `should find id of tenant by reference`() = testDispatcherProvider.run {
+        // given
+        val saved = tenantRepository.save(tenantPrototype.copy())
+
+        // when
+        val fetched = tenantRepository.findIdByReference(saved.reference)
+
+        // then
+        assertThat(fetched).equals(saved.id)
+    }
+
+    @Test
+    fun `should find reference of the tenant by it id`() = testDispatcherProvider.run {
+        // given
+        // given
+        val saved = tenantRepository.save(tenantPrototype.copy())
+
+        // when
+        val fetched = tenantRepository.findReferenceById(saved.id)
+
+        // then
+        assertThat(fetched).equals(saved.reference)
+    }
+
+    @Test
     fun `should update the version when the message is updated`() = testDispatcherProvider.run {
         // given
         val saved = tenantRepository.save(tenantPrototype.copy())

@@ -52,4 +52,8 @@ internal interface AutostartCampaignConfiguration {
     @get:Positive
     @get:Bindable(defaultValue = "1s")
     val startOffset: Duration
+
+    @get:NotBlank
+    @get:Bindable(defaultValue = "")
+    val tenant: String
 }

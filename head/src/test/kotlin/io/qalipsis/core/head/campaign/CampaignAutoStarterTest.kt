@@ -67,6 +67,7 @@ internal class CampaignAutoStarterTest {
         override val minionsFactor: Double = 1.87
         override val speedFactor: Double = 54.87
         override val startOffset: Duration = Duration.ofMillis(12367)
+        override val tenant: String = ""
     }
 
     @JvmField
@@ -96,6 +97,7 @@ internal class CampaignAutoStarterTest {
                     override val minionsFactor: Double = 1.87
                     override val speedFactor: Double = 54.87
                     override val startOffset: Duration = Duration.ofMillis(12367)
+                    override val tenant: String = ""
                 },
                 headChannel
             )
@@ -107,7 +109,12 @@ internal class CampaignAutoStarterTest {
                 every { name } returns "scenario-3"
                 every { minionsCount } returns 100
             }
-            coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2", "scenario-3")) } returns
+            coEvery {
+                factoryService.getActiveScenarios(
+                    any(),
+                    setOf("scenario-1", "scenario-2", "scenario-3")
+                )
+            } returns
                     listOf(scenario1, scenario2)
 
             // when
@@ -222,7 +229,7 @@ internal class CampaignAutoStarterTest {
                 every { name } returns "scenario-2"
                 every { minionsCount } returns 100
             }
-            coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns listOf(
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns listOf(
                 scenario1,
                 scenario2
             )
@@ -282,7 +289,7 @@ internal class CampaignAutoStarterTest {
                 every { name } returns "scenario-2"
                 every { minionsCount } returns 100
             }
-            coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario2)
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
                 every { scenarios } returns listOf(
@@ -311,10 +318,6 @@ internal class CampaignAutoStarterTest {
 
             // then
             assertThat(campaignAutoStarter.campaignLatch().isLocked).isFalse()
-            coVerifyOnce {
-                headChannel.publishDirective(FactoryShutdownDirective("channel-factory-1"))
-                headChannel.publishDirective(FactoryShutdownDirective("channel-factory-2"))
-            }
 
             // when
             val exception = assertThrows<RuntimeException> {
@@ -346,7 +349,7 @@ internal class CampaignAutoStarterTest {
                 every { name } returns "scenario-2"
                 every { minionsCount } returns 100
             }
-            coEvery { factoryService.getActiveScenarios(setOf("scenario-1", "scenario-2")) } returns
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns
                     listOf(scenario1, scenario2)
 
             // when

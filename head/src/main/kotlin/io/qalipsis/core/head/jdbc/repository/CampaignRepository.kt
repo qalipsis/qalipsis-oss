@@ -19,9 +19,9 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
         """SELECT campaign.id
             FROM campaign
             WHERE name = :campaignName AND "end" IS NULL AND EXISTS 
-            (SELECT * FROM tenant WHERE reference IN (:tenant) AND id = campaign.tenant_id)"""
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByNameAndEndIsNull(tenant: Collection<String>, campaignName: String): Long
+    suspend fun findIdByNameAndEndIsNull(tenant: String, campaignName: String): Long
 
     @Query(
         """SELECT campaign.id

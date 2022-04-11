@@ -11,4 +11,9 @@ import io.qalipsis.core.head.jdbc.entity.TenantEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-internal interface TenantRepository : CoroutineCrudRepository<TenantEntity, Long>
+internal interface TenantRepository : CoroutineCrudRepository<TenantEntity, Long>{
+
+    suspend fun findIdByReference(reference: String): Long
+
+    suspend fun findReferenceById(id: Long): String
+}

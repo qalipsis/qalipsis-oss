@@ -59,7 +59,7 @@ internal class InMemoryFactoryServiceTest {
         every { scenarioSummaryRepository.getAll(any()) } returns listOf(scenario1, scenario2)
 
         // when
-        val result = inMemoryFactoryService.getActiveScenarios(listOf("scen-1", "scen-2"))
+        val result = inMemoryFactoryService.getActiveScenarios("", listOf("scen-1", "scen-2"))
 
         // then
         assertThat(result).all {
