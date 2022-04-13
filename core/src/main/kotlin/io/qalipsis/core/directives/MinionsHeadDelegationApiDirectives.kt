@@ -25,6 +25,8 @@ data class MinionsDeclarationDirective(
     override val channel: DispatcherChannel
 ) : SingleUseDirective<MinionsDeclarationDirectiveReference>(), CampaignManagementDirective {
 
+    override var tenant: String = ""
+
     override fun toReference(key: DirectiveKey): MinionsDeclarationDirectiveReference {
         return MinionsDeclarationDirectiveReference(key, campaignName, scenarioName)
     }
@@ -39,7 +41,10 @@ data class MinionsDeclarationDirectiveReference(
     override val key: DirectiveKey,
     override val campaignName: CampaignName,
     val scenarioName: ScenarioName
-) : SingleUseDirectiveReference(), CampaignManagementDirective
+) : SingleUseDirectiveReference(), CampaignManagementDirective{
+
+    override var tenant: String = ""
+}
 
 /**
  * Directive to calculate the ramp-up of the minions given the scenario strategy.
@@ -53,6 +58,8 @@ data class MinionsRampUpPreparationDirective(
     override val channel: DispatcherChannel
 ) : SingleUseDirective<MinionsRampUpPreparationDirectiveReference>(),
     CampaignManagementDirective {
+
+    override var tenant: String = ""
 
     override fun toReference(key: DirectiveKey): MinionsRampUpPreparationDirectiveReference {
         return MinionsRampUpPreparationDirectiveReference(key, campaignName, scenarioName)
@@ -68,4 +75,7 @@ data class MinionsRampUpPreparationDirectiveReference(
     override val key: DirectiveKey,
     override val campaignName: CampaignName,
     val scenarioName: ScenarioName
-) : SingleUseDirectiveReference(), CampaignManagementDirective
+) : SingleUseDirectiveReference(), CampaignManagementDirective{
+
+    override var tenant: String = ""
+}

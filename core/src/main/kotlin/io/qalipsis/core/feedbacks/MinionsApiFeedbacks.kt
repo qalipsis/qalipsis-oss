@@ -29,6 +29,7 @@ data class MinionsAssignmentFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 /**
@@ -54,6 +55,7 @@ data class MinionsStartFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 /**
@@ -74,6 +76,7 @@ data class CompleteMinionFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 /**
@@ -101,4 +104,5 @@ data class MinionsShutdownFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }

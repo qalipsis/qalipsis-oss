@@ -22,7 +22,10 @@ data class FactoryAssignmentDirective(
     val broadcastChannel: DispatcherChannel,
     val feedbackChannel: DispatcherChannel,
     override val channel: DispatcherChannel
-) : DescriptiveDirective(), CampaignManagementDirective
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+}
 
 /**
  * Directive to warm-up the component of a scenario (steps...) when a new campaign starts.
@@ -33,7 +36,10 @@ data class ScenarioWarmUpDirective(
     override val campaignName: CampaignName,
     val scenarioName: ScenarioName,
     override val channel: DispatcherChannel
-) : DescriptiveDirective(), CampaignManagementDirective
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+}
 
 /**
  * Directive to shutdown all the components of a scenario in a campaign.
@@ -44,7 +50,10 @@ data class CampaignScenarioShutdownDirective(
     override val campaignName: CampaignName,
     val scenarioName: ScenarioName,
     override val channel: DispatcherChannel
-) : DescriptiveDirective(), CampaignManagementDirective
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+}
 
 /**
  * Directive to shutdown all the components of a campaign.
@@ -54,7 +63,10 @@ data class CampaignScenarioShutdownDirective(
 data class CampaignShutdownDirective(
     override val campaignName: CampaignName,
     override val channel: DispatcherChannel
-) : DescriptiveDirective(), CampaignManagementDirective
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+}
 
 /**
  * Directive to notify components from the completion of a campaign.

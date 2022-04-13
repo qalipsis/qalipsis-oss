@@ -27,6 +27,8 @@ data class MinionsDeclarationFeedback(
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
+
+    override var tenant: String = ""
 }
 
 /**
@@ -52,4 +54,5 @@ data class MinionsRampUpPreparationFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
