@@ -48,7 +48,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         tryAndLog(log) {
             feedback as CampaignManagementFeedback
             processingMutex.withLock {
-                val sourceCampaignState = get(feedback.campaignName)
+                val sourceCampaignState = get(feedback.tenant, feedback.campaignName)
                 log.trace { "Processing $feedback on $sourceCampaignState" }
                 val campaignState = sourceCampaignState.process(feedback)
                 log.trace { "New campaign state $campaignState" }
@@ -115,7 +115,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     ): CampaignExecutionState<C>
 
     @LogInputAndOutput
-    abstract suspend fun get(campaignName: CampaignName): CampaignExecutionState<C>
+    abstract suspend fun get(tenant: String, campaignName: CampaignName): CampaignExecutionState<C>
 
     @LogInput
     abstract suspend fun set(state: CampaignExecutionState<C>)

@@ -71,20 +71,22 @@ internal class ClusterFactoryService(
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
     ) {
-        val existingFactory = saveFactory(actualNodeId, handshakeRequest, handshakeResponse)
-        saveScenariosAndDependencies(handshakeRequest.scenarios, existingFactory)
+        val tenantId = tenantRepository.findIdByReference(handshakeRequest.tenant)
+        val existingFactory = saveFactory(tenantId, actualNodeId, handshakeRequest, handshakeResponse)
+        saveScenariosAndDependencies(handshakeRequest.tenant, handshakeRequest.scenarios, existingFactory)
     }
 
     /**
      * Updates or saves factory and factory_selector entities using handshakeRequest
      */
     private suspend fun saveFactory(
+        tenantId: Long,
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
     ) =
         (updateFactory(actualNodeId, handshakeRequest, handshakeResponse)
-            ?: saveNewFactory(actualNodeId, handshakeRequest, handshakeResponse))
+            ?: saveNewFactory(tenantId, actualNodeId, handshakeRequest, handshakeResponse))
             .also { factoryEntity ->
                 // The state of the factory is changed to REGISTERED.
                 val now = Instant.now()
@@ -119,6 +121,7 @@ internal class ClusterFactoryService(
      * Persists new factory and factory_selector entities
      */
     private suspend fun saveNewFactory(
+        tenantId: Long,
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
@@ -129,7 +132,7 @@ internal class ClusterFactoryService(
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = handshakeResponse.unicastChannel,
-                tenantId = tenantRepository.findIdByReference(handshakeRequest.tenant)
+                tenantId = tenantId
             )
         )
         if (handshakeRequest.tags.isNotEmpty()) {
@@ -144,14 +147,12 @@ internal class ClusterFactoryService(
      * Creates, updates and deletes scenario-specific entities with accordance to scenarios from handshakeRequest
      */
     private suspend fun saveScenariosAndDependencies(
+        tenantReference: String,
         registrationScenarios: List<RegistrationScenario>,
         existingFactory: FactoryEntity
     ) {
         val inputScenarios = registrationScenarios.associateBy { it.name }.toMutableMap()
-        val existingScenarios = scenarioRepository.findByFactoryId(
-            tenantRepository.findReferenceById(existingFactory.tenantId),
-            existingFactory.id
-        )
+        val existingScenarios = scenarioRepository.findByFactoryId(tenantReference, existingFactory.id)
         if (existingScenarios.isNotEmpty()) {
             directedAcyclicGraphRepository.deleteByScenarioIdIn(existingScenarios.map { it.id })
             directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(existingScenarios.flatMap { it.dags }

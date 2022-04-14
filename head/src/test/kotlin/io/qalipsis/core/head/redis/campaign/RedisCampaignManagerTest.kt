@@ -295,10 +295,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisFactoryAssignmentState::class).all {
@@ -314,10 +319,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisMinionsAssignmentState::class).all {
@@ -333,10 +343,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.WARMUP_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.WARMUP_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisWarmupState::class).all {
@@ -352,10 +367,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.MINIONS_STARTUP_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.MINIONS_STARTUP_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisMinionsStartupState::class).all {
@@ -371,10 +391,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.RUNNING_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.RUNNING_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisRunningState::class).all {
@@ -390,10 +415,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.COMPLETION_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.COMPLETION_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisCompletionState::class).all {
@@ -409,10 +439,15 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = relaxedMockk<CampaignConfiguration>()
-            coEvery { operations.getState("my-campaign") } returns (campaign to CampaignRedisState.FAILURE_STATE)
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.FAILURE_STATE)
 
             // when
-            val state = campaignManager.get("my-campaign")
+            val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisFailureState::class).all {

@@ -101,12 +101,12 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val saved = tenantRepository.save(tenantPrototype.copy())
         campaignRepository.save(
             CampaignEntity(
-                "the-campaign-id",
-                123.0,
-                Instant.now() - Duration.ofSeconds(173),
-                Instant.now(),
-                ExecutionStatus.SUCCESSFUL,
-                saved.id
+                tenantId = saved.id,
+                campaignName = "the-campaign-id",
+                speedFactor = 123.0,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                result = ExecutionStatus.SUCCESSFUL
             )
         )
         val factory = factoryRepository.save(

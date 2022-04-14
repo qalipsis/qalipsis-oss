@@ -28,6 +28,9 @@ import javax.validation.constraints.PositiveOrZero
 @ConfigurationProperties("campaign")
 internal interface AutostartCampaignConfiguration {
 
+    @get:Bindable(defaultValue = "")
+    val tenant: String
+
     @get:NotBlank
     val name: String
 
@@ -53,8 +56,4 @@ internal interface AutostartCampaignConfiguration {
     @get:Positive
     @get:Bindable(defaultValue = "1s")
     val startOffset: Duration
-
-    @get:NotNull
-    @get:Bindable(defaultValue = "")
-    val tenant: String
 }

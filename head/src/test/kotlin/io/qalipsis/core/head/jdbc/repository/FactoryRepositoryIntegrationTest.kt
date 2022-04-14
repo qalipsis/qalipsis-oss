@@ -49,8 +49,12 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Inject
     private lateinit var tenantRepository: TenantRepository
 
-    private val factoryPrototype =
-        FactoryEntity("the-node-id", Instant.now(), "the-registration-node-id", "unicast-channel")
+    private val factoryPrototype = FactoryEntity(
+        nodeId = "the-node-id",
+        registrationTimestamp = Instant.now(),
+        registrationNodeId = "the-registration-node-id",
+        unicastChannel = "unicast-channel"
+    )
 
     private val tenantPrototype =
         TenantEntity(Instant.now(), "qalipsis", "test-tenant")
@@ -337,7 +341,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
 
             val campaign =
-                campaignRepository.save(CampaignEntity("the-campaign-1", end = null, tenantId = savedTenant2.id))
+                campaignRepository.save(
+                    CampaignEntity(
+                        campaignName = "the-campaign-1", end = null, tenantId = savedTenant2.id
+                    )
+                )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
 
             // when
@@ -402,7 +410,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             val campaign = campaignRepository.save(
                 CampaignEntity(
-                    "the-campaign-1",
+                    campaignName = "the-campaign-1",
                     end = Instant.now(),
                     tenantId = savedTenant2.id
                 )
@@ -481,7 +489,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
 
             val campaign =
-                campaignRepository.save(CampaignEntity("the-campaign-1", end = null, tenantId = savedTenant2.id))
+                campaignRepository.save(
+                    CampaignEntity(
+                        campaignName = "the-campaign-1",
+                        end = null,
+                        tenantId = savedTenant2.id
+                    )
+                )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = true))
 
             // when

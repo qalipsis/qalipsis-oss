@@ -28,7 +28,7 @@ internal class RedisRunningState(
 
     override suspend fun doInit(): List<Directive> {
         if (!doNotPersistStateOnInit) {
-            operations.setState(campaignName, CampaignRedisState.RUNNING_STATE)
+            operations.setState(campaign.tenant, campaignName, CampaignRedisState.RUNNING_STATE)
             operations.prepareScenariosForFeedbackExpectations(campaign)
         }
         return super.doInit()
@@ -70,7 +70,7 @@ internal class RedisRunningState(
                 )
             }
             feedback is CampaignScenarioShutdownFeedback -> {
-                if (operations.markFeedbackForScenario(feedback.campaignName, feedback.scenarioName)) {
+                if (operations.markFeedbackForScenario(campaign.tenant, feedback.campaignName, feedback.scenarioName)) {
                     context.campaignReportStateKeeper.complete(feedback.campaignName)
                     RedisCompletionState(campaign, operations)
                 } else {

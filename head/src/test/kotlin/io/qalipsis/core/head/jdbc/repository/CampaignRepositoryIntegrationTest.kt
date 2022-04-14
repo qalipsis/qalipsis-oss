@@ -42,11 +42,11 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     private val campaignPrototype =
         CampaignEntity(
-            "the-campaign-id",
-            123.0,
-            Instant.now() - Duration.ofSeconds(173),
-            Instant.now(),
-            ExecutionStatus.SUCCESSFUL
+            campaignName = "the-campaign-id",
+            speedFactor = 123.0,
+            start = Instant.now() - Duration.ofSeconds(173),
+            end = Instant.now(),
+            result = ExecutionStatus.SUCCESSFUL
         )
 
     private val tenantPrototype =
@@ -136,10 +136,10 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val factory =
             factoryRepository.save(
                 FactoryEntity(
-                    "the-node-id",
-                    Instant.now(),
-                    "the-registration-node-id",
-                    "unicast-channel",
+                    nodeId = "the-node-id",
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "the-registration-node-id",
+                    unicastChannel = "unicast-channel",
                     tenantId = tenant.id
                 )
             )

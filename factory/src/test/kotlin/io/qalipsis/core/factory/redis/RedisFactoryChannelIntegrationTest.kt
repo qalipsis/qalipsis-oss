@@ -50,7 +50,9 @@ import java.time.temporal.ChronoUnit
 @WithMockk
 @PropertySource(
     Property(name = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = ExecutionEnvironments.REDIS),
-    Property(name = "factory.handshake.request-channel", value = RedisFactoryChannelIntegrationTest.HANDSHAKE_CHANNEL)
+    Property(name = "factory.handshake.request-channel", value = RedisFactoryChannelIntegrationTest.HANDSHAKE_CHANNEL),
+    Property(name = "factory.node-id", value = "my-node"),
+    Property(name = "factory.tenant", value = "my-tenant")
 )
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
 internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest() {
@@ -205,6 +207,8 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
                     prop(EndOfCampaignFeedback::campaignName).isEqualTo("campaign-1")
                     prop(EndOfCampaignFeedback::status).isEqualTo(FeedbackStatus.COMPLETED)
                     prop(EndOfCampaignFeedback::error).isEqualTo("the error")
+                    prop(EndOfCampaignFeedback::nodeId).isEqualTo("my-node")
+                    prop(EndOfCampaignFeedback::tenant).isEqualTo("my-tenant")
                 }
         }
     }
