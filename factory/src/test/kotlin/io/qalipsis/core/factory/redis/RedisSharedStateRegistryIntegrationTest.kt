@@ -34,6 +34,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
     @Inject
     private lateinit var registry: RedisSharedStateRegistry
 
+    @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 

@@ -40,8 +40,9 @@ import java.time.Duration
 @WithMockk
 internal class InitializationContextTest {
 
+    @JvmField
     @RegisterExtension
-    private val testDispatcherProvider = TestDispatcherProvider()
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
     private lateinit var factoryConfiguration: FactoryConfiguration

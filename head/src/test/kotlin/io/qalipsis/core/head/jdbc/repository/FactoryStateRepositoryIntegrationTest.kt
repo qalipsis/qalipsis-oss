@@ -13,6 +13,7 @@ import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.map
@@ -35,18 +36,27 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     private lateinit var repository: FactoryStateRepository
 
     @BeforeEach
-    internal fun setup(factoryRepository: FactoryRepository) = testDispatcherProvider.run {
-        val factory = factoryRepository.save(
-            FactoryEntity(
-                nodeId = "the-node",
-                registrationTimestamp = Instant.now(),
-                registrationNodeId = "test",
-                unicastChannel = "unicast-channel"
+    internal fun setup(factoryRepository: FactoryRepository, tenantRepository: TenantRepository) =
+        testDispatcherProvider.run {
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val factory = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-node",
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "test",
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
+                )
             )
-        )
-        state =
-            FactoryStateEntity(Instant.now(), factory.id, healthTimestamp = Instant.now(), 0, FactoryStateValue.HEALTHY)
-    }
+            state =
+                FactoryStateEntity(
+                    Instant.now(),
+                    factory.id,
+                    healthTimestamp = Instant.now(),
+                    0,
+                    FactoryStateValue.HEALTHY
+                )
+        }
 
     @AfterEach
     internal fun tearDown(factoryRepository: FactoryRepository) = testDispatcherProvider.run {
@@ -71,16 +81,21 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     }
 
     @Test
-    fun `should delete for a factory state before a timestamp only`(factoryRepository: FactoryRepository) =
+    fun `should delete for a factory state before a timestamp only`(
+        factoryRepository: FactoryRepository,
+        tenantRepository: TenantRepository
+    ) =
         testDispatcherProvider.run {
             // given
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
             val cutoff = Instant.now() - Duration.ofHours(2)
             val factory1 = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "factory-1",
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "random-node",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
             val factory2 = factoryRepository.save(
@@ -88,7 +103,8 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
                     nodeId = "factory-2",
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "random-node",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
             repository.saveAll(
@@ -165,15 +181,20 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
         }
 
     @Test
-    internal fun `should delete the states attached to a deleted factory`(factoryRepository: FactoryRepository) =
+    internal fun `should delete the states attached to a deleted factory`(
+        factoryRepository: FactoryRepository,
+        tenantRepository: TenantRepository
+    ) =
         testDispatcherProvider.run {
             // given
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
             repository.save(state.copy(factoryId = factory.id))

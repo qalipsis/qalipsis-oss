@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
 internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
+    @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 

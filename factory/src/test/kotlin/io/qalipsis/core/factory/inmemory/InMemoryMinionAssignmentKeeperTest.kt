@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 internal class InMemoryMinionAssignmentKeeperTest {
 
+    @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 

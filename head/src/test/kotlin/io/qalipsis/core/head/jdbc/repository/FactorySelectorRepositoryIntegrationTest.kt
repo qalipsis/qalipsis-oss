@@ -114,7 +114,8 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
     @Test
     internal fun `should not save selectors twice with same key for same factory`() = testDispatcherProvider.run {
         // given
-        val saved = repository.save(factory.copy())
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val saved = repository.save(factory.copy(tenantId = tenant.id))
 
         // when
         selectorRepository.save(FactorySelectorEntity(saved.id, "key-1", "value-1"))
@@ -126,8 +127,9 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
     @Test
     internal fun `should save selectors twice with same key for different factories`() = testDispatcherProvider.run {
         // given
-        val saved1 = repository.save(factory.copy())
-        val saved2 = repository.save(factory.copy(nodeId = "another node ID"))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val saved1 = repository.save(factory.copy(tenantId = tenant.id))
+        val saved2 = repository.save(factory.copy(nodeId = "another node ID", tenantId = tenant.id))
 
         // when
         selectorRepository.save(FactorySelectorEntity(saved1.id, "key-1", "value-1"))
