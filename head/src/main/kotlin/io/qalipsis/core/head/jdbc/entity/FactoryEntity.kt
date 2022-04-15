@@ -22,6 +22,7 @@ internal data class FactoryEntity(
     override val id: Long,
     @field:Version
     val version: Instant,
+    val tenantId: Long,
     val nodeId: String,
     val registrationTimestamp: Instant,
     @field:NotBlank
@@ -33,6 +34,7 @@ internal data class FactoryEntity(
 ) : Entity {
 
     constructor(
+        tenantId: Long = -1,
         nodeId: String,
         registrationTimestamp: Instant,
         registrationNodeId: String,
@@ -41,6 +43,7 @@ internal data class FactoryEntity(
     ) : this(
         -1,
         Instant.EPOCH,
+        tenantId,
         nodeId,
         registrationTimestamp,
         registrationNodeId,

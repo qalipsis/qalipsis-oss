@@ -14,6 +14,10 @@
       <column name="version" type="TIMESTAMP">
         <constraints nullable="false"/>
       </column>
+      <column name="tenant_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="factory_tenant_id_fk" referencedTableName="tenant"
+          referencedColumnNames="id" deleteCascade="true"/>
+      </column>
       <column name="node_id" type="varchar(50)">
         <constraints nullable="false"/>
       </column>
@@ -30,6 +34,7 @@
 
     <createIndex schemaName="qalipsis" indexName="unique_factory_node_idx" tableName="factory" unique="true">
       <column name="node_id"/>
+      <column name="tenant_id"/>
     </createIndex>
   </changeSet>
 </databaseChangeLog>

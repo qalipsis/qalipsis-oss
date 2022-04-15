@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThan
@@ -13,6 +14,7 @@ import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -32,14 +34,26 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Inject
     private lateinit var repository: ScenarioRepository
 
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
+
+    private val tenantPrototype =
+        TenantEntity(
+            Instant.now(),
+            "qalipsis",
+            "test-tenant",
+        )
+
     @BeforeEach
     internal fun setup(factoryRepository: FactoryRepository) = testDispatcherProvider.run {
+        val savedTenant = tenantRepository.save(tenantPrototype.copy(reference = "hello"))
         val factory = factoryRepository.save(
             FactoryEntity(
                 nodeId = "the-node",
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = "test",
-                unicastChannel = "unicast-channel"
+                unicastChannel = "unicast-channel",
+                tenantId = savedTenant.id
             )
         )
         scenario = ScenarioEntity(factory.id, "test", 1)
@@ -131,12 +145,14 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should save two scenarios with the same name on different factories`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
 
@@ -152,12 +168,15 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should list the enabled scenarios for the provided names`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
+            val tenant1 = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy())
             val factory1 = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant1.id
                 )
             )
             val factory2 = factoryRepository.save(
@@ -165,32 +184,74 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "any",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant2.id
                 )
             )
             val scenario1 = repository.save(scenario.copy())
-            val scenario2 = repository.save(scenario.copy(name = "another-name"))
+            val scenario2 = repository.save(scenario.copy(name = "another-name", factoryId = factory2.id))
             val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
             repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
 
             // when + then
-            assertThat(repository.findActiveByName(listOf("test")).map { it.id }).containsOnly(
-                scenario1.id,
+            assertThat(repository.findActiveByName("qalipsis", listOf("test")).map { it.id }).containsOnly(
                 scenario3.id
             )
-            assertThat(repository.findActiveByName(listOf("another-name")).map { it.id }).containsOnly(scenario2.id)
+            assertThat(repository.findActiveByName("qalipsis", listOf("another-name")).map { it.id }).containsOnly(
+                scenario2.id
+            )
         }
 
     @Test
-    internal fun `should list the scenarios of the provided factory`(factoryRepository: FactoryRepository) =
+    internal fun `should list the enabled scenarios for the provided names with tenant reference`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
+            val factory1 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "test",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant1.id
+                )
+            )
+            val factory2 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "any",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant2.id
+                )
+            )
+            val scenario1 = repository.save(scenario.copy())
+            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
+            val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
+            repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
+
+            // when + then
+            assertThat(repository.findActiveByName("qalipsis", listOf("test")).map { it.id }).containsOnly(
+                scenario3.id
+            )
+            assertThat(repository.findActiveByName("new-qalipsis", listOf("another-name")).map { it.id }).containsOnly(
+                scenario2.id
+            )
+        }
+
+    @Test
+    internal fun `should list the scenarios of the provided factory with tenant reference`(factoryRepository: FactoryRepository) =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy())
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant.id
                 )
             )
             val scenario1 = repository.save(scenario.copy())
@@ -198,21 +259,63 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario3 = repository.save(scenario.copy(factoryId = factory.id))
 
             // when + then
-            assertThat(repository.findByFactoryId(scenario1.factoryId).map { it.id })
-                .containsOnly(scenario1.id, scenario2.id)
-            assertThat(repository.findByFactoryId(factory.id).map { it.id }).containsOnly(scenario3.id)
+            assertThat(repository.findByFactoryId("qalipsis", scenario1.factoryId)).isEmpty()
+            assertThat(
+                repository.findByFactoryId("qalipsis", factory.id).map { it.id }).containsOnly(scenario3.id)
         }
 
     @Test
-    internal fun `should delete the scenarios attached to a deleted factory`(factoryRepository: FactoryRepository) =
+    fun `should list the scenarios of the provided factory with tenant reference and different tenants aren't mixed up`(
+        factoryRepository: FactoryRepository
+    ) =
         testDispatcherProvider.run {
             // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant.id
+                )
+            )
+            val factory2 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "test",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant2.id
+                )
+            )
+
+            val scenario1 = repository.save(scenario.copy(factoryId = factory.id))
+            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id))
+
+            // when + then
+            assertThat(repository.findByFactoryId("qalipsis", scenario2.factoryId)).isEmpty()
+            assertThat(repository.findByFactoryId("qalipsis-2", scenario1.factoryId)).isEmpty()
+            assertThat(
+                repository.findByFactoryId("qalipsis", factory.id).map { it.id }).containsOnly(scenario1.id)
+            assertThat(
+                repository.findByFactoryId("qalipsis-2", factory2.id).map { it.id }).containsOnly(scenario2.id)
+        }
+
+
+    @Test
+    internal fun `should delete the scenarios attached to a deleted factory`(factoryRepository: FactoryRepository) =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val factory = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "test",
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
             repository.save(scenario.copy(factoryId = factory.id))

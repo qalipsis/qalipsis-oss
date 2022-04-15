@@ -29,6 +29,7 @@ import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactorySelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
@@ -57,7 +58,8 @@ internal class ClusterFactoryService(
     private val directedAcyclicGraphRepository: DirectedAcyclicGraphRepository,
     private val directedAcyclicGraphSelectorRepository: DirectedAcyclicGraphSelectorRepository,
     private val campaignRepository: CampaignRepository,
-    private val campaignFactoryRepository: CampaignFactoryRepository
+    private val campaignFactoryRepository: CampaignFactoryRepository,
+    private val tenantRepository: TenantRepository
 ) : FactoryService {
 
     /**
@@ -69,20 +71,22 @@ internal class ClusterFactoryService(
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
     ) {
-        val existingFactory = saveFactory(actualNodeId, handshakeRequest, handshakeResponse)
-        saveScenariosAndDependencies(handshakeRequest.scenarios, existingFactory)
+        val tenantId = tenantRepository.findIdByReference(handshakeRequest.tenant)
+        val existingFactory = saveFactory(tenantId, actualNodeId, handshakeRequest, handshakeResponse)
+        saveScenariosAndDependencies(handshakeRequest.tenant, handshakeRequest.scenarios, existingFactory)
     }
 
     /**
      * Updates or saves factory and factory_selector entities using handshakeRequest
      */
     private suspend fun saveFactory(
+        tenantId: Long,
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
     ) =
         (updateFactory(actualNodeId, handshakeRequest, handshakeResponse)
-            ?: saveNewFactory(actualNodeId, handshakeRequest, handshakeResponse))
+            ?: saveNewFactory(tenantId, actualNodeId, handshakeRequest, handshakeResponse))
             .also { factoryEntity ->
                 // The state of the factory is changed to REGISTERED.
                 val now = Instant.now()
@@ -103,19 +107,21 @@ internal class ClusterFactoryService(
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
-    ) = factoryRepository.findByNodeIdIn(listOf(actualNodeId)).firstOrNull()?.also { entity ->
-        // When the entity already exists, its selectors are updated.
-        mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
+    ) = factoryRepository.findByNodeIdIn(handshakeRequest.tenant, listOf(actualNodeId))
+        .firstOrNull()?.also { entity ->
+            // When the entity already exists, its selectors are updated.
+            mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
 
-        if (entity.unicastChannel != handshakeResponse.unicastChannel) {
-            factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+            if (entity.unicastChannel != handshakeResponse.unicastChannel) {
+                factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+            }
         }
-    }
 
     /**
      * Persists new factory and factory_selector entities
      */
     private suspend fun saveNewFactory(
+        tenantId: Long,
         actualNodeId: String,
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
@@ -125,7 +131,8 @@ internal class ClusterFactoryService(
                 nodeId = actualNodeId,
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = handshakeRequest.nodeId,
-                unicastChannel = handshakeResponse.unicastChannel
+                unicastChannel = handshakeResponse.unicastChannel,
+                tenantId = tenantId
             )
         )
         if (handshakeRequest.tags.isNotEmpty()) {
@@ -140,11 +147,12 @@ internal class ClusterFactoryService(
      * Creates, updates and deletes scenario-specific entities with accordance to scenarios from handshakeRequest
      */
     private suspend fun saveScenariosAndDependencies(
+        tenantReference: String,
         registrationScenarios: List<RegistrationScenario>,
         existingFactory: FactoryEntity
     ) {
         val inputScenarios = registrationScenarios.associateBy { it.name }.toMutableMap()
-        val existingScenarios = scenarioRepository.findByFactoryId(existingFactory.id)
+        val existingScenarios = scenarioRepository.findByFactoryId(tenantReference, existingFactory.id)
         if (existingScenarios.isNotEmpty()) {
             directedAcyclicGraphRepository.deleteByScenarioIdIn(existingScenarios.map { it.id })
             directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(existingScenarios.flatMap { it.dags }
@@ -269,12 +277,15 @@ internal class ClusterFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getAvailableFactoriesForScenarios(scenarioNames: Collection<String>): Collection<Factory> {
-        val scenariosByFactories = scenarioRepository.findActiveByName(scenarioNames).groupBy { it.factoryId }
-
-        return factoryRepository.getAvailableFactoriesForScenarios(scenarioNames).map { entity ->
-            entity.toModel(scenariosByFactories[entity.id]!!.map { it.name })
-        }
+    override suspend fun getAvailableFactoriesForScenarios(
+        tenant: String,
+        scenarioNames: Collection<String>
+    ): Collection<Factory> {
+        val scenariosByFactories = scenarioRepository.findActiveByName(tenant, scenarioNames).groupBy { it.factoryId }
+        return factoryRepository.getAvailableFactoriesForScenarios(tenant, scenarioNames)
+            .map { entity ->
+                entity.toModel(scenariosByFactories[entity.id]!!.map { it.name })
+            }
     }
 
     @LogInput
@@ -282,7 +293,9 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignName = campaignRepository.findIdByNameAndEndIsNull(campaignConfiguration.name)
+                val campaignName = campaignRepository.findIdByNameAndEndIsNull(
+                    campaignConfiguration.tenant, campaignConfiguration.name
+                )
                 campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignName, it) }).count()
             }
         }
@@ -293,7 +306,9 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignName = campaignRepository.findIdByNameAndEndIsNull(campaignConfiguration.name)
+                val campaignName = campaignRepository.findIdByNameAndEndIsNull(
+                    campaignConfiguration.tenant, campaignConfiguration.name
+                )
                 campaignFactoryRepository.discard(campaignName, factoryIds)
             }
         }
@@ -302,7 +317,7 @@ internal class ClusterFactoryService(
     /**
      * getAllScenarios method finds all active scenarios by given ids
      */
-    override suspend fun getActiveScenarios(ids: Collection<String>) =
-        scenarioRepository.findActiveByName(ids).map(ScenarioEntity::toModel)
+    override suspend fun getActiveScenarios(tenant: String, ids: Collection<String>) =
+        scenarioRepository.findActiveByName(tenant, ids).map(ScenarioEntity::toModel)
 
 }

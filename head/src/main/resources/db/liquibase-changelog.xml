@@ -4,6 +4,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <include file="changelog/creation/00-create-tenant.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/01-create-factory.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/02-create-factory-selector.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/03-create-factory-state.xml" relativeToChangelogFile="true"/>

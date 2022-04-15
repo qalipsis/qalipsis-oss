@@ -8,6 +8,6 @@ import io.qalipsis.api.context.CampaignName
  * @author Eric Jessé
  */
 interface CampaignManagementDirective {
-
     val campaignName: CampaignName
+    var tenant: String
 }

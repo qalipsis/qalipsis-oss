@@ -35,7 +35,12 @@ data class DirectiveFeedback(
     /**
      * Error message.
      */
-    val error: String? = null
+    val error: String? = null,
+
+    /**
+     * reference to the tenant of the factory that emitted the feedback, when known.
+     */
+    var tenant: String = ""
 ) : Feedback()
 
 /**

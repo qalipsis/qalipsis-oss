@@ -77,8 +77,9 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class FactoryInitializerImplTest {
 
+    @JvmField
     @RegisterExtension
-    private val testDispatcherProvider = TestDispatcherProvider()
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
     private lateinit var applicationContext: ApplicationContext

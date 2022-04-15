@@ -98,6 +98,7 @@ internal class RedisFactoryChannel(
     override suspend fun publishFeedback(feedback: Feedback) {
         if (feedback is CampaignManagementFeedback) {
             feedback.nodeId = factoryConfiguration.nodeId
+            feedback.tenant = factoryConfiguration.tenant
         }
         publisherCommands.publish(currentFeedbackChannel, serializer.serialize(feedback)).toFuture().asSuspended().get()
     }

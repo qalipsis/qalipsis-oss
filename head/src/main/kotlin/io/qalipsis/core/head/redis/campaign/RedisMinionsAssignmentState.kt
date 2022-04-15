@@ -18,7 +18,7 @@ internal class RedisMinionsAssignmentState(
 ) : MinionsAssignmentState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
-        operations.setState(campaignName, CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
+        operations.setState(campaign.tenant, campaignName, CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
         return super.doInit()
     }
@@ -33,7 +33,13 @@ internal class RedisMinionsAssignmentState(
                 if (feedback.status == FeedbackStatus.IGNORED) {
                     operations.saveConfiguration(campaign)
                 }
-                if (operations.markFeedbackForFactoryScenario(campaignName, feedback.nodeId, feedback.scenarioName)) {
+                if (operations.markFeedbackForFactoryScenario(
+                        campaign.tenant,
+                        campaignName,
+                        feedback.nodeId,
+                        feedback.scenarioName
+                    )
+                ) {
                     RedisWarmupState(campaign, operations)
                 } else {
                     this

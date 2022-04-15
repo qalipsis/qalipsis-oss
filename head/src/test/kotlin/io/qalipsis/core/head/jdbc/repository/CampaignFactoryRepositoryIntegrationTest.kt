@@ -13,6 +13,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -32,15 +33,20 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
 
     private val campaignPrototype =
         CampaignEntity(
-            "the-campaign-id",
-            123.0,
-            Instant.now() - Duration.ofSeconds(173),
-            Instant.now(),
-            ExecutionStatus.SUCCESSFUL
+            campaignName = "the-campaign-id",
+            speedFactor = 123.0,
+            start = Instant.now() - Duration.ofSeconds(173),
+            end = Instant.now(),
+            result = ExecutionStatus.SUCCESSFUL
         )
 
     private val factoryPrototype =
-        FactoryEntity("the-node-id", Instant.now(), "the-registration-node-id", "unicast-channel")
+        FactoryEntity(
+            nodeId = "the-node-id",
+            registrationTimestamp = Instant.now(),
+            registrationNodeId = "the-registration-node-id",
+            unicastChannel = "unicast-channel"
+        )
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
@@ -49,49 +55,56 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
     }
 
     @Test
-    internal fun `should save then update the discarded flag`() = testDispatcherProvider.run {
-        // given
-        val campaign = campaignRepository.save(campaignPrototype.copy())
-        val factory1 = factoryRepository.save(factoryPrototype.copy())
-        val factory2 = factoryRepository.save(factoryPrototype.copy(nodeId = "other-factory"))
-        val saved1 = campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory1.id, discarded = false))
-        val saved2 = campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
+    internal fun `should save then update the discarded flag`(tenantRepository: TenantRepository) =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val campaign = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
+            val factory1 = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
+            val factory2 = factoryRepository.save(factoryPrototype.copy(nodeId = "other-factory", tenantId = tenant.id))
+            val saved1 =
+                campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory1.id, discarded = false))
+            val saved2 =
+                campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
 
-        // when
-        var fetched = campaignFactoryRepository.findById(saved1.id)
+            // when
+            var fetched = campaignFactoryRepository.findById(saved1.id)
 
-        // then
-        assertThat(fetched).isNotNull().isDataClassEqualTo(saved1)
+            // then
+            assertThat(fetched).isNotNull().isDataClassEqualTo(saved1)
 
-        // when
-        campaignFactoryRepository.discard(campaign.id, listOf(factory1.id))
+            // when
+            campaignFactoryRepository.discard(campaign.id, listOf(factory1.id))
 
-        // then
-        fetched = campaignFactoryRepository.findById(saved1.id)
-        assertThat(fetched).isNotNull().all {
-            prop(CampaignFactoryEntity::discarded).isTrue()
-            prop(CampaignFactoryEntity::version).isGreaterThan(saved1.version)
+            // then
+            fetched = campaignFactoryRepository.findById(saved1.id)
+            assertThat(fetched).isNotNull().all {
+                prop(CampaignFactoryEntity::discarded).isTrue()
+                prop(CampaignFactoryEntity::version).isGreaterThan(saved1.version)
+            }
+            // The record for factory 2 remains unchanged.
+            fetched = campaignFactoryRepository.findById(saved2.id)
+            assertThat(fetched).isNotNull().all {
+                prop(CampaignFactoryEntity::discarded).isFalse()
+                prop(CampaignFactoryEntity::version).isEqualTo(saved2.version)
+            }
         }
-        // The record for factory 2 remains unchanged.
-        fetched = campaignFactoryRepository.findById(saved2.id)
-        assertThat(fetched).isNotNull().all {
-            prop(CampaignFactoryEntity::discarded).isFalse()
-            prop(CampaignFactoryEntity::version).isEqualTo(saved2.version)
-        }
-    }
 
     @Test
-    fun `should update the version when the entity is updated`() = testDispatcherProvider.run {
-        // given
-        val campaign = campaignRepository.save(campaignPrototype.copy())
-        val factory = factoryRepository.save(factoryPrototype.copy())
-        val saved = campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory.id, discarded = false))
+    fun `should update the version when the entity is updated`(tenantRepository: TenantRepository) =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val campaign = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
+            val factory = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
+            val saved =
+                campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory.id, discarded = false))
 
-        // when
-        val updated = campaignFactoryRepository.update(saved)
+            // when
+            val updated = campaignFactoryRepository.update(saved)
 
-        // then
-        assertThat(updated.version).isGreaterThan(saved.version)
-    }
+            // then
+            assertThat(updated.version).isGreaterThan(saved.version)
+        }
 
 }

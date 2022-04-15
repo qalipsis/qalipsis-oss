@@ -10,6 +10,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterAll
@@ -30,6 +31,9 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     @Inject
     private lateinit var campaignRepository: CampaignRepository
 
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
+
     private val campaignReportPrototype =
         CampaignReportEntity(
             campaignId = 1,
@@ -41,13 +45,15 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
 
     @BeforeEach
     fun init() = testDispatcherProvider.run {
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
         val campaignPrototype =
             CampaignEntity(
                 campaignName = "the-campaign-id",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
-                result = ExecutionStatus.SUCCESSFUL
+                result = ExecutionStatus.SUCCESSFUL,
+                tenantId = tenant.id
             )
         campaignRepository.save(campaignPrototype.copy())
     }
@@ -60,6 +66,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     @AfterAll
     fun tearDownAll() = testDispatcherProvider.run {
         campaignRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @Test

@@ -16,8 +16,9 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @MicronautTest(environments = [ExecutionEnvironments.POSTGRESQL])
 internal abstract class PostgresqlTemplateTest : TestPropertyProvider {
 
+    @JvmField
     @RegisterExtension
-    protected val testDispatcherProvider = TestDispatcherProvider()
+    final val testDispatcherProvider = TestDispatcherProvider()
 
     override fun getProperties() = pgsqlContainer.testProperties()
 

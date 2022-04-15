@@ -57,7 +57,10 @@ internal class StandaloneCampaignManager(
         return FactoryAssignmentState(campaign)
     }
 
-    override suspend fun get(campaignName: CampaignName): CampaignExecutionState<CampaignExecutionContext> {
+    override suspend fun get(
+        tenant: String,
+        campaignName: CampaignName
+    ): CampaignExecutionState<CampaignExecutionContext> {
         return currentCampaignState
     }
 

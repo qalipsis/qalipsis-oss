@@ -26,6 +26,7 @@ data class FactoryAssignmentFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 
@@ -52,6 +53,7 @@ data class ScenarioWarmUpFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 
@@ -72,6 +74,7 @@ data class EndOfCampaignScenarioFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 
@@ -90,6 +93,7 @@ data class EndOfCampaignFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 /**
@@ -115,6 +119,7 @@ data class CampaignScenarioShutdownFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }
 
 /**
@@ -138,4 +143,5 @@ data class CampaignShutdownFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
 }

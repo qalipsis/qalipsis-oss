@@ -15,7 +15,10 @@ import kotlinx.serialization.Serializable
 data class MinionsAssignmentDirective(
     override val campaignName: CampaignName,
     val scenarioName: ScenarioName
-) : DescriptiveDirective(), CampaignManagementDirective
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+}
 
 /**
  * Definition of an instant when a given minion has to start.
@@ -36,6 +39,8 @@ data class MinionsStartDirective(
     val startDefinitions: List<MinionStartDefinition>
 ) : DescriptiveDirective(), CampaignManagementDirective {
 
+    override var tenant: String = ""
+
     override fun toString(): String {
         return "MinionsStartDirective(campaignName='$campaignName', scenarioName='$scenarioName', startDefinitionsCount=${startDefinitions.size})"
     }
@@ -51,4 +56,7 @@ data class MinionsShutdownDirective(
     val scenarioName: ScenarioName,
     val minionIds: List<MinionId>,
     override val channel: DispatcherChannel
-) : DescriptiveDirective(), CampaignManagementDirective
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+}

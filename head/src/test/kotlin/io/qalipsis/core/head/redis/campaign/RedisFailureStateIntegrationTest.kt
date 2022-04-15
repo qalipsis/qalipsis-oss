@@ -55,7 +55,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
             )
         )
         operations.saveConfiguration(campaign)
-        operations.setState(campaign.name, CampaignRedisState.WARMUP_STATE)
+        operations.setState(campaign.tenant, campaign.name, CampaignRedisState.WARMUP_STATE)
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
 
         // when
@@ -72,7 +72,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
                 CampaignShutdownDirective("my-campaign", "my-broadcast-channel")
             )
         }
-        assertThat(operations.getState(campaign.name)).isNotNull().all {
+        assertThat(operations.getState(campaign.tenant, campaign.name)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.FAILURE_STATE)
         }

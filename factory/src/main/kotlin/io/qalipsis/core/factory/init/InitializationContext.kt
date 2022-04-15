@@ -43,13 +43,13 @@ internal open class InitializationContext(
                 feedbackDags
             )
         }
-        // TODO Test
         factoryChannel.subscribeHandshakeResponse(factoryConfiguration.handshake.responseChannel)
         val request = HandshakeRequest(
             factoryConfiguration.nodeId,
             factoryConfiguration.tags,
             factoryConfiguration.handshake.responseChannel,
-            feedbackScenarios
+            feedbackScenarios,
+            factoryConfiguration.tenant
         )
         factoryChannel.publishHandshakeRequest(request)
     }

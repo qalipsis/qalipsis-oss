@@ -15,8 +15,9 @@ import org.junit.jupiter.api.extension.RegisterExtension
  */
 internal class InMemorySharedStateRegistryTest {
 
+    @JvmField
     @RegisterExtension
-    private val testDispatcherProvider = TestDispatcherProvider()
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Test
     internal fun shouldSetAndGet() = testDispatcherProvider.run {

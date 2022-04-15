@@ -15,10 +15,25 @@ import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 @JdbcRepository(dialect = Dialect.POSTGRES)
 internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Long> {
 
+    @Query(
+        """SELECT factory.*, 
+            factory_selector.id as selectors_id, factory_selector.factory_id as selectors_factory_id, factory_selector.key as selectors_key, factory_selector.value as selectors_value
+            FROM factory LEFT JOIN factory_selector ON factory_id = factory.id WHERE factory.node_id IN (:factoryIds)
+            AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
+            """
+    )
     @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
-    suspend fun findByNodeIdIn(factoryIds: Collection<String>): List<FactoryEntity>
+    suspend fun findByNodeIdIn(tenant: String, factoryIds: Collection<String>): List<FactoryEntity>
 
     suspend fun findIdByNodeIdIn(factoryIds: Collection<String>): List<Long>
+
+    @Query(
+        """SELECT DISTINCT factory.id 
+            FROM factory LEFT JOIN factory_selector ON factory_id = factory.id WHERE factory.node_id IN (:factoryIds)
+            AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
+            """
+    )
+    suspend fun findIdByNodeIdIn(tenant: String, factoryIds: Collection<String>): List<Long>
 
     /**
      * Searching for the factories currently supporting the expected scenarios, and being healthy in the past 2 minutes.
@@ -34,10 +49,12 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
             AND NOT EXISTS -- The factory should not be used in a running campaign.
                 (SELECT * FROM campaign WHERE "end" IS NULL 
                     AND EXISTS (SELECT * FROM campaign_factory WHERE factory_id = factory.id AND campaign_id = campaign.id AND discarded = false)
-                )"""
+                )
+            AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
+                """
     )
     @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
-    suspend fun getAvailableFactoriesForScenarios(names: Collection<String>): List<FactoryEntity>
+    suspend fun getAvailableFactoriesForScenarios(tenant: String, names: Collection<String>): List<FactoryEntity>
 
     private companion object {
 

@@ -114,7 +114,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                 }
             }
         }
-        assertThat(operations.getState(campaign.name)).isNotNull().all {
+        assertThat(operations.getState(campaign.tenant, campaign.name)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
         }

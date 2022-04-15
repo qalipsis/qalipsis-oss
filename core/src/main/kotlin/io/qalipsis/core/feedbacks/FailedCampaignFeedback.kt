@@ -18,6 +18,8 @@ data class FailedCampaignFeedback(
 
     override var nodeId: String = ""
 
+    override var tenant: String = ""
+
     override val status: FeedbackStatus = FeedbackStatus.FAILED
 
 }

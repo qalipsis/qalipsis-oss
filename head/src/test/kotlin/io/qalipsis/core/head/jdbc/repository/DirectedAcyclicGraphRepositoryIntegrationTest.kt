@@ -20,11 +20,13 @@ import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.PostgresqlTemplateTest
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -50,14 +52,20 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     private lateinit var selectorRepository: DirectedAcyclicGraphSelectorRepository
 
     @BeforeAll
-    internal fun setUpAll(factoryRepository: FactoryRepository, scenarioRepository: ScenarioRepository) =
+    internal fun setUpAll(
+        factoryRepository: FactoryRepository,
+        scenarioRepository: ScenarioRepository,
+        tenantRepository: TenantRepository
+    ) =
         testDispatcherProvider.run {
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-node",
                     registrationTimestamp = Instant.now(),
                     registrationNodeId = "test",
-                    unicastChannel = "unicast-channel"
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
             scenario = scenarioRepository.save(ScenarioEntity(factory.id, "test", 123))

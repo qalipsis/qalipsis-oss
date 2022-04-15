@@ -14,6 +14,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
@@ -36,15 +37,24 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Inject
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
+
     private val campaignPrototype =
         CampaignEntity(
-            "the-campaign-id",
-            123.0,
-            Instant.now() - Duration.ofSeconds(173),
-            Instant.now(),
-            ExecutionStatus.SUCCESSFUL
+            campaignName = "the-campaign-id",
+            speedFactor = 123.0,
+            start = Instant.now() - Duration.ofSeconds(173),
+            end = Instant.now(),
+            result = ExecutionStatus.SUCCESSFUL
         )
 
+    private val tenantPrototype =
+        TenantEntity(
+            Instant.now(),
+            "qalipsis",
+            "test-tenant",
+        )
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
@@ -55,7 +65,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should save then get`() = testDispatcherProvider.run {
         // given
-        val saved = campaignRepository.save(campaignPrototype.copy())
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when
         val fetched = campaignRepository.findById(saved.id)
@@ -67,23 +78,48 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should find the ID of the running campaign`() = testDispatcherProvider.run {
         // given
-        val saved = campaignRepository.save(campaignPrototype.copy())
+        val savedTenant = tenantRepository.save(tenantPrototype.copy())
+        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = savedTenant.id))
 
         // when + then
         assertThrows<EmptyResultException> {
-            campaignRepository.findIdByNameAndEndIsNull(saved.name)
+            campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved.name)
         }
 
         // when
         campaignRepository.update(saved.copy(end = null))
-        assertThat(campaignRepository.findIdByNameAndEndIsNull(saved.name)).isEqualTo(saved.id)
+
+        assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved.name)).isEqualTo(saved.id)
     }
 
+    @Test
+    fun `should find the ID of the running campaign and different tenants aren't mixed up`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
+            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = savedTenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant2.id))
+
+            // when + then
+            assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved.name)).isEqualTo(saved.id)
+            assertThat(
+                campaignRepository.findIdByNameAndEndIsNull("qalipsis-2", saved2.name)
+            ).isEqualTo(saved2.id)
+            assertThrows<EmptyResultException> {
+                assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis", saved2.name))
+            }
+            assertThrows<EmptyResultException> {
+                assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis-2", saved.name))
+            }
+        }
 
     @Test
     fun `should update the version when the campaign is updated`() = testDispatcherProvider.run {
         // given
-        val saved = campaignRepository.save(campaignPrototype.copy())
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when
         val updated = campaignRepository.update(saved)
@@ -95,14 +131,16 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should delete all the sub-entities on delete`() = testDispatcherProvider.run {
         // given
-        val saved = campaignRepository.save(campaignPrototype.copy())
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
         val factory =
             factoryRepository.save(
                 FactoryEntity(
-                    "the-node-id",
-                    Instant.now(),
-                    "the-registration-node-id",
-                    "unicast-channel"
+                    nodeId = "the-node-id",
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "the-registration-node-id",
+                    unicastChannel = "unicast-channel",
+                    tenantId = tenant.id
                 )
             )
         campagnScenarioRepository.save(CampaignScenarioEntity(saved.id, "the-scenario", 231))
@@ -121,9 +159,12 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should close the open campaign`() = testDispatcherProvider.run {
         // given
-        val alreadyClosedCampaign = campaignRepository.save(campaignPrototype.copy(end = Instant.now()))
-        val openCampaign = campaignRepository.save(campaignPrototype.copy(end = null))
-        val otherOpenCampaign = campaignRepository.save(campaignPrototype.copy(name = "other-campaign", end = null))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val alreadyClosedCampaign =
+            campaignRepository.save(campaignPrototype.copy(end = Instant.now(), tenantId = tenant.id))
+        val openCampaign = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+        val otherOpenCampaign =
+            campaignRepository.save(campaignPrototype.copy(name = "other-campaign", end = null, tenantId = tenant.id))
 
         // when
         val beforeCall = Instant.now()

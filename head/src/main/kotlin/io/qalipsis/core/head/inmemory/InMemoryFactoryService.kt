@@ -75,7 +75,10 @@ internal class InMemoryFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getAvailableFactoriesForScenarios(scenarioNames: Collection<ScenarioName>): Collection<Factory> {
+    override suspend fun getAvailableFactoriesForScenarios(
+        tenant: String,
+        scenarioNames: Collection<ScenarioName>
+    ): Collection<Factory> {
         return scenarioNames.flatMap { scenarioName ->
             factoriesByScenarios[scenarioName]
                 ?.mapNotNull { nodeId -> factoriesByNodeId[nodeId]?.takeIf(::isAvailableAndHealthy) } ?: emptyList()
@@ -102,7 +105,7 @@ internal class InMemoryFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getActiveScenarios(ids: Collection<ScenarioName>): Collection<ScenarioSummary> {
+    override suspend fun getActiveScenarios(tenant: String, ids: Collection<ScenarioName>): Collection<ScenarioSummary> {
         return scenarioSummaryRepository.getAll(ids)
     }
 

@@ -12,4 +12,5 @@ interface CampaignManagementFeedback {
     var nodeId: String
     val status: FeedbackStatus
     val error: String?
+    var tenant: String
 }

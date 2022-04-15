@@ -19,8 +19,9 @@ import java.time.Duration
 @WithMockk
 internal class ClusterInitializationContextTest {
 
+    @JvmField
     @RegisterExtension
-    private val testDispatcherProvider = TestDispatcherProvider()
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
     private lateinit var factoryConfiguration: FactoryConfiguration

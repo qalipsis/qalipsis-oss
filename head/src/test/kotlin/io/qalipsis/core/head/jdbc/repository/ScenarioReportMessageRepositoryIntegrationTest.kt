@@ -11,13 +11,14 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils
 import java.time.Duration
 import java.time.Instant
 
@@ -44,16 +45,17 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     )
 
     @BeforeEach
-    fun initial() = testDispatcherProvider.run {
+    fun initial(tenantRepository: TenantRepository) = testDispatcherProvider.run {
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
         val campaignPrototype =
             CampaignEntity(
                 campaignName = "the-campaign-id",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
-                result = ExecutionStatus.SUCCESSFUL
+                result = ExecutionStatus.SUCCESSFUL,
             )
-        val campaingEntity = campaignRepository.save(campaignPrototype.copy())
+        val campaingEntity = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
         val campaignReportPrototype =
             CampaignReportEntity(
                 campaignId = campaingEntity.id,

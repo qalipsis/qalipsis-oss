@@ -24,6 +24,7 @@ internal data class CampaignEntity(
     override val id: Long,
     @field:Version
     val version: Instant,
+    val tenantId: Long,
     @field:NotBlank
     @field:Size(min = 5, max = 300)
     val name: String,
@@ -36,14 +37,15 @@ internal data class CampaignEntity(
 ) : Entity {
 
     constructor(
+        tenantId: Long = -1,
         campaignName: String,
         speedFactor: Double = 1.0,
         start: Instant = Instant.now(),
         end: Instant? = null,
-        result: ExecutionStatus? = null,
+        result: ExecutionStatus? = null
     ) : this(
         -1,
-        Instant.EPOCH,
+        Instant.EPOCH, tenantId,
         campaignName, speedFactor, start, end, result
     )
 }

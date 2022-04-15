@@ -15,9 +15,21 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 @JdbcRepository(dialect = Dialect.POSTGRES)
 internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
 
-    suspend fun findIdByNameAndEndIsNull(campaignName: String): Long
+    @Query(
+        """SELECT campaign.id
+            FROM campaign
+            WHERE name = :campaignName AND "end" IS NULL AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findIdByNameAndEndIsNull(tenant: String, campaignName: String): Long
 
-    suspend fun findIdByName(campaignName: String): Long
+    @Query(
+        """SELECT campaign.id
+            FROM campaign
+            WHERE name = :campaignName AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findIdByName(tenant: String, campaignName: String): Long
 
     /**
      * Marks the open campaign with the specified name [campaignName] as complete with the provided [result].
