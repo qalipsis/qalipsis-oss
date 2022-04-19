@@ -9,9 +9,12 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
+import io.qalipsis.core.head.security.AddRoleUserPatch
+import io.qalipsis.core.head.security.Auth0Patch
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UsernameUserPatch
 import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.RoleName
 import io.qalipsis.core.head.security.entity.UserIdentity
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -65,18 +68,19 @@ internal class UserManagementImplTest {
             every { name } returns "name"
         }
         coEvery { userRepository.findByUsername("qalipsis") } returns mockedUserEntity
-        coEvery { idendityManagement.get("identity") } returns mockedUserIdentity
+        coEvery { idendityManagement.get("qalipsis", "identity") } returns mockedUserIdentity
 
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
             "get",
+            "qalipsis",
             "qalipsis"
         )
 
         //  then
         coVerifyOrder {
             userRepository.findByUsername("qalipsis")
-            idendityManagement.get("identity")
+            idendityManagement.get("qalipsis", "identity")
 
         }
         confirmVerified(userRepository, idendityManagement)
@@ -93,6 +97,7 @@ internal class UserManagementImplTest {
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
             "get",
+            "qalipsis",
             "qalipsis"
         )
 
@@ -107,6 +112,7 @@ internal class UserManagementImplTest {
     fun `should update user`() = testDispatcherProvider.run {
         // given
         val patch = UsernameUserPatch("qalipsis-new")
+        val patch2 = AddRoleUserPatch("qalipsis", RoleName.REPORTER)
         val mockedUser = relaxedMockk<QalipsisUser> {
             every { verify_email } returns true
             every { email_verified } returns false
@@ -126,13 +132,19 @@ internal class UserManagementImplTest {
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
             "save",
+            "qalipsis",
             mockedUser,
-            listOf(patch)
+            listOf(patch, patch2)
         )
 
         //  then
         coVerifyOrder {
-            idendityManagement.update("identity", any() as UserIdentity)
+            idendityManagement.update(
+                "qalipsis",
+                "identity",
+                any() as UserIdentity,
+                any() as List<Auth0Patch>
+            )
             userRepository.update(any() as UserEntity)
         }
         confirmVerified(userRepository, idendityManagement)
@@ -151,6 +163,7 @@ internal class UserManagementImplTest {
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
             "delete",
+            "qalipsis",
             "Qalipsis-test"
         )
 
@@ -158,7 +171,7 @@ internal class UserManagementImplTest {
         coVerifyOrder {
             userRepository.findByUsername("Qalipsis-test")
             userRepository.update(any() as UserEntity)
-            idendityManagement.delete("identity")
+            idendityManagement.delete("qalipsis", "identity")
         }
         confirmVerified(userRepository, idendityManagement)
     }
