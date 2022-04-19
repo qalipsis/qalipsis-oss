@@ -13,7 +13,6 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -34,18 +33,11 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     @Inject
     private lateinit var tenantRepository: TenantRepository
 
-    private val campaignReportPrototype =
-        CampaignReportEntity(
-            campaignId = 1,
-            startedMinions = 1000,
-            completedMinions = 990,
-            successfulExecutions = 990,
-            failedExecutions = 10
-        )
+    private lateinit var campaignReportPrototype: CampaignReportEntity
 
     @BeforeEach
     fun init() = testDispatcherProvider.run {
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
         val campaignPrototype =
             CampaignEntity(
                 campaignName = "the-campaign-id",
@@ -55,17 +47,20 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 result = ExecutionStatus.SUCCESSFUL,
                 tenantId = tenant.id
             )
-        campaignRepository.save(campaignPrototype.copy())
+        val campaign = campaignRepository.save(campaignPrototype.copy())
+        campaignReportPrototype =
+            CampaignReportEntity(
+                campaignId = campaign.id,
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10
+            )
     }
 
     @AfterEach
     fun tearDown() = testDispatcherProvider.run {
         campaignReportRepository.deleteAll()
-    }
-
-    @AfterAll
-    fun tearDownAll() = testDispatcherProvider.run {
-        campaignRepository.deleteAll()
         tenantRepository.deleteAll()
     }
 

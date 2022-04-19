@@ -14,7 +14,7 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils
@@ -35,44 +35,46 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     @Inject
     private lateinit var campaignRepository: CampaignRepository
 
-    private val scenarioReportPrototype =
-        ScenarioReportEntity(
-            name = RandomStringUtils.randomAlphanumeric(7),
-            campaignReportId = 1,
-            start = Instant.now().minusSeconds(900),
-            end = Instant.now().minusSeconds(600),
-            startedMinions = 1000,
-            completedMinions = 990,
-            successfulExecutions = 990,
-            failedExecutions = 10,
-            ExecutionStatus.SUCCESSFUL
-        )
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
 
+    private lateinit var scenarioReportPrototype: ScenarioReportEntity
 
     @BeforeEach
-    fun initial(tenantRepository: TenantRepository) = testDispatcherProvider.run {
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
-        val campaignPrototype =
+    fun setUp() = testDispatcherProvider.run {
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val campaign = campaignRepository.save(
             CampaignEntity(
+                tenantId = tenant.id,
                 campaignName = "the-campaign-id",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL
             )
-        val campaingEntity = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
-        val campaignReportPrototype =
-            CampaignReportEntity(
-                campaingEntity.id, 1000, 990, 990, 10
+        )
+        val campaignReport = campaignReportRepository.save(CampaignReportEntity(campaign.id, 1000, 990, 990, 10))
+
+        scenarioReportPrototype =
+            ScenarioReportEntity(
+                name = RandomStringUtils.randomAlphanumeric(7),
+                campaignReportId = campaignReport.id,
+                start = Instant.now().minusSeconds(900),
+                end = Instant.now().minusSeconds(600),
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                ExecutionStatus.SUCCESSFUL
             )
-        campaignReportRepository.save(campaignReportPrototype)
     }
 
-    @AfterAll
-    fun tearDownAll() = testDispatcherProvider.run {
+    @AfterEach
+    fun tearDown() = testDispatcherProvider.run {
         scenarioReportRepository.deleteAll()
         campaignReportRepository.deleteAll()
         campaignRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @Test

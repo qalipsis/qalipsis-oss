@@ -37,7 +37,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
     )
 
     private val tenantPrototype =
-        TenantEntity(Instant.now(), "qalipsis", "test-tenant")
+        TenantEntity(Instant.now(), "my-tenant", "test-tenant")
 
     @Inject
     private lateinit var repository: FactoryRepository
@@ -71,7 +71,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         assertThat(selectorRepository.findAll().toList()).hasSize(2)
 
         // when
-        val resultingEntity = repository.findByNodeIdIn("qalipsis", listOf("the-node")).first()
+        val resultingEntity = repository.findByNodeIdIn("my-tenant", listOf("the-node")).first()
 
         // then
         assertThat(resultingEntity).all {
@@ -114,7 +114,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
     @Test
     internal fun `should not save selectors twice with same key for same factory`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
         val saved = repository.save(factory.copy(tenantId = tenant.id))
 
         // when
@@ -127,7 +127,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
     @Test
     internal fun `should save selectors twice with same key for different factories`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
         val saved1 = repository.save(factory.copy(tenantId = tenant.id))
         val saved2 = repository.save(factory.copy(nodeId = "another node ID", tenantId = tenant.id))
 
@@ -154,7 +154,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         selectorRepository.saveAll(listOf(FactorySelectorEntity(saved.id, "key-3", "value-3"))).count()
 
         // then
-        assertThat(repository.findByNodeIdIn("qalipsis", listOf("the-node")).first()).all {
+        assertThat(repository.findByNodeIdIn("my-tenant", listOf("the-node")).first()).all {
             prop(FactoryEntity::id).isGreaterThan(0)
             prop(FactoryEntity::version).isEqualTo(saved.version)
             prop(FactoryEntity::nodeId).isEqualTo("the-node")
@@ -190,7 +190,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         repository.deleteById(saved.id)
 
         // then
-        assertThat(repository.findByNodeIdIn("qalipsis", listOf("the-node"))).isEmpty()
+        assertThat(repository.findByNodeIdIn("my-tenant", listOf("the-node"))).isEmpty()
         assertThat(selectorRepository.findAll().toList()).isEmpty()
     }
 

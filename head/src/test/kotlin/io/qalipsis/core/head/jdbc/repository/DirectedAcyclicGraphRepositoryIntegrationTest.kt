@@ -58,7 +58,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         tenantRepository: TenantRepository
     ) =
         testDispatcherProvider.run {
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-node",

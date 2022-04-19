@@ -31,6 +31,9 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
     @Inject
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
+
     private val campaignPrototype =
         CampaignEntity(
             campaignName = "the-campaign-id",
@@ -52,13 +55,14 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
     internal fun tearDown() = testDispatcherProvider.run {
         campaignRepository.deleteAll()
         factoryRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @Test
-    internal fun `should save then update the discarded flag`(tenantRepository: TenantRepository) =
+    internal fun `should save then update the discarded flag`() =
         testDispatcherProvider.run {
             // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
             val campaign = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
             val factory1 = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
             val factory2 = factoryRepository.save(factoryPrototype.copy(nodeId = "other-factory", tenantId = tenant.id))
@@ -91,10 +95,10 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
         }
 
     @Test
-    fun `should update the version when the entity is updated`(tenantRepository: TenantRepository) =
+    fun `should update the version when the entity is updated`() =
         testDispatcherProvider.run {
             // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
             val campaign = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
             val factory = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
             val saved =

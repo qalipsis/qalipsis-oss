@@ -33,12 +33,18 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     private lateinit var state: FactoryStateEntity
 
     @Inject
+    private lateinit var factoryRepository: FactoryRepository
+
+    @Inject
+    private lateinit var tenantRepository: TenantRepository
+
+    @Inject
     private lateinit var repository: FactoryStateRepository
 
     @BeforeEach
-    internal fun setup(factoryRepository: FactoryRepository, tenantRepository: TenantRepository) =
+    internal fun setup() =
         testDispatcherProvider.run {
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-node",
@@ -59,8 +65,9 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
         }
 
     @AfterEach
-    internal fun tearDown(factoryRepository: FactoryRepository) = testDispatcherProvider.run {
+    internal fun tearDown() = testDispatcherProvider.run {
         factoryRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @Test
@@ -81,113 +88,106 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     }
 
     @Test
-    fun `should delete for a factory state before a timestamp only`(
-        factoryRepository: FactoryRepository,
-        tenantRepository: TenantRepository
-    ) =
-        testDispatcherProvider.run {
-            // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
-            val cutoff = Instant.now() - Duration.ofHours(2)
-            val factory1 = factoryRepository.save(
-                FactoryEntity(
-                    nodeId = "factory-1",
-                    registrationTimestamp = Instant.now(),
-                    registrationNodeId = "random-node",
-                    unicastChannel = "unicast-channel",
-                    tenantId = tenant.id
+    fun `should delete for a factory state before a timestamp only`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-other-tenant", "test-tenant"))
+        val cutoff = Instant.now() - Duration.ofHours(2)
+        val factory1 = factoryRepository.save(
+            FactoryEntity(
+                nodeId = "factory-1",
+                registrationTimestamp = Instant.now(),
+                registrationNodeId = "random-node",
+                unicastChannel = "unicast-channel",
+                tenantId = tenant.id
+            )
+        )
+        val factory2 = factoryRepository.save(
+            FactoryEntity(
+                nodeId = "factory-2",
+                registrationTimestamp = Instant.now(),
+                registrationNodeId = "random-node",
+                unicastChannel = "unicast-channel",
+                tenantId = tenant.id
+            )
+        )
+        repository.saveAll(
+            listOf(
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory1.id,
+                    healthTimestamp = cutoff - Duration.ofHours(4),
+                    0,
+                    FactoryStateValue.REGISTERED
+                ),
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory1.id,
+                    healthTimestamp = cutoff - Duration.ofHours(2),
+                    0,
+                    FactoryStateValue.HEALTHY
+                ),
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory1.id,
+                    healthTimestamp = cutoff.plusMillis(1),
+                    0,
+                    FactoryStateValue.UNHEALTHY
+                ),
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory1.id,
+                    healthTimestamp = Instant.now(),
+                    0,
+                    FactoryStateValue.UNREGISTERED
+                ),
+
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory2.id,
+                    healthTimestamp = cutoff - Duration.ofHours(4),
+                    0,
+                    FactoryStateValue.REGISTERED
+                ),
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory2.id,
+                    healthTimestamp = cutoff - Duration.ofHours(2),
+                    0,
+                    FactoryStateValue.HEALTHY
+                ),
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory2.id,
+                    healthTimestamp = cutoff.plusMillis(1),
+                    0,
+                    FactoryStateValue.UNHEALTHY
+                ),
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId = factory2.id,
+                    healthTimestamp = Instant.now(),
+                    0,
+                    FactoryStateValue.UNREGISTERED
                 )
             )
-            val factory2 = factoryRepository.save(
-                FactoryEntity(
-                    nodeId = "factory-2",
-                    registrationTimestamp = Instant.now(),
-                    registrationNodeId = "random-node",
-                    unicastChannel = "unicast-channel",
-                    tenantId = tenant.id
-                )
-            )
-            repository.saveAll(
-                listOf(
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory1.id,
-                        healthTimestamp = cutoff - Duration.ofHours(4),
-                        0,
-                        FactoryStateValue.REGISTERED
-                    ),
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory1.id,
-                        healthTimestamp = cutoff - Duration.ofHours(2),
-                        0,
-                        FactoryStateValue.HEALTHY
-                    ),
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory1.id,
-                        healthTimestamp = cutoff.plusMillis(1),
-                        0,
-                        FactoryStateValue.UNHEALTHY
-                    ),
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory1.id,
-                        healthTimestamp = Instant.now(),
-                        0,
-                        FactoryStateValue.UNREGISTERED
-                    ),
+        ).count()
 
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory2.id,
-                        healthTimestamp = cutoff - Duration.ofHours(4),
-                        0,
-                        FactoryStateValue.REGISTERED
-                    ),
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory2.id,
-                        healthTimestamp = cutoff - Duration.ofHours(2),
-                        0,
-                        FactoryStateValue.HEALTHY
-                    ),
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory2.id,
-                        healthTimestamp = cutoff.plusMillis(1),
-                        0,
-                        FactoryStateValue.UNHEALTHY
-                    ),
-                    FactoryStateEntity(
-                        Instant.now(),
-                        factoryId = factory2.id,
-                        healthTimestamp = Instant.now(),
-                        0,
-                        FactoryStateValue.UNREGISTERED
-                    )
-                )
-            ).count()
+        // when
+        val deleted = repository.deleteByFactoryIdAndHealthTimestampBefore(factory2.id, cutoff)
 
-            // when
-            val deleted = repository.deleteByFactoryIdAndHealthTimestampBefore(factory2.id, cutoff)
-
-            // then
-            assertThat(deleted).isEqualTo(2)
-            assertThat(repository.findAll().toList()).all {
-                hasSize(6)
-                each { it.matchesPredicate { it.factoryId == factory1.id || it.healthTimestamp >= cutoff } }
-            }
+        // then
+        assertThat(deleted).isEqualTo(2)
+        assertThat(repository.findAll().toList()).all {
+            hasSize(6)
+            each { it.matchesPredicate { it.factoryId == factory1.id || it.healthTimestamp >= cutoff } }
         }
+    }
 
     @Test
-    internal fun `should delete the states attached to a deleted factory`(
-        factoryRepository: FactoryRepository,
-        tenantRepository: TenantRepository
-    ) =
+    internal fun `should delete the states attached to a deleted factory`() =
         testDispatcherProvider.run {
             // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-other-tenant", "test-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
