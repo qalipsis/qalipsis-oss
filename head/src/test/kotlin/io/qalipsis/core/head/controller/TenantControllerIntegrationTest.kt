@@ -1,68 +1,50 @@
 package io.qalipsis.core.head.controller
 
 
-import com.google.gson.Gson
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.client.HttpClient
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.qalipsis.core.head.admin.SaveTenantDto
 import io.qalipsis.core.head.admin.SaveTenantResponse
-import okhttp3.MediaType
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 
 @MicronautTest
 class TenantControllerIntegrationTest(
-    private val client: OkHttpClient,
-    private val gson: Gson
+    private val httpClient: HttpClient
 ) {
 
-    private val mediaType: MediaType = "application/json".toMediaType()
-
-
     @Test
-    fun `should return display name`() {
+    fun `should return display name and 200`() {
 
+        val requestDto = SaveTenantDto("test")
+        val loginRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenant", requestDto)
+        val rsp: HttpResponse<SaveTenantResponse> = httpClient.toBlocking().exchange(
+            loginRequest,
+            SaveTenantResponse::class.java
+        )
 
-        @Language("JSON") val body = """{
-  "displayName": "test"
-}"""
-            .toRequestBody(mediaType)
-        val request: Request = Request.Builder()
-            .url("api/admin/tenant")
-            .method("POST", body)
-            .addHeader("Content-Type", "application/json")
-            .build()
-        val response: Response = client.newCall(request).execute()
-
-        val responseObject = gson.fromJson(response.body!!.string(), SaveTenantResponse::class.java)
-
-        Assertions.assertEquals("test", responseObject.displayName);
-
+        Assertions.assertEquals(200, rsp.status.code)
+        Assertions.assertEquals("test", rsp.body.get().displayName)
     }
 
 
     @Test
     fun `should not return 400`() {
 
+        val stringLengthWith201 = "W1HEH0JP1r0BsTrKwcyxCBZmaIeDmdbQhIreDcFsJrVBIMPid6NUnFZnl8lf9MMnnupmHlnX21c1r7Snd0YSv0cYqKhcLN5hl3a8AMeAPEvBhToJeXzJeEK7c6ugPzx170fVV1HMOWaUoDEWki6B13FcHgsRYlzQtdMlFD7D2zKcUbMv3NFgk98CqLyEzBxZMAXTtN5qc"
 
-        @Language("JSON") val body = """{
-  "displayName": "Re4ONd4UDqGDmLy1fmHAHDchkcvcknUXKDFu1pJfglRbw4bsxk74QaFqDSWOJj5zKAmPGiiHmFFbNlXMgzKQgv0IVLw7b4qh4F8wgnkNNt7t6uLhm020RLDOsUVNcfcwN1LsXFBfLOQK8fwUrwPWGn8YYybOmxfgdpmZwpMjsrjmU7N1AnhSBJoSmZPOiK91vnQyIH2dV"
-}"""
-            .toRequestBody(mediaType)
-        val request: Request = Request.Builder()
-            .url("api/admin/tenant")
-            .method("POST", body)
-            .addHeader("Content-Type", "application/json")
-            .build()
-        val response: Response = client.newCall(request).execute()
+        val requestDto = SaveTenantDto(stringLengthWith201)
+        val loginRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenant", requestDto)
+        val rsp: HttpResponse<SaveTenantResponse> = httpClient.toBlocking().exchange(
+            loginRequest,
+            SaveTenantResponse::class.java
+        )
 
-        Assertions.assertEquals("400", response.code);
-
+        Assertions.assertEquals(400, rsp.status.code)
     }
 
 }
