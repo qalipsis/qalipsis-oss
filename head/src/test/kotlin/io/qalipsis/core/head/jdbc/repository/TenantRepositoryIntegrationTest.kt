@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.prop
+import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
@@ -14,6 +15,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 import java.time.Instant
 
@@ -25,7 +27,6 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     val now = Instant.now()
 
     val tenantPrototype = TenantEntity(
-        creation = now,
         reference = "my-tenant",
         displayName = "my-tenant-1",
         description = "Here I am",
@@ -55,6 +56,15 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
+    fun `should not save two tenants with same reference`() = testDispatcherProvider.run {
+        // given
+        tenantRepository.save(tenantPrototype.copy())
+        assertThrows<DataAccessException> {
+            tenantRepository.save(tenantPrototype.copy())
+        }
+    }
+
+    @Test
     fun `should find id of tenant by reference`() = testDispatcherProvider.run {
         // given
         val saved = tenantRepository.save(tenantPrototype.copy())
@@ -63,7 +73,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetched = tenantRepository.findIdByReference(saved.reference)
 
         // then
-        assertThat(fetched).equals(saved.id)
+        assertThat(fetched).isEqualTo(saved.id)
     }
 
     @Test
@@ -76,7 +86,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetched = tenantRepository.findReferenceById(saved.id)
 
         // then
-        assertThat(fetched).equals(saved.reference)
+        assertThat(fetched).isEqualTo(saved.reference)
     }
 
     @Test

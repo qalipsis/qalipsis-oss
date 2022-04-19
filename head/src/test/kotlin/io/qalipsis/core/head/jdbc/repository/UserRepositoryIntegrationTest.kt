@@ -39,7 +39,7 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // then
         assertThat(fetched).isNotNull()
-        assertThat(fetched[0].username).isEqualTo("qalipsis")
+        assertThat(fetched[0].username).isEqualTo("_qalipsis_")
     }
 
     @Test

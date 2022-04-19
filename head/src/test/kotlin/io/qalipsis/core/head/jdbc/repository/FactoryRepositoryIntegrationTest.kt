@@ -57,12 +57,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     )
 
     private val tenantPrototype =
-        TenantEntity(Instant.now(), "qalipsis", "test-tenant")
+        TenantEntity(Instant.now(), "my-tenant", "test-tenant")
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
         factoryRepository.deleteAll()
         campaignRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @Test
@@ -101,18 +102,18 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         ).collect { selectors.add(it) }
 
         // when + then
-        assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-node-id")).first()).isDataClassEqualTo(
+        assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-node-id")).first()).isDataClassEqualTo(
             factory.copy(selectors = selectors)
         )
-        assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-other-node-id"))).isEmpty()
+        assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-other-node-id"))).isEmpty()
 
-        assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-node-id"))).containsOnly(factory.id)
+        assertThat(factoryRepository.findIdByNodeIdIn("my-tenant", listOf("the-node-id"))).containsOnly(factory.id)
         assertThat(
             factoryRepository.findIdByNodeIdIn(
-                "qalipsis", listOf("the-node-id", "the-other-node-id")
+                "my-tenant", listOf("the-node-id", "the-other-node-id")
             )
         ).containsOnly(factory.id)
-        assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-other-node-id"))).isEmpty()
+        assertThat(factoryRepository.findIdByNodeIdIn("my-tenant", listOf("the-other-node-id"))).isEmpty()
     }
 
     @Test
@@ -125,19 +126,19 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val factory2 = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant2.id))
 
             // when + then
-            assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-node-id"))).hasSize(1)
+            assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-node-id"))).hasSize(1)
             assertThat(factoryRepository.findByNodeIdIn("qalipsis-2", listOf("the-node-id"))).hasSize(1)
-            assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-other-node-id"))).hasSize(0)
+            assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-other-node-id"))).hasSize(0)
 
-            assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-node-id"))).containsOnly(factory.id)
+            assertThat(factoryRepository.findIdByNodeIdIn("my-tenant", listOf("the-node-id"))).containsOnly(factory.id)
             assertThat(
                 factoryRepository.findIdByNodeIdIn(
                     "qalipsis-2",
                     listOf("the-node-id")
                 )
             ).containsOnly(factory2.id)
-            assertThat(factoryRepository.findIdByNodeIdIn("qalipsis", listOf("the-other-node-id"))).isEmpty()
-            assertThat(factoryRepository.findByNodeIdIn("qalipsis", listOf("the-node-id")).first()).isDataClassEqualTo(
+            assertThat(factoryRepository.findIdByNodeIdIn("my-tenant", listOf("the-other-node-id"))).isEmpty()
+            assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-node-id")).first()).isDataClassEqualTo(
                 factory.copy()
             )
             assertThat(
@@ -203,7 +204,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    "qalipsis",
+                    "my-tenant",
                     listOf("scenario-1", "scenario-2")
                 )
 
@@ -271,7 +272,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios1 =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    "qalipsis",
+                    "my-tenant",
                     listOf("scenario-1", "scenario-2")
                 )
 
@@ -351,7 +352,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    "qalipsis",
+                    "my-tenant",
                     listOf("scenario-1", "scenario-2")
                 )
 
@@ -420,7 +421,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios1 =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    "qalipsis",
+                    "my-tenant",
                     listOf("scenario-1", "scenario-2")
                 )
 
@@ -501,7 +502,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios1 =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    "qalipsis",
+                    "my-tenant",
                     listOf("scenario-1", "scenario-2")
                 )
             val factoriesForScenarios2 =
@@ -570,7 +571,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when
             val factoriesForScenarios =
                 factoryRepository.getAvailableFactoriesForScenarios(
-                    "qalipsis",
+                    "my-tenant",
                     listOf("scenario-1", "scenario-2")
                 )
 

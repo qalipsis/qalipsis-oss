@@ -34,19 +34,16 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     private lateinit var scenarioReportMessageRepository: ScenarioReportMessageRepository
 
     @Inject
+    private lateinit var tenantRepository: TenantRepository
+
+    @Inject
     private lateinit var campaignRepository: CampaignRepository
 
-    val messagePrototype = ScenarioReportMessageEntity(
-        scenarioReportId = 1,
-        stepName = "my-step",
-        messageId = "my-message-1",
-        severity = ReportMessageSeverity.INFO,
-        message = "This is the first message"
-    )
+    lateinit var messagePrototype: ScenarioReportMessageEntity
 
     @BeforeEach
-    fun initial(tenantRepository: TenantRepository) = testDispatcherProvider.run {
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "qalipsis", "test-tenant"))
+    fun setUp() = testDispatcherProvider.run {
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
         val campaignPrototype =
             CampaignEntity(
                 campaignName = "the-campaign-id",
@@ -77,12 +74,20 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
                 failedExecutions = 10,
                 status = ExecutionStatus.SUCCESSFUL
             )
-        scenarioReportRepository.save(scenarioReportPrototype)
+        val scenarioReport = scenarioReportRepository.save(scenarioReportPrototype)
+        messagePrototype = ScenarioReportMessageEntity(
+            scenarioReportId = scenarioReport.id,
+            stepName = "my-step",
+            messageId = "my-message-1",
+            severity = ReportMessageSeverity.INFO,
+            message = "This is the first message"
+        )
     }
 
     @AfterEach
     fun tearDown() = testDispatcherProvider.run {
         scenarioReportMessageRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @AfterAll

@@ -18,7 +18,7 @@
         <constraints nullable="false"/>
       </column>
       <column name="reference" type="VARCHAR(50)">
-        <constraints nullable="false"/>
+        <constraints nullable="false" unique="true" uniqueConstraintName="unique_tenant_reference_idx"/>
       </column>
       <column name="display_name" type="VARCHAR(200)">
         <constraints nullable="false"/>
@@ -33,6 +33,15 @@
       </column>
     </createTable>
 
+    <!-- Default user -->
+    <insert tableName="tenant" schemaName="qalipsis">
+      <column name="id" valueSequenceNext="tenant_seq"/>
+      <column name="version" valueDate="CURRENT_TIMESTAMP"/>
+      <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
+      <column name="reference" value="_qalipsis_"/>
+      <column name="display_name" value="QALIPSIS"/>
+    </insert>
+
     <createSequence sequenceName="user_seq" schemaName="qalipsis"/>
     <createTable tableName="user" schemaName="qalipsis">
       <column name="id" type="BIGINT" valueSequenceNext="user_seq">
@@ -45,17 +54,16 @@
         <constraints nullable="false"/>
       </column>
       <column name="username" type="VARCHAR(150)">
-        <constraints nullable="false"/>
+        <constraints nullable="false" unique="true" uniqueConstraintName="unique_username_idx"/>
       </column>
     </createTable>
-    <createIndex schemaName="qalipsis" indexName="unique_username_idx" tableName="user" unique="true">
-      <column name="username"/>
-    </createIndex>
-    <insert tableName="user">
+
+    <!-- Default user -->
+    <insert tableName="user" schemaName="qalipsis">
       <column name="id" valueSequenceNext="user_seq"/>
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
       <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
-      <column name="username" value="qalipsis"/>
+      <column name="username" value="_qalipsis_"/>
     </insert>
   </changeSet>
 </databaseChangeLog>

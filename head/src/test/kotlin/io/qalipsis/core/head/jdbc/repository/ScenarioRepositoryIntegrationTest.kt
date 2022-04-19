@@ -40,7 +40,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private val tenantPrototype =
         TenantEntity(
             Instant.now(),
-            "qalipsis",
+            "my-tenant",
             "test-tenant",
         )
 
@@ -62,6 +62,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @AfterEach
     internal fun tearDown(factoryRepository: FactoryRepository) = testDispatcherProvider.run {
         factoryRepository.deleteAll()
+        tenantRepository.deleteAll()
     }
 
     @Test
@@ -169,7 +170,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
         testDispatcherProvider.run {
             // given
             val tenant1 = tenantRepository.save(tenantPrototype.copy())
-            val tenant2 = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy(reference = "my-other-tenant"))
             val factory1 = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
@@ -188,16 +189,19 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant2.id
                 )
             )
-            val scenario1 = repository.save(scenario.copy())
+            repository.save(scenario.copy())
             val scenario2 = repository.save(scenario.copy(name = "another-name", factoryId = factory2.id))
             val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
             repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
 
             // when + then
-            assertThat(repository.findActiveByName("qalipsis", listOf("test")).map { it.id }).containsOnly(
+            assertThat(
+                repository.findActiveByName("my-tenant", listOf("test", "another-name")).map { it.id }).containsOnly(
                 scenario3.id
             )
-            assertThat(repository.findActiveByName("qalipsis", listOf("another-name")).map { it.id }).containsOnly(
+            assertThat(
+                repository.findActiveByName("my-other-tenant", listOf("test", "another-name"))
+                    .map { it.id }).containsOnly(
                 scenario2.id
             )
         }
@@ -232,7 +236,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
 
             // when + then
-            assertThat(repository.findActiveByName("qalipsis", listOf("test")).map { it.id }).containsOnly(
+            assertThat(repository.findActiveByName("my-tenant", listOf("test")).map { it.id }).containsOnly(
                 scenario3.id
             )
             assertThat(repository.findActiveByName("new-qalipsis", listOf("another-name")).map { it.id }).containsOnly(
@@ -259,9 +263,9 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario3 = repository.save(scenario.copy(factoryId = factory.id))
 
             // when + then
-            assertThat(repository.findByFactoryId("qalipsis", scenario1.factoryId)).isEmpty()
+            assertThat(repository.findByFactoryId("my-tenant", scenario1.factoryId)).isEmpty()
             assertThat(
-                repository.findByFactoryId("qalipsis", factory.id).map { it.id }).containsOnly(scenario3.id)
+                repository.findByFactoryId("my-tenant", factory.id).map { it.id }).containsOnly(scenario3.id)
         }
 
     @Test
@@ -295,10 +299,10 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario2 = repository.save(scenario.copy(factoryId = factory2.id))
 
             // when + then
-            assertThat(repository.findByFactoryId("qalipsis", scenario2.factoryId)).isEmpty()
+            assertThat(repository.findByFactoryId("my-tenant", scenario2.factoryId)).isEmpty()
             assertThat(repository.findByFactoryId("qalipsis-2", scenario1.factoryId)).isEmpty()
             assertThat(
-                repository.findByFactoryId("qalipsis", factory.id).map { it.id }).containsOnly(scenario1.id)
+                repository.findByFactoryId("my-tenant", factory.id).map { it.id }).containsOnly(scenario1.id)
             assertThat(
                 repository.findByFactoryId("qalipsis-2", factory2.id).map { it.id }).containsOnly(scenario2.id)
         }
