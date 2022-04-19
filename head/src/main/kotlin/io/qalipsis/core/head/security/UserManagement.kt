@@ -1,6 +1,8 @@
 package io.qalipsis.core.head.security
 
+import io.qalipsis.core.head.security.entity.QalipsisRole
 import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.RoleName
 
 /**
  * Service to proceed (get, save, update, delete) the hybrid storage (database and identity management platform)
@@ -13,20 +15,25 @@ internal interface UserManagement {
     /**
      * Returns an enabled user.
      */
-    suspend fun get(username: String): QalipsisUser?
+    suspend fun get(tenant: String, username: String): QalipsisUser?
 
     /**
      *  Applies the different patches to [user] and persists those changes.
      */
-    suspend fun save(user: QalipsisUser, userPatches: Collection<UserPatch>)
+    suspend fun save(tenant: String, user: QalipsisUser, userPatches: Collection<UserPatch>)
 
     /**
      * Marks the user as disabled.
      */
-    suspend fun delete(username: String)
+    suspend fun delete(tenant: String, username: String)
 
     /**
      * Creates new the user.
      */
-    suspend fun create(user: QalipsisUser)
+    suspend fun create(tenant: String, user: QalipsisUser)
+
+    /**
+     * Receives the roles that a user is authorized to assign to another one.
+     */
+    suspend fun getAssignableRoles(tenant: String, currentUser: QalipsisUser): Set<RoleName>
 }
