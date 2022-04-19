@@ -94,4 +94,14 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
             userRepository.findById(saved.id)
         }
     }
+
+    @Test
+    fun `should find user by username`() = testDispatcherProvider.run {
+        // when
+        val fetched = userRepository.findByUsername("qalipsis")
+
+        // then
+        assertThat(fetched).isNotNull()
+        assertThat(fetched!!.id).isEqualTo(1)
+    }
 }
