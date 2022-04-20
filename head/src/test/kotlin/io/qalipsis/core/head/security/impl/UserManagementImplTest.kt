@@ -9,7 +9,7 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
-import io.qalipsis.core.head.security.IdendityManagement
+import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UsernameUserPatch
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -29,7 +29,7 @@ internal class UserManagementImplTest {
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var idendityManagement: IdendityManagement
+    private lateinit var idendityManagement: IdentityManagement
 
     @RelaxedMockK
     private lateinit var userRepository: UserRepository
@@ -100,8 +100,8 @@ internal class UserManagementImplTest {
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
             "save",
-            listOf(patch),
-            user
+            user,
+            listOf(patch)
         )
 
         //  then

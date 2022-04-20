@@ -2,13 +2,19 @@ package io.qalipsis.core.head.security.impl
 
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
-import io.qalipsis.core.head.security.IdendityManagement
+import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UserManagement
 import io.qalipsis.core.head.security.UserPatch
 import java.time.Instant
 
+/**
+ * There is a default implementation of [UserManagement] interface that encapsulate
+ * the “identity management” enabled by configuration
+ *
+ * @author Palina Bril
+ */
 class UserManagementImpl(
-    private val idendityManagement: IdendityManagement,
+    private val identityManagement: IdentityManagement,
     private val userRepository: UserRepository
 ) : UserManagement {
 
@@ -20,12 +26,10 @@ class UserManagementImpl(
         return null
     }
 
-    override suspend fun save(userPatches: Collection<UserPatch>, user: UserEntity) {
-        userPatches.forEach {
-            if (it.apply(user)) {
-                idendityManagement.update(user)
-                userRepository.update(user)
-            }
+    override suspend fun save(user: UserEntity, userPatches: Collection<UserPatch>) {
+        if (userPatches.asSequence().map { it.apply(user) }.any()) {
+            identityManagement.update(user)
+            userRepository.update(user)
         }
     }
 
@@ -34,7 +38,7 @@ class UserManagementImpl(
         if (userEntity != null) {
             val disabledUser = userEntity.copy(disabled = Instant.now())
             userRepository.update(disabledUser)
-            idendityManagement.update(disabledUser)
+            identityManagement.update(disabledUser)
         }
     }
 }
