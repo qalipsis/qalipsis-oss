@@ -79,6 +79,8 @@ dependencies {
     implementation("io.micronaut.rxjava3:micronaut-rxjava3")
     implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.auth0:mvc-auth-commons:1.9.2")
+    implementation("io.micronaut.security:micronaut-security-oauth2")
+    implementation("io.micronaut.security:micronaut-security-jwt")
 
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
