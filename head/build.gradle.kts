@@ -53,8 +53,6 @@ dependencies {
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
 
     implementation(project(":core"))
-    implementation("com.squareup.okhttp3:okhttp:4.9.0")
-    implementation ("com.google.code.gson:gson:2.9.0")
     implementation("io.qalipsis:api-common:${project.version}")
     implementation("io.qalipsis:api-dsl:${project.version}")
     implementation("io.qalipsis:api-processors:${project.version}")
