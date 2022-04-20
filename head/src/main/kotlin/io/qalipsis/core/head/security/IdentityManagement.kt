@@ -13,20 +13,20 @@ internal interface IdentityManagement {
     /**
      * Returns a user from the identity management platform .
      */
-    suspend fun get(identityReference: String): UserIdentity
+    suspend fun get(tenant: String, identityReference: String): UserIdentity
 
     /**
      * Saves the user to the identity management platform.
      */
-    suspend fun save(user: UserIdentity): UserIdentity
+    suspend fun save(tenant: String, user: UserIdentity): UserIdentity
 
     /**
      * Delete a user from the identity management platform .
      */
-    suspend fun delete(identityReference: String)
+    suspend fun delete(tenant: String, identityReference: String)
 
     /**
      * Saves changes to the user into the identity management platform.
      */
-    suspend fun update(identityReference: String, user: UserIdentity)
+    suspend fun update(tenant: String, identityReference: String, user: UserIdentity, userPatches: List<Auth0Patch>)
 }
