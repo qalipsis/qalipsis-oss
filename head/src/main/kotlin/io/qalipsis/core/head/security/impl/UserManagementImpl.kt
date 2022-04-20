@@ -20,10 +20,11 @@ class UserManagementImpl(
 
     override suspend fun get(username: String): UserEntity? {
         val userEntity = userRepository.findByUsername(username)
-        if (userEntity != null && userEntity.disabled == null) {
-            return userEntity
+        return if (userEntity?.disabled == null) {
+            userEntity
+        } else {
+            null
         }
-        return null
     }
 
     override suspend fun save(user: UserEntity, userPatches: Collection<UserPatch>) {

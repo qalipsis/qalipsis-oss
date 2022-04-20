@@ -16,7 +16,7 @@ interface UserManagement {
     suspend fun get(username: String): UserEntity?
 
     /**
-     * Checks if there are changes for user exists and update the user in both storages if so.
+     *  Applies the different patches to [user] and persists those changes.
      */
     suspend fun save(user: UserEntity, userPatches: Collection<UserPatch>)
 
