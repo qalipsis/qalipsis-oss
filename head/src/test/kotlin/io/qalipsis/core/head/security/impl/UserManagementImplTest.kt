@@ -108,7 +108,6 @@ internal class UserManagementImplTest {
         coVerifyOrder {
             idendityManagement.update(any() as UserEntity)
             userRepository.update(any() as UserEntity)
-
         }
         confirmVerified(userRepository, idendityManagement)
     }
