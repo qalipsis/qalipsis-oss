@@ -11,3 +11,8 @@ head:
 
 logging:
   console: true
+
+jpa:
+  default:
+    entity-scan:
+      packages: 'io.qalipsis.core.head.jdbc.entity'
