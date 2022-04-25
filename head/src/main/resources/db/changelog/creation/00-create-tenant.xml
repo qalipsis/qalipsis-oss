@@ -47,6 +47,15 @@
       <column name="username" type="VARCHAR(150)">
         <constraints nullable="false"/>
       </column>
+      <column name="email_address" type="VARCHAR(150)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="display_name" type="VARCHAR(150)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="disabled" type="TIMESTAMP">
+        <constraints nullable="true"/>
+      </column>
     </createTable>
     <createIndex schemaName="qalipsis" indexName="unique_username_idx" tableName="user" unique="true">
       <column name="username"/>
@@ -56,6 +65,8 @@
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
       <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
       <column name="username" value="qalipsis"/>
+      <column name="email_address" value="foo@bar.com"/>
+      <column name="display_name" value="qalipsis"/>
     </insert>
   </changeSet>
 </databaseChangeLog>
