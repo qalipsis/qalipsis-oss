@@ -42,4 +42,9 @@ class UserManagementImpl(
             identityManagement.update(disabledUser)
         }
     }
+
+    override suspend fun create(user: UserEntity) {
+        val userWithIdendityReference = identityManagement.save(user)
+        userRepository.save(userWithIdendityReference)
+    }
 }

@@ -24,4 +24,9 @@ interface UserManagement {
      * Marks the user as disabled.
      */
     suspend fun delete(username: String)
+
+    /**
+     * Creates new the user.
+     */
+    suspend fun create(user: UserEntity)
 }
