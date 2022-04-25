@@ -3,48 +3,87 @@ package io.qalipsis.core.head.controller
 
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.admin.SaveTenantDto
 import io.qalipsis.core.head.admin.SaveTenantResponse
+import io.qalipsis.core.head.jdbc.repository.PostgresqlTemplateTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.testcontainers.junit.jupiter.Testcontainers
 
 
-@MicronautTest
-class TenantControllerIntegrationTest(
-) {
+internal class TenantControllerIntegrationTest : PostgresqlTemplateTest() {
 
 
     @Inject
     @field:Client("/")
-    lateinit var httpClient : HttpClient
+    lateinit var httpClient: HttpClient
+
+    @Inject
+
 
     @Test
-    fun `should return display name and 200`() {
+    fun `should return display name and 200`() = testDispatcherProvider.run {
 
-        val requestDto = SaveTenantDto("test")
-        val createTenantRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenant", requestDto)
+        val tenantDisplayName = "test"
+        val requestDto = SaveTenantDto(tenantDisplayName)
+        val createTenantRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenants", requestDto)
         val rsp: HttpResponse<SaveTenantResponse> = httpClient.toBlocking().exchange(
             createTenantRequest,
             SaveTenantResponse::class.java
         )
 
-        assertEquals(200, rsp.status.code)
-        assertEquals("test", rsp.body.get().displayName)
+        assertEquals(HttpStatus.OK.code, rsp.status.code)
+        assertEquals(tenantDisplayName, rsp.body.get().displayName)
     }
 
 
     @Test
-    fun `should not return 400`() {
+    fun `should return 400 long displayname`() = testDispatcherProvider.run {
 
 
-        val stringLengthWith201 = "W1HEH0JP1r0BsTrKwcyxCBZmaIeDmdbQhIreDcFsJrVBIMPid6NUnFZnl8lf9MMnnupmHlnX21c1r7Snd0YSv0cYqKhcLN5hl3a8AMeAPEvBhToJeXzJeEK7c6ugPzx170fVV1HMOWaUoDEWki6B13FcHgsRYlzQtdMlFD7D2zKcUbMv3NFgk98CqLyEzBxZMAXTtN5qc"
+        val stringLengthWith201 =
+            "W1HEH0JP1r0BsTrKwcyxCBZmaIeDmdbQhIreDcFsJrVBIMPid6NUnFZnl8lf9MMnnupmHlnX21c1r7Snd0YSv0cYqKhcLN5hl3a8AMeAPEvBhToJeXzJeEK7c6ugPzx170fVV1HMOWaUoDEWki6B13FcHgsRYlzQtdMlFD7D2zKcUbMv3NFgk98CqLyEzBxZMAXTtN5qc"
 
         val requestDto = SaveTenantDto(stringLengthWith201)
-        val createTenantRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenant", requestDto)
+        val createTenantRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenants", requestDto)
+        val rsp: HttpResponse<SaveTenantResponse> = httpClient.toBlocking().exchange(
+            createTenantRequest,
+            SaveTenantResponse::class.java
+        )
+
+        assertEquals(400, rsp.status.code)
+    }
+
+    @Test
+    fun `should return 400 0 length displayname`() = testDispatcherProvider.run {
+
+
+        val stringLengthWith201 = ""
+
+        val requestDto = SaveTenantDto(stringLengthWith201)
+        val createTenantRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenants", requestDto)
+        val rsp: HttpResponse<SaveTenantResponse> = httpClient.toBlocking().exchange(
+            createTenantRequest,
+            SaveTenantResponse::class.java
+        )
+
+        assertEquals(400, rsp.status.code)
+    }
+
+    @Test
+    fun `should return 400 blank displayname`() = testDispatcherProvider.run {
+
+        val requestDto = Object()
+        val createTenantRequest: HttpRequest<*> = HttpRequest.POST("/api/admin/tenants", requestDto)
         val rsp: HttpResponse<SaveTenantResponse> = httpClient.toBlocking().exchange(
             createTenantRequest,
             SaveTenantResponse::class.java
