@@ -6,6 +6,10 @@ import jakarta.inject.Singleton
 import java.util.UUID
 
 
+/**
+ * @author Sandro Mamukelashvili
+ */
+
 @Singleton
 internal class TenantManagementImpl(
     private val tenantRepository: TenantRepository
