@@ -1,7 +1,7 @@
 identity:
   manager: auth0
   auth0:
-    client-id: QddokR3NNMzECAu2Ww5yVLzNcqTuWIWV
-    client-secret: yk4sV_HULJdYCQ4wUvmhP6sTD9ocNXMCeNKhfetEJQYTep_MeXFQrvpfHxCCPYh4
-    api-identifier: https://dev-d7xe49-1.us.auth0.com/api/v2/
-    domain: dev-d7xe49-1.us.auth0.com
+    client-id: PkAlTrtbUB3bh0qpcdkW6GkgrwQrTPNW
+    client-secret: ctdLwYjjE2fjvYV4HJDvCIUQPbQX7-zJn_TZihHDeA_6TsZW6V8yMEXN8Q6s5xXJ
+    api-identifier: https://qalipsis-dev.eu.auth0.com/api/v2/
+    domain: qalipsis-dev.eu.auth0.com
