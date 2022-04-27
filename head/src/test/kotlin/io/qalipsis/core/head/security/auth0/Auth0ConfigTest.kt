@@ -29,8 +29,8 @@ internal class Auth0ConfigTest {
             }
             val auth0Config =
                 (applicationContext.getBeansOfType(Auth0IdentityManagement::class.java) as ArrayList).get(0).auth0Properties
-            assertThat(auth0Config.domain).isEqualTo("dev-d7xe49-1.us.auth0.com")
-            assertThat(auth0Config.apiIdentifier).isEqualTo("https://dev-d7xe49-1.us.auth0.com/api/v2/")
+            assertThat(auth0Config.domain).isEqualTo("qalipsis-dev.eu.auth0.com")
+            assertThat(auth0Config.apiIdentifier).isEqualTo("https://qalipsis-dev.eu.auth0.com/api/v2/")
         }
     }
 }
