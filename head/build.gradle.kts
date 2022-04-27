@@ -61,7 +61,7 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
     implementation("cool.graph:cuid-java:0.1.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.5")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
     implementation("io.micronaut.data:micronaut-data-jdbc")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
@@ -77,7 +77,8 @@ dependencies {
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
     implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
     implementation("io.micronaut.rxjava3:micronaut-rxjava3")
-    implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.+")
+    implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("com.auth0:mvc-auth-commons:1.9.2")
 
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")

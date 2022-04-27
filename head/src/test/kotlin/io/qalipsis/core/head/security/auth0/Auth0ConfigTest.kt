@@ -28,11 +28,8 @@ internal class Auth0ConfigTest {
                 any { it.isInstanceOf(Auth0IdentityManagement::class) }
             }
             val auth0Config =
-                (applicationContext.getBeansOfType(Auth0IdentityManagement::class.java) as ArrayList).get(0).auth0Configuration
-            assertThat(auth0Config.connection).isEqualTo("qalipsis")
-            assertThat(auth0Config.baseAddress).isEqualTo("https://dev-d7xe49-1.us.auth0.com/api/v2/users")
-            assertThat(auth0Config.clientId).isEqualTo("QddokR3NNMzECAu2Ww5yVLzNcqTuWIWV")
-            assertThat(auth0Config.clientSecret).isEqualTo("yk4sV_HULJdYCQ4wUvmhP6sTD9ocNXMCeNKhfetEJQYTep_MeXFQrvpfHxCCPYh4")
+                (applicationContext.getBeansOfType(Auth0IdentityManagement::class.java) as ArrayList).get(0).auth0Properties
+            assertThat(auth0Config.domain).isEqualTo("dev-d7xe49-1.us.auth0.com")
             assertThat(auth0Config.apiIdentifier).isEqualTo("https://dev-d7xe49-1.us.auth0.com/api/v2/")
         }
     }

@@ -19,15 +19,6 @@ import javax.validation.constraints.NotBlank
 internal interface Auth0Configuration {
 
     @get:NotBlank
-    val connection: String
-
-    @get:NotBlank
-    val token: String
-
-    @get:NotBlank
-    val baseAddress: String
-
-    @get:NotBlank
     val clientId: String
 
     @get:NotBlank
@@ -35,4 +26,7 @@ internal interface Auth0Configuration {
 
     @get:NotBlank
     val apiIdentifier: String
+
+    @get:NotBlank
+    val domain: String
 }

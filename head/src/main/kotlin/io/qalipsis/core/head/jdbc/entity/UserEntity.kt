@@ -6,7 +6,6 @@ import io.micronaut.data.annotation.MappedEntity
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
 import java.time.Instant
-import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
@@ -31,23 +30,16 @@ data class UserEntity(
     @field:NotBlank
     @field:Size(min = 1, max = 150)
     var username: String,
-    @field:NotBlank
-    @field:Email
-    var emailAddress: String,
-    @field:NotBlank
-    @field:Size(min = 1, max = 150)
-    var displayName: String,
+    @field:Size(min = 1, max = 60)
     val identityReference: String? = null,
     val disabled: Instant? = null
 ) : Entity {
 
     constructor(
         username: String,
-        emailAddress: String = "foo@bar.com",
-        displayName: String = " "
     ) : this(
         -1,
         Instant.EPOCH, Instant.now(),
-        username, emailAddress, displayName
+        username
     )
 }
