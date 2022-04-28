@@ -1,12 +1,12 @@
 package io.qalipsis.core.head.security.impl
 
-import com.auth0.json.mgmt.users.User
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UserManagement
 import io.qalipsis.core.head.security.UserPatch
 import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.UserIdentity
 import java.time.Instant
 
 /**
@@ -48,7 +48,7 @@ class UserManagementImpl(
 
     override suspend fun create(user: QalipsisUser) {
         val authUser = identityManagement.save(transformToUserIdentity(user))
-        userRepository.save(transformToUserEntity(QalipsisUser(authUser)))
+        userRepository.save(transformToUserEntity(authUser))
     }
 
     private fun transformToUserEntity(user: QalipsisUser): UserEntity {
@@ -62,15 +62,15 @@ class UserManagementImpl(
         )
     }
 
-    private fun transformToUserIdentity(user: QalipsisUser): User {
-        val authUser = User()
-        authUser.email = user.email
-        authUser.username = user.username
-        authUser.name = user.name
-        authUser.isEmailVerified = user.email_verified
-        authUser.setVerifyEmail(user.verify_email)
-        authUser.setPassword((user.password).toCharArray())
-        authUser.setConnection(user.connection)
-        return authUser
+    private fun transformToUserIdentity(user: QalipsisUser): UserIdentity {
+        return UserIdentity(
+            username = user.username,
+            email = user.email,
+            name = user.name,
+            email_verified = user.email_verified,
+            connection = user.connection,
+            verify_email = user.verify_email,
+            password = user.password
+        )
     }
 }

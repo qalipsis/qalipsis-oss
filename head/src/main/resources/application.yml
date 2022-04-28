@@ -1,7 +1,7 @@
 identity:
   manager: auth0
   auth0:
-    client-id: PkAlTrtbUB3bh0qpcdkW6GkgrwQrTPNW
-    client-secret: ctdLwYjjE2fjvYV4HJDvCIUQPbQX7-zJn_TZihHDeA_6TsZW6V8yMEXN8Q6s5xXJ
+    client-id:
+    client-secret:
     api-identifier: https://qalipsis-dev.eu.auth0.com/api/v2/
     domain: qalipsis-dev.eu.auth0.com

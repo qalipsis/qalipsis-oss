@@ -34,11 +34,11 @@ data class QalipsisUser(
         creation = Instant.now(),
     )
 
-    constructor(authUser: User, userEntity: UserEntity) : this(
+    constructor(authUser: UserIdentity, userEntity: UserEntity) : this(
         username = authUser.username,
         email = authUser.email,
         name = authUser.name,
-        email_verified = authUser.isEmailVerified,
+        email_verified = authUser.email_verified,
         userEntityId = userEntity.id,
         version = userEntity.version,
         creation = userEntity.creation,

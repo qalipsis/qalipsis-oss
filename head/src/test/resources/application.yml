@@ -12,6 +12,7 @@ head:
 logging:
   console: true
 
+#FIXME QALI-207 remove the id and secret - https://aeris-consulting.atlassian.net/browse/QALI-207
 identity:
   manager: auth0
   auth0:

@@ -1,6 +1,7 @@
 package io.qalipsis.core.head.security
 
-import com.auth0.json.mgmt.users.User
+import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.UserIdentity
 
 /**
  * Service to proceed with the user data, which is used by the implementation of [UserManagement] to propagate
@@ -13,12 +14,12 @@ interface IdentityManagement {
     /**
      * Returns a user from the identity management platform .
      */
-    suspend fun get(identityReference: String): User
+    suspend fun get(identityReference: String): UserIdentity
 
     /**
      * Saves the user to the identity management platform.
      */
-    suspend fun save(user: User): User
+    suspend fun save(user: UserIdentity): QalipsisUser
 
     /**
      * Delete a user from the identity management platform .
@@ -28,5 +29,5 @@ interface IdentityManagement {
     /**
      * Saves changes to the user into the identity management platform.
      */
-    suspend fun update(identityReference: String, user: User)
+    suspend fun update(identityReference: String, user: UserIdentity)
 }

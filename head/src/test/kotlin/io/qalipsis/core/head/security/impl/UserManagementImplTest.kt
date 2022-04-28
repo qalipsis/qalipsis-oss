@@ -1,6 +1,5 @@
 package io.qalipsis.core.head.security.impl
 
-import com.auth0.json.mgmt.users.User
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -13,6 +12,7 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UsernameUserPatch
 import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.UserIdentity
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -39,9 +39,9 @@ internal class UserManagementImplTest {
     @InjectMockKs
     private lateinit var userManagement: UserManagementImpl
 
-    val now = Instant.now()
+    val now: Instant = Instant.now()
 
-    val userPrototype = UserEntity(
+    private val userPrototype = UserEntity(
         id = 1,
         version = now,
         creation = now,
@@ -58,8 +58,8 @@ internal class UserManagementImplTest {
             every { creation } returns now
             every { id } returns 555
         }
-        val mockedUserIdentity = relaxedMockk<User> {
-            every { isEmailVerified } returns true
+        val mockedUserIdentity = relaxedMockk<UserIdentity> {
+            every { email_verified } returns true
             every { username } returns "username"
             every { email } returns "email"
             every { name } returns "name"
@@ -132,7 +132,7 @@ internal class UserManagementImplTest {
 
         //  then
         coVerifyOrder {
-            idendityManagement.update("identity", any() as User)
+            idendityManagement.update("identity", any() as UserIdentity)
             userRepository.update(any() as UserEntity)
         }
         confirmVerified(userRepository, idendityManagement)
