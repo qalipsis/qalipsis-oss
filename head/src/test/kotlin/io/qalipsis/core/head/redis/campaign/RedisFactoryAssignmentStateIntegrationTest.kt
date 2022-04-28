@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -238,4 +239,23 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
+    @Test
+    internal fun `should return a new RedisAbortingState`() = testDispatcherProvider.run {
+        // given
+        val state = RedisFactoryAssignmentState(campaign, operations)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
+
+        // when
+        val newState = state.abort(AbortCampaignConfiguration())
+
+        // then
+        assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
+            prop("campaign").isSameAs(campaign)
+            prop("error").isSameAs("The campaign was aborted")
+        }
+        confirmVerified(factoryService, campaignReportStateKeeper)
+    }
 }

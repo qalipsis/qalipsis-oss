@@ -3,15 +3,15 @@ package io.qalipsis.core.directives
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import javax.validation.constraints.NotEmpty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import javax.validation.constraints.NotEmpty
 
 /**
  * Directive notifying a unique factory of the DAGs assigned to it in the context of a new campaign.
  *
  * @property campaignName the ID of the campaign
- * @property assignedDagsByScenario assignment of the scenarios and DAGs to the target factory
  */
 @Serializable
 @SerialName("fa")
@@ -89,3 +89,26 @@ data class CompleteCampaignDirective(
 data class FactoryShutdownDirective(
     override val channel: DispatcherChannel
 ) : DescriptiveDirective()
+
+
+/**
+ * Directive to abort the campaign for a given list of scenarios.
+ */
+@Serializable
+@SerialName("cad")
+data class CampaignAbortDirective(
+    override val campaignName: CampaignName,
+    override val channel: DispatcherChannel,
+    /**
+     * The list of scenario IDs for which the campaign has to be aborted.
+     */
+    val scenarioNames: List<ScenarioName>,
+    /**
+     * Configuration defining soft/hard aborting mode.
+     */
+    val abortCampaignConfiguration: AbortCampaignConfiguration = AbortCampaignConfiguration(hard = true)
+) : DescriptiveDirective(), CampaignManagementDirective {
+
+    override var tenant: String = ""
+
+}

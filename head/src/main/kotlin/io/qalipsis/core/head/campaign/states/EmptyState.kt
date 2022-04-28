@@ -1,6 +1,7 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignName
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
 
@@ -16,5 +17,9 @@ internal object EmptyState : CampaignExecutionState<CampaignExecutionContext> {
 
     override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         throw IllegalStateException()
+    }
+
+    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+        return this
     }
 }

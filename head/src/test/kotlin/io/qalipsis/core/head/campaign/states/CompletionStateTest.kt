@@ -54,8 +54,10 @@ internal class CompletionStateTest : AbstractStateTest() {
                 "node-2" to relaxedMockk()
             )
             val state = CompletionState(campaign)
-            state.inject(campaignExecutionContext)
-            state.init()
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
 
             // when
             var newState = state.process(mockk<CampaignShutdownFeedback> {
@@ -83,5 +85,4 @@ internal class CompletionStateTest : AbstractStateTest() {
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
-
 }
