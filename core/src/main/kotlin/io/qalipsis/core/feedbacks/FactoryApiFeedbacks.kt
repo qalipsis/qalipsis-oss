@@ -8,7 +8,6 @@ import kotlinx.serialization.Serializable
 /**
  * Feedback to a [io.qalipsis.core.directives.FactoryAssignmentDirective].
  *
- * @property key unique key of the feedback
  * @property campaignName campaign to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
@@ -33,7 +32,6 @@ data class FactoryAssignmentFeedback(
 /**
  * Feedback to a [io.qalipsis.core.directives.ScenarioWarmUpDirective].
  *
- * @property key unique key of the feedback
  * @property campaignName campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
@@ -99,7 +97,6 @@ data class EndOfCampaignFeedback(
 /**
  * Feedback to a [io.qalipsis.core.directives.CampaignScenarioShutdownDirective].
  *
- * @property key unique key of the feedback
  * @property campaignName campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
@@ -125,7 +122,6 @@ data class CampaignScenarioShutdownFeedback(
 /**
  * Feedback to a [io.qalipsis.core.directives.CampaignShutdownDirective].
  *
- * @property key unique key of the feedback
  * @property campaignName campaign to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
@@ -139,6 +135,31 @@ data class CampaignShutdownFeedback(
     override val campaignName: CampaignName,
     override val status: FeedbackStatus,
     override val error: String? = null
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+    override var tenant: String = ""
+}
+
+/**
+ * Feedback to a [io.qalipsis.core.directives.CampaignAbortDirective].
+ *
+ * @property campaignName campaign to which the feedback relates
+ * @property nodeId ID of the factory node that emitted the feedback
+ * @property status status of the execution of the directive
+ * @property error error message in case of failure
+ * @property scenarioNames list of scenario names for which the campaign has to be aborted
+ *
+ * @author Svetlana Paliashchuk
+ */
+@Serializable
+@SerialName("caf")
+data class CampaignAbortFeedback(
+    override val campaignName: CampaignName,
+    override val status: FeedbackStatus,
+    override val error: String? = null,
+    val scenarioNames: List<ScenarioName>
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""

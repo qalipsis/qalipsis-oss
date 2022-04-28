@@ -7,5 +7,6 @@ internal enum class CampaignRedisState {
     MINIONS_STARTUP_STATE,
     RUNNING_STATE,
     COMPLETION_STATE,
-    FAILURE_STATE
+    FAILURE_STATE,
+    ABORTING_STATE
 }

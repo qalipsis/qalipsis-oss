@@ -114,7 +114,7 @@ internal class RedisCampaignManagerTest {
                     listOf(scenario1, scenario2, scenario3)
             val factory1 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-1"; every { unicastChannel } returns "unicast-channel-1" }
-            val factory2 = relaxedMockk<Factory> { every { nodeId } returns "factory-2" };
+            val factory2 = relaxedMockk<Factory> { every { nodeId } returns "factory-2" }
             val factory3 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
             coEvery {
@@ -451,6 +451,30 @@ internal class RedisCampaignManagerTest {
 
             // then
             assertThat(state).isInstanceOf(RedisFailureState::class).all {
+                prop("campaign").isSameAs(campaign)
+                prop("operations").isSameAs(operations)
+                prop("context").isSameAs(campaignExecutionContext)
+                typedProp<Boolean>("initialized").isTrue()
+            }
+        }
+
+    @Test
+    internal fun `should return RedisAbortingState`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = relaxedMockk<CampaignConfiguration>()
+            coEvery {
+                operations.getState(
+                    "my-tenant",
+                    "my-campaign"
+                )
+            } returns (campaign to CampaignRedisState.ABORTING_STATE)
+
+            // when
+            val state = campaignManager.get("my-tenant", "my-campaign")
+
+            // then
+            assertThat(state).isInstanceOf(RedisAbortingState::class).all {
                 prop("campaign").isSameAs(campaign)
                 prop("operations").isSameAs(operations)
                 prop("context").isSameAs(campaignExecutionContext)

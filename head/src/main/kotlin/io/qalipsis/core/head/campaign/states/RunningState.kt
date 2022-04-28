@@ -4,6 +4,7 @@ import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
@@ -96,14 +97,16 @@ internal open class RunningState(
         }
     }
 
-    override fun toString(): String {
-        return "RunningState(campaign=$campaign, directivesForInit=$directivesForInit, expectedScenariosToComplete=$expectedScenariosToComplete)"
+    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+        return AbortingState(campaign, abortConfiguration, "The campaign was aborted")
     }
 
+    override fun toString(): String {
+        return "RunningState(campaign=$campaign, directivesForInit=$directivesForInit," +
+                " expectedScenariosToComplete=$expectedScenariosToComplete)"
+    }
 
     private companion object {
-
-        @JvmStatic
         val log = logger()
     }
 }

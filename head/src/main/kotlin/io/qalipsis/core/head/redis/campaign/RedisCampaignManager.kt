@@ -71,6 +71,7 @@ internal class RedisCampaignManager(
             CampaignRedisState.RUNNING_STATE -> RedisRunningState(currentState.first, redisOperations)
             CampaignRedisState.COMPLETION_STATE -> RedisCompletionState(currentState.first, redisOperations)
             CampaignRedisState.FAILURE_STATE -> RedisFailureState(currentState.first, redisOperations)
+            CampaignRedisState.ABORTING_STATE -> RedisAbortingState(currentState.first, redisOperations)
             else -> throw IllegalStateException("The state of the campaign execution is unknown")
         }
         executionState.inject(campaignExecutionContext)

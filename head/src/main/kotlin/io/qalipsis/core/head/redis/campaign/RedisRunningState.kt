@@ -2,6 +2,7 @@ package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
@@ -79,5 +80,9 @@ internal class RedisRunningState(
             }
             else -> this
         }
+    }
+
+    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+        return RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
     }
 }

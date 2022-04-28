@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -228,4 +229,23 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
+    @Test
+    fun `should return an AbortingState`() = testDispatcherProvider.runTest {
+        // given
+        val state = FactoryAssignmentState(campaign)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
+
+        // when
+        val newState = state.abort(AbortCampaignConfiguration())
+
+        // then
+        assertThat(newState).isInstanceOf(AbortingState::class).all {
+            prop("campaign").isSameAs(campaign)
+            prop("error").isSameAs("The campaign was aborted")
+        }
+        confirmVerified(factoryService, campaignReportStateKeeper)
+    }
 }

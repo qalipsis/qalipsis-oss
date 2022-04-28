@@ -18,6 +18,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -305,4 +306,23 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
+    @Test
+    fun `should return a new RedisAbortingState`() = testDispatcherProvider.run {
+        // given
+        val state = RedisMinionsAssignmentState(campaign, operations)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
+
+        // when
+        val newState = state.abort(AbortCampaignConfiguration())
+
+        // then
+        assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
+            prop("campaign").isSameAs(campaign)
+            prop("error").isSameAs("The campaign was aborted")
+        }
+        confirmVerified(factoryService, campaignReportStateKeeper)
+    }
 }

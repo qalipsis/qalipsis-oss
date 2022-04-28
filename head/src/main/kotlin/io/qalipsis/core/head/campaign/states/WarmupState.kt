@@ -2,14 +2,15 @@ package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.ConcurrentHashMap
 
 internal open class WarmupState(
     protected val campaign: CampaignConfiguration
@@ -68,13 +69,15 @@ internal open class WarmupState(
         }
     }
 
+    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+        return AbortingState(campaign, abortConfiguration, "The campaign was aborted")
+    }
+
     override fun toString(): String {
         return "WarmupState(campaign=$campaign, expectedFeedbacks=$expectedFeedbacks)"
     }
 
     private companion object {
-
-        @JvmStatic
         val log = logger()
     }
 }

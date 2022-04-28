@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -289,4 +290,23 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
+    @Test
+    fun `should return an AbortingState`() = testDispatcherProvider.runTest {
+        // given
+        val state = MinionsAssignmentState(campaign)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
+
+        // when
+        val newState = state.abort(AbortCampaignConfiguration())
+
+        // then
+        assertThat(newState).isInstanceOf(AbortingState::class).all {
+            prop("campaign").isSameAs(campaign)
+            prop("error").isSameAs("The campaign was aborted")
+        }
+        confirmVerified(factoryService, campaignReportStateKeeper)
+    }
 }

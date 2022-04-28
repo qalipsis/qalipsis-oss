@@ -16,5 +16,4 @@ internal class RedisDisabledState(
         operations.clean(campaign)
         return super.doInit()
     }
-
 }

@@ -86,5 +86,4 @@ internal class FailureStateTest : AbstractStateTest() {
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
-
 }
