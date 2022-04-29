@@ -3,6 +3,8 @@ package io.qalipsis.core.head.security.auth0
 import com.auth0.client.auth.AuthAPI
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.exception.Auth0Exception
+import com.auth0.json.mgmt.Permission
+import com.auth0.json.mgmt.Role
 import com.auth0.json.mgmt.users.User
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.head.security.IdentityManagement
@@ -110,5 +112,45 @@ internal class Auth0IdentityManagement(
     suspend fun getUsers(): MutableList<User> {
         val users = getManagementAPI().users().list(null).execute()
         return users.items
+    }
+
+    @Throws(Auth0Exception::class)
+    suspend fun getUserRoles(identityReference: String): MutableList<Role> {
+        val authUser = getManagementAPI().users().listRoles(identityReference, null).execute()
+        return authUser.items
+    }
+
+    @Throws(Auth0Exception::class)
+    suspend fun removeUserRoles(identityReference: String, roleNames: MutableList<String>) {
+        val roleIds = getRoles().filter { roleNames.contains(it.name) }.map { it.id }.toList()
+        getManagementAPI().users().removeRoles(identityReference, roleIds).execute()
+    }
+
+    @Throws(Auth0Exception::class)
+    suspend fun assignUserRoles(identityReference: String, roleNames: MutableList<String>) {
+        val roleIds = getRoles().filter { roleNames.contains(it.name) }.map { it.id }.toList()
+        getManagementAPI().users().addRoles(identityReference, roleIds).execute()
+    }
+
+    @Throws(Auth0Exception::class)
+    suspend fun getRoles(): MutableList<Role> {
+        val roles = getManagementAPI().roles().list(null).execute()
+        return roles.items
+    }
+
+    @Throws(Auth0Exception::class)
+    suspend fun createRole(name: String, description: String): Role {
+        val role = Role()
+        role.name = name
+        role.description = description
+        return getManagementAPI().roles().create(role).execute()
+    }
+
+    @Throws(Auth0Exception::class)
+    suspend fun assignRolePermissions(roleId: String, name: String, description: String) {
+        val permission = Permission()
+        permission.name = name
+        permission.description = description
+        getManagementAPI().roles().addPermissions(roleId, mutableListOf(permission)).execute()
     }
 }

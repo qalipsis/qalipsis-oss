@@ -5,7 +5,14 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UserManagement
 import io.qalipsis.core.head.security.UserPatch
+import io.qalipsis.core.head.security.entity.BillingAdminitratorRole
+import io.qalipsis.core.head.security.entity.QalipsisRole
 import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.ReporterRole
+import io.qalipsis.core.head.security.entity.RolesPostfix
+import io.qalipsis.core.head.security.entity.SuperAdministratorRole
+import io.qalipsis.core.head.security.entity.TenantAdministratorRole
+import io.qalipsis.core.head.security.entity.TesterRole
 import io.qalipsis.core.head.security.entity.UserIdentity
 import java.time.Instant
 
@@ -50,6 +57,35 @@ class UserManagementImpl(
         val authUser = identityManagement.save(transformToUserIdentity(user))
         userRepository.save(transformToUserEntity(authUser))
     }
+
+    override suspend fun getAssignableRoles(currentUser: QalipsisUser): Set<QalipsisRole> {
+        val currentUserRoles = mutableSetOf<QalipsisRole>()
+        currentUser.roles.forEach {
+            when (it) {
+                RolesPostfix.SUPER_ADMINISTRATOR -> currentUserRoles.addAll(
+                    listOf(
+                        SuperAdministratorRole(),
+                        BillingAdminitratorRole(),
+                        TenantAdministratorRole(),
+                        TesterRole(),
+                        ReporterRole()
+                    )
+                )
+                RolesPostfix.BILLING_ADMINISTRATOR -> currentUserRoles.addAll(listOf(BillingAdminitratorRole()))
+                RolesPostfix.TENANT_ADMINISTRATOR -> currentUserRoles.addAll(
+                    listOf(
+                        TenantAdministratorRole(),
+                        TesterRole(),
+                        ReporterRole()
+                    )
+                )
+                RolesPostfix.TESTER -> currentUserRoles.addAll(listOf(TesterRole(), ReporterRole()))
+                RolesPostfix.REPORTER -> currentUserRoles.addAll(listOf(ReporterRole()))
+            }
+        }
+        return currentUserRoles
+    }
+
 
     private fun transformToUserEntity(user: QalipsisUser): UserEntity {
         return UserEntity(

@@ -1,6 +1,7 @@
 package io.qalipsis.core.head.security
 
 import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.RolesPostfix
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
@@ -60,6 +61,45 @@ internal class UsernameUserPatch(
     override fun apply(user: QalipsisUser): Boolean {
         return if (user.username != newUsername.trim()) {
             user.username = newUsername.trim()
+            true
+        } else {
+            false
+        }
+    }
+}
+
+/**
+ * Implementation of the [UserPatch] interface, that is in charge of changing roles property of a user
+ */
+internal class AddRoleUserPatch(
+    @field:NotBlank @field:Size(min = 1, max = 150)
+    internal val role: RolesPostfix
+) : UserPatch {
+    override fun apply(user: QalipsisUser): Boolean {
+        return if (user.roles.contains(role)) {
+            false
+        } else {
+            val newRolesList = mutableListOf<RolesPostfix>(role)
+            newRolesList.addAll(user.roles)
+            user.roles = newRolesList
+            true
+        }
+    }
+}
+
+/**
+ * Implementation of the [UserPatch] interface, that is in charge of changing roles property of a user
+ */
+internal class DeleteRoleUserPatch(
+    @field:NotBlank @field:Size(min = 1, max = 150)
+    internal val role: RolesPostfix
+) : UserPatch {
+    override fun apply(user: QalipsisUser): Boolean {
+        return if (user.roles.contains(role)) {
+            val newRolesList = mutableListOf<RolesPostfix>()
+            newRolesList.addAll(user.roles)
+            newRolesList.remove(role)
+            user.roles = newRolesList
             true
         } else {
             false

@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.security
 
+import io.qalipsis.core.head.security.entity.QalipsisRole
 import io.qalipsis.core.head.security.entity.QalipsisUser
 
 /**
@@ -29,4 +30,9 @@ interface UserManagement {
      * Creates new the user.
      */
     suspend fun create(user: QalipsisUser)
+
+    /**
+     * Receives roles of the user.
+     */
+    suspend fun getAssignableRoles(currentUser: QalipsisUser): Set<QalipsisRole>
 }
