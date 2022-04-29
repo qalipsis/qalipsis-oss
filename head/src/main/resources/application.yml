@@ -1,5 +1,5 @@
 identity:
-  manager: auth0
+  manager: none
   auth0:
     client-id:
     client-secret:

@@ -48,7 +48,7 @@ class UserManagementImpl(
 
     override suspend fun create(user: QalipsisUser) {
         val authUser = identityManagement.save(transformToUserIdentity(user))
-        userRepository.save(transformToUserEntity(authUser))
+        userRepository.save(transformToUserEntityFromUserIdentity(authUser))
     }
 
     private fun transformToUserEntity(user: QalipsisUser): UserEntity {
@@ -71,6 +71,13 @@ class UserManagementImpl(
             connection = user.connection,
             verify_email = user.verify_email,
             password = user.password
+        )
+    }
+
+    private fun transformToUserEntityFromUserIdentity(user: UserIdentity): UserEntity {
+        return UserEntity(
+            username = user.username,
+            identityReference = user.user_id
         )
     }
 }

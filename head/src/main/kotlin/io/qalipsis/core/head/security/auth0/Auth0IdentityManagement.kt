@@ -6,7 +6,6 @@ import com.auth0.exception.Auth0Exception
 import com.auth0.json.mgmt.users.User
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.head.security.IdentityManagement
-import io.qalipsis.core.head.security.entity.QalipsisUser
 import io.qalipsis.core.head.security.entity.UserIdentity
 import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
@@ -26,7 +25,6 @@ internal class Auth0IdentityManagement(
     /**
      * API for making calls to our application for saving, getting and so on data to/from Auth0
      */
-    @Volatile
     private var managementAPI: ManagementAPI? = null
 
     /**
@@ -45,13 +43,13 @@ internal class Auth0IdentityManagement(
      * The experation itself is calculated in AuthToken in the field expiresAt
      */
     private val expirationBufferSec: Long = 10
-    private val mutex = Mutex()
+    private val managementApiCreationMutex = Mutex()
 
     @Throws(Auth0Exception::class)
     suspend fun getManagementAPI(): ManagementAPI {
         val currentTimeEpochSecs = Instant.now().epochSecond
         if (auth0Token == null || auth0Token!!.expiresAt < currentTimeEpochSecs + expirationBufferSec) {
-            mutex.withLock {
+            managementApiCreationMutex.withLock {
                 if (auth0Token == null || auth0Token!!.expiresAt < currentTimeEpochSecs + expirationBufferSec) {
                     val tokenHolder = authAPI.requestToken(auth0Properties.apiIdentifier).execute()
                     auth0Token = Auth0Token(tokenHolder.accessToken, tokenHolder.expiresIn)
@@ -72,12 +70,13 @@ internal class Auth0IdentityManagement(
             username = authUser.username,
             email = authUser.email,
             name = authUser.name,
-            email_verified = authUser.isEmailVerified
+            email_verified = authUser.isEmailVerified,
+            user_id = authUser.id
         )
     }
 
     @Throws(Auth0Exception::class)
-    override suspend fun save(user: UserIdentity): QalipsisUser {
+    override suspend fun save(user: UserIdentity): UserIdentity {
         val authUser = User()
         authUser.email = user.email
         authUser.username = user.username
@@ -87,7 +86,13 @@ internal class Auth0IdentityManagement(
         authUser.setPassword((user.password).toCharArray())
         authUser.setConnection(user.connection)
         val userWithId = getManagementAPI().users().create(authUser).execute()
-        return QalipsisUser(userWithId)
+        return UserIdentity(
+            username = userWithId.username,
+            email = userWithId.email,
+            name = userWithId.name,
+            email_verified = userWithId.isEmailVerified,
+            user_id = userWithId.id
+        )
     }
 
     @Throws(Auth0Exception::class)

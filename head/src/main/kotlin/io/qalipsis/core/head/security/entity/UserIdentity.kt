@@ -12,5 +12,6 @@ data class UserIdentity(
     var connection: String = "Username-Password-Authentication",
     var verify_email: Boolean = true,
     var email_verified: Boolean = false,
-    var password: String = "pass"
+    var password: String = "pass",
+    var user_id: String = ""
 )
