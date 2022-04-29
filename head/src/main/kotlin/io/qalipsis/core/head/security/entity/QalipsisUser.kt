@@ -21,7 +21,8 @@ data class QalipsisUser(
     var version: Instant,
     var creation: Instant,
     var identityReference: String? = null,
-    var disabled: Instant? = null
+    var disabled: Instant? = null,
+    var roles: List<RolesPostfix> = mutableListOf(RolesPostfix.REPORTER)
 ) {
     constructor(user: User) : this(
         username = user.username,
