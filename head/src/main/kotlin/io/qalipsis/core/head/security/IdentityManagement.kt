@@ -1,6 +1,5 @@
 package io.qalipsis.core.head.security
 
-import io.qalipsis.core.head.security.entity.QalipsisUser
 import io.qalipsis.core.head.security.entity.UserIdentity
 
 /**
@@ -19,7 +18,7 @@ interface IdentityManagement {
     /**
      * Saves the user to the identity management platform.
      */
-    suspend fun save(user: UserIdentity): QalipsisUser
+    suspend fun save(user: UserIdentity): UserIdentity
 
     /**
      * Delete a user from the identity management platform .

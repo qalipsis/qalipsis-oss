@@ -44,14 +44,14 @@ internal class Auth0IdentityManagementTest {
         val result = identityManagement.save(createUser())
 
         //  then
-        assertThat(result.identityReference).isNotNull()
+        assertThat(result.user_id).isNotNull()
 
-        val result2 = identityManagement.get(result.identityReference!!)
+        val result2 = identityManagement.get(result.user_id!!)
         assertThat(result2.username).isEqualTo(result.username)
         assertThat(result2.email).isEqualTo(result.email)
         assertThat(result2.name).isEqualTo(result.name)
 
-        identityManagement.delete(result.identityReference!!)
+        identityManagement.delete(result.user_id!!)
     }
 
     @Test
@@ -60,24 +60,24 @@ internal class Auth0IdentityManagementTest {
         val result = identityManagement.save(createUser())
         userPrototype.email = result.email
         userPrototype.username = "new-qalipsis-1"
-        identityManagement.update(result.identityReference!!, userPrototype)
+        identityManagement.update(result.user_id!!, userPrototype)
 
         //  then
-        val result2 = identityManagement.get(result.identityReference!!)
+        val result2 = identityManagement.get(result.user_id!!)
         assertThat(result2.username).isEqualTo("new-qalipsis-1")
 
-        identityManagement.delete(result.identityReference!!)
+        identityManagement.delete(result.user_id!!)
     }
 
     @Test
     fun `should delete user from auth0`() = testDispatcherProvider.run {
         // when
         val result = identityManagement.save(createUser())
-        identityManagement.delete(result.identityReference!!)
+        identityManagement.delete(result.user_id!!)
 
         //  then
         assertThrows<Auth0Exception> {
-            identityManagement.get(result.identityReference!!)
+            identityManagement.get(result.user_id!!)
         }
     }
 

@@ -37,9 +37,10 @@ data class UserEntity(
 
     constructor(
         username: String,
+        identityReference: String? = null
     ) : this(
         -1,
         Instant.EPOCH, Instant.now(),
-        username
+        username, identityReference
     )
 }
