@@ -22,7 +22,7 @@ data class QalipsisUser(
     var creation: Instant,
     var identityReference: String? = null,
     var disabled: Instant? = null,
-    var roles: List<RolesPostfix> = mutableListOf(RolesPostfix.REPORTER)
+    var roles: List<RoleNames> = mutableListOf()
 ) {
     constructor(user: User) : this(
         username = user.username,
@@ -44,6 +44,7 @@ data class QalipsisUser(
         version = userEntity.version,
         creation = userEntity.creation,
         identityReference = userEntity.identityReference,
-        disabled = userEntity.disabled
+        disabled = userEntity.disabled,
+        roles = authUser.userRoles.map { RoleNames.valueOf(it.name) }.toList()
     )
 }
