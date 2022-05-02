@@ -13,5 +13,6 @@ data class UserIdentity(
     var verify_email: Boolean = true,
     var email_verified: Boolean = false,
     var password: String = "pass",
-    var user_id: String = ""
+    var user_id: String = "",
+    var userRoles: List<QalipsisRole> = mutableListOf()
 )
