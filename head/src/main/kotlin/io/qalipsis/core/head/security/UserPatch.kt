@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.security
 
 import io.qalipsis.core.head.security.entity.QalipsisUser
-import io.qalipsis.core.head.security.entity.RolesPostfix
+import io.qalipsis.core.head.security.entity.RoleNames
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
@@ -73,13 +73,13 @@ internal class UsernameUserPatch(
  */
 internal class AddRoleUserPatch(
     @field:NotBlank @field:Size(min = 1, max = 150)
-    internal val role: RolesPostfix
+    internal val role: RoleNames
 ) : UserPatch {
     override fun apply(user: QalipsisUser): Boolean {
         return if (user.roles.contains(role)) {
             false
         } else {
-            val newRolesList = mutableListOf<RolesPostfix>(role)
+            val newRolesList = mutableListOf(role)
             newRolesList.addAll(user.roles)
             user.roles = newRolesList
             true
@@ -92,12 +92,11 @@ internal class AddRoleUserPatch(
  */
 internal class DeleteRoleUserPatch(
     @field:NotBlank @field:Size(min = 1, max = 150)
-    internal val role: RolesPostfix
+    internal val role: RoleNames
 ) : UserPatch {
     override fun apply(user: QalipsisUser): Boolean {
         return if (user.roles.contains(role)) {
-            val newRolesList = mutableListOf<RolesPostfix>()
-            newRolesList.addAll(user.roles)
+            val newRolesList = user.roles.toMutableList()
             newRolesList.remove(role)
             user.roles = newRolesList
             true

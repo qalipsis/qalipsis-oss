@@ -9,7 +9,7 @@ import io.qalipsis.core.head.security.entity.BillingAdminitratorRole
 import io.qalipsis.core.head.security.entity.QalipsisRole
 import io.qalipsis.core.head.security.entity.QalipsisUser
 import io.qalipsis.core.head.security.entity.ReporterRole
-import io.qalipsis.core.head.security.entity.RolesPostfix
+import io.qalipsis.core.head.security.entity.RoleNames
 import io.qalipsis.core.head.security.entity.SuperAdministratorRole
 import io.qalipsis.core.head.security.entity.TenantAdministratorRole
 import io.qalipsis.core.head.security.entity.TesterRole
@@ -62,7 +62,7 @@ class UserManagementImpl(
         val currentUserRoles = mutableSetOf<QalipsisRole>()
         currentUser.roles.forEach {
             when (it) {
-                RolesPostfix.SUPER_ADMINISTRATOR -> currentUserRoles.addAll(
+                RoleNames.SUPER_ADMINISTRATOR -> currentUserRoles.addAll(
                     listOf(
                         SuperAdministratorRole(),
                         BillingAdminitratorRole(),
@@ -71,16 +71,16 @@ class UserManagementImpl(
                         ReporterRole()
                     )
                 )
-                RolesPostfix.BILLING_ADMINISTRATOR -> currentUserRoles.addAll(listOf(BillingAdminitratorRole()))
-                RolesPostfix.TENANT_ADMINISTRATOR -> currentUserRoles.addAll(
+                RoleNames.BILLING_ADMINISTRATOR -> currentUserRoles.addAll(listOf(BillingAdminitratorRole()))
+                RoleNames.TENANT_ADMINISTRATOR -> currentUserRoles.addAll(
                     listOf(
                         TenantAdministratorRole(),
                         TesterRole(),
                         ReporterRole()
                     )
                 )
-                RolesPostfix.TESTER -> currentUserRoles.addAll(listOf(TesterRole(), ReporterRole()))
-                RolesPostfix.REPORTER -> currentUserRoles.addAll(listOf(ReporterRole()))
+                RoleNames.TESTER -> currentUserRoles.addAll(listOf(TesterRole(), ReporterRole()))
+                RoleNames.REPORTER -> currentUserRoles.addAll(listOf(ReporterRole()))
             }
         }
         return currentUserRoles
@@ -98,7 +98,7 @@ class UserManagementImpl(
         )
     }
 
-    private fun transformToUserIdentity(user: QalipsisUser): UserIdentity {
+    private suspend fun transformToUserIdentity(user: QalipsisUser): UserIdentity {
         return UserIdentity(
             username = user.username,
             email = user.email,
@@ -106,7 +106,8 @@ class UserManagementImpl(
             email_verified = user.email_verified,
             connection = user.connection,
             verify_email = user.verify_email,
-            password = user.password
+            password = user.password,
+            userRoles = getAssignableRoles(user).toList()
         )
     }
 
