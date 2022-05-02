@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.security.impl
 
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.entity.UserIdentity
 import jakarta.inject.Singleton
@@ -9,7 +10,7 @@ import jakarta.inject.Singleton
  *
  * @author Palina Bril
  */
-
+@Requires(property = "identity.manager", notEquals = "auth0")
 @Singleton
 internal class IdentityManagementImpl : IdentityManagement {
 

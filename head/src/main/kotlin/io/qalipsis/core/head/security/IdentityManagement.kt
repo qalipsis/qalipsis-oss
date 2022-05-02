@@ -8,7 +8,7 @@ import io.qalipsis.core.head.security.entity.UserIdentity
  *
  * @author Palina Bril
  */
-interface IdentityManagement {
+internal interface IdentityManagement {
 
     /**
      * Returns a user from the identity management platform .

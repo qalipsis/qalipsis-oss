@@ -8,7 +8,7 @@ import io.qalipsis.core.head.security.entity.QalipsisUser
  *
  * @author Palina Bril
  */
-interface UserManagement {
+internal interface UserManagement {
 
     /**
      * Returns an enabled user.

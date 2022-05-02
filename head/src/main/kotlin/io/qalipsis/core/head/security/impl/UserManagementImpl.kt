@@ -15,7 +15,7 @@ import java.time.Instant
  *
  * @author Palina Bril
  */
-class UserManagementImpl(
+internal class UserManagementImpl(
     private val identityManagement: IdentityManagement,
     private val userRepository: UserRepository
 ) : UserManagement {
