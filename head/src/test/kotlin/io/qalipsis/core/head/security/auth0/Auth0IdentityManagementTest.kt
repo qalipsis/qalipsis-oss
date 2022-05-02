@@ -59,12 +59,12 @@ internal class Auth0IdentityManagementTest {
         // when
         val result = identityManagement.save(createUser())
         userPrototype.email = result.email
-        userPrototype.username = "new-qalipsis-1"
+        userPrototype.name = "new-qalipsis-1"
         identityManagement.update(result.user_id!!, userPrototype)
 
         //  then
         val result2 = identityManagement.get(result.user_id!!)
-        assertThat(result2.username).isEqualTo("new-qalipsis-1")
+        assertThat(result2.name).isEqualTo("new-qalipsis-1")
 
         identityManagement.delete(result.user_id!!)
     }
