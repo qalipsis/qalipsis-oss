@@ -6,18 +6,13 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
-import io.micronaut.http.client.exceptions.HttpClientResponseException
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest
-import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.admin.SaveTenantDto
 import io.qalipsis.core.head.admin.SaveTenantResponse
 import io.qalipsis.core.head.jdbc.repository.PostgresqlTemplateTest
+import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import org.testcontainers.junit.jupiter.Testcontainers
 
 
 internal class TenantControllerIntegrationTest : PostgresqlTemplateTest() {
@@ -28,6 +23,7 @@ internal class TenantControllerIntegrationTest : PostgresqlTemplateTest() {
     lateinit var httpClient: HttpClient
 
     @Inject
+    private lateinit var tenantRepository: TenantRepository
 
 
     @Test
@@ -41,8 +37,15 @@ internal class TenantControllerIntegrationTest : PostgresqlTemplateTest() {
             SaveTenantResponse::class.java
         )
 
+        val fetched = tenantRepository.findByReference(rsp.body.get().reference)
+
         assertEquals(HttpStatus.OK.code, rsp.status.code)
         assertEquals(tenantDisplayName, rsp.body.get().displayName)
+
+        assertEquals(rsp.body.get().reference, fetched.reference)
+        assertEquals(rsp.body.get().version, fetched.version)
+        assertEquals(rsp.body.get().displayName, fetched.displayName)
+
     }
 
 

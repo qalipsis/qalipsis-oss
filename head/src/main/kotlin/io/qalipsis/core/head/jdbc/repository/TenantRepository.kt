@@ -15,5 +15,7 @@ internal interface TenantRepository : CoroutineCrudRepository<TenantEntity, Long
 
     suspend fun findIdByReference(reference: String): Long
 
+    suspend fun findByReference(reference: String): TenantEntity
+
     suspend fun findReferenceById(id: Long): String
 }
