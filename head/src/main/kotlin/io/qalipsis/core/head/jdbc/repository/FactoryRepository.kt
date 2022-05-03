@@ -22,7 +22,7 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
             """
     )
-    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
+    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
     suspend fun findByNodeIdIn(tenant: String, factoryIds: Collection<String>): List<FactoryEntity>
 
     suspend fun findIdByNodeIdIn(factoryIds: Collection<String>): List<Long>
@@ -53,7 +53,7 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
                 """
     )
-    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
+    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
     suspend fun getAvailableFactoriesForScenarios(tenant: String, names: Collection<String>): List<FactoryEntity>
 
     private companion object {
