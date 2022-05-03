@@ -22,7 +22,7 @@ data class QalipsisUser(
     var creation: Instant,
     var identityReference: String? = null,
     var disabled: Instant? = null,
-    var roles: List<RoleNames> = mutableListOf()
+    var roles: List<RoleName> = mutableListOf()
 ) {
     constructor(user: User) : this(
         username = user.username,
@@ -45,6 +45,6 @@ data class QalipsisUser(
         creation = userEntity.creation,
         identityReference = userEntity.identityReference,
         disabled = userEntity.disabled,
-        roles = authUser.userRoles.map { RoleNames.valueOf(it.name) }.toList()
+        roles = authUser.userRoles.map { RoleName.valueOf(it.name) }.toList()
     )
 }
