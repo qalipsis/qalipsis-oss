@@ -24,15 +24,15 @@ internal interface UserManagement {
     /**
      * Marks the user as disabled.
      */
-    suspend fun delete(username: String)
+    suspend fun delete(tenantName: String, username: String)
 
     /**
      * Creates new the user.
      */
-    suspend fun create(user: QalipsisUser)
+    suspend fun create(tenantName: String, user: QalipsisUser)
 
     /**
      * Receives roles of the user.
      */
-    suspend fun getAssignableRoles(currentUser: QalipsisUser): Set<QalipsisRole>
+    suspend fun getAssignableRoles(tenantName: String, currentUser: QalipsisUser): Set<QalipsisRole>
 }

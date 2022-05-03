@@ -18,13 +18,13 @@ internal class IdentityManagementImpl : IdentityManagement {
         return UserIdentity(username = "qalipsis", name = "qalipsis", email = "foo@bar.com")
     }
 
-    override suspend fun save(user: UserIdentity): UserIdentity {
+    override suspend fun save(tenantName: String, user: UserIdentity): UserIdentity {
         return UserIdentity(username = "qalipsis", name = "qalipsis", email = "foo@bar.com")
     }
 
-    override suspend fun delete(username: String) {
+    override suspend fun delete(username: String, identityReference: String) {
     }
 
-    override suspend fun update(identityReference: String, user: UserIdentity) {
+    override suspend fun update(tenantName: String, identityReference: String, user: UserIdentity) {
     }
 }

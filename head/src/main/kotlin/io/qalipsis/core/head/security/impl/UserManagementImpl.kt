@@ -2,6 +2,8 @@ package io.qalipsis.core.head.security.impl
 
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
+import io.qalipsis.core.head.security.AddRoleUserPatch
+import io.qalipsis.core.head.security.DeleteRoleUserPatch
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UserManagement
 import io.qalipsis.core.head.security.UserPatch
@@ -9,7 +11,7 @@ import io.qalipsis.core.head.security.entity.BillingAdminitratorRole
 import io.qalipsis.core.head.security.entity.QalipsisRole
 import io.qalipsis.core.head.security.entity.QalipsisUser
 import io.qalipsis.core.head.security.entity.ReporterRole
-import io.qalipsis.core.head.security.entity.RoleNames
+import io.qalipsis.core.head.security.entity.RoleName
 import io.qalipsis.core.head.security.entity.SuperAdministratorRole
 import io.qalipsis.core.head.security.entity.TenantAdministratorRole
 import io.qalipsis.core.head.security.entity.TesterRole
@@ -38,49 +40,70 @@ internal class UserManagementImpl(
     }
 
     override suspend fun save(user: QalipsisUser, userPatches: Collection<UserPatch>) {
+        var tenantName = ""
+        if(userPatches.asSequence().filter { it is AddRoleUserPatch }.any()){
+            userPatches.asSequence().filter { it is AddRoleUserPatch }
+                .let { tenantName = (it.first() as AddRoleUserPatch).tenantName }
+        }
+        if(userPatches.asSequence().filter { it is DeleteRoleUserPatch }.any()) {
+            userPatches.asSequence().filter { it is DeleteRoleUserPatch }
+                .let { tenantName = (it.first() as DeleteRoleUserPatch).tenantName }
+        }
         if (userPatches.asSequence().map { it.apply(user) }.any()) {
-            user.identityReference?.let { identityManagement.update(it, transformToUserIdentity(user)) }
+            user.identityReference?.let {
+                identityManagement.update(
+                    tenantName = tenantName,
+                    identityReference = it,
+                    user = transformToUserIdentity(tenantName, user)
+                )
+            }
             userRepository.update(transformToUserEntity(user))
         }
     }
 
-    override suspend fun delete(username: String) {
+    override suspend fun delete(tenantName: String, username: String) {
         val userEntity = userRepository.findByUsername(username)
         if (userEntity != null) {
             val disabledUser = userEntity.copy(disabled = Instant.now(), identityReference = null)
             userRepository.update(disabledUser)
-            userEntity.identityReference?.let { identityManagement.delete(it) }
+            userEntity.identityReference?.let {
+                identityManagement.delete(
+                    tenantName = tenantName,
+                    identityReference = it
+                )
+            }
         }
     }
 
-    override suspend fun create(user: QalipsisUser) {
-        val authUser = identityManagement.save(transformToUserIdentity(user))
+    override suspend fun create(tenantName: String, user: QalipsisUser) {
+        val authUser =
+            identityManagement.save(tenantName = tenantName, user = transformToUserIdentity(tenantName, user))
         userRepository.save(transformToUserEntityFromUserIdentity(authUser))
     }
 
-    override suspend fun getAssignableRoles(currentUser: QalipsisUser): Set<QalipsisRole> {
+    override suspend fun getAssignableRoles(tenantName: String, currentUser: QalipsisUser): Set<QalipsisRole> {
         val currentUserRoles = mutableSetOf<QalipsisRole>()
         currentUser.roles.forEach {
             when (it) {
-                RoleNames.SUPER_ADMINISTRATOR -> currentUserRoles.addAll(
+                RoleName.SUPER_ADMINISTRATOR -> currentUserRoles.addAll(
                     listOf(
-                        SuperAdministratorRole(),
-                        BillingAdminitratorRole(),
-                        TenantAdministratorRole(),
-                        TesterRole(),
-                        ReporterRole()
+                        SuperAdministratorRole(tenantName),
+                        BillingAdminitratorRole(tenantName),
+                        TenantAdministratorRole(tenantName),
+                        TesterRole(tenantName),
+                        ReporterRole(tenantName)
                     )
                 )
-                RoleNames.BILLING_ADMINISTRATOR -> currentUserRoles.addAll(listOf(BillingAdminitratorRole()))
-                RoleNames.TENANT_ADMINISTRATOR -> currentUserRoles.addAll(
+                RoleName.BILLING_ADMINISTRATOR -> currentUserRoles.addAll(listOf(BillingAdminitratorRole(tenantName)))
+                RoleName.TENANT_ADMINISTRATOR -> currentUserRoles.addAll(
                     listOf(
-                        TenantAdministratorRole(),
-                        TesterRole(),
-                        ReporterRole()
+                        TenantAdministratorRole(tenantName),
+                        TesterRole(tenantName),
+                        ReporterRole(tenantName)
                     )
                 )
-                RoleNames.TESTER -> currentUserRoles.addAll(listOf(TesterRole(), ReporterRole()))
-                RoleNames.REPORTER -> currentUserRoles.addAll(listOf(ReporterRole()))
+                RoleName.TESTER -> currentUserRoles.addAll(listOf(TesterRole(tenantName), ReporterRole(tenantName)))
+                RoleName.REPORTER -> currentUserRoles.addAll(listOf(ReporterRole(tenantName)))
             }
         }
         return currentUserRoles
@@ -98,7 +121,7 @@ internal class UserManagementImpl(
         )
     }
 
-    private suspend fun transformToUserIdentity(user: QalipsisUser): UserIdentity {
+    private suspend fun transformToUserIdentity(tenantName: String, user: QalipsisUser): UserIdentity {
         return UserIdentity(
             username = user.username,
             email = user.email,
@@ -107,7 +130,7 @@ internal class UserManagementImpl(
             connection = user.connection,
             verify_email = user.verify_email,
             password = user.password,
-            userRoles = getAssignableRoles(user).toList()
+            userRoles = getAssignableRoles(tenantName, user).toList()
         )
     }
 

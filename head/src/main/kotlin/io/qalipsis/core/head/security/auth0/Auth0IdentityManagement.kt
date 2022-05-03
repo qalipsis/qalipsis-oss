@@ -2,6 +2,7 @@ package io.qalipsis.core.head.security.auth0
 
 import com.auth0.client.auth.AuthAPI
 import com.auth0.client.mgmt.ManagementAPI
+import com.auth0.client.mgmt.filter.RolesFilter
 import com.auth0.exception.Auth0Exception
 import com.auth0.json.mgmt.Permission
 import com.auth0.json.mgmt.Role
@@ -9,6 +10,7 @@ import com.auth0.json.mgmt.users.User
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.events.AbstractBufferedEventsPublisher.Companion.log
 import io.qalipsis.core.head.security.IdentityManagement
+import io.qalipsis.core.head.security.entity.QalipsisPermission
 import io.qalipsis.core.head.security.entity.QalipsisRole
 import io.qalipsis.core.head.security.entity.UserIdentity
 import jakarta.inject.Singleton
@@ -83,7 +85,7 @@ internal class Auth0IdentityManagement(
     }
 
     @Throws(Auth0Exception::class)
-    override suspend fun save(user: UserIdentity): UserIdentity {
+    override suspend fun save(tenantName: String, user: UserIdentity): UserIdentity {
         val authUser = User()
         authUser.email = user.email
         authUser.username = user.username
@@ -94,8 +96,8 @@ internal class Auth0IdentityManagement(
         authUser.setConnection(user.connection)
         val userWithId = getManagementAPI().users().create(authUser).execute()
         if (user.userRoles.isNotEmpty()) {
-            checkIfRolesExist(user.userRoles)
-            assignUserRoles(userWithId.id, user.userRoles.map { it.name }.toList())
+            checkIfRolesExist(tenantName, user.userRoles)
+            assignUserRoles(tenantName, userWithId.id, user.userRoles.map { it.name }.toList())
         }
         return UserIdentity(
             username = userWithId.username,
@@ -108,7 +110,7 @@ internal class Auth0IdentityManagement(
     }
 
     @Throws(Auth0Exception::class)
-    override suspend fun update(identityReference: String, user: UserIdentity) {
+    override suspend fun update(tenantName: String, identityReference: String, user: UserIdentity) {
         val authUser = User()
         authUser.username = user.username
         authUser.name = user.name
@@ -117,56 +119,73 @@ internal class Auth0IdentityManagement(
         userWithNewMail.email = user.email
         getManagementAPI().users().update(identityReference, userWithNewMail).execute()
         if (user.userRoles.isNotEmpty()) {
-            updateUserRoles(identityReference, user.userRoles)
+            updateUserRoles(tenantName, identityReference, user.userRoles)
         }
     }
 
     @Throws(Auth0Exception::class)
-    override suspend fun delete(identityReference: String) {
+    override suspend fun delete(tenantName: String, identityReference: String) {
         try {
-            removeUserRoles(identityReference, getUserRoles(identityReference).map { it.name }.toMutableList())
+            removeUserRoles(
+                tenantName,
+                identityReference,
+                getUserRoles(identityReference).map { it.name }.toMutableList()
+            )
         } catch (e: IllegalArgumentException) {
-            log.info("Deleted user with id ${identityReference} hasn't any roles")
+            log.info("Deleted user with id $identityReference hasn't any roles")
         } finally {
             getManagementAPI().users().delete(identityReference).execute()
         }
     }
 
+    /**
+     * Gets all users from Auth0
+     */
     @Throws(Auth0Exception::class)
     private suspend fun getUsers(): MutableList<User> {
         val users = getManagementAPI().users().list(null).execute()
         return users.items
     }
 
-    private suspend fun updateUserRoles(identityReference: String, userRoles: List<QalipsisRole>) {
-        val currentUserRoles = getUserRoles(identityReference).map { it.name }.toMutableList()
-        val userRoleNames = userRoles.associate { it.name to it }.toMutableMap()
-        if (!currentUserRoles.containsAll(userRoleNames.keys)) {
-            currentUserRoles.forEach { userRoleNames.remove(it) }
-            checkIfRolesExist(userRoleNames.values.toList())
-            assignUserRoles(identityReference, userRoleNames.keys.toList())
+    /**
+     * Saves changes in user roles to Auth0
+     */
+    private suspend fun updateUserRoles(tenantName: String, identityReference: String, userRoles: List<QalipsisRole>) {
+        val currentUserRoles = getUserRoles(identityReference).map { it.name }.toMutableSet()
+        val userRoleNames = userRoles.associateBy { it.name }
+        (userRoleNames.keys - currentUserRoles).takeIf(Collection<String>::isNotEmpty)?.let { newRoles ->
+            checkIfRolesExist(tenantName, userRoleNames.filterKeys { key -> key in newRoles }.values.toList())
+            assignUserRoles(tenantName, identityReference, newRoles.toList())
         }
-        if (!userRoles.map { it.name }.toList().containsAll(currentUserRoles)) {
-            currentUserRoles.removeAll(userRoles.map { it.name }.toList())
-            removeUserRoles(identityReference, currentUserRoles)
+        (currentUserRoles - userRoleNames.keys).takeIf(Collection<String>::isNotEmpty)?.let { obsoleteRoles ->
+            removeUserRoles(tenantName, identityReference, obsoleteRoles.toMutableList())
         }
     }
 
+    /**
+     * Returns all user roles from Auth0
+     */
     @Throws(Auth0Exception::class)
     private suspend fun getUserRoles(identityReference: String): MutableList<QalipsisRole> {
         val authUserRoles = getManagementAPI().users().listRoles(identityReference, null).execute()
         return authUserRoles.items.map { QalipsisRole(it.name, it.description) }.toMutableList()
     }
 
+    /**
+     * Delete user roles in Auth0
+     */
     @Throws(Auth0Exception::class)
-    private suspend fun removeUserRoles(identityReference: String, roleNames: MutableList<String>) {
-        val authRoles = getRoles()
+    private suspend fun removeUserRoles(tenantName: String, identityReference: String, roleNames: MutableList<String>) {
+        val authRoles = getRoles(tenantName)
         val roleIds = authRoles.filter { roleNames.contains(it.name) }.map { it.id }.toList()
-        validateIfNotLastUserForRole("billing-admin", authRoles, roleNames)
-        validateIfNotLastUserForRole("tenant-admin", authRoles, roleNames)
+        validateIfNotLastUserForRole("$tenantName:billing-admin", authRoles, roleNames)
+        validateIfNotLastUserForRole("$tenantName:tenant-admin", authRoles, roleNames)
         getManagementAPI().users().removeRoles(identityReference, roleIds).execute()
     }
 
+    /**
+     * Checks if it is possible to remove role from user. It is not possible in case of last user for the role.
+     */
     private suspend fun validateIfNotLastUserForRole(
         roleName: String,
         authRoles: MutableList<Role>,
@@ -175,22 +194,31 @@ internal class Auth0IdentityManagement(
         if (roleNames.contains(roleName)) {
             val roleId = authRoles.filter { it.name.contains(roleName) }.map { it.id }.first()
             val roleUsers = getManagementAPI().roles().listUsers(roleId, null).execute().items
-            if (roleUsers.size < 2) throw ValidationException("Last user for role ${roleName} can't be deleted!")
+            if (roleUsers.size < 2) throw ValidationException("Last user for role $roleName can't be deleted!")
         }
     }
 
+    /**
+     * Adds user roles in Auth0
+     */
     @Throws(Auth0Exception::class)
-    private suspend fun assignUserRoles(identityReference: String, roleNames: List<String>) {
-        val roleIds = getRoles().filter { roleNames.contains(it.name) }.map { it.id }.toList()
+    private suspend fun assignUserRoles(tenantName: String, identityReference: String, roleNames: List<String>) {
+        val roleIds = getRoles(tenantName).filter { roleNames.contains(it.name) }.map { it.id }.toList()
         getManagementAPI().users().addRoles(identityReference, roleIds).execute()
     }
 
+    /**
+     * Returns all roles exist for certain tenant in Auth0
+     */
     @Throws(Auth0Exception::class)
-    private suspend fun getRoles(): MutableList<Role> {
-        val roles = getManagementAPI().roles().list(null).execute()
+    private suspend fun getRoles(tenantName: String): MutableList<Role> {
+        val roles = getManagementAPI().roles().list(RolesFilter().withName(tenantName)).execute()
         return roles.items
     }
 
+    /**
+     * API for getting and updating tokens
+     */
     @Throws(Auth0Exception::class)
     private suspend fun createRole(name: String, description: String): Role {
         val role = Role()
@@ -199,25 +227,30 @@ internal class Auth0IdentityManagement(
         return getManagementAPI().roles().create(role).execute()
     }
 
+    /**
+     * Saves permissions to roles in Auth0
+     */
     @Throws(Auth0Exception::class)
-    private suspend fun assignRolePermissions(roleId: String, name: String, description: String) {
-        val permission = Permission()
-        permission.name = name
-        permission.description = description
-        getManagementAPI().roles().addPermissions(roleId, mutableListOf(permission)).execute()
+    private suspend fun assignRolePermissions(roleId: String, permissions: List<QalipsisPermission>) {
+        getManagementAPI().roles().addPermissions(roleId, permissions.map {
+            val permission = Permission()
+            permission.name = it.name
+            permission.description = it.description
+            permission
+        }).execute()
     }
 
-    private suspend fun checkIfRolesExist(userRoles: List<QalipsisRole>) {
-        val userRoleNames = userRoles.associate { it.name to it }.toMutableMap()
-        val roles = getRoles().map { it.name }
-        if (!roles.containsAll(userRoleNames.keys)) {
-            roles.forEach { userRoleNames.remove(it) }
-            userRoleNames.forEach {
-                val newRole = createRole(it.value.name, it.value.description)
-                if (it.value.permissions.isNotEmpty()) {
-                    it.value.permissions.forEach {
-                        assignRolePermissions(newRole.id, it.name, it.description.orEmpty())
-                    }
+    /**
+     * Creates new roles in Auth0 if they are not exist
+     */
+    private suspend fun checkIfRolesExist(tenantName: String, userRoles: List<QalipsisRole>) {
+        val userRoleNames = userRoles.associateBy { it.name }
+        val roles = getRoles(tenantName).map { it.name }.toMutableSet()
+        (userRoleNames.keys - roles).takeIf(Collection<String>::isNotEmpty)?.let { newRoles ->
+            userRoleNames.filterKeys { key -> key in newRoles }.values.forEach {
+                val newRole = createRole(it.name, it.description)
+                if (it.permissions.isNotEmpty()) {
+                    assignRolePermissions(newRole.id, it.permissions)
                 }
             }
         }

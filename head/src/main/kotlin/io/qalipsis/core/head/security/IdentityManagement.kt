@@ -18,15 +18,15 @@ internal interface IdentityManagement {
     /**
      * Saves the user to the identity management platform.
      */
-    suspend fun save(user: UserIdentity): UserIdentity
+    suspend fun save(tenantName: String, user: UserIdentity): UserIdentity
 
     /**
      * Delete a user from the identity management platform .
      */
-    suspend fun delete(identityReference: String)
+    suspend fun delete(tenantName: String, identityReference: String)
 
     /**
      * Saves changes to the user into the identity management platform.
      */
-    suspend fun update(identityReference: String, user: UserIdentity)
+    suspend fun update(tenantName: String, identityReference: String, user: UserIdentity)
 }

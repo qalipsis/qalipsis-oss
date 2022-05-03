@@ -53,49 +53,49 @@ internal class Auth0IdentityManagementTest {
     @Test
     fun `should save and get user from auth0`() = testDispatcherProvider.run {
         // when
-        val result = identityManagement.save(createUser())
+        val result = identityManagement.save("qalipsis", createUser())
 
         //  then
         assertThat(result.user_id).isNotNull()
 
-        val result2 = identityManagement.get(result.user_id!!)
+        val result2 = identityManagement.get(result.user_id)
         assertThat(result2.username).isEqualTo(result.username)
         assertThat(result2.email).isEqualTo(result.email)
         assertThat(result2.name).isEqualTo(result.name)
-        assertThat(result2.userRoles.get(0).name).isEqualTo("billing-admin")
+        assertThat(result2.userRoles.get(0).name).isEqualTo("qalipsis:billing-admin")
 
         delay(1000)
-        identityManagement.delete(result.user_id!!)
+        identityManagement.delete("qalipsis", result.user_id)
     }
 
     @Test
     fun `should update user from auth0`() = testDispatcherProvider.run {
         // when
-        val result = identityManagement.save(createUser())
+        val result = identityManagement.save("qalipsis", createUser())
         userPrototype.email = result.email
         userPrototype.name = "new-qalipsis"
-        userPrototype.userRoles = mutableListOf(TesterRole())
-        identityManagement.update(result.user_id!!, userPrototype)
+        userPrototype.userRoles = mutableListOf(TesterRole("qalipsis"))
+        identityManagement.update("qalipsis", result.user_id, userPrototype)
 
         //  then
-        val result2 = identityManagement.get(result.user_id!!)
+        val result2 = identityManagement.get(result.user_id)
         assertThat(result2.name).isEqualTo("new-qalipsis")
         assertThat(result2.userRoles).hasSize(1)
-        assertThat(result2.userRoles.get(0).name).isEqualTo("tester")
+        assertThat(result2.userRoles.get(0).name).isEqualTo("qalipsis:tester")
 
-        delay(1000)
-        identityManagement.delete(result.user_id!!)
+        delay(1500)
+        identityManagement.delete("qalipsis", result.user_id)
     }
 
     @Test
     fun `should delete user from auth0`() = testDispatcherProvider.run {
         // when
-        val result = identityManagement.save(createUser())
-        identityManagement.delete(result.user_id!!)
+        val result = identityManagement.save("qalipsis", createUser())
+        identityManagement.delete("qalipsis", result.user_id)
 
         //  then
         assertThrows<Auth0Exception> {
-            identityManagement.get(result.user_id!!)
+            identityManagement.get(result.user_id)
         }
     }
 
@@ -104,7 +104,7 @@ internal class Auth0IdentityManagementTest {
             username = "auth-user${(Random.nextInt(-9999, 99999))}",
             name = "test",
             email = "foo+${(Random.nextInt(10, 36000))}@bar.com",
-            userRoles = mutableListOf(BillingAdminitratorRole())
+            userRoles = mutableListOf(BillingAdminitratorRole("qalipsis"))
         )
     }
 }
