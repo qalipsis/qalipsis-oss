@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.security
 
-import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.qalipsis.core.head.security.entity.QalipsisUser
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
@@ -10,10 +10,10 @@ import javax.validation.constraints.Size
  */
 interface UserPatch {
     /**
-     * Applies a change on the [UserEntity] and returns true if and only if the change was actually
+     * Applies a change on the [QalipsisUser] and returns true if and only if the change was actually
      * performed.
      */
-    fun apply(user: UserEntity): Boolean
+    fun apply(user: QalipsisUser): Boolean
 }
 
 /**
@@ -23,9 +23,9 @@ internal class DisplayNameUserPatch(
     @field:NotBlank @field:Size(min = 1, max = 150)
     private val newDisplayName: String
 ) : UserPatch {
-    override fun apply(user: UserEntity): Boolean {
-        return if (user.displayName != newDisplayName.trim()) {
-            user.displayName = newDisplayName.trim()
+    override fun apply(user: QalipsisUser): Boolean {
+        return if (user.name != newDisplayName.trim()) {
+            user.name = newDisplayName.trim()
             true
         } else {
             false
@@ -40,9 +40,9 @@ internal class EmailAddressUserPatch(
     @field:NotBlank @field:Email
     private val newEmailAddress: String
 ) : UserPatch {
-    override fun apply(user: UserEntity): Boolean {
-        return if (user.emailAddress != newEmailAddress.trim()) {
-            user.emailAddress = newEmailAddress.trim()
+    override fun apply(user: QalipsisUser): Boolean {
+        return if (user.email != newEmailAddress.trim()) {
+            user.email = newEmailAddress.trim()
             true
         } else {
             false
@@ -57,7 +57,7 @@ internal class UsernameUserPatch(
     @field:NotBlank @field:Size(min = 1, max = 150)
     internal val newUsername: String
 ) : UserPatch {
-    override fun apply(user: UserEntity): Boolean {
+    override fun apply(user: QalipsisUser): Boolean {
         return if (user.username != newUsername.trim()) {
             user.username = newUsername.trim()
             true

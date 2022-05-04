@@ -11,3 +11,12 @@ head:
 
 logging:
   console: true
+
+#FIXME QALI-207 remove the id and secret - https://aeris-consulting.atlassian.net/browse/QALI-207
+identity:
+  manager: auth0
+  auth0:
+    client-id: ALQoukwJr0ohAwkOBtCTBDMzGWcx1ksw
+    client-secret: 8y-XkaFwv9nNhHvOu4Zmp353gNE3aKTUHQq-j_oB7TXRkyn9vWkZuDMIly3riXQi
+    api-identifier: https://qalipsis-dev.eu.auth0.com/api/v2/
+    domain: qalipsis-dev.eu.auth0.com
