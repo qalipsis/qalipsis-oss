@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.security
 
-import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.qalipsis.core.head.security.entity.UserIdentity
 
 /**
  * Service to proceed with the user data, which is used by the implementation of [UserManagement] to propagate
@@ -8,25 +8,25 @@ import io.qalipsis.core.head.jdbc.entity.UserEntity
  *
  * @author Palina Bril
  */
-interface IdentityManagement {
+internal interface IdentityManagement {
 
     /**
      * Returns a user from the identity management platform .
      */
-    suspend fun get(username: String): UserEntity
+    suspend fun get(identityReference: String): UserIdentity
 
     /**
      * Saves the user to the identity management platform.
      */
-    suspend fun save(user: UserEntity): UserEntity
+    suspend fun save(user: UserIdentity): UserIdentity
 
     /**
      * Delete a user from the identity management platform .
      */
-    suspend fun delete(username: String)
+    suspend fun delete(identityReference: String)
 
     /**
      * Saves changes to the user into the identity management platform.
      */
-    suspend fun update(user: UserEntity)
+    suspend fun update(identityReference: String, user: UserIdentity)
 }

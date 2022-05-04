@@ -11,6 +11,8 @@ import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.security.IdentityManagement
 import io.qalipsis.core.head.security.UsernameUserPatch
+import io.qalipsis.core.head.security.entity.QalipsisUser
+import io.qalipsis.core.head.security.entity.UserIdentity
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -37,15 +39,13 @@ internal class UserManagementImplTest {
     @InjectMockKs
     private lateinit var userManagement: UserManagementImpl
 
-    val now = Instant.now()
+    val now: Instant = Instant.now()
 
-    val userPrototype = UserEntity(
+    private val userPrototype = UserEntity(
         id = 1,
         version = now,
         creation = now,
         username = "Qalipsis-test",
-        displayName = "test",
-        emailAddress = "foo@bar.com"
     )
 
     @Test
@@ -53,8 +53,19 @@ internal class UserManagementImplTest {
         // given
         val mockedUserEntity = relaxedMockk<UserEntity> {
             every { disabled } returns null
+            every { identityReference } returns "identity"
+            every { version } returns now
+            every { creation } returns now
+            every { id } returns 555
+        }
+        val mockedUserIdentity = relaxedMockk<UserIdentity> {
+            every { email_verified } returns true
+            every { username } returns "username"
+            every { email } returns "email"
+            every { name } returns "name"
         }
         coEvery { userRepository.findByUsername("qalipsis") } returns mockedUserEntity
+        coEvery { idendityManagement.get("identity") } returns mockedUserIdentity
 
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
@@ -65,6 +76,8 @@ internal class UserManagementImplTest {
         //  then
         coVerifyOrder {
             userRepository.findByUsername("qalipsis")
+            idendityManagement.get("identity")
+
         }
         confirmVerified(userRepository, idendityManagement)
     }
@@ -94,19 +107,32 @@ internal class UserManagementImplTest {
     fun `should update user`() = testDispatcherProvider.run {
         // given
         val patch = UsernameUserPatch("qalipsis-new")
-        val user = UserEntity(username = "qalipsis", displayName = "qalipsis")
+        val mockedUser = relaxedMockk<QalipsisUser> {
+            every { verify_email } returns true
+            every { email_verified } returns false
+            every { password } returns "pass"
+            every { connection } returns "connection"
+            every { username } returns "username"
+            every { email } returns "email"
+            every { name } returns "name"
+            every { identityReference } returns "identity"
+            every { disabled } returns null
+            every { version } returns now
+            every { creation } returns now
+            every { userEntityId } returns 555
+        }
         coEvery { userRepository.update(any()) } returns userPrototype
 
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
             "save",
-            user,
+            mockedUser,
             listOf(patch)
         )
 
         //  then
         coVerifyOrder {
-            idendityManagement.update(any() as UserEntity)
+            idendityManagement.update("identity", any() as UserIdentity)
             userRepository.update(any() as UserEntity)
         }
         confirmVerified(userRepository, idendityManagement)
@@ -120,6 +146,7 @@ internal class UserManagementImplTest {
         coEvery { mockedUserEntity.copy(any()) } returns disabledUserEntity
         coEvery { userRepository.findByUsername("Qalipsis-test") } returns mockedUserEntity
         coEvery { userRepository.update(any()) } returns userPrototype
+        coEvery { mockedUserEntity.identityReference } returns "identity"
 
         // when
         userManagement.coInvokeInvisible<UserManagementImpl>(
@@ -131,7 +158,7 @@ internal class UserManagementImplTest {
         coVerifyOrder {
             userRepository.findByUsername("Qalipsis-test")
             userRepository.update(any() as UserEntity)
-            idendityManagement.update(any() as UserEntity)
+            idendityManagement.delete("identity")
         }
         confirmVerified(userRepository, idendityManagement)
     }

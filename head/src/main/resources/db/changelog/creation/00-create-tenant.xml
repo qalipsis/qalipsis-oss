@@ -47,11 +47,8 @@
       <column name="username" type="VARCHAR(150)">
         <constraints nullable="false"/>
       </column>
-      <column name="email_address" type="VARCHAR(150)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="display_name" type="VARCHAR(150)">
-        <constraints nullable="false"/>
+      <column name="identity_reference" type="VARCHAR(60)">
+        <constraints nullable="true"/>
       </column>
       <column name="disabled" type="TIMESTAMP">
         <constraints nullable="true"/>
@@ -65,8 +62,6 @@
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
       <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
       <column name="username" value="qalipsis"/>
-      <column name="email_address" value="foo@bar.com"/>
-      <column name="display_name" value="qalipsis"/>
     </insert>
   </changeSet>
 </databaseChangeLog>
