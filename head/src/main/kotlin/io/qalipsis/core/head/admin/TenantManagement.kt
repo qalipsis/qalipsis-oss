@@ -1,5 +1,10 @@
 package io.qalipsis.core.head.admin
 
-interface TenantManagement {
-    suspend fun saveTenant(saveTenantDto: SaveTenantDto): SaveTenantResponse
+import io.qalipsis.core.head.model.Tenant
+import io.qalipsis.core.head.model.TenantCreation
+
+internal interface TenantManagement {
+
+    suspend fun saveTenant(tenantCreation: TenantCreation): Tenant
+
 }
