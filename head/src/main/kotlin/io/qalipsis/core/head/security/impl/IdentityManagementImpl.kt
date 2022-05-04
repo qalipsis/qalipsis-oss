@@ -10,7 +10,7 @@ import jakarta.inject.Singleton
  *
  * @author Palina Bril
  */
-@Requires(property = "identity.manager", notEquals = "auth0")
+@Requires(missingBeans = [IdentityManagement::class])
 @Singleton
 internal class IdentityManagementImpl : IdentityManagement {
 
