@@ -50,9 +50,6 @@
       <column name="identity_reference" type="VARCHAR(60)">
         <constraints nullable="true"/>
       </column>
-      <column name="identity_reference" type="VARCHAR(60)">
-        <constraints nullable="true"/>
-      </column>
       <column name="disabled" type="TIMESTAMP">
         <constraints nullable="true"/>
       </column>
