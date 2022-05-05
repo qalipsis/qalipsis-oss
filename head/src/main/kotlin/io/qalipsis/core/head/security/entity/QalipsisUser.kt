@@ -9,7 +9,7 @@ import java.time.Instant
  *
  * @author Palina Bril
  */
-data class QalipsisUser(
+internal data class QalipsisUser(
     var username: String,
     var email: String,
     var name: String,

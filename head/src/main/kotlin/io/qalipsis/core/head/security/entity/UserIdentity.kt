@@ -5,7 +5,7 @@ package io.qalipsis.core.head.security.entity
  *
  * @author Palina Bril
  */
-data class UserIdentity(
+internal data class UserIdentity(
     var username: String,
     var email: String,
     var name: String,

@@ -5,34 +5,34 @@ package io.qalipsis.core.head.security.entity
  *
  * @author Palina Bril
  */
-open class QalipsisRole(
+internal open class QalipsisRole(
     var name: String,
     var description: String
 ) {
     var permissions: List<QalipsisPermission> = mutableListOf()
 }
 
-internal class SuperAdministratorRole(tenantName: String) : QalipsisRole(
-    name = "$tenantName:super-admin",
+internal class SuperAdministratorRole(tenant: String) : QalipsisRole(
+    name = "$tenant:super-admin",
     description = "Include all possible roles"
 )
 
-internal class BillingAdminitratorRole(tenantName: String) : QalipsisRole(
-    name = "$tenantName:billing-admin",
+internal class BillingAdminitratorRole(tenant: String) : QalipsisRole(
+    name = "$tenant:billing-admin",
     description = "Only relevant for the cloud solution to maintain their payment modes and subscriptions in the webshop"
 )
 
-internal class TenantAdministratorRole(tenantName: String) : QalipsisRole(
-    name = "$tenantName:tenant-admin",
+internal class TenantAdministratorRole(tenant: String) : QalipsisRole(
+    name = "$tenant:tenant-admin",
     description = "Can manage users, tenant naming"
 )
 
-internal class TesterRole(tenantName: String) : QalipsisRole(
-    name = "$tenantName:tester",
+internal class TesterRole(tenant: String) : QalipsisRole(
+    name = "$tenant:tester",
     description = "Can configure a new campaign, see the results and reports"
 )
 
-internal class ReporterRole(tenantName: String) : QalipsisRole(
-    name = "$tenantName:reporter",
+internal class ReporterRole(tenant: String) : QalipsisRole(
+    name = "$tenant:reporter",
     description = "Can only see the results and reports"
 )
