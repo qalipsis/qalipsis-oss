@@ -11,10 +11,35 @@ internal enum class RoleName(
     val publicName: String,
     val permissions: Set<Permission> = emptySet()
 ) {
+    /**
+     * Role assigned to any user having a role in a tenant.
+     * This role is only used for technical reasons.
+     */
+    TENANT_USER("tenant-user"),
+
+    /**
+     * Role of user having the administrator rights.
+     */
     SUPER_ADMINISTRATOR("super-admin", setOf(ALL_PERMISSION)),
+
+    /**
+     * Role of user having the rights to edit the billing details of the tenant.
+     */
     BILLING_ADMINISTRATOR("billing-admin"),
+
+    /**
+     * Role of user having the rights to edit the tenant details and its users.
+     */
     TENANT_ADMINISTRATOR("tenant-admin"),
+
+    /**
+     * Role of user having the rights to start and edit campaigns.
+     */
     TESTER("tester"),
+
+    /**
+     * Role of user having the rights to vizualize the results of campaigns.
+     */
     REPORTER("reporter");
 
     /**
@@ -22,6 +47,7 @@ internal enum class RoleName(
      */
     val assignableRoles: Collection<RoleName>
         get() = when (this) {
+            TENANT_USER -> emptySet()
             SUPER_ADMINISTRATOR -> setOf(
                 SUPER_ADMINISTRATOR,
                 BILLING_ADMINISTRATOR,
