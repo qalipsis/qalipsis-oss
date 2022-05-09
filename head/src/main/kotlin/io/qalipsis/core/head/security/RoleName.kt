@@ -12,6 +12,12 @@ internal enum class RoleName(
     val permissions: Set<Permission> = emptySet()
 ) {
     /**
+     * Role assigned to any user having a role in a tenant.
+     * This role is only used for technical reasons.
+     */
+    TENANT_USER("tenant-user"),
+
+    /**
      * Role of user having the administrator rights.
      */
     SUPER_ADMINISTRATOR("super-admin", setOf(ALL_PERMISSION)),
@@ -35,6 +41,25 @@ internal enum class RoleName(
      * Role of user having the rights to vizualize the results of campaigns.
      */
     REPORTER("reporter");
+
+    /**
+     * Roles that a user with this role can assign to another user (by invitation or administration).
+     */
+    val assignableRoles: Collection<RoleName>
+        get() = when (this) {
+            TENANT_USER -> emptySet()
+            SUPER_ADMINISTRATOR -> setOf(
+                SUPER_ADMINISTRATOR,
+                BILLING_ADMINISTRATOR,
+                TENANT_ADMINISTRATOR,
+                TESTER,
+                REPORTER
+            )
+            BILLING_ADMINISTRATOR -> setOf(BILLING_ADMINISTRATOR)
+            TENANT_ADMINISTRATOR -> setOf(TENANT_ADMINISTRATOR, TESTER, REPORTER)
+            TESTER -> setOf(TESTER, REPORTER)
+            REPORTER -> setOf(REPORTER)
+        }
 
     companion object {
 

@@ -62,9 +62,6 @@
       <column name="identity_id" type="VARCHAR(60)">
         <constraints nullable="true"/>
       </column>
-      <column name="display_name" type="VARCHAR(150)">
-        <constraints nullable="true"/>
-      </column>
     </createTable>
 
     <!-- Default user -->
