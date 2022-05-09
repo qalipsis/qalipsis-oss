@@ -1,7 +1,9 @@
 package io.qalipsis.core.head.security
 
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.core.head.security.entity.QalipsisUser
 import io.qalipsis.core.head.security.entity.RoleName
+import java.time.Instant
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
@@ -111,3 +113,14 @@ internal class DeleteRoleUserPatch(
         }
     }
 }
+
+/**
+ * Patch details
+ **/
+@Introspected
+internal data class CreateUserPatch(
+    @field:NotBlank @field:Size(min = 1, max = 150)
+    var newValue: String,
+    @field:NotBlank @field:Size(min = 1, max = 11)
+    var name: String
+)

@@ -8,6 +8,7 @@ import com.auth0.json.mgmt.Permission
 import com.auth0.json.mgmt.Role
 import com.auth0.json.mgmt.users.User
 import io.micronaut.context.annotation.Requires
+import io.micronaut.data.exceptions.EmptyResultException
 import io.qalipsis.api.events.AbstractBufferedEventsPublisher.Companion.log
 import io.qalipsis.core.head.security.Auth0Patch
 import io.qalipsis.core.head.security.IdentityManagement
@@ -152,9 +153,23 @@ internal class Auth0IdentityManagement(
      * Gets all users from Auth0
      */
     @Throws(Auth0Exception::class)
-    private suspend fun getUsers(): MutableList<User> {
+    override suspend fun getUsers(tenant: String): List<UserIdentity> {
         val users = getManagementAPI().users().list(null).execute()
-        return users.items
+        return users.items.map {
+            try {
+                val userRoles = getUserRoles(tenant, it.id)
+                UserIdentity(
+                    username = it.username,
+                    email = it.email,
+                    name = it.name,
+                    email_verified = it.isEmailVerified,
+                    user_id = it.id,
+                    userRoles = userRoles
+                )
+            } catch (e: Auth0Exception){
+                null
+            }
+        }.filterNotNull()
     }
 
     /**

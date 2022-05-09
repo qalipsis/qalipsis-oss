@@ -20,7 +20,7 @@ internal interface UserManagement {
     /**
      *  Applies the different patches to [user] and persists those changes.
      */
-    suspend fun save(tenant: String, user: QalipsisUser, userPatches: Collection<UserPatch>)
+    suspend fun save(tenant: String, user: QalipsisUser, userPatches: Collection<UserPatch>): QalipsisUser
 
     /**
      * Marks the user as disabled.
@@ -30,10 +30,15 @@ internal interface UserManagement {
     /**
      * Creates new the user.
      */
-    suspend fun create(tenant: String, user: QalipsisUser)
+    suspend fun create(tenant: String, user: QalipsisUser): QalipsisUser
 
     /**
      * Receives the roles that a user is authorized to assign to another one.
      */
     suspend fun getAssignableRoles(tenant: String, currentUser: QalipsisUser): Set<RoleName>
+
+    /**
+     * Returns all users for the tenant.
+     */
+    suspend fun getAll(tenant: String): List<QalipsisUser>
 }

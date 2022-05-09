@@ -29,4 +29,9 @@ internal interface IdentityManagement {
      * Saves changes to the user into the identity management platform.
      */
     suspend fun update(tenant: String, identityReference: String, user: UserIdentity, userPatches: List<Auth0Patch>)
+
+    /**
+     * Returns a all users from the identity management platform for certain tenant.
+     */
+    suspend fun getUsers(tenant: String): List<UserIdentity>
 }
