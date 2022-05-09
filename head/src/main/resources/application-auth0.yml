@@ -1,0 +1,24 @@
+identity:
+  manager: auth0
+  auth0:
+    client-id: "-"
+    client-secret: "-"
+    connection: "Username-Password-Authentication"
+    domain: "my-domain.auth0.com"
+    api-url: https://${identity.auth0.domain}/api/v2/
+    json-web-key-set: 'https://${identity.auth0.domain}/.well-known/jwks.json'
+
+micronaut:
+  security:
+    enabled: true
+    token:
+      enabled: true
+      jwt:
+        enabled: true
+        claims-validators:
+          subject-not-null: false
+          expiration: true
+        signatures:
+          jwks:
+            auth0:
+              url: ${identity.auth0.json-web-key-set}
