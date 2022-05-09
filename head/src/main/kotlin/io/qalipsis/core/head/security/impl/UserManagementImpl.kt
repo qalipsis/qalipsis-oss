@@ -15,6 +15,7 @@ import io.qalipsis.core.head.security.entity.SuperAdministratorRole
 import io.qalipsis.core.head.security.entity.TenantAdministratorRole
 import io.qalipsis.core.head.security.entity.TesterRole
 import io.qalipsis.core.head.security.entity.UserIdentity
+import jakarta.inject.Singleton
 import java.time.Instant
 
 /**
@@ -23,6 +24,7 @@ import java.time.Instant
  *
  * @author Palina Bril
  */
+@Singleton
 internal class UserManagementImpl(
     private val identityManagement: IdentityManagement,
     private val userRepository: UserRepository
@@ -38,18 +40,22 @@ internal class UserManagementImpl(
         }
     }
 
-    override suspend fun save(tenant: String, user: QalipsisUser, userPatches: Collection<UserPatch>) {
+    override suspend fun save(tenant: String, user: QalipsisUser, userPatches: Collection<UserPatch>): QalipsisUser {
         if (userPatches.asSequence().map { it.apply(user) }.any()) {
             userPatches.forEach { it.apply(user) }
+            val identityUser = transformToUserIdentity(tenant, user)
             user.identityReference?.let {
                 identityManagement.update(
                     tenant = tenant,
                     identityReference = it,
-                    user = transformToUserIdentity(tenant, user),
+                    user = identityUser,
                     userPatches = Auth0PatchConverter(userPatches).convert()
                 )
             }
-            userRepository.update(transformToUserEntity(user))
+            val userEntity = userRepository.update(transformToUserEntity(user))
+            return QalipsisUser(identityUser, userEntity)
+        } else{
+            return user
         }
     }
 
@@ -67,10 +73,11 @@ internal class UserManagementImpl(
         }
     }
 
-    override suspend fun create(tenant: String, user: QalipsisUser) {
+    override suspend fun create(tenant: String, user: QalipsisUser): QalipsisUser {
         val authUser =
             identityManagement.save(tenant = tenant, user = transformToUserIdentity(tenant, user))
-        userRepository.save(transformToUserEntityFromUserIdentity(authUser))
+        val userEntity = userRepository.save(transformToUserEntityFromUserIdentity(authUser))
+        return QalipsisUser(authUser, userEntity)
     }
 
     override suspend fun getAssignableRoles(tenant: String, currentUser: QalipsisUser): Set<RoleName> {
@@ -96,6 +103,12 @@ internal class UserManagementImpl(
                 RoleName.REPORTER -> listOf(RoleName.REPORTER)
             }
         }.toSet()
+    }
+
+    override suspend fun getAll(tenant: String): List<QalipsisUser> {
+        return identityManagement.getUsers(tenant).map {
+            QalipsisUser(it, userRepository.findByUsername(it.username)!!)
+        }
     }
 
     private fun transformToQalipsisRoles(tenant: String, currentUser: QalipsisUser): Set<QalipsisRole> {

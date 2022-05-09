@@ -30,4 +30,8 @@ internal class IdentityManagementImpl : IdentityManagement {
         tenant: String, identityReference: String, user: UserIdentity, userPatches: List<Auth0Patch>
     ) {
     }
+
+    override suspend fun getUsers(tenant: String): List<UserIdentity> {
+        return listOf(UserIdentity(username = "qalipsis", name = "qalipsis", email = "foo@bar.com"))
+    }
 }
