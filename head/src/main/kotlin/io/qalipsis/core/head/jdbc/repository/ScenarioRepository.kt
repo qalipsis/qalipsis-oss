@@ -35,4 +35,17 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
     )
     @Join(value = "dags", type = Join.Type.LEFT)
     suspend fun findByFactoryId(tenant: String, factoryId: Long): List<ScenarioEntity>
+
+    @Query(
+        """SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id 
+            WHERE enabled = true AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
+            ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
+            CASE :sort WHEN 'name' THEN scenario.name END, 
+            CASE :sort WHEN 'id' THEN scenario.id END, 
+            CASE :sort WHEN 'factory_id' THEN scenario.factory_id END, 
+            CASE :sort WHEN 'enabled' THEN scenario.enabled END
+            """
+    )
+    @Join(value = "dags", type = Join.Type.LEFT)
+    suspend fun findAllActiveWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
 }

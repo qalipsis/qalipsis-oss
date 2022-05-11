@@ -105,8 +105,16 @@ internal class InMemoryFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getActiveScenarios(tenant: String, ids: Collection<ScenarioName>): Collection<ScenarioSummary> {
+    override suspend fun getActiveScenarios(
+        tenant: String,
+        ids: Collection<ScenarioName>
+    ): Collection<ScenarioSummary> {
         return scenarioSummaryRepository.getAll(ids)
+    }
+
+    @LogInputAndOutput
+    override suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary> {
+        return scenarioSummaryRepository.getAll()
     }
 
     /**
