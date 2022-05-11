@@ -328,4 +328,48 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // then
             assertThat(repository.findAll().map { it.id }.toList()).containsOnly(scenario.id)
         }
+
+    @Test
+    internal fun `should list the enabled scenarios with tenant reference`(factoryRepository: FactoryRepository) =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
+            val factory1 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "test",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant1.id
+                )
+            )
+            val factory2 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "any",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant2.id
+                )
+            )
+            val scenario1 =
+                repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 3, name = "one"))
+            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id))
+            val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
+            val scenario4 =
+                repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 5, name = "two"))
+            val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
+
+            // when + then
+            val result = repository.findAllActiveWithSorting("qalipsis", "default_minions_count").map { it.id }
+            assertThat(result).containsOnly(scenario1.id, scenario3.id, scenario4.id)
+            assertThat(result.get(0)).isEqualTo(scenario3.id)
+            assertThat(result.get(1)).isEqualTo(scenario1.id)
+            assertThat(result.get(2)).isEqualTo(scenario4.id)
+            val result2 = repository.findAllActiveWithSorting("new-qalipsis", "name").map { it.id }
+            assertThat(result2).containsOnly(scenario2.id, scenario5.id)
+            assertThat(result2.get(0)).isEqualTo(scenario5.id)
+            assertThat(result2.get(1)).isEqualTo(scenario2.id)
+        }
 }

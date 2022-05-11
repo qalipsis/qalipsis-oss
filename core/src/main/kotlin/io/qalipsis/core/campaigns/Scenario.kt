@@ -1,7 +1,11 @@
 package io.qalipsis.core.campaigns
 
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.rampup.MinionsStartingLine
+import io.qalipsis.api.rampup.RampUpStrategy
+import io.qalipsis.api.rampup.UserDefinedRampUp
 import io.qalipsis.core.persistence.InMemoryEntity
 import kotlinx.serialization.Serializable
 
@@ -10,16 +14,19 @@ import kotlinx.serialization.Serializable
  *
  * @author Eric Jessé
  */
+@Introspected
 @Serializable
 data class ScenarioSummary(
     override var name: ScenarioName,
     val minionsCount: Int,
-    val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>
+    val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>,
+    val rampUpStrategyName: String = "user-defined"
 ) : InMemoryEntity<ScenarioName>
 
 /**
  * Entity to provide metadata of a directed acyclic graph for the head.
  */
+@Introspected
 @Serializable
 data class DirectedAcyclicGraphSummary(
     val name: DirectedAcyclicGraphName,
