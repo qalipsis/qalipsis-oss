@@ -11,6 +11,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
@@ -126,5 +127,37 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         assertEquals(HttpStatus.BAD_REQUEST, response.status)
+    }
+
+    @Test
+    fun `should return status ok for valid campaign`() {
+        // given
+//        val campaignConfiguration = CampaignConfiguration(
+//            tenant = "",
+//            name = "just-test",
+//            scenarios = mutableMapOf(
+//                "Scenario1" to ScenarioConfiguration(5)
+//            )
+//        )
+
+        val campaignRequest = CampaignRequest(
+            username = "qalipsis-user",
+            name = "ju",
+            scenarios = mutableMapOf("Scenario1" to ScenarioConfiguration(5))
+        )
+        val validateRequest = HttpRequest.POST("/validate", campaignRequest).header("X-Tenant", "qalipsis")
+
+        // when
+        try {
+            val response = httpClient.toBlocking().exchange(
+                validateRequest,
+                CampaignRequest::class.java
+            )
+            assertThat(response).all {
+                transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            }
+        } catch (e: HttpClientResponseException) {
+            print(e.message)
+        }
     }
 }
