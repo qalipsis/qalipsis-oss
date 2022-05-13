@@ -46,7 +46,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             speedFactor = 123.0,
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
-            result = ExecutionStatus.SUCCESSFUL
+            result = ExecutionStatus.SUCCESSFUL,
+            configurer = "qalipsis-user"
         )
 
     private val tenantPrototype =

@@ -46,9 +46,9 @@ internal class StandaloneCampaignManager(
     @KTestable
     private var currentCampaignState: CampaignExecutionState<CampaignExecutionContext> = EmptyState
 
-    override suspend fun start(campaign: CampaignConfiguration) {
+    override suspend fun start(configurer: String, campaign: CampaignConfiguration) {
         require(currentCampaignState.isCompleted) { "A campaign is already running, please wait for its completion or cancel it" }
-        super.start(campaign)
+        super.start(configurer, campaign)
     }
 
     override suspend fun create(

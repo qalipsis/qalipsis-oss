@@ -23,12 +23,13 @@ internal class PersistentCampaignService(
     private val campaignScenarioRepository: CampaignScenarioRepository
 ) : CampaignService {
 
-    override suspend fun save(campaignConfiguration: CampaignConfiguration) {
+    override suspend fun save(configurer: String, campaignConfiguration: CampaignConfiguration) {
         val campaign = campaignRepository.save(
             CampaignEntity(
                 campaignName = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
-                start = Instant.now()
+                start = Instant.now(),
+                configurer = configurer
             )
         )
         campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->
