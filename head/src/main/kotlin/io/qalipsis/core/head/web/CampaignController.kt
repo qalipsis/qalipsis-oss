@@ -40,4 +40,10 @@ internal class CampaignController(
             scenarios = campaign.scenarios
         )
     }
+
+    @Post("/validate")
+    suspend fun validate(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<Void> {
+        print(campaign)
+        return HttpResponse.ok()
+    }
 }
