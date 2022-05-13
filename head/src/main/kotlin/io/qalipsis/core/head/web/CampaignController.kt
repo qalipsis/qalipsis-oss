@@ -22,10 +22,11 @@ internal class CampaignController(
 
     @Post
     suspend fun execute(
-        @Tenant tenant: String, @Body @Valid campaign: CampaignRequest
-    ): HttpResponse<Void> {
-        campaignManager.start(campaign.username, convertCampaignRequestToConfiguration(tenant, campaign))
-        return HttpResponse.ok()
+        @Tenant tenant: String,
+        @Body @Valid campaign: CampaignRequest
+    ): HttpResponse<Unit> {
+        campaignManager.start("", convertCampaignRequestToConfiguration(tenant, campaign))
+        return HttpResponse.accepted()
     }
 
     private fun convertCampaignRequestToConfiguration(
@@ -42,7 +43,7 @@ internal class CampaignController(
     }
 
     @Post("/validate")
-    suspend fun validate(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<Void> {
+    suspend fun validate(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<Unit> {
         print(campaign)
         return HttpResponse.ok()
     }

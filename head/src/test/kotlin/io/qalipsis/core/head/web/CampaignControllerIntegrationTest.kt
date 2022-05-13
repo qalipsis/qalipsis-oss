@@ -2,6 +2,7 @@ package io.qalipsis.core.head.web
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
@@ -11,7 +12,6 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
@@ -38,10 +38,9 @@ internal class CampaignControllerIntegrationTest {
     fun campaignManager() = campaignManager
 
     @Test
-    fun `should return status ok when start campaign`() {
+    fun `should return status accepted when start campaign`() {
         // given
         val campaignRequest = CampaignRequest(
-            username = "qalipsis-user",
             name = "just-test",
             scenarios = mutableMapOf("Scenario1" to ScenarioConfiguration(5))
         )
@@ -55,11 +54,11 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.start("qalipsis-user", any())
+            campaignManager.start("", any())
         }
 
         assertThat(response).all {
-            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
     }
 
@@ -67,7 +66,6 @@ internal class CampaignControllerIntegrationTest {
     fun `should return 400 when saving with a too short name`() {
         // given
         val campaignRequest = CampaignRequest(
-            username = "qalipsis-user",
             name = "ju",
             scenarios = mutableMapOf("Scenario1" to ScenarioConfiguration(5))
         )
@@ -82,14 +80,18 @@ internal class CampaignControllerIntegrationTest {
         }
 
         // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.status)
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.response.getBody(String::class.java).get()
+            }.contains("""{"message":"campaign.name: size must be between 3 and 300"}""")
+        }
     }
 
     @Test
     fun `should return 400 when saving with an empty scenarios`() {
         // given
         val campaignRequest = CampaignRequest(
-            username = "qalipsis-user",
             name = "just-test",
             scenarios = emptyMap()
         )
@@ -108,56 +110,44 @@ internal class CampaignControllerIntegrationTest {
     }
 
     @Test
-    fun `should return 400 when saving with a blank user name`() {
-        // given
-        val campaignRequest = CampaignRequest(
-            username = "",
-            name = "just-test",
-            scenarios = mutableMapOf("Scenario1" to ScenarioConfiguration(5))
-        )
-        val executeRequest = HttpRequest.POST("/", campaignRequest).header("X-Tenant", "qalipsis")
-
-        // when
-        val response = assertThrows<HttpClientResponseException> {
-            httpClient.toBlocking().exchange(
-                executeRequest,
-                CampaignRequest::class.java
-            )
-        }
-
-        // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.status)
-    }
-
-    @Test
     fun `should return status ok for valid campaign`() {
         // given
-//        val campaignConfiguration = CampaignConfiguration(
-//            tenant = "",
-//            name = "just-test",
-//            scenarios = mutableMapOf(
-//                "Scenario1" to ScenarioConfiguration(5)
-//            )
-//        )
-
         val campaignRequest = CampaignRequest(
-            username = "qalipsis-user",
-            name = "ju",
+            name = "the-campaign-name",
             scenarios = mutableMapOf("Scenario1" to ScenarioConfiguration(5))
         )
         val validateRequest = HttpRequest.POST("/validate", campaignRequest).header("X-Tenant", "qalipsis")
 
         // when
-        try {
-            val response = httpClient.toBlocking().exchange(
-                validateRequest,
-                CampaignRequest::class.java
-            )
-            assertThat(response).all {
-                transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            }
-        } catch (e: HttpClientResponseException) {
-            print(e.message)
+        val response = httpClient.toBlocking().exchange(validateRequest, Unit::class.java)
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
         }
     }
+
+    @Test
+    fun `should return status failure for invalid campaign`() {
+        // given
+        val campaignRequest = CampaignRequest(
+            name = "ju",
+            scenarios = mutableMapOf("Scenario1" to ScenarioConfiguration(5))
+        )
+        val validateRequest = HttpRequest.POST("/validate", campaignRequest)
+            .header("X-Tenant", "qalipsis")
+            .header("Accept-Language", "en")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(validateRequest, Unit::class.java)
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.response.getBody(String::class.java).get()
+            }.contains("""{"message":"campaign.name: size must be between 3 and 300"}""")
+        }
+    }
+
 }
