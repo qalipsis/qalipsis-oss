@@ -142,7 +142,7 @@ internal class RedisCampaignManagerTest {
             } returns assignments
 
             // when
-            campaignManager.start(campaign)
+            campaignManager.start("qalipsis-user", campaign)
 
             // then
             assertThat(campaign.factories).all {
@@ -175,7 +175,7 @@ internal class RedisCampaignManagerTest {
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
-                campaignService.save(refEq(campaign))
+                campaignService.save("qalipsis-user", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(campaign),
@@ -258,14 +258,14 @@ internal class RedisCampaignManagerTest {
 
             // when
             assertThrows<RuntimeException> {
-                campaignManager.start(campaign)
+                campaignManager.start("qalipsis-user", campaign)
             }
 
             // then
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1"))
-                campaignService.save(refEq(campaign))
+                campaignService.save("qalipsis-user", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1"))
                 campaignService.close("my-campaign", ExecutionStatus.FAILED)
             }
@@ -286,7 +286,7 @@ internal class RedisCampaignManagerTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start(campaign)
+                campaignManager.start("qalipsis-user", campaign)
             }
         }
 

@@ -13,5 +13,5 @@ internal interface CampaignManager {
     /**
      * Starts a new campaign with the provided configuration.
      */
-    suspend fun start(campaign: CampaignConfiguration)
+    suspend fun start(configurer: String, campaign: CampaignConfiguration)
 }

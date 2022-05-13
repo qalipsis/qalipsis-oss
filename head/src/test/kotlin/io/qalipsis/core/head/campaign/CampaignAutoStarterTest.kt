@@ -68,6 +68,7 @@ internal class CampaignAutoStarterTest {
         override val speedFactor: Double = 54.87
         override val startOffset: Duration = Duration.ofMillis(12367)
         override val tenant: String = ""
+        override val configurer: String = "qalipsis-user"
     }
 
     @JvmField
@@ -98,6 +99,7 @@ internal class CampaignAutoStarterTest {
                     override val speedFactor: Double = 54.87
                     override val startOffset: Duration = Duration.ofMillis(12367)
                     override val tenant: String = ""
+                    override val configurer: String = "qalipsis-user"
                 },
                 headChannel
             )
@@ -129,7 +131,7 @@ internal class CampaignAutoStarterTest {
             campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
 
             // then
-            coVerifyNever { campaignManager.start(any()) }
+            coVerifyNever { campaignManager.start("qalipsis-user", any()) }
 
             // when
             val elapsed = coMeasureTime {
@@ -140,6 +142,7 @@ internal class CampaignAutoStarterTest {
             assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(420)) // Should have waited triggerOffset.
             coVerifyOnce {
                 campaignManager.start(
+                    autostartConfiguration.configurer,
                     CampaignConfiguration(
                         name = "my-campaign",
                         speedFactor = 54.87,
