@@ -62,7 +62,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         }
     }
 
-    override suspend fun start(campaign: CampaignConfiguration) {
+    override suspend fun start(configurer: String, campaign: CampaignConfiguration) {
         val selectedScenarios = campaign.scenarios.keys.toSet()
         val scenarios = factoryService.getActiveScenarios(campaign.tenant, selectedScenarios).distinctBy { it.name }
         val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
@@ -71,7 +71,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         val factories = factoryService.getAvailableFactoriesForScenarios(campaign.tenant, selectedScenarios)
         require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
 
-        campaignService.save(campaign)
+        campaignService.save(configurer, campaign)
         selectedScenarios.forEach {
             campaignReportStateKeeper.start(campaign.name, it)
         }

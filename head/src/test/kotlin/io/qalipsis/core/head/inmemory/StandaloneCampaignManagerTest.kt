@@ -145,7 +145,7 @@ internal class StandaloneCampaignManagerTest {
             } returns assignments
 
             // when
-            campaignManager.start(campaign)
+            campaignManager.start("qalipsis-user", campaign)
 
             // then
             assertThat(campaign.factories).all {
@@ -181,7 +181,7 @@ internal class StandaloneCampaignManagerTest {
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
-                campaignService.save(refEq(campaign))
+                campaignService.save("qalipsis-user", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(campaign),
@@ -256,7 +256,7 @@ internal class StandaloneCampaignManagerTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start(campaign)
+                campaignManager.start("qalipsis-user", campaign)
             }
         }
 
@@ -271,7 +271,7 @@ internal class StandaloneCampaignManagerTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start(relaxedMockk())
+                campaignManager.start("qalipsis-user", relaxedMockk())
             }
         }
 }

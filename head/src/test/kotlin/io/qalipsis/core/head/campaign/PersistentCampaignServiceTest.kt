@@ -59,7 +59,7 @@ internal class PersistentCampaignServiceTest {
         coEvery { campaignRepository.save(any()) } returns mockk { every { id } returns 8126 }
 
         // when
-        persistentCampaignService.save(campaign)
+        persistentCampaignService.save("qalipsis-user", campaign)
 
         // then
         coVerifyOrder {
@@ -67,7 +67,8 @@ internal class PersistentCampaignServiceTest {
                 CampaignEntity(
                     campaignName = "my-campaign",
                     speedFactor = 123.2,
-                    start = now
+                    start = now,
+                    configurer = "qalipsis-user"
                 )
             )
             campaignScenarioRepository.saveAll(
