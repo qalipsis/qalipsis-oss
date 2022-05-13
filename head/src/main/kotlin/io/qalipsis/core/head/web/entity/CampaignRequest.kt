@@ -1,9 +1,9 @@
 package io.qalipsis.core.head.web.entity
 
 import io.micronaut.core.annotation.Introspected
-import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.context.ScenarioName
+import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotEmpty
@@ -25,6 +25,14 @@ internal data class CampaignRequest(
     @field:Max(15000)
     val startOffsetMs: Long = 1000,
 
+    @field:Valid
     @field:NotEmpty
-    val scenarios: Map<@NotBlank ScenarioName, ScenarioConfiguration>
+    val scenarios: Map<@NotBlank ScenarioName, @Valid ScenarioRequest>
+)
+
+@Introspected
+internal data class ScenarioRequest(
+    @field:Positive
+    @field:Max(1000000)
+    val minionsCount: Int
 )
