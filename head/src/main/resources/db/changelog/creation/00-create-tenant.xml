@@ -33,7 +33,7 @@
       </column>
     </createTable>
 
-    <!-- Default user -->
+    <!-- Default tenant -->
     <insert tableName="tenant" schemaName="qalipsis">
       <column name="id" valueSequenceNext="tenant_seq"/>
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
@@ -56,7 +56,15 @@
       <column name="username" type="VARCHAR(150)">
         <constraints nullable="false" unique="true" uniqueConstraintName="unique_username_idx"/>
       </column>
+      <column name="display_name" type="VARCHAR(150)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="identity_id" type="VARCHAR(60)">
+        <constraints nullable="true"/>
+      </column>
     </createTable>
+
+    <!-- Default user -->
 
     <!-- Default user -->
     <insert tableName="user" schemaName="qalipsis">
@@ -64,6 +72,32 @@
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
       <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
       <column name="username" value="_qalipsis_"/>
+      <column name="display_name" value="Qalipsis"/>
     </insert>
+
+    <createSequence sequenceName="role_seq" schemaName="qalipsis"/>
+    <createTable tableName="role" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="role_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="role_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="tenant" type="VARCHAR(50)">
+        <constraints nullable="false" foreignKeyName="role_tenant_fk" referencedTableSchemaName="qalipsis"
+          referencedTableName="tenant" referencedColumnNames="reference" deleteCascade="true"/>
+      </column>
+      <column name="name" type="VARCHAR(30)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="reference" type="VARCHAR(50)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="unique_role_reference_idx"/>
+      </column>
+    </createTable>
+
+    <createIndex schemaName="qalipsis" indexName="unique_role_idx" tableName="role" unique="true">
+      <column name="tenant"/>
+      <column name="name"/>
+    </createIndex>
   </changeSet>
 </databaseChangeLog>

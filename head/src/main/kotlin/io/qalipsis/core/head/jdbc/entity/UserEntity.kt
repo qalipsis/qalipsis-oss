@@ -14,28 +14,41 @@ import javax.validation.constraints.Size
  * User details.
  * @property username  public identified of a user (globally unique, might be the email address). A first record
  * is created into the table, with the username  “qalipsis”. This corresponds to the “system” user.
+ * @property identityId is identifier of a user in identity manager Auth0
  *
  * @author Palina Bril
  */
 @MappedEntity("user", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class UserEntity(
+data class UserEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,
+
     @field:Version
     val version: Instant,
+
     @field:NotNull
     val creation: Instant,
+
     @field:NotBlank
     @field:Size(min = 1, max = 150)
-    val username: String
+    var username: String,
+
+    @field:NotBlank
+    @field:Size(min = 1, max = 150)
+    var displayName: String?,
+
+    @field:Size(max = 60)
+    val identityId: String? = null
 ) : Entity {
 
     constructor(
-        username: String
+        username: String,
+        displayName: String? = null,
+        identityReference: String? = null
     ) : this(
         -1,
-        Instant.EPOCH,
-        Instant.now(), username
+        Instant.EPOCH, Instant.now(),
+        username, displayName, identityReference
     )
 }
