@@ -2,6 +2,7 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
@@ -10,30 +11,38 @@ import io.micronaut.data.exceptions.DataAccessException
 import io.micronaut.data.exceptions.EmptyResultException
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Instant
 
 internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Inject
     private lateinit var userRepository: UserRepository
 
-    val now = Instant.now()
+    private val userPrototype = UserEntity(username = "test-user")
 
-    val userPrototype = UserEntity(
-        username = "Qalipsis-test"
-    )
+    private lateinit var defaultUser: UserEntity
 
-    @AfterAll
+    @BeforeEach
+    internal fun setUp() = testDispatcherProvider.run {
+        defaultUser = userRepository.findAll().first()
+    }
+
+    @AfterEach
     fun tearDown() = testDispatcherProvider.run {
-        userRepository.deleteAll()
+        // Delete the users but the default one.
+        userRepository.findAll().filter { it.id != defaultUser.id }.toList().takeIf { it.isNotEmpty() }?.let {
+            userRepository.deleteAll(it)
+        }
     }
 
     @Test
-    fun `should default user exist`() = testDispatcherProvider.run {
+    fun `default user should exist`() = testDispatcherProvider.run {
         // when
         val fetched = userRepository.findAll().toList()
 
@@ -55,21 +64,36 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(UserEntity::username).isEqualTo(saved.username)
         }
         assertThat(fetched!!.creation.toEpochMilli() == saved.creation.toEpochMilli())
+
+        // when
+        val allFetched = userRepository.findAll().toList()
+
+        // then
+        assertThat(allFetched).hasSize(2)
+    }
+
+    @Test
+    fun `should not save two users with same username`() = testDispatcherProvider.run {
+        // given
+        userRepository.save(userPrototype.copy())
+        assertThrows<DataAccessException> {
+            userRepository.save(userPrototype.copy())
+        }
     }
 
     @Test
     fun `should not save users twice with the same username`() = testDispatcherProvider.run {
-        userRepository.save(userPrototype.copy(username = "Qalipsis-test-one"))
+        userRepository.save(userPrototype.copy())
 
         assertThrows<DataAccessException> {
-            userRepository.save(userPrototype.copy(username = "Qalipsis-test-one"))
+            userRepository.save(userPrototype.copy())
         }
     }
 
     @Test
     fun `should update the version when the user is updated`() = testDispatcherProvider.run {
         // given
-        val saved = userRepository.save(userPrototype.copy(username = "Qalipsis-test-two"))
+        val saved = userRepository.save(userPrototype.copy())
 
         // when
         val updated = userRepository.update(saved)
@@ -78,13 +102,10 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(updated.version).isGreaterThan(saved.version)
     }
 
-
     @Test
     fun `should delete user on deleteById`() = testDispatcherProvider.run {
         // given
-        val saved = userRepository.save(userPrototype.copy(username = "Qalipsis-test-three"))
-
-        assertThat(userRepository.findById(saved.id)).isNotNull()
+        val saved = userRepository.save(userPrototype.copy())
 
         // when
         userRepository.deleteById(saved.id)
@@ -93,5 +114,37 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThrows<EmptyResultException> {
             userRepository.findById(saved.id)
         }
+    }
+
+    @Test
+    fun `should find user by username`() = testDispatcherProvider.run {
+        // given
+        val saved = userRepository.save(userPrototype.copy())
+
+        // when
+        val fetched = userRepository.findByUsername(saved.username)
+
+        // then
+        assertThat(fetched).isNotNull().prop(UserEntity::id).isEqualTo(saved.id)
+    }
+
+    @Test
+    fun `should not find user by username when it does not exist`() = testDispatcherProvider.run {
+        assertThrows<EmptyResultException> {
+            userRepository.findByUsername("not-qalipsis")
+        }
+    }
+
+    @Test
+    fun `should update the identity reference`() = testDispatcherProvider.run {
+        // given
+        val saved = userRepository.save(userPrototype.copy())
+
+        // when
+        userRepository.updateIdentityId(saved.id, saved.version, "my reference")
+
+        // then
+        val fetched = userRepository.findById(saved.id)
+        assertThat(fetched).isNotNull().prop(UserEntity::identityId).isEqualTo("my reference")
     }
 }
