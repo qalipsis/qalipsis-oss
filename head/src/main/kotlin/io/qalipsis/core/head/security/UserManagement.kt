@@ -19,9 +19,9 @@ internal interface UserManagement {
     suspend fun update(tenant: String, user: User, userPatches: Collection<UserPatch>): User
 
     /**
-     * Marks the user as disabled.
+     * Marks the user as disabled for the provided tenant.
      */
-    suspend fun delete(tenant: String, username: String)
+    suspend fun disable(tenant: String, username: String)
 
     /**
      * Creates new the user.
@@ -32,4 +32,10 @@ internal interface UserManagement {
      * Receives the roles that a user is authorized to assign to another one.
      */
     suspend fun getAssignableRoles(tenant: String, currentUser: User): Set<RoleName>
+
+    /**
+     * Returns all users related to a tenant.
+     */
+    suspend fun findAll(tenant: String): List<User>
+
 }

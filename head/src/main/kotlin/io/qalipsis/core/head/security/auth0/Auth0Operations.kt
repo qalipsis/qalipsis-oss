@@ -67,4 +67,9 @@ internal interface Auth0Operations {
         roles: Collection<RoleName>,
         createMissingRoles: Boolean = false
     ): List<String>
+
+    /**
+     * Lists all the users having a given role in the tenant.
+     */
+    suspend fun listUsersWithRoleInTenant(role: RoleName, tenant: String): Collection<User>
 }

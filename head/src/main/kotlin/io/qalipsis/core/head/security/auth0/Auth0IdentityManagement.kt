@@ -28,6 +28,8 @@ internal class Auth0IdentityManagement(
 
     override suspend fun get(tenant: String, identityReference: String): UserIdentity {
         val identity = operations.getUser(identityReference)
+        val roles = getRolesNamesInTenant(identityReference, tenant)
+        require(roles.isNotEmpty()) { "The user could not be found in the tenant $tenant" }
 
         return UserIdentity(
             id = identity.id,
@@ -36,7 +38,7 @@ internal class Auth0IdentityManagement(
             displayName = identity.name,
             emailVerified = identity.isEmailVerified,
             blocked = identity.isBlocked,
-            roles = getRolesNamesInTenant(identityReference, tenant).toMutableSet()
+            roles = roles.toMutableSet()
         )
     }
 
@@ -81,6 +83,8 @@ internal class Auth0IdentityManagement(
 
     override suspend fun delete(tenant: String, user: UserEntity) {
         val userRoles = getRolesNamesInTenant(user.identityId!!, tenant)
+        require(userRoles.isNotEmpty()) { "The user could not be found in the tenant $tenant" }
+
         operations.validateAdministrationRolesRemoval(tenant, userRoles)
         operations.removeFromTenant(user.identityId, tenant)
 
@@ -88,6 +92,20 @@ internal class Auth0IdentityManagement(
         if (operations.getAllUserRoles(user.identityId).isEmpty()) {
             operations.deleteUser(user.identityId)
             userRepository.updateIdentityId(user.id, user.version, null)
+        }
+    }
+
+    override suspend fun listUsers(tenant: String): List<UserIdentity> {
+        return operations.listUsersWithRoleInTenant(RoleName.TENANT_USER, tenant).map { identity ->
+            UserIdentity(
+                id = identity.id,
+                username = identity.username,
+                email = identity.email,
+                displayName = identity.name,
+                emailVerified = identity.isEmailVerified,
+                blocked = identity.isBlocked ?: false,
+                roles = getRolesNamesInTenant(identity.id, tenant).toMutableSet()
+            )
         }
     }
 

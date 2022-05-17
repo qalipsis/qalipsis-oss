@@ -3,6 +3,8 @@ package io.qalipsis.core.head.security.auth0
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
+import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
@@ -179,6 +181,27 @@ internal class Auth0IdentityManagementTest {
     }
 
     @Test
+    internal fun `should not retrieve the identity from Auth0 when the user has no role in the tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val user = User().apply {
+                username = "the user name"
+                name = "the display name"
+                email = "the email"
+                isEmailVerified = true
+                id = "the-user-id"
+                isBlocked = true
+            }
+            coEvery { operations.getUser(any()) } returns user
+            coEvery { operations.getUserRolesInTenant(any(), any()) } returns emptySet()
+
+            // when
+            assertThrows<IllegalArgumentException> {
+                identityManagement.get("my-tenant", "the-user-id")
+            }
+        }
+
+    @Test
     fun `should apply patches from auth0 but not update in Auth0 when none has effect`() = testDispatcherProvider.run {
         // given
         val userPatch1 = relaxedMockk<UserPatch>()
@@ -336,7 +359,7 @@ internal class Auth0IdentityManagementTest {
         }
 
     @Test
-    internal fun `should unassign the user from the tenant then delete when there is no other role in other tenant`() {
+    internal fun `should unassign the user from the tenant then delete when there is no other role in other tenant`() =
         testDispatcherProvider.run {
             // given
             val now = Instant.now()
@@ -365,6 +388,75 @@ internal class Auth0IdentityManagementTest {
                 userRepository.updateIdentityId(617265L, now, null)
             }
             confirmVerified(operations)
+        }
+
+    @Test
+    internal fun `should not unassign the identity from Auth0 when the user has no role in the tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val user = relaxedMockk<UserEntity> {
+                every { identityId } returns "the-user-id"
+            }
+            coEvery { operations.getUserRolesInTenant(any(), any()) } returns emptySet()
+
+            // when
+            assertThrows<IllegalArgumentException> {
+                identityManagement.delete("my-tenant", user)
+            }
+
+            coVerifyOrder {
+                operations.getUserRolesInTenant("the-user-id", "my-tenant")
+            }
+            confirmVerified(operations)
+        }
+
+    @Test
+    internal fun `should list all the users of the tenant`() = testDispatcherProvider.run {
+        // given
+        val identity1 = relaxedMockk<User> {
+            every { id } returns "the identity 1"
+            every { isEmailVerified } returns true
+            every { username } returns "the username 1"
+            every { email } returns "email 1"
+            every { name } returns "the display name 1"
+            every { isBlocked } returns false
+        }
+        val identity2 = relaxedMockk<User> {
+            every { id } returns "the identity 2"
+            every { isEmailVerified } returns false
+            every { username } returns "the username 2"
+            every { email } returns "email 2"
+            every { name } returns "the display name 2"
+            every { isBlocked } returns true
+        }
+        coEvery { operations.listUsersWithRoleInTenant(any(), any()) } returns listOf(identity1, identity2)
+        coEvery { operations.getUserRolesInTenant(any(), any()) } returns setOf(
+            Role().apply { name = "my-tenant:tester" },
+            Role().apply { name = "my-tenant:reporter" }
+        ) andThen setOf(Role().apply { name = "my-tenant:tenant-admin" })
+
+        // when
+        val identities = identityManagement.listUsers("my-tenant")
+
+        // then
+        assertThat(identities).all {
+            hasSize(2)
+            index(0).all {
+                prop(UserIdentity::username).isEqualTo("the username 1")
+                prop(UserIdentity::displayName).isEqualTo("the display name 1")
+                prop(UserIdentity::email).isEqualTo("email 1")
+                prop(UserIdentity::emailVerified).isTrue()
+                prop(UserIdentity::blocked).isFalse()
+                prop(UserIdentity::roles).containsOnly(RoleName.TESTER, RoleName.REPORTER)
+            }
+            index(1).all {
+                prop(UserIdentity::username).isEqualTo("the username 2")
+                prop(UserIdentity::displayName).isEqualTo("the display name 2")
+                prop(UserIdentity::email).isEqualTo("email 2")
+                prop(UserIdentity::emailVerified).isFalse()
+                prop(UserIdentity::blocked).isTrue()
+                prop(UserIdentity::roles).containsOnly(RoleName.TENANT_ADMINISTRATOR)
+            }
         }
     }
 }

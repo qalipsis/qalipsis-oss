@@ -14,11 +14,9 @@ import assertk.assertions.prop
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.exception.APIException
 import com.auth0.json.mgmt.users.User
-import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.aerisconsulting.catadioptre.coInvokeNoArgs
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.spyk
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.RoleEntity
@@ -64,7 +62,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
 
     @BeforeEach
     internal fun setUp() {
-        // In order to avoid reaching the rate limit, we slow down the access to the management API.
+        // In order to preserve the rate limit, we slow down the access to the management API.
         operations = spyk(originalOperations, recordPrivateCalls = true)
         coEvery { operations["getManagementAPI"]() } coAnswers {
             Thread.sleep(300)
@@ -86,7 +84,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
     private suspend fun getManagementApi() = operations.coInvokeNoArgs<ManagementAPI>("getManagementAPI")
 
     @Test
-    @Timeout(15)
+    @Timeout(30)
     internal fun `should create and get a user`() = testDispatcherProvider.run {
         // given
         val user = createUser()
@@ -113,7 +111,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    @Timeout(15)
+    @Timeout(30)
     internal fun `should update a user`() = testDispatcherProvider.run {
         // given
         val user = createUser()
@@ -149,7 +147,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    @Timeout(15)
+    @Timeout(30)
     internal fun `should delete a user`() = testDispatcherProvider.run {
         // given
         val createdUser = operations.createUser(createUser()).also(createdUsers::add)
@@ -164,7 +162,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
 
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     internal fun `should return the ids for all in a tenant and only create the missing ones on demand`() =
         testDispatcherProvider.run {
             // given
@@ -295,7 +293,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
         }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     internal fun `should assign and unassign roles to the user`() = testDispatcherProvider.run {
         // given
         tenantRepository.saveAll(
@@ -351,7 +349,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     internal fun `should list all the users with a role in a tenant`() = testDispatcherProvider.run {
         // given
         tenantRepository.saveAll(
@@ -378,28 +376,20 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
         operations.assignRoles(user3.id, roleIdsInTenant2)
 
         // when
-        val testersOfTenant1 =
-            operations.coInvokeInvisible<Collection<User>>("getUsersWithRoleInTenant", RoleName.TESTER, MY_TENANT_1)
-                .map { it.id }
+        val testersOfTenant1 = operations.listUsersWithRoleInTenant(RoleName.TESTER, MY_TENANT_1).map { it.id }
 
         // then
         assertThat(testersOfTenant1).containsOnly(user1.id, user2.id)
 
         // when
-        val testersOfTenant2 =
-            operations.coInvokeInvisible<Collection<User>>("getUsersWithRoleInTenant", RoleName.TESTER, MY_TENANT_2)
-                .map { it.id }
+        val testersOfTenant2 = operations.listUsersWithRoleInTenant(RoleName.TESTER, MY_TENANT_2).map { it.id }
 
         // then
         assertThat(testersOfTenant2).containsOnly(user2.id, user3.id)
 
         // when
         val adminsOfTenant1 =
-            operations.coInvokeInvisible<Collection<User>>(
-                "getUsersWithRoleInTenant",
-                RoleName.TENANT_ADMINISTRATOR,
-                MY_TENANT_1
-            ).map { it.id }
+            operations.listUsersWithRoleInTenant(RoleName.TENANT_ADMINISTRATOR, MY_TENANT_1).map { it.id }
 
         // then
         assertThat(adminsOfTenant1).isEmpty()
@@ -409,21 +399,15 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should throw an error when the user is an admin and there is less than 2 administrators`() =
         testDispatcherProvider.run {
             // given
-            val spiedOperations = spyk(operations, recordPrivateCalls = true)
-            every {
-                spiedOperations["getUsersWithRoleInTenant"](
-                    RoleName.TENANT_ADMINISTRATOR,
-                    MY_TENANT_1
+            val spiedOperations = spyk(operations, recordPrivateCalls = true) {
+                coEvery { listUsersWithRoleInTenant(RoleName.TENANT_ADMINISTRATOR, MY_TENANT_1) } returns listOf(
+                    relaxedMockk(),
+                    relaxedMockk()
                 )
-            } returns listOf<User>(
-                relaxedMockk(), relaxedMockk()
-            )
-            every {
-                spiedOperations["getUsersWithRoleInTenant"](
-                    RoleName.BILLING_ADMINISTRATOR,
-                    MY_TENANT_1
+                coEvery { listUsersWithRoleInTenant(RoleName.BILLING_ADMINISTRATOR, MY_TENANT_1) } returns listOf<User>(
+                    relaxedMockk()
                 )
-            } returns listOf<User>(relaxedMockk())
+            }
 
             // when
             assertDoesNotThrow {
