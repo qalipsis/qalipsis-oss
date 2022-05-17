@@ -93,7 +93,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     fun `should save a dag with selectors and fetch by ID`() = testDispatcherProvider.run {
         // when
         val saved = repository.save(dag.copy())
-        selectorRepository.saveAll(dag.selectors.map { it.copy(directedAcyclicGraphId = saved.id) }).count()
+        selectorRepository.saveAll(dag.tags.map { it.copy(directedAcyclicGraphId = saved.id) }).count()
 
         // then
         assertThat(repository.findAll().toList()).hasSize(1)
@@ -112,7 +112,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             prop(DirectedAcyclicGraphEntity::singleton).isFalse()
             prop(DirectedAcyclicGraphEntity::underLoad).isTrue()
             prop(DirectedAcyclicGraphEntity::numberOfSteps).isEqualTo(21)
-            prop(DirectedAcyclicGraphEntity::selectors).all {
+            prop(DirectedAcyclicGraphEntity::tags).all {
                 hasSize(2)
                 any {
                     it.all {
@@ -188,7 +188,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         // given
         val saved = repository.save(dag.copy())
         val selectors =
-            selectorRepository.saveAll(dag.selectors.map { it.copy(directedAcyclicGraphId = saved.id) }).toList()
+            selectorRepository.saveAll(dag.tags.map { it.copy(directedAcyclicGraphId = saved.id) }).toList()
 
         // when
         // Tests the strategy of update for the selectors attached to a dag, as used in the PersistentFactoryService.
@@ -206,7 +206,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             prop(DirectedAcyclicGraphEntity::singleton).isFalse()
             prop(DirectedAcyclicGraphEntity::underLoad).isTrue()
             prop(DirectedAcyclicGraphEntity::numberOfSteps).isEqualTo(21)
-            prop(DirectedAcyclicGraphEntity::selectors).all {
+            prop(DirectedAcyclicGraphEntity::tags).all {
                 hasSize(2)
                 any {
                     it.all {
@@ -228,7 +228,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     fun `should delete the dag and its selectors`() = testDispatcherProvider.run {
         // given
         val saved = repository.save(dag.copy())
-        selectorRepository.saveAll(dag.selectors.map { it.copy(directedAcyclicGraphId = saved.id) }).count()
+        selectorRepository.saveAll(dag.tags.map { it.copy(directedAcyclicGraphId = saved.id) }).count()
         assertThat(selectorRepository.findAll().toList()).isNotEmpty()
 
         // when
@@ -246,7 +246,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         val anotherScenario = scenarioRepository.save(scenario.copy(name = "another-scenario"))
 
         repository.save(dag.copy(name = "dag-1")).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-1"
@@ -254,7 +254,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             }).count()
         }
         repository.save(dag.copy(name = "dag-2")).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-2"
@@ -262,7 +262,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             }).count()
         }
         repository.save(dag.copy(name = "dag-3", scenarioId = otherScenario.id)).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-3"
@@ -270,7 +270,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             }).count()
         }
         repository.save(dag.copy(name = "dag-4", scenarioId = anotherScenario.id)).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-4"
@@ -286,21 +286,21 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             hasSize(3)
             index(0).all {
                 prop(DirectedAcyclicGraphEntity::name).isEqualTo("dag-1")
-                prop(DirectedAcyclicGraphEntity::selectors).all {
+                prop(DirectedAcyclicGraphEntity::tags).all {
                     hasSize(2)
                     each { it.transform { it.value }.endsWith("dag-1") }
                 }
             }
             index(1).all {
                 prop(DirectedAcyclicGraphEntity::name).isEqualTo("dag-2")
-                prop(DirectedAcyclicGraphEntity::selectors).all {
+                prop(DirectedAcyclicGraphEntity::tags).all {
                     hasSize(2)
                     each { it.transform { it.value }.endsWith("dag-2") }
                 }
             }
             index(2).all {
                 prop(DirectedAcyclicGraphEntity::name).isEqualTo("dag-4")
-                prop(DirectedAcyclicGraphEntity::selectors).all {
+                prop(DirectedAcyclicGraphEntity::tags).all {
                     hasSize(2)
                     each { it.transform { it.value }.endsWith("dag-4") }
                 }
@@ -316,7 +316,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         val anotherScenario = scenarioRepository.save(scenario.copy(name = "yet-another-scenario"))
 
         repository.save(dag.copy(name = "dag-1")).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-1"
@@ -324,7 +324,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             }).count()
         }
         repository.save(dag.copy(name = "dag-2")).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-2"
@@ -332,7 +332,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             }).count()
         }
         repository.save(dag.copy(name = "dag-3", scenarioId = otherScenario.id)).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-3"
@@ -340,7 +340,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             }).count()
         }
         repository.save(dag.copy(name = "dag-4", scenarioId = anotherScenario.id)).also { dag ->
-            selectorRepository.saveAll(dag.selectors.map {
+            selectorRepository.saveAll(dag.tags.map {
                 it.copy(
                     directedAcyclicGraphId = dag.id,
                     value = it.value + "-dag-4"
@@ -356,7 +356,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             hasSize(1)
             index(0).all {
                 prop(DirectedAcyclicGraphEntity::name).isEqualTo("dag-3")
-                prop(DirectedAcyclicGraphEntity::selectors).all {
+                prop(DirectedAcyclicGraphEntity::tags).all {
                     hasSize(2)
                     each { it.transform { it.value }.endsWith("dag-3") }
                 }

@@ -782,7 +782,7 @@ internal class ClusterFactoryServiceTest {
         coVerifyOrder {
 
             directedAcyclicGraphRepository.saveAll(listOf(expectedDagEntity))
-            directedAcyclicGraphSelectorRepository.saveAll(expectedDagEntity.selectors.map {
+            directedAcyclicGraphSelectorRepository.saveAll(expectedDagEntity.tags.map {
                 it.copy(
                     directedAcyclicGraphId = savedDag.id
                 )

@@ -36,7 +36,7 @@ internal data class DirectedAcyclicGraphEntity(
         mappedBy = "directedAcyclicGraphId",
         cascade = [Relation.Cascade.ALL]
     )
-    val selectors: List<DirectedAcyclicGraphSelectorEntity>
+    val tags: List<DirectedAcyclicGraphSelectorEntity>
 ) : VersionedEntity {
 
     constructor(
@@ -57,7 +57,7 @@ internal data class DirectedAcyclicGraphEntity(
             isRoot = root,
             isUnderLoad = underLoad,
             numberOfSteps = numberOfSteps,
-            selectors = selectors.associate { it.key to it.value },
+            selectors = tags.associate { it.key to it.value },
         )
     }
 }
