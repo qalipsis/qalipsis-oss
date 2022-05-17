@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.jdbc
 
 /**
- * General interface for tags entities.
+ * General interface for selectors entities.
  *
  * @author Eric Jessé
  */

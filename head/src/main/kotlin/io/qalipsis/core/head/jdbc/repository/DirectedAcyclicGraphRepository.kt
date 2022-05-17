@@ -15,13 +15,13 @@ import kotlinx.coroutines.flow.Flow
 @JdbcRepository(dialect = Dialect.POSTGRES)
 internal interface DirectedAcyclicGraphRepository : CoroutineCrudRepository<DirectedAcyclicGraphEntity, Long> {
 
-    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
+    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
     override fun findAll(): Flow<DirectedAcyclicGraphEntity>
 
-    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
+    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
     override suspend fun findById(id: Long): DirectedAcyclicGraphEntity?
 
-    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
+    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
     suspend fun findByScenarioIdIn(scenarioIds: Iterable<Long>): Collection<DirectedAcyclicGraphEntity>
 
     suspend fun deleteByScenarioIdIn(scenarioIds: Iterable<Long>): Int

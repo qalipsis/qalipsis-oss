@@ -15,7 +15,7 @@ internal open class Factory(
     val registrationTimestamp: Instant,
     val unicastChannel: String,
     open val version: Instant,
-    val tags: Map<String, String> = emptyMap(),
+    val selectors: Map<String, String> = emptyMap(),
     open val activeScenarios: Collection<String> = emptySet()
 ) {
 
@@ -42,6 +42,6 @@ internal open class Factory(
     }
 
     override fun toString(): String {
-        return "Factory(nodeId='$nodeId', registrationTimestamp=$registrationTimestamp, version=$version, tags=$tags, supportedScenarios=$activeScenarios)"
+        return "Factory(nodeId='$nodeId', registrationTimestamp=$registrationTimestamp, version=$version, selectors=$selectors, supportedScenarios=$activeScenarios)"
     }
 }

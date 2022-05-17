@@ -30,7 +30,7 @@ internal data class FactoryEntity(
     @field:NotBlank
     val unicastChannel: String,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "factoryId")
-    val tags: List<FactorySelectorEntity>
+    val selectors: List<FactorySelectorEntity>
 ) : Entity {
 
     constructor(
@@ -57,7 +57,7 @@ internal data class FactoryEntity(
             registrationTimestamp = registrationTimestamp,
             unicastChannel = unicastChannel,
             version = version,
-            tags = tags.associate { it.key to it.value },
+            selectors = selectors.associate { it.key to it.value },
             activeScenarios = activeScenarios
         )
     }

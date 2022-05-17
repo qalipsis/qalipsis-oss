@@ -160,12 +160,12 @@ internal class ContextInitializer(
     }
 
     /**
-     * Adds the definition of the tags for scenarios to load.
+     * Adds the definition of the selectors for scenarios to load.
      * Others are just ignored, as if they were not in the classpath.
      */
     private fun filterEnabledScenarios(properties: MutableMap<String, Any>) {
         if (scenariosSelectors.isNotBlank()) {
-            properties["scenarios-tags"] = scenariosSelectors
+            properties["scenarios-selectors"] = scenariosSelectors
         }
     }
 

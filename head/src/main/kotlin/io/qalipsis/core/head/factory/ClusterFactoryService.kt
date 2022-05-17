@@ -109,8 +109,8 @@ internal class ClusterFactoryService(
         handshakeResponse: HandshakeResponse
     ) = factoryRepository.findByNodeIdIn(handshakeRequest.tenant, listOf(actualNodeId))
         .firstOrNull()?.also { entity ->
-            // When the entity already exists, its tags are updated.
-            mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.tags, entity.id)
+            // When the entity already exists, its selectors are updated.
+            mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
 
             if (entity.unicastChannel != handshakeResponse.unicastChannel) {
                 factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
@@ -220,7 +220,7 @@ internal class ClusterFactoryService(
         if (dagsToSave.isNotEmpty()) {
             val dagsEntities = directedAcyclicGraphRepository.saveAll(dagsToSave).toList().associateBy { it.name }
             val dagsSelectorsToSave = registrationDags.flatMap { dag ->
-                dag.tags.map { (key, value) ->
+                dag.selectors.map { (key, value) ->
                     DirectedAcyclicGraphSelectorEntity(
                         dagId = dagsEntities[dag.name]!!.id,
                         selectorKey = key,
@@ -235,7 +235,7 @@ internal class ClusterFactoryService(
     }
 
     /**
-     * Methods merging tags of any kind.
+     * Methods merging selectors of any kind.
      */
     private suspend fun <T : SelectorEntity<*>> mergeSelectors(
         repository: CoroutineCrudRepository<T, Long>,

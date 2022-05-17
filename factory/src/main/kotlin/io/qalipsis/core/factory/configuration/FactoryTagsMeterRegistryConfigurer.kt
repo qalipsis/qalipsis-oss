@@ -8,7 +8,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 
 /**
- * Adds the factory tags on all the locally generated Micrometer meters.
+ * Adds the factory selectors on all the locally generated Micrometer meters.
  *
  * @author Eric Jessé
  */
