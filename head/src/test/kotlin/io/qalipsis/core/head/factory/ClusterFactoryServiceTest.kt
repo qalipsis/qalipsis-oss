@@ -642,7 +642,7 @@ internal class ClusterFactoryServiceTest {
 
         val graphSummary = DirectedAcyclicGraphSummary(
             name = "new-test-dag-id",
-            selectors = mapOf("test_dag_selector1" to "test_dag_selector_value1")
+            tags = mapOf("test_dag_selector1" to "test_dag_selector_value1")
         )
         val newRegistrationScenario = RegistrationScenario(
             name = "test",
@@ -675,7 +675,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = graphSummary.selectors.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            selectors = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
 
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
@@ -718,7 +718,7 @@ internal class ClusterFactoryServiceTest {
                         id = -1,
                         directedAcyclicGraphId = -1,
                         key = "test_dag_selector1",
-                        value = graphSummary.selectors["test_dag_selector1"]!!
+                        value = graphSummary.tags["test_dag_selector1"]!!
                     )
                 )
             )
@@ -737,7 +737,7 @@ internal class ClusterFactoryServiceTest {
 
         val graphSummary = DirectedAcyclicGraphSummary(
             name = "new-test-dag-id",
-            selectors = mapOf("test_dag_selector1" to "test_dag_selector_value1")
+            tags = mapOf("test_dag_selector1" to "test_dag_selector_value1")
         )
         val directedAcyclicGraphs = listOf(graphSummary)
         val savedDag = DirectedAcyclicGraphEntity(
@@ -748,7 +748,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = graphSummary.selectors.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            selectors = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
         val expectedDagEntity = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = "new-test-dag-id",
@@ -974,7 +974,7 @@ internal class ClusterFactoryServiceTest {
                             isRoot = false,
                             isUnderLoad = dag.underLoad,
                             numberOfSteps = dag.numberOfSteps,
-                            selectors = emptyMap()
+                            tags = emptyMap()
                         )
                     })
             }, scenarios
@@ -1182,7 +1182,7 @@ internal class ClusterFactoryServiceTest {
                     dag.isSingleton,
                     dag.isUnderLoad,
                     dag.numberOfSteps,
-                    dag.selectors.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) })
+                    dag.tags.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) })
             )
         )
 
@@ -1194,6 +1194,6 @@ internal class ClusterFactoryServiceTest {
             dag.isSingleton,
             dag.isUnderLoad,
             dag.numberOfSteps,
-            dag.selectors.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) }
+            dag.tags.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) }
         )
 }

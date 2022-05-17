@@ -57,7 +57,7 @@ internal data class DirectedAcyclicGraphEntity(
             isRoot = root,
             isUnderLoad = underLoad,
             numberOfSteps = numberOfSteps,
-            selectors = tags.associate { it.key to it.value },
+            tags = tags.associate { it.key to it.value },
         )
     }
 }

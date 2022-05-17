@@ -220,7 +220,7 @@ internal class ClusterFactoryService(
         if (dagsToSave.isNotEmpty()) {
             val dagsEntities = directedAcyclicGraphRepository.saveAll(dagsToSave).toList().associateBy { it.name }
             val dagsSelectorsToSave = registrationDags.flatMap { dag ->
-                dag.selectors.map { (key, value) ->
+                dag.tags.map { (key, value) ->
                     DirectedAcyclicGraphSelectorEntity(
                         dagId = dagsEntities[dag.name]!!.id,
                         selectorKey = key,
