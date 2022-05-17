@@ -17,12 +17,12 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
 
     @Query(
         """SELECT factory.*, 
-            factory_selector.id as selectors_id, factory_selector.factory_id as selectors_factory_id, factory_selector.key as selectors_key, factory_selector.value as selectors_value
+            factory_selector.id as tags_id, factory_selector.factory_id as tags_factory_id, factory_selector.key as tags_key, factory_selector.value as tags_value
             FROM factory LEFT JOIN factory_selector ON factory_id = factory.id WHERE factory.node_id IN (:factoryIds)
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
             """
     )
-    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
+    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
     suspend fun findByNodeIdIn(tenant: String, factoryIds: Collection<String>): List<FactoryEntity>
 
     suspend fun findIdByNodeIdIn(factoryIds: Collection<String>): List<Long>
@@ -40,7 +40,7 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
      */
     @Query(
         """SELECT factory.*, 
-            factory_selector.id as selectors_id, factory_selector.factory_id as selectors_factory_id, factory_selector.key as selectors_key, factory_selector.value as selectors_value
+            factory_selector.id as tags_id, factory_selector.factory_id as tags_factory_id, factory_selector.key as tags_key, factory_selector.value as tags_value
             FROM factory LEFT JOIN factory_selector ON factory_id = factory.id WHERE
             EXISTS (SELECT * FROM scenario WHERE factory_id = factory.id AND name in (:names) AND enabled = true)
             AND EXISTS -- The factory should be healthy as latest known state within  the last 2 minutes.
@@ -53,7 +53,7 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
                 """
     )
-    @Join(value = "selectors", type = Join.Type.LEFT_FETCH)
+    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
     suspend fun getAvailableFactoriesForScenarios(tenant: String, names: Collection<String>): List<FactoryEntity>
 
     private companion object {

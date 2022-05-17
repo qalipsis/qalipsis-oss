@@ -10,7 +10,7 @@ import java.time.Duration
  * Notification sent from the factory to the head, when the factory has prepared its scenario and is ready for work.
  *
  * @property nodeId current identifier of the factory sending the feedback
- * @property tags list of selectors configured in the factory
+ * @property tags list of tags configured in the factory
  * @property replyTo channel to use for the registration response
  * @property scenarios set of scenarios supported by the factory
  * @property tenant tenant identifier of the factory sending the feedback

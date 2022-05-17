@@ -60,7 +60,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         // when
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         val factory = repository.save(factory.copy(tenantId = savedTenant.id))
-        selectorRepository.saveAll(this@FactorySelectorRepositoryIntegrationTest.factory.selectors.map {
+        selectorRepository.saveAll(this@FactorySelectorRepositoryIntegrationTest.factory.tags.map {
             it.copy(
                 factoryId = factory.id
             )
@@ -80,7 +80,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
             prop(FactoryEntity::nodeId).isEqualTo("the-node")
             prop(FactoryEntity::registrationNodeId).isEqualTo("test")
             prop(FactoryEntity::registrationTimestamp).isEqualTo(this@FactorySelectorRepositoryIntegrationTest.factory.registrationTimestamp)
-            prop(FactoryEntity::selectors).all {
+            prop(FactoryEntity::tags).all {
                 hasSize(2)
                 any {
                     it.all {
@@ -101,7 +101,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         val selectorsOfFactories = selectorRepository.findByFactoryIdIn(listOf(factory.id, -1, Long.MAX_VALUE))
 
         // then
-        assertThat(selectorsOfFactories).isEqualTo(resultingEntity.selectors)
+        assertThat(selectorsOfFactories).isEqualTo(resultingEntity.tags)
     }
 
     @Test
@@ -145,10 +145,10 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         val saved = repository.save(factory.copy(tenantId = savedTenant.id))
         val selectors =
-            selectorRepository.saveAll(factory.selectors.map { it.copy(factoryId = saved.id) }).toList()
+            selectorRepository.saveAll(factory.tags.map { it.copy(factoryId = saved.id) }).toList()
 
         // when
-        // Tests the strategy of update for the selectors attached to a factory, as used in the PersistentFactoryService.
+        // Tests the strategy of update for the tags attached to a factory, as used in the PersistentFactoryService.
         selectorRepository.deleteAll(selectors.subList(0, 1))
         selectorRepository.updateAll(listOf(selectors[1].withValue("other-than-value-2"))).count()
         selectorRepository.saveAll(listOf(FactorySelectorEntity(saved.id, "key-3", "value-3"))).count()
@@ -160,7 +160,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
             prop(FactoryEntity::nodeId).isEqualTo("the-node")
             prop(FactoryEntity::registrationNodeId).isEqualTo("test")
             prop(FactoryEntity::registrationTimestamp).isEqualTo(factory.registrationTimestamp)
-            prop(FactoryEntity::selectors).all {
+            prop(FactoryEntity::tags).all {
                 hasSize(2)
                 any {
                     it.all {
@@ -183,7 +183,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         // given
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         val saved = repository.save(factory.copy(tenantId = savedTenant.id))
-        selectorRepository.saveAll(factory.selectors.map { it.copy(factoryId = saved.id) }).count()
+        selectorRepository.saveAll(factory.tags.map { it.copy(factoryId = saved.id) }).count()
         assertThat(selectorRepository.findAll().toList()).isNotEmpty()
 
         // when
