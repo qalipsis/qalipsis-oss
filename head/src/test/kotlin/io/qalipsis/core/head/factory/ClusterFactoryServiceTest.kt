@@ -275,7 +275,7 @@ internal class ClusterFactoryServiceTest {
             "mergeSelectors",
             factorySelectorRepository,
             handshakeRequest.tags,
-            factoryEntity.selectors,
+            factoryEntity.tags,
             factoryEntity.id
         )
 
@@ -321,7 +321,7 @@ internal class ClusterFactoryServiceTest {
             "mergeSelectors",
             factorySelectorRepository,
             handshakeRequest.tags,
-            factoryEntity.selectors,
+            factoryEntity.tags,
             factoryEntity.id
         )
 
@@ -362,7 +362,7 @@ internal class ClusterFactoryServiceTest {
             "mergeSelectors",
             factorySelectorRepository,
             handshakeRequest.tags,
-            factoryEntity.selectors,
+            factoryEntity.tags,
             factoryEntity.id
         )
 
@@ -405,7 +405,7 @@ internal class ClusterFactoryServiceTest {
                 "mergeSelectors",
                 factorySelectorRepository,
                 handshakeRequest.tags,
-                factoryEntity.selectors,
+                factoryEntity.tags,
                 factoryEntity.id
             )
 
@@ -470,7 +470,7 @@ internal class ClusterFactoryServiceTest {
                 "mergeSelectors",
                 factorySelectorRepository,
                 handshakeRequest.tags,
-                factoryEntity.selectors,
+                factoryEntity.tags,
                 factoryEntity.id
             )
 

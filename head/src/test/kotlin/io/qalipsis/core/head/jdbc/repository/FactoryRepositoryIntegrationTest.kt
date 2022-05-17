@@ -103,7 +103,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when + then
         assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-node-id")).first()).isDataClassEqualTo(
-            factory.copy(selectors = selectors)
+            factory.copy(tags = selectors)
         )
         assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-other-node-id"))).isEmpty()
 
@@ -211,7 +211,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // then
             assertThat(factoriesForScenarios).all {
                 hasSize(1)
-                any { it.transform { factory -> factory.id == factory1.id && factory.selectors.isNotEmpty() } }
+                any { it.transform { factory -> factory.id == factory1.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
             }
         }
@@ -284,13 +284,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // then
             assertThat(factoriesForScenarios1).all {
                 hasSize(1)
-                any { it.transform { factory -> factory.id == factory1.id && factory.selectors.isNotEmpty() } }
+                any { it.transform { factory -> factory.id == factory1.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
             }
 
             assertThat(factoriesForScenarios2).all {
                 hasSize(1)
-                any { it.transform { factory -> factory.id == factory2.id && factory.selectors.isNotEmpty() } }
+                any { it.transform { factory -> factory.id == factory2.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory2.id)
             }
         }
