@@ -46,9 +46,9 @@ internal data class DirectedAcyclicGraphEntity(
         singleton: Boolean,
         underLoad: Boolean,
         numberOfSteps: Int,
-        selectors: List<DirectedAcyclicGraphSelectorEntity> = emptyList(),
+        tags: List<DirectedAcyclicGraphSelectorEntity> = emptyList(),
         version: Instant = Instant.now()
-    ) : this(-1, version, scenarioId, name, isRoot, singleton, underLoad, numberOfSteps, selectors)
+    ) : this(-1, version, scenarioId, name, isRoot, singleton, underLoad, numberOfSteps, tags)
 
     fun toModel(): DirectedAcyclicGraphSummary {
         return DirectedAcyclicGraphSummary(

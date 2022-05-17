@@ -30,7 +30,7 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
     private val factory = FactoryEntity(
         nodeId = "the-node", registrationTimestamp = Instant.now(), registrationNodeId = "test",
         unicastChannel = "unicast-channel",
-        selectors = listOf(
+        tags = listOf(
             FactorySelectorEntity(-1, "key-1", "value-1"),
             FactorySelectorEntity(-1, "key-2", "value-2")
         )
@@ -98,10 +98,10 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         }
 
         // when
-        val selectorsOfFactories = selectorRepository.findByFactoryIdIn(listOf(factory.id, -1, Long.MAX_VALUE))
+        val tagsOfFactories = selectorRepository.findByFactoryIdIn(listOf(factory.id, -1, Long.MAX_VALUE))
 
         // then
-        assertThat(selectorsOfFactories).isEqualTo(resultingEntity.tags)
+        assertThat(tagsOfFactories).isEqualTo(resultingEntity.tags)
     }
 
     @Test
@@ -144,13 +144,13 @@ internal class FactorySelectorRepositoryIntegrationTest : PostgresqlTemplateTest
         // given
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         val saved = repository.save(factory.copy(tenantId = savedTenant.id))
-        val selectors =
+        val tags =
             selectorRepository.saveAll(factory.tags.map { it.copy(factoryId = saved.id) }).toList()
 
         // when
         // Tests the strategy of update for the selectors attached to a factory, as used in the PersistentFactoryService.
-        selectorRepository.deleteAll(selectors.subList(0, 1))
-        selectorRepository.updateAll(listOf(selectors[1].withValue("other-than-value-2"))).count()
+        selectorRepository.deleteAll(tags.subList(0, 1))
+        selectorRepository.updateAll(listOf(tags[1].withValue("other-than-value-2"))).count()
         selectorRepository.saveAll(listOf(FactorySelectorEntity(saved.id, "key-3", "value-3"))).count()
 
         // then

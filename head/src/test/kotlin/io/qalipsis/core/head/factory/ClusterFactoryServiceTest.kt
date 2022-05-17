@@ -264,7 +264,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf()
+            tags = listOf()
         )
         val newSelector = FactorySelectorEntity(factoryEntity.id, selectorKey, selectorValue)
 
@@ -311,7 +311,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            tags = listOf(selector)
         )
 
         coEvery { factorySelectorRepository.updateAll(listOf(selector)) } returns flowOf(selector)
@@ -352,7 +352,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            tags = listOf(selector)
         )
 
         coEvery { factorySelectorRepository.deleteAll(listOf(selector)) } returns 1
@@ -397,7 +397,7 @@ internal class ClusterFactoryServiceTest {
                 registrationTimestamp = now,
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = "unicast",
-                selectors = listOf(selector)
+                tags = listOf(selector)
             )
 
             // when
@@ -438,7 +438,7 @@ internal class ClusterFactoryServiceTest {
                 registrationTimestamp = now,
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = "unicast",
-                selectors = existingSelectors
+                tags = existingSelectors
             )
 
             coEvery { factorySelectorRepository.deleteAll(listOf(existingSelectors[0])) } returns 1
@@ -525,7 +525,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector),
+            tags = listOf(selector),
             tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -588,7 +588,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector),
+            tags = listOf(selector),
             tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -662,7 +662,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector),
+            tags = listOf(selector),
             tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -675,7 +675,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            tags = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
 
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
@@ -748,7 +748,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            tags = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
         val expectedDagEntity = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = "new-test-dag-id",
@@ -757,7 +757,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = listOf(
+            tags = listOf(
                 DirectedAcyclicGraphSelectorEntity(
                     id = -1,
                     directedAcyclicGraphId = 1,
@@ -818,7 +818,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = emptyList()
+            tags = emptyList()
         )
 
         coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf(
@@ -877,7 +877,7 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast-before",
-            selectors = listOf(selector)
+            tags = listOf(selector)
         )
 
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)

@@ -76,7 +76,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
                 singleton = false,
                 underLoad = true,
                 numberOfSteps = 21,
-                selectors = listOf(
+                tags = listOf(
                     DirectedAcyclicGraphSelectorEntity(-1, "key-1", "value-1"),
                     DirectedAcyclicGraphSelectorEntity(-1, "key-2", "value-2")
                 )

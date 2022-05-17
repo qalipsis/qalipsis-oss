@@ -13,7 +13,7 @@ import javax.validation.constraints.Size
  *
  * @author rklymenko
  */
-@MappedEntity("factory_selector", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
+@MappedEntity("factory_tag", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
 internal data class FactorySelectorEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)

@@ -39,7 +39,7 @@ internal data class FactoryEntity(
         registrationTimestamp: Instant,
         registrationNodeId: String,
         unicastChannel: String,
-        selectors: List<FactorySelectorEntity> = emptyList()
+        tags: List<FactorySelectorEntity> = emptyList()
     ) : this(
         -1,
         Instant.EPOCH,
@@ -48,7 +48,7 @@ internal data class FactoryEntity(
         registrationTimestamp,
         registrationNodeId,
         unicastChannel,
-        selectors
+        tags
     )
 
     fun toModel(activeScenarios: Collection<String> = emptySet()): Factory {
@@ -57,7 +57,7 @@ internal data class FactoryEntity(
             registrationTimestamp = registrationTimestamp,
             unicastChannel = unicastChannel,
             version = version,
-            selectors = tags.associate { it.key to it.value },
+            tags = tags.associate { it.key to it.value },
             activeScenarios = activeScenarios
         )
     }

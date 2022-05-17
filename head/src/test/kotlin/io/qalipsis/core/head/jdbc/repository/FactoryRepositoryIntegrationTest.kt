@@ -93,17 +93,17 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // given
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         val factory = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
-        val selectors = mutableListOf<FactorySelectorEntity>()
+        val tags = mutableListOf<FactorySelectorEntity>()
         factorySelectorRepository.saveAll(
             listOf(
                 FactorySelectorEntity(factory.id, "key-1", "value-1"),
                 FactorySelectorEntity(factory.id, "key-2", "value-2")
             )
-        ).collect { selectors.add(it) }
+        ).collect { tags.add(it) }
 
         // when + then
         assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-node-id")).first()).isDataClassEqualTo(
-            factory.copy(tags = selectors)
+            factory.copy(tags = tags)
         )
         assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-other-node-id"))).isEmpty()
 
@@ -162,13 +162,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         tenantId = savedTenant1.id
                     )
                 )
-            val selectors = mutableListOf<FactorySelectorEntity>()
+            val tags = mutableListOf<FactorySelectorEntity>()
             factorySelectorRepository.saveAll(
                 listOf(
                     FactorySelectorEntity(factory1.id, "key-1", "value-1"),
                     FactorySelectorEntity(factory1.id, "key-2", "value-2")
                 )
-            ).collect { selectors.add(it) }
+            ).collect { tags.add(it) }
             val factory2 =
                 factoryRepository.save(
                     factoryPrototype.copy(
@@ -230,13 +230,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         tenantId = savedTenant1.id
                     )
                 )
-            val selectors = mutableListOf<FactorySelectorEntity>()
+            val tags = mutableListOf<FactorySelectorEntity>()
             factorySelectorRepository.saveAll(
                 listOf(
                     FactorySelectorEntity(factory1.id, "key-1", "value-1"),
                     FactorySelectorEntity(factory1.id, "key-2", "value-2")
                 )
-            ).collect { selectors.add(it) }
+            ).collect { tags.add(it) }
             val factory2 =
                 factoryRepository.save(
                     factoryPrototype.copy(
