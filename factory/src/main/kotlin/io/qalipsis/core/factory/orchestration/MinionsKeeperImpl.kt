@@ -85,7 +85,7 @@ internal class MinionsKeeperImpl(
                         Tag.of("minion", minionId)
                     ),
                     AtomicInteger()
-                )
+                )!!
             )
             minions[minionId] = minion
 

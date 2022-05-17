@@ -29,4 +29,9 @@ internal interface IdentityManagement {
      * Saves changes to the user into the identity management platform.
      */
     suspend fun update(tenant: String, user: UserEntity, patches: Collection<UserPatch>): UserIdentity
+
+    /**
+     * Returns all the users from the identity management platform assigned to the tenant.
+     */
+    suspend fun listUsers(tenant: String): List<UserIdentity>
 }

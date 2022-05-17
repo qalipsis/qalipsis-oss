@@ -143,16 +143,15 @@ internal class Auth0OperationsImpl(
         tenant: String, errorMessage: () -> String
     ) {
         if (roleToValidate in userRoles) {
-            require(getUsersWithRoleInTenant(roleToValidate, tenant).size > 1, errorMessage)
+            require(listUsersWithRoleInTenant(roleToValidate, tenant).size > 1, errorMessage)
         }
     }
 
-    private suspend fun getUsersWithRoleInTenant(role: RoleName, tenant: String): Collection<User> {
+    override suspend fun listUsersWithRoleInTenant(role: RoleName, tenant: String): Collection<User> {
         return roleRepository.findByTenantAndNameIn(tenant, listOf(role)).firstOrNull()?.reference?.let { roleId ->
             getManagementAPI().roles().listUsers(roleId, null).executeAsync().asSuspended().get().items
         } ?: emptyList()
     }
-
 
     /**
      * Creates new roles in Auth0 if they do not exist and return the mapping between values in [roles] and their IDs at Auth0.

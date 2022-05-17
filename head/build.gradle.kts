@@ -47,6 +47,7 @@ dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
+    compileOnly("io.swagger.core.v3:swagger-annotations")
 
     compileOnly(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
@@ -73,11 +74,13 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
     implementation("io.micronaut:micronaut-http-server-netty")
+    implementation("io.micronaut:micronaut-http-client")
     implementation("io.micronaut.reactor:micronaut-reactor")
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
     implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
     implementation("io.micronaut.rxjava3:micronaut-rxjava3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-paranamer:$jacksonVersion")
     implementation("com.auth0:mvc-auth-commons:1.+")
     implementation("org.apache.commons:commons-lang3:3.+")
 
@@ -87,6 +90,7 @@ dependencies {
     kapt("io.qalipsis:api-processors:${project.version}")
     kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
     kapt("io.micronaut.data:micronaut-data-processor")
+    kapt("io.micronaut.openapi:micronaut-openapi")
 
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
