@@ -31,7 +31,7 @@ internal class PersistentCampaignService(
                 campaignName = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
                 start = Instant.now(),
-                configurer = userRepository.findByUsername(configurer)?.identityReference!!
+                configurer = userRepository.findByUsername(configurer)?.identityId!!
             )
         )
         campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->
