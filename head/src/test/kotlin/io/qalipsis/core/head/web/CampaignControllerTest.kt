@@ -3,8 +3,11 @@ package io.qalipsis.core.head.web
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.factory.ClusterFactoryService
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.web.entity.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.entity.CampaignRequest
 import io.qalipsis.core.head.web.entity.ScenarioRequest
 import io.qalipsis.test.mockk.WithMockk
@@ -16,7 +19,7 @@ import org.junit.jupiter.api.Test
 import javax.validation.ConstraintViolationException
 
 @WithMockk
-@MicronautTest
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD])
 internal class CampaignControllerTest {
 
     @Inject
@@ -26,13 +29,19 @@ internal class CampaignControllerTest {
     private lateinit var campaignManager: CampaignManager
 
     @RelaxedMockK
-    private lateinit var scenarioRepository: ScenarioRepository
+    private lateinit var clusterFactoryService: ClusterFactoryService
 
-    @MockBean(ScenarioRepository::class)
-    fun scenarioRepository() = scenarioRepository
+    @RelaxedMockK
+    private lateinit var campaignConfigurationConverter: CampaignConfigurationConverter
+
+    @MockBean(ClusterFactoryService::class)
+    fun clusterFactoryService() = clusterFactoryService
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
+
+    @MockBean(CampaignConfigurationConverter::class)
+    fun campaignConfigurationConverter() = campaignConfigurationConverter
 
     @Test
     fun testThatMinionsCountIsValidated() {

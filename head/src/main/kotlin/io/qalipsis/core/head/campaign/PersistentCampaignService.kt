@@ -10,6 +10,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.UserRepository
 import jakarta.inject.Singleton
 import java.time.Instant
 
@@ -20,6 +21,7 @@ import java.time.Instant
 )
 internal class PersistentCampaignService(
     private val campaignRepository: CampaignRepository,
+    private val userRepository: UserRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository
 ) : CampaignService {
 
@@ -29,7 +31,7 @@ internal class PersistentCampaignService(
                 campaignName = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
                 start = Instant.now(),
-                configurer = configurer
+                configurer = userRepository.findByUsername(configurer)?.identityReference!!
             )
         )
         campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->
