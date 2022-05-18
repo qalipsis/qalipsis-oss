@@ -337,7 +337,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should list the enabled scenarios with tenant reference`(factoryRepository: FactoryRepository) =
         testDispatcherProvider.run {
             // given
-            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy(reference = "new"))
             val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
             val factory1 = factoryRepository.save(
                 FactoryEntity(
@@ -359,14 +359,14 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             )
             val scenario1 =
                 repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 3, name = "one"))
-            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id))
-            val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
+            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id, name = "four"))
+            val scenario3 = repository.save(scenario.copy(factoryId = factory1.id, name = "three"))
             val scenario4 =
                 repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 5, name = "two"))
             val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
 
             // when + then
-            val result = repository.findAllActiveWithSorting("qalipsis", "default_minions_count").map { it.id }
+            val result = repository.findAllActiveWithSorting("new", "default_minions_count").map { it.id }
             assertThat(result).containsOnly(scenario1.id, scenario3.id, scenario4.id)
             assertThat(result.get(0)).isEqualTo(scenario3.id)
             assertThat(result.get(1)).isEqualTo(scenario1.id)
