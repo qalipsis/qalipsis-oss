@@ -97,7 +97,7 @@ internal class ClusterFactoryServiceTest {
     private lateinit var clusterFactoryService: ClusterFactoryService
 
     @Test
-    fun `should register new factory without selectors`() = testDispatcherProvider.run {
+    fun `should register new factory without tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
@@ -143,7 +143,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should register new factory with selectors`() = testDispatcherProvider.run {
+    fun `should register new factory with tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -190,7 +190,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should update existing factory without selectors`() = testDispatcherProvider.run {
+    fun `should update existing factory without tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
@@ -247,7 +247,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should save new selectors`() = testDispatcherProvider.run {
+    fun `should save new tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -292,7 +292,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should update existing selectors`() = testDispatcherProvider.run {
+    fun `should update existing tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -338,7 +338,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should delete existing selectors`() = testDispatcherProvider.run {
+    fun `should delete existing tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -378,7 +378,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should skip update of existing selectors because they were not changed`() =
+    fun `should skip update of existing tags because they were not changed`() =
         testDispatcherProvider.run {
             //given
             val actualNodeId = "boo"
@@ -417,7 +417,7 @@ internal class ClusterFactoryServiceTest {
         }
 
     @Test
-    fun `should create new selectors and update existing selectors and delete old selectors and dont touch unchanged selectors`() =
+    fun `should create new tags and update existing tags and delete old tags and dont touch unchanged tags`() =
         testDispatcherProvider.run {
             //given
             val actualNodeId = "boo"
@@ -634,7 +634,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should update scenario and dags and dag selectors`() = testDispatcherProvider.run {
+    fun `should update scenario and dags and dag tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -731,7 +731,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should save dags and dag selectors`() = testDispatcherProvider.run {
+    fun `should save dags and dag tags`() = testDispatcherProvider.run {
         //given
         val now = getTimeMock()
 
@@ -795,7 +795,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should save dags without dag selectors`() = testDispatcherProvider.run {
+    fun `should save dags without dag tags`() = testDispatcherProvider.run {
         //given
         val now = getTimeMock()
 
