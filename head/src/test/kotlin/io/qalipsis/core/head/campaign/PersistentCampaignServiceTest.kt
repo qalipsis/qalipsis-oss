@@ -15,6 +15,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -37,6 +38,9 @@ internal class PersistentCampaignServiceTest {
     @RelaxedMockK
     private lateinit var campaignScenarioRepository: CampaignScenarioRepository
 
+    @RelaxedMockK
+    private lateinit var userRepository: UserRepository
+
     @InjectMockKs
     private lateinit var persistentCampaignService: PersistentCampaignService
 
@@ -57,18 +61,20 @@ internal class PersistentCampaignServiceTest {
             )
         )
         coEvery { campaignRepository.save(any()) } returns mockk { every { id } returns 8126 }
+        coEvery { userRepository.findByUsername("qalipsis-user") } returns mockk { every { identityReference } returns "199" }
 
         // when
         persistentCampaignService.save("qalipsis-user", campaign)
 
         // then
         coVerifyOrder {
+            userRepository.findByUsername("qalipsis-user")
             campaignRepository.save(
                 CampaignEntity(
                     campaignName = "my-campaign",
                     speedFactor = 123.2,
                     start = now,
-                    configurer = "qalipsis-user"
+                    configurer = "199"
                 )
             )
             campaignScenarioRepository.saveAll(
@@ -78,7 +84,7 @@ internal class PersistentCampaignServiceTest {
                 )
             )
         }
-        confirmVerified(campaignRepository, campaignScenarioRepository)
+        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
     }
 
     @Test

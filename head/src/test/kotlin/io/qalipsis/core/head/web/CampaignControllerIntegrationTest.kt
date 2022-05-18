@@ -15,8 +15,9 @@ import io.mockk.coEvery
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.factory.ClusterFactoryService
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
-import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.web.entity.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.entity.CampaignRequest
 import io.qalipsis.core.head.web.entity.ScenarioRequest
 import io.qalipsis.test.mockk.WithMockk
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 @WithMockk
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD])
 internal class CampaignControllerIntegrationTest {
 
     @Inject
@@ -37,13 +38,19 @@ internal class CampaignControllerIntegrationTest {
     private lateinit var campaignManager: CampaignManager
 
     @RelaxedMockK
-    private lateinit var scenarioRepository: ScenarioRepository
+    private lateinit var clusterFactoryService: ClusterFactoryService
 
-    @MockBean(ScenarioRepository::class)
-    fun scenarioRepository() = scenarioRepository
+    @RelaxedMockK
+    private lateinit var campaignConfigurationConverter: CampaignConfigurationConverter
+
+    @MockBean(ClusterFactoryService::class)
+    fun clusterFactoryService() = clusterFactoryService
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
+
+    @MockBean(CampaignConfigurationConverter::class)
+    fun campaignConfigurationConverter() = campaignConfigurationConverter
 
     @Test
     fun `should return status accepted when start campaign`() {
@@ -107,9 +114,9 @@ internal class CampaignControllerIntegrationTest {
         val validateRequest = HttpRequest.POST("/validate", campaignRequest)
             .header("X-Tenant", "qalipsis")
             .header("Accept-Language", "en")
-        coEvery { scenarioRepository.findActiveByName("qalipsis", any()) } returns listOf(
+        coEvery { clusterFactoryService.getActiveScenarios("qalipsis", any()) } returns listOf(
             ScenarioEntity(555, "scenario-1", 500)
-        )
+        ).map(ScenarioEntity::toModel)
 
         // when
         val response = httpClient.toBlocking().exchange(validateRequest, Unit::class.java)
@@ -125,7 +132,7 @@ internal class CampaignControllerIntegrationTest {
             name = "just",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(5))
         )
-        coEvery { scenarioRepository.findActiveByName("qalipsis", any()) } returns emptyList()
+        coEvery { clusterFactoryService.getActiveScenarios("qalipsis", any()) } returns emptyList()
         val validateRequest = HttpRequest.POST("/validate", campaignRequest)
             .header("X-Tenant", "qalipsis")
             .header("Accept-Language", "en")

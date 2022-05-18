@@ -5,36 +5,52 @@ import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
 import io.micronaut.validation.Validated
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.ScenarioConfiguration
-import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.head.campaign.CampaignManager
-import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
+import io.qalipsis.core.head.factory.ClusterFactoryService
 import io.qalipsis.core.head.web.entity.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.entity.CampaignRequest
-import io.qalipsis.core.head.web.entity.ScenarioRequest
 import io.qalipsis.core.head.web.requestAnnotation.Tenant
+import java.security.PrivateKey
 import javax.validation.Valid
 
+/**
+ * Controller for REST calls related to campaign operations.
+ *
+ * @author Palina Bril
+ */
 @Validated
 @Controller("/campaigns")
 internal class CampaignController(
     private val campaignManager: CampaignManager,
-    private val scenarioRepository: ScenarioRepository
+    private val clusterFactoryService: ClusterFactoryService,
+    private val campaignConfigurationConverter: CampaignConfigurationConverter
 ) {
 
+    /**
+     * REST endpoint to start campaign.
+     */
     @Post
     suspend fun execute(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<Unit> {
-        campaignManager.start("", CampaignConfigurationConverter().convertCampaignRequestToConfiguration(tenant, campaign))
+        campaignManager.start(
+            "",
+            campaignConfigurationConverter.convertCampaignRequestToConfiguration(tenant, campaign)
+        )
         return HttpResponse.accepted()
     }
 
+    /**
+     * REST endpoint to validate the campaign configuration.
+     */
     @Post("/validate")
     suspend fun validate(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<String> {
-        if (scenarioRepository.findActiveByName(tenant, campaign.scenarios.keys).size == campaign.scenarios.keys.size) {
-            return HttpResponse.accepted()
+        return if (clusterFactoryService.getActiveScenarios(
+                tenant,
+                campaign.scenarios.keys
+            ).size == campaign.scenarios.keys.size
+        ) {
+            HttpResponse.accepted()
         } else {
-            return HttpResponse.badRequest("Scenarios with names ${campaign.scenarios.keys} are not exist")
+            HttpResponse.badRequest("Scenarios with names ${campaign.scenarios.keys} are not exist")
         }
     }
 }

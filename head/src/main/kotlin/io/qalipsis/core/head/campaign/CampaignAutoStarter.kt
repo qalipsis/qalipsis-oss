@@ -114,7 +114,7 @@ internal class CampaignAutoStarter(
                             startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
                             scenarios = scenariosConfigs
                         )
-                        campaignManager.get().start(autostartCampaignConfiguration.configurer, campaign)
+                        campaignManager.get().start("qalipsis", campaign)
                         runningCampaign = true
                     } else {
                         log.error { "No executable scenario was found" }
