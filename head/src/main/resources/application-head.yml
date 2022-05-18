@@ -9,6 +9,20 @@ micronaut:
       header: false
   security:
     enabled: false
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+      swagger-ui:
+        paths: classpath:META-INF/swagger/views/swagger-ui
+        mapping: /swagger-ui/**
+      rapidoc:
+        paths: classpath:META-INF/swagger/views/rapidoc
+        mapping: /rapidoc/**
+      redoc:
+        paths: classpath:META-INF/swagger/views/redoc
+        mapping: /redoc/**
 
 head:
   handshake-request-channel: handshake-request
@@ -19,12 +33,6 @@ head:
 distributed:
   streaming:
     platform: redis
-
-liquibase:
-  enabled: true
-  datasources:
-    default:
-      change-log: 'classpath:db/liquibase-changelog.xml'
 
 report:
   export:
