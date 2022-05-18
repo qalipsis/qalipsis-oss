@@ -24,7 +24,7 @@ import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
+import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
@@ -675,7 +675,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            tags = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            tags = graphSummary.tags.map { DirectedAcyclicGraphTagEntity(1, it.key, it.value) })
 
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
@@ -714,7 +714,7 @@ internal class ClusterFactoryServiceTest {
                 })
             directedAcyclicGraphSelectorRepository.saveAll(
                 listOf(
-                    DirectedAcyclicGraphSelectorEntity(
+                    DirectedAcyclicGraphTagEntity(
                         id = -1,
                         directedAcyclicGraphId = -1,
                         key = "test_dag_selector1",
@@ -748,7 +748,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            tags = graphSummary.tags.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            tags = graphSummary.tags.map { DirectedAcyclicGraphTagEntity(1, it.key, it.value) })
         val expectedDagEntity = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = "new-test-dag-id",
@@ -758,7 +758,7 @@ internal class ClusterFactoryServiceTest {
             numberOfSteps = 1,
             version = now,
             tags = listOf(
-                DirectedAcyclicGraphSelectorEntity(
+                DirectedAcyclicGraphTagEntity(
                     id = -1,
                     directedAcyclicGraphId = 1,
                     key = "test_dag_selector1",
@@ -837,7 +837,7 @@ internal class ClusterFactoryServiceTest {
             directedAcyclicGraphRepository.saveAll(listOf(expectedDagEntity))
         }
         coVerifyNever {
-            directedAcyclicGraphSelectorRepository.saveAll(any<Iterable<DirectedAcyclicGraphSelectorEntity>>())
+            directedAcyclicGraphSelectorRepository.saveAll(any<Iterable<DirectedAcyclicGraphTagEntity>>())
         }
         confirmVerified(
             directedAcyclicGraphRepository,
@@ -1182,7 +1182,7 @@ internal class ClusterFactoryServiceTest {
                     dag.isSingleton,
                     dag.isUnderLoad,
                     dag.numberOfSteps,
-                    dag.tags.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) })
+                    dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) })
             )
         )
 
@@ -1194,6 +1194,6 @@ internal class ClusterFactoryServiceTest {
             dag.isSingleton,
             dag.isUnderLoad,
             dag.numberOfSteps,
-            dag.tags.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) }
+            dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) }
         )
 }

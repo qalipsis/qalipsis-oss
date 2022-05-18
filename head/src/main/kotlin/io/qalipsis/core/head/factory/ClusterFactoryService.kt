@@ -15,7 +15,7 @@ import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.head.jdbc.SelectorEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
+import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
@@ -221,7 +221,7 @@ internal class ClusterFactoryService(
             val dagsEntities = directedAcyclicGraphRepository.saveAll(dagsToSave).toList().associateBy { it.name }
             val dagsSelectorsToSave = registrationDags.flatMap { dag ->
                 dag.tags.map { (key, value) ->
-                    DirectedAcyclicGraphSelectorEntity(
+                    DirectedAcyclicGraphTagEntity(
                         dagId = dagsEntities[dag.name]!!.id,
                         selectorKey = key,
                         selectorValue = value

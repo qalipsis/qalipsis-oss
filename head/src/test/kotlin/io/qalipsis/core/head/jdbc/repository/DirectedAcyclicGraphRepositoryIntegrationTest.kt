@@ -17,7 +17,7 @@ import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
+import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
@@ -77,8 +77,8 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
                 underLoad = true,
                 numberOfSteps = 21,
                 tags = listOf(
-                    DirectedAcyclicGraphSelectorEntity(-1, "key-1", "value-1"),
-                    DirectedAcyclicGraphSelectorEntity(-1, "key-2", "value-2")
+                    DirectedAcyclicGraphTagEntity(-1, "key-1", "value-1"),
+                    DirectedAcyclicGraphTagEntity(-1, "key-2", "value-2")
                 )
             )
         }
@@ -116,14 +116,14 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
                 hasSize(2)
                 any {
                     it.all {
-                        prop(DirectedAcyclicGraphSelectorEntity::key).isEqualTo("key-1")
-                        prop(DirectedAcyclicGraphSelectorEntity::value).isEqualTo("value-1")
+                        prop(DirectedAcyclicGraphTagEntity::key).isEqualTo("key-1")
+                        prop(DirectedAcyclicGraphTagEntity::value).isEqualTo("value-1")
                     }
                 }
                 any {
                     it.all {
-                        prop(DirectedAcyclicGraphSelectorEntity::key).isEqualTo("key-2")
-                        prop(DirectedAcyclicGraphSelectorEntity::value).isEqualTo("value-2")
+                        prop(DirectedAcyclicGraphTagEntity::key).isEqualTo("key-2")
+                        prop(DirectedAcyclicGraphTagEntity::value).isEqualTo("value-2")
                     }
                 }
             }
@@ -133,7 +133,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     @Test
     internal fun `should not save selector on a missing dag`() = testDispatcherProvider.run {
         assertThrows<DataAccessException> {
-            selectorRepository.save(DirectedAcyclicGraphSelectorEntity(-1, "key-1", "value-1"))
+            selectorRepository.save(DirectedAcyclicGraphTagEntity(-1, "key-1", "value-1"))
         }
     }
 
@@ -151,9 +151,9 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         val saved = repository.save(dag.copy())
 
         // when
-        selectorRepository.save(DirectedAcyclicGraphSelectorEntity(saved.id, "key-1", "value-1"))
+        selectorRepository.save(DirectedAcyclicGraphTagEntity(saved.id, "key-1", "value-1"))
         assertThrows<DataAccessException> {
-            selectorRepository.save(DirectedAcyclicGraphSelectorEntity(saved.id, "key-1", "value-1"))
+            selectorRepository.save(DirectedAcyclicGraphTagEntity(saved.id, "key-1", "value-1"))
         }
     }
 
@@ -164,8 +164,8 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         val saved2 = repository.save(dag.copy(name = "another name"))
 
         // when
-        selectorRepository.save(DirectedAcyclicGraphSelectorEntity(saved1.id, "key-1", "value-1"))
-        selectorRepository.save(DirectedAcyclicGraphSelectorEntity(saved2.id, "key-1", "value-1"))
+        selectorRepository.save(DirectedAcyclicGraphTagEntity(saved1.id, "key-1", "value-1"))
+        selectorRepository.save(DirectedAcyclicGraphTagEntity(saved2.id, "key-1", "value-1"))
 
         // then
         assertThat(selectorRepository.findAll().toList()).hasSize(2)
@@ -194,7 +194,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
         // Tests the strategy of update for the selectors attached to a dag, as used in the PersistentFactoryService.
         selectorRepository.deleteAll(selectors.subList(0, 1))
         selectorRepository.updateAll(listOf(selectors[1].withValue("other-than-value-2"))).count()
-        selectorRepository.saveAll(listOf(DirectedAcyclicGraphSelectorEntity(saved.id, "key-3", "value-3"))).count()
+        selectorRepository.saveAll(listOf(DirectedAcyclicGraphTagEntity(saved.id, "key-3", "value-3"))).count()
 
         // then
         assertThat(repository.findById(saved.id)).isNotNull().all {
@@ -210,14 +210,14 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
                 hasSize(2)
                 any {
                     it.all {
-                        prop(DirectedAcyclicGraphSelectorEntity::key).isEqualTo("key-2")
-                        prop(DirectedAcyclicGraphSelectorEntity::value).isEqualTo("other-than-value-2")
+                        prop(DirectedAcyclicGraphTagEntity::key).isEqualTo("key-2")
+                        prop(DirectedAcyclicGraphTagEntity::value).isEqualTo("other-than-value-2")
                     }
                 }
                 any {
                     it.all {
-                        prop(DirectedAcyclicGraphSelectorEntity::key).isEqualTo("key-3")
-                        prop(DirectedAcyclicGraphSelectorEntity::value).isEqualTo("value-3")
+                        prop(DirectedAcyclicGraphTagEntity::key).isEqualTo("key-3")
+                        prop(DirectedAcyclicGraphTagEntity::value).isEqualTo("value-3")
                     }
                 }
             }
