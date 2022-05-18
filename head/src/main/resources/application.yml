@@ -1,7 +1,0 @@
-identity:
-  manager: none
-  auth0:
-    client-id:
-    client-secret:
-    api-identifier: https://qalipsis-dev.eu.auth0.com/api/v2/
-    domain: qalipsis-dev.eu.auth0.com
