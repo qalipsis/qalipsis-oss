@@ -99,7 +99,7 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
             transform("body") {
                 it.response.getBody(String::class.java).get()
-            }.contains("""{"message":"campaign.name: size must be between 3 and 300"}""")
+            }.contains(""""message":"campaign.name: size must be between 3 and 300"""")
         }
     }
 

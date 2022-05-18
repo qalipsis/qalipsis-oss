@@ -7,11 +7,16 @@ import io.micronaut.http.annotation.Post
 import io.micronaut.validation.Validated
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.factory.ClusterFactoryService
+import io.qalipsis.core.head.web.annotations.Tenant
 import io.qalipsis.core.head.web.entity.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.entity.CampaignRequest
-import io.qalipsis.core.head.web.requestAnnotation.Tenant
-import java.security.PrivateKey
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import javax.validation.Valid
+import javax.validation.constraints.NotBlank
 
 /**
  * Controller for REST calls related to campaign operations.
@@ -30,7 +35,26 @@ internal class CampaignController(
      * REST endpoint to start campaign.
      */
     @Post
-    suspend fun execute(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<Unit> {
+    @Operation(
+        summary = "Start a new campaign",
+        description = "Start a new campaign with the provided details of campaign configuration and attach it to the contextual tenant",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Details of the successfully created user"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    suspend fun execute(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String, @Body @Valid campaign: CampaignRequest
+    ): HttpResponse<Unit> {
         campaignManager.start(
             "",
             campaignConfigurationConverter.convertCampaignRequestToConfiguration(tenant, campaign)
@@ -42,7 +66,26 @@ internal class CampaignController(
      * REST endpoint to validate the campaign configuration.
      */
     @Post("/validate")
-    suspend fun validate(@Tenant tenant: String, @Body @Valid campaign: CampaignRequest): HttpResponse<String> {
+    @Operation(
+        summary = "Validate a campaign configuration",
+        description = "Validate a campaign configuration with the contextual tenant",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Details of the successfully created user"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    suspend fun validate(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String, @Body @Valid campaign: CampaignRequest
+    ): HttpResponse<String> {
         return if (clusterFactoryService.getActiveScenarios(
                 tenant,
                 campaign.scenarios.keys

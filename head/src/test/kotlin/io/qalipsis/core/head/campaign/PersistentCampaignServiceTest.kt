@@ -61,7 +61,7 @@ internal class PersistentCampaignServiceTest {
             )
         )
         coEvery { campaignRepository.save(any()) } returns mockk { every { id } returns 8126 }
-        coEvery { userRepository.findByUsername("qalipsis-user") } returns mockk { every { identityReference } returns "199" }
+        coEvery { userRepository.findByUsername("qalipsis-user") } returns mockk { every { identityId } returns "199" }
 
         // when
         persistentCampaignService.save("qalipsis-user", campaign)
