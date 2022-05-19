@@ -53,7 +53,7 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
 
     private companion object {
 
-        const val HEALTH_QUERY_INTERVAL = "2 minutes"
+        const val HEALTH_QUERY_INTERVAL = "2 minute"
 
     }
 }
