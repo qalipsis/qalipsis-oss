@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Delete
@@ -11,6 +12,7 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.Status
 import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.UserCreationRequest
@@ -36,7 +38,6 @@ import javax.validation.constraints.NotEmpty
     Requires(env = [ExecutionEnvironments.HEAD]),
     Requires(beans = [UserManagement::class])
 )
-
 @Controller("/users")
 @Validated
 @Version("1.0")
@@ -51,7 +52,7 @@ internal class UserController(
         responses = [
             ApiResponse(responseCode = "200", description = "Details of the successfully created user"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -76,7 +77,7 @@ internal class UserController(
         responses = [
             ApiResponse(responseCode = "200", description = "Details of users in the tenant"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -100,7 +101,7 @@ internal class UserController(
         responses = [
             ApiResponse(responseCode = "200", description = "Details of the user in the tenant"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
             ApiResponse(responseCode = "404", description = "User not found"),
         ],
         security = [
@@ -135,7 +136,7 @@ internal class UserController(
         responses = [
             ApiResponse(responseCode = "200", description = "Updated user"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
             ApiResponse(responseCode = "404", description = "User not found"),
         ],
         security = [
@@ -171,12 +172,13 @@ internal class UserController(
         responses = [
             ApiResponse(responseCode = "204", description = "Successful deletion "),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
         ],
         security = [
             SecurityRequirement(name = "JWT")
         ]
     )
+    @Status(HttpStatus.NO_CONTENT)
     suspend fun deleteUser(
         @Parameter(
             name = "X-Tenant",
@@ -189,8 +191,7 @@ internal class UserController(
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable username: String
-    ): HttpResponse<Unit> {
+    ) {
         userManagement.disable(tenant, username)
-        return HttpResponse.noContent()
     }
 }
