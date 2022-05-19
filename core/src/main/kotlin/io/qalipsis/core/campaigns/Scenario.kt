@@ -21,13 +21,13 @@ import kotlinx.serialization.Serializable
     description = "Details of the scenario as persisted into QALIPSIS"
 )
 data class ScenarioSummary(
-    @Schema(description = "Name of the Scenario")
+    @field:Schema(description = "Name of the Scenario")
     override var name: ScenarioName,
-    @Schema(description = "Counts of minions that will be assigned to the scenario")
+    @field:Schema(description = "Counts of minions that will be assigned to the scenario")
     val minionsCount: Int,
-    @Schema(description = "The list of directed acyclic graphs summaries of the scenario")
+    @field:Schema(description = "The list of directed acyclic graphs summaries of the scenario")
     val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>,
-    @Schema(description = "The name of the ramp up strategy with default value 'user-defined'")
+    @field:Schema(description = "The name of the ramp up strategy with default value 'user-defined'")
     val rampUpStrategyName: String = "user-defined"
 ) : InMemoryEntity<ScenarioName>
 
@@ -42,27 +42,27 @@ data class ScenarioSummary(
     description = "Details of the directed acyclic graphs of the scenario as persisted into QALIPSIS"
 )
 data class DirectedAcyclicGraphSummary(
-    @Schema(
+    @field:Schema(
         description = "The name of the directed acyclis graph"
     )
     val name: DirectedAcyclicGraphName,
-    @Schema(
+    @field:Schema(
         description = "The flag is the directed acyclic graph is singleton or not with default value 'false'"
     )
     val isSingleton: Boolean = false,
-    @Schema(
+    @field:Schema(
         description = "The flag is the directed acyclic graph is root one or not with default value 'false'"
     )
     val isRoot: Boolean = false,
-    @Schema(
+    @field:Schema(
         description = "The flag is the directed acyclic graph is under load or not with default value 'false'"
     )
     val isUnderLoad: Boolean = false,
-    @Schema(
+    @field:Schema(
         description = "The number of steps in directed acyclic graph with default value '0'"
     )
     val numberOfSteps: Int = 0,
-    @Schema(
+    @field:Schema(
         description = "The name of the ramp up strategy with default value 'user-defined'"
     )
     val selectors: Map<String, String> = emptyMap()
