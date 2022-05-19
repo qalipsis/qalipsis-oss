@@ -5,7 +5,6 @@ import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
-import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.validation.Validated
 import io.qalipsis.core.campaigns.ScenarioSummary
@@ -49,7 +48,7 @@ internal class ScenarioController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Field of the entity which will be used for sorting",
+            description = "Field of the scenarios to use in order to sort the results, can be name, default_minions_count or enabled, add the postfix `:desc` to the field name to reverse the order",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue sort: String

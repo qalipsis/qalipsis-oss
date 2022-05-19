@@ -38,14 +38,22 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
 
     @Query(
         """SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id 
-            WHERE enabled = true AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
+            WHERE enabled = true 
+            AND EXISTS -- The factory should be healthy as latest known state within  the last 2 minutes.
+                (SELECT * FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'HEALTHY' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
+                AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'HEALTHY' and health_timestamp > fs.health_timestamp))
+            AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
             ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
             CASE :sort WHEN 'name' THEN scenario.name END, 
-            CASE :sort WHEN 'id' THEN scenario.id END, 
-            CASE :sort WHEN 'factory_id' THEN scenario.factory_id END, 
-            CASE :sort WHEN 'enabled' THEN scenario.enabled END
+            CASE :sort WHEN 'id' THEN scenario.id END 
             """
     )
     @Join(value = "dags", type = Join.Type.LEFT)
     suspend fun findAllActiveWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
+
+    private companion object {
+
+        const val HEALTH_QUERY_INTERVAL = "2 minutes"
+
+    }
 }

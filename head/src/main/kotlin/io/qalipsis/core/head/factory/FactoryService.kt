@@ -43,7 +43,7 @@ internal interface FactoryService : HeartbeatListener {
     suspend fun getActiveScenarios(tenant: String, ids: Collection<ScenarioName>): Collection<ScenarioSummary>
 
     /**
-     * Returns the details from a Scenario model for all scenarios currently available in the cluster with the given identifiers.
+     * Lists all the active scenarios in [tenant], sorted by [sort].
      */
     suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary>
 }

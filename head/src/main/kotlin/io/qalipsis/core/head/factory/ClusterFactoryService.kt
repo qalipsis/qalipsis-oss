@@ -321,10 +321,17 @@ internal class ClusterFactoryService(
     override suspend fun getActiveScenarios(tenant: String, ids: Collection<String>) =
         scenarioRepository.findActiveByName(tenant, ids).map(ScenarioEntity::toModel)
 
-    /**
-     * getAllScenarios method finds all active scenarios in tenant
-     */
     override suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary> {
-        return scenarioRepository.findAllActiveWithSorting(tenant, sort).map(ScenarioEntity::toModel)
+        sort?.let {
+            val sortProperty = sort.trim().split(":").get(0)
+            val sortOrder = sort.trim().split(":").last()
+            return if ("desc" == sortOrder) {
+                scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
+                    .reversed()
+            } else {
+                scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
+            }
+        }
+        return scenarioRepository.findAllActiveWithSorting(tenant, null).map(ScenarioEntity::toModel)
     }
 }

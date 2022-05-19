@@ -3,6 +3,7 @@ package io.qalipsis.core.head.web
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import io.micronaut.core.type.Argument
@@ -51,10 +52,10 @@ internal class ScenarioControllerIntegrationTest {
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", selectors = mapOf("two" to "two")))
         )
-        coEvery { factoryService.getAllActiveScenarios("qalipsis", "name") } returns listOf(scenario, scenario2)
+        coEvery { factoryService.getAllActiveScenarios("my-tenant", "name") } returns listOf(scenario, scenario2)
 
         val getAllScenariosRequest =
-            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name").header("X-Tenant", "qalipsis")
+            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name").header("X-Tenant", "my-tenant")
 
         // when
         val response: HttpResponse<List<ScenarioSummary>> = httpClient.toBlocking().exchange(
@@ -64,14 +65,94 @@ internal class ScenarioControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            factoryService.getAllActiveScenarios("qalipsis", "name")
+            factoryService.getAllActiveScenarios("my-tenant", "name")
         }
 
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.hasSize(2)
-            transform("body") { it.body().get(0) }.isDataClassEqualTo(scenario)
-            transform("body") { it.body().get(1) }.isDataClassEqualTo(scenario2)
+            transform("body") { it.body() }.all {
+                hasSize(2)
+                index(0).isDataClassEqualTo(scenario)
+                index(1).isDataClassEqualTo(scenario2)
+            }
+        }
+    }
+
+    @Test
+    fun `should return list of scenarios with sorting desc`() {
+        // given
+        val scenario = ScenarioSummary(
+            name = "qalipsis-test",
+            minionsCount = 1000,
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", selectors = mapOf("one" to "one")))
+        )
+        val scenario2 = ScenarioSummary(
+            name = "qalipsis-2",
+            minionsCount = 2000,
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", selectors = mapOf("two" to "two")))
+        )
+        coEvery { factoryService.getAllActiveScenarios("my-tenant", "name:desc") } returns listOf(scenario, scenario2)
+
+        val getAllScenariosRequest =
+            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name:desc").header("X-Tenant", "my-tenant")
+
+        // when
+        val response: HttpResponse<List<ScenarioSummary>> = httpClient.toBlocking().exchange(
+            getAllScenariosRequest,
+            Argument.listOf(ScenarioSummary::class.java)
+        )
+
+        // then
+        coVerifyOnce {
+            factoryService.getAllActiveScenarios("my-tenant", "name:desc")
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.all {
+                hasSize(2)
+                index(0).isDataClassEqualTo(scenario)
+                index(1).isDataClassEqualTo(scenario2)
+            }
+        }
+    }
+
+    @Test
+    fun `should return list of scenarios without sorting`() {
+        // given
+        val scenario = ScenarioSummary(
+            name = "qalipsis-test-2",
+            minionsCount = 1000,
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", selectors = mapOf("one" to "one")))
+        )
+        val scenario2 = ScenarioSummary(
+            name = "qalipsis-3",
+            minionsCount = 2000,
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", selectors = mapOf("two" to "two")))
+        )
+        coEvery { factoryService.getAllActiveScenarios("my-tenant", null) } returns listOf(scenario, scenario2)
+
+        val getAllScenariosRequest =
+            HttpRequest.GET<List<ScenarioSummary>>("/scenarios").header("X-Tenant", "my-tenant")
+
+        // when
+        val response: HttpResponse<List<ScenarioSummary>> = httpClient.toBlocking().exchange(
+            getAllScenariosRequest,
+            Argument.listOf(ScenarioSummary::class.java)
+        )
+
+        // then
+        coVerifyOnce {
+            factoryService.getAllActiveScenarios("my-tenant", null)
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.all {
+                hasSize(2)
+                index(0).isDataClassEqualTo(scenario)
+                index(1).isDataClassEqualTo(scenario2)
+            }
         }
     }
 }
