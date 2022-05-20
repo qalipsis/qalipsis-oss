@@ -344,7 +344,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val campaign =
                 campaignRepository.save(
                     CampaignEntity(
-                        campaignName = "the-campaign-1", end = null, tenantId = savedTenant2.id, configurer = "qalipsis-user"
+                        campaignName = "the-campaign-1", end = null, tenantId = savedTenant2.id, configurer = 1
                     )
                 )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
@@ -414,7 +414,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     campaignName = "the-campaign-1",
                     end = Instant.now(),
                     tenantId = savedTenant2.id,
-                    configurer = "qalipsis-user"
+                    configurer = 1
                 )
             )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
@@ -496,7 +496,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         campaignName = "the-campaign-1",
                         end = null,
                         tenantId = savedTenant2.id,
-                        configurer = "qalipsis-user"
+                        configurer = 1
                     )
                 )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = true))

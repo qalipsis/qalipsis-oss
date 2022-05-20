@@ -71,7 +71,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         val factories = factoryService.getAvailableFactoriesForScenarios(campaign.tenant, selectedScenarios)
         require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
 
-        campaignService.save(configurer, campaign)
+        campaignService.create(configurer, campaign)
         selectedScenarios.forEach {
             campaignReportStateKeeper.start(campaign.name, it)
         }

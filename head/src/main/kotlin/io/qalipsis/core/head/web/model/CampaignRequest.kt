@@ -1,4 +1,4 @@
-package io.qalipsis.core.head.web.entity
+package io.qalipsis.core.head.web.model
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.CampaignName

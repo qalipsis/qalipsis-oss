@@ -1,15 +1,18 @@
 package io.qalipsis.core.head.web
 
+import io.micronaut.context.annotation.Requires
+import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
 import io.micronaut.validation.Validated
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.factory.ClusterFactoryService
 import io.qalipsis.core.head.web.annotations.Tenant
-import io.qalipsis.core.head.web.entity.CampaignConfigurationConverter
-import io.qalipsis.core.head.web.entity.CampaignRequest
+import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
+import io.qalipsis.core.head.web.model.CampaignRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -25,6 +28,8 @@ import javax.validation.constraints.NotBlank
  */
 @Validated
 @Controller("/campaigns")
+@Requires(env = [ExecutionEnvironments.HEAD])
+@Version("1.0")
 internal class CampaignController(
     private val campaignManager: CampaignManager,
     private val clusterFactoryService: ClusterFactoryService,

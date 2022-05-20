@@ -15,7 +15,7 @@ interface CampaignService {
      * Saves a new campaign for the first time.
      * @param configurer consider the user's name  who configure the campaign
      */
-    suspend fun save(configurer: String, campaignConfiguration: CampaignConfiguration)
+    suspend fun create(configurer: String, campaignConfiguration: CampaignConfiguration)
 
     /**
      * Marks a campaign as complete.

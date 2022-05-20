@@ -16,7 +16,7 @@ import jakarta.inject.Singleton
 )
 internal class InMemoryCampaignService : CampaignService {
 
-    override suspend fun save(configurer: String, campaignConfiguration: CampaignConfiguration) {
+    override suspend fun create(configurer: String, campaignConfiguration: CampaignConfiguration) {
         // Nothing to do.
     }
 

@@ -51,7 +51,7 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,
-                configurer = "qalipsis-user"
+                configurer = 1
             )
         )
         val campaignReport = campaignReportRepository.save(CampaignReportEntity(campaign.id, 1000, 990, 990, 10))

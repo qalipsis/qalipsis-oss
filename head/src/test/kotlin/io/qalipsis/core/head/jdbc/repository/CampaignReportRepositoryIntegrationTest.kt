@@ -46,7 +46,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,
                 tenantId = tenant.id,
-                configurer = "qalipsis-user"
+                configurer = 1
             )
         val campaign = campaignRepository.save(campaignPrototype.copy())
         campaignReportPrototype =
