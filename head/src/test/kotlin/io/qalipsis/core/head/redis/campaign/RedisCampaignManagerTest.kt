@@ -175,7 +175,7 @@ internal class RedisCampaignManagerTest {
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
-                campaignService.save("qalipsis-user", refEq(campaign))
+                campaignService.create("qalipsis-user", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(campaign),
@@ -265,7 +265,7 @@ internal class RedisCampaignManagerTest {
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1"))
-                campaignService.save("qalipsis-user", refEq(campaign))
+                campaignService.create("qalipsis-user", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1"))
                 campaignService.close("my-campaign", ExecutionStatus.FAILED)
             }

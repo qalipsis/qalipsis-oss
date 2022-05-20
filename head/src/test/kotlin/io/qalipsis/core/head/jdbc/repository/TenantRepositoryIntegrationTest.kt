@@ -117,7 +117,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,
-                configurer = "qalipsis-user"
+                configurer = 1
             )
         )
         val factory = factoryRepository.save(

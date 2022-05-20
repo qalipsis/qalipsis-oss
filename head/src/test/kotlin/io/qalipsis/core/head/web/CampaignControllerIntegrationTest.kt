@@ -17,9 +17,9 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.factory.ClusterFactoryService
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
-import io.qalipsis.core.head.web.entity.CampaignConfigurationConverter
-import io.qalipsis.core.head.web.entity.CampaignRequest
-import io.qalipsis.core.head.web.entity.ScenarioRequest
+import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
+import io.qalipsis.core.head.web.model.CampaignRequest
+import io.qalipsis.core.head.web.model.ScenarioRequest
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject

@@ -61,20 +61,20 @@ internal class PersistentCampaignServiceTest {
             )
         )
         coEvery { campaignRepository.save(any()) } returns mockk { every { id } returns 8126 }
-        coEvery { userRepository.findByUsername("qalipsis-user") } returns mockk { every { identityId } returns "199" }
+        coEvery { userRepository.findIdByUsername("qalipsis-user") } returns  199
 
         // when
-        persistentCampaignService.save("qalipsis-user", campaign)
+        persistentCampaignService.create("qalipsis-user", campaign)
 
         // then
         coVerifyOrder {
-            userRepository.findByUsername("qalipsis-user")
+            userRepository.findIdByUsername("qalipsis-user")
             campaignRepository.save(
                 CampaignEntity(
                     campaignName = "my-campaign",
                     speedFactor = 123.2,
                     start = now,
-                    configurer = "199"
+                    configurer = 199
                 )
             )
             campaignScenarioRepository.saveAll(

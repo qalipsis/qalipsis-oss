@@ -1,4 +1,4 @@
-package io.qalipsis.core.head.web.entity
+package io.qalipsis.core.head.web.model
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.ScenarioConfiguration

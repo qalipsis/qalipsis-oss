@@ -136,6 +136,18 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
+    fun `should find user id by username`() = testDispatcherProvider.run {
+        // given
+        val saved = userRepository.save(userPrototype.copy())
+
+        // when
+        val fetched = userRepository.findIdByUsername(saved.username)
+
+        // then
+        assertThat(fetched).isNotNull().isEqualTo(saved.id)
+    }
+
+    @Test
     fun `should update the identity reference`() = testDispatcherProvider.run {
         // given
         val saved = userRepository.save(userPrototype.copy())
