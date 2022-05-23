@@ -13,6 +13,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.ClusterFactoryService
+import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.web.annotations.Tenant
 import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
@@ -38,7 +39,7 @@ import javax.validation.constraints.NotBlank
 internal class CampaignController(
     private val campaignManager: CampaignManager,
     private val campaignService: CampaignService,
-    private val clusterFactoryService: ClusterFactoryService,
+    private val clusterFactoryService: FactoryService,
     private val campaignConfigurationConverter: CampaignConfigurationConverter
 ) {
 
