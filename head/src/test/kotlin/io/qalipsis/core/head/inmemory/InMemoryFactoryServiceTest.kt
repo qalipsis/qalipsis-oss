@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -72,5 +73,95 @@ internal class InMemoryFactoryServiceTest {
         confirmVerified(scenarioSummaryRepository)
     }
 
+    @Test
+    internal fun `should returns the searched scenarios from the repository with sorting null`() = runBlockingTest {
+        // given
+        val scenario1 = relaxedMockk<ScenarioSummary>()
+        val scenario2 = relaxedMockk<ScenarioSummary>()
+        val scenarios = listOf(scenario1, scenario2)
+        every { scenarioSummaryRepository.getAll() } returns scenarios
 
+        // when
+        val result = inMemoryFactoryService.getAllActiveScenarios("my-tenant", null)
+
+        // then
+        assertThat(result).all {
+            containsOnly(scenario1, scenario2)
+            hasSize(2)
+            isEqualTo(scenarios)
+        }
+        coVerify {
+            scenarioSummaryRepository.getAll()
+        }
+        confirmVerified(scenarioSummaryRepository)
+    }
+
+    @Test
+    internal fun `should returns the searched scenarios from the repository with sorting asc`() = runBlockingTest {
+        // given
+        val scenario1 = relaxedMockk<ScenarioSummary>()
+        val scenario2 = relaxedMockk<ScenarioSummary>()
+        val scenarios = listOf(scenario1, scenario2)
+        every { scenarioSummaryRepository.getAll() } returns scenarios
+
+        // when
+        val result = inMemoryFactoryService.getAllActiveScenarios("my-tenant", "name:asc")
+
+        // then
+        assertThat(result).all {
+            containsOnly(scenario1, scenario2)
+            hasSize(2)
+            isEqualTo(scenarios)
+        }
+        coVerify {
+            scenarioSummaryRepository.getAll()
+        }
+        confirmVerified(scenarioSummaryRepository)
+    }
+
+    @Test
+    internal fun `should returns the searched scenarios from the repository with sorting desc`() = runBlockingTest {
+        // given
+        val scenario1 = relaxedMockk<ScenarioSummary>()
+        val scenario2 = relaxedMockk<ScenarioSummary>()
+        val scenarios = listOf(scenario1, scenario2)
+        every { scenarioSummaryRepository.getAll() } returns scenarios
+
+        // when
+        val result = inMemoryFactoryService.getAllActiveScenarios("my-tenant", "name:desc")
+
+        // then
+        assertThat(result).all {
+            containsOnly(scenario1, scenario2)
+            hasSize(2)
+            isEqualTo(scenarios.reversed())
+        }
+        coVerify {
+            scenarioSummaryRepository.getAll()
+        }
+        confirmVerified(scenarioSummaryRepository)
+    }
+
+    @Test
+    internal fun `should returns the searched scenarios from the repository with sorting`() = runBlockingTest {
+        // given
+        val scenario1 = relaxedMockk<ScenarioSummary>()
+        val scenario2 = relaxedMockk<ScenarioSummary>()
+        val scenarios = listOf(scenario1, scenario2)
+        every { scenarioSummaryRepository.getAll() } returns scenarios
+
+        // when
+        val result = inMemoryFactoryService.getAllActiveScenarios("my-tenant", "name")
+
+        // then
+        assertThat(result).all {
+            containsOnly(scenario1, scenario2)
+            hasSize(2)
+            isEqualTo(scenarios)
+        }
+        coVerify {
+            scenarioSummaryRepository.getAll()
+        }
+        confirmVerified(scenarioSummaryRepository)
+    }
 }
