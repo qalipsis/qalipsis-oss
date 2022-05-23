@@ -12,7 +12,6 @@ import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
-import io.qalipsis.core.head.factory.ClusterFactoryService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.web.annotations.Tenant
