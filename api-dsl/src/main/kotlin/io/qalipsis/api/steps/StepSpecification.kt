@@ -61,9 +61,9 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     var reporting: StepReportingSpecification
 
     /**
-     * Selectors of the factories where the step can be executed.
+     * Tags of the factories where the step can be executed.
      */
-    val selectors: Map<String, String>
+    val tags: Map<String, String>
 
     /**
      * Collection of [StepSpecification]s to create the sibling [io.qalipsis.api.steps.Step]s.
@@ -76,26 +76,27 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     fun add(step: StepSpecification<*, *, *>)
 
     /**
-     * Specifies the selectors of the factories where the step can be executed.
+     * Specifies the tags to additionally describe the steps.
      */
-    fun runOn(vararg selectors: Pair<String, String>) = runOn(selectors.toMap())
+    fun tag(vararg tags: Pair<String, String>) = tag(tags.toMap())
 
     /**
-     * Specifies the selectors of the factories where the step can be executed.
+     * Specifies the tags to additionally describe the steps.
      */
-    fun runOn(selectors: Map<String, String>)
+    fun tag(tags: Map<String, String>)
 
     /**
      * Add several next steps to run concurrently.
      *
      * Example:
-     *
+     * ```
      * myStep.split{
      *   assert{...}.filter{}
      *   map{...}.validate{}.split {
      *      ...
      *   }
      * }.map{...}
+     * ```
      */
     fun split(block: SELF.() -> Unit): SELF {
         @Suppress("UNCHECKED_CAST")

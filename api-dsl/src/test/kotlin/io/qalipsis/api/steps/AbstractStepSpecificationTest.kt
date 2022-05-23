@@ -23,7 +23,7 @@ internal class AbstractStepSpecificationTest {
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
             prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
-            prop(TestAbstractStepSpecification::selectors).isEmpty()
+            prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
             prop(TestAbstractStepSpecification::timeout).isNull()
@@ -47,7 +47,7 @@ internal class AbstractStepSpecificationTest {
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
             prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
-            prop(TestAbstractStepSpecification::selectors).isEmpty()
+            prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
             prop(TestAbstractStepSpecification::timeout).isNull()
@@ -56,16 +56,16 @@ internal class AbstractStepSpecificationTest {
     }
 
     @Test
-    internal fun `should enable the selectors as map`() {
+    internal fun `should enable the tags as map`() {
         // when
         val specification = TestAbstractStepSpecification()
-        specification.runOn(mapOf("key1" to "value1", "key2" to "value2"))
+        specification.tag(mapOf("key1" to "value1", "key2" to "value2"))
 
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
             prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
-            prop(TestAbstractStepSpecification::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+            prop(TestAbstractStepSpecification::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
             prop(TestAbstractStepSpecification::timeout).isNull()
@@ -74,16 +74,16 @@ internal class AbstractStepSpecificationTest {
     }
 
     @Test
-    internal fun `should enable the selectors as vararg of pairs`() {
+    internal fun `should enable the tags as vararg of pairs`() {
         // when
         val specification = TestAbstractStepSpecification()
-        specification.runOn("key1" to "value1", "key2" to "value2")
+        specification.tag("key1" to "value1", "key2" to "value2")
 
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
             prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
-            prop(TestAbstractStepSpecification::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+            prop(TestAbstractStepSpecification::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
             prop(TestAbstractStepSpecification::timeout).isNull()
@@ -101,7 +101,7 @@ internal class AbstractStepSpecificationTest {
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
             prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
-            prop(TestAbstractStepSpecification::selectors).isEmpty()
+            prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(123L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ofSeconds(2))
             prop(TestAbstractStepSpecification::timeout).isNull()
@@ -119,7 +119,7 @@ internal class AbstractStepSpecificationTest {
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
             prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
-            prop(TestAbstractStepSpecification::selectors).isEmpty()
+            prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
             prop(TestAbstractStepSpecification::timeout).isEqualTo(Duration.ofMillis(2344))
@@ -128,31 +128,31 @@ internal class AbstractStepSpecificationTest {
     }
 
     @Test
-    internal fun `should inherit the selectors when not set in the next one`() {
+    internal fun `should inherit the tags when not set in the next one`() {
         // when
         val specification = TestAbstractStepSpecification()
         specification.scenario = relaxedMockk()
-        specification.runOn("key1" to "value1", "key2" to "value2")
+        specification.tag("key1" to "value1", "key2" to "value2")
         val next = TestAbstractStepSpecification()
         specification.add(next)
 
         // then
-        assertThat(next).prop(TestAbstractStepSpecification::selectors)
+        assertThat(next).prop(TestAbstractStepSpecification::tags)
             .isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
     }
 
     @Test
-    internal fun `should not inherit the selectors when already set in the next one`() {
+    internal fun `should not inherit the tags when already set in the next one`() {
         // when
         val specification = TestAbstractStepSpecification()
         specification.scenario = relaxedMockk()
-        specification.runOn("key1" to "value1", "key2" to "value2")
+        specification.tag("key1" to "value1", "key2" to "value2")
         val next = TestAbstractStepSpecification()
-        next.runOn("key3" to "value3", "key4" to "value4")
+        next.tag("key3" to "value3", "key4" to "value4")
         specification.add(next)
 
         // then
-        assertThat(next).prop(TestAbstractStepSpecification::selectors)
+        assertThat(next).prop(TestAbstractStepSpecification::tags)
             .isEqualTo(mapOf("key3" to "value3", "key4" to "value4"))
     }
 

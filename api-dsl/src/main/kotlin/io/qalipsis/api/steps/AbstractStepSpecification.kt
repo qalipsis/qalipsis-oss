@@ -44,9 +44,9 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
 
     override var reporting = StepReportingSpecification()
 
-    private var selectorsSet = false
+    private var tagsSet = false
 
-    override var selectors: Map<String, String> = emptyMap()
+    override var tags: Map<String, String> = emptyMap()
 
     override fun timeout(duration: Duration) {
         timeout = duration
@@ -63,8 +63,8 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
 
     override fun add(step: StepSpecification<*, *, *>) {
         // If no selector is specified on the next step, they are inherited.
-        if (step.selectors.isEmpty() || (step as? AbstractStepSpecification<*, *, *>)?.selectorsSet != true) {
-            step.runOn(selectors)
+        if (step.tags.isEmpty() || (step as? AbstractStepSpecification<*, *, *>)?.tagsSet != true) {
+            step.tag(tags)
         }
         nextSteps.add(step)
         scenario.registerNext(this, step)
@@ -74,8 +74,8 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
         reporting.specification()
     }
 
-    override fun runOn(selectors: Map<String, String>) {
-        selectorsSet = true
-        this.selectors = selectors
+    override fun tag(tags: Map<String, String>) {
+        tagsSet = true
+        this.tags = tags
     }
 }

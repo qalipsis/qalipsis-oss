@@ -62,8 +62,8 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
         wrappedStepSpec.add(step)
     }
 
-    override fun runOn(selectors: Map<String, String>) {
-        wrappedStepSpec.runOn(selectors)
+    override fun tag(tags: Map<String, String>) {
+        wrappedStepSpec.tag(tags)
     }
 
     override fun split(block: AbstractPluginStepWrapper<I, O>.() -> Unit): AbstractPluginStepWrapper<I, O> {
@@ -72,5 +72,5 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
         )
     }
 
-    override val selectors: Map<String, String> = wrappedStepSpec.selectors
+    override val tags: Map<String, String> = wrappedStepSpec.tags
 }

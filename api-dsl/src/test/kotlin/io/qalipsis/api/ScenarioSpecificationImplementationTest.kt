@@ -171,15 +171,15 @@ internal class ScenarioSpecificationImplementationTest {
     }
 
     @Test
-    internal fun `should create a new DAG when the selectors are not equal`() {
+    internal fun `should create a new DAG when the tags are not equal`() {
         // given
         val scenario = ScenarioSpecificationImplementation("my-scenario")
         val previous = relaxedMockk<StepSpecification<*, *, *>> {
             every { directedAcyclicGraphName } returns "my-dag"
-            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val next = relaxedMockk<StepSpecification<*, *, *>> {
-            every { selectors } returns mapOf("key3" to "value3", "key4" to "value4")
+            every { tags } returns mapOf("key3" to "value3", "key4" to "value4")
         }
 
         // when
@@ -190,15 +190,15 @@ internal class ScenarioSpecificationImplementationTest {
     }
 
     @Test
-    internal fun `should not create a new DAG when the selectors are equal and there is no singleton`() {
+    internal fun `should not create a new DAG when the tags are equal and there is no singleton`() {
         // given
         val scenario = ScenarioSpecificationImplementation("my-scenario")
         val previous = relaxedMockk<StepSpecification<*, *, *>> {
             every { directedAcyclicGraphName } returns "my-dag"
-            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val next = relaxedMockk<StepSpecification<*, *, *>> {
-            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
         }
 
         // when

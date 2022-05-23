@@ -48,9 +48,9 @@ data class DirectedAcyclicGraph(
     val isSingleton: Boolean,
 
     /**
-     * Selectors to correlate on which factory the DAG can be executed.
+     * Tags to describe the steps of the DAG.
      */
-    val selectors: Map<String, String>
+    val tags: Map<String, String>
 ) {
 
     /**

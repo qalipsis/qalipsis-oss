@@ -71,7 +71,7 @@ internal class ScenarioSpecificationImplementation(
     private fun isNewDag(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>): Boolean {
         return previousStep is SingletonStepSpecification
                 || nextStep is SingletonStepSpecification
-                || previousStep.selectors != nextStep.selectors
+                || previousStep.tags != nextStep.tags
     }
 
     override fun register(step: StepSpecification<*, *, *>) {
