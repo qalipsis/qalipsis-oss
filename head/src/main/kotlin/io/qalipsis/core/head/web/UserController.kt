@@ -15,6 +15,7 @@ import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.Status
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
+import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.UserCreationRequest
@@ -113,6 +114,7 @@ internal class UserController(
             SecurityRequirement(name = "JWT")
         ]
     )
+    @Secured(SecurityRule.IS_AUTHENTICATED)
     suspend fun getUser(
         @Parameter(
             name = "X-Tenant",
@@ -156,7 +158,7 @@ internal class UserController(
             SecurityRequirement(name = "JWT")
         ]
     )
-    @Secured(value = [Permissions.WRITE_USER])
+    @Secured(SecurityRule.IS_AUTHENTICATED)
     suspend fun updateUser(
         @Parameter(
             name = "X-Tenant",

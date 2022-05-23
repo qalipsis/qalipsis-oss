@@ -1,18 +1,24 @@
 identity:
   manager: auth0
   auth0:
-    client-id: "-"
-    client-secret: "-"
-    connection: "Username-Password-Authentication"
     domain: "my-domain.auth0.com"
-    api-url: https://${identity.auth0.domain}/api/v2/
     json-web-key-set: 'https://${identity.auth0.domain}/.well-known/jwks.json'
+    scopes:
+      roles: "https://qalipsis.io/roles"
+      tenants: "https://qalipsis.io/tenants"
+    management:
+      client-id: "-"
+      client-secret: "-"
+      connection: "Username-Password-Authentication"
+      api-url: https://${identity.auth0.domain}/api/v2/
+  bind-tenant: true
 
 micronaut:
   security:
     enabled: true
     token:
-      enabled: true
+      roles-name: "${identity.auth0.scopes.roles}"
+      name-key: sub
       jwt:
         enabled: true
         claims-validators:

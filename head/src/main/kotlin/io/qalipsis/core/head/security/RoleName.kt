@@ -15,7 +15,7 @@ internal enum class RoleName(
      * Role assigned to any user having a role in a tenant.
      * This role is only used for technical reasons.
      */
-    TENANT_USER("tenant-user"),
+    USER("user", Permissions.FOR_USER),
 
     /**
      * Role of user having the administrator rights.
@@ -47,7 +47,7 @@ internal enum class RoleName(
      */
     val assignableRoles: Collection<RoleName>
         get() = when (this) {
-            TENANT_USER -> emptySet()
+            USER -> emptySet()
             SUPER_ADMINISTRATOR -> setOf(
                 SUPER_ADMINISTRATOR,
                 BILLING_ADMINISTRATOR,

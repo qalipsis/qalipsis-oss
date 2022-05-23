@@ -12,6 +12,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import io.micronaut.data.exceptions.EmptyResultException
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -22,8 +23,10 @@ import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
@@ -377,4 +380,29 @@ internal class UserManagementImplTest {
             userRepository.findByIdentityIdIn(listOf("the identity 1", "the identity 2", "the identity 3"))
         }
     }
+
+    @Test
+    internal fun `should find the username from the identity`() = testDispatcherProvider.run {
+        // given
+        coEvery { userRepository.findUsernameByIdentityId("my-identity") } returns "the user"
+
+        // when
+        val result = userManagement.getUsernameFromIdentityId("my-identity")
+
+        // then
+        assertThat(result).isEqualTo("the user")
+        coVerifyOnce { userRepository.findUsernameByIdentityId("my-identity") }
+        confirmVerified(userRepository)
+    }
+
+
+    @Test
+    internal fun `should throw an exception when searching a username from identity and no result can be found`() =
+        testDispatcherProvider.run {
+            // given
+            coEvery { userRepository.findUsernameByIdentityId("my-identity") } throws EmptyResultException()
+
+            // when
+            assertThrows<IllegalArgumentException> { userManagement.getUsernameFromIdentityId("my-identity") }
+        }
 }

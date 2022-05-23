@@ -57,7 +57,7 @@ internal class Auth0IdentityManagement(
         val createdIdentity = operations.createUser(authUser)
         userRepository.updateIdentityId(user.id, user.version, createdIdentity.id)
 
-        val rolesToAssign = identity.roles + RoleName.TENANT_USER
+        val rolesToAssign = identity.roles + RoleName.USER
         val auth0RolesIds = operations.listRolesIds(tenant, rolesToAssign, true)
         operations.assignRoles(createdIdentity.id, auth0RolesIds)
 
@@ -96,7 +96,7 @@ internal class Auth0IdentityManagement(
     }
 
     override suspend fun listUsers(tenant: String): List<UserIdentity> {
-        return operations.listUsersWithRoleInTenant(RoleName.TENANT_USER, tenant).map { identity ->
+        return operations.listUsersWithRoleInTenant(RoleName.USER, tenant).map { identity ->
             UserIdentity(
                 id = identity.id,
                 username = identity.username,
@@ -117,6 +117,6 @@ internal class Auth0IdentityManagement(
         tenant: String
     ): Collection<RoleName> = operations.getUserRolesInTenant(userId, tenant)
         .map { it.asRoleName(tenant) }
-        .filterNot { it == RoleName.TENANT_USER }
+        .filterNot { it == RoleName.USER }
 
 }

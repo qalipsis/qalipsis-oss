@@ -59,6 +59,7 @@ dependencies {
     implementation("io.qalipsis:api-processors:${project.version}")
 
     implementation("io.micronaut.security:micronaut-security")
+    implementation("io.micronaut.security:micronaut-security-jwt")
     implementation("com.google.guava:guava:29.0-jre")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
     implementation("cool.graph:cuid-java:0.1.1")

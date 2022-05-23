@@ -14,6 +14,7 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
@@ -22,22 +23,25 @@ import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @WithMockk
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
-@PropertySource(
-    Property(name = "micronaut.server.log-handled-exceptions", value = "true"),
-    Property(name = "identity.bind-tenant", value = "true")
-)
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD, "jwt"])
+@PropertySource(Property(name = "micronaut.server.log-handled-exceptions", value = "true"))
 internal class ScenarioControllerIntegrationTest {
 
     @Inject
     @field:Client("/")
     lateinit var httpClient: HttpClient
+
+    @Inject
+    private lateinit var jwtGenerator: JwtGenerator
 
     @RelaxedMockK
     private lateinit var factoryService: FactoryService
@@ -46,7 +50,7 @@ internal class ScenarioControllerIntegrationTest {
     fun factoryService() = factoryService
 
     @Test
-    fun `should return list of scenarios`() {
+    fun `should list all the scenarios with sorting by name`() {
         // given
         val scenario = ScenarioSummary(
             name = "qalipsis-test",
@@ -61,7 +65,9 @@ internal class ScenarioControllerIntegrationTest {
         coEvery { factoryService.getAllActiveScenarios("my-tenant", "name") } returns listOf(scenario, scenario2)
 
         val getAllScenariosRequest =
-            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name").header("X-Tenant", "my-tenant")
+            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name")
+                .header("X-Tenant", "my-tenant")
+                .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_SCENARIO)))
 
         // when
         val response: HttpResponse<List<ScenarioSummary>> = httpClient.toBlocking().exchange(
@@ -85,7 +91,7 @@ internal class ScenarioControllerIntegrationTest {
     }
 
     @Test
-    fun `should return list of scenarios with sorting desc`() {
+    fun `should list all the scenarios with sorting by name descending`() {
         // given
         val scenario = ScenarioSummary(
             name = "qalipsis-test",
@@ -100,7 +106,9 @@ internal class ScenarioControllerIntegrationTest {
         coEvery { factoryService.getAllActiveScenarios("my-tenant", "name:desc") } returns listOf(scenario, scenario2)
 
         val getAllScenariosRequest =
-            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name:desc").header("X-Tenant", "my-tenant")
+            HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name:desc")
+                .header("X-Tenant", "my-tenant")
+                .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_SCENARIO)))
 
         // when
         val response: HttpResponse<List<ScenarioSummary>> = httpClient.toBlocking().exchange(
@@ -124,7 +132,7 @@ internal class ScenarioControllerIntegrationTest {
     }
 
     @Test
-    fun `should return list of scenarios without sorting`() {
+    fun `should list all the scenarios without explicit sorting`() {
         // given
         val scenario = ScenarioSummary(
             name = "qalipsis-test-2",
@@ -138,8 +146,9 @@ internal class ScenarioControllerIntegrationTest {
         )
         coEvery { factoryService.getAllActiveScenarios("my-tenant", null) } returns listOf(scenario, scenario2)
 
-        val getAllScenariosRequest =
-            HttpRequest.GET<List<ScenarioSummary>>("/scenarios").header("X-Tenant", "my-tenant")
+        val getAllScenariosRequest = HttpRequest.GET<List<ScenarioSummary>>("/scenarios")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_SCENARIO)))
 
         // when
         val response: HttpResponse<List<ScenarioSummary>> = httpClient.toBlocking().exchange(
@@ -160,5 +169,25 @@ internal class ScenarioControllerIntegrationTest {
                 index(1).isDataClassEqualTo(scenario2)
             }
         }
+    }
+
+    @Test
+    fun `should deny listing the scenarios when the permission is missing`() {
+        // given
+        val getAllScenariosRequest = HttpRequest.GET<List<ScenarioSummary>>("/scenarios")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin"))
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                getAllScenariosRequest,
+                Argument.listOf(ScenarioSummary::class.java)
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever { factoryService.getAllActiveScenarios(any(), any()) }
     }
 }
