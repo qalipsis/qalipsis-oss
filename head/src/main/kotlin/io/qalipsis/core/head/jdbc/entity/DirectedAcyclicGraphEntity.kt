@@ -36,7 +36,7 @@ internal data class DirectedAcyclicGraphEntity(
         mappedBy = "directedAcyclicGraphId",
         cascade = [Relation.Cascade.ALL]
     )
-    val selectors: List<DirectedAcyclicGraphSelectorEntity>
+    val tags: List<DirectedAcyclicGraphTagEntity>
 ) : VersionedEntity {
 
     constructor(
@@ -46,9 +46,9 @@ internal data class DirectedAcyclicGraphEntity(
         singleton: Boolean,
         underLoad: Boolean,
         numberOfSteps: Int,
-        selectors: List<DirectedAcyclicGraphSelectorEntity> = emptyList(),
+        tags: List<DirectedAcyclicGraphTagEntity> = emptyList(),
         version: Instant = Instant.now()
-    ) : this(-1, version, scenarioId, name, isRoot, singleton, underLoad, numberOfSteps, selectors)
+    ) : this(-1, version, scenarioId, name, isRoot, singleton, underLoad, numberOfSteps, tags)
 
     fun toModel(): DirectedAcyclicGraphSummary {
         return DirectedAcyclicGraphSummary(
@@ -57,7 +57,7 @@ internal data class DirectedAcyclicGraphEntity(
             isRoot = root,
             isUnderLoad = underLoad,
             numberOfSteps = numberOfSteps,
-            selectors = selectors.associate { it.key to it.value },
+            tags = tags.associate { it.key to it.value },
         )
     }
 }

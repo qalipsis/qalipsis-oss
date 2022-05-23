@@ -16,9 +16,9 @@ import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.head.jdbc.SelectorEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
+import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactorySelectorEntity
+import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
@@ -27,7 +27,7 @@ import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
-import io.qalipsis.core.head.jdbc.repository.FactorySelectorRepository
+import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
@@ -41,7 +41,7 @@ import java.time.Instant
 
 /**
  * FactoryService implementation for persistence implementation of factory-specific data
- * FactoryRepository, FactorySelectorRepository, FactoryStateRepository, ScenarioRepository, DirectedAcyclicGraphRepository, DirectedAcyclicGraphSelectorRepository
+ * FactoryRepository, FactoryTagRepository, FactoryStateRepository, ScenarioRepository, DirectedAcyclicGraphRepository, DirectedAcyclicGraphSelectorRepository
  * beans should be injected
  *
  * @author rklymenko
@@ -53,7 +53,7 @@ import java.time.Instant
 )
 internal class ClusterFactoryService(
     private val factoryRepository: FactoryRepository,
-    private val factorySelectorRepository: FactorySelectorRepository,
+    private val factoryTagRepository: FactoryTagRepository,
     private val factoryStateRepository: FactoryStateRepository,
     private val scenarioRepository: ScenarioRepository,
     private val directedAcyclicGraphRepository: DirectedAcyclicGraphRepository,
@@ -111,7 +111,7 @@ internal class ClusterFactoryService(
     ) = factoryRepository.findByNodeIdIn(handshakeRequest.tenant, listOf(actualNodeId))
         .firstOrNull()?.also { entity ->
             // When the entity already exists, its selectors are updated.
-            mergeSelectors(factorySelectorRepository, handshakeRequest.tags, entity.selectors, entity.id)
+            mergeSelectors(factoryTagRepository, handshakeRequest.tags, entity.tags, entity.id)
 
             if (entity.unicastChannel != handshakeResponse.unicastChannel) {
                 factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
@@ -137,8 +137,8 @@ internal class ClusterFactoryService(
             )
         )
         if (handshakeRequest.tags.isNotEmpty()) {
-            factorySelectorRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
-                FactorySelectorEntity(factoryEntity.id, key, value)
+            factoryTagRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
+                FactoryTagEntity(factoryEntity.id, key, value)
             })
         }
         return factoryEntity
@@ -221,8 +221,8 @@ internal class ClusterFactoryService(
         if (dagsToSave.isNotEmpty()) {
             val dagsEntities = directedAcyclicGraphRepository.saveAll(dagsToSave).toList().associateBy { it.name }
             val dagsSelectorsToSave = registrationDags.flatMap { dag ->
-                dag.selectors.map { (key, value) ->
-                    DirectedAcyclicGraphSelectorEntity(
+                dag.tags.map { (key, value) ->
+                    DirectedAcyclicGraphTagEntity(
                         dagId = dagsEntities[dag.name]!!.id,
                         selectorKey = key,
                         selectorValue = value
@@ -256,7 +256,7 @@ internal class ClusterFactoryService(
         }
         val toSave =
             mutableNewSelectors.filter { newSelector -> remaining.filter { it.key == newSelector.key }.isEmpty() }
-                .map { (key, value) -> FactorySelectorEntity(entityId, key, value) }
+                .map { (key, value) -> FactoryTagEntity(entityId, key, value) }
         if (toSave.isNotEmpty()) {
             repository.saveAll(toSave as Iterable<T>).collect()
         }

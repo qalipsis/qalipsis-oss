@@ -63,7 +63,7 @@ data class DirectedAcyclicGraphSummary(
     )
     val numberOfSteps: Int = 0,
     @field:Schema(
-        description = "Pairs of key/values that additionally describes the DAG"
+        description = "Pairs of key/values that additionally describe the DAG"
     )
-    val selectors: Map<String, String> = emptyMap()
+    val tags: Map<String, String> = emptyMap()
 )

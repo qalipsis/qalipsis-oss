@@ -6,13 +6,13 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
   <changeSet id="06" author="rklymenko">
-    <createSequence sequenceName="directed_acyclic_graph_selector_seq" schemaName="qalipsis"/>
-    <createTable tableName="directed_acyclic_graph_selector" schemaName="qalipsis">
-      <column name="id" type="BIGINT" valueSequenceNext="directed_acyclic_graph_selector_seq">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="directed_acyclic_graph_selector_pk"/>
+    <createSequence sequenceName="directed_acyclic_graph_tag_seq" schemaName="qalipsis"/>
+    <createTable tableName="directed_acyclic_graph_tag" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="directed_acyclic_graph_tag_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="directed_acyclic_graph_tag_pk"/>
       </column>
       <column name="directed_acyclic_graph_id" type="BIGINT">
-        <constraints nullable="false" foreignKeyName="directed_acyclic_graph_selector_directed_acyclic_graph_id_fk"
+        <constraints nullable="false" foreignKeyName="directed_acyclic_graph_tag_directed_acyclic_graph_id_fk"
           referencedTableName="directed_acyclic_graph"
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
@@ -25,7 +25,7 @@
     </createTable>
 
     <createIndex schemaName="qalipsis" indexName="unique_selector_key_by_directed_acyclic_graph_idx"
-      tableName="directed_acyclic_graph_selector" unique="true">
+      tableName="directed_acyclic_graph_tag" unique="true">
       <column name="directed_acyclic_graph_id"/>
       <column name="key"/>
     </createIndex>

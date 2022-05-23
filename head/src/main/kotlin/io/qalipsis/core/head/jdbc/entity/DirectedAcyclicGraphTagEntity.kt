@@ -13,8 +13,8 @@ import javax.validation.constraints.Size
  *
  * @author rklymenko
  */
-@MappedEntity("directed_acyclic_graph_selector", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class DirectedAcyclicGraphSelectorEntity(
+@MappedEntity("directed_acyclic_graph_tag", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
+internal data class DirectedAcyclicGraphTagEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,
@@ -25,7 +25,7 @@ internal data class DirectedAcyclicGraphSelectorEntity(
     @field:NotBlank
     @field:Size(min = 1, max = 50)
     override val value: String
-) : Entity, SelectorEntity<DirectedAcyclicGraphSelectorEntity> {
+) : Entity, SelectorEntity<DirectedAcyclicGraphTagEntity> {
 
     constructor(
         dagId: Long,
@@ -33,7 +33,7 @@ internal data class DirectedAcyclicGraphSelectorEntity(
         selectorValue: String
     ) : this(-1, dagId, selectorKey, selectorValue)
 
-    override fun withValue(value: String): DirectedAcyclicGraphSelectorEntity {
+    override fun withValue(value: String): DirectedAcyclicGraphTagEntity {
         return this.copy(value = value)
     }
 }
