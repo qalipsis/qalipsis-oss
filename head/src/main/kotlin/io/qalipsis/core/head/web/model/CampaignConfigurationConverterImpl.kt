@@ -13,7 +13,7 @@ import jakarta.inject.Singleton
 @Singleton
 internal class CampaignConfigurationConverterImpl : CampaignConfigurationConverter {
 
-    override fun convertCampaignRequestToConfiguration(
+    override fun convertRequestToConfiguration(
         tenant: String,
         campaign: CampaignRequest
     ): CampaignConfiguration {

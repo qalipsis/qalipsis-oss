@@ -12,7 +12,7 @@ internal interface CampaignConfigurationConverter {
     /**
      * Converts from [CampaignRequest] to [CampaignConfiguration].
      */
-    fun convertCampaignRequestToConfiguration(
+    fun convertRequestToConfiguration(
         tenant: String,
         campaign: CampaignRequest
     ): CampaignConfiguration

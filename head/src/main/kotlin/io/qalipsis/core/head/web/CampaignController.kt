@@ -6,10 +6,11 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
+import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
-import io.qalipsis.core.head.factory.ClusterFactoryService
+import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.web.annotations.Tenant
 import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.model.CampaignRequest
@@ -32,7 +33,7 @@ import javax.validation.constraints.NotBlank
 @Version("1.0")
 internal class CampaignController(
     private val campaignManager: CampaignManager,
-    private val clusterFactoryService: ClusterFactoryService,
+    private val clusterFactoryService: FactoryService,
     private val campaignConfigurationConverter: CampaignConfigurationConverter
 ) {
 
@@ -58,11 +59,13 @@ internal class CampaignController(
             description = "Contextual tenant",
             required = true,
             `in` = ParameterIn.HEADER
-        ) @NotBlank @Tenant tenant: String, @Body @Valid campaign: CampaignRequest
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Body @Valid campaign: CampaignRequest
     ): HttpResponse<Unit> {
         campaignManager.start(
-            "",
-            campaignConfigurationConverter.convertCampaignRequestToConfiguration(tenant, campaign)
+            authentication.name,
+            campaignConfigurationConverter.convertRequestToConfiguration(tenant, campaign)
         )
         return HttpResponse.accepted()
     }
