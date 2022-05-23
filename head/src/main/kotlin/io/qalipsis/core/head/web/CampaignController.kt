@@ -10,6 +10,7 @@ import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.factory.ClusterFactoryService
+import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.web.annotations.Tenant
 import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.model.CampaignRequest
@@ -32,7 +33,7 @@ import javax.validation.constraints.NotBlank
 @Version("1.0")
 internal class CampaignController(
     private val campaignManager: CampaignManager,
-    private val clusterFactoryService: ClusterFactoryService,
+    private val clusterFactoryService: FactoryService,
     private val campaignConfigurationConverter: CampaignConfigurationConverter
 ) {
 

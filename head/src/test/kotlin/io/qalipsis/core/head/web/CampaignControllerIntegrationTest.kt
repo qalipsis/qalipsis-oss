@@ -16,6 +16,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.factory.ClusterFactoryService
+import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.model.CampaignRequest
@@ -27,8 +28,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 @WithMockk
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD])
-internal class CampaignControllerIntegrationTest {
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])internal class CampaignControllerIntegrationTest {
 
     @Inject
     @field:Client("/campaigns")
@@ -38,12 +38,12 @@ internal class CampaignControllerIntegrationTest {
     private lateinit var campaignManager: CampaignManager
 
     @RelaxedMockK
-    private lateinit var clusterFactoryService: ClusterFactoryService
+    private lateinit var clusterFactoryService: FactoryService
 
     @RelaxedMockK
     private lateinit var campaignConfigurationConverter: CampaignConfigurationConverter
 
-    @MockBean(ClusterFactoryService::class)
+    @MockBean(FactoryService::class)
     fun clusterFactoryService() = clusterFactoryService
 
     @MockBean(CampaignManager::class)
