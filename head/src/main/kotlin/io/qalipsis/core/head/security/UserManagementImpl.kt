@@ -50,13 +50,23 @@ internal class UserManagementImpl(
         return User(tenant, updatedUser, identity)
     }
 
-    override suspend fun delete(tenant: String, username: String) {
+    override suspend fun disable(tenant: String, username: String) {
         val userEntity = userRepository.findByUsername(username)
         identityManagement.delete(tenant, userEntity)
     }
 
     override suspend fun getAssignableRoles(tenant: String, currentUser: User): Set<RoleName> {
         return currentUser.roles.flatMap { it.assignableRoles }.toSet()
+    }
+
+    override suspend fun findAll(tenant: String): List<User> {
+        val identities = identityManagement.listUsers(tenant)
+        val users = userRepository.findByIdentityIdIn(identities.map { it.id }).associateBy { it.identityId }
+        return identities.mapNotNull { identity ->
+            users[identity.id]?.let { userEntity ->
+                User(tenant, userEntity, identity)
+            }
+        }
     }
 
 }

@@ -4,23 +4,25 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.ArgumentBinder
 import io.micronaut.core.convert.ArgumentConversionContext
 import io.micronaut.core.util.StringUtils
+import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.bind.binders.AnnotatedRequestArgumentBinder
 import jakarta.inject.Singleton
 import java.util.Optional
 
 /**
- * Binder to inject the default tenant reference when no security is active.
+ * Binder to inject the tenant reference of the context of the request.
  */
 @Singleton
-@Requires(property = "identity.bind-tenant", defaultValue = StringUtils.FALSE, notEquals = StringUtils.TRUE)
-internal class NoOpTenantBinder : AnnotatedRequestArgumentBinder<Tenant, String> {
+@Requires(property = "identity.bind-tenant", defaultValue = StringUtils.FALSE, value = StringUtils.TRUE)
+internal class TenantBinder : AnnotatedRequestArgumentBinder<Tenant, String> {
 
     override fun bind(
         context: ArgumentConversionContext<String>,
         source: HttpRequest<*>
     ): ArgumentBinder.BindingResult<String> {
-        return ArgumentBinder.BindingResult<String> { Optional.of("_qalipsis_") }
+        val headers: HttpHeaders = source.headers
+        return ArgumentBinder.BindingResult<String> { Optional.ofNullable(headers.get("X-Tenant")) }
     }
 
     override fun getAnnotationType(): Class<Tenant> {

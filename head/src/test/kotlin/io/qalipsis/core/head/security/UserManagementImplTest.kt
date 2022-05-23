@@ -3,6 +3,8 @@ package io.qalipsis.core.head.security
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
+import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
@@ -289,7 +291,7 @@ internal class UserManagementImplTest {
         coEvery { userRepository.findByUsername("the username") } returns existingUser
 
         // when
-        userManagement.delete("my-tenant", "the username")
+        userManagement.disable("my-tenant", "the username")
 
         // then
         coVerifyOrder {
@@ -297,5 +299,82 @@ internal class UserManagementImplTest {
             identityManagement.delete("my-tenant", refEq(existingUser))
         }
         confirmVerified(userRepository, identityManagement)
+    }
+
+    @Test
+    internal fun `should list all the users of the tenant`() = testDispatcherProvider.run {
+        // given
+        val creationInstant1 = Instant.now()
+        val versionInstant1 = Instant.now()
+        val user1 = relaxedMockk<UserEntity> {
+            every { creation } returns creationInstant1
+            every { version } returns versionInstant1
+            every { identityId } returns "the identity 1"
+        }
+        val identity1 = relaxedMockk<UserIdentity> {
+            every { id } returns "the identity 1"
+            every { username } returns "the username 1"
+            every { email } returns "email 1"
+            every { displayName } returns "the display name 1"
+            every { emailVerified } returns true
+            every { blocked } returns false
+            every { roles } returns mutableSetOf(RoleName.TESTER, RoleName.REPORTER)
+        }
+        val creationInstant2 = Instant.now()
+        val versionInstant2 = Instant.now()
+        val user2 = relaxedMockk<UserEntity> {
+            every { creation } returns creationInstant2
+            every { version } returns versionInstant2
+            every { identityId } returns "the identity 2"
+        }
+        val identity2 = relaxedMockk<UserIdentity> {
+            every { id } returns "the identity 2"
+            every { username } returns "the username 2"
+            every { email } returns "email 2"
+            every { displayName } returns "the display name 2"
+            every { emailVerified } returns false
+            every { blocked } returns true
+            every { roles } returns mutableSetOf(RoleName.TENANT_ADMINISTRATOR)
+        }
+
+        coEvery { identityManagement.listUsers(any()) } returns listOf(
+            identity1,
+            identity2,
+            relaxedMockk { every { id } returns "the identity 3" })
+        coEvery { userRepository.findByIdentityIdIn(any()) } returns listOf(user2, user1)
+
+        // when
+        val users = userManagement.findAll("my-tenant")
+
+        // then
+        assertThat(users).all {
+            hasSize(2)
+            index(0).all {
+                prop(User::tenant).isEqualTo("my-tenant")
+                prop(User::creation).isEqualTo(creationInstant1)
+                prop(User::version).isEqualTo(versionInstant1)
+                prop(User::username).isEqualTo("the username 1")
+                prop(User::displayName).isEqualTo("the display name 1")
+                prop(User::email).isEqualTo("email 1")
+                prop(User::emailVerified).isTrue()
+                prop(User::blocked).isFalse()
+                prop(User::roles).containsOnly(RoleName.TESTER, RoleName.REPORTER)
+            }
+            index(1).all {
+                prop(User::tenant).isEqualTo("my-tenant")
+                prop(User::creation).isEqualTo(creationInstant2)
+                prop(User::version).isEqualTo(versionInstant2)
+                prop(User::username).isEqualTo("the username 2")
+                prop(User::displayName).isEqualTo("the display name 2")
+                prop(User::email).isEqualTo("email 2")
+                prop(User::emailVerified).isFalse()
+                prop(User::blocked).isTrue()
+                prop(User::roles).containsOnly(RoleName.TENANT_ADMINISTRATOR)
+            }
+        }
+        coVerifyOrder {
+            identityManagement.listUsers("my-tenant")
+            userRepository.findByIdentityIdIn(listOf("the identity 1", "the identity 2", "the identity 3"))
+        }
     }
 }

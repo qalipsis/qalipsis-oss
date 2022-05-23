@@ -18,6 +18,8 @@ internal interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
 
     suspend fun findByUsername(username: String): UserEntity
 
+    suspend fun findByIdentityIdIn(identitiesIds: Collection<String>): Collection<UserEntity>
+
     /**
      * Update the identity reference of a QALIPSIS User.
      *
