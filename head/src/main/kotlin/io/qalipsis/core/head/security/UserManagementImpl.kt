@@ -1,6 +1,7 @@
 package io.qalipsis.core.head.security
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.data.exceptions.EmptyResultException
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import jakarta.inject.Singleton
@@ -69,4 +70,11 @@ internal class UserManagementImpl(
         }
     }
 
+    override suspend fun getUsernameFromIdentityId(identityId: String): String {
+        return try {
+            userRepository.findUsernameByIdentityId(identityId)
+        } catch (e: EmptyResultException) {
+            throw IllegalArgumentException("User with identity $identityId cannot be found")
+        }
+    }
 }

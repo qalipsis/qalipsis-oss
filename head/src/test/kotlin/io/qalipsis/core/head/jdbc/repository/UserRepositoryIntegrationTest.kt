@@ -147,4 +147,22 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetched = userRepository.findById(saved.id)
         assertThat(fetched).isNotNull().prop(UserEntity::identityId).isEqualTo("my reference")
     }
+
+    @Test
+    internal fun `should find the username from the identity`() = testDispatcherProvider.run {
+        // given
+        userRepository.save(userPrototype.copy(identityId = "the-identity"))
+
+        // when
+        val foundUsername = userRepository.findUsernameByIdentityId("the-identity")
+
+        // then
+        assertThat(foundUsername).isEqualTo("test-user")
+    }
+
+    @Test
+    internal fun `should throw an exception when search the username of unknown identity`() =
+        testDispatcherProvider.run {
+            assertThrows<EmptyResultException> { userRepository.findUsernameByIdentityId("the-identity") }
+        }
 }

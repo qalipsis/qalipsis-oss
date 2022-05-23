@@ -81,7 +81,7 @@ internal class AddRoleAuth0Patch(
 ) : Auth0Patch {
 
     override suspend fun apply(user: User): Boolean {
-        val actualRolesToAssign = rolesToAssign + RoleName.TENANT_USER
+        val actualRolesToAssign = rolesToAssign + RoleName.USER
         val auth0RolesIds = operations.listRolesIds(tenant, actualRolesToAssign, true)
         operations.assignRoles(user.id, auth0RolesIds)
         // False is always returned because the change is directly done and does not affect the instance user.

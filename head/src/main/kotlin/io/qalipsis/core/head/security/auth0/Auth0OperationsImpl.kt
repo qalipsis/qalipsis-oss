@@ -3,12 +3,17 @@ package io.qalipsis.core.head.security.auth0
 import com.auth0.client.auth.AuthAPI
 import com.auth0.client.mgmt.ManagementAPI
 import com.auth0.exception.Auth0Exception
+import com.auth0.json.mgmt.ResourceServer
 import com.auth0.json.mgmt.Role
+import com.auth0.json.mgmt.Scope
 import com.auth0.json.mgmt.users.User
+import io.qalipsis.api.lang.tryAndLogOrNull
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.asSuspended
 import io.qalipsis.core.head.jdbc.entity.RoleEntity
 import io.qalipsis.core.head.jdbc.repository.RoleRepository
 import io.qalipsis.core.head.security.RoleName
+import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
@@ -34,26 +39,66 @@ internal class Auth0OperationsImpl(
     /**
      * API for getting and updating tokens
      */
-    private val authAPI = AuthAPI(configuration.domain, configuration.clientId, configuration.clientSecret)
+    private val authAPI =
+        AuthAPI(configuration.domain, configuration.management.clientId, configuration.management.clientSecret)
 
     /**
      * Token details for Auth0
      */
-    @Volatile
     private var auth0Token: Auth0Token? = null
 
     private val managementApiCreationMutex = Mutex()
+
+    /**
+     * Initialize the access to the management API and the environment at Auth0 by creating all the available
+     * permissions on the API when the API ID is defined in [Auth0Configuration.apiId].
+     */
+    @PostConstruct
+    fun init() {
+        tryAndLogOrNull(log) {
+            log.info { "Obtaining a new token for the management API at Auth0" }
+            val tokenHolder = (auth0Token?.refreshToken?.let { authAPI.renewAuth(it) } ?: authAPI.requestToken(
+                configuration.management.apiUrl
+            )).execute()
+            auth0Token =
+                Auth0Token(
+                    tokenHolder.accessToken,
+                    tokenHolder.refreshToken,
+                    TimeUnit.MILLISECONDS.toSeconds(tokenHolder.expiresIn)
+                )
+            managementAPI = ManagementAPI(configuration.domain, auth0Token!!.accessToken)
+            log.info { "The new token for the management API at Auth0 was created" }
+
+            if (configuration.apiId.isNotBlank()) {
+                log.info { "Starting to update the API ${configuration.apiId} at Auth0" }
+                managementAPI!!.resourceServers()
+                    .update(configuration.apiId, ResourceServer().apply {
+                        scopes = RoleName.values().asSequence().flatMap { it.permissions }.distinct()
+                            .map { Scope(it) }.toList()
+                    }).execute()
+                log.info { "The API ${configuration.apiId} at Auth0 was updated" }
+            }
+        }
+    }
 
     @Throws(Auth0Exception::class)
     private suspend fun getManagementAPI(): ManagementAPI {
         if (auth0Token?.isValid != true) {
             managementApiCreationMutex.withLock {
                 if (auth0Token?.isValid != true) {
-                    val tokenHolder =
-                        authAPI.requestToken(configuration.apiUrl).executeAsync().asSuspended().get()
+                    log.info { "Obtaining a new token for the management API at Auth0" }
+                    val tokenHolder = (auth0Token?.refreshToken?.let { authAPI.renewAuth(it) } ?: authAPI.requestToken(
+                        configuration.management.apiUrl
+                    )).executeAsync().asSuspended().get()
+                    log.info { "New token for the management API at Auth0 was obtained, now connecting to the management API" }
                     auth0Token =
-                        Auth0Token(tokenHolder.accessToken, TimeUnit.MILLISECONDS.toSeconds(tokenHolder.expiresIn))
+                        Auth0Token(
+                            tokenHolder.accessToken,
+                            tokenHolder.refreshToken,
+                            TimeUnit.MILLISECONDS.toSeconds(tokenHolder.expiresIn)
+                        )
                     managementAPI = ManagementAPI(configuration.domain, auth0Token!!.accessToken)
+                    log.info { "The new token for the management API at Auth0 was created" }
                 }
             }
         }
@@ -61,7 +106,7 @@ internal class Auth0OperationsImpl(
     }
 
     override suspend fun createUser(user: User): User {
-        user.setConnection(configuration.connection)
+        user.setConnection(configuration.management.connection)
         return getManagementAPI().users().create(user).executeAsync().asSuspended().get()
     }
 
@@ -75,7 +120,7 @@ internal class Auth0OperationsImpl(
             val userToUpdate = User()
             userToUpdate.email = user.email
             userToUpdate.setVerifyEmail(true)
-            userToUpdate.setConnection(configuration.connection)
+            userToUpdate.setConnection(configuration.management.connection)
             getManagementAPI().users().update(user.id, userToUpdate).executeAsync().asSuspended().get()
 
             user.email = null
@@ -89,7 +134,7 @@ internal class Auth0OperationsImpl(
             isBlocked = user.isBlocked
         }
 
-        userToUpdate.setConnection(configuration.connection)
+        userToUpdate.setConnection(configuration.management.connection)
         return getManagementAPI().users().update(user.id, userToUpdate).executeAsync().asSuspended().get()
     }
 
@@ -153,9 +198,6 @@ internal class Auth0OperationsImpl(
         } ?: emptyList()
     }
 
-    /**
-     * Creates new roles in Auth0 if they do not exist and return the mapping between values in [roles] and their IDs at Auth0.
-     */
     override suspend fun listRolesIds(
         tenant: String,
         roles: Collection<RoleName>,
@@ -186,5 +228,9 @@ internal class Auth0OperationsImpl(
         }
 
         return existingRolesByReference
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

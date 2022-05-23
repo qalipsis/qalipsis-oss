@@ -38,4 +38,9 @@ internal interface UserManagement {
      */
     suspend fun findAll(tenant: String): List<User>
 
+    /**
+     * Retrieves the username from the identity ID received.
+     */
+    suspend fun getUsernameFromIdentityId(identityId: String): String
+
 }

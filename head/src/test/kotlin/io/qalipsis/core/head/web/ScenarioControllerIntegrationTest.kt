@@ -6,6 +6,8 @@ import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import io.micronaut.context.annotation.Property
+import io.micronaut.context.annotation.PropertySource
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -27,6 +29,10 @@ import org.junit.jupiter.api.Test
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
+@PropertySource(
+    Property(name = "micronaut.server.log-handled-exceptions", value = "true"),
+    Property(name = "identity.bind-tenant", value = "true")
+)
 internal class ScenarioControllerIntegrationTest {
 
     @Inject
@@ -45,12 +51,12 @@ internal class ScenarioControllerIntegrationTest {
         val scenario = ScenarioSummary(
             name = "qalipsis-test",
             minionsCount = 1000,
-            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", selectors = mapOf("one" to "one")))
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", tags = mapOf("one" to "one")))
         )
         val scenario2 = ScenarioSummary(
             name = "qalipsis-2",
             minionsCount = 2000,
-            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", selectors = mapOf("two" to "two")))
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
         coEvery { factoryService.getAllActiveScenarios("my-tenant", "name") } returns listOf(scenario, scenario2)
 
@@ -84,12 +90,12 @@ internal class ScenarioControllerIntegrationTest {
         val scenario = ScenarioSummary(
             name = "qalipsis-test",
             minionsCount = 1000,
-            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", selectors = mapOf("one" to "one")))
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", tags = mapOf("one" to "one")))
         )
         val scenario2 = ScenarioSummary(
             name = "qalipsis-2",
             minionsCount = 2000,
-            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", selectors = mapOf("two" to "two")))
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
         coEvery { factoryService.getAllActiveScenarios("my-tenant", "name:desc") } returns listOf(scenario, scenario2)
 
@@ -123,12 +129,12 @@ internal class ScenarioControllerIntegrationTest {
         val scenario = ScenarioSummary(
             name = "qalipsis-test-2",
             minionsCount = 1000,
-            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", selectors = mapOf("one" to "one")))
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", tags = mapOf("one" to "one")))
         )
         val scenario2 = ScenarioSummary(
             name = "qalipsis-3",
             minionsCount = 2000,
-            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", selectors = mapOf("two" to "two")))
+            directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
         coEvery { factoryService.getAllActiveScenarios("my-tenant", null) } returns listOf(scenario, scenario2)
 

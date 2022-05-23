@@ -43,7 +43,7 @@ import java.util.UUID
 @WithMockk
 @MicronautTest(
     propertySources = ["classpath:application-auth0-test.yml"],
-    environments = [ExecutionEnvironments.POSTGRESQL]
+    environments = ["auth0", ExecutionEnvironments.POSTGRESQL]
 )
 internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
 

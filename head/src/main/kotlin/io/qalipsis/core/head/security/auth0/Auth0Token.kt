@@ -8,6 +8,7 @@ package io.qalipsis.core.head.security.auth0
  */
 internal class Auth0Token(
     val accessToken: String,
+    val refreshToken: String?,
     expiresIn: Long,
 ) {
 
