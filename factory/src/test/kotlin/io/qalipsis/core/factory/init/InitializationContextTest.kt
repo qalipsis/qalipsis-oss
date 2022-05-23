@@ -125,7 +125,7 @@ internal class InitializationContextTest {
                             prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
                             prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(12)
-                            prop(DirectedAcyclicGraphSummary::selectors).all {
+                            prop(DirectedAcyclicGraphSummary::tags).all {
                                 hasSize(1)
                                 key("key1").isEqualTo("value1")
                             }
@@ -136,7 +136,7 @@ internal class InitializationContextTest {
                             prop(DirectedAcyclicGraphSummary::isRoot).isFalse()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
                             prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(4)
-                            prop(DirectedAcyclicGraphSummary::selectors).all {
+                            prop(DirectedAcyclicGraphSummary::tags).all {
                                 hasSize(1)
                                 key("key2").isEqualTo("value2")
                             }
@@ -155,7 +155,7 @@ internal class InitializationContextTest {
                             prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isTrue()
                             prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(42)
-                            prop(DirectedAcyclicGraphSummary::selectors).all {
+                            prop(DirectedAcyclicGraphSummary::tags).all {
                                 hasSize(2)
                                 key("key3").isEqualTo("value3")
                                 key("key4").isEqualTo("value4")

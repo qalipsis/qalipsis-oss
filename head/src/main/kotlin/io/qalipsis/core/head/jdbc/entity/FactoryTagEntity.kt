@@ -13,8 +13,8 @@ import javax.validation.constraints.Size
  *
  * @author rklymenko
  */
-@MappedEntity("factory_selector", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class FactorySelectorEntity(
+@MappedEntity("factory_tag", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
+internal data class FactoryTagEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,
@@ -25,7 +25,7 @@ internal data class FactorySelectorEntity(
     @field:NotBlank
     @field:Size(min = 1, max = 50)
     override val value: String,
-) : Entity, SelectorEntity<FactorySelectorEntity> {
+) : Entity, SelectorEntity<FactoryTagEntity> {
 
     constructor(
         factoryId: Long,
@@ -33,7 +33,7 @@ internal data class FactorySelectorEntity(
         selectorValue: String
     ) : this(-1, factoryId, selectorKey, selectorValue)
 
-    override fun withValue(value: String): FactorySelectorEntity {
+    override fun withValue(value: String): FactoryTagEntity {
         return this.copy(value = value)
     }
 }

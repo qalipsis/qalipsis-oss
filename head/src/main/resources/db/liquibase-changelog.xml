@@ -6,11 +6,11 @@
       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
   <include file="changelog/creation/00-create-tenant.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/01-create-factory.xml" relativeToChangelogFile="true"/>
-  <include file="changelog/creation/02-create-factory-selector.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/02-create-factory-tag.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/03-create-factory-state.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/04-create-scenario.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/05-create-directed-acyclic-graph.xml" relativeToChangelogFile="true"/>
-  <include file="changelog/creation/06-create-directed-acyclic-graph-selector.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/06-create-directed-acyclic-graph-tag.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/07-create-campaign.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/08-create-campaign-scenario.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/09-create-campaign-factory.xml" relativeToChangelogFile="true"/>
