@@ -2,6 +2,7 @@ package io.qalipsis.core.head.inmemory
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.beans.BeanIntrospection
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
@@ -105,8 +106,28 @@ internal class InMemoryFactoryService(
     }
 
     @LogInputAndOutput
-    override suspend fun getActiveScenarios(tenant: String, ids: Collection<ScenarioName>): Collection<ScenarioSummary> {
+    override suspend fun getActiveScenarios(
+        tenant: String,
+        ids: Collection<ScenarioName>
+    ): Collection<ScenarioSummary> {
         return scenarioSummaryRepository.getAll(ids)
+    }
+
+    @LogInputAndOutput
+    override suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary> {
+        sort?.let {
+            val sortProperty = BeanIntrospection.getIntrospection(ScenarioSummary::class.java).beanProperties
+                .firstOrNull {
+                    it.name == sort.trim().split(":").get(0)
+                }
+            val sortOrder = sort.trim().split(":").last()
+            return if ("desc" == sortOrder) {
+                scenarioSummaryRepository.getAll().sortedBy { sortProperty?.get(it) as Comparable<Any> }.reversed()
+            } else {
+                scenarioSummaryRepository.getAll().sortedBy { sortProperty?.get(it) as Comparable<Any> }
+            }
+        }
+        return scenarioSummaryRepository.getAll()
     }
 
     /**

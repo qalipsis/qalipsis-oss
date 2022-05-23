@@ -3,6 +3,7 @@ package io.qalipsis.core.head.factory
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
@@ -40,4 +41,9 @@ internal interface FactoryService : HeartbeatListener {
      * Returns all the scenario currently available in the cluster with the given identifiers.
      */
     suspend fun getActiveScenarios(tenant: String, ids: Collection<ScenarioName>): Collection<ScenarioSummary>
+
+    /**
+     * Lists all the active scenarios in [tenant], sorted by [sort].
+     */
+    suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary>
 }

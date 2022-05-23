@@ -7,6 +7,7 @@ import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
@@ -320,4 +321,17 @@ internal class ClusterFactoryService(
     override suspend fun getActiveScenarios(tenant: String, ids: Collection<String>) =
         scenarioRepository.findActiveByName(tenant, ids).map(ScenarioEntity::toModel)
 
+    override suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary> {
+        sort?.let {
+            val sortProperty = sort.trim().split(":").get(0)
+            val sortOrder = sort.trim().split(":").last()
+            return if ("desc" == sortOrder) {
+                scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
+                    .reversed()
+            } else {
+                scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
+            }
+        }
+        return scenarioRepository.findAllActiveWithSorting(tenant, null).map(ScenarioEntity::toModel)
+    }
 }
