@@ -8,6 +8,8 @@ import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
+import io.micronaut.context.annotation.Property
+import io.micronaut.context.annotation.PropertySource
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -34,6 +36,10 @@ import java.time.Instant
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
+@PropertySource(
+    Property(name = "micronaut.server.log-handled-exceptions", value = "true"),
+    Property(name = "identity.bind-tenant", value = "true")
+)
 internal class UserControllerIntegrationTest {
 
     @Inject

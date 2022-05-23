@@ -33,7 +33,7 @@ internal class AddRoleAuth0PatchTest {
         coEvery {
             auth0Operations.listRolesIds(
                 tenant = "my-tenant",
-                roles = listOf(RoleName.TESTER, RoleName.REPORTER, RoleName.TENANT_USER),
+                roles = listOf(RoleName.TESTER, RoleName.REPORTER, RoleName.USER),
                 createMissingRoles = true
             )
         } returns listOf("1", "2")
@@ -45,7 +45,7 @@ internal class AddRoleAuth0PatchTest {
         coVerifyOrder {
             auth0Operations.listRolesIds(
                 "my-tenant",
-                listOf(RoleName.TESTER, RoleName.REPORTER, RoleName.TENANT_USER),
+                listOf(RoleName.TESTER, RoleName.REPORTER, RoleName.USER),
                 true
             )
             user.id

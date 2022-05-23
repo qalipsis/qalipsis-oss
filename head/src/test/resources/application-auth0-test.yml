@@ -3,9 +3,12 @@
 identity:
   manager: auth0
   auth0:
-    client-id: "e8CVIPLXvA8NLnXMiyoYyr9urh8NvIWJ"
-    client-secret: "-_CAbr9sUYD-W3v4a7LnWv8LBeUfYjPrrARJ2DyeTO1stoZPe1jiLJBLGqFNzNZ-"
     domain: qalipsis-dev.eu.auth0.com
-    api-url: https://${identity.auth0.domain}/api/v2/
-    json-web-key-set: 'https://${identity.auth0.domain}/.well-known/jwks.json'
+    api-id: 62875116a39915003e089449
+    scopes:
+      roles: "https://dev.qalipsis.io/roles"
+      tenants: "https://dev.qalipsis.io/tenants"
+    management:
+      client-id: "e8CVIPLXvA8NLnXMiyoYyr9urh8NvIWJ"
+      client-secret: "-_CAbr9sUYD-W3v4a7LnWv8LBeUfYjPrrARJ2DyeTO1stoZPe1jiLJBLGqFNzNZ-"
 

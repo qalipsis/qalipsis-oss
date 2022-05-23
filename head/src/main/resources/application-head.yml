@@ -9,6 +9,9 @@ micronaut:
       header: false
   security:
     enabled: false
+    basic-auth.enabled: false
+    token:
+      enabled: false
   router:
     static-resources:
       swagger:

@@ -1,0 +1,9 @@
+jwt.generators:
+  valid:
+    jwsAlgorithm: RS256
+    secret: qalipsisIsAwesome
+    path: /jwt/valid-private-key.pem
+  invalid:
+    jwsAlgorithm: RS256
+    secret: qalipsisIsAwesome
+    path: /jwt/invalid-private-key.pem

@@ -94,7 +94,7 @@ internal class Auth0IdentityManagementTest {
                 }
             })
             userRepository.updateIdentityId(617265L, refEq(now), "the-user-id")
-            operations.listRolesIds("my-tenant", setOf(RoleName.TENANT_USER), true)
+            operations.listRolesIds("my-tenant", setOf(RoleName.USER), true)
             operations.assignRoles("the-user-id", listOf("a"))
         }
         confirmVerified(operations, userRepository)
@@ -142,7 +142,7 @@ internal class Auth0IdentityManagementTest {
                 }
             })
             userRepository.updateIdentityId(617265L, refEq(now), "the-user-id")
-            operations.listRolesIds("my-tenant", setOf(RoleName.TESTER, RoleName.REPORTER, RoleName.TENANT_USER), true)
+            operations.listRolesIds("my-tenant", setOf(RoleName.TESTER, RoleName.REPORTER, RoleName.USER), true)
             operations.assignRoles("the-user-id", listOf("a", "b"))
         }
         confirmVerified(operations, userRepository)
