@@ -984,6 +984,221 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
+    fun `should return all active scenarios with sorting`() = testDispatcherProvider.run {
+        //given
+        val now = getTimeMock()
+
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
+        val scenarioEntities = listOf(
+            ScenarioEntity(
+                id = 1,
+                version = now,
+                factoryId = 1,
+                name = "test",
+                defaultMinionsCount = 1,
+                enabled = true,
+                dags = listOf(
+                    DirectedAcyclicGraphEntity(
+                        -1,
+                        dag.name,
+                        dag.isRoot,
+                        dag.isSingleton,
+                        dag.isUnderLoad,
+                        dag.numberOfSteps,
+                        emptyList()
+                    )
+                )
+            )
+        )
+        coEvery { scenarioRepository.findAllActiveWithSorting("my-tenant", "name") } returns scenarioEntities
+
+
+        //when
+        val scenarios = clusterFactoryService.getAllActiveScenarios("my-tenant", "name")
+
+        //then
+        coVerifyOnce {
+            scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
+        }
+
+        Assert.assertEquals(
+            scenarioEntities.map { scenario ->
+                ScenarioSummary(
+                    name = scenario.name,
+                    minionsCount = scenario.defaultMinionsCount,
+                    directedAcyclicGraphs = scenario.dags.map { dag ->
+                        DirectedAcyclicGraphSummary(
+                            name = dag.name,
+                            isSingleton = dag.singleton,
+                            isRoot = false,
+                            isUnderLoad = dag.underLoad,
+                            numberOfSteps = dag.numberOfSteps,
+                            tags = emptyMap()
+                        )
+                    })
+            }, scenarios
+        )
+
+        confirmVerified(scenarioRepository)
+    }
+
+    @Test
+    fun `should return all active scenarios with sorting desc`() = testDispatcherProvider.run {
+        //given
+        val now = getTimeMock()
+
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
+        val scenarioEntities = listOf(
+            ScenarioEntity(
+                id = 1,
+                version = now,
+                factoryId = 1,
+                name = "test",
+                defaultMinionsCount = 1,
+                enabled = true,
+                dags = listOf(
+                    DirectedAcyclicGraphEntity(
+                        -1,
+                        dag.name,
+                        dag.isRoot,
+                        dag.isSingleton,
+                        dag.isUnderLoad,
+                        dag.numberOfSteps,
+                        emptyList()
+                    )
+                )
+            ),
+            ScenarioEntity(
+                id = 2,
+                version = now,
+                factoryId = 2,
+                name = "test2",
+                defaultMinionsCount = 2,
+                enabled = true,
+                dags = listOf(
+                    DirectedAcyclicGraphEntity(
+                        -1,
+                        dag.name,
+                        dag.isRoot,
+                        dag.isSingleton,
+                        dag.isUnderLoad,
+                        dag.numberOfSteps,
+                        emptyList()
+                    )
+                )
+            )
+        )
+        coEvery { scenarioRepository.findAllActiveWithSorting("my-tenant", "name") } returns scenarioEntities
+
+
+        //when
+        val scenarios2 = clusterFactoryService.getAllActiveScenarios("my-tenant", "name:desc")
+
+        //then
+        coVerifyOnce {
+            scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
+        }
+
+        Assert.assertEquals(
+            scenarioEntities.map { scenario ->
+                ScenarioSummary(
+                    name = scenario.name,
+                    minionsCount = scenario.defaultMinionsCount,
+                    directedAcyclicGraphs = scenario.dags.map { dag ->
+                        DirectedAcyclicGraphSummary(
+                            name = dag.name,
+                            isSingleton = dag.singleton,
+                            isRoot = false,
+                            isUnderLoad = dag.underLoad,
+                            numberOfSteps = dag.numberOfSteps,
+                            tags = emptyMap()
+                        )
+                    })
+            }.reversed(), scenarios2
+        )
+
+        confirmVerified(scenarioRepository)
+    }
+
+    @Test
+    fun `should return all active scenarios with sorting asc`() = testDispatcherProvider.run {
+        //given
+        val now = getTimeMock()
+
+        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
+        val scenarioEntities = listOf(
+            ScenarioEntity(
+                id = 1,
+                version = now,
+                factoryId = 1,
+                name = "test",
+                defaultMinionsCount = 1,
+                enabled = true,
+                dags = listOf(
+                    DirectedAcyclicGraphEntity(
+                        -1,
+                        dag.name,
+                        dag.isRoot,
+                        dag.isSingleton,
+                        dag.isUnderLoad,
+                        dag.numberOfSteps,
+                        emptyList()
+                    )
+                )
+            ),
+            ScenarioEntity(
+                id = 2,
+                version = now,
+                factoryId = 2,
+                name = "test2",
+                defaultMinionsCount = 2,
+                enabled = true,
+                dags = listOf(
+                    DirectedAcyclicGraphEntity(
+                        -1,
+                        dag.name,
+                        dag.isRoot,
+                        dag.isSingleton,
+                        dag.isUnderLoad,
+                        dag.numberOfSteps,
+                        emptyList()
+                    )
+                )
+            )
+        )
+        coEvery { scenarioRepository.findAllActiveWithSorting("my-tenant", "name") } returns scenarioEntities
+
+
+        //when
+        val scenarios2 = clusterFactoryService.getAllActiveScenarios("my-tenant", "name:asc")
+
+        //then
+        coVerifyOnce {
+            scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
+        }
+
+        Assert.assertEquals(
+            scenarioEntities.map { scenario ->
+                ScenarioSummary(
+                    name = scenario.name,
+                    minionsCount = scenario.defaultMinionsCount,
+                    directedAcyclicGraphs = scenario.dags.map { dag ->
+                        DirectedAcyclicGraphSummary(
+                            name = dag.name,
+                            isSingleton = dag.singleton,
+                            isRoot = false,
+                            isUnderLoad = dag.underLoad,
+                            numberOfSteps = dag.numberOfSteps,
+                            tags = emptyMap()
+                        )
+                    })
+            }, scenarios2
+        )
+
+        confirmVerified(scenarioRepository)
+    }
+
+    @Test
     fun `should update heartbeat`() = testDispatcherProvider.run {
         //given
         val now = getTimeMock()

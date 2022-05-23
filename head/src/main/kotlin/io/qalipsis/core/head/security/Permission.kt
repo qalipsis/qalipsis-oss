@@ -9,17 +9,17 @@ internal object Permissions {
 
     const val CREATE_CAMPAIGN = "create:campaign"
     const val READ_CAMPAIGN = "read:campaign"
-
-
-    val FOR_USER = emptySet<Permission>()
+    const val READ_SCENARIO = "read:scenario"
 
     val FOR_TESTER = setOf(
         CREATE_CAMPAIGN,
         READ_CAMPAIGN,
+        READ_SCENARIO,
     )
 
     val FOR_REPORTER = setOf(
         READ_CAMPAIGN,
+        READ_SCENARIO,
     )
 
     val FOR_TENANT_ADMINISTRATOR = emptySet<Permission>()
@@ -29,6 +29,7 @@ internal object Permissions {
     val ALL_PERMISSIONS = setOf(
         CREATE_CAMPAIGN,
         READ_CAMPAIGN,
+        READ_SCENARIO,
     )
 
 }
