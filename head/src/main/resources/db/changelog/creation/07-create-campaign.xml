@@ -30,7 +30,7 @@
         <constraints nullable="true"/>
       </column>
       <column name="configurer" type="BIGINT">
-        <constraints nullable="false" foreignKeyName="campaign_configurer_id_fk" referencedTableName="user"
+        <constraints nullable="false" foreignKeyName="campaign_configurer_id_fk" referencedTableName="users"
           referencedColumnNames="id" deleteCascade="false"/>
       </column>
       <column name="tenant_id" type="BIGINT">

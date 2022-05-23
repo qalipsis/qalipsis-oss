@@ -43,7 +43,7 @@
     </insert>
 
     <createSequence sequenceName="user_seq" schemaName="qalipsis"/>
-    <createTable tableName="user" schemaName="qalipsis">
+    <createTable tableName="users" schemaName="qalipsis">
       <column name="id" type="BIGINT" valueSequenceNext="user_seq">
         <constraints nullable="false" primaryKey="true" primaryKeyName="user_pk"/>
       </column>
@@ -65,7 +65,7 @@
     </createTable>
 
     <!-- Default user -->
-    <insert tableName="user" schemaName="qalipsis">
+    <insert tableName="users" schemaName="qalipsis">
       <column name="id" valueSequenceNext="user_seq"/>
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
       <column name="creation" valueDate="CURRENT_TIMESTAMP"/>

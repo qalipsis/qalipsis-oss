@@ -3,6 +3,7 @@ package io.qalipsis.core.head.campaign
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 
 /**
  * Service in charge of maintaining the campaigns.
@@ -22,4 +23,8 @@ interface CampaignService {
      */
     suspend fun close(campaignName: CampaignName, result: ExecutionStatus)
 
+    /**
+     * Returns list of all campaigns
+     */
+    suspend fun getAllCampaigns(tenant: String, filter: String?, sort: String?): List<CampaignEntity>
 }

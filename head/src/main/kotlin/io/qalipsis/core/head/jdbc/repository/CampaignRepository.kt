@@ -36,4 +36,23 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
      */
     @Query("""UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE name = :campaignName AND "end" IS NULL""")
     suspend fun close(campaignName: String, result: ExecutionStatus): Int
+
+    @Query(
+        """SELECT *
+            FROM campaign
+            LEFT JOIN campaign_scenario s ON campaign.id = s.campaign_id 
+            LEFT JOIN users ON campaign.configurer = users.id 
+            WHERE campaign.name IN (:filter) OR s.name IN (:filter) OR users.username IN (:filter) 
+            AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findAll(tenant: String, filter: List<String>): List<CampaignEntity>
+
+    @Query(
+        """SELECT *
+            FROM campaign
+            WHERE EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findAll(tenant: String): List<CampaignEntity>
 }

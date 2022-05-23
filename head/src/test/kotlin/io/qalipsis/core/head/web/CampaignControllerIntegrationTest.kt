@@ -3,7 +3,11 @@ package io.qalipsis.core.head.web
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
@@ -15,7 +19,9 @@ import io.mockk.coEvery
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.ClusterFactoryService
+import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
 import io.qalipsis.core.head.web.model.CampaignRequest
@@ -31,11 +37,14 @@ import org.junit.jupiter.api.assertThrows
 internal class CampaignControllerIntegrationTest {
 
     @Inject
-    @field:Client("/campaigns")
+    @field:Client("/")
     lateinit var httpClient: HttpClient
 
     @RelaxedMockK
     private lateinit var campaignManager: CampaignManager
+
+    @RelaxedMockK
+    private lateinit var campaignService: CampaignService
 
     @RelaxedMockK
     private lateinit var clusterFactoryService: ClusterFactoryService
@@ -45,6 +54,9 @@ internal class CampaignControllerIntegrationTest {
 
     @MockBean(ClusterFactoryService::class)
     fun clusterFactoryService() = clusterFactoryService
+
+    @MockBean(CampaignService::class)
+    fun campaignService() = campaignService
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
@@ -59,7 +71,7 @@ internal class CampaignControllerIntegrationTest {
             name = "just-test",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
-        val executeRequest = HttpRequest.POST("/", campaignRequest).header("X-Tenant", "qalipsis")
+        val executeRequest = HttpRequest.POST("/campaigns", campaignRequest).header("X-Tenant", "qalipsis")
 
         // when
         val response = httpClient.toBlocking().exchange(
@@ -84,7 +96,7 @@ internal class CampaignControllerIntegrationTest {
             name = "ju",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(5))
         )
-        val executeRequest = HttpRequest.POST("/", campaignRequest).header("X-Tenant", "qalipsis")
+        val executeRequest = HttpRequest.POST("/campaigns", campaignRequest).header("X-Tenant", "qalipsis")
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -111,7 +123,7 @@ internal class CampaignControllerIntegrationTest {
             name = "just",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(5))
         )
-        val validateRequest = HttpRequest.POST("/validate", campaignRequest)
+        val validateRequest = HttpRequest.POST("/campaigns/validate", campaignRequest)
             .header("X-Tenant", "qalipsis")
             .header("Accept-Language", "en")
         coEvery { clusterFactoryService.getActiveScenarios("qalipsis", any()) } returns listOf(
@@ -133,7 +145,7 @@ internal class CampaignControllerIntegrationTest {
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(5))
         )
         coEvery { clusterFactoryService.getActiveScenarios("qalipsis", any()) } returns emptyList()
-        val validateRequest = HttpRequest.POST("/validate", campaignRequest)
+        val validateRequest = HttpRequest.POST("/campaigns/validate", campaignRequest)
             .header("X-Tenant", "qalipsis")
             .header("Accept-Language", "en")
 
@@ -149,6 +161,74 @@ internal class CampaignControllerIntegrationTest {
             transform("body") {
                 it.response.getBody(String::class.java).get()
             }.contains("Scenarios with names [Scenario1] are not exist")
+        }
+    }
+
+    @Test
+    fun `should return list of campaigns`() {
+        // given
+        val campaign = CampaignEntity(campaignName = "campaign-1", configurer = 1)
+        val listsRequest = HttpRequest.GET<List<CampaignEntity>>("/campaigns")
+            .header("X-Tenant", "my-tenant")
+
+        coEvery { campaignService.getAllCampaigns("my-tenant", null, null) } returns listOf(campaign)
+
+        // when
+        val response = httpClient.toBlocking().exchange(listsRequest, Argument.listOf(CampaignEntity::class.java))
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.all {
+                hasSize(1)
+                index(0).isDataClassEqualTo(campaign)
+            }
+        }
+    }
+
+    @Test
+    fun `should return list of campaigns with filter`() {
+        // given
+        val campaign = CampaignEntity(campaignName = "campaign-1", configurer = 1)
+
+        val listsRequest = HttpRequest.GET<List<CampaignEntity>>("/campaigns?filter=campaign-1")
+            .header("X-Tenant", "my-tenant")
+        coEvery { campaignService.getAllCampaigns("my-tenant", "campaign-1", null) } returns listOf(campaign)
+
+
+        // when
+        val response = httpClient.toBlocking().exchange(listsRequest, Argument.listOf(CampaignEntity::class.java))
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.all {
+                hasSize(1)
+                index(0).isDataClassEqualTo(campaign)
+            }
+        }
+    }
+
+    @Test
+    fun `should return list of campaigns with filter and sort`() {
+        // given
+        val campaign = CampaignEntity(campaignName = "campaign-1", configurer = 1)
+
+        val listsRequest = HttpRequest.GET<List<CampaignEntity>>("/campaigns?filter=campaign-1&sort=name")
+            .header("X-Tenant", "my-tenant")
+
+        coEvery { campaignService.getAllCampaigns("my-tenant", "campaign-1", "name") } returns listOf(campaign)
+
+        // when
+        val response = httpClient.toBlocking().exchange(listsRequest, Argument.listOf(CampaignEntity::class.java))
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.all {
+                hasSize(1)
+                index(0).isDataClassEqualTo(campaign)
+            }
         }
     }
 }

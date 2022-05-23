@@ -187,4 +187,32 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::result).isEqualTo(ExecutionStatus.FAILED)
         }
     }
+
+    @Test
+    fun `should find all campaigns in tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = savedTenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant.id))
+            val campaigns = listOf(saved, saved2)
+
+            // when + then
+            assertThat(campaignRepository.findAll("my-tenant-2")).isEqualTo(campaigns)
+        }
+
+    @Test
+    fun `should find all campaigns in tenant with filter`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = savedTenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant.id))
+            val campaigns = listOf(saved2)
+
+            // when + then
+            assertThat(campaignRepository.findAll("my-tenant-2", listOf("new"))).isEqualTo(campaigns)
+        }
 }

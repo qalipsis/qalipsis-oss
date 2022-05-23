@@ -7,6 +7,7 @@ import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import jakarta.inject.Singleton
 
 @Singleton
@@ -24,5 +25,8 @@ internal class InMemoryCampaignService : CampaignService {
         // Nothing to do.
     }
 
-
+    override suspend fun getAllCampaigns(tenant: String, filter: String?, sort: String?): List<CampaignEntity> {
+        // Nothing to do.
+        return emptyList()
+    }
 }

@@ -18,7 +18,7 @@ import javax.validation.constraints.Size
  *
  * @author Palina Bril
  */
-@MappedEntity("user", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
+@MappedEntity("users", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
 data class UserEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
