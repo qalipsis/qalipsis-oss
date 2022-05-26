@@ -2,6 +2,7 @@ package io.qalipsis.core.head.inmemory
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.micronaut.data.model.Page
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
@@ -25,8 +26,10 @@ internal class InMemoryCampaignService : CampaignService {
         // Nothing to do.
     }
 
-    override suspend fun getAllCampaigns(tenant: String, filter: String?, sort: String?): List<CampaignEntity> {
+    override suspend fun getAllCampaigns(
+        tenant: String, filter: String?, sort: String?, page: Int, size: Int
+    ): Page<CampaignEntity> {
         // Nothing to do.
-        return emptyList()
+        return Page.empty()
     }
 }

@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.campaign
 
+import io.micronaut.data.model.Page
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
@@ -24,7 +25,9 @@ interface CampaignService {
     suspend fun close(campaignName: CampaignName, result: ExecutionStatus)
 
     /**
-     * Returns list of all campaigns
+     * Returns list of all campaigns. Filter is a comma-separated list of values to apply
+     * as wildcard filters on the campaign, user and scenario names. For example,  “foo,bar” and *foo* or *bar* will
+     * be searched in both the campaign, user and the scenario names
      */
-    suspend fun getAllCampaigns(tenant: String, filter: String?, sort: String?): List<CampaignEntity>
+    suspend fun getAllCampaigns(tenant: String, filter: String?, sort: String?, page: Int, size: Int): Page<CampaignEntity>
 }

@@ -2,6 +2,7 @@ package io.qalipsis.core.head.web
 
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
+import io.micronaut.data.model.Page
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
@@ -13,9 +14,9 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.web.annotations.Tenant
 import io.qalipsis.core.head.web.model.CampaignConfigurationConverter
+import io.qalipsis.core.head.web.model.CampaignModel
 import io.qalipsis.core.head.web.model.CampaignRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -25,6 +26,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import javax.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
+
 
 /**
  * Controller for REST calls related to campaign operations.
@@ -82,7 +84,7 @@ internal class CampaignController(
         description = "Validate a campaign configuration with the contextual tenant",
         responses = [
             ApiResponse(responseCode = "200", description = "Campaign validated successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "400", description = "Invalid campaign configuration provide"),
             ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
         ],
         security = [
@@ -129,7 +131,7 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "It is  a comma-separated list of values to apply as wilcard filters on the the campaign, user and scenario campaigns",
+            description = "Comma-separated list of values to apply as wildcard filters on the campaign, user and scenarios names",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue filter: String,
@@ -137,8 +139,20 @@ internal class CampaignController(
             description = "Field of the campaign to use in order to sort the results",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue sort: String
-    ): HttpResponse<List<CampaignEntity>>? {
-        return HttpResponse.ok(campaignService.getAllCampaigns(tenant, filter, sort))
+        ) @Nullable @QueryValue sort: String,
+        @Parameter(
+            description = "Field of the campaign to use in order to sort the results",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue(defaultValue = 0.toString()) page: String,
+        @Parameter(
+            description = "Field of the campaign to use in order to sort the results",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue(defaultValue = "20") size: String
+    ): HttpResponse<Page<CampaignModel>> {
+        val campaigns =
+            campaignService.getAllCampaigns(tenant, filter, sort, page.toInt(), size.toInt()).map { CampaignModel(it) }
+        return HttpResponse.ok(campaigns)
     }
 }

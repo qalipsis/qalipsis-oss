@@ -2,7 +2,8 @@ package io.qalipsis.core.head.campaign
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.micronaut.core.beans.BeanIntrospection
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
@@ -12,8 +13,10 @@ import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
+import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import java.time.Instant
+
 
 @Singleton
 @Requirements(
@@ -44,34 +47,32 @@ internal class PersistentCampaignService(
         campaignRepository.close(campaignName, result)
     }
 
-    override suspend fun getAllCampaigns(tenant: String, filter: String?, sort: String?): List<CampaignEntity> {
-        val filters = filter?.let { filter.split(",").map { it.trim() } }
+    override suspend fun getAllCampaigns(
+        tenant: String, filter: String?, sort: String?, page: Int, size: Int
+    ): Page<CampaignEntity> {
+        val filters = filter?.let { filter.split(",").map { "%${it.trim()}%" } }?.toMutableList()
+        var pageable = Pageable.from(page, size)
         sort?.let {
-            val sortProperty = BeanIntrospection.getIntrospection(CampaignEntity::class.java).beanProperties
-                .firstOrNull {
-                    it.name == sort.trim().split(":").get(0)
-                }
-            val sortOrder = sort.trim().split(":").last()
-            return if ("desc" == sortOrder) {
-                if (filters?.isNotEmpty() == true) {
-                    campaignRepository.findAll(tenant, filters).sortedBy { sortProperty?.get(it) as Comparable<Any> }
-                        .reversed()
-                } else {
-                    campaignRepository.findAll(tenant).sortedBy { sortProperty?.get(it) as Comparable<Any> }
-                        .reversed()
-                }
-            } else {
-                if (filters?.isNotEmpty() == true) {
-                    campaignRepository.findAll(tenant, filters).sortedBy { sortProperty?.get(it) as Comparable<Any> }
-                } else {
-                    campaignRepository.findAll(tenant).sortedBy { sortProperty?.get(it) as Comparable<Any> }
-                }
-            }
+            val sorting = SortingUtil.sort(sort)
+            sorting?.let { pageable = Pageable.from(page, size, sorting) }
         }
+        val campaignSet = mutableSetOf<CampaignEntity>()
         return if (filters?.isNotEmpty() == true) {
-            campaignRepository.findAll(tenant, filters)
+            filters.forEach {
+                campaignSet += campaignRepository.findAll(tenant, it)
+            }
+            createPageFromList(campaignSet.toList(), pageable)
         } else {
-            campaignRepository.findAll(tenant)
+            campaignRepository.findAll(tenant, pageable)
         }
+    }
+
+    private fun createPageFromList(list: List<CampaignEntity>, pageable: Pageable): Page<CampaignEntity> {
+        val startOfPage: Int = pageable.number * pageable.size
+        if (startOfPage > list.size) {
+            return Page.of(emptyList(), pageable, 0)
+        }
+        val endOfPage = Math.min(startOfPage + pageable.size, list.size)
+        return Page.of(list.subList(startOfPage, endOfPage), pageable, list.size.toLong())
     }
 }

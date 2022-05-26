@@ -2,6 +2,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import io.micronaut.data.annotation.Query
 import io.micronaut.data.jdbc.annotation.JdbcRepository
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.report.ExecutionStatus
@@ -42,17 +44,23 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             FROM campaign
             LEFT JOIN campaign_scenario s ON campaign.id = s.campaign_id 
             LEFT JOIN users ON campaign.configurer = users.id 
-            WHERE campaign.name IN (:filter) OR s.name IN (:filter) OR users.username IN (:filter) 
+            WHERE campaign.name LIKE :filter OR s.name LIKE :filter OR users.username LIKE :filter
             AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findAll(tenant: String, filter: List<String>): List<CampaignEntity>
+    suspend fun findAll(tenant: String, filter: String): List<CampaignEntity>
 
     @Query(
+        value =
         """SELECT *
-            FROM campaign
+            FROM campaign as campaign_entity_
             WHERE EXISTS 
-            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+        countQuery = """SELECT count (*)
+            FROM campaign campaign_entity_
+            WHERE EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+        nativeQuery = true
     )
-    suspend fun findAll(tenant: String): List<CampaignEntity>
+    suspend fun findAll(tenant: String, pageable: Pageable): Page<CampaignEntity>
 }

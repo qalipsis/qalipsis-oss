@@ -5,6 +5,9 @@ import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -26,7 +29,6 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
@@ -117,118 +119,134 @@ internal class PersistentCampaignServiceTest {
 
 
     @Test
-    internal fun `should returns the searched campaigns from the repository with sorting null`() = testDispatcherProvider.run {
-        // given
-        val campaign1 = relaxedMockk<CampaignEntity>()
-        val campaign2 = relaxedMockk<CampaignEntity>()
-        val campaigns = listOf(campaign1, campaign2)
-        coEvery { campaignRepository.findAll("my-tenant") } returns campaigns
+    internal fun `should returns the searched campaigns from the repository with sorting null`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign1 = relaxedMockk<CampaignEntity>()
+            val campaign2 = relaxedMockk<CampaignEntity>()
+            val campaigns = listOf(campaign1, campaign2)
+            val pageable = Pageable.from(0, 20)
+            val page = Page.of(campaigns, pageable, campaigns.size.toLong())
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
-        // when
-        val result = persistentCampaignService.getAllCampaigns("my-tenant", null, null)
+            // when
+            val result = persistentCampaignService.getAllCampaigns("my-tenant", null, null, 0, 20).content
 
-        // then
-        assertThat(result).all {
-            containsOnly(campaign1, campaign2)
-            hasSize(2)
-            isEqualTo(campaigns)
+            // then
+            assertThat(result).all {
+                containsOnly(campaign1, campaign2)
+                hasSize(2)
+                isEqualTo(campaigns)
+            }
+            coVerify {
+                campaignRepository.findAll("my-tenant", pageable)
+            }
+            confirmVerified(campaignRepository)
         }
-        coVerify {
-            campaignRepository.findAll("my-tenant")
-        }
-        confirmVerified(campaignRepository)
-    }
 
     @Test
-    internal fun `should returns the searched campaigns from the repository with sorting asc`() = runBlockingTest {
-        // given
-        val campaign1 = relaxedMockk<CampaignEntity>()
-        val campaign2 = relaxedMockk<CampaignEntity>()
-        val campaigns = listOf(campaign1, campaign2)
-        coEvery { campaignRepository.findAll("my-tenant") } returns campaigns
+    internal fun `should returns the searched campaigns from the repository with sorting asc`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign1 = relaxedMockk<CampaignEntity>()
+            val campaign2 = relaxedMockk<CampaignEntity>()
+            val campaigns = listOf(campaign1, campaign2)
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val page = Page.of(campaigns, Pageable.from(0, 20), campaigns.size.toLong())
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
-        // when
-        val result = persistentCampaignService.getAllCampaigns("my-tenant", null, "name:asc")
+            // when
+            val result = persistentCampaignService.getAllCampaigns("my-tenant", null, "name:asc", 0, 20).content
 
-        // then
-        assertThat(result).all {
-            containsOnly(campaign1, campaign2)
-            hasSize(2)
-            isEqualTo(campaigns)
+            // then
+            assertThat(result).all {
+                containsOnly(campaign1, campaign2)
+                hasSize(2)
+                isEqualTo(campaigns)
+            }
+            coVerify {
+                campaignRepository.findAll("my-tenant", pageable)
+            }
+            confirmVerified(campaignRepository)
         }
-        coVerify {
-            campaignRepository.findAll("my-tenant")
-        }
-        confirmVerified(campaignRepository)
-    }
 
     @Test
-    internal fun `should returns the searched campaigns from the repository with sorting desc`() = runBlockingTest {
-        // given
-        val campaign1 = relaxedMockk<CampaignEntity>()
-        val campaign2 = relaxedMockk<CampaignEntity>()
-        val campaigns = listOf(campaign1, campaign2)
-        coEvery { campaignRepository.findAll("my-tenant") } returns campaigns
+    internal fun `should returns the searched campaigns from the repository with sorting desc`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign1 = relaxedMockk<CampaignEntity>()
+            val campaign2 = relaxedMockk<CampaignEntity>()
+            val campaigns = listOf(campaign1, campaign2)
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("name")))
+            val page = Page.of(campaigns.reversed(), Pageable.from(0, 20), campaigns.size.toLong())
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
-        // when
-        val result = persistentCampaignService.getAllCampaigns("my-tenant", null, "name:desc")
+            // when
+            val result = persistentCampaignService.getAllCampaigns("my-tenant", null, "name:desc", 0, 20).content
 
-        // then
-        assertThat(result).all {
-            containsOnly(campaign1, campaign2)
-            hasSize(2)
-            isEqualTo(campaigns.reversed())
+            // then
+            assertThat(result).all {
+                containsOnly(campaign1, campaign2)
+                hasSize(2)
+                isEqualTo(campaigns.reversed())
+            }
+            coVerify {
+                campaignRepository.findAll("my-tenant", pageable)
+            }
+            confirmVerified(campaignRepository)
         }
-        coVerify {
-            campaignRepository.findAll("my-tenant")
-        }
-        confirmVerified(campaignRepository)
-    }
 
     @Test
-    internal fun `should returns the searched campaigns from the repository with sorting`() = runBlockingTest {
-        // given
-        val campaign1 = relaxedMockk<CampaignEntity>()
-        val campaign2 = relaxedMockk<CampaignEntity>()
-        val campaigns = listOf(campaign1, campaign2)
-        coEvery { campaignRepository.findAll("my-tenant") } returns campaigns
+    internal fun `should returns the searched campaigns from the repository with sorting`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign1 = relaxedMockk<CampaignEntity>()
+            val campaign2 = relaxedMockk<CampaignEntity>()
+            val campaigns = listOf(campaign1, campaign2)
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val page = Page.of(campaigns, Pageable.from(0, 20), campaigns.size.toLong())
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
-        // when
-        val result = persistentCampaignService.getAllCampaigns("my-tenant", null, "name")
+            // when
+            val result = persistentCampaignService.getAllCampaigns("my-tenant", null, "name", 0, 20).content
 
-        // then
-        assertThat(result).all {
-            containsOnly(campaign1, campaign2)
-            hasSize(2)
-            isEqualTo(campaigns)
+            // then
+            assertThat(result).all {
+                containsOnly(campaign1, campaign2)
+                hasSize(2)
+                isEqualTo(campaigns)
+            }
+            coVerify {
+                campaignRepository.findAll("my-tenant", pageable)
+            }
+            confirmVerified(campaignRepository)
         }
-        coVerify {
-            campaignRepository.findAll("my-tenant")
-        }
-        confirmVerified(campaignRepository)
-    }
 
     @Test
-    internal fun `should returns the searched campaigns from the repository with sorting and filtering`() = runBlockingTest {
-        // given
-        val campaign1 = relaxedMockk<CampaignEntity>()
-        val campaign2 = relaxedMockk<CampaignEntity>()
-        val campaigns = listOf(campaign1, campaign2)
-        val filters =  listOf("test-1", "test-2")
-        coEvery { campaignRepository.findAll("my-tenant", filters) } returns campaigns
+    internal fun `should returns the searched campaigns from the repository with sorting and filtering`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign1 = relaxedMockk<CampaignEntity>()
+            val campaign2 = relaxedMockk<CampaignEntity>()
+            val campaigns = listOf(campaign1, campaign2)
+            val filter1 = "%test%"
+            val filter2 = "%hello%"
+            coEvery { campaignRepository.findAll("my-tenant", filter1) } returns campaigns
+            coEvery { campaignRepository.findAll("my-tenant", filter2) } returns emptyList()
 
-        // when
-        val result = persistentCampaignService.getAllCampaigns("my-tenant", "test-1, test-2", "name")
+            // when
+            val result = persistentCampaignService.getAllCampaigns("my-tenant", "test, hello", "name", 0, 20).content
 
-        // then
-        assertThat(result).all {
-            containsOnly(campaign1, campaign2)
-            hasSize(2)
-            isEqualTo(campaigns)
+            // then
+            assertThat(result).all {
+                containsOnly(campaign1, campaign2)
+                hasSize(2)
+                isEqualTo(campaigns)
+            }
+            coVerify {
+                campaignRepository.findAll("my-tenant", filter1)
+                campaignRepository.findAll("my-tenant", filter2)
+            }
+            confirmVerified(campaignRepository)
         }
-        coVerify {
-            campaignRepository.findAll("my-tenant", filters)
-        }
-        confirmVerified(campaignRepository)
-    }
 }

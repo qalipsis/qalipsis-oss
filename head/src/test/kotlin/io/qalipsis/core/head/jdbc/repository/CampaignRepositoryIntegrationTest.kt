@@ -9,6 +9,8 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.EmptyResultException
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
@@ -199,7 +201,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val campaigns = listOf(saved, saved2)
 
             // when + then
-            assertThat(campaignRepository.findAll("my-tenant-2")).isEqualTo(campaigns)
+            assertThat(campaignRepository.findAll("my-tenant-2", Pageable.from(0, 20)).content).isEqualTo(campaigns)
         }
 
     @Test
@@ -209,10 +211,10 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val savedTenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
             val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = savedTenant.id))
             val saved2 =
-                campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant.id))
+                campaignRepository.save(campaignPrototype.copy(name = "new-one", end = null, tenantId = savedTenant.id))
             val campaigns = listOf(saved2)
 
             // when + then
-            assertThat(campaignRepository.findAll("my-tenant-2", listOf("new"))).isEqualTo(campaigns)
+            assertThat(campaignRepository.findAll("my-tenant-2", "%new%")).isEqualTo(campaigns)
         }
 }
