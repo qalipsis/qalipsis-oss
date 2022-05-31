@@ -273,7 +273,7 @@ internal class FactoryInitializerImpl(
                 isRoot = (actualParent == null),
                 isSingleton = stepSpecification is SingletonStepSpecification,
                 isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad),
-                selectors = stepSpecification.selectors
+                tags = stepSpecification.tags
             )
         }
 

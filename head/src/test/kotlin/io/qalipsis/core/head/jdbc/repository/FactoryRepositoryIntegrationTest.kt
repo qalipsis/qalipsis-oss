@@ -12,7 +12,7 @@ import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactorySelectorEntity
+import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
@@ -35,7 +35,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var factoryStateRepository: FactoryStateRepository
 
     @Inject
-    private lateinit var factorySelectorRepository: FactorySelectorRepository
+    private lateinit var factoryTagRepository: FactoryTagRepository
 
     @Inject
     private lateinit var scenarioRepository: ScenarioRepository
@@ -93,17 +93,17 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // given
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         val factory = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
-        val selectors = mutableListOf<FactorySelectorEntity>()
-        factorySelectorRepository.saveAll(
+        val tags = mutableListOf<FactoryTagEntity>()
+        factoryTagRepository.saveAll(
             listOf(
-                FactorySelectorEntity(factory.id, "key-1", "value-1"),
-                FactorySelectorEntity(factory.id, "key-2", "value-2")
+                FactoryTagEntity(factory.id, "key-1", "value-1"),
+                FactoryTagEntity(factory.id, "key-2", "value-2")
             )
-        ).collect { selectors.add(it) }
+        ).collect { tags.add(it) }
 
         // when + then
         assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-node-id")).first()).isDataClassEqualTo(
-            factory.copy(selectors = selectors)
+            factory.copy(tags = tags)
         )
         assertThat(factoryRepository.findByNodeIdIn("my-tenant", listOf("the-other-node-id"))).isEmpty()
 
@@ -149,7 +149,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
 
     @Test
-    fun `should find the healthy unused factories that supports the enabled scenarios with factory selectors`() =
+    fun `should find the healthy unused factories that supports the enabled scenarios with factory tags`() =
         testDispatcherProvider.run {
             // given
             val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
@@ -162,13 +162,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         tenantId = savedTenant1.id
                     )
                 )
-            val selectors = mutableListOf<FactorySelectorEntity>()
-            factorySelectorRepository.saveAll(
+            val tags = mutableListOf<FactoryTagEntity>()
+            factoryTagRepository.saveAll(
                 listOf(
-                    FactorySelectorEntity(factory1.id, "key-1", "value-1"),
-                    FactorySelectorEntity(factory1.id, "key-2", "value-2")
+                    FactoryTagEntity(factory1.id, "key-1", "value-1"),
+                    FactoryTagEntity(factory1.id, "key-2", "value-2")
                 )
-            ).collect { selectors.add(it) }
+            ).collect { tags.add(it) }
             val factory2 =
                 factoryRepository.save(
                     factoryPrototype.copy(
@@ -211,13 +211,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // then
             assertThat(factoriesForScenarios).all {
                 hasSize(1)
-                any { it.transform { factory -> factory.id == factory1.id && factory.selectors.isNotEmpty() } }
+                any { it.transform { factory -> factory.id == factory1.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
             }
         }
 
     @Test
-    internal fun `should find the healthy unused factories that supports the enabled scenarios with factory selectors with tenant reference`() =
+    internal fun `should find the healthy unused factories that supports the enabled scenarios with factory tags with tenant reference`() =
         testDispatcherProvider.run {
             // given
             val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
@@ -230,13 +230,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         tenantId = savedTenant1.id
                     )
                 )
-            val selectors = mutableListOf<FactorySelectorEntity>()
-            factorySelectorRepository.saveAll(
+            val tags = mutableListOf<FactoryTagEntity>()
+            factoryTagRepository.saveAll(
                 listOf(
-                    FactorySelectorEntity(factory1.id, "key-1", "value-1"),
-                    FactorySelectorEntity(factory1.id, "key-2", "value-2")
+                    FactoryTagEntity(factory1.id, "key-1", "value-1"),
+                    FactoryTagEntity(factory1.id, "key-2", "value-2")
                 )
-            ).collect { selectors.add(it) }
+            ).collect { tags.add(it) }
             val factory2 =
                 factoryRepository.save(
                     factoryPrototype.copy(
@@ -284,13 +284,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // then
             assertThat(factoriesForScenarios1).all {
                 hasSize(1)
-                any { it.transform { factory -> factory.id == factory1.id && factory.selectors.isNotEmpty() } }
+                any { it.transform { factory -> factory.id == factory1.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
             }
 
             assertThat(factoriesForScenarios2).all {
                 hasSize(1)
-                any { it.transform { factory -> factory.id == factory2.id && factory.selectors.isNotEmpty() } }
+                any { it.transform { factory -> factory.id == factory2.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory2.id)
             }
         }

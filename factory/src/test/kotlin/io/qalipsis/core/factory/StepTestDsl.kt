@@ -37,11 +37,9 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
     errors: MutableList<StepError> = mutableListOf(),
     minionId: MinionId = "my-minion",
     scenarioName: ScenarioName = "",
-    directedAcyclicGraphName: DirectedAcyclicGraphName = "",
     parentStepName: StepName = "my-parent-step",
     stepName: StepName = "my-step", stepIterationIndex: Long = 0,
-    attemptsAfterFailure: Long = 0, isExhausted: Boolean = false,
-    completed: Boolean = false
+    isExhausted: Boolean = false
 ): StepContextImpl<IN, OUT> {
     val inputChannel = Channel<IN>(1)
     runBlocking {
@@ -50,18 +48,18 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
         }
     }
     return StepContextImpl(
-        inputChannel,
-        outputChannel,
-        errors,
-        "",
-        minionId,
-        scenarioName,
-        parentStepName,
-        stepName,
-        "",
-        "",
-        stepIterationIndex,
-        isExhausted,
+        input = inputChannel,
+        output = outputChannel,
+        internalErrors = errors,
+        campaignName = "",
+        minionId = minionId,
+        scenarioName = scenarioName,
+        previousStepName = parentStepName,
+        stepName = stepName,
+        stepType = "",
+        stepFamily = "",
+        stepIterationIndex = stepIterationIndex,
+        isExhausted = isExhausted,
         isTail = false
     )
 }
@@ -98,7 +96,7 @@ internal fun testDag(
         isRoot = root,
         isSingleton = isSingleton,
         isUnderLoad = isUnderLoad,
-        selectors = mutableMapOf()
+        tags = mutableMapOf()
     )
     runBlocking {
         dag.configure()

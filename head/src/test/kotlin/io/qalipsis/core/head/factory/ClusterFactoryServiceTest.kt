@@ -24,19 +24,19 @@ import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphSelectorEntity
+import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactorySelectorEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
+import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignFactoryRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
-import io.qalipsis.core.head.jdbc.repository.FactorySelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
+import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
@@ -70,7 +70,7 @@ internal class ClusterFactoryServiceTest {
     private lateinit var factoryRepository: FactoryRepository
 
     @RelaxedMockK
-    private lateinit var factorySelectorRepository: FactorySelectorRepository
+    private lateinit var factoryTagRepository: FactoryTagRepository
 
     @RelaxedMockK
     private lateinit var factoryStateRepository: FactoryStateRepository
@@ -97,7 +97,7 @@ internal class ClusterFactoryServiceTest {
     private lateinit var clusterFactoryService: ClusterFactoryService
 
     @Test
-    fun `should register new factory without selectors`() = testDispatcherProvider.run {
+    fun `should register new factory without tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
@@ -143,7 +143,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should register new factory with selectors`() = testDispatcherProvider.run {
+    fun `should register new factory with tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -183,14 +183,14 @@ internal class ClusterFactoryServiceTest {
                     tenantId = 123
                 )
             )
-            factorySelectorRepository.saveAll(listOf(FactorySelectorEntity(123, selectorKey, selectorValue)))
+            factoryTagRepository.saveAll(listOf(FactoryTagEntity(123, selectorKey, selectorValue)))
             factoryStateRepository.save(FactoryStateEntity(now, 123, now, 0, FactoryStateValue.REGISTERED))
         }
-        confirmVerified(factoryRepository, factorySelectorRepository)
+        confirmVerified(factoryRepository, factoryTagRepository)
     }
 
     @Test
-    fun `should update existing factory without selectors`() = testDispatcherProvider.run {
+    fun `should update existing factory without tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val handshakeRequest =
@@ -239,15 +239,15 @@ internal class ClusterFactoryServiceTest {
             factoryRepository.save(any())
         }
         coVerifyNever {
-            factorySelectorRepository.saveAll(any<Iterable<FactorySelectorEntity>>())
-            factorySelectorRepository.updateAll(any<Iterable<FactorySelectorEntity>>())
-            factorySelectorRepository.deleteAll(any())
+            factoryTagRepository.saveAll(any<Iterable<FactoryTagEntity>>())
+            factoryTagRepository.updateAll(any<Iterable<FactoryTagEntity>>())
+            factoryTagRepository.deleteAll(any())
         }
-        confirmVerified(factoryRepository, factorySelectorRepository)
+        confirmVerified(factoryRepository, factoryTagRepository)
     }
 
     @Test
-    fun `should save new selectors`() = testDispatcherProvider.run {
+    fun `should save new tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -264,35 +264,35 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf()
+            tags = listOf()
         )
-        val newSelector = FactorySelectorEntity(factoryEntity.id, selectorKey, selectorValue)
+        val newSelector = FactoryTagEntity(factoryEntity.id, selectorKey, selectorValue)
 
-        coEvery { factorySelectorRepository.saveAll(listOf(newSelector)) } returns flowOf(newSelector)
+        coEvery { factoryTagRepository.saveAll(listOf(newSelector)) } returns flowOf(newSelector)
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "mergeSelectors",
-            factorySelectorRepository,
+            "mergeTags",
+            factoryTagRepository,
             handshakeRequest.tags,
-            factoryEntity.selectors,
+            factoryEntity.tags,
             factoryEntity.id
         )
 
         //then
-        val expectedSelector = FactorySelectorEntity(factoryEntity.id, selectorKey, selectorValue)
+        val expectedSelector = FactoryTagEntity(factoryEntity.id, selectorKey, selectorValue)
         coVerifyOnce {
-            factorySelectorRepository.saveAll(listOf(expectedSelector))
+            factoryTagRepository.saveAll(listOf(expectedSelector))
         }
         coVerifyNever {
-            factorySelectorRepository.updateAll(any<Iterable<FactorySelectorEntity>>())
-            factorySelectorRepository.deleteAll(any())
+            factoryTagRepository.updateAll(any<Iterable<FactoryTagEntity>>())
+            factoryTagRepository.deleteAll(any())
         }
-        confirmVerified(factorySelectorRepository)
+        confirmVerified(factoryTagRepository)
     }
 
     @Test
-    fun `should update existing selectors`() = testDispatcherProvider.run {
+    fun `should update existing tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -305,40 +305,40 @@ internal class ClusterFactoryServiceTest {
             scenarios = emptyList()
         )
         val now = getTimeMock()
-        val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            tags = listOf(selector)
         )
 
-        coEvery { factorySelectorRepository.updateAll(listOf(selector)) } returns flowOf(selector)
+        coEvery { factoryTagRepository.updateAll(listOf(selector)) } returns flowOf(selector)
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "mergeSelectors",
-            factorySelectorRepository,
+            "mergeTags",
+            factoryTagRepository,
             handshakeRequest.tags,
-            factoryEntity.selectors,
+            factoryEntity.tags,
             factoryEntity.id
         )
 
         //then
-        val expectedSelector = FactorySelectorEntity(factoryEntity.id, selectorKey, selectorNewValue)
+        val expectedSelector = FactoryTagEntity(factoryEntity.id, selectorKey, selectorNewValue)
         coVerifyOnce {
-            factorySelectorRepository.updateAll(listOf(expectedSelector))
+            factoryTagRepository.updateAll(listOf(expectedSelector))
         }
         coVerifyNever {
-            factorySelectorRepository.saveAll(any<Iterable<FactorySelectorEntity>>())
-            factorySelectorRepository.deleteAll(any())
+            factoryTagRepository.saveAll(any<Iterable<FactoryTagEntity>>())
+            factoryTagRepository.deleteAll(any())
         }
-        confirmVerified(factorySelectorRepository)
+        confirmVerified(factoryTagRepository)
     }
 
     @Test
-    fun `should delete existing selectors`() = testDispatcherProvider.run {
+    fun `should delete existing tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -346,39 +346,39 @@ internal class ClusterFactoryServiceTest {
         val handshakeRequest =
             HandshakeRequest(nodeId = "testNodeId", tags = emptyMap(), replyTo = "", scenarios = emptyList())
         val now = getTimeMock()
-        val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector)
+            tags = listOf(selector)
         )
 
-        coEvery { factorySelectorRepository.deleteAll(listOf(selector)) } returns 1
+        coEvery { factoryTagRepository.deleteAll(listOf(selector)) } returns 1
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "mergeSelectors",
-            factorySelectorRepository,
+            "mergeTags",
+            factoryTagRepository,
             handshakeRequest.tags,
-            factoryEntity.selectors,
+            factoryEntity.tags,
             factoryEntity.id
         )
 
         //then
         coVerifyOnce {
-            factorySelectorRepository.deleteAll(listOf(selector))
+            factoryTagRepository.deleteAll(listOf(selector))
         }
         coVerifyNever {
-            factorySelectorRepository.updateAll(any<Iterable<FactorySelectorEntity>>())
-            factorySelectorRepository.saveAll(any<Iterable<FactorySelectorEntity>>())
+            factoryTagRepository.updateAll(any<Iterable<FactoryTagEntity>>())
+            factoryTagRepository.saveAll(any<Iterable<FactoryTagEntity>>())
         }
-        confirmVerified(factorySelectorRepository)
+        confirmVerified(factoryTagRepository)
     }
 
     @Test
-    fun `should skip update of existing selectors because they were not changed`() =
+    fun `should skip update of existing tags because they were not changed`() =
         testDispatcherProvider.run {
             //given
             val actualNodeId = "boo"
@@ -391,72 +391,72 @@ internal class ClusterFactoryServiceTest {
                 scenarios = emptyList()
             )
             val now = getTimeMock()
-            val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+            val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
             val factoryEntity = FactoryEntity(
                 nodeId = actualNodeId,
                 registrationTimestamp = now,
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = "unicast",
-                selectors = listOf(selector)
+                tags = listOf(selector)
             )
 
             // when
             clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-                "mergeSelectors",
-                factorySelectorRepository,
+                "mergeTags",
+                factoryTagRepository,
                 handshakeRequest.tags,
-                factoryEntity.selectors,
+                factoryEntity.tags,
                 factoryEntity.id
             )
 
             //then
             coVerifyNever {
-                factorySelectorRepository.updateAll(any<Iterable<FactorySelectorEntity>>())
+                factoryTagRepository.updateAll(any<Iterable<FactoryTagEntity>>())
             }
-            confirmVerified(factorySelectorRepository)
+            confirmVerified(factoryTagRepository)
         }
 
     @Test
-    fun `should create new selectors and update existing selectors and delete old selectors and dont touch unchanged selectors`() =
+    fun `should create new tags and update existing tags and delete old tags and dont touch unchanged tags`() =
         testDispatcherProvider.run {
             //given
             val actualNodeId = "boo"
-            val existingSelectorsMap =
+            val existingTagsMap =
                 mapOf("test0key" to "test0value", "test2key" to "test002value", "test4key" to "test4value")
-            val newSelectorsMap =
+            val newTagsMap =
                 mapOf("test1key" to "test1value", "test2key" to "test2value", "test4key" to "test4value")
             val handshakeRequest = HandshakeRequest(
                 nodeId = "testNodeId",
-                tags = newSelectorsMap,
+                tags = newTagsMap,
                 replyTo = "",
                 scenarios = emptyList()
             )
             val now = getTimeMock()
-            val existingSelectors = existingSelectorsMap.map { FactorySelectorEntity(-1, it.key, it.value) }
+            val existingTags = existingTagsMap.map { FactoryTagEntity(-1, it.key, it.value) }
             val factoryEntity = FactoryEntity(
                 nodeId = actualNodeId,
                 registrationTimestamp = now,
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = "unicast",
-                selectors = existingSelectors
+                tags = existingTags
             )
 
-            coEvery { factorySelectorRepository.deleteAll(listOf(existingSelectors[0])) } returns 1
+            coEvery { factoryTagRepository.deleteAll(listOf(existingTags[0])) } returns 1
             coEvery {
-                factorySelectorRepository.updateAll(
+                factoryTagRepository.updateAll(
                     listOf(
-                        FactorySelectorEntity(
+                        FactoryTagEntity(
                             factoryEntity.id,
                             "test2key",
-                            newSelectorsMap["test2key"]!!
+                            newTagsMap["test2key"]!!
                         )
                     )
                 )
             } returns flowOf()
             coEvery {
-                factorySelectorRepository.saveAll(
+                factoryTagRepository.saveAll(
                     listOf(
-                        FactorySelectorEntity(
+                        FactoryTagEntity(
                             factoryEntity.id,
                             "test1key",
                             "test1value"
@@ -467,28 +467,28 @@ internal class ClusterFactoryServiceTest {
 
             // when
             clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-                "mergeSelectors",
-                factorySelectorRepository,
+                "mergeTags",
+                factoryTagRepository,
                 handshakeRequest.tags,
-                factoryEntity.selectors,
+                factoryEntity.tags,
                 factoryEntity.id
             )
 
             //then
             coVerifyOrder {
-                factorySelectorRepository.deleteAll(listOf(existingSelectors[0]))
-                factorySelectorRepository.updateAll(
+                factoryTagRepository.deleteAll(listOf(existingTags[0]))
+                factoryTagRepository.updateAll(
                     listOf(
-                        FactorySelectorEntity(
+                        FactoryTagEntity(
                             factoryEntity.id,
                             "test2key",
-                            newSelectorsMap["test2key"]!!
+                            newTagsMap["test2key"]!!
                         )
                     )
                 )
-                factorySelectorRepository.saveAll(
+                factoryTagRepository.saveAll(
                     listOf(
-                        FactorySelectorEntity(
+                        FactoryTagEntity(
                             factoryEntity.id,
                             "test1key",
                             "test1value"
@@ -496,7 +496,7 @@ internal class ClusterFactoryServiceTest {
                     )
                 )
             }
-            confirmVerified(factorySelectorRepository)
+            confirmVerified(factoryTagRepository)
         }
 
     @Test
@@ -519,13 +519,13 @@ internal class ClusterFactoryServiceTest {
             scenarios = listOf(newRegistrationScenario)
         )
         val now = getTimeMock()
-        val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector),
+            tags = listOf(selector),
             tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -582,13 +582,13 @@ internal class ClusterFactoryServiceTest {
             scenarios = listOf(newRegistrationScenario)
         )
         val now = getTimeMock()
-        val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector),
+            tags = listOf(selector),
             tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -634,7 +634,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should update scenario and dags and dag selectors`() = testDispatcherProvider.run {
+    fun `should update scenario and dags and dag tags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
         val selectorKey = "test-selector-key"
@@ -642,7 +642,7 @@ internal class ClusterFactoryServiceTest {
 
         val graphSummary = DirectedAcyclicGraphSummary(
             name = "new-test-dag-id",
-            selectors = mapOf("test_dag_selector1" to "test_dag_selector_value1")
+            tags = mapOf("test_dag_selector1" to "test_dag_selector_value1")
         )
         val newRegistrationScenario = RegistrationScenario(
             name = "test",
@@ -656,13 +656,13 @@ internal class ClusterFactoryServiceTest {
             scenarios = listOf(newRegistrationScenario)
         )
         val now = getTimeMock()
-        val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast",
-            selectors = listOf(selector),
+            tags = listOf(selector),
             tenantId = 1
         )
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -675,7 +675,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = graphSummary.selectors.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            tags = graphSummary.tags.map { DirectedAcyclicGraphTagEntity(1, it.key, it.value) })
 
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
@@ -714,11 +714,11 @@ internal class ClusterFactoryServiceTest {
                 })
             directedAcyclicGraphSelectorRepository.saveAll(
                 listOf(
-                    DirectedAcyclicGraphSelectorEntity(
+                    DirectedAcyclicGraphTagEntity(
                         id = -1,
                         directedAcyclicGraphId = -1,
                         key = "test_dag_selector1",
-                        value = graphSummary.selectors["test_dag_selector1"]!!
+                        value = graphSummary.tags["test_dag_selector1"]!!
                     )
                 )
             )
@@ -731,13 +731,13 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should save dags and dag selectors`() = testDispatcherProvider.run {
+    fun `should save dags and dag tags`() = testDispatcherProvider.run {
         //given
         val now = getTimeMock()
 
         val graphSummary = DirectedAcyclicGraphSummary(
             name = "new-test-dag-id",
-            selectors = mapOf("test_dag_selector1" to "test_dag_selector_value1")
+            tags = mapOf("test_dag_selector1" to "test_dag_selector_value1")
         )
         val directedAcyclicGraphs = listOf(graphSummary)
         val savedDag = DirectedAcyclicGraphEntity(
@@ -748,7 +748,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = graphSummary.selectors.map { DirectedAcyclicGraphSelectorEntity(1, it.key, it.value) })
+            tags = graphSummary.tags.map { DirectedAcyclicGraphTagEntity(1, it.key, it.value) })
         val expectedDagEntity = DirectedAcyclicGraphEntity(
             scenarioId = 1,
             name = "new-test-dag-id",
@@ -757,8 +757,8 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = listOf(
-                DirectedAcyclicGraphSelectorEntity(
+            tags = listOf(
+                DirectedAcyclicGraphTagEntity(
                     id = -1,
                     directedAcyclicGraphId = 1,
                     key = "test_dag_selector1",
@@ -773,7 +773,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveDagsAndSelectors",
+            "saveDagsAndTags",
             listOf(savedDag),
             directedAcyclicGraphs
         )
@@ -782,7 +782,7 @@ internal class ClusterFactoryServiceTest {
         coVerifyOrder {
 
             directedAcyclicGraphRepository.saveAll(listOf(expectedDagEntity))
-            directedAcyclicGraphSelectorRepository.saveAll(expectedDagEntity.selectors.map {
+            directedAcyclicGraphSelectorRepository.saveAll(expectedDagEntity.tags.map {
                 it.copy(
                     directedAcyclicGraphId = savedDag.id
                 )
@@ -795,7 +795,7 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
-    fun `should save dags without dag selectors`() = testDispatcherProvider.run {
+    fun `should save dags without dag tags`() = testDispatcherProvider.run {
         //given
         val now = getTimeMock()
 
@@ -818,7 +818,7 @@ internal class ClusterFactoryServiceTest {
             underLoad = true,
             numberOfSteps = 1,
             version = now,
-            selectors = emptyList()
+            tags = emptyList()
         )
 
         coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf(
@@ -827,7 +827,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveDagsAndSelectors",
+            "saveDagsAndTags",
             listOf(savedDag),
             directedAcyclicGraphs
         )
@@ -837,7 +837,7 @@ internal class ClusterFactoryServiceTest {
             directedAcyclicGraphRepository.saveAll(listOf(expectedDagEntity))
         }
         coVerifyNever {
-            directedAcyclicGraphSelectorRepository.saveAll(any<Iterable<DirectedAcyclicGraphSelectorEntity>>())
+            directedAcyclicGraphSelectorRepository.saveAll(any<Iterable<DirectedAcyclicGraphTagEntity>>())
         }
         confirmVerified(
             directedAcyclicGraphRepository,
@@ -870,14 +870,14 @@ internal class ClusterFactoryServiceTest {
             heartbeatPeriod = Duration.ofMinutes(1)
         )
         val now = getTimeMock()
-        val selector = FactorySelectorEntity(-1, selectorKey, selectorValue)
+        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
         val factoryEntity = FactoryEntity(
             tenantId = 321,
             nodeId = actualNodeId,
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast-before",
-            selectors = listOf(selector)
+            tags = listOf(selector)
         )
 
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -974,7 +974,7 @@ internal class ClusterFactoryServiceTest {
                             isRoot = false,
                             isUnderLoad = dag.underLoad,
                             numberOfSteps = dag.numberOfSteps,
-                            selectors = emptyMap()
+                            tags = emptyMap()
                         )
                     })
             }, scenarios
@@ -1182,7 +1182,7 @@ internal class ClusterFactoryServiceTest {
                     dag.isSingleton,
                     dag.isUnderLoad,
                     dag.numberOfSteps,
-                    dag.selectors.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) })
+                    dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) })
             )
         )
 
@@ -1194,6 +1194,6 @@ internal class ClusterFactoryServiceTest {
             dag.isSingleton,
             dag.isUnderLoad,
             dag.numberOfSteps,
-            dag.selectors.map { (key, value) -> DirectedAcyclicGraphSelectorEntity(-1, key, value) }
+            dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) }
         )
 }

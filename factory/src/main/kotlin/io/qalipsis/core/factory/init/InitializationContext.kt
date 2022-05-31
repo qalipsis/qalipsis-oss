@@ -34,7 +34,7 @@ internal open class InitializationContext(
         val feedbackScenarios = scenarios.map { scenario ->
             val feedbackDags = scenario.dags.map {
                 RegistrationDirectedAcyclicGraph(
-                    it.name, it.isSingleton, it.isRoot, it.isUnderLoad, it.stepsCount, it.selectors
+                    it.name, it.isSingleton, it.isRoot, it.isUnderLoad, it.stepsCount, it.tags
                 )
             }
             RegistrationScenario(

@@ -73,14 +73,14 @@ internal class InitializationContextTest {
                     every { isSingleton } returns false
                     every { isRoot } returns true
                     every { stepsCount } returns 12
-                    every { selectors } returns mutableMapOf("key1" to "value1")
+                    every { tags } returns mutableMapOf("key1" to "value1")
                 },
                 relaxedMockk {
                     every { name } returns "dag-2"
                     every { isSingleton } returns true
                     every { isRoot } returns false
                     every { stepsCount } returns 4
-                    every { selectors } returns mutableMapOf("key2" to "value2")
+                    every { tags } returns mutableMapOf("key2" to "value2")
                 }
             )
         }
@@ -94,7 +94,7 @@ internal class InitializationContextTest {
                     every { isRoot } returns true
                     every { isUnderLoad } returns true
                     every { stepsCount } returns 42
-                    every { selectors } returns mutableMapOf("key3" to "value3", "key4" to "value4")
+                    every { tags } returns mutableMapOf("key3" to "value3", "key4" to "value4")
                 }
             )
         }
@@ -125,7 +125,7 @@ internal class InitializationContextTest {
                             prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
                             prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(12)
-                            prop(DirectedAcyclicGraphSummary::selectors).all {
+                            prop(DirectedAcyclicGraphSummary::tags).all {
                                 hasSize(1)
                                 key("key1").isEqualTo("value1")
                             }
@@ -136,7 +136,7 @@ internal class InitializationContextTest {
                             prop(DirectedAcyclicGraphSummary::isRoot).isFalse()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isFalse()
                             prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(4)
-                            prop(DirectedAcyclicGraphSummary::selectors).all {
+                            prop(DirectedAcyclicGraphSummary::tags).all {
                                 hasSize(1)
                                 key("key2").isEqualTo("value2")
                             }
@@ -155,7 +155,7 @@ internal class InitializationContextTest {
                             prop(DirectedAcyclicGraphSummary::isRoot).isTrue()
                             prop(DirectedAcyclicGraphSummary::isUnderLoad).isTrue()
                             prop(DirectedAcyclicGraphSummary::numberOfSteps).isEqualTo(42)
-                            prop(DirectedAcyclicGraphSummary::selectors).all {
+                            prop(DirectedAcyclicGraphSummary::tags).all {
                                 hasSize(2)
                                 key("key3").isEqualTo("value3")
                                 key("key4").isEqualTo("value4")
