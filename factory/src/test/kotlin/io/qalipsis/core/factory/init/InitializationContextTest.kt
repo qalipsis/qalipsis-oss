@@ -73,14 +73,14 @@ internal class InitializationContextTest {
                     every { isSingleton } returns false
                     every { isRoot } returns true
                     every { stepsCount } returns 12
-                    every { selectors } returns mutableMapOf("key1" to "value1")
+                    every { tags } returns mutableMapOf("key1" to "value1")
                 },
                 relaxedMockk {
                     every { name } returns "dag-2"
                     every { isSingleton } returns true
                     every { isRoot } returns false
                     every { stepsCount } returns 4
-                    every { selectors } returns mutableMapOf("key2" to "value2")
+                    every { tags } returns mutableMapOf("key2" to "value2")
                 }
             )
         }
@@ -94,7 +94,7 @@ internal class InitializationContextTest {
                     every { isRoot } returns true
                     every { isUnderLoad } returns true
                     every { stepsCount } returns 42
-                    every { selectors } returns mutableMapOf("key3" to "value3", "key4" to "value4")
+                    every { tags } returns mutableMapOf("key3" to "value3", "key4" to "value4")
                 }
             )
         }

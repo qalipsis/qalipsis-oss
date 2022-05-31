@@ -49,7 +49,7 @@ internal class InMemoryFactoryService(
             registrationTimestamp = Instant.now(),
             unicastChannel = handshakeResponse.unicastChannel,
             version = Instant.now(),
-            selectors = handshakeRequest.tags,
+            tags = handshakeRequest.tags,
             activeScenarios = handshakeRequest.scenarios.map { it.name }
         )
         handshakeRequest.scenarios.forEach { scenario ->
@@ -117,13 +117,13 @@ internal class InMemoryFactoryService(
         registrationTimestamp: Instant,
         unicastChannel: String,
         version: Instant,
-        selectors: Map<String, String> = emptyMap(),
+        tags: Map<String, String> = emptyMap(),
         activeScenarios: Collection<String> = emptySet(),
         val locked: AtomicBoolean = AtomicBoolean(false),
         val healthState: AtomicReference<Heartbeat> = AtomicReference(
             Heartbeat(nodeId, Instant.now(), Heartbeat.State.REGISTERED)
         )
-    ) : Factory(nodeId, registrationTimestamp, unicastChannel, version, selectors, activeScenarios)
+    ) : Factory(nodeId, registrationTimestamp, unicastChannel, version, tags, activeScenarios)
 
     private companion object {
 

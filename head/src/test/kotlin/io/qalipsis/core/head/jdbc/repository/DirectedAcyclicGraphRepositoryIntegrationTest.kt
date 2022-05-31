@@ -90,7 +90,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     }
 
     @Test
-    fun `should save a dag with selectors and fetch by ID`() = testDispatcherProvider.run {
+    fun `should save a dag with tags and fetch by ID`() = testDispatcherProvider.run {
         // when
         val saved = repository.save(dag.copy())
         selectorRepository.saveAll(dag.tags.map { it.copy(directedAcyclicGraphId = saved.id) }).count()
@@ -146,7 +146,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     }
 
     @Test
-    internal fun `should not save selectors twice with same key for same dag`() = testDispatcherProvider.run {
+    internal fun `should not save tags twice with same key for same dag`() = testDispatcherProvider.run {
         // given
         val saved = repository.save(dag.copy())
 
@@ -158,7 +158,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     }
 
     @Test
-    internal fun `should save selectors twice with same key for different dags`() = testDispatcherProvider.run {
+    internal fun `should save tags twice with same key for different dags`() = testDispatcherProvider.run {
         // given
         val saved1 = repository.save(dag.copy())
         val saved2 = repository.save(dag.copy(name = "another name"))
@@ -184,16 +184,16 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     }
 
     @Test
-    fun `should update the entity selectors`() = testDispatcherProvider.run {
+    fun `should update the entity tags`() = testDispatcherProvider.run {
         // given
         val saved = repository.save(dag.copy())
-        val selectors =
+        val tags =
             selectorRepository.saveAll(dag.tags.map { it.copy(directedAcyclicGraphId = saved.id) }).toList()
 
         // when
-        // Tests the strategy of update for the selectors attached to a dag, as used in the PersistentFactoryService.
-        selectorRepository.deleteAll(selectors.subList(0, 1))
-        selectorRepository.updateAll(listOf(selectors[1].withValue("other-than-value-2"))).count()
+        // Tests the strategy of update for the tags attached to a dag, as used in the PersistentFactoryService.
+        selectorRepository.deleteAll(tags.subList(0, 1))
+        selectorRepository.updateAll(listOf(tags[1].withValue("other-than-value-2"))).count()
         selectorRepository.saveAll(listOf(DirectedAcyclicGraphTagEntity(saved.id, "key-3", "value-3"))).count()
 
         // then
@@ -225,7 +225,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     }
 
     @Test
-    fun `should delete the dag and its selectors`() = testDispatcherProvider.run {
+    fun `should delete the dag and its tags`() = testDispatcherProvider.run {
         // given
         val saved = repository.save(dag.copy())
         selectorRepository.saveAll(dag.tags.map { it.copy(directedAcyclicGraphId = saved.id) }).count()

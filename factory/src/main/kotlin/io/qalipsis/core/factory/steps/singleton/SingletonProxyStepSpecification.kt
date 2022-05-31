@@ -43,7 +43,7 @@ internal open class SingletonProxyStepSpecification<T>(
     override val nextSteps: MutableList<StepSpecification<*, *, *>>
         get() = mutableListOf(next)
 
-    override var selectors = mutableMapOf<String, String>()
+    override var tags = mutableMapOf<String, String>()
 
     override fun split(block: SingletonProxyStepSpecification<T>.() -> Unit): SingletonProxyStepSpecification<T> {
         // Nothing to do.
@@ -56,8 +56,8 @@ internal open class SingletonProxyStepSpecification<T>(
 
     override var reporting: StepReportingSpecification = StepReportingSpecification()
 
-    override fun runOn(selectors: Map<String, String>) {
-        this.selectors.clear()
-        this.selectors += selectors
+    override fun tag(tags: Map<String, String>) {
+        this.tags.clear()
+        this.tags += tags
     }
 }

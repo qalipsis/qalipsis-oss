@@ -287,7 +287,7 @@ internal class FactoryInitializerImplTest {
         val scenario = testScenario()
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { directedAcyclicGraphName } returns "dag-1"
-            every { selectors } returns emptyMap()
+            every { tags } returns emptyMap()
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { directedAcyclicGraphName } returns "dag-2"
@@ -296,7 +296,7 @@ internal class FactoryInitializerImplTest {
         val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification2)
             every { directedAcyclicGraphName } returns "dag-2"
-            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val atomicInteger = AtomicInteger()
         coEvery {
@@ -325,13 +325,13 @@ internal class FactoryInitializerImplTest {
         // Only two dags were created.
         assertThat(scenario["dag-1"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
-            prop(DirectedAcyclicGraph::selectors).isEmpty()
+            prop(DirectedAcyclicGraph::tags).isEmpty()
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
                 .index(0).isSameAs(deadEndStep1)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
-            prop(DirectedAcyclicGraph::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+            prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
                 .index(0).prop(Step<*, *>::next).index(0).isSameAs(deadEndStep2)
         }
@@ -354,7 +354,7 @@ internal class FactoryInitializerImplTest {
         val scenario = testScenario()
         val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { directedAcyclicGraphName } returns "dag-1"
-            every { selectors } returns emptyMap()
+            every { tags } returns emptyMap()
         }
         val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification1)
@@ -364,7 +364,7 @@ internal class FactoryInitializerImplTest {
         val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
             every { nextSteps } returns mutableListOf(stepSpecification2)
             every { directedAcyclicGraphName } returns "dag-2"
-            every { selectors } returns mapOf("key1" to "value1", "key2" to "value2")
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
         }
         val atomicInteger = AtomicInteger()
         coEvery {
@@ -393,13 +393,13 @@ internal class FactoryInitializerImplTest {
         // Only two dags were created.
         assertThat(scenario["dag-1"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
-            prop(DirectedAcyclicGraph::selectors).isEmpty()
+            prop(DirectedAcyclicGraph::tags).isEmpty()
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
                 .index(0).isSameAs(deadEndStep)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
-            prop(DirectedAcyclicGraph::selectors).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+            prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
                 .index(0).prop(Step<*, *>::next).index(0).isSameAs(dagTransitionStep)
         }
