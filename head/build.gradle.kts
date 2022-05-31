@@ -58,6 +58,7 @@ dependencies {
     implementation("io.qalipsis:api-dsl:${project.version}")
     implementation("io.qalipsis:api-processors:${project.version}")
 
+    implementation("io.micronaut.security:micronaut-security")
     implementation("com.google.guava:guava:29.0-jre")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
     implementation("cool.graph:cuid-java:0.1.1")
@@ -69,6 +70,7 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgresqlDriverVersion")
     implementation("io.micronaut.liquibase:micronaut-liquibase")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
@@ -103,6 +105,10 @@ dependencies {
     testImplementation(testFixtures(project(":core")))
     testImplementation("org.testcontainers:testcontainers:${testContainersVersion}")
     testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
+
+    testImplementation("org.bouncycastle:bcprov-jdk15on:1.64")
+    testImplementation("org.bouncycastle:bcprov-ext-jdk15on:1.64")
+    testImplementation("org.bouncycastle:bcpkix-jdk15on:1.64")
 
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")

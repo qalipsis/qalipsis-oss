@@ -9,32 +9,32 @@ package io.qalipsis.core.head.security
  */
 internal enum class RoleName(
     val publicName: String,
-    val permissions: Set<Permission> = emptySet()
+    val permissions: Collection<Permission> = emptySet()
 ) {
     /**
      * Role of user having the administrator rights.
      */
-    SUPER_ADMINISTRATOR("super-admin", setOf(ALL_PERMISSION)),
+    SUPER_ADMINISTRATOR("super-admin", Permissions.ALL_PERMISSIONS),
 
     /**
      * Role of user having the rights to edit the billing details of the tenant.
      */
-    BILLING_ADMINISTRATOR("billing-admin"),
+    BILLING_ADMINISTRATOR("billing-admin", Permissions.FOR_BILLING_ADMINISTRATOR),
 
     /**
      * Role of user having the rights to edit the tenant details and its users.
      */
-    TENANT_ADMINISTRATOR("tenant-admin"),
+    TENANT_ADMINISTRATOR("tenant-admin", Permissions.FOR_TENANT_ADMINISTRATOR),
 
     /**
      * Role of user having the rights to start and edit campaigns.
      */
-    TESTER("tester"),
+    TESTER("tester", Permissions.FOR_TESTER),
 
     /**
      * Role of user having the rights to vizualize the results of campaigns.
      */
-    REPORTER("reporter");
+    REPORTER("reporter", Permissions.FOR_REPORTER);
 
     companion object {
 
