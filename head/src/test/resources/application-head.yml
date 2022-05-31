@@ -8,3 +8,7 @@ head:
   heartbeat-channel: heartbeat
   heartbeat-duration: 30s
   heartbeat-consumer-group-name: heartbeat-group-name
+
+micronaut:
+  security:
+    enabled: false
