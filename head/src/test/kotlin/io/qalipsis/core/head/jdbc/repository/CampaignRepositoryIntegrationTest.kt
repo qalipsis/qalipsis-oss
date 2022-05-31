@@ -16,6 +16,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -169,6 +170,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when
         val beforeCall = Instant.now()
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
         campaignRepository.close(campaignPrototype.name, ExecutionStatus.FAILED)
 
         // then
@@ -176,7 +178,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             .isDataClassEqualTo(alreadyClosedCampaign)
         assertThat(campaignRepository.findById(otherOpenCampaign.id)).isNotNull().isDataClassEqualTo(otherOpenCampaign)
         assertThat(campaignRepository.findById(openCampaign.id)).isNotNull().all {
-            prop(CampaignEntity::version).isGreaterThan(beforeCall)
+            prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::name).isEqualTo(openCampaign.name)
             prop(CampaignEntity::start).isEqualTo(openCampaign.start)
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
