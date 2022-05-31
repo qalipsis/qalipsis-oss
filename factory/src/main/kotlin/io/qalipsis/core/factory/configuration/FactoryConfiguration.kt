@@ -16,7 +16,7 @@ internal class FactoryConfiguration {
     var nodeId: String = ""
 
     /**
-     * Set of selectors assigned to this factory, defaults to empty.
+     * Set of tags assigned to this factory, defaults to empty.
      */
     var tags: Map<String, String> = emptyMap()
 

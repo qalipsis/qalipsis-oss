@@ -11,4 +11,8 @@ import io.qalipsis.core.head.jdbc.entity.UserEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-internal interface UserRepository : CoroutineCrudRepository<UserEntity, Long>
+interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
+
+    suspend fun findByUsername(username: String): UserEntity
+
+}

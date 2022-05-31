@@ -26,17 +26,17 @@ import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
+import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignFactoryRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
-import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
+import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
@@ -272,7 +272,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "mergeSelectors",
+            "mergeTags",
             factoryTagRepository,
             handshakeRequest.tags,
             factoryEntity.tags,
@@ -318,7 +318,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "mergeSelectors",
+            "mergeTags",
             factoryTagRepository,
             handshakeRequest.tags,
             factoryEntity.tags,
@@ -359,7 +359,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "mergeSelectors",
+            "mergeTags",
             factoryTagRepository,
             handshakeRequest.tags,
             factoryEntity.tags,
@@ -402,7 +402,7 @@ internal class ClusterFactoryServiceTest {
 
             // when
             clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-                "mergeSelectors",
+                "mergeTags",
                 factoryTagRepository,
                 handshakeRequest.tags,
                 factoryEntity.tags,
@@ -467,7 +467,7 @@ internal class ClusterFactoryServiceTest {
 
             // when
             clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-                "mergeSelectors",
+                "mergeTags",
                 factoryTagRepository,
                 handshakeRequest.tags,
                 factoryEntity.tags,
@@ -773,7 +773,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveDagsAndSelectors",
+            "saveDagsAndTags",
             listOf(savedDag),
             directedAcyclicGraphs
         )
@@ -827,7 +827,7 @@ internal class ClusterFactoryServiceTest {
 
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveDagsAndSelectors",
+            "saveDagsAndTags",
             listOf(savedDag),
             directedAcyclicGraphs
         )

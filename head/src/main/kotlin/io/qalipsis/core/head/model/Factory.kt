@@ -42,6 +42,6 @@ internal open class Factory(
     }
 
     override fun toString(): String {
-        return "Factory(nodeId='$nodeId', registrationTimestamp=$registrationTimestamp, version=$version, selectors=$tags, supportedScenarios=$activeScenarios)"
+        return "Factory(nodeId='$nodeId', registrationTimestamp=$registrationTimestamp, version=$version, tags=$tags, supportedScenarios=$activeScenarios)"
     }
 }
