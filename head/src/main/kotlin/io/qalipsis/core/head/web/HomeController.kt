@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.info.Info
     info = Info(
         title = "QALIPSIS",
         version = "1.0",
-        description = "QALIPSIS Campaign API"
+        description = "QALIPSIS Management and Campaign API"
     )
 )
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
