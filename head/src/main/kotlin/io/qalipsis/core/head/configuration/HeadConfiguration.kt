@@ -2,11 +2,15 @@ package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.web.model.Zone
 import java.time.Duration
 import javax.validation.constraints.NotBlank
+import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 
+@Introspected
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("head")
 internal interface HeadConfiguration {
@@ -35,4 +39,10 @@ internal interface HeadConfiguration {
     @get:Positive
     val heartbeatDuration: Duration
 
+    /**
+     * Set of zones to use to execute the scenarios.
+     */
+    @get:NotNull
+    val zones: Set<Zone>
+        get() = emptySet()
 }

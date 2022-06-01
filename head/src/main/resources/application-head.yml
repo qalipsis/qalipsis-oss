@@ -29,6 +29,7 @@ head:
   unicast-channel-prefix: unicast-
   heartbeat-channel: heartbeat
   heartbeat-duration: 30s
+  zones:
 
 distributed:
   streaming:
