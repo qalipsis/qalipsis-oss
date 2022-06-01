@@ -2,6 +2,7 @@ package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.web.model.Zone
 import java.time.Duration
@@ -41,6 +42,6 @@ internal interface HeadConfiguration {
      * Set of zones to use to execute the scenarios.
      */
     @get:NotNull
+    @get:Bindable(defaultValue = "")
     val zones: Set<Zone>
-        get() = emptySet()
 }
