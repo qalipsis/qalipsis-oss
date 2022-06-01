@@ -32,13 +32,13 @@ internal class CampaignShutdownDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is CampaignShutdownDirective
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignName)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignKey)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: CampaignShutdownDirective) {
         val feedback = CampaignShutdownFeedback(
-            campaignName = directive.campaignName,
+            campaignKey = directive.campaignKey,
             status = FeedbackStatus.IN_PROGRESS
         )
         factoryChannel.publishFeedback(feedback)

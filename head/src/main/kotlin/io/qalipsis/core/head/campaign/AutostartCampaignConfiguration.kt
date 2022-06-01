@@ -6,7 +6,6 @@ import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import java.time.Duration
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 
@@ -27,9 +26,6 @@ import javax.validation.constraints.PositiveOrZero
 @Requires(env = [ExecutionEnvironments.AUTOSTART])
 @ConfigurationProperties("campaign")
 internal interface AutostartCampaignConfiguration {
-
-    @get:Bindable(defaultValue = "")
-    val tenant: String
 
     @get:NotBlank
     val name: String

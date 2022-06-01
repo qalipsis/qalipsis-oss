@@ -17,9 +17,7 @@ internal class CampaignConfigurationTest {
     @Test
     internal fun `should unassign the scenario from the factory`() {
         // given
-        val campaign = CampaignConfiguration(
-            name = "my-campaign",
-        )
+        val campaign = CampaignConfiguration(key = "my-campaign")
         campaign.factories += mapOf(
             "factory-1" to FactoryConfiguration(
                 "",
@@ -85,9 +83,7 @@ internal class CampaignConfigurationTest {
     @Test
     internal fun `should unassign the factory`() {
         // given
-        val campaign = CampaignConfiguration(
-            name = "my-campaign"
-        )
+        val campaign = CampaignConfiguration(key = "my-campaign")
         campaign.factories += mapOf(
             "factory-1" to FactoryConfiguration(
                 "",

@@ -32,7 +32,7 @@ internal class ConsoleReportPublisher : CampaignReportPublisher {
 =====================  CAMPAIGN REPORT =====================
 ============================================================   
 
-Campaign...........................${report.campaignName}
+Campaign...........................${report.campaignKey}
 Start..............................${report.start}
 End................................${report.end ?: RUNNING_INDICATOR}
 Duration...........................${duration?.let { "$it seconds" } ?: RUNNING_INDICATOR} 

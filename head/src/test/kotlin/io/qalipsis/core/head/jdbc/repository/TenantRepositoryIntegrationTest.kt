@@ -112,11 +112,13 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         campaignRepository.save(
             CampaignEntity(
                 tenantId = saved.id,
-                campaignName = "the-campaign-id",
+                key = "the-campaign-id",
+                name = "This is a campaign",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
-                result = ExecutionStatus.SUCCESSFUL
+                result = ExecutionStatus.SUCCESSFUL,
+                configurer = 1
             )
         )
         val factory = factoryRepository.save(

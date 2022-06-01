@@ -19,6 +19,7 @@ import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.campaign.catadioptre.campaign
 import io.qalipsis.core.head.campaign.catadioptre.campaignLatch
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -67,7 +68,6 @@ internal class CampaignAutoStarterTest {
         override val minionsFactor: Double = 1.87
         override val speedFactor: Double = 54.87
         override val startOffset: Duration = Duration.ofMillis(12367)
-        override val tenant: String = ""
     }
 
     @JvmField
@@ -97,7 +97,6 @@ internal class CampaignAutoStarterTest {
                     override val minionsFactor: Double = 1.87
                     override val speedFactor: Double = 54.87
                     override val startOffset: Duration = Duration.ofMillis(12367)
-                    override val tenant: String = ""
                 },
                 headChannel
             )
@@ -129,7 +128,7 @@ internal class CampaignAutoStarterTest {
             campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
 
             // then
-            coVerifyNever { campaignManager.start(any()) }
+            coVerifyNever { campaignManager.start(any(), any(), any()) }
 
             // when
             val elapsed = coMeasureTime {
@@ -140,8 +139,11 @@ internal class CampaignAutoStarterTest {
             assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(420)) // Should have waited triggerOffset.
             coVerifyOnce {
                 campaignManager.start(
+                    Defaults.USER,
+                    "my-campaign",
                     CampaignConfiguration(
-                        name = "my-campaign",
+                        tenant = Defaults.TENANT,
+                        key = "my-campaign",
                         speedFactor = 54.87,
                         startOffsetMs = 12367,
                         scenarios = mapOf(
@@ -252,7 +254,7 @@ internal class CampaignAutoStarterTest {
             // when
             campaignAutoStarter.completeCampaign(
                 CompleteCampaignDirective(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     isSuccessful = true,
                     "", "the-broadcast-channel"
                 )
@@ -310,7 +312,7 @@ internal class CampaignAutoStarterTest {
             // when
             campaignAutoStarter.completeCampaign(
                 CompleteCampaignDirective(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     isSuccessful = false,
                     "There is an error", "the-broadcast-channel"
                 )

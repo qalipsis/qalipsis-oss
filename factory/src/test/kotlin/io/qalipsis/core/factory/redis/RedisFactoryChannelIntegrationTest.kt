@@ -142,7 +142,7 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
                 // Dereferences the received directive.
                 .transform { runBlocking { directiveRegistry.get(it) } }.isNotNull()
                 .isInstanceOf(MinionsDeclarationDirective::class).all {
-                    prop(MinionsDeclarationDirective::campaignName).isEqualTo("the campaign")
+                    prop(MinionsDeclarationDirective::campaignKey).isEqualTo("the campaign")
                     prop(MinionsDeclarationDirective::scenarioName).isEqualTo("the scenario")
                     prop(MinionsDeclarationDirective::minionsCount).isEqualTo(1000)
                 }
@@ -204,7 +204,7 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(FEEDBACK_CHANNEL)
             transform("message") { serializer.deserialize<Feedback>(it.message) }.isNotNull()
                 .isInstanceOf(EndOfCampaignFeedback::class).all {
-                    prop(EndOfCampaignFeedback::campaignName).isEqualTo("campaign-1")
+                    prop(EndOfCampaignFeedback::campaignKey).isEqualTo("campaign-1")
                     prop(EndOfCampaignFeedback::status).isEqualTo(FeedbackStatus.COMPLETED)
                     prop(EndOfCampaignFeedback::error).isEqualTo("the error")
                     prop(EndOfCampaignFeedback::nodeId).isEqualTo("my-node")

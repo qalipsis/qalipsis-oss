@@ -3,7 +3,7 @@ package io.qalipsis.core.head.inmemory
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
@@ -14,6 +14,7 @@ import io.qalipsis.core.head.campaign.states.EmptyState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import jakarta.inject.Singleton
@@ -46,9 +47,13 @@ internal class StandaloneCampaignManager(
     @KTestable
     private var currentCampaignState: CampaignExecutionState<CampaignExecutionContext> = EmptyState
 
-    override suspend fun start(campaign: CampaignConfiguration) {
+    override suspend fun start(
+        configurer: String,
+        campaignDisplayName: String,
+        configuration: CampaignConfiguration
+    ): Campaign {
         require(currentCampaignState.isCompleted) { "A campaign is already running, please wait for its completion or cancel it" }
-        super.start(campaign)
+        return super.start(configurer, campaignDisplayName, configuration)
     }
 
     override suspend fun create(
@@ -59,7 +64,7 @@ internal class StandaloneCampaignManager(
 
     override suspend fun get(
         tenant: String,
-        campaignName: CampaignName
+        campaignKey: CampaignKey
     ): CampaignExecutionState<CampaignExecutionContext> {
         return currentCampaignState
     }

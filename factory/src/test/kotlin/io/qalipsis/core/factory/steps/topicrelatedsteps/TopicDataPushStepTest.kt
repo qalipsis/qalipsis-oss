@@ -76,7 +76,7 @@ internal class TopicDataPushStepTest {
 
         assertThat(contexts).all {
             index(0).all {
-                prop(StepContext<String, String>::campaignName).isEqualTo("my-campaign")
+                prop(StepContext<String, String>::campaignKey).isEqualTo("my-campaign")
                 prop(StepContext<String, String>::scenarioName).isEqualTo("my-scenario")
                 prop(StepContext<String, String>::previousStepName).isEqualTo("my-parent-step")
                 prop(StepContext<String, String>::stepName).isEqualTo("my-next-step")

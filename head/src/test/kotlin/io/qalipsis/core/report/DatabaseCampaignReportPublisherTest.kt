@@ -56,7 +56,7 @@ internal class DatabaseCampaignReportPublisherTest {
     internal fun `should save the new campaign`() = testDispatcherProvider.run {
         // given
         val now = getTimeMock()
-        coEvery { campaignRepository.findIdByName(any(), "my-campaign") } returns 8
+        coEvery { campaignRepository.findIdByKey(any(), "my-campaign") } returns 8
         val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
             every { id } returns 10L
             every { name } returns "my-scenario"
@@ -85,7 +85,7 @@ internal class DatabaseCampaignReportPublisherTest {
         val messages = mutableListOf(messageOne, messageTwo)
 
         val scenarioReport = ScenarioReport(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             start = now.minusSeconds(900),
             end = now.minusSeconds(600),
@@ -97,7 +97,7 @@ internal class DatabaseCampaignReportPublisherTest {
             messages = messages
         )
         val campaignReport = CampaignReport(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             start = now.minusSeconds(1000),
             end = now.minusSeconds(500),
             startedMinions = 1000,

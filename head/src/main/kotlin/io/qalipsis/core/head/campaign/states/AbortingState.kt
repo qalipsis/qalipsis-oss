@@ -12,7 +12,7 @@ internal open class AbortingState(
     protected val campaign: CampaignConfiguration,
     protected val abortConfiguration: AbortCampaignConfiguration,
     protected val error: String
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
@@ -20,7 +20,7 @@ internal open class AbortingState(
         campaign.message = "Aborting campaign"
         return listOf(
             CampaignAbortDirective(
-                campaignName = campaignName,
+                campaignKey = campaignKey,
                 channel = campaign.broadcastChannel,
                 scenarioNames = campaign.scenarios.keys.toList()
             )
