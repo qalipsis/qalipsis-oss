@@ -2,7 +2,6 @@ package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
-import io.micronaut.core.annotation.Introspected
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.web.model.Zone
 import java.time.Duration
