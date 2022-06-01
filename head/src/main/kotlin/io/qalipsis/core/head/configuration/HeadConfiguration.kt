@@ -10,7 +10,6 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 
-@Introspected
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("head")
 internal interface HeadConfiguration {
