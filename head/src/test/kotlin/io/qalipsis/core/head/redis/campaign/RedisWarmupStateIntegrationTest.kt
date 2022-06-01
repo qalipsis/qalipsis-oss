@@ -83,7 +83,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
                 )
             )
         }
-        assertThat(operations.getState(campaign.tenant, campaign.name)).isNotNull().all {
+        assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.WARMUP_STATE)
         }

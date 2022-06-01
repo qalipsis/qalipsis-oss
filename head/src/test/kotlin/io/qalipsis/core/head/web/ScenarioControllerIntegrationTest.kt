@@ -22,6 +22,7 @@ import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
@@ -55,7 +56,7 @@ internal class ScenarioControllerIntegrationTest {
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
-        coEvery { factoryService.getAllActiveScenarios("_qalipsis_", "name") } returns listOf(scenario, scenario2)
+        coEvery { factoryService.getAllActiveScenarios(Defaults.TENANT, "name") } returns listOf(scenario, scenario2)
 
         val getAllScenariosRequest =
             HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name")
@@ -68,7 +69,7 @@ internal class ScenarioControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            factoryService.getAllActiveScenarios("_qalipsis_", "name")
+            factoryService.getAllActiveScenarios(Defaults.TENANT, "name")
         }
 
         assertThat(response).all {
@@ -94,7 +95,10 @@ internal class ScenarioControllerIntegrationTest {
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
-        coEvery { factoryService.getAllActiveScenarios("_qalipsis_", "name:desc") } returns listOf(scenario, scenario2)
+        coEvery { factoryService.getAllActiveScenarios(Defaults.TENANT, "name:desc") } returns listOf(
+            scenario,
+            scenario2
+        )
 
         val getAllScenariosRequest =
             HttpRequest.GET<List<ScenarioSummary>>("/scenarios?sort=name:desc")
@@ -107,7 +111,7 @@ internal class ScenarioControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            factoryService.getAllActiveScenarios("_qalipsis_", "name:desc")
+            factoryService.getAllActiveScenarios(Defaults.TENANT, "name:desc")
         }
 
         assertThat(response).all {
@@ -133,7 +137,7 @@ internal class ScenarioControllerIntegrationTest {
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
-        coEvery { factoryService.getAllActiveScenarios("_qalipsis_", null) } returns listOf(scenario, scenario2)
+        coEvery { factoryService.getAllActiveScenarios(Defaults.TENANT, null) } returns listOf(scenario, scenario2)
 
         val getAllScenariosRequest =
             HttpRequest.GET<List<ScenarioSummary>>("/scenarios")
@@ -146,7 +150,7 @@ internal class ScenarioControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            factoryService.getAllActiveScenarios("_qalipsis_", null)
+            factoryService.getAllActiveScenarios(Defaults.TENANT, null)
         }
 
         assertThat(response).all {

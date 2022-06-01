@@ -1,6 +1,6 @@
 package io.qalipsis.core.directives
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import kotlinx.serialization.SerialName
@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("ma")
 data class MinionsAssignmentDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName
 ) : DescriptiveDirective(), CampaignManagementDirective {
 
@@ -34,7 +34,7 @@ data class MinionStartDefinition(val minionId: MinionId, val timestamp: Long)
 @Serializable
 @SerialName("ms")
 data class MinionsStartDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     val startDefinitions: List<MinionStartDefinition>
 ) : DescriptiveDirective(), CampaignManagementDirective {
@@ -42,7 +42,7 @@ data class MinionsStartDirective(
     override var tenant: String = ""
 
     override fun toString(): String {
-        return "MinionsStartDirective(campaignName='$campaignName', scenarioName='$scenarioName', startDefinitionsCount=${startDefinitions.size})"
+        return "MinionsStartDirective(campaignKey='$campaignKey', scenarioName='$scenarioName', startDefinitionsCount=${startDefinitions.size})"
     }
 }
 
@@ -52,7 +52,7 @@ data class MinionsStartDirective(
 @Serializable
 @SerialName("msd")
 data class MinionsShutdownDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     val minionIds: List<MinionId>,
     override val channel: DispatcherChannel

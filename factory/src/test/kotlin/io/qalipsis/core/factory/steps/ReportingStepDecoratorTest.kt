@@ -91,7 +91,7 @@ internal class ReportingStepDecoratorTest {
     internal fun `should stop the decorated step and send the report with errors`() = runBlockingTest {
         // given
         val startContext: StepStartStopContext = relaxedMockk {
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         }
         every { decorated.name } returns "the decorated"
@@ -118,7 +118,7 @@ internal class ReportingStepDecoratorTest {
     internal fun `should stop the decorated step and send the report with information`() = runBlockingTest {
         // given
         val startContext: StepStartStopContext = relaxedMockk {
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         }
         every { decorated.name } returns "the decorated"

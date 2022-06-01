@@ -33,7 +33,7 @@ internal class MinionsShutdownDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is MinionsShutdownDirective
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignKey, directive.scenarioName)
                 && directive.minionIds.any(minionsKeeper::contains)
     }
 
@@ -42,14 +42,14 @@ internal class MinionsShutdownDirectiveListener(
         val relevantMinions = directive.minionIds.filter(minionsKeeper::contains)
         if (relevantMinions.isNotEmpty()) {
             val feedback = MinionsShutdownFeedback(
-                campaignName = directive.campaignName,
+                campaignKey = directive.campaignKey,
                 scenarioName = directive.scenarioName,
                 minionIds = relevantMinions,
                 status = FeedbackStatus.IN_PROGRESS
             )
             factoryChannel.publishFeedback(feedback)
             tryAndLogOrNull(log) {
-                factoryCampaignManager.shutdownMinions(directive.campaignName, relevantMinions)
+                factoryCampaignManager.shutdownMinions(directive.campaignKey, relevantMinions)
             }
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         }

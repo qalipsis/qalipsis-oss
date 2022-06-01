@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.context
 
 import io.micrometer.core.instrument.Tags
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.MinionId
@@ -27,7 +27,7 @@ internal class StepContextImpl<IN, OUT>(
     private val input: ReceiveChannel<IN> = Channel(1),
     val output: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(Channel.UNLIMITED),
     private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),
-    override val campaignName: CampaignName = "",
+    override val campaignKey: CampaignKey = "",
     override val minionId: MinionId,
     override val scenarioName: ScenarioName,
     override val previousStepName: StepName? = null,
@@ -55,7 +55,7 @@ internal class StepContextImpl<IN, OUT>(
 
     override val equivalentCompletionContext: CompletionContext
         get() = DefaultCompletionContext(
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             scenarioName = scenarioName,
             minionId = minionId,
             lastExecutedStepName = stepName,
@@ -113,7 +113,7 @@ internal class StepContextImpl<IN, OUT>(
     override fun <T : Any?> next(stepName: StepName): StepContext<OUT, T> {
         return StepContextImpl(
             internalErrors = LinkedHashSet(internalErrors),
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             minionId = minionId,
             scenarioName = scenarioName,
             previousStepName = this.stepName,
@@ -132,7 +132,7 @@ internal class StepContextImpl<IN, OUT>(
         return StepContextImpl(
             input = inputChannel ?: sourceInput,
             output = outputChannel ?: this.output,
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             minionId = minionId,
             scenarioName = scenarioName,
             previousStepName = this.previousStepName,
@@ -155,7 +155,7 @@ internal class StepContextImpl<IN, OUT>(
     override fun toEventTags(): Map<String, String> {
         if (immutableEventTags == null) {
             val tags = mutableMapOf(
-                "campaign" to campaignName,
+                "campaign" to campaignKey,
                 "minion" to minionId,
                 "scenario" to scenarioName,
                 "iteration" to "$stepIterationIndex"
@@ -174,7 +174,7 @@ internal class StepContextImpl<IN, OUT>(
     override fun toMetersTags(): Tags {
         if (immutableMetersTags == null) {
             var tags = Tags.of(
-                "campaign", campaignName,
+                "campaign", campaignKey,
                 "scenario", scenarioName,
                 "step", stepName
             )
@@ -191,7 +191,7 @@ internal class StepContextImpl<IN, OUT>(
     }
 
     override fun toString(): String {
-        return "StepContext(campaignName='$campaignName', minionId='$minionId', scenarioName='$scenarioName', parentStepName=$previousStepName, stepName='$stepName')"
+        return "StepContext(campaignKey='$campaignKey', minionId='$minionId', scenarioName='$scenarioName', parentStepName=$previousStepName, stepName='$stepName')"
     }
 
 }

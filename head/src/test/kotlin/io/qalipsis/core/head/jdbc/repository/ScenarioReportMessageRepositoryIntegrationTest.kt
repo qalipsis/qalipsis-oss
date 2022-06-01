@@ -46,11 +46,13 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
         val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
         val campaignPrototype =
             CampaignEntity(
-                campaignName = "the-campaign-id",
+                key = "the-campaign-id",
+                name = "This is a campaign",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,
+                configurer = 1
             )
         val campaingEntity = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
         val campaignReportPrototype =

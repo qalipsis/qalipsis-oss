@@ -1,22 +1,22 @@
 package io.qalipsis.core.directives
 
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.configuration.AbortCampaignConfiguration
-import javax.validation.constraints.NotEmpty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import javax.validation.constraints.NotEmpty
 
 /**
  * Directive notifying a unique factory of the DAGs assigned to it in the context of a new campaign.
  *
- * @property campaignName the ID of the campaign
+ * @property campaignKey the ID of the campaign
  */
 @Serializable
 @SerialName("fa")
 data class FactoryAssignmentDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     @field:NotEmpty
     val assignments: Collection<FactoryScenarioAssignment>,
     val broadcastChannel: DispatcherChannel,
@@ -33,7 +33,7 @@ data class FactoryAssignmentDirective(
 @Serializable
 @SerialName("wup")
 data class ScenarioWarmUpDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val channel: DispatcherChannel
 ) : DescriptiveDirective(), CampaignManagementDirective {
@@ -47,7 +47,7 @@ data class ScenarioWarmUpDirective(
 @Serializable
 @SerialName("ssd")
 data class CampaignScenarioShutdownDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val channel: DispatcherChannel
 ) : DescriptiveDirective(), CampaignManagementDirective {
@@ -61,7 +61,7 @@ data class CampaignScenarioShutdownDirective(
 @Serializable
 @SerialName("csd")
 data class CampaignShutdownDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     override val channel: DispatcherChannel
 ) : DescriptiveDirective(), CampaignManagementDirective {
 
@@ -74,7 +74,7 @@ data class CampaignShutdownDirective(
 @Serializable
 @SerialName("ccd")
 data class CompleteCampaignDirective(
-    val campaignName: CampaignName,
+    val campaignKey: CampaignKey,
     val isSuccessful: Boolean = true,
     val message: String? = null,
     override val channel: DispatcherChannel
@@ -97,7 +97,7 @@ data class FactoryShutdownDirective(
 @Serializable
 @SerialName("cad")
 data class CampaignAbortDirective(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     override val channel: DispatcherChannel,
     /**
      * The list of scenario IDs for which the campaign has to be aborted.

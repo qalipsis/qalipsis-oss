@@ -108,7 +108,7 @@ internal class FactoryCampaignManagerImplTest {
             every { scenarioRegistry.contains("scenario-1") } returns true
             every { scenarioRegistry.contains("scenario-2") } returns true
             every { scenarioRegistry.contains("scenario-3") } returns false
-            every { campaign.campaignName } returns "my-campaign"
+            every { campaign.campaignKey } returns "my-campaign"
             every { campaign.assignments } returns listOf(
                 relaxedMockk { every { scenarioName } returns "scenario-1" },
                 relaxedMockk { every { scenarioName } returns "scenario-2" },
@@ -152,7 +152,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should ignore init the campaign when no scenario is known`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignName } returns "my-campaign"
+        every { campaign.campaignKey } returns "my-campaign"
         every { scenarioRegistry.contains(any()) } returns false
         every { campaign.assignments } returns listOf(
             relaxedMockk { every { scenarioName } returns "scenario-1" },
@@ -186,7 +186,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should warmup campaign successfully`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignName } returns "my-campaign"
+        every { campaign.campaignKey } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
         val scenario = relaxedMockk<Scenario>()
@@ -210,7 +210,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
-            every { campaign.campaignName } returns "my-other-campaign"
+            every { campaign.campaignKey } returns "my-other-campaign"
             factoryCampaignManager.runningCampaign(campaign)
             factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
 
@@ -225,7 +225,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should ignore warmup campaign when the scenario is not running`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignName } returns "my-campaign"
+        every { campaign.campaignKey } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-other-scenario"))
 
@@ -240,7 +240,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should warmup campaign with failure`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        every { campaign.campaignName } returns "my-campaign"
+        every { campaign.campaignKey } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario"))
         val exception = RuntimeException()
@@ -813,7 +813,7 @@ internal class FactoryCampaignManagerImplTest {
         val factoryCampaignManager = buildCampaignManager()
         val scenario1 = relaxedMockk<Scenario>()
         val scenario2 = relaxedMockk<Scenario>()
-        every { campaign.campaignName } returns "my-campaign"
+        every { campaign.campaignKey } returns "my-campaign"
         factoryCampaignManager.runningCampaign(campaign)
         factoryCampaignManager.runningScenarios(mutableSetOf("my-scenario-1", "my-scenario-2"))
         every { scenarioRegistry["my-scenario-1"] } returns scenario1
@@ -847,7 +847,7 @@ internal class FactoryCampaignManagerImplTest {
         // when
         assertDoesNotThrow {
             factoryCampaignManager.close(relaxedMockk {
-                every { campaignName } returns "my-other-campaign"
+                every { campaignKey } returns "my-other-campaign"
             })
         }
 

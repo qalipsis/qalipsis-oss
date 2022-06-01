@@ -8,6 +8,7 @@ import io.micronaut.core.convert.ArgumentConversionContext
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.bind.binders.AnnotatedRequestArgumentBinder
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import java.util.Optional
 
 /**
@@ -21,7 +22,7 @@ internal class NoOpTenantBinder : AnnotatedRequestArgumentBinder<Tenant, String>
         context: ArgumentConversionContext<String>,
         source: HttpRequest<*>
     ): ArgumentBinder.BindingResult<String> {
-        return ArgumentBinder.BindingResult<String> { Optional.of("_qalipsis_") }
+        return ArgumentBinder.BindingResult<String> { Optional.of(Defaults.TENANT) }
     }
 
     override fun getAnnotationType(): Class<Tenant> {

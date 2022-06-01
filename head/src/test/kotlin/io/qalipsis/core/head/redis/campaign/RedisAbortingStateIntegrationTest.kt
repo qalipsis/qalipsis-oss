@@ -41,7 +41,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
             "scenario-2" to relaxedMockk { every { minionsCount } returns 43 }
         )
         operations.saveConfiguration(campaign)
-        operations.setState(campaign.tenant, campaign.name, CampaignRedisState.ABORTING_STATE)
+        operations.setState(campaign.tenant, campaign.key, CampaignRedisState.ABORTING_STATE)
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
 
         // when
@@ -58,7 +58,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
                 CampaignAbortDirective("my-campaign", "my-broadcast-channel", listOf("scenario-1", "scenario-2"))
             )
         }
-        assertThat(operations.getState(campaign.tenant, campaign.name)).isNotNull().all {
+        assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.ABORTING_STATE)
         }

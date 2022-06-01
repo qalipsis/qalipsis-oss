@@ -12,7 +12,7 @@ import io.qalipsis.api.report.ScenarioReport
 internal fun Collection<out ScenarioReport>.toCampaignReport(): CampaignReport {
 
     return CampaignReport(
-        campaignName = first().campaignName,
+        campaignKey = first().campaignKey,
         start = minOf(ScenarioReport::start),
         end = maxOf { it.end },
         startedMinions = sumOf { it.startedMinions },

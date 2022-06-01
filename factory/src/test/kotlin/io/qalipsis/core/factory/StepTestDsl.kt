@@ -51,7 +51,7 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
         input = inputChannel,
         output = outputChannel,
         internalErrors = errors,
-        campaignName = "",
+        campaignKey = "",
         minionId = minionId,
         scenarioName = scenarioName,
         previousStepName = parentStepName,

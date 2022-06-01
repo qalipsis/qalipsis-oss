@@ -29,7 +29,7 @@ internal class RedisRunningState(
 
     override suspend fun doInit(): List<Directive> {
         if (!doNotPersistStateOnInit) {
-            operations.setState(campaign.tenant, campaignName, CampaignRedisState.RUNNING_STATE)
+            operations.setState(campaign.tenant, campaignKey, CampaignRedisState.RUNNING_STATE)
             operations.prepareScenariosForFeedbackExpectations(campaign)
         }
         return super.doInit()
@@ -51,7 +51,7 @@ internal class RedisRunningState(
             feedback is CompleteMinionFeedback -> RedisRunningState(
                 campaign, operations, true, listOf(
                     MinionsShutdownDirective(
-                        campaign.name,
+                        campaign.key,
                         feedback.scenarioName,
                         listOf(feedback.minionId),
                         campaign.broadcastChannel
@@ -59,11 +59,11 @@ internal class RedisRunningState(
                 )
             )
             feedback is EndOfCampaignScenarioFeedback -> {
-                context.campaignReportStateKeeper.complete(feedback.campaignName, feedback.scenarioName)
+                context.campaignReportStateKeeper.complete(feedback.campaignKey, feedback.scenarioName)
                 RedisRunningState(
                     campaign, operations, true, listOf(
                         CampaignScenarioShutdownDirective(
-                            campaign.name,
+                            campaign.key,
                             feedback.scenarioName,
                             campaign.broadcastChannel
                         )
@@ -71,8 +71,8 @@ internal class RedisRunningState(
                 )
             }
             feedback is CampaignScenarioShutdownFeedback -> {
-                if (operations.markFeedbackForScenario(campaign.tenant, feedback.campaignName, feedback.scenarioName)) {
-                    context.campaignReportStateKeeper.complete(feedback.campaignName)
+                if (operations.markFeedbackForScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)) {
+                    context.campaignReportStateKeeper.complete(feedback.campaignKey)
                     RedisCompletionState(campaign, operations)
                 } else {
                     this

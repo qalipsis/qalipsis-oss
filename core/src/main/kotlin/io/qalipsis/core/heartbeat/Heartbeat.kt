@@ -1,6 +1,6 @@
 package io.qalipsis.core.heartbeat
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.serialization.InstantKotlinSerializer
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -15,7 +15,7 @@ data class Heartbeat(
     val nodeId: String,
     @Serializable(with = InstantKotlinSerializer::class) val timestamp: Instant,
     val state: State = State.HEALTHY,
-    val campaignName: CampaignName? = null
+    val campaignKey: CampaignKey? = null
 ) {
 
     enum class State {

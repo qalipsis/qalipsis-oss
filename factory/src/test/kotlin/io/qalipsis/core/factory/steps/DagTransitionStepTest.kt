@@ -31,7 +31,7 @@ internal class DagTransitionStepTest {
         val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion"
         )
@@ -53,7 +53,7 @@ internal class DagTransitionStepTest {
         // given
         val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
         val ctx = DefaultCompletionContext(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion",
             lastExecutedStepName = "step-1",

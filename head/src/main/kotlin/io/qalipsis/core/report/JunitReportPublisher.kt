@@ -31,7 +31,7 @@ internal class JunitReportPublisher(
 
     override suspend fun publish(campaign: CampaignConfiguration, report: CampaignReport) {
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }!!
-        val dir = File(reportFolder, campaign.name)
+        val dir = File(reportFolder, campaign.key)
         dir.mkdirs()
 
         report.scenariosReports.forEach {

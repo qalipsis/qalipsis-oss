@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.DirectiveFeedback
@@ -23,7 +23,7 @@ internal interface CampaignExecutionState<C : CampaignExecutionContext> {
     /**
      * ID of the current campaign.
      */
-    val campaignName: CampaignName
+    val campaignKey: CampaignKey
 
     fun inject(context: C)
 

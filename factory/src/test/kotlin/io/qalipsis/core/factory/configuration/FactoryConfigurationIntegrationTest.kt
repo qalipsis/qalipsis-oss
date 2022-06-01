@@ -27,7 +27,7 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::nodeId).isNotEmpty()
             prop(FactoryConfiguration::tags).isEmpty()
             prop(FactoryConfiguration::metadataPath).isEqualTo("./metadata")
-            prop(FactoryConfiguration::tenant).isEmpty()
+            prop(FactoryConfiguration::tenant).isEqualTo("_qalipsis_")
             prop(FactoryConfiguration::handshake).all {
                 prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("handshake-request")
                 prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("handshake-response")

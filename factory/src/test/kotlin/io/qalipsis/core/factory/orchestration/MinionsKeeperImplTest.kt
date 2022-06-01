@@ -132,7 +132,7 @@ internal class MinionsKeeperImplTest {
 
             assertThat(minionSlot.captured).all {
                 prop(MinionImpl::id).isEqualTo("my-minion")
-                prop(MinionImpl::campaignName).isEqualTo("my-campaign")
+                prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
                 prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
                 prop(MinionImpl::isSingleton).isFalse()
                 prop("executingStepsGauge").isSameAs(executingStepsGauge)
@@ -188,7 +188,7 @@ internal class MinionsKeeperImplTest {
             assertThat(minionsKeeper).all {
                 typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isNotNull().all {
                     prop(MinionImpl::id).isEqualTo("my-minion")
-                    prop(MinionImpl::campaignName).isEqualTo("my-campaign")
+                    prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
                     prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
                     prop(MinionImpl::isSingleton).isFalse()
                     prop("executingStepsGauge").isSameAs(executingStepsGauge)
@@ -249,7 +249,7 @@ internal class MinionsKeeperImplTest {
 
         assertThat(minionSlot.captured).all {
             prop(MinionImpl::id).isEqualTo("my-minion")
-            prop(MinionImpl::campaignName).isEqualTo("my-campaign")
+            prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
             prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
             prop(MinionImpl::isSingleton).isTrue()
             prop("executingStepsGauge").isSameAs(executingStepsGauge)
@@ -283,7 +283,7 @@ internal class MinionsKeeperImplTest {
         val minion1: MinionImpl = relaxedMockk()
         val minion2: MinionImpl = relaxedMockk()
         listOf(minion1, minion2).forEach {
-            every { it.campaignName } returns "my-campaign"
+            every { it.campaignKey } returns "my-campaign"
             every { it.scenarioName } returns "my-scenario"
         }
         val idleSingletonsMinions =
@@ -342,7 +342,7 @@ internal class MinionsKeeperImplTest {
         val minionToStart = relaxedMockk<MinionImpl> { every { id } returns "my-minion" }
         val minionToIgnore = relaxedMockk<MinionImpl> { every { id } returns "my-other" }
         listOf(minionToStart, minionToIgnore).forEach {
-            every { it.campaignName } returns "my-campaign"
+            every { it.campaignKey } returns "my-campaign"
             every { it.scenarioName } returns "my-scenario"
             coEvery { it.start() } coAnswers {
                 startTime.set(System.currentTimeMillis())
@@ -389,7 +389,7 @@ internal class MinionsKeeperImplTest {
         val minionToStart = relaxedMockk<MinionImpl> { every { id } returns "my-minion" }
         val minionToIgnore = relaxedMockk<MinionImpl> { every { id } returns "my-other" }
         listOf(minionToStart, minionToIgnore).forEach {
-            every { it.campaignName } returns "my-campaign"
+            every { it.campaignKey } returns "my-campaign"
             every { it.scenarioName } returns "my-scenario"
             coEvery { it.start() } coAnswers {
                 startTime.set(System.currentTimeMillis())
@@ -557,7 +557,7 @@ internal class MinionsKeeperImplTest {
         val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
         val minion = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion"
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         }
         minions["my-minion"] = minion
@@ -577,7 +577,7 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOrder {
             minion.id
-            minion.campaignName
+            minion.campaignKey
             minion.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
@@ -612,7 +612,7 @@ internal class MinionsKeeperImplTest {
         val theException = RuntimeException()
         val minion = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion"
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
             coEvery { cancel() } throws theException
         }
@@ -627,7 +627,7 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOrder {
             minion.id
-            minion.campaignName
+            minion.campaignKey
             minion.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
@@ -682,18 +682,18 @@ internal class MinionsKeeperImplTest {
         val theException = RuntimeException()
         val minion1 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion1"
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
             coEvery { cancel() } throws theException
         }
         val minion2 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion2"
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         }
         val minion3 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion3"
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         }
         minions["my-minion1"] = minion1
@@ -715,7 +715,7 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyOnce {
             minion1.id
-            minion1.campaignName
+            minion1.campaignKey
             minion1.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
@@ -731,7 +731,7 @@ internal class MinionsKeeperImplTest {
             )
 
             minion2.id
-            minion2.campaignName
+            minion2.campaignKey
             minion2.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",
@@ -746,7 +746,7 @@ internal class MinionsKeeperImplTest {
             )
 
             minion3.id
-            minion3.campaignName
+            minion3.campaignKey
             minion3.scenarioName
             eventsLogger.info(
                 "minion.cancellation.started",

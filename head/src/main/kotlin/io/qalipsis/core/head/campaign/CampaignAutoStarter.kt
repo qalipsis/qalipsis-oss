@@ -21,6 +21,7 @@ import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.core.lifetime.HeadStartupComponent
@@ -103,18 +104,19 @@ internal class CampaignAutoStarter(
                         campaignLatch.lock()
                         val scenariosConfigs =
                             factoryService.getActiveScenarios(
-                                autostartCampaignConfiguration.tenant,
+                                Defaults.TENANT,
                                 registeredScenarios
                             ).associate { scenario ->
                                 scenario.name to ScenarioConfiguration(calculateMinionsCount(scenario))
                             }
                         campaign = CampaignConfiguration(
-                            name = autostartCampaignConfiguration.name,
+                            tenant = Defaults.TENANT,
+                            key = autostartCampaignConfiguration.name,
                             speedFactor = autostartCampaignConfiguration.speedFactor,
                             startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
                             scenarios = scenariosConfigs
                         )
-                        campaignManager.get().start(campaign)
+                        campaignManager.get().start(Defaults.USER, autostartCampaignConfiguration.name, campaign)
                         runningCampaign = true
                     } else {
                         log.error { "No executable scenario was found" }
@@ -134,9 +136,9 @@ internal class CampaignAutoStarter(
     @LogInput
     suspend fun completeCampaign(directive: CompleteCampaignDirective) {
         if (directive.isSuccessful) {
-            log.info { "The campaign ${directive.campaignName} was completed successfully: ${directive.message ?: "<no detail>"}" }
+            log.info { "The campaign ${directive.campaignKey} was completed successfully: ${directive.message ?: "<no detail>"}" }
         } else {
-            log.error { "The campaign ${directive.campaignName} failed: ${directive.message ?: "<no detail>"}" }
+            log.error { "The campaign ${directive.campaignKey} failed: ${directive.message ?: "<no detail>"}" }
             error = directive.message
         }
         campaign.factories.forEach { (_, factory) ->

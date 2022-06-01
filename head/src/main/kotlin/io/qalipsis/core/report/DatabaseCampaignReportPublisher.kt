@@ -55,7 +55,7 @@ internal class DatabaseCampaignReportPublisher(
     private suspend fun saveCampaignReport(tenant: String, campaignReport: CampaignReport): CampaignReportEntity {
         return campaignReportRepository.save(
             CampaignReportEntity(
-                campaignRepository.findIdByName(tenant, campaignReport.campaignName),
+                campaignRepository.findIdByKey(tenant, campaignReport.campaignKey),
                 campaignReport.startedMinions,
                 campaignReport.completedMinions,
                 campaignReport.successfulExecutions,
