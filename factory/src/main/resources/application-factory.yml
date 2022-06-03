@@ -3,7 +3,7 @@ factory:
   node-id: ""
   tags:
   metadata-path: "./metadata"
-  zone: ru
+  zone: ""
 
   handshake:
     request-channel: handshake-request
