@@ -15,7 +15,7 @@ import io.mockk.coEvery
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.head.web.model.Zone
+import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test

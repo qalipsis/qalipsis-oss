@@ -8,7 +8,7 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.head.web.model.Zone
+import io.qalipsis.core.head.model.Zone
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -28,9 +28,9 @@ internal class ZoneController(val headConfiguration: HeadConfiguration) {
     @Get
     @Operation(
         summary = "List of zones",
-        description = "Return selected zones to execute scenarios,",
+        description = "List all the available zones to execute scenarios,",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of zones for scenarios"),
+            ApiResponse(responseCode = "200", description = "Details of available zones"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
             ApiResponse(responseCode = "401", description = "Operation not allowed"),
         ],

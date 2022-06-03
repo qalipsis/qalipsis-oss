@@ -4,7 +4,7 @@ import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.web.model.Zone
+import io.qalipsis.core.head.model.Zone
 import java.time.Duration
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
