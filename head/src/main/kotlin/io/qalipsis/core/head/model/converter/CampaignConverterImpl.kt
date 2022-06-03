@@ -5,9 +5,11 @@ import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import jakarta.inject.Singleton
 
@@ -19,6 +21,7 @@ import jakarta.inject.Singleton
 @Singleton
 internal class CampaignConverterImpl(
     private val userRepository: UserRepository,
+    private val scenarioRepository: CampaignScenarioRepository,
     private val idGenerator: IdGenerator
 ) : CampaignConverter {
 
@@ -48,7 +51,14 @@ internal class CampaignConverterImpl(
             start = campaignEntity.start,
             end = campaignEntity.end,
             result = campaignEntity.result,
-            configurerName = userRepository.findUsernameById(campaignEntity.configurer)
+            configurerName = userRepository.findUsernameById(campaignEntity.configurer),
+            scenarios = scenarioRepository.findByCampaignId(campaignEntity.id).map { scenarioEntity ->
+                Scenario(
+                    scenarioEntity.version,
+                    scenarioEntity.name,
+                    scenarioEntity.minionsCount
+                )
+            }
         )
     }
 
