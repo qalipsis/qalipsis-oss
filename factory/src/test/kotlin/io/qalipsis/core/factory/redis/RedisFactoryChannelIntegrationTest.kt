@@ -229,7 +229,8 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
             nodeId = "testNodeId",
             tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
-            scenarios = listOf(newRegistrationScenario)
+            scenarios = listOf(newRegistrationScenario),
+            zone = "by"
         )
         redisFactoryChannel.publishHandshakeRequest(handshakeRequest)
 

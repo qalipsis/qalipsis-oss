@@ -19,7 +19,10 @@ internal class FactoryTagsMeterRegistryConfigurer(
 ) : MeterRegistryConfigurer<MeterRegistry> {
 
     override fun configure(meterRegistry: MeterRegistry) {
-        val tags = factoryConfiguration.tags.map { (key, value) -> Tag.of(key, value) }
+        var tags = factoryConfiguration.tags.map { (key, value) -> Tag.of(key, value) }
+        factoryConfiguration.zone?.let {
+            tags += Tag.of("zone", factoryConfiguration.zone)
+        }
         meterRegistry.Config().commonTags(tags)
     }
 
