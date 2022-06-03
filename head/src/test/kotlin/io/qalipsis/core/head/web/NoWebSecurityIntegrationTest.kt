@@ -16,6 +16,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.security.RoleName
 import io.qalipsis.core.head.web.AuthenticatedController.CallResult
 import io.qalipsis.core.head.web.annotations.Tenant
@@ -52,8 +53,8 @@ internal class NoWebSecurityIntegrationTest {
         assertThat(response).all {
             transform("status") { it.status() }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isNotNull().all {
-                prop(CallResult::tenant).isEqualTo("_qalipsis_")
-                prop(CallResult::name).isEqualTo("_qalipsis_")
+                prop(CallResult::tenant).isEqualTo(Defaults.TENANT)
+                prop(CallResult::name).isEqualTo(Defaults.USER)
                 prop(CallResult::roles).containsAll(
                     *RoleName.values().asSequence().flatMap { it.permissions }.toSet().toTypedArray()
                 )
@@ -71,8 +72,8 @@ internal class NoWebSecurityIntegrationTest {
         assertThat(response).all {
             transform("status") { it.status() }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isNotNull().all {
-                prop(CallResult::tenant).isEqualTo("_qalipsis_")
-                prop(CallResult::name).isEqualTo("_qalipsis_")
+                prop(CallResult::tenant).isEqualTo(Defaults.TENANT)
+                prop(CallResult::name).isEqualTo(Defaults.USER)
                 prop(CallResult::roles).containsAll(
                     *RoleName.values().asSequence().flatMap { it.permissions }.toSet().toTypedArray()
                 )

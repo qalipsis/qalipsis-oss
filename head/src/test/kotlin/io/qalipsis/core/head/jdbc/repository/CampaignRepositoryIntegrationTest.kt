@@ -43,11 +43,13 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     private val campaignPrototype =
         CampaignEntity(
-            campaignName = "the-campaign-id",
+            key = "the-campaign-id",
+            name = "This is my new campaign",
             speedFactor = 123.0,
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
-            result = ExecutionStatus.SUCCESSFUL
+            result = ExecutionStatus.SUCCESSFUL,
+            configurer = 1
         )
 
     private val tenantPrototype =
@@ -85,13 +87,13 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when + then
         assertThrows<EmptyResultException> {
-            campaignRepository.findIdByNameAndEndIsNull("my-tenant", saved.name)
+            campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved.key)
         }
 
         // when
         campaignRepository.update(saved.copy(end = null))
 
-        assertThat(campaignRepository.findIdByNameAndEndIsNull("my-tenant", saved.name)).isEqualTo(saved.id)
+        assertThat(campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved.key)).isEqualTo(saved.id)
     }
 
     @Test
@@ -100,27 +102,38 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // given
             val savedTenant = tenantRepository.save(tenantPrototype.copy())
             val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
-            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = savedTenant.id))
+            val saved =
+                campaignRepository.save(campaignPrototype.copy(key = "1", end = null, tenantId = savedTenant.id))
             val saved2 =
-                campaignRepository.save(campaignPrototype.copy(name = "new", end = null, tenantId = savedTenant2.id))
+                campaignRepository.save(
+                    campaignPrototype.copy(
+                        key = "2",
+                        name = "new",
+                        end = null,
+                        tenantId = savedTenant2.id
+                    )
+                )
 
             // when + then
-            assertThat(campaignRepository.findIdByNameAndEndIsNull("my-tenant", saved.name)).isEqualTo(saved.id)
+            assertThat(campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved.key)).isEqualTo(saved.id)
+
             assertThat(
-                campaignRepository.findIdByNameAndEndIsNull("qalipsis-2", saved2.name)
+                campaignRepository.findIdByKeyAndEndIsNull("qalipsis-2", saved2.key)
             ).isEqualTo(saved2.id)
+
             assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByNameAndEndIsNull("my-tenant", saved2.name))
+                assertThat(campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved2.key))
             }
+
             assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByNameAndEndIsNull("qalipsis-2", saved.name))
+                assertThat(campaignRepository.findIdByKeyAndEndIsNull("qalipsis-2", saved.key))
             }
         }
 
     @Test
     fun `should update the version when the campaign is updated`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(tenantPrototype.copy())
         val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when
@@ -133,7 +146,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should delete all the sub-entities on delete`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(tenantPrototype.copy())
         val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
         val factory =
             factoryRepository.save(
@@ -161,17 +174,24 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should close the open campaign`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(tenantPrototype.copy())
         val alreadyClosedCampaign =
-            campaignRepository.save(campaignPrototype.copy(end = Instant.now(), tenantId = tenant.id))
-        val openCampaign = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+            campaignRepository.save(campaignPrototype.copy(key = "1", end = Instant.now(), tenantId = tenant.id))
+        val openCampaign = campaignRepository.save(campaignPrototype.copy(key = "2", end = null, tenantId = tenant.id))
         val otherOpenCampaign =
-            campaignRepository.save(campaignPrototype.copy(name = "other-campaign", end = null, tenantId = tenant.id))
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "3",
+                    name = "other-campaign",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
 
         // when
         val beforeCall = Instant.now()
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.close(campaignPrototype.name, ExecutionStatus.FAILED)
+        campaignRepository.close("my-tenant", "2", ExecutionStatus.FAILED)
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()

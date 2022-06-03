@@ -7,13 +7,22 @@ import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
 import io.qalipsis.api.report.ExecutionStatus
 import java.time.Instant
-import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.Positive
 import javax.validation.constraints.Size
 
 /**
  * Details of a campaign.
+ *
+ * @property id internal database ID
+ * @property version version of the entity
+ * @property tenantId internal database ID of the tenant owning the campaign
+ * @property key unique public identifier of the campaign in the tenant, generated
+ * @property name display name of the campaign
+ * @property speedFactor speed factor to apply on the ramp-up strategy, each strategy will apply it differently depending on its own implementation
+ * @property start when the campaign was started
+ * @property end when the campaign was completed, successfully or not
+ * @property result overall execution status of the campaign
+ * @property configurer internal database ID of the user that started the campaign
  *
  * @author Eric Jessé
  */
@@ -26,26 +35,31 @@ internal data class CampaignEntity(
     val version: Instant,
     val tenantId: Long,
     @field:NotBlank
-    @field:Size(min = 5, max = 300)
+    @field:Size(min = 5, max = 60)
+    val key: String,
+    @field:Size(max = 300)
     val name: String,
-    @field:Positive
-    @field:Max(999)
+    @field:Size(max = 300)
     val speedFactor: Double,
     val start: Instant,
     val end: Instant?,
-    val result: ExecutionStatus?
+    val result: ExecutionStatus?,
+    @field:NotBlank
+    val configurer: Long
 ) : Entity {
 
     constructor(
         tenantId: Long = -1,
-        campaignName: String,
+        key: String,
+        name: String,
         speedFactor: Double = 1.0,
         start: Instant = Instant.now(),
         end: Instant? = null,
-        result: ExecutionStatus? = null
+        result: ExecutionStatus? = null,
+        configurer: Long
     ) : this(
         -1,
-        Instant.EPOCH, tenantId,
-        campaignName, speedFactor, start, end, result
+        Instant.EPOCH, tenantId, key,
+        name, speedFactor, start, end, result, configurer
     )
 }

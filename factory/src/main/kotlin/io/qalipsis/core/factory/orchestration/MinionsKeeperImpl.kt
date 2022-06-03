@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
@@ -63,7 +63,7 @@ internal class MinionsKeeperImpl(
 
     @LogInput
     override suspend fun create(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         dagIds: Collection<DirectedAcyclicGraphName>,
         minionId: MinionId
@@ -73,14 +73,14 @@ internal class MinionsKeeperImpl(
             val rootDag = dagIds.asSequence().map { dagId -> scenario[dagId]!! }.firstOrNull { it.isRoot }
             val minion = MinionImpl(
                 minionId,
-                campaignName,
+                campaignKey,
                 scenarioName,
                 rootDag != null && rootDag.isUnderLoad, // Minions that have no root or are under load should not be started yet.
                 rootDag?.isSingleton == true,
                 meterRegistry.gauge(
                     "minion-running-steps",
                     listOf(
-                        Tag.of("campaign", campaignName),
+                        Tag.of("campaign", campaignKey),
                         Tag.of("scenario", scenarioName),
                         Tag.of("minion", minionId)
                     ),
@@ -109,7 +109,7 @@ internal class MinionsKeeperImpl(
                 rootDagsOfMinions[minionId] = rootDag.name
                 eventsLogger.info(
                     "minion.created",
-                    tags = mapOf("campaign" to campaignName, "scenario" to scenarioName, "minion" to minionId)
+                    tags = mapOf("campaign" to campaignKey, "scenario" to scenarioName, "minion" to minionId)
                 )
                 // When the minion is not under load or executes the root DAG locally, it is started and kept idle.
                 // Otherwise, it will be the responsibility of the "DAG input step" to perform the execution when
@@ -138,11 +138,11 @@ internal class MinionsKeeperImpl(
                 delay(waitingDelay)
             }
             minion.start()
-            reportLiveStateRegistry.recordStartedMinion(minion.campaignName, minion.scenarioName, 1)
+            reportLiveStateRegistry.recordStartedMinion(minion.campaignKey, minion.scenarioName, 1)
             eventsLogger.info(
                 "minion.started",
                 tags = mapOf(
-                    "campaign" to minion.campaignName,
+                    "campaign" to minion.campaignKey,
                     "scenario" to minion.scenarioName,
                     "minion" to minion.id
                 )
@@ -192,7 +192,7 @@ internal class MinionsKeeperImpl(
     private suspend fun shutdownMinion(minion: MinionImpl) {
         val minionId = minion.id
         val eventsTags =
-            mapOf("campaign" to minion.campaignName, "scenario" to minion.scenarioName, "minion" to minionId)
+            mapOf("campaign" to minion.campaignKey, "scenario" to minion.scenarioName, "minion" to minionId)
         eventsLogger.info("minion.cancellation.started", tags = eventsTags)
         dagIdsBySingletonMinionId.remove(minionId)
             ?.let { (scenarioName, dagId) -> singletonMinionsByDagId.remove(scenarioName, dagId) }

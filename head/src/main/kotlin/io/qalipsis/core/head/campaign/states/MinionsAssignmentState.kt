@@ -9,13 +9,13 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 internal open class MinionsAssignmentState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     private val expectedFeedbacks =
         ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })
@@ -25,7 +25,7 @@ internal open class MinionsAssignmentState(
     override suspend fun doInit(): List<Directive> {
         return campaign.scenarios.map { (scenarioName, config) ->
             MinionsDeclarationDirective(
-                campaignName = campaignName,
+                campaignKey = campaignKey,
                 scenarioName = scenarioName,
                 minionsCount = config.minionsCount,
                 channel = campaign.broadcastChannel

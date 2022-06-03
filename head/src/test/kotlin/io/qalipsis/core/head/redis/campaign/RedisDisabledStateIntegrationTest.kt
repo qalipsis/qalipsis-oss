@@ -29,7 +29,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
         testDispatcherProvider.run {
             // given
             operations.saveConfiguration(campaign)
-            operations.setState(campaign.tenant, campaign.name, CampaignRedisState.COMPLETION_STATE)
+            operations.setState(campaign.tenant, campaign.key, CampaignRedisState.COMPLETION_STATE)
             operations.prepareAssignmentsForFeedbackExpectations(campaign)
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.report(any()) } returns report
@@ -70,7 +70,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
         testDispatcherProvider.run {
             // given
             operations.saveConfiguration(campaign)
-            operations.setState(campaign.tenant, campaign.name, CampaignRedisState.FAILURE_STATE)
+            operations.setState(campaign.tenant, campaign.key, CampaignRedisState.FAILURE_STATE)
             operations.prepareAssignmentsForFeedbackExpectations(campaign)
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.report(any()) } returns report

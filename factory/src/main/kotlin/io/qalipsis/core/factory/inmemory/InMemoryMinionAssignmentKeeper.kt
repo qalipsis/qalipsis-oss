@@ -4,7 +4,7 @@ import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
@@ -56,7 +56,7 @@ internal class InMemoryMinionAssignmentKeeper(
      * The assignment of DAGs to a factory is not relevant when there is only one factory.
      */
     override suspend fun assignFactoryDags(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         assignments: Collection<FactoryScenarioAssignment>
     ) {
         dagsCountByMinions.clear()
@@ -66,7 +66,7 @@ internal class InMemoryMinionAssignmentKeeper(
 
     @LogInputAndOutput
     override suspend fun registerMinionsToAssign(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         dagIds: Collection<DirectedAcyclicGraphName>,
         minionIds: Collection<MinionId>,
@@ -90,11 +90,11 @@ internal class InMemoryMinionAssignmentKeeper(
         }
     }
 
-    override suspend fun completeUnassignedMinionsRegistration(campaignName: CampaignName, scenarioName: ScenarioName) =
+    override suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName) =
         Unit
 
     override suspend fun getIdsOfMinionsUnderLoad(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName
     ): Collection<MinionId> {
         return minionsByScenarios[scenarioName]!! - singletonMinions
@@ -102,7 +102,7 @@ internal class InMemoryMinionAssignmentKeeper(
 
     @LogInputAndOutput
     override suspend fun assign(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName
     ): Map<MinionId, Collection<DirectedAcyclicGraphName>> {
         return localAssignmentStore.assignments[scenarioName] ?: emptyMap()
@@ -110,7 +110,7 @@ internal class InMemoryMinionAssignmentKeeper(
 
     @LogInputAndOutput
     override suspend fun executionComplete(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionId: MinionId,
         dagIds: Collection<DirectedAcyclicGraphName>
@@ -123,7 +123,7 @@ internal class InMemoryMinionAssignmentKeeper(
         } else {
             val remainingDagsForMinion = dagsCountByMinions[scenarioName, minionId]?.addAndGet(-1 * dagIds.size)
             if (remainingDagsForMinion == 0) {
-                log.trace { "The minion under load with ID $minionId of campaign $campaignName executed all its steps and is now complete" }
+                log.trace { "The minion under load with ID $minionId of campaign $campaignKey executed all its steps and is now complete" }
                 state.minionComplete = true
                 executionCompleteMutex.withLock {
                     dagsCountByMinions.remove(scenarioName, minionId)
@@ -132,11 +132,11 @@ internal class InMemoryMinionAssignmentKeeper(
 
                         // The verification of the completeness of the scenario and campaign are synchronized to avoid collision.
                         if (minionsInScenario.isEmpty()) {
-                            log.debug { "The scenario $scenarioName of campaign $campaignName is now complete" }
+                            log.debug { "The scenario $scenarioName of campaign $campaignKey is now complete" }
                             state.scenarioComplete = true
                             minionsByScenarios.remove(scenarioName)
                             if (minionsByScenarios.isEmpty()) {
-                                log.debug { "The campaign $campaignName is now complete" }
+                                log.debug { "The campaign $campaignKey is now complete" }
                                 state.campaignComplete = true
                                 localAssignmentStore.reset()
                             }
@@ -144,7 +144,7 @@ internal class InMemoryMinionAssignmentKeeper(
                     }
                 }
             } else {
-                log.trace { "The minion with ID $minionId of campaign $campaignName has still ${remainingDagsForMinion} DAGs to complete" }
+                log.trace { "The minion with ID $minionId of campaign $campaignKey has still ${remainingDagsForMinion} DAGs to complete" }
             }
         }
 
@@ -152,7 +152,7 @@ internal class InMemoryMinionAssignmentKeeper(
     }
 
     override suspend fun getFactoriesChannels(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionIds: Collection<MinionId>,
         dagsIds: Collection<DirectedAcyclicGraphName>

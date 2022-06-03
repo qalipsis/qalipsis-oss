@@ -2,12 +2,13 @@ package io.qalipsis.core.head.campaign
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.FactoryConfiguration
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.lang.tryAndLog
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.directives.CampaignManagementDirective
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -16,6 +17,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
@@ -48,7 +50,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         tryAndLog(log) {
             feedback as CampaignManagementFeedback
             processingMutex.withLock {
-                val sourceCampaignState = get(feedback.tenant, feedback.campaignName)
+                val sourceCampaignState = get(feedback.tenant, feedback.campaignKey)
                 log.trace { "Processing $feedback on $sourceCampaignState" }
                 val campaignState = sourceCampaignState.process(feedback)
                 log.trace { "New campaign state $campaignState" }
@@ -56,56 +58,66 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 val directives = campaignState.init()
                 set(campaignState)
                 directives.forEach {
+                    (it as? CampaignManagementDirective)?.tenant = feedback.tenant
                     headChannel.publishDirective(it)
                 }
             }
         }
     }
 
-    override suspend fun start(campaign: CampaignConfiguration) {
-        val selectedScenarios = campaign.scenarios.keys.toSet()
-        val scenarios = factoryService.getActiveScenarios(campaign.tenant, selectedScenarios).distinctBy { it.name }
+    override suspend fun start(
+        configurer: String,
+        campaignDisplayName: String,
+        configuration: CampaignConfiguration
+    ): Campaign {
+        val selectedScenarios = configuration.scenarios.keys.toSet()
+        val scenarios =
+            factoryService.getActiveScenarios(configuration.tenant, selectedScenarios).distinctBy { it.name }
         val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
         require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
 
-        val factories = factoryService.getAvailableFactoriesForScenarios(campaign.tenant, selectedScenarios)
+        val factories = factoryService.getAvailableFactoriesForScenarios(configuration.tenant, selectedScenarios)
         require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
 
-        campaignService.save(campaign)
+        val createdCampaign = campaignService.create(configurer, campaignDisplayName, configuration)
         selectedScenarios.forEach {
-            campaignReportStateKeeper.start(campaign.name, it)
+            campaignReportStateKeeper.start(configuration.key, it)
         }
         try {
-            log.trace { "Factories to evaluate for campaign ${campaign.name}: ${factories.map(Factory::nodeId)}" }
+            log.trace { "Factories to evaluate for campaign ${configuration.key}: ${factories.map(Factory::nodeId)}" }
             // Locks all the factories from a concurrent assignment resolution.
-            factoryService.lockFactories(campaign, factories.map(Factory::nodeId))
-            val assignments = assignmentResolver.resolveFactoriesAssignments(campaign, factories, scenarios)
-            log.trace { "Factory assignment for campaign ${campaign.name}: $assignments" }
+            factoryService.lockFactories(configuration, factories.map(Factory::nodeId))
+            val assignments = assignmentResolver.resolveFactoriesAssignments(configuration, factories, scenarios)
+            log.trace { "Factory assignment for campaign ${configuration.key}: $assignments" }
 
             // Releases the unassigned factories to make them available for other campaigns.
-            factoryService.releaseFactories(campaign, (factories.map(Factory::nodeId) - assignments.rowKeySet()))
+            factoryService.releaseFactories(configuration, (factories.map(Factory::nodeId) - assignments.rowKeySet()))
 
-            campaign.broadcastChannel = getBroadcastChannelName(campaign)
-            campaign.feedbackChannel = getFeedbackChannelName(campaign)
+            configuration.broadcastChannel = getBroadcastChannelName(configuration)
+            configuration.feedbackChannel = getFeedbackChannelName(configuration)
 
             val factoriesByNodeId = factories.associateBy(Factory::nodeId)
             assignments.rowMap().forEach { (factoryNodeId, assignments) ->
-                campaign.factories[factoryNodeId] = FactoryConfiguration(
+                configuration.factories[factoryNodeId] = FactoryConfiguration(
                     unicastChannel = factoriesByNodeId[factoryNodeId]!!.unicastChannel,
                     assignment = assignments
                 )
             }
 
-            headChannel.subscribeFeedback(campaign.feedbackChannel)
-            val campaignStartState = create(campaign)
+            headChannel.subscribeFeedback(configuration.feedbackChannel)
+            val campaignStartState = create(configuration)
             campaignStartState.inject(campaignExecutionContext)
-            val directives = campaignStartState.init()
-            set(campaignStartState)
-            directives.forEach {
-                headChannel.publishDirective(it)
+            processingMutex.withLock {
+                val directives = campaignStartState.init()
+                set(campaignStartState)
+                directives.forEach {
+                    (it as? CampaignManagementDirective)?.tenant = configuration.tenant
+                    headChannel.publishDirective(it)
+                }
             }
+            return createdCampaign
         } catch (e: Exception) {
-            campaignService.close(campaign.name, ExecutionStatus.FAILED)
+            campaignService.close(configuration.tenant, configuration.key, ExecutionStatus.FAILED)
             throw e
         }
     }
@@ -115,7 +127,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     ): CampaignExecutionState<C>
 
     @LogInputAndOutput
-    abstract suspend fun get(tenant: String, campaignName: CampaignName): CampaignExecutionState<C>
+    abstract suspend fun get(tenant: String, campaignKey: CampaignKey): CampaignExecutionState<C>
 
     @LogInput
     abstract suspend fun set(state: CampaignExecutionState<C>)

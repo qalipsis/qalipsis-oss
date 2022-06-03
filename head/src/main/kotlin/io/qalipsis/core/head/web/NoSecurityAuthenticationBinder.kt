@@ -12,11 +12,12 @@ import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.authentication.ServerAuthentication
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.security.RoleName
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import jakarta.inject.Singleton
 import java.util.Optional
 
 /**
- * Binder to inject the default tenant reference when no security is active.
+ * Binder to inject the default user when no security is active.
  */
 @Singleton
 @Requirements(
@@ -31,7 +32,7 @@ internal class NoSecurityAuthenticationBinder : TypedRequestArgumentBinder<Authe
         return ArgumentBinder.BindingResult {
             Optional.of(
                 ServerAuthentication(
-                    "_qalipsis_",
+                    Defaults.USER,
                     RoleName.values().asSequence().flatMap { it.permissions }.toSet(),
                     emptyMap()
                 )

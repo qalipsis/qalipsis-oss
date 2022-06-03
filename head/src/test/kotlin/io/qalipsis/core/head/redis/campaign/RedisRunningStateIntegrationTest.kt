@@ -61,7 +61,7 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         // then
         assertThat(directives).isSameAs(initDirectives)
 
-        assertThat(operations.getState(campaign.tenant, campaign.name)).isNotNull().all {
+        assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.RUNNING_STATE)
         }
@@ -245,7 +245,7 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             val newState = state.process(mockk<EndOfCampaignScenarioFeedback> {
-                every { campaignName } returns "my-campaign"
+                every { campaignKey } returns "my-campaign"
                 every { scenarioName } returns "the scenario"
             })
 
@@ -286,7 +286,7 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             var newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
-                every { campaignName } returns "my-campaign"
+                every { campaignKey } returns "my-campaign"
                 every { scenarioName } returns "scenario-1"
             })
 
@@ -296,7 +296,7 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // when
             newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
-                every { campaignName } returns "my-campaign"
+                every { campaignKey } returns "my-campaign"
                 every { scenarioName } returns "scenario-2"
             })
 

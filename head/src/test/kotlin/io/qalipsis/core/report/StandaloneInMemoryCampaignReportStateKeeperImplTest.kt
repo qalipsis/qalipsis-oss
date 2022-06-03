@@ -332,7 +332,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
         // then
         assertThat(report).all {
-            prop(CampaignReport::campaignName).isEqualTo("the campaign")
+            prop(CampaignReport::campaignKey).isEqualTo("the campaign")
             prop(CampaignReport::start).isNotNull()
             prop(CampaignReport::end).isNotNull()
             prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)
@@ -380,7 +380,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignName).isEqualTo("the campaign")
+                prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state1.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
@@ -435,7 +435,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignName).isEqualTo("the campaign")
+                prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state1.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.WARNING)
@@ -490,7 +490,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignName).isEqualTo("the campaign")
+                prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state2.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.FAILED)
@@ -542,7 +542,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignName).isEqualTo("the campaign")
+                prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state2.end)
                 prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)

@@ -40,7 +40,7 @@ internal class CampaignAbortDirectiveListenerTest {
     @Timeout(1)
     fun `should accept campaign abort directive`() {
         val directive = CampaignAbortDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
             abortCampaignConfiguration = AbortCampaignConfiguration()
@@ -54,7 +54,7 @@ internal class CampaignAbortDirectiveListenerTest {
     @Timeout(1)
     fun `should not accept campaign abort directive when the campaign is not executed locally`() {
         val directive = CampaignAbortDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
             abortCampaignConfiguration = AbortCampaignConfiguration()
@@ -73,7 +73,7 @@ internal class CampaignAbortDirectiveListenerTest {
     @Test
     fun `should process the directive and confirm when all is right`() = testCoroutineDispatcher.runTest {
         val directive = CampaignAbortDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
             abortCampaignConfiguration = AbortCampaignConfiguration()
@@ -86,7 +86,7 @@ internal class CampaignAbortDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 CampaignAbortFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     status = FeedbackStatus.IN_PROGRESS,
                     scenarioNames = listOf("my-scenario-1", "my-scenario-2")
                 )
@@ -95,7 +95,7 @@ internal class CampaignAbortDirectiveListenerTest {
             factoryCampaignManager.shutdownScenario("my-campaign", "my-scenario-2")
             factoryChannel.publishFeedback(
                 CampaignAbortFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     status = FeedbackStatus.COMPLETED,
                     scenarioNames = listOf("my-scenario-1", "my-scenario-2")
                 )
@@ -107,7 +107,7 @@ internal class CampaignAbortDirectiveListenerTest {
     @Test
     fun `should process the directive and fail when there is an exception`() = testCoroutineDispatcher.runTest {
         val directive = CampaignAbortDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
             abortCampaignConfiguration = AbortCampaignConfiguration()
@@ -121,7 +121,7 @@ internal class CampaignAbortDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 CampaignAbortFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     status = FeedbackStatus.IN_PROGRESS,
                     scenarioNames = listOf("my-scenario-1", "my-scenario-2")
                 )
@@ -129,7 +129,7 @@ internal class CampaignAbortDirectiveListenerTest {
             factoryCampaignManager.shutdownScenario("my-campaign", "my-scenario-1")
             factoryChannel.publishFeedback(
                 CampaignAbortFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     status = FeedbackStatus.FAILED,
                     scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
                     error = "A problem occurred"

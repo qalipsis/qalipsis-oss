@@ -9,14 +9,14 @@ import io.qalipsis.core.feedbacks.Feedback
 
 internal open class CompletionState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
     override suspend fun doInit(): List<Directive> {
         return listOf(
             CampaignShutdownDirective(
-                campaignName = campaignName,
+                campaignKey = campaignKey,
                 channel = campaign.broadcastChannel
             )
         )

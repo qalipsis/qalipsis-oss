@@ -180,7 +180,7 @@ internal class ContextInitializer(
             { true }
         ).apply {
             if (this.isNotBlank()) {
-                properties["campaign.name"] = this
+                properties["campaign.key"] = this
             }
         }
         val loadSelectionStrategy: Int = promptAndValidate(

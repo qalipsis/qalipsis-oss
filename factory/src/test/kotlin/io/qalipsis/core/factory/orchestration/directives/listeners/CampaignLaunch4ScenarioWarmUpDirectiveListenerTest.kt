@@ -94,7 +94,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
             localAssignmentStore.hasMinionsAssigned("my-scenario")
             factoryChannel.publishFeedback(
                 ScenarioWarmUpFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -102,7 +102,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
             factoryCampaignManager.warmUpCampaignScenario("my-campaign", "my-scenario")
             factoryChannel.publishFeedback(
                 ScenarioWarmUpFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
@@ -127,7 +127,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
             localAssignmentStore.hasMinionsAssigned("my-scenario")
             factoryChannel.publishFeedback(
                 ScenarioWarmUpFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IGNORED
                 )
@@ -155,7 +155,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
             localAssignmentStore.hasMinionsAssigned("my-scenario")
             factoryChannel.publishFeedback(
                 ScenarioWarmUpFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -163,7 +163,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
             factoryCampaignManager.warmUpCampaignScenario("my-campaign", "my-scenario")
             factoryChannel.publishFeedback(
                 ScenarioWarmUpFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
                     error = "A problem occurred"

@@ -70,7 +70,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
             hasSize(2)
             any {
                 it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                    prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                    prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
                     prop(FactoryAssignmentDirective::assignments).all {
                         hasSize(2)
                         any {
@@ -95,7 +95,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
             }
             any {
                 it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                    prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                    prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
                     prop(FactoryAssignmentDirective::assignments).all {
                         hasSize(1)
                         any {

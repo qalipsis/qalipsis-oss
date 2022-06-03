@@ -38,6 +38,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
@@ -104,9 +105,18 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                name = "my-campaign",
+                tenant = "my-tenant",
+                key = "my-campaign",
                 scenarios = linkedMapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             )
+            val createdCampaign = relaxedMockk<Campaign>()
+            coEvery {
+                campaignService.create(
+                    "qalipsis-user",
+                    "This is a campaign",
+                    refEq(campaign)
+                )
+            } returns createdCampaign
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
@@ -119,7 +129,7 @@ internal class RedisCampaignManagerTest {
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
             coEvery {
                 factoryService.getAvailableFactoriesForScenarios(
-                    campaign.tenant,
+                    "my-tenant",
                     setOf("scenario-1", "scenario-2")
                 )
             } returns
@@ -142,9 +152,10 @@ internal class RedisCampaignManagerTest {
             } returns assignments
 
             // when
-            campaignManager.start(campaign)
+            val result = campaignManager.start("qalipsis-user", "This is a campaign", campaign)
 
             // then
+            assertThat(result).isSameAs(createdCampaign)
             assertThat(campaign.factories).all {
                 hasSize(2)
                 key("factory-1").all {
@@ -175,7 +186,7 @@ internal class RedisCampaignManagerTest {
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
-                campaignService.save(refEq(campaign))
+                campaignService.create("qalipsis-user", "This is a campaign", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(campaign),
@@ -198,7 +209,7 @@ internal class RedisCampaignManagerTest {
                 hasSize(2)
                 any {
                     it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                        prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                        prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
                         prop(FactoryAssignmentDirective::assignments).all {
                             hasSize(2)
                             any {
@@ -223,7 +234,7 @@ internal class RedisCampaignManagerTest {
                 }
                 any {
                     it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                        prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                        prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
                         prop(FactoryAssignmentDirective::assignments).all {
                             hasSize(1)
                             any {
@@ -243,31 +254,40 @@ internal class RedisCampaignManagerTest {
         }
 
     @Test
-    internal fun `should close the campaign when an exception occurs`() =
+    internal fun `should close the campaign after creation when an exception occurs`() =
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                name = "my-campaign",
+                key = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk()),
+                tenant = "my-tenant"
             )
+            val createdCampaign = relaxedMockk<Campaign>()
+            coEvery {
+                campaignService.create(
+                    "qalipsis-user",
+                    "This is a campaign",
+                    refEq(campaign)
+                )
+            } returns createdCampaign
             coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1")) } returns
                     listOf(relaxedMockk { every { name } returns "scenario-1" })
-            coEvery { factoryService.getAvailableFactoriesForScenarios(campaign.tenant, any()) } returns
+            coEvery { factoryService.getAvailableFactoriesForScenarios("my-tenant", any()) } returns
                     listOf(relaxedMockk { every { nodeId } returns "factory-1" })
             coEvery { factoryService.lockFactories(any(), any()) } throws RuntimeException("Something wrong occurred")
 
             // when
             assertThrows<RuntimeException> {
-                campaignManager.start(campaign)
+                campaignManager.start("qalipsis-user", "This is a campaign", campaign)
             }
 
             // then
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1"))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1"))
-                campaignService.save(refEq(campaign))
+                campaignService.create("qalipsis-user", "This is a campaign", refEq(campaign))
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1"))
-                campaignService.close("my-campaign", ExecutionStatus.FAILED)
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)
             }
         }
 
@@ -276,7 +296,7 @@ internal class RedisCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                name = "my-campaign",
+                key = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             )
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
@@ -286,7 +306,7 @@ internal class RedisCampaignManagerTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start(campaign)
+                campaignManager.start("qalipsis-user", "This is a campaign", campaign)
             }
         }
 

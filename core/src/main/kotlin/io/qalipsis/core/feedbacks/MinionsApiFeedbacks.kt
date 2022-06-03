@@ -1,6 +1,6 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import kotlinx.serialization.SerialName
@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
  * Feedback to a [io.qalipsis.core.directives.MinionsAssignmentDirective].
  *
  * @property key unique key of the feedback
- * @property campaignName campaign to which the feedback relates
+ * @property campaignKey campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("ma")
 data class MinionsAssignmentFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
     override val error: String? = null
@@ -36,7 +36,7 @@ data class MinionsAssignmentFeedback(
  * Feedback to a [io.qalipsis.core.directives.MinionsStartDirective].
  *
  * @property key unique key of the feedback
- * @property campaignName campaign to which the feedback relates
+ * @property campaignKey campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
@@ -47,7 +47,7 @@ data class MinionsAssignmentFeedback(
 @Serializable
 @SerialName("ms")
 data class MinionsStartFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
     override val error: String? = null
@@ -67,7 +67,7 @@ data class MinionsStartFeedback(
 @Serializable
 @SerialName("cmf")
 data class CompleteMinionFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     val minionId: MinionId,
     override val status: FeedbackStatus,
@@ -83,7 +83,7 @@ data class CompleteMinionFeedback(
  * Feedback to a [io.qalipsis.core.directives.MinionsStartDirective].
  *
  * @property key unique key of the feedback
- * @property campaignName campaign to which the feedback relates
+ * @property campaignKey campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property minionIds IDs of all the minions to shut down
  * @property nodeId ID of the factory node that emitted the feedback
@@ -95,7 +95,7 @@ data class CompleteMinionFeedback(
 @Serializable
 @SerialName("msd")
 data class MinionsShutdownFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     val minionIds: List<MinionId>,
     override val status: FeedbackStatus,

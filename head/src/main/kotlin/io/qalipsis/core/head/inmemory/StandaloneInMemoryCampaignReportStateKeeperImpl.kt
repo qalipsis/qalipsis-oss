@@ -2,7 +2,7 @@ package io.qalipsis.core.head.inmemory
 
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.IdGenerator
@@ -50,22 +50,22 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun start(campaignName: CampaignName, scenarioName: ScenarioName) {
+    override suspend fun start(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         scenarioStates[scenarioName] = InMemoryScenarioReportingExecutionState(scenarioName)
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun complete(campaignName: CampaignName, scenarioName: ScenarioName) {
+    override suspend fun complete(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         scenarioStates[scenarioName]!!.end = Instant.now()
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun complete(campaignName: CampaignName) {
+    override suspend fun complete(campaignKey: CampaignKey) {
         runningCampaignLatch.cancel()
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun abort(campaignName: CampaignName) {
+    override suspend fun abort(campaignKey: CampaignKey) {
         val abortTimestamp = Instant.now()
         scenarioStates.filterValues { state -> state.end == null && state.abort == null }
             .forEach { (_, state) ->
@@ -77,7 +77,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
 
     @LogInputAndOutput
     override suspend fun put(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
         severity: ReportMessageSeverity,
@@ -89,14 +89,14 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         }
     }
 
-    override suspend fun clear(campaignName: CampaignName) {
+    override suspend fun clear(campaignKey: CampaignKey) {
         scenarioStates.clear()
         runningCampaignLatch.lock()
     }
 
     @LogInput
     override suspend fun delete(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
         messageId: Any
@@ -105,13 +105,13 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     }
 
     @LogInput
-    override suspend fun recordStartedMinion(campaignName: CampaignName, scenarioName: ScenarioName, count: Int): Long {
+    override suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int): Long {
         return scenarioStates[scenarioName]!!.startedMinionsCounter.addAndGet(count).toLong()
     }
 
     @LogInput
     override suspend fun recordCompletedMinion(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         count: Int
     ): Long {
@@ -120,7 +120,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
 
     @LogInput
     override suspend fun recordSuccessfulStepExecution(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
         count: Int
@@ -130,7 +130,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
 
     @LogInput
     override suspend fun recordFailedStepExecution(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
         count: Int
@@ -139,10 +139,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     }
 
     @LogInputAndOutput
-    override suspend fun report(campaignName: CampaignName): CampaignReport {
+    override suspend fun report(campaignKey: CampaignKey): CampaignReport {
         join()
         return scenarioStates.map { (_, runningScenarioCampaign) ->
-            runningScenarioCampaign.toReport(campaignName)
+            runningScenarioCampaign.toReport(campaignKey)
         }.toCampaignReport()
     }
 

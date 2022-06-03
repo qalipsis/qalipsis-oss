@@ -46,11 +46,13 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val campaign = campaignRepository.save(
             CampaignEntity(
                 tenantId = tenant.id,
-                campaignName = "the-campaign-id",
+                key = "the-campaign-id",
+                name = "This is a campaign",
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
-                result = ExecutionStatus.SUCCESSFUL
+                result = ExecutionStatus.SUCCESSFUL,
+                configurer = 1
             )
         )
         val campaignReport = campaignReportRepository.save(CampaignReportEntity(campaign.id, 1000, 990, 990, 10))
