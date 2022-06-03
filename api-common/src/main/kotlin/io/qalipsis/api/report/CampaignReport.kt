@@ -1,6 +1,6 @@
 package io.qalipsis.api.report
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import java.time.Instant
 
 /**
@@ -9,7 +9,7 @@ import java.time.Instant
  * @author Eric Jessé
  */
 data class CampaignReport(
-    val campaignName: CampaignName,
+    val campaignKey: CampaignKey,
     val start: Instant,
     val end: Instant?,
     val startedMinions: Int = 0,

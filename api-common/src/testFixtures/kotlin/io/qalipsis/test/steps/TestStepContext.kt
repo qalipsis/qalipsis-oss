@@ -1,7 +1,7 @@
 package io.qalipsis.test.steps
 
 import io.micrometer.core.instrument.Tags
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.MinionId
@@ -27,7 +27,7 @@ class TestStepContext<IN, OUT>(
     val input: ReceiveChannel<IN> = Channel(1),
     val output: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(1),
     private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),
-    override val campaignName: CampaignName = "",
+    override val campaignKey: CampaignKey = "",
     override val minionId: MinionId,
     override val scenarioName: ScenarioName,
     override val previousStepName: StepName? = null,
@@ -58,7 +58,7 @@ class TestStepContext<IN, OUT>(
 
     override val equivalentCompletionContext: CompletionContext
         get() = DefaultCompletionContext(
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             scenarioName = scenarioName,
             minionId = minionId,
             lastExecutedStepName = stepName,
@@ -119,7 +119,7 @@ class TestStepContext<IN, OUT>(
         return TestStepContext(
             input = inputChannel ?: this.input,
             output = outputChannel ?: this.output,
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             minionId = minionId,
             scenarioName = scenarioName,
             previousStepName = this.stepName,
@@ -143,7 +143,7 @@ class TestStepContext<IN, OUT>(
         return TestStepContext(
             input = Channel(1),
             internalErrors = LinkedHashSet(internalErrors),
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             minionId = minionId,
             scenarioName = scenarioName,
             previousStepName = this.stepName,
@@ -156,7 +156,7 @@ class TestStepContext<IN, OUT>(
     override fun toEventTags(): Map<String, String> {
         if (immutableEventTags == null) {
             val tags = mutableMapOf(
-                "campaign" to campaignName,
+                "campaign" to campaignKey,
                 "minion" to minionId,
                 "scenario" to scenarioName,
                 "iteration" to "$stepIterationIndex"
@@ -175,7 +175,7 @@ class TestStepContext<IN, OUT>(
     override fun toMetersTags(): Tags {
         if (immutableMetersTags == null) {
             var tags = Tags.of(
-                "campaign", campaignName,
+                "campaign", campaignKey,
                 "scenario", scenarioName,
                 "step", stepName
             )

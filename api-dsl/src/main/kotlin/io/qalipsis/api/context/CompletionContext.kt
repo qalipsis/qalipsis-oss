@@ -3,7 +3,7 @@ package io.qalipsis.api.context
 /**
  * Context to provide to steps to notify that the tail of the convey of executions of a minion reached them and left.
  *
- * @property campaignName Identifier of the test campaign owning the context
+ * @property campaignKey Identifier of the test campaign owning the context
  * @property minionId Identifier of the Minion owning the context
  * @property scenarioName Identifier of the Scenario being executed
  * @property lastExecutedStepName Identifier of the lately executed step
@@ -13,7 +13,7 @@ package io.qalipsis.api.context
  *
  */
 interface CompletionContext : MonitoringTags {
-    val campaignName: CampaignName
+    val campaignKey: CampaignKey
     val scenarioName: ScenarioName
     val minionId: MinionId
     val lastExecutedStepName: StepName

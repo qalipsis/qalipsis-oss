@@ -1,5 +1,6 @@
 package io.qalipsis.test.steps
 
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
@@ -20,7 +21,7 @@ object StepTestHelper {
         outputChannel: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(100),
         errors: MutableList<StepError> = mutableListOf(),
         minionId: MinionId = "my-minion",
-        campaignName: ScenarioName = "",
+        campaignKey: CampaignKey = "",
         scenarioName: ScenarioName = "",
         previousStepName: StepName = "my-previous-step",
         stepName: StepName = "my-step",
@@ -36,7 +37,7 @@ object StepTestHelper {
             inputChannel,
             outputChannel,
             errors,
-            campaignName,
+            campaignKey,
             minionId,
             scenarioName,
             previousStepName,

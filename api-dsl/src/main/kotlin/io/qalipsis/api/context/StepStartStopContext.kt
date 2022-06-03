@@ -5,7 +5,7 @@ import io.micrometer.core.instrument.Tags
 /**
  * Data class to pass to a step when starting and stopping it.
  *
- * @property campaignName identifier of the test campaign owning the context
+ * @property campaignKey identifier of the test campaign owning the context
  * @property scenarioName identifier of the Scenario being executed
  * @property dagId identifier of the DirectedAcyclicGraph being executed
  * @property stepName identifier of the Step being initialized
@@ -14,7 +14,7 @@ import io.micrometer.core.instrument.Tags
  * @author Eric Jessé
  */
 data class StepStartStopContext(
-    val campaignName: CampaignName,
+    val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     val dagId: DirectedAcyclicGraphName,
     val stepName: StepName,
@@ -23,7 +23,7 @@ data class StepStartStopContext(
 
     override fun toEventTags(): Map<String, String> {
         return mutableMapOf(
-            "campaign" to campaignName,
+            "campaign" to campaignKey,
             "scenario" to scenarioName,
             "dag" to dagId,
             "step" to stepName,
@@ -32,7 +32,7 @@ data class StepStartStopContext(
 
     override fun toMetersTags(): Tags {
         return Tags.of(
-            "campaign", campaignName,
+            "campaign", campaignKey,
             "scenario", scenarioName,
             "dag", dagId,
             "step", stepName

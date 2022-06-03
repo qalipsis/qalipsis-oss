@@ -1,6 +1,6 @@
 package io.qalipsis.api.runtime
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
@@ -55,12 +55,12 @@ interface Scenario {
     /**
      * Starts a new campaign on the scenario.
      */
-    suspend fun start(campaignName: CampaignName)
+    suspend fun start(campaignKey: CampaignKey)
 
     /**
      * Stops a running campaign on the scenario.
      */
-    suspend fun stop(campaignName: CampaignName)
+    suspend fun stop(campaignKey: CampaignKey)
 
     /**
      * Destroys the scenario and all its components recursively.

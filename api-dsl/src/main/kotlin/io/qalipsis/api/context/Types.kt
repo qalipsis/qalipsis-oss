@@ -12,6 +12,6 @@ typealias DirectedAcyclicGraphName = Identifier
 
 typealias SharedStateName = Identifier
 
-typealias CampaignName = Identifier
+typealias CampaignKey = Identifier
 
 typealias NodeId = String

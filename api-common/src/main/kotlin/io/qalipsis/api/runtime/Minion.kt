@@ -1,6 +1,6 @@
 package io.qalipsis.api.runtime
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -18,7 +18,7 @@ interface Minion {
 
     val id: MinionId
 
-    val campaignName: CampaignName
+    val campaignKey: CampaignKey
 
     val scenarioName: ScenarioName
 
@@ -43,7 +43,7 @@ interface Minion {
      * Configures the [MDC] context for the execution of the minion.
      */
     fun completeMdcContext() {
-        MDC.put("campaign", this.campaignName)
+        MDC.put("campaign", this.campaignKey)
         MDC.put("scenario", this.scenarioName)
         MDC.put("minion", this.id)
     }

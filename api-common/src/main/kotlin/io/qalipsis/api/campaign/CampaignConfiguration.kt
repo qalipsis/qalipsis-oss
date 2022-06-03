@@ -1,6 +1,6 @@
 package io.qalipsis.api.campaign
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
@@ -11,7 +11,7 @@ import javax.validation.constraints.NotEmpty
 @Serializable
 data class CampaignConfiguration(
     val tenant: String = "",
-    val name: CampaignName,
+    val key: CampaignKey,
     val speedFactor: Double = 1.0,
     val startOffsetMs: Long = 1000,
     val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap()

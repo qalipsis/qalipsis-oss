@@ -7,7 +7,7 @@ import kotlinx.coroutines.channels.SendChannel
  * Context of a unique execution of a minion on a step.
  * When the same minion repeats the same step in a raw, several contexts should be used.
  *
- * @property campaignName Identifier of the test campaign owning the context
+ * @property campaignKey Identifier of the test campaign owning the context
  * @property minionId Identifier of the Minion owning the context
  * @property scenarioName Identifier of the Scenario being executed
  * @property previousStepName First ancestor step
@@ -24,7 +24,7 @@ import kotlinx.coroutines.channels.SendChannel
  *
  */
 interface StepContext<IN, OUT> : StepOutput<OUT>, MonitoringTags {
-    val campaignName: CampaignName
+    val campaignKey: CampaignKey
     val minionId: MinionId
     val scenarioName: ScenarioName
     val previousStepName: StepName?
