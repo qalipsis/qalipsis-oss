@@ -44,5 +44,8 @@ internal data class Campaign(
     val result: ExecutionStatus?,
 
     @field:Schema(description = "Name of the user, who created the campaign", required = false)
-    val configurerName: String?
+    val configurerName: String?,
+
+    @field:Schema(description = "Scenarios being part of the campaign", required = true)
+    val scenarios: Collection<Scenario>
 )

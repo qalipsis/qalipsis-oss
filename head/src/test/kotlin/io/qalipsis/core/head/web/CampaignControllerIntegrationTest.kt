@@ -7,6 +7,7 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
+import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
@@ -18,13 +19,17 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.Page
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.test.mockk.WithMockk
@@ -48,6 +53,9 @@ internal class CampaignControllerIntegrationTest {
     private lateinit var campaignManager: CampaignManager
 
     @RelaxedMockK
+    private lateinit var campaignService: CampaignService
+
+    @RelaxedMockK
     private lateinit var clusterFactoryService: FactoryService
 
     @RelaxedMockK
@@ -55,6 +63,9 @@ internal class CampaignControllerIntegrationTest {
 
     @MockBean(FactoryService::class)
     fun clusterFactoryService() = clusterFactoryService
+
+    @MockBean(CampaignService::class)
+    fun campaignService() = campaignService
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
@@ -79,7 +90,11 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = null,
             configurerName = Defaults.USER,
-            result = null
+            result = null,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
         )
         coEvery {
             campaignManager.start(
@@ -180,6 +195,131 @@ internal class CampaignControllerIntegrationTest {
             transform("body") {
                 it.response.getBody(String::class.java).get()
             }.contains("Scenarios with names Scenario1 are unknown or currently disabled")
+        }
+    }
+
+    @Test
+    fun `should return page of campaigns`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            result = ExecutionStatus.SUCCESSFUL,
+            configurerName = Defaults.USER,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/")
+
+        coEvery {
+            campaignService.search(
+                Defaults.TENANT,
+                null,
+                null,
+                0,
+                20
+            )
+        } returns Page(0, 1, 1, listOf(campaign))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
+        }
+    }
+
+    @Test
+    fun `should return page of campaigns with filter`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            result = ExecutionStatus.SUCCESSFUL,
+            configurerName = Defaults.USER,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/?filter=an*,other")
+        coEvery {
+            campaignService.search(
+                Defaults.TENANT,
+                "an*,other",
+                null,
+                0,
+                20
+            )
+        } returns Page(0, 1, 1, listOf(campaign))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
+        }
+    }
+
+    @Test
+    fun `should return page of campaigns with filter and sort`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            result = ExecutionStatus.SUCCESSFUL,
+            configurerName = Defaults.USER,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+
+        val listsRequest =
+            HttpRequest.GET<Page<Campaign>>("/?filter=campaign&sort=name")
+
+        coEvery {
+            campaignService.search(
+                Defaults.TENANT,
+                "campaign",
+                "name",
+                0,
+                20
+            )
+        } returns Page(0, 1, 1, listOf(campaign))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
     }
 }

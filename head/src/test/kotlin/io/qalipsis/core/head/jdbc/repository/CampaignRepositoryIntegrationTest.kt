@@ -2,22 +2,30 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsOnly
 import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.EmptyResultException
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.head.jdbc.entity.UserEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -41,6 +49,9 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Inject
     private lateinit var tenantRepository: TenantRepository
 
+    @Inject
+    private lateinit var userRepository: UserRepository
+
     private val campaignPrototype =
         CampaignEntity(
             key = "the-campaign-id",
@@ -49,21 +60,23 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
             result = ExecutionStatus.SUCCESSFUL,
-            configurer = 1
+            configurer = 1L // Default user.
         )
 
-    private val tenantPrototype =
-        TenantEntity(
-            Instant.now(),
-            "my-tenant",
-            "test-tenant",
-        )
+    private val tenantPrototype = TenantEntity(Instant.now(), "my-tenant", "test-tenant")
+
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
         campaignRepository.deleteAll()
         factoryRepository.deleteAll()
         tenantRepository.deleteAll()
+        kotlin.runCatching {
+            val allButDefaultUsers = userRepository.findAll().filterNot { it.username == Defaults.USER }.toList()
+            if (allButDefaultUsers.isNotEmpty()) {
+                userRepository.deleteAll(allButDefaultUsers)
+            }
+        }
     }
 
     @Test
@@ -82,8 +95,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should find the ID of the running campaign`() = testDispatcherProvider.run {
         // given
-        val savedTenant = tenantRepository.save(tenantPrototype.copy())
-        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = savedTenant.id))
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when + then
         assertThrows<EmptyResultException> {
@@ -100,17 +113,17 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should find the ID of the running campaign and different tenants aren't mixed up`() =
         testDispatcherProvider.run {
             // given
-            val savedTenant = tenantRepository.save(tenantPrototype.copy())
-            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
             val saved =
-                campaignRepository.save(campaignPrototype.copy(key = "1", end = null, tenantId = savedTenant.id))
+                campaignRepository.save(campaignPrototype.copy(key = "1", end = null, tenantId = tenant.id))
             val saved2 =
                 campaignRepository.save(
                     campaignPrototype.copy(
                         key = "2",
                         name = "new",
                         end = null,
-                        tenantId = savedTenant2.id
+                        tenantId = tenant2.id
                     )
                 )
 
@@ -206,4 +219,197 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::result).isEqualTo(ExecutionStatus.FAILED)
         }
     }
+
+    @Test
+    fun `should find all campaigns in tenant without filter but with paging`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val saved = campaignRepository.save(campaignPrototype.copy(key = "1", end = null, tenantId = tenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(key = "2", end = null, tenantId = tenant.id))
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    Pageable.from(0, 1, Sort.of(Sort.Order("key")))
+                ).content
+            )
+                .containsOnly(saved)
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    Pageable.from(1, 1, Sort.of(Sort.Order("key")))
+                ).content
+            )
+                .containsOnly(saved2)
+        }
+
+    @Test
+    fun `should find all campaigns in tenant with filter and paging`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(key = "anyone-1", end = null, tenantId = tenant.id))
+            val saved3 =
+                campaignRepository.save(campaignPrototype.copy(key = "anyone-2", end = null, tenantId = tenant.id))
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%NyO%", "%NoNe%"),
+                    Pageable.from(0, 2, Sort.of(Sort.Order("key")))
+                )
+            ).containsOnly(saved2, saved3)
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%NyO%", "%NoNe%"),
+                    Pageable.from(0, 2, Sort.of(Sort.Order("key", Sort.Order.Direction.DESC, true)))
+                )
+            ).containsOnly(saved3, saved2)
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%NyO%", "%NoNe%"),
+                    Pageable.from(0, 1, Sort.of(Sort.Order("key")))
+                )
+            ).containsOnly(saved2)
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%NyO%", "%NoNe%"),
+                    Pageable.from(1, 1, Sort.of(Sort.Order("key")))
+                )
+            ).containsOnly(saved3)
+
+            assertThat(
+                campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
+            ).isEmpty()
+        }
+
+    @Test
+    fun `should find all campaigns in tenant with filter on key`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+            val saved2 =
+                campaignRepository.save(campaignPrototype.copy(key = "anyone", end = null, tenantId = tenant.id))
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll("my-tenant-2", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
+            ).containsOnly(saved2)
+            assertThat(
+                campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
+            ).isEmpty()
+        }
+
+    @Test
+    fun `should find all campaigns in tenant with filter on name`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+            val saved2 =
+                campaignRepository.save(
+                    campaignPrototype.copy(
+                        key = "the-key",
+                        name = "The other name",
+                        end = null,
+                        tenantId = tenant.id
+                    )
+                )
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%OtH%", "%NoNe%"),
+                    Pageable.from(0, 1)
+                )
+            ).containsOnly(saved2)
+            assertThat(
+                campaignRepository.findAll(
+                    "other-tenant",
+                    listOf("%OtH%", "%NoNe%"),
+                    Pageable.from(0, 1)
+                )
+            ).isEmpty()
+        }
+
+    @Test
+    fun `should find all campaigns in tenant with filter on configurer username`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val user = userRepository.save(UserEntity(username = "John Doe"))
+            campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+            val saved2 =
+                campaignRepository.save(
+                    campaignPrototype.copy(
+                        key = "the-key",
+                        name = "The other name",
+                        end = null,
+                        tenantId = tenant.id,
+                        configurer = user.id
+                    )
+                )
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%HN%", "%NoNe%"),
+                    Pageable.from(0, 1)
+                )
+            ).containsOnly(saved2)
+            assertThat(
+                campaignRepository.findAll(
+                    "other-tenant",
+                    listOf("%HN%", "%NoNe%"),
+                    Pageable.from(0, 1)
+                )
+            ).isEmpty()
+        }
+
+    @Test
+    fun `should find all campaigns in tenant with filter on configurer display name`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val user = userRepository.save(UserEntity(username = "foo", displayName = "John Doe"))
+            campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
+            val saved2 =
+                campaignRepository.save(
+                    campaignPrototype.copy(
+                        key = "the-key",
+                        name = "The other name",
+                        end = null,
+                        tenantId = tenant.id,
+                        configurer = user.id
+                    )
+                )
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%HN%", "%NoNe%"),
+                    Pageable.from(0, 1)
+                )
+            ).containsOnly(saved2)
+            assertThat(
+                campaignRepository.findAll(
+                    "other-tenant",
+                    listOf("%HN%", "%NoNe%"),
+                    Pageable.from(0, 1)
+                )
+            ).isEmpty()
+        }
 }

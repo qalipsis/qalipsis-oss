@@ -1,7 +1,15 @@
 package io.qalipsis.core.head.campaign
 
+import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import assertk.assertions.isSameAs
+import assertk.assertions.prop
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -137,4 +145,182 @@ internal class PersistentCampaignServiceTest {
         every { Clock.systemUTC() } returns fixedClock
         return now
     }
+
+
+    @Test
+    internal fun `should returns the searched campaigns from the repository with default sorting`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("start")))
+            val page = Page.of(listOf(campaignEntity1, campaignEntity2), pageable, 2)
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
+
+            // when
+            val result = persistentCampaignService.search("my-tenant", null, null, 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign1, campaign2)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable)
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+            }
+            confirmVerified(campaignRepository, campaignConverter)
+        }
+
+    @Test
+    internal fun `should returns the searched campaigns from the repository with sorting asc`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
+
+            // when
+            val result = persistentCampaignService.search("my-tenant", null, "name:asc", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign1, campaign2)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable)
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+            }
+            confirmVerified(campaignRepository, campaignConverter)
+        }
+
+    @Test
+    internal fun `should returns the searched campaigns from the repository with sorting desc`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("name")))
+            val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
+
+            // when
+            val result = persistentCampaignService.search("my-tenant", null, "name:desc", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign1, campaign2)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable)
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+            }
+            confirmVerified(campaignRepository, campaignConverter)
+        }
+
+    @Test
+    internal fun `should returns the searched campaigns from the repository with sorting`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
+
+            // when
+            val result = persistentCampaignService.search("my-tenant", null, "name", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign1, campaign2)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable)
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+            }
+            confirmVerified(campaignRepository, campaignConverter)
+        }
+
+    @Test
+    internal fun `should returns the searched campaigns from the repository with sorting and filtering`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val filter1 = "%test%"
+            val filter2 = "%he%lo%"
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
+            coEvery { campaignRepository.findAll("my-tenant", listOf(filter1, filter2), pageable) } returns page
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
+
+            // when
+            val result = persistentCampaignService.search("my-tenant", "test, he*lo", "name", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign1, campaign2)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", listOf(filter1, filter2), pageable)
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+            }
+            confirmVerified(campaignRepository, campaignConverter)
+        }
 }
