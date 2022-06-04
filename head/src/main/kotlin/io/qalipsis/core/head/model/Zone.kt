@@ -32,8 +32,4 @@ internal data class Zone(
     @field:NotBlank
     @field:Size(min = 3, max = 50)
     val description: String
-){
-    override fun toString(): String {
-        return "Zone(key='$key', title='$title', description='$description')"
-    }
-}
+)

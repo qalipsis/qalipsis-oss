@@ -28,7 +28,7 @@ internal class ZoneController(val headConfiguration: HeadConfiguration) {
     @Get
     @Operation(
         summary = "List of zones",
-        description = "List all the available zones to execute scenarios,",
+        description = "List all the available zones to execute scenarios",
         responses = [
             ApiResponse(responseCode = "200", description = "Details of available zones"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),

@@ -34,9 +34,8 @@ class ZoneControllerIntegrationTest {
     @MockBean(HeadConfiguration::class)
     internal fun headConfiguration() = headConfiguration
 
-
     @Test
-    fun `should return list of zones`() {
+    fun `should list all the zones`() {
         // given
         val zone = Zone("en", "England", "description")
         coEvery { headConfiguration.zones } returns setOf(zone)
