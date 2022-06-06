@@ -2,6 +2,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import io.micronaut.data.annotation.Query
 import io.micronaut.data.jdbc.annotation.JdbcRepository
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.report.ExecutionStatus
@@ -18,22 +20,66 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     @Query(
         """SELECT campaign.id
             FROM campaign
-            WHERE name = :campaignName AND "end" IS NULL AND EXISTS 
+            WHERE key = :campaignKey AND "end" IS NULL AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByNameAndEndIsNull(tenant: String, campaignName: String): Long
+    suspend fun findIdByKeyAndEndIsNull(tenant: String, campaignKey: String): Long
+
+    @Query(
+        """SELECT *
+            FROM campaign
+            WHERE key = :campaignKey AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findByKey(tenant: String, campaignKey: String): CampaignEntity
 
     @Query(
         """SELECT campaign.id
             FROM campaign
-            WHERE name = :campaignName AND EXISTS 
+            WHERE key = :campaignKey AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByName(tenant: String, campaignName: String): Long
+    suspend fun findIdByKey(tenant: String, campaignKey: String): Long
 
     /**
-     * Marks the open campaign with the specified name [campaignName] as complete with the provided [result].
+     * Marks the open campaign with the specified name [campaignKey] as complete with the provided [result].
      */
-    @Query("""UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE name = :campaignName AND "end" IS NULL""")
-    suspend fun close(campaignName: String, result: ExecutionStatus): Int
+    @Query(
+        """UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE key = :campaignKey AND "end" IS NULL 
+        AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Int
+
+    @Query(
+        value = """SELECT *
+            FROM campaign as campaign_entity_
+            LEFT JOIN campaign_scenario s ON campaign_entity_.id = s.campaign_id 
+            LEFT JOIN "user" u ON campaign_entity_.configurer = u.id 
+            WHERE (campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters]) OR s.name ILIKE any (array[:filters]) OR u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters]))
+            AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+        countQuery = """SELECT COUNT(*)
+            FROM campaign as campaign_entity_
+            LEFT JOIN campaign_scenario s ON campaign_entity_.id = s.campaign_id 
+            LEFT JOIN "user" u ON campaign_entity_.configurer = u.id 
+            WHERE (campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters]) OR s.name ILIKE any (array[:filters]) OR u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters]))
+            AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+        nativeQuery = true
+    )
+    suspend fun findAll(tenant: String, filters: Collection<String>, pageable: Pageable): Page<CampaignEntity>
+
+    @Query(
+        value =
+        """SELECT *
+            FROM campaign as campaign_entity_
+            WHERE EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+        countQuery = """SELECT COUNT(*)
+            FROM campaign campaign_entity_
+            WHERE EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+        nativeQuery = true
+    )
+    suspend fun findAll(tenant: String, pageable: Pageable): Page<CampaignEntity>
 }

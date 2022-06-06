@@ -101,7 +101,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -110,21 +110,21 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
             factoryChannel.publishDirective(
                 MinionsStartDirective(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     minionsStartDefinitions.subList(0, 400)
                 )
             )
             factoryChannel.publishDirective(
                 MinionsStartDirective(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     minionsStartDefinitions.subList(400, 650)
                 )
             )
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
@@ -155,7 +155,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -164,7 +164,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
                     error = "A problem occurred"

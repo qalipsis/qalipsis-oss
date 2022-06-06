@@ -34,7 +34,7 @@ interface ScenarioReportingExecutionState {
 
     val messages: Map<Any, ReportMessage>
 
-    fun toReport(campaignName: String): ScenarioReport {
+    fun toReport(campaignKey: String): ScenarioReport {
         val endTimestamp = end
         val abortTimestamp = abort
         val scenarioEnd = if (abortTimestamp != null && endTimestamp != null) {
@@ -50,7 +50,7 @@ interface ScenarioReportingExecutionState {
         }
 
         return ScenarioReport(
-            campaignName,
+            campaignKey,
             scenarioName,
             start,
             scenarioEnd,

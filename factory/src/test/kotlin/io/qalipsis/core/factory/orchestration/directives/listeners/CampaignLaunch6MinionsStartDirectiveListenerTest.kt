@@ -98,7 +98,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -107,7 +107,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
             minionsKeeper.scheduleMinionStart("my-minion-3", Instant.ofEpochMilli(789))
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
@@ -142,7 +142,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
                 localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
                 factoryChannel.publishFeedback(
                     MinionsStartFeedback(
-                        campaignName = "my-campaign",
+                        campaignKey = "my-campaign",
                         scenarioName = "my-scenario",
                         status = FeedbackStatus.IGNORED
                     )
@@ -183,7 +183,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -191,7 +191,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
             minionsKeeper.scheduleMinionStart("my-minion-1", Instant.ofEpochMilli(123))
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
                     error = "A problem occurred"

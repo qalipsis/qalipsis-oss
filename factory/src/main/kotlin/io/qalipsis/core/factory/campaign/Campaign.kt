@@ -1,7 +1,7 @@
 package io.qalipsis.core.factory.campaign
 
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.directives.DispatcherChannel
 
 /**
@@ -10,7 +10,7 @@ import io.qalipsis.core.directives.DispatcherChannel
  * @author Eric Jessé
  */
 data class Campaign(
-    val campaignName: CampaignName,
+    val campaignKey: CampaignKey,
     val broadcastChannel: DispatcherChannel,
     val feedbackChannel: DispatcherChannel,
     val assignments: Collection<FactoryScenarioAssignment>

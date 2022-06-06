@@ -2,7 +2,7 @@ package io.qalipsis.core.factory.orchestration
 
 import com.google.common.collect.Table
 import io.qalipsis.api.campaign.FactoryScenarioAssignment
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
@@ -21,7 +21,7 @@ internal interface MinionAssignmentKeeper {
      * campaign will start.
      */
     suspend fun assignFactoryDags(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         assignments: Collection<FactoryScenarioAssignment>
     )
 
@@ -30,7 +30,7 @@ internal interface MinionAssignmentKeeper {
      * This function is called only in the factory processing the [io.qalipsis.core.directives.MinionsAssignmentDirective].
      */
     suspend fun registerMinionsToAssign(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         dagIds: Collection<DirectedAcyclicGraphName>,
         minionIds: Collection<MinionId>,
@@ -42,13 +42,13 @@ internal interface MinionAssignmentKeeper {
      * This function is called only in the factory processing the [io.qalipsis.core.directives.MinionsAssignmentDirective]
      * and aims at cleaning potential cache used during the registration process.
      */
-    suspend fun completeUnassignedMinionsRegistration(campaignName: CampaignName, scenarioName: ScenarioName)
+    suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName)
 
     /**
      * Returns all the IDs for the minions under load.
      */
     suspend fun getIdsOfMinionsUnderLoad(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName
     ): Collection<MinionId>
 
@@ -59,7 +59,7 @@ internal interface MinionAssignmentKeeper {
      * @return a set of assignment of minions to DAGs
      */
     suspend fun assign(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
     ): Map<MinionId, Collection<DirectedAcyclicGraphName>>
 
@@ -69,7 +69,7 @@ internal interface MinionAssignmentKeeper {
      * @return a state of the completion of the minion, scenario and campaign.
      */
     suspend fun executionComplete(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionId: MinionId,
         dagIds: Collection<DirectedAcyclicGraphName>
@@ -79,7 +79,7 @@ internal interface MinionAssignmentKeeper {
      * Returns the channels to use to forward data to the DAGs identified by [dagsIds] for the specified [minionIds].
      */
     suspend fun getFactoriesChannels(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionIds: Collection<MinionId>,
         dagsIds: Collection<DirectedAcyclicGraphName>

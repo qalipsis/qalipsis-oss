@@ -39,16 +39,16 @@ internal class JunitReportPublisherTest {
         //given
         val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
 
-        val campaignName = "foo"
+        val campaignKey = "foo"
 
         val timeDiffSeconds = 10L
         val start = Instant.now().minusSeconds(timeDiffSeconds)
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignName = campaignName, start = start, end = end, scenariosReports = listOf(
+            campaignKey = campaignKey, start = start, end = end, scenariosReports = listOf(
                 ScenarioReport(
-                    campaignName = campaignName,
+                    campaignKey = campaignKey,
                     scenarioName = "bar",
                     start = start,
                     end = end,
@@ -72,7 +72,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { name } returns campaignName }, campaignReport)
+        junitReportPublisher.publish(relaxedMockk { every { key } returns campaignKey }, campaignReport)
 
         //then
         val generatedReport =
@@ -89,16 +89,16 @@ internal class JunitReportPublisherTest {
         //given
         val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
 
-        val campaignName = "foo"
+        val campaignKey = "foo"
 
         val timeDiffSeconds = 10L
         val start = Instant.now().minusSeconds(timeDiffSeconds)
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignName = campaignName, start = start, end = end, scenariosReports = listOf(
+            campaignKey = campaignKey, start = start, end = end, scenariosReports = listOf(
                 ScenarioReport(
-                    campaignName = campaignName,
+                    campaignKey = campaignKey,
                     scenarioName = "bar2",
                     start = start,
                     end = end,
@@ -128,7 +128,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { name } returns campaignName }, campaignReport)
+        junitReportPublisher.publish(relaxedMockk { every { key } returns campaignKey }, campaignReport)
 
 
         //then
@@ -154,9 +154,9 @@ internal class JunitReportPublisherTest {
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignName = campaignName1, start = start, end = end, scenariosReports = listOf(
+            campaignKey = campaignName1, start = start, end = end, scenariosReports = listOf(
                 ScenarioReport(
-                    campaignName = campaignName1,
+                    campaignKey = campaignName1,
                     scenarioName = "bar3",
                     start = start,
                     end = end,
@@ -181,7 +181,7 @@ internal class JunitReportPublisherTest {
                     )
                 ),
                 ScenarioReport(
-                    campaignName = campaignName2,
+                    campaignKey = campaignName2,
                     scenarioName = "bar4",
                     start = start,
                     end = end,
@@ -210,7 +210,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { name } returns "foo" }, campaignReport)
+        junitReportPublisher.publish(relaxedMockk { every { key } returns "foo" }, campaignReport)
 
         //then
         campaignReport.scenariosReports.forEach {

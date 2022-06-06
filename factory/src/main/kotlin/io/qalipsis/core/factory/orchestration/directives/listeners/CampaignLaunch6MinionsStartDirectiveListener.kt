@@ -44,7 +44,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
             }
             if (relevantMinions.isNotEmpty()) {
                 val feedback = MinionsStartFeedback(
-                    campaignName = directive.campaignName,
+                    campaignKey = directive.campaignKey,
                     scenarioName = directive.scenarioName,
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -55,7 +55,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
             } else {
                 val feedback = MinionsStartFeedback(
-                    campaignName = directive.campaignName,
+                    campaignKey = directive.campaignKey,
                     scenarioName = directive.scenarioName,
                     status = FeedbackStatus.IGNORED
                 )
@@ -65,7 +65,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
             log.error(e) { e.message }
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
-                    campaignName = directive.campaignName,
+                    campaignKey = directive.campaignKey,
                     scenarioName = directive.scenarioName,
                     status = FeedbackStatus.FAILED,
                     error = e.message

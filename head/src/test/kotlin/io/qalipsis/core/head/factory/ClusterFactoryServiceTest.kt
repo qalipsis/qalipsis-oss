@@ -1204,7 +1204,7 @@ internal class ClusterFactoryServiceTest {
         val now = getTimeMock()
         val factoryId = 1L
         val heartbeat =
-            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.UNREGISTERED, campaignName = "1")
+            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.UNREGISTERED, campaignKey = "1")
 
         coEvery { factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)) } returns listOf(factoryId)
 
@@ -1268,9 +1268,9 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { campaignRepository.findIdByNameAndEndIsNull(any(), "my-campaign") } returns 765
+        coEvery { campaignRepository.findIdByKeyAndEndIsNull(any(), "my-campaign") } returns 765
         val campaignConfiguration = mockk<CampaignConfiguration> {
-            every { name } returns "my-campaign"
+            every { key } returns "my-campaign"
             every { tenant } returns "qalipsis"
         }
 
@@ -1280,7 +1280,7 @@ internal class ClusterFactoryServiceTest {
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            campaignRepository.findIdByNameAndEndIsNull("qalipsis", "my-campaign")
+            campaignRepository.findIdByKeyAndEndIsNull("qalipsis", "my-campaign")
             campaignFactoryRepository.saveAll(
                 listOf(
                     CampaignFactoryEntity(765, 12),
@@ -1297,7 +1297,7 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns emptyList()
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> { every { key } returns "my-campaign" }
 
         // when
         clusterFactoryService.lockFactories(campaignConfiguration, factories)
@@ -1323,9 +1323,9 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { campaignRepository.findIdByNameAndEndIsNull(any(), "my-campaign") } returns 765
+        coEvery { campaignRepository.findIdByKeyAndEndIsNull(any(), "my-campaign") } returns 765
         val campaignConfiguration = mockk<CampaignConfiguration> {
-            every { name } returns "my-campaign"
+            every { key } returns "my-campaign"
             every { tenant } returns "qalipsis"
         }
 
@@ -1335,7 +1335,7 @@ internal class ClusterFactoryServiceTest {
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            campaignRepository.findIdByNameAndEndIsNull("qalipsis", "my-campaign")
+            campaignRepository.findIdByKeyAndEndIsNull("qalipsis", "my-campaign")
             campaignFactoryRepository.discard(765, listOf(12, 32))
         }
         confirmVerified(factoryRepository, campaignRepository, campaignFactoryRepository)
@@ -1346,7 +1346,7 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns emptyList()
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { name } returns "my-campaign" }
+        val campaignConfiguration = mockk<CampaignConfiguration> { every { key } returns "my-campaign" }
 
         // when
         clusterFactoryService.releaseFactories(campaignConfiguration, factories)

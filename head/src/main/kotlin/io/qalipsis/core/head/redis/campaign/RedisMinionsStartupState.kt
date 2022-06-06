@@ -20,7 +20,7 @@ internal class RedisMinionsStartupState(
 ) : MinionsStartupState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
-        operations.setState(campaign.tenant, campaignName, CampaignRedisState.MINIONS_STARTUP_STATE)
+        operations.setState(campaign.tenant, campaignKey, CampaignRedisState.MINIONS_STARTUP_STATE)
         return super.doInit()
     }
 

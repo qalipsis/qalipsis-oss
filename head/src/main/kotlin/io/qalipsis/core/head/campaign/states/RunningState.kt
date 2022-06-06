@@ -22,7 +22,7 @@ internal open class RunningState(
     protected val campaign: CampaignConfiguration,
     private val directivesForInit: List<Directive> = emptyList(),
     private val expectedScenariosToComplete: MutableSet<ScenarioName> = concurrentSet(campaign.scenarios.keys)
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     override suspend fun doInit(): List<Directive> {
         return directivesForInit
@@ -38,7 +38,7 @@ internal open class RunningState(
             feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED ->
                 log.error { "The start of minions of scenario ${feedback.scenarioName} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
             feedback is FailedCampaignFeedback ->
-                log.error { "The campaign ${feedback.campaignName} failed in the factory ${feedback.nodeId}: ${feedback.error}" }
+                log.error { "The campaign ${feedback.campaignKey} failed in the factory ${feedback.nodeId}: ${feedback.error}" }
         }
 
         return doTransition(feedback)
@@ -62,7 +62,7 @@ internal open class RunningState(
                 RunningState(
                     campaign, listOf(
                         MinionsShutdownDirective(
-                            campaignName = campaign.name,
+                            campaignKey = campaign.key,
                             scenarioName = feedback.scenarioName,
                             minionIds = listOf(feedback.minionId),
                             channel = campaign.broadcastChannel
@@ -71,11 +71,11 @@ internal open class RunningState(
                 )
             }
             feedback is EndOfCampaignScenarioFeedback -> {
-                context.campaignReportStateKeeper.complete(feedback.campaignName, feedback.scenarioName)
+                context.campaignReportStateKeeper.complete(feedback.campaignKey, feedback.scenarioName)
                 RunningState(
                     campaign, listOf(
                         CampaignScenarioShutdownDirective(
-                            campaignName = campaign.name,
+                            campaignKey = campaign.key,
                             scenarioName = feedback.scenarioName,
                             channel = campaign.broadcastChannel
                         )
@@ -85,7 +85,7 @@ internal open class RunningState(
             feedback is CampaignScenarioShutdownFeedback -> {
                 expectedScenariosToComplete.remove(feedback.scenarioName)
                 if (expectedScenariosToComplete.isEmpty()) {
-                    context.campaignReportStateKeeper.complete(feedback.campaignName)
+                    context.campaignReportStateKeeper.complete(feedback.campaignKey)
                     CompletionState(campaign)
                 } else {
                     this

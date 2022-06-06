@@ -61,33 +61,33 @@ internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
         // given
         val stepExecutionContext = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario-1",
             minionId = "my-minion-1"
         )
         val stepExecutionContextWithError = StepTestHelper.createStepContext<Int, Int>(
             input = 2,
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario-1",
             minionId = "my-minion-2",
             isExhausted = true,
             errors = mutableListOf(StepError("This is an error"))
         )
         val completionContext = DefaultCompletionContext(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario-2",
             minionId = "my-minion-3",
             lastExecutedStepName = "step-1",
             errors = emptyList()
         )
         val completionContextWithError = DefaultCompletionContext(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario-1",
             minionId = "my-minion-4",
             lastExecutedStepName = "step-3",
             errors = listOf(StepError("This is an error"))
         )
-        every { factoryCampaignManager.runningCampaign.campaignName } returns "my-campaign"
+        every { factoryCampaignManager.runningCampaign.campaignKey } returns "my-campaign"
         every { factoryCampaignManager.runningCampaign.broadcastChannel } returns "the-broadcast-channel"
 
         coEvery {

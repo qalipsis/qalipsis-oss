@@ -8,13 +8,13 @@ import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 internal open class WarmupState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     private val expectedFeedbacks =
         ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })
@@ -25,7 +25,7 @@ internal open class WarmupState(
         return campaign.factories.values.flatMap { config ->
             config.assignment.keys.map { scenarioName ->
                 ScenarioWarmUpDirective(
-                    campaignName = campaignName,
+                    campaignKey = campaignKey,
                     scenarioName = scenarioName,
                     channel = config.unicastChannel
                 )

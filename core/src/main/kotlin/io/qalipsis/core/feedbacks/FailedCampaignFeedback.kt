@@ -1,6 +1,6 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("fail")
 data class FailedCampaignFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     override val error: String
 ) : Feedback(), CampaignManagementFeedback {
 

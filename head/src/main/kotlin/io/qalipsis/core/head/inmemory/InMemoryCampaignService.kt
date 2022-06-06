@@ -3,11 +3,14 @@ package io.qalipsis.core.head.inmemory
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.Page
+import io.qalipsis.core.head.model.Scenario
 import jakarta.inject.Singleton
+import java.time.Instant
 
 @Singleton
 @Requirements(
@@ -16,13 +19,44 @@ import jakarta.inject.Singleton
 )
 internal class InMemoryCampaignService : CampaignService {
 
-    override suspend fun save(campaignConfiguration: CampaignConfiguration) {
+    override suspend fun create(
+        configurer: String,
+        campaignDisplayName: String,
+        campaignConfiguration: CampaignConfiguration
+    ): Campaign {
         // Nothing to do.
+        return Campaign(
+            version = Instant.now(),
+            key = campaignConfiguration.key,
+            name = campaignDisplayName,
+            speedFactor = campaignConfiguration.speedFactor,
+            start = Instant.now(),
+            end = null,
+            result = null,
+            configurerName = null,
+            scenarios = campaignConfiguration.scenarios.map { Scenario(Instant.now(), it.key, it.value.minionsCount) }
+        )
     }
 
-    override suspend fun close(campaignName: CampaignName, result: ExecutionStatus) {
+    override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
         // Nothing to do.
+        return Campaign(
+            version = Instant.now(),
+            key = campaignKey,
+            name = campaignKey,
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now(),
+            result = result,
+            configurerName = null,
+            emptyList()
+        )
     }
 
-
+    override suspend fun search(
+        tenant: String, filter: String?, sort: String?, page: Int, size: Int
+    ): Page<Campaign> {
+        // Nothing to do.
+        return Page(0, 0, 0, emptyList())
+    }
 }

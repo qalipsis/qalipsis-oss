@@ -1,6 +1,6 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
@@ -73,25 +73,25 @@ internal class ScenarioImpl(
     }
 
     @LogInput(level = Level.DEBUG)
-    override suspend fun start(campaignName: CampaignName) {
+    override suspend fun start(campaignKey: CampaignKey) {
         val scenarioName = this.name
         try {
-            startAllDags(scenarioName, campaignName)
+            startAllDags(scenarioName, campaignKey)
         } catch (e: Exception) {
             log.error(e) { "An error occurred while starting the scenario $scenarioName: ${e.message}" }
-            stopAllDags(campaignName, scenarioName)
+            stopAllDags(campaignKey, scenarioName)
         }
     }
 
     private suspend fun startAllDags(
         scenarioName: ScenarioName,
-        campaignName: CampaignName
+        campaignKey: CampaignKey
     ) {
         internalDags.values.forEach { dag ->
             CampaignStartedForDagFeedback(
                 scenarioName = scenarioName,
                 dagId = dag.name,
-                campaignName = campaignName,
+                campaignKey = campaignKey,
                 status = FeedbackStatus.IN_PROGRESS
             ).also {
                 log.trace { "Sending feedback: $it" }
@@ -102,7 +102,7 @@ internal class ScenarioImpl(
             try {
                 startStepRecursively(
                     step, StepStartStopContext(
-                        campaignName = campaignName,
+                        campaignKey = campaignKey,
                         scenarioName = scenarioName,
                         dagId = dag.name,
                         stepName = step.name
@@ -112,7 +112,7 @@ internal class ScenarioImpl(
                 CampaignStartedForDagFeedback(
                     scenarioName = scenarioName,
                     dagId = dag.name,
-                    campaignName = campaignName,
+                    campaignKey = campaignKey,
                     status = FeedbackStatus.COMPLETED
                 ).also {
                     log.trace { "Sending feedback: $it" }
@@ -122,7 +122,7 @@ internal class ScenarioImpl(
                 CampaignStartedForDagFeedback(
                     scenarioName = scenarioName,
                     dagId = dag.name,
-                    campaignName = campaignName,
+                    campaignKey = campaignKey,
                     status = FeedbackStatus.FAILED,
                     error = "The start of the DAG ${dag.name} failed: ${e.message}"
                 ).also {
@@ -146,16 +146,16 @@ internal class ScenarioImpl(
     }
 
     @LogInput(level = Level.DEBUG)
-    override suspend fun stop(campaignName: CampaignName) {
+    override suspend fun stop(campaignKey: CampaignKey) {
         val scenarioName = this.name
-        stopAllDags(campaignName, scenarioName)
+        stopAllDags(campaignKey, scenarioName)
     }
 
-    private suspend fun stopAllDags(campaignName: CampaignName, scenarioName: ScenarioName) {
+    private suspend fun stopAllDags(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         internalDags.values.map { it.name to it.rootStep.get() }.forEach {
             stopStepRecursively(
                 it.second, StepStartStopContext(
-                    campaignName = campaignName,
+                    campaignKey = campaignKey,
                     scenarioName = scenarioName,
                     dagId = it.first,
                     stepName = it.second.name

@@ -64,7 +64,7 @@ internal class TopicDataPushStep<I>(
                     if (filter(valueFromTopic)) {
                         val ctx = StepContextImpl<I, I>(
                             input = Channel<I>(1).also { it.send(valueFromTopic) },
-                            campaignName = context.campaignName,
+                            campaignKey = context.campaignKey,
                             scenarioName = context.scenarioName,
                             previousStepName = parentStepName,
                             stepName = stepName,
