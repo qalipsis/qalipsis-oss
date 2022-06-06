@@ -13,6 +13,7 @@ internal object Permissions {
     const val WRITE_USER = "write:user"
     const val READ_USER = "read:user"
     const val DELETE_USER = "delete:user"
+    const val WRITE_TENANT = "write:tenant"
 
     val FOR_USER = emptySet<Permission>()
 
@@ -41,7 +42,8 @@ internal object Permissions {
         READ_SCENARIO,
         WRITE_USER,
         READ_USER,
-        DELETE_USER
+        DELETE_USER,
+        WRITE_TENANT
     )
 
 }
