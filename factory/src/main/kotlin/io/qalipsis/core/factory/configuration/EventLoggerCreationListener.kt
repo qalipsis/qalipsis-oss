@@ -16,11 +16,15 @@ import jakarta.inject.Singleton
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class EventLoggerCreationListener(
-    @Property(name = "factory.tags", defaultValue = "") private val tags: Map<String, String>
+    @Property(name = "factory.tags", defaultValue = "") private val tags: MutableMap<String, String>,
+    @Property(name = "factory.zone", defaultValue = "") private val zone: String?
 ) : BeanCreatedEventListener<EventsLogger>,
     BeanDestroyedEventListener<EventsLogger> {
 
     override fun onCreated(event: BeanCreatedEvent<EventsLogger>): EventsLogger {
+        if (!zone.isNullOrEmpty()) {
+            tags.put("zone", zone)
+        }
         event.bean.apply {
             configureTags(tags)
             start()

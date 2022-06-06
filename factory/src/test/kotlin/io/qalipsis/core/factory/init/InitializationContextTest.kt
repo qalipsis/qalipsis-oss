@@ -62,6 +62,7 @@ internal class InitializationContextTest {
     internal fun `should publish handshake request for all scenarios`() = testDispatcherProvider.runTest {
         // given
         every { factoryConfiguration.nodeId } returns "the-node-id"
+        every { factoryConfiguration.zone } returns "en"
         every { factoryConfiguration.tags } returns mapOf("key1" to "value1", "key2" to "value2")
         every { factoryConfiguration.handshake.responseChannel } returns "the-handshake-response-channel"
         val scenario1: Scenario = relaxedMockk {
@@ -110,6 +111,7 @@ internal class InitializationContextTest {
         }
         assertThat(request.captured).all {
             prop(HandshakeRequest::nodeId).isEqualTo("the-node-id")
+            prop(HandshakeRequest::zone).isEqualTo("en")
             prop(HandshakeRequest::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(HandshakeRequest::replyTo).isEqualTo("the-handshake-response-channel")
             prop(HandshakeRequest::scenarios).all {
