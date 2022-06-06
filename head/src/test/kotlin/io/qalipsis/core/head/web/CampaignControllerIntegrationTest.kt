@@ -392,7 +392,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
-        coVerifyNever { campaignManager.start(any(), any(), any()) }
+        coVerifyNever { clusterFactoryService.getActiveScenarios(any(), any()) }
     }
 
     @Test
@@ -413,6 +413,6 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
-        coVerifyNever { campaignManager.start(any(), any(), any()) }
+        coVerifyNever { campaignService.search(any(), any(), any(), any(), any()) }
     }
 }
