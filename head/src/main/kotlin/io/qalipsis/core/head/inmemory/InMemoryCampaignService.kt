@@ -7,6 +7,8 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.Page
+import io.qalipsis.core.head.model.Scenario
 import jakarta.inject.Singleton
 import java.time.Instant
 
@@ -31,7 +33,8 @@ internal class InMemoryCampaignService : CampaignService {
             start = Instant.now(),
             end = null,
             result = null,
-            configurerName = null
+            configurerName = null,
+            scenarios = campaignConfiguration.scenarios.map { Scenario(Instant.now(), it.key, it.value.minionsCount) }
         )
     }
 
@@ -45,8 +48,15 @@ internal class InMemoryCampaignService : CampaignService {
             start = Instant.now(),
             end = Instant.now(),
             result = result,
-            configurerName = null
+            configurerName = null,
+            emptyList()
         )
     }
 
+    override suspend fun search(
+        tenant: String, filter: String?, sort: String?, page: Int, size: Int
+    ): Page<Campaign> {
+        // Nothing to do.
+        return Page(0, 0, 0, emptyList())
+    }
 }

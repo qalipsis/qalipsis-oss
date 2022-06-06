@@ -11,9 +11,12 @@ import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
+import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -30,6 +33,9 @@ internal class CampaignConverterImplTest {
 
     @RelaxedMockK
     private lateinit var userRepository: UserRepository
+
+    @RelaxedMockK
+    private lateinit var scenarioRepository: CampaignScenarioRepository
 
     @RelaxedMockK
     private lateinit var idGenerator: IdGenerator
@@ -67,6 +73,20 @@ internal class CampaignConverterImplTest {
     internal fun `should convert to the model`() = testDispatcherProvider.runTest {
         // given
         coEvery { userRepository.findUsernameById(545) } returns "my-user"
+        val scenarioVersion1 = Instant.now().minusMillis(3)
+        val scenarioVersion2 = Instant.now().minusMillis(542)
+        coEvery { scenarioRepository.findByCampaignId(1231243) } returns listOf(
+            CampaignScenarioEntity(
+                campaignId = 1231243,
+                name = "scenario-1",
+                minionsCount = 2534
+            ).copy(version = scenarioVersion1),
+            CampaignScenarioEntity(
+                campaignId = 1231243,
+                name = "scenario-2",
+                minionsCount = 45645
+            ).copy(version = scenarioVersion2)
+        )
         val version = Instant.now().minusMillis(1)
         val start = Instant.now().minusSeconds(123)
         val end = Instant.now().minusSeconds(12)
@@ -97,7 +117,11 @@ internal class CampaignConverterImplTest {
                 start = start,
                 end = end,
                 result = ExecutionStatus.FAILED,
-                configurerName = "my-user"
+                configurerName = "my-user",
+                scenarios = listOf(
+                    Scenario(version = scenarioVersion1, name = "scenario-1", minionsCount = 2534),
+                    Scenario(version = scenarioVersion2, name = "scenario-2", minionsCount = 45645)
+                )
             )
         )
     }

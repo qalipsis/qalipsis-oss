@@ -7,6 +7,7 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
+import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
@@ -18,6 +19,7 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -25,6 +27,8 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.Page
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.security.Permissions
@@ -90,7 +94,11 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = null,
             configurerName = "my-user",
-            result = null
+            result = null,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
         )
         coEvery {
             campaignManager.start(
@@ -253,4 +261,157 @@ internal class CampaignControllerIntegrationTest {
         coVerifyNever { clusterFactoryService.getActiveScenarios(any(), any()) }
     }
 
+
+    @Test
+    fun `should return page of campaigns`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            result = ExecutionStatus.SUCCESSFUL,
+            configurerName = "my-user",
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
+
+        coEvery {
+            campaignService.search(
+                "my-tenant",
+                null,
+                null,
+                0,
+                20
+            )
+        } returns Page(0, 1, 1, listOf(campaign))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
+        }
+    }
+
+    @Test
+    fun `should return page of campaigns with filter`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            result = ExecutionStatus.SUCCESSFUL,
+            configurerName = "my-user",
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/?filter=an*,other")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
+
+        coEvery {
+            campaignService.search(
+                "my-tenant",
+                "an*,other",
+                null,
+                0,
+                20
+            )
+        } returns Page(0, 1, 1, listOf(campaign))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        //then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
+        }
+    }
+
+    @Test
+    fun `should return page of campaigns with filter and sort`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            result = ExecutionStatus.SUCCESSFUL,
+            configurerName = "my-user",
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+
+        val listsRequest =
+            HttpRequest.GET<Page<Campaign>>("/?filter=campaign&sort=name")
+                .header("X-Tenant", "my-tenant")
+                .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
+
+        coEvery {
+            campaignService.search(
+                "my-tenant",
+                "campaign",
+                "name",
+                0,
+                20
+            )
+        } returns Page(0, 1, 1, listOf(campaign))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
+        }
+    }
+
+    @Test
+    fun `should deny listing campaigns when the permission is missing`() {
+        // given
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user"))
+
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                listsRequest,
+                Campaign::class.java
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever { campaignService.search(any(), any(), any(), any(), any()) }
+    }
 }
