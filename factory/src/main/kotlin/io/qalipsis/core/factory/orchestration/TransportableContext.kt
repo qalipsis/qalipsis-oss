@@ -1,6 +1,6 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.MinionId
@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Polymorphic
 abstract class TransportableContext : Directive() {
-    abstract val campaignName: CampaignName
+    abstract val campaignKey: CampaignKey
     abstract val scenarioName: ScenarioName
     abstract val minionId: MinionId
     override var channel: DispatcherChannel = ""
@@ -28,7 +28,7 @@ abstract class TransportableContext : Directive() {
 @Serializable
 @SerialName("co")
 data class TransportableCompletionContext(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     override val minionId: MinionId,
     val lastExecutedStepName: StepName,
@@ -36,7 +36,7 @@ data class TransportableCompletionContext(
 ) : TransportableContext() {
 
     constructor(ctx: CompletionContext) : this(
-        ctx.campaignName,
+        ctx.campaignKey,
         ctx.scenarioName,
         ctx.minionId,
         ctx.lastExecutedStepName,
@@ -45,7 +45,7 @@ data class TransportableCompletionContext(
 
     fun toContext(): CompletionContext {
         return DefaultCompletionContext(
-            campaignName,
+            campaignKey,
             scenarioName,
             minionId,
             lastExecutedStepName,
@@ -58,7 +58,7 @@ data class TransportableCompletionContext(
 @SerialName("st")
 data class TransportableStepContext(
     val input: SerializedRecord?,
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     override val minionId: MinionId,
     val previousStepName: StepName,
@@ -73,7 +73,7 @@ data class TransportableStepContext(
 
     constructor(ctx: StepContext<*, *>, input: SerializedRecord?) : this(
         input = input,
-        campaignName = ctx.campaignName,
+        campaignKey = ctx.campaignKey,
         scenarioName = ctx.scenarioName,
         minionId = ctx.minionId,
         previousStepName = ctx.previousStepName!!,
@@ -91,7 +91,7 @@ data class TransportableStepContext(
             input = if (generatedOutput) {
                 Channel<Any?>(1).also { it.send(input) }
             } else Channel(Channel.RENDEZVOUS),
-            campaignName = campaignName,
+            campaignKey = campaignKey,
             scenarioName = scenarioName,
             minionId = minionId,
             previousStepName = previousStepName,
@@ -119,7 +119,7 @@ data class TransportableStepContext(
             if (other.input == null) return false
             if (!input.value.contentEquals(other.input.value)) return false
         } else if (other.input != null) return false
-        if (campaignName != other.campaignName) return false
+        if (campaignKey != other.campaignKey) return false
         if (scenarioName != other.scenarioName) return false
         if (minionId != other.minionId) return false
         if (previousStepName != other.previousStepName) return false
@@ -136,7 +136,7 @@ data class TransportableStepContext(
 
     override fun hashCode(): Int {
         var result = input?.value?.contentHashCode() ?: 0
-        result = 31 * result + campaignName.hashCode()
+        result = 31 * result + campaignKey.hashCode()
         result = 31 * result + scenarioName.hashCode()
         result = 31 * result + minionId.hashCode()
         result = 31 * result + previousStepName.hashCode()

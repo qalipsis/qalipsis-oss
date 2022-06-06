@@ -75,7 +75,7 @@ internal class VerificationStepTest {
 
         step.execute(ctx)
         step.stop(relaxedMockk {
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         })
         val output = ctx.consumeOutputValue()
@@ -112,7 +112,7 @@ internal class VerificationStepTest {
 
         step.execute(ctx)
         step.stop(relaxedMockk {
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         })
         val output = ctx.consumeOutputValue()
@@ -147,7 +147,7 @@ internal class VerificationStepTest {
 
         step.execute(ctx)
         step.stop(relaxedMockk {
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         })
         assertTrue((ctx.output as Channel).isEmpty)
@@ -186,7 +186,7 @@ internal class VerificationStepTest {
 
         step.execute(ctx)
         step.stop(relaxedMockk {
-            every { campaignName } returns "my-campaign"
+            every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
         })
         assertTrue((ctx.output as Channel).isEmpty)

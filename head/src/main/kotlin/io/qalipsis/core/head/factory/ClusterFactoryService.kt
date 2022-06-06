@@ -294,10 +294,10 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignName = campaignRepository.findIdByNameAndEndIsNull(
-                    campaignConfiguration.tenant, campaignConfiguration.name
+                val campaignKey = campaignRepository.findIdByKeyAndEndIsNull(
+                    campaignConfiguration.tenant, campaignConfiguration.key
                 )
-                campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignName, it) }).count()
+                campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignKey, it) }).count()
             }
         }
     }
@@ -307,10 +307,10 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignName = campaignRepository.findIdByNameAndEndIsNull(
-                    campaignConfiguration.tenant, campaignConfiguration.name
+                val campaignKey = campaignRepository.findIdByKeyAndEndIsNull(
+                    campaignConfiguration.tenant, campaignConfiguration.key
                 )
-                campaignFactoryRepository.discard(campaignName, factoryIds)
+                campaignFactoryRepository.discard(campaignKey, factoryIds)
             }
         }
     }

@@ -80,7 +80,7 @@ internal class FactoryApiDirectivesTest {
     @Test
     fun `should encode and decode CampaignAbortDirective as directive`() {
         val directive: Directive = CampaignAbortDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             channel = "the-channel",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
             abortCampaignConfiguration = AbortCampaignConfiguration()

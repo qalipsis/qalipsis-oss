@@ -1,6 +1,6 @@
 package io.qalipsis.core.factory.orchestration
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
@@ -31,13 +31,13 @@ interface MinionsKeeper {
     /**
      * Creates a new Minion for the given scenario and directed acyclic graph.
      *
-     * @param campaignName the ID of the campaign to execute.
+     * @param campaignKey the ID of the campaign to execute.
      * @param scenarioName the ID of the scenario to execute.
      * @param dagIds the IDs of the directed acyclic graphs the minion will execute.
      * @param minionId the ID of the minion.
      */
     suspend fun create(
-        campaignName: CampaignName,
+        campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         dagIds: Collection<DirectedAcyclicGraphName>,
         minionId: MinionId

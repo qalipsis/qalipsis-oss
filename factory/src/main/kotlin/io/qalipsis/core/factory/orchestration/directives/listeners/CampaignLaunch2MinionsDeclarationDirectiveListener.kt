@@ -43,13 +43,13 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is MinionsDeclarationDirectiveReference
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignKey, directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsDeclarationDirective) {
         val feedback = MinionsDeclarationFeedback(
-            campaignName = directive.campaignName,
+            campaignKey = directive.campaignKey,
             scenarioName = directive.scenarioName,
             status = FeedbackStatus.IN_PROGRESS
         )
@@ -81,7 +81,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
                 val minion = scenario.name + "-lonely-" + idGenerator.short()
                 minions.add(minion)
                 minionAssignmentKeeper.registerMinionsToAssign(
-                    directive.campaignName,
+                    directive.campaignKey,
                     directive.scenarioName,
                     listOf(dag.name),
                     listOf(minion),
@@ -94,15 +94,15 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
         }
         // Registers all the non-singleton minions at once.
         minionAssignmentKeeper.registerMinionsToAssign(
-            directive.campaignName,
+            directive.campaignKey,
             directive.scenarioName,
             dagsUnderLoad,
             minionsUnderLoad
         )
-        minionAssignmentKeeper.completeUnassignedMinionsRegistration(directive.campaignName, directive.scenarioName)
+        minionAssignmentKeeper.completeUnassignedMinionsRegistration(directive.campaignKey, directive.scenarioName)
 
         val minionsAssignmentDirective = MinionsAssignmentDirective(
-            directive.campaignName,
+            directive.campaignKey,
             scenario.name
         )
         factoryChannel.publishDirective(minionsAssignmentDirective)

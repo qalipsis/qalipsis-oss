@@ -44,7 +44,7 @@ internal class MinionsShutdownDirectiveListenerTest {
     @Timeout(1)
     fun `should accept minion shutdown directive`() {
         val directive = MinionsShutdownDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionIds = listOf("my-minion-1", "my-minion-2"),
             ""
@@ -60,7 +60,7 @@ internal class MinionsShutdownDirectiveListenerTest {
     @Timeout(1)
     fun `should not accept minion shutdown directive when the scenario is not executed locally`() {
         val directive = MinionsShutdownDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionIds = listOf("my-minion-1", "my-minion-2"),
             ""
@@ -76,7 +76,7 @@ internal class MinionsShutdownDirectiveListenerTest {
     @Timeout(1)
     fun `should not accept minion shutdown directive when no minion is executed locally`() {
         val directive = MinionsShutdownDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionIds = listOf("my-minion-1", "my-minion-2"),
             ""
@@ -96,7 +96,7 @@ internal class MinionsShutdownDirectiveListenerTest {
     @Test
     fun `should process the directive and confirm when all is right`() = testCoroutineDispatcher.runTest {
         val directive = MinionsShutdownDirective(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionIds = listOf("my-minion-1", "my-minion-2", "my-minion-3"),
             ""
@@ -115,7 +115,7 @@ internal class MinionsShutdownDirectiveListenerTest {
             minionsKeeper.contains("my-minion-3")
             factoryChannel.publishFeedback(
                 MinionsShutdownFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     minionIds = listOf("my-minion-1", "my-minion-3"),
                     status = FeedbackStatus.IN_PROGRESS
@@ -124,7 +124,7 @@ internal class MinionsShutdownDirectiveListenerTest {
             factoryCampaignManager.shutdownMinions("my-campaign", listOf("my-minion-1", "my-minion-3"))
             factoryChannel.publishFeedback(
                 MinionsShutdownFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     minionIds = listOf("my-minion-1", "my-minion-3"),
                     status = FeedbackStatus.COMPLETED
@@ -138,7 +138,7 @@ internal class MinionsShutdownDirectiveListenerTest {
     fun `should process the directive and not fail even when there is an exception`() =
         testCoroutineDispatcher.runTest {
             val directive = MinionsShutdownDirective(
-                campaignName = "my-campaign",
+                campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
                 minionIds = listOf("my-minion-1", "my-minion-2", "my-minion-3"),
                 ""
@@ -163,7 +163,7 @@ internal class MinionsShutdownDirectiveListenerTest {
                 minionsKeeper.contains("my-minion-3")
                 factoryChannel.publishFeedback(
                     MinionsShutdownFeedback(
-                        campaignName = "my-campaign",
+                        campaignKey = "my-campaign",
                         scenarioName = "my-scenario",
                         minionIds = listOf("my-minion-1", "my-minion-3"),
                         status = FeedbackStatus.IN_PROGRESS
@@ -172,7 +172,7 @@ internal class MinionsShutdownDirectiveListenerTest {
                 factoryCampaignManager.shutdownMinions("my-campaign", listOf("my-minion-1", "my-minion-3"))
                 factoryChannel.publishFeedback(
                     MinionsShutdownFeedback(
-                        campaignName = "my-campaign",
+                        campaignKey = "my-campaign",
                         scenarioName = "my-scenario",
                         minionIds = listOf("my-minion-1", "my-minion-3"),
                         status = FeedbackStatus.COMPLETED

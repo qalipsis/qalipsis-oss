@@ -89,7 +89,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
 
         // then
         val expectedCampaign = Campaign(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             broadcastChannel = "broadcast-channel",
             feedbackChannel = "feedback-channel",
             assignments = listOf(
@@ -101,7 +101,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
             campaignLifeCycleAware1.init(expectedCampaign)
             campaignLifeCycleAware2.init(expectedCampaign)
             factoryChannel.publishFeedback(
-                FactoryAssignmentFeedback(campaignName = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
+                FactoryAssignmentFeedback(campaignKey = "my-campaign", status = FeedbackStatus.IN_PROGRESS)
             )
             minionAssignmentKeeper.assignFactoryDags(
                 "my-campaign",
@@ -111,7 +111,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 )
             )
             factoryChannel.publishFeedback(
-                FactoryAssignmentFeedback(campaignName = "my-campaign", status = FeedbackStatus.COMPLETED)
+                FactoryAssignmentFeedback(campaignKey = "my-campaign", status = FeedbackStatus.COMPLETED)
             )
         }
         confirmVerified(factoryChannel, minionAssignmentKeeper, campaignLifeCycleAware1, campaignLifeCycleAware2)
@@ -137,7 +137,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
 
             // then
             val expectedCampaign = Campaign(
-                campaignName = "my-campaign",
+                campaignKey = "my-campaign",
                 broadcastChannel = "broadcast-channel",
                 feedbackChannel = "feedback-channel",
                 assignments = listOf(
@@ -149,7 +149,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 campaignLifeCycleAware1.init(expectedCampaign)
                 factoryChannel.publishFeedback(
                     FactoryAssignmentFeedback(
-                        campaignName = "my-campaign",
+                        campaignKey = "my-campaign",
                         status = FeedbackStatus.FAILED,
                         error = "A problem occurred"
                     )

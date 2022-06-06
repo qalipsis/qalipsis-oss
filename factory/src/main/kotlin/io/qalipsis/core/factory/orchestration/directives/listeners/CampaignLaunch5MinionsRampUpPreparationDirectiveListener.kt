@@ -36,13 +36,13 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is MinionsRampUpPreparationDirectiveReference
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignName, directive.scenarioName)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignKey, directive.scenarioName)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsRampUpPreparationDirective) {
         val feedback = MinionsRampUpPreparationFeedback(
-            campaignName = directive.campaignName,
+            campaignKey = directive.campaignKey,
             scenarioName = directive.scenarioName,
             status = FeedbackStatus.IN_PROGRESS
         )
@@ -50,13 +50,13 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
         try {
             val scenario = scenarioRegistry[directive.scenarioName]!!
             val minionsStartDefinitions = factoryCampaignManager.prepareMinionsRampUp(
-                directive.campaignName, scenario, directive.rampUpConfiguration
+                directive.campaignKey, scenario, directive.rampUpConfiguration
             )
 
             minionsStartDefinitions.windowed(400, 400, true).forEach { def ->
                 factoryChannel.publishDirective(
                     MinionsStartDirective(
-                        directive.campaignName,
+                        directive.campaignKey,
                         scenario.name,
                         def,
                     )

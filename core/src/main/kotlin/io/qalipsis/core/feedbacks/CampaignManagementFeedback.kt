@@ -1,6 +1,6 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 
 /**
  * Interface for [Feedback]s linked to a campaign.
@@ -8,7 +8,7 @@ import io.qalipsis.api.context.CampaignName
  * @author Eric Jessé
  */
 interface CampaignManagementFeedback {
-    val campaignName: CampaignName
+    val campaignKey: CampaignKey
     var nodeId: String
     val status: FeedbackStatus
     val error: String?

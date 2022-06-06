@@ -14,12 +14,12 @@ import io.qalipsis.core.rampup.RampUpConfiguration
 
 internal open class MinionsStartupState(
     protected val campaign: CampaignConfiguration
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.name) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     override suspend fun doInit(): List<Directive> {
         return campaign.scenarios.keys.map { scenarioName ->
             MinionsRampUpPreparationDirective(
-                campaignName = campaignName,
+                campaignKey = campaignKey,
                 scenarioName = scenarioName,
                 rampUpConfiguration = RampUpConfiguration(campaign.startOffsetMs, campaign.speedFactor),
                 channel = campaign.broadcastChannel

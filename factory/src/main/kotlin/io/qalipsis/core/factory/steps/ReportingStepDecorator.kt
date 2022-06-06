@@ -48,8 +48,8 @@ internal class ReportingStepDecorator<I, O>(
         } else {
             ReportMessageSeverity.INFO
         }
-        reportLiveStateRegistry.put(context.campaignName, context.scenarioName, this.name, severity, result)
-        log.info { "Stopping the step ${this.name} for the campaign ${context.campaignName}: $result" }
+        reportLiveStateRegistry.put(context.campaignKey, context.scenarioName, this.name, severity, result)
+        log.info { "Stopping the step ${this.name} for the campaign ${context.campaignKey}: $result" }
         super<StepDecorator>.stop(context)
     }
 

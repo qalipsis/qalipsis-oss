@@ -29,14 +29,14 @@ internal class RedisFailureState(
     )
 
     override suspend fun doInit(): List<Directive> {
-        operations.setState(campaign.tenant, campaignName, CampaignRedisState.FAILURE_STATE)
+        operations.setState(campaign.tenant, campaignKey, CampaignRedisState.FAILURE_STATE)
         operations.prepareFactoriesForFeedbackExpectations(campaign)
         return super.doInit()
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
-            if (operations.markFeedbackForFactory(campaign.tenant, campaignName, feedback.nodeId)) {
+            if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
                 RedisDisabledState(campaign, false, operations)
             } else {
                 this

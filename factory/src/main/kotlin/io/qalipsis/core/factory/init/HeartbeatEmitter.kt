@@ -53,7 +53,7 @@ internal class HeartbeatEmitter(
                         nodeId,
                         Instant.now(),
                         Heartbeat.State.HEALTHY,
-                        campaignManager.runningCampaign.campaignName.takeUnless(String::isBlank)
+                        campaignManager.runningCampaign.campaignKey.takeUnless(String::isBlank)
                     )
                     try {
                         factoryChannel.publishHeartbeat(heartbeatChannel, heartbeat)

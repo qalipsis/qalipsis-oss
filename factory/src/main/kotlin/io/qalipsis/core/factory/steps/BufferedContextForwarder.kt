@@ -83,7 +83,7 @@ internal class BufferedContextForwarder(
             val nextDagsIds = ctx.flatMap { it.second }.toSet()
 
             minionAssignmentKeeper.getFactoriesChannels(
-                factoryCampaignManager.runningCampaign.campaignName,
+                factoryCampaignManager.runningCampaign.campaignKey,
                 scenarioName,
                 minions,
                 nextDagsIds

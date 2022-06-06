@@ -73,7 +73,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             hasSize(2)
             any {
                 it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                    prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                    prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
                     prop(FactoryAssignmentDirective::assignments).all {
                         hasSize(2)
                         any {
@@ -98,7 +98,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             }
             any {
                 it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                    prop(FactoryAssignmentDirective::campaignName).isEqualTo("my-campaign")
+                    prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
                     prop(FactoryAssignmentDirective::assignments).all {
                         hasSize(1)
                         any {
@@ -115,7 +115,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                 }
             }
         }
-        assertThat(operations.getState(campaign.tenant, campaign.name)).isNotNull().all {
+        assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
             prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
             prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
         }

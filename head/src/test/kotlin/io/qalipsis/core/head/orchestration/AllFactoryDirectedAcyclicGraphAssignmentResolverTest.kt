@@ -22,7 +22,7 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
     internal fun `should assign all the scenarios to all the factories`() {
         // given
         val campaign = CampaignConfiguration(
-            name = "my-campaign",
+            key = "my-campaign",
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(
                     minionsCount = 54
