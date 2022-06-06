@@ -30,7 +30,8 @@ internal data class FactoryEntity(
     @field:NotBlank
     val unicastChannel: String,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "factoryId")
-    val tags: List<FactoryTagEntity>
+    val tags: List<FactoryTagEntity>,
+    val zone: String? = null
 ) : Entity {
 
     constructor(
@@ -39,7 +40,8 @@ internal data class FactoryEntity(
         registrationTimestamp: Instant,
         registrationNodeId: String,
         unicastChannel: String,
-        tags: List<FactoryTagEntity> = emptyList()
+        tags: List<FactoryTagEntity> = emptyList(),
+        zone: String? = null
     ) : this(
         -1,
         Instant.EPOCH,
@@ -48,7 +50,8 @@ internal data class FactoryEntity(
         registrationTimestamp,
         registrationNodeId,
         unicastChannel,
-        tags
+        tags,
+        zone
     )
 
     fun toModel(activeScenarios: Collection<String> = emptySet()): Factory {
@@ -58,7 +61,8 @@ internal data class FactoryEntity(
             unicastChannel = unicastChannel,
             version = version,
             tags = tags.associate { it.key to it.value },
-            activeScenarios = activeScenarios
+            activeScenarios = activeScenarios,
+            zone = zone
         )
     }
 }

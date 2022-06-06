@@ -13,6 +13,7 @@ import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -45,6 +46,7 @@ internal class HandshakeManagerTest {
         every { headConfiguration.unicastChannelPrefix } returns "the-unicast-channel-prefix-"
         every { headConfiguration.heartbeatChannel } returns "the-heartbeat-channel"
         every { headConfiguration.heartbeatDuration } returns Duration.ofSeconds(123)
+        every { headConfiguration.zones } returns setOf(Zone("by", "belarus", "description"))
     }
 
     @JvmField
@@ -98,7 +100,8 @@ internal class HandshakeManagerTest {
                     replyTo = "reply-channel",
                     scenarios = listOf(
                         relaxedMockk { every { name } returns "scen-1" },
-                        relaxedMockk { every { name } returns "scen-2" })
+                        relaxedMockk { every { name } returns "scen-2" }),
+                    zone = "en"
                 )
 
                 // when

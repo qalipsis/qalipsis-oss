@@ -6,6 +6,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotEmpty
+import assertk.assertions.isNullOrEmpty
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.micronaut.context.annotation.Property
@@ -28,6 +29,7 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::tags).isEmpty()
             prop(FactoryConfiguration::metadataPath).isEqualTo("./metadata")
             prop(FactoryConfiguration::tenant).isEqualTo("_qalipsis_")
+            prop(FactoryConfiguration::zone).isNullOrEmpty()
             prop(FactoryConfiguration::handshake).all {
                 prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("handshake-request")
                 prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("handshake-response")
@@ -53,6 +55,7 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.handshake.timeout", value = "20ms"),
         Property(name = "factory.metadata-path", value = "./another-metadata-path"),
         Property(name = "factory.tenant", value = "the tenant"),
+        Property(name = "factory.zone", value = "en"),
         Property(name = "factory.metadata-path", value = "./another-metadata-path"),
         Property(name = "factory.cache.ttl", value = "PT2M"),
         Property(name = "factory.cache.keyPrefix", value = "some-other-registry"),
@@ -72,6 +75,7 @@ internal class FactoryConfigurationIntegrationTest {
             }
             prop(FactoryConfiguration::metadataPath).isEqualTo("./another-metadata-path")
             prop(FactoryConfiguration::tenant).isEqualTo("the tenant")
+            prop(FactoryConfiguration::zone).isEqualTo("en")
             prop(FactoryConfiguration::handshake).all {
                 prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("The handshake request channel")
                 prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("The handshake response channel")
