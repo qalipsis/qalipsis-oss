@@ -13,7 +13,7 @@ import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.web.model.Zone
+import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
