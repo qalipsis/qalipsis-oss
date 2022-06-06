@@ -18,6 +18,10 @@ internal interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
 
     suspend fun findByUsername(username: String): UserEntity
 
+    suspend fun findIdByUsername(username: String): Long
+
+    suspend fun findUsernameById(id: Long): String
+
     suspend fun findByIdentityIdIn(identitiesIds: Collection<String>): Collection<UserEntity>
 
     suspend fun findUsernameByIdentityId(identityId: String): String

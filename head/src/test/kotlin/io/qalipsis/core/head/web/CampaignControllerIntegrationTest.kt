@@ -32,6 +32,7 @@ import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
@@ -41,13 +42,16 @@ import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
 @WithMockk
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD, "jwt"])
 @PropertySource(Property(name = "micronaut.server.log-handled-exceptions", value = "true"))
 internal class CampaignControllerIntegrationTest {
 
     @Inject
     @field:Client("/campaigns")
     lateinit var httpClient: HttpClient
+
+    @Inject
+    private lateinit var jwtGenerator: JwtGenerator
 
     @RelaxedMockK
     private lateinit var campaignManager: CampaignManager
@@ -89,7 +93,7 @@ internal class CampaignControllerIntegrationTest {
             speedFactor = 1.0,
             start = Instant.now(),
             end = null,
-            configurerName = Defaults.USER,
+            configurerName = "the-admin",
             result = null,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -98,7 +102,7 @@ internal class CampaignControllerIntegrationTest {
         )
         coEvery {
             campaignManager.start(
-                Defaults.USER,
+                "the-admin",
                 "This is a campaign",
                 refEq(campaignConfiguration)
             )
@@ -106,6 +110,9 @@ internal class CampaignControllerIntegrationTest {
 
         // when
         val executeRequest = HttpRequest.POST("/", campaignRequest)
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
+
         val response = httpClient.toBlocking().exchange(
             executeRequest,
             Campaign::class.java
@@ -113,9 +120,9 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOrder {
-            campaignConverter.convertRequest(Defaults.TENANT, campaignRequest)
+            campaignConverter.convertRequest("my-tenant", campaignRequest)
             // Called with the default user.
-            campaignManager.start(Defaults.USER, "This is a campaign", refEq(campaignConfiguration))
+            campaignManager.start("the-admin", "This is a campaign", refEq(campaignConfiguration))
         }
 
         assertThat(response).all {
@@ -132,6 +139,8 @@ internal class CampaignControllerIntegrationTest {
             scenarios = mapOf("Scenario1" to ScenarioRequest(5))
         )
         val executeRequest = HttpRequest.POST("/", campaignRequest)
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -159,8 +168,10 @@ internal class CampaignControllerIntegrationTest {
         )
         val validateRequest = HttpRequest.POST("/validate", campaignRequest)
             .header("Accept-Language", "en")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
 
-        coEvery { clusterFactoryService.getActiveScenarios(Defaults.TENANT, any()) } returns listOf(
+        coEvery { clusterFactoryService.getActiveScenarios("my-tenant", any()) } returns listOf(
             ScenarioEntity(555, "scenario-1", 500)
         ).map(ScenarioEntity::toModel)
 
@@ -179,9 +190,11 @@ internal class CampaignControllerIntegrationTest {
             name = "just",
             scenarios = mapOf("Scenario1" to ScenarioRequest(5))
         )
-        coEvery { clusterFactoryService.getActiveScenarios(Defaults.TENANT, any()) } returns emptyList()
+        coEvery { clusterFactoryService.getActiveScenarios("my-tenant", any()) } returns emptyList()
         val validateRequest = HttpRequest.POST("/validate", campaignRequest)
             .header("Accept-Language", "en")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -209,17 +222,19 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             result = ExecutionStatus.SUCCESSFUL,
-            configurerName = Defaults.USER,
+            configurerName = "the-admin",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
         )
         val listsRequest = HttpRequest.GET<Page<Campaign>>("/")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_CAMPAIGN)))
 
         coEvery {
             campaignService.search(
-                Defaults.TENANT,
+                "my-tenant",
                 null,
                 null,
                 0,
@@ -250,7 +265,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             result = ExecutionStatus.SUCCESSFUL,
-            configurerName = Defaults.USER,
+            configurerName = "the-admin",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -258,9 +273,12 @@ internal class CampaignControllerIntegrationTest {
         )
 
         val listsRequest = HttpRequest.GET<Page<Campaign>>("/?filter=an*,other")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_CAMPAIGN)))
+
         coEvery {
             campaignService.search(
-                Defaults.TENANT,
+                "my-tenant",
                 "an*,other",
                 null,
                 0,
@@ -291,7 +309,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             result = ExecutionStatus.SUCCESSFUL,
-            configurerName = Defaults.USER,
+            configurerName = "the-admin",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -300,10 +318,12 @@ internal class CampaignControllerIntegrationTest {
 
         val listsRequest =
             HttpRequest.GET<Page<Campaign>>("/?filter=campaign&sort=name")
+                .header("X-Tenant", "my-tenant")
+                .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_CAMPAIGN)))
 
         coEvery {
             campaignService.search(
-                Defaults.TENANT,
+                "my-tenant",
                 "campaign",
                 "name",
                 0,
