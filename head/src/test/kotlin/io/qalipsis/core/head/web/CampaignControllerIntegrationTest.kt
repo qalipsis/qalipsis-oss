@@ -33,6 +33,7 @@ import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
@@ -320,6 +321,42 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
+        }
+    }
+
+    @Test
+    fun `should successfully abort the campaign`() {
+        // given
+        val abortRequest = HttpRequest.POST("/first_campaign/abort", null)
+
+        // when
+        val response = httpClient.toBlocking().exchange(abortRequest, Unit::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignManager.abort(Defaults.USER, Defaults.TENANT, "first_campaign", false)
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
+        }
+    }
+
+    @Test
+    fun `should successfully abort the campaign hard`() {
+        // given
+        val abortRequest = HttpRequest.POST("/first_campaign/abort?hard=true", null)
+
+        // when
+        val response = httpClient.toBlocking().exchange(abortRequest, Unit::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignManager.abort(Defaults.USER, Defaults.TENANT, "first_campaign", true)
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
     }
 }

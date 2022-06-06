@@ -2,9 +2,12 @@ package io.qalipsis.core.head.campaign
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.any
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
@@ -323,4 +326,45 @@ internal class PersistentCampaignServiceTest {
             }
             confirmVerified(campaignRepository, campaignConverter)
         }
+
+    @Test
+    internal fun `should save the aborter to the campaign`() = testDispatcherProvider.run {
+        val now = Instant.now()
+        val campaign = CampaignEntity(
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            start = now,
+            configurer = 199
+        )
+        coEvery { campaignRepository.findByKey("my-tenant", "my-campaign") } returns campaign
+        coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
+
+        // when
+        persistentCampaignService.saveAborter("my-tenant", "my-aborter", "my-campaign")
+
+        // then
+        val capturedEntity = mutableListOf<CampaignEntity>()
+        coVerifyOnce {
+            campaignRepository.findByKey("my-tenant", "my-campaign")
+            userRepository.findIdByUsername("my-aborter")
+            campaignRepository.update(capture(capturedEntity))
+        }
+        confirmVerified(campaignRepository, userRepository, campaignScenarioRepository)
+        assertThat(capturedEntity).all {
+            hasSize(1)
+            any {
+                it.isInstanceOf(CampaignEntity::class).isDataClassEqualTo(
+                    CampaignEntity(
+                        key = "my-campaign",
+                        name = "This is a campaign",
+                        speedFactor = 123.2,
+                        start = now,
+                        configurer = 199,
+                        aborter = 111
+                    )
+                )
+            }
+        }
+    }
 }
