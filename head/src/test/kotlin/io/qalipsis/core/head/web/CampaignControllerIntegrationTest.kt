@@ -20,6 +20,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -34,6 +35,7 @@ import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
@@ -93,7 +95,7 @@ internal class CampaignControllerIntegrationTest {
             speedFactor = 1.0,
             start = Instant.now(),
             end = null,
-            configurerName = "the-admin",
+            configurerName = "my-user",
             result = null,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -102,7 +104,7 @@ internal class CampaignControllerIntegrationTest {
         )
         coEvery {
             campaignManager.start(
-                "the-admin",
+                "my-user",
                 "This is a campaign",
                 refEq(campaignConfiguration)
             )
@@ -111,7 +113,7 @@ internal class CampaignControllerIntegrationTest {
         // when
         val executeRequest = HttpRequest.POST("/", campaignRequest)
             .header("X-Tenant", "my-tenant")
-            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.CREATE_CAMPAIGN)))
 
         val response = httpClient.toBlocking().exchange(
             executeRequest,
@@ -122,7 +124,7 @@ internal class CampaignControllerIntegrationTest {
         coVerifyOrder {
             campaignConverter.convertRequest("my-tenant", campaignRequest)
             // Called with the default user.
-            campaignManager.start("the-admin", "This is a campaign", refEq(campaignConfiguration))
+            campaignManager.start("my-user", "This is a campaign", refEq(campaignConfiguration))
         }
 
         assertThat(response).all {
@@ -140,7 +142,7 @@ internal class CampaignControllerIntegrationTest {
         )
         val executeRequest = HttpRequest.POST("/", campaignRequest)
             .header("X-Tenant", "my-tenant")
-            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.CREATE_CAMPAIGN)))
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -169,7 +171,7 @@ internal class CampaignControllerIntegrationTest {
         val validateRequest = HttpRequest.POST("/validate", campaignRequest)
             .header("Accept-Language", "en")
             .header("X-Tenant", "my-tenant")
-            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.CREATE_CAMPAIGN)))
 
         coEvery { clusterFactoryService.getActiveScenarios("my-tenant", any()) } returns listOf(
             ScenarioEntity(555, "scenario-1", 500)
@@ -194,7 +196,7 @@ internal class CampaignControllerIntegrationTest {
         val validateRequest = HttpRequest.POST("/validate", campaignRequest)
             .header("Accept-Language", "en")
             .header("X-Tenant", "my-tenant")
-            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.CREATE_CAMPAIGN)))
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.CREATE_CAMPAIGN)))
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -222,7 +224,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             result = ExecutionStatus.SUCCESSFUL,
-            configurerName = "the-admin",
+            configurerName = "my-user",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -230,7 +232,7 @@ internal class CampaignControllerIntegrationTest {
         )
         val listsRequest = HttpRequest.GET<Page<Campaign>>("/")
             .header("X-Tenant", "my-tenant")
-            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_CAMPAIGN)))
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
 
         coEvery {
             campaignService.search(
@@ -265,7 +267,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             result = ExecutionStatus.SUCCESSFUL,
-            configurerName = "the-admin",
+            configurerName = "my-user",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -274,7 +276,7 @@ internal class CampaignControllerIntegrationTest {
 
         val listsRequest = HttpRequest.GET<Page<Campaign>>("/?filter=an*,other")
             .header("X-Tenant", "my-tenant")
-            .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_CAMPAIGN)))
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
 
         coEvery {
             campaignService.search(
@@ -309,7 +311,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             result = ExecutionStatus.SUCCESSFUL,
-            configurerName = "the-admin",
+            configurerName = "my-user",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -319,7 +321,7 @@ internal class CampaignControllerIntegrationTest {
         val listsRequest =
             HttpRequest.GET<Page<Campaign>>("/?filter=campaign&sort=name")
                 .header("X-Tenant", "my-tenant")
-                .bearerAuth(jwtGenerator.generateValidToken("the-admin", listOf(Permissions.READ_CAMPAIGN)))
+                .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
 
         coEvery {
             campaignService.search(
@@ -341,5 +343,76 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
+    }
+
+    @Test
+    fun `should deny starting campaign when the permission is missing`() {
+        // given
+        val campaignRequest = CampaignRequest(
+            name = "This is a campaign",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+
+        val executeRequest = HttpRequest.POST("/", campaignRequest)
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user"))
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                executeRequest,
+                Campaign::class.java
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever { campaignManager.start(any(), any(), any()) }
+    }
+
+    @Test
+    fun `should deny validating campaign when the permission is missing`() {
+        // given
+        val campaignRequest = CampaignRequest(
+            name = "just",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(5))
+        )
+        val validateRequest = HttpRequest.POST("/validate", campaignRequest)
+            .header("Accept-Language", "en")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user"))
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                validateRequest,
+                Campaign::class.java
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever { campaignManager.start(any(), any(), any()) }
+    }
+
+    @Test
+    fun `should deny listing campaigns when the permission is missing`() {
+        // given
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/")
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user"))
+
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                listsRequest,
+                Campaign::class.java
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever { campaignManager.start(any(), any(), any()) }
     }
 }
