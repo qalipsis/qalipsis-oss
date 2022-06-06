@@ -22,7 +22,8 @@ internal open class AbortingState(
             CampaignAbortDirective(
                 campaignKey = campaignKey,
                 channel = campaign.broadcastChannel,
-                scenarioNames = campaign.scenarios.keys.toList()
+                scenarioNames = campaign.scenarios.keys.toList(),
+                abortCampaignConfiguration = AbortCampaignConfiguration(abortConfiguration.hard)
             )
         )
     }

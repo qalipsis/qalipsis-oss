@@ -2,9 +2,12 @@ package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.model.Zone
 import java.time.Duration
 import javax.validation.constraints.NotBlank
+import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
 
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
@@ -35,4 +38,10 @@ internal interface HeadConfiguration {
     @get:Positive
     val heartbeatDuration: Duration
 
+    /**
+     * Set of zones to use to execute the scenarios.
+     */
+    @get:NotNull
+    @get:Bindable(defaultValue = "")
+    val zones: Set<Zone>
 }
