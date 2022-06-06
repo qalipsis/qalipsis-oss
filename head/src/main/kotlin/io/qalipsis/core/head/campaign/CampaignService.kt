@@ -33,4 +33,9 @@ internal interface CampaignService {
      * be searched in both the campaign, user and the scenario names
      */
     suspend fun search(tenant: String, filter: String?, sort: String?, page: Int, size: Int): Page<Campaign>
+
+    /**
+     * Saves the name of the user who aborted the campaign.
+     */
+    suspend fun saveAborter(tenant: String, aborter: String, campaignKey: String)
 }
