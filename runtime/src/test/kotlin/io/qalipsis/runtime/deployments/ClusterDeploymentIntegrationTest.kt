@@ -33,7 +33,8 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
-            "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE"
+            "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
+            "-c", "logging.level.io.qalipsis.core.head.redis.campaign.RedisFactoryAssignmentState=TRACE"
         )
         val factoryConfig = arrayOf(
             "factory",

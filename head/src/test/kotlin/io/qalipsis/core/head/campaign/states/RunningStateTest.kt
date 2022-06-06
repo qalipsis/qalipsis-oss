@@ -211,7 +211,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
             // when
             val newState = state.process(mockk<EndOfCampaignScenarioFeedback> {
-                every { campaignName } returns "my-campaign"
+                every { campaignKey } returns "my-campaign"
                 every { scenarioName } returns "the scenario"
             })
 
@@ -248,7 +248,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
             // when
             var newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
-                every { campaignName } returns "my-campaign"
+                every { campaignKey } returns "my-campaign"
                 every { scenarioName } returns "scenario-1"
             })
 
@@ -258,7 +258,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
             // when
             newState = state.process(mockk<CampaignScenarioShutdownFeedback> {
-                every { campaignName } returns "my-campaign"
+                every { campaignKey } returns "my-campaign"
                 every { scenarioName } returns "scenario-2"
             })
 

@@ -135,7 +135,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsDeclarationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -165,13 +165,13 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
             minionAssignmentKeeper.completeUnassignedMinionsRegistration("my-campaign", "my-scenario")
             factoryChannel.publishDirective(
                 MinionsAssignmentDirective(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                 )
             )
             factoryChannel.publishFeedback(
                 MinionsDeclarationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.COMPLETED
                 )
@@ -179,7 +179,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
         }
         assertThat(assignmentDirectiveSlot.captured).all {
             prop(MinionsAssignmentDirective::scenarioName).isEqualTo("my-scenario")
-            prop(MinionsAssignmentDirective::campaignName).isEqualTo("my-campaign")
+            prop(MinionsAssignmentDirective::campaignKey).isEqualTo("my-campaign")
             prop(MinionsAssignmentDirective::channel).isEmpty()
         }
 
@@ -223,7 +223,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
         coVerifyOrder {
             factoryChannel.publishFeedback(
                 MinionsDeclarationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.IN_PROGRESS
                 )
@@ -232,7 +232,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
             minionAssignmentKeeper.registerMinionsToAssign(any(), any(), any(), any(), any())
             factoryChannel.publishFeedback(
                 MinionsDeclarationFeedback(
-                    campaignName = "my-campaign",
+                    campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
                     error = "A problem occurred"

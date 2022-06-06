@@ -76,7 +76,7 @@ internal class RunnerImpl(
         val step = dag.rootStep.get()
         val stepContext = StepContextImpl<Unit, Any>(
             input = Channel<Unit>(1).also { it.send(Unit) },
-            campaignName = minion.campaignName,
+            campaignKey = minion.campaignKey,
             minionId = minion.id,
             scenarioName = dag.scenario.name,
             stepName = step.name
@@ -289,7 +289,7 @@ internal class RunnerImpl(
                     meterRegistry.timer("step-execution", "step", step.name, "status", "completed").record(duration)
                 }
                 reportLiveStateRegistry.recordSuccessfulStepExecution(
-                    stepContext.campaignName,
+                    stepContext.campaignKey,
                     minion.scenarioName,
                     step.name
                 )
@@ -297,7 +297,7 @@ internal class RunnerImpl(
             } catch (t: Throwable) {
                 val duration = Duration.ofNanos(System.nanoTime() - start)
                 reportLiveStateRegistry.recordFailedStepExecution(
-                    stepContext.campaignName,
+                    stepContext.campaignKey,
                     minion.scenarioName,
                     step.name
                 )

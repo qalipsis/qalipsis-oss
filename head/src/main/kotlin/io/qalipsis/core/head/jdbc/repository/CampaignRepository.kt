@@ -18,22 +18,33 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     @Query(
         """SELECT campaign.id
             FROM campaign
-            WHERE name = :campaignName AND "end" IS NULL AND EXISTS 
+            WHERE key = :campaignKey AND "end" IS NULL AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByNameAndEndIsNull(tenant: String, campaignName: String): Long
+    suspend fun findIdByKeyAndEndIsNull(tenant: String, campaignKey: String): Long
+
+    @Query(
+        """SELECT *
+            FROM campaign
+            WHERE key = :campaignKey AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findByKey(tenant: String, campaignKey: String): CampaignEntity
 
     @Query(
         """SELECT campaign.id
             FROM campaign
-            WHERE name = :campaignName AND EXISTS 
+            WHERE key = :campaignKey AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByName(tenant: String, campaignName: String): Long
+    suspend fun findIdByKey(tenant: String, campaignKey: String): Long
 
     /**
-     * Marks the open campaign with the specified name [campaignName] as complete with the provided [result].
+     * Marks the open campaign with the specified name [campaignKey] as complete with the provided [result].
      */
-    @Query("""UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE name = :campaignName AND "end" IS NULL""")
-    suspend fun close(campaignName: String, result: ExecutionStatus): Int
+    @Query(
+        """UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE key = :campaignKey AND "end" IS NULL 
+        AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Int
 }

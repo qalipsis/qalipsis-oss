@@ -1,6 +1,6 @@
 package io.qalipsis.core.feedbacks
 
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * Feedback to a [io.qalipsis.core.directives.MinionsDeclarationDirective].
  *
  * @property key unique key of the feedback
- * @property campaignName campaign to which the feedback relates
+ * @property campaignKey campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("md")
 data class MinionsDeclarationFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
     override val error: String? = null
@@ -35,7 +35,7 @@ data class MinionsDeclarationFeedback(
  * Feedback to a [io.qalipsis.core.directives.MinionsRampUpPreparationDirective].
  *
  * @property key unique key of the feedback
- * @property campaignName campaign to which the feedback relates
+ * @property campaignKey campaign to which the feedback relates
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
@@ -46,7 +46,7 @@ data class MinionsDeclarationFeedback(
 @Serializable
 @SerialName("mrp")
 data class MinionsRampUpPreparationFeedback(
-    override val campaignName: CampaignName,
+    override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
     override val error: String? = null

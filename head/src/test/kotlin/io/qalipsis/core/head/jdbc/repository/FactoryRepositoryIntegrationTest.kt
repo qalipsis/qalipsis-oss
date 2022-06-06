@@ -12,9 +12,9 @@ import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
+import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
@@ -344,7 +344,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val campaign =
                 campaignRepository.save(
                     CampaignEntity(
-                        campaignName = "the-campaign-1", end = null, tenantId = savedTenant2.id
+                        key = "the-campaign-1",
+                        name = "This is a campaign",
+                        end = null,
+                        tenantId = savedTenant2.id,
+                        configurer = 1
                     )
                 )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
@@ -411,9 +415,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             val campaign = campaignRepository.save(
                 CampaignEntity(
-                    campaignName = "the-campaign-1",
+                    key = "the-campaign-1",
+                    name = "This is a campaign",
                     end = Instant.now(),
-                    tenantId = savedTenant2.id
+                    tenantId = savedTenant2.id,
+                    configurer = 1
                 )
             )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = false))
@@ -492,9 +498,11 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val campaign =
                 campaignRepository.save(
                     CampaignEntity(
-                        campaignName = "the-campaign-1",
+                        key = "the-campaign-1",
+                        name = "This is a campaign",
                         end = null,
-                        tenantId = savedTenant2.id
+                        tenantId = savedTenant2.id,
+                        configurer = 1
                     )
                 )
             campaignFactoryRepository.save(CampaignFactoryEntity(campaign.id, factory2.id, discarded = true))

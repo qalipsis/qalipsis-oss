@@ -97,7 +97,7 @@ internal class ScenarioImplTest {
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignName = "camp-1",
+                campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagId,
                 stepName = step.name
@@ -137,7 +137,7 @@ internal class ScenarioImplTest {
         }
         mockedSteps.subList(0, 2).forEach { step ->
             val context = StepStartStopContext(
-                campaignName = "camp-1",
+                campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagId,
                 stepName = step.name
@@ -148,7 +148,7 @@ internal class ScenarioImplTest {
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignName = "camp-1",
+                campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagId,
                 stepName = step.name
@@ -188,7 +188,7 @@ internal class ScenarioImplTest {
         }
         mockedSteps.subList(0, 2).forEach { step ->
             val context = StepStartStopContext(
-                campaignName = "camp-1",
+                campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagId,
                 stepName = step.name
@@ -199,7 +199,7 @@ internal class ScenarioImplTest {
         }
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignName = "camp-1",
+                campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagId,
                 stepName = step.name
@@ -230,7 +230,7 @@ internal class ScenarioImplTest {
         assertEquals(mockedSteps.size, calledStop.get())
         mockedSteps.forEach { step ->
             val context = StepStartStopContext(
-                campaignName = "camp-1",
+                campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagId,
                 stepName = step.name

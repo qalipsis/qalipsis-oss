@@ -19,7 +19,7 @@ internal class DeadEndStep<I>(
     override suspend fun complete(completionContext: CompletionContext) {
         factoryCampaignManager.notifyCompleteMinion(
             completionContext.minionId,
-            completionContext.campaignName,
+            completionContext.campaignKey,
             completionContext.scenarioName,
             dagId
         )

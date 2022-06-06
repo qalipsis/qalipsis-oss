@@ -49,7 +49,7 @@ internal class DistributedDagTransitionStepTest {
         )
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion"
         )
@@ -85,7 +85,7 @@ internal class DistributedDagTransitionStepTest {
         )
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion"
         )
@@ -119,7 +119,7 @@ internal class DistributedDagTransitionStepTest {
             contextForwarder
         )
         val ctx = DefaultCompletionContext(
-            campaignName = "my-campaign",
+            campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion",
             lastExecutedStepName = "step-1",
@@ -157,7 +157,7 @@ internal class DistributedDagTransitionStepTest {
                 contextForwarder
             )
             val ctx = DefaultCompletionContext(
-                campaignName = "my-campaign",
+                campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
                 minionId = "my-minion",
                 lastExecutedStepName = "step-1",

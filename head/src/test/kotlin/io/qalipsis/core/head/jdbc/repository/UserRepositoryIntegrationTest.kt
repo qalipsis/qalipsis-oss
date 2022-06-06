@@ -9,6 +9,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.micronaut.data.exceptions.EmptyResultException
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.filter
@@ -48,7 +49,7 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // then
         assertThat(fetched).isNotNull()
-        assertThat(fetched[0].username).isEqualTo("_qalipsis_")
+        assertThat(fetched[0].username).isEqualTo(Defaults.USER)
     }
 
     @Test
@@ -114,6 +115,18 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThrows<EmptyResultException> {
             userRepository.findById(saved.id)
         }
+    }
+
+    @Test
+    fun `should find user id by username`() = testDispatcherProvider.run {
+        // given
+        val saved = userRepository.save(userPrototype.copy())
+
+        // when
+        val fetched = userRepository.findIdByUsername(saved.username)
+
+        // then
+        assertThat(fetched).isNotNull().isEqualTo(saved.id)
     }
 
     @Test

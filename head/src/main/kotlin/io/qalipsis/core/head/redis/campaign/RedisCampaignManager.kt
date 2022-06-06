@@ -6,7 +6,9 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.context.CampaignName
+import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
@@ -49,14 +51,16 @@ internal class RedisCampaignManager(
     campaignExecutionContext
 ) {
 
+    @LogInputAndOutput
     override suspend fun create(campaign: CampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> =
         RedisFactoryAssignmentState(campaign, redisOperations)
 
+    @LogInput
     override suspend fun get(
         tenant: String,
-        campaignName: CampaignName
+        campaignKey: CampaignKey
     ): CampaignExecutionState<CampaignExecutionContext> {
-        val currentState = redisOperations.getState(tenant, campaignName)
+        val currentState = redisOperations.getState(tenant, campaignKey)
         val executionState = when (currentState?.second) {
             CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE -> RedisFactoryAssignmentState(
                 currentState.first,
@@ -72,7 +76,7 @@ internal class RedisCampaignManager(
             CampaignRedisState.COMPLETION_STATE -> RedisCompletionState(currentState.first, redisOperations)
             CampaignRedisState.FAILURE_STATE -> RedisFailureState(currentState.first, redisOperations)
             CampaignRedisState.ABORTING_STATE -> RedisAbortingState(currentState.first, redisOperations)
-            else -> throw IllegalStateException("The state of the campaign execution is unknown")
+            else -> throw IllegalStateException("The state of the campaign $campaignKey of tenant $tenant is unidentified: $currentState")
         }
         executionState.inject(campaignExecutionContext)
 

@@ -30,13 +30,13 @@ internal class CampaignAbortDirectiveListener(
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
         return directive is CampaignAbortDirective
-                && factoryCampaignManager.isLocallyExecuted(directive.campaignName)
+                && factoryCampaignManager.isLocallyExecuted(directive.campaignKey)
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: CampaignAbortDirective) {
         val feedback = CampaignAbortFeedback(
-            campaignName = directive.campaignName,
+            campaignKey = directive.campaignKey,
             status = FeedbackStatus.IN_PROGRESS,
             scenarioNames = directive.scenarioNames
         )
@@ -44,7 +44,7 @@ internal class CampaignAbortDirectiveListener(
 
         try {
             directive.scenarioNames.forEach {
-                factoryCampaignManager.shutdownScenario(directive.campaignName, it)
+                factoryCampaignManager.shutdownScenario(directive.campaignKey, it)
             }
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         } catch (e: Exception) {

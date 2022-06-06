@@ -11,6 +11,7 @@ import io.micronaut.http.bind.binders.TypedRequestArgumentBinder
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.authentication.ServerAuthentication
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.security.RoleName
 import jakarta.inject.Singleton
 import java.util.Optional
@@ -31,7 +32,7 @@ internal class NoSecurityAuthenticationBinder : TypedRequestArgumentBinder<Authe
         return ArgumentBinder.BindingResult {
             Optional.of(
                 ServerAuthentication(
-                    "_qalipsis_",
+                    Defaults.USER,
                     RoleName.values().asSequence().flatMap { it.permissions }.toSet(),
                     emptyMap()
                 )

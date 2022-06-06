@@ -36,11 +36,13 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
 
     private val campaignPrototype =
         CampaignEntity(
-            campaignName = "the-campaign-id",
+            key = "the-campaign-id",
+            name = "This is a campaign",
             speedFactor = 123.0,
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
-            result = ExecutionStatus.SUCCESSFUL
+            result = ExecutionStatus.SUCCESSFUL,
+            configurer = 1
         )
 
     private val factoryPrototype =
