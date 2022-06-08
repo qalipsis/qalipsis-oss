@@ -88,4 +88,10 @@ internal class PersistentCampaignService(
             elements = entitiesPage.content.map { campaignConverter.convertToModel(it) }
         )
     }
+
+    override suspend fun saveAborter(tenant: String, aborter: String, campaignKey: String) {
+        val campaign = campaignRepository.findByKey(tenant, campaignKey)
+        campaignRepository.update(campaign.copy(aborter = userRepository.findIdByUsername(aborter)))
+    }
+
 }

@@ -9,6 +9,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.EmptyResultException
 import io.micronaut.data.model.Pageable
@@ -144,16 +145,18 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
 
     @Test
-    fun `should update the version when the campaign is updated`() = testDispatcherProvider.run {
+    fun `should update the version and aborter when the campaign is updated`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when
-        val updated = campaignRepository.update(saved)
+        val updated = campaignRepository.update(saved.copy(aborter = 1))
 
         // then
         assertThat(updated.version).isGreaterThan(saved.version)
+        assertThat(saved.aborter).isNull()
+        assertThat(updated.aborter).isEqualTo(1)
     }
 
     @Test
@@ -412,4 +415,17 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             ).isEmpty()
         }
+
+    @Test
+    internal fun `should find campaign by key`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-11", "test-tenant"))
+        val saved = campaignRepository.save(campaignPrototype.copy(key = "name-11", tenantId = tenant.id))
+
+        // when
+        val fetched = campaignRepository.findByKey("tenant-11", saved.key)
+
+        // then
+        assertThat(fetched).isNotNull().isDataClassEqualTo(saved)
+    }
 }

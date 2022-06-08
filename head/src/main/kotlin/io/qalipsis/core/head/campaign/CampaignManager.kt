@@ -19,4 +19,13 @@ internal interface CampaignManager {
      * @param configuration configuration of the campaign to execute
      */
     suspend fun start(configurer: String, campaignDisplayName: String, configuration: CampaignConfiguration): Campaign
+
+    /**
+     * Aborts a campaign with the provided name.
+     * @param aborter is a username of the user aborting the campaign
+     * @param tenant define in which tenant the abortion of the campaign should be done
+     * @param campaignKey is a name of the campaign to abort
+     * @param hard force the campaign to fail when set to true, defaults to false
+     */
+    suspend fun abort(aborter: String, tenant: String, campaignKey: String, hard: Boolean)
 }
