@@ -75,7 +75,7 @@ internal class CampaignConverterImpl(
         )
     }
 
-    private fun convertScenarioReport(scenariosReports: List<io.qalipsis.api.report.ScenarioReport>): List<ScenarioReport> {
+    private fun convertScenarioReport(scenariosReports: List<io.qalipsis.api.report.ScenarioReport>): Collection<ScenarioReport> {
         return scenariosReports.map {
             ScenarioReport(
                 campaignKey = it.campaignKey,
@@ -89,10 +89,10 @@ internal class CampaignConverterImpl(
                 status = it.status,
                 messages = convertReportMessages(it.messages)
             )
-        }.toList()
+        }
     }
 
-    private fun convertReportMessages(reportMessages: List<io.qalipsis.api.report.ReportMessage>): List<ReportMessage> {
+    private fun convertReportMessages(reportMessages: List<io.qalipsis.api.report.ReportMessage>): Collection<ReportMessage> {
         return reportMessages.map {
             ReportMessage(
                 stepName = it.stepName,
@@ -100,7 +100,7 @@ internal class CampaignConverterImpl(
                 severity = it.severity,
                 message = it.message
             )
-        }.toList()
+        }
     }
 
     private fun convertScenarioRequestsToConfigurations(scenarios: Map<ScenarioName, ScenarioRequest>): Map<ScenarioName, ScenarioConfiguration> {

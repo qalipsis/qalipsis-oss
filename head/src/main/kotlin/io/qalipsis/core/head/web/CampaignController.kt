@@ -213,7 +213,7 @@ internal class CampaignController(
     @Get("/{campaignKey}")
     @Operation(
         summary = "Retrieve campaign report",
-        description = "Get the complete execution report of a completed campaign",
+        description = "Reports the details of the execution of a completed or running campaign and its scenario",
         responses = [
             ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaign report"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
@@ -225,12 +225,6 @@ internal class CampaignController(
     )
     @Secured(Permissions.READ_CAMPAIGN)
     suspend fun retrieve(
-        @Parameter(
-            name = "X-Tenant",
-            description = "Contextual tenant",
-            required = true,
-            `in` = ParameterIn.HEADER
-        ) @NotBlank @Tenant tenant: String,
         @Parameter(
             description = "Campaign name of the campaign to retrieve the report",
             required = true,

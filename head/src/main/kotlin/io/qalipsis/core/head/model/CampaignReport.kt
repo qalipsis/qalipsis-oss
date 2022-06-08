@@ -19,8 +19,8 @@ import javax.validation.constraints.PositiveOrZero
  */
 @Introspected
 @Schema(
-    name = "Details about execution report of a completed campaign",
-    title = "Details for the campaign report to retrieve from the REST endpoint"
+    name = "Report of campaign execution",
+    title = "Details of the execution of a completed or running campaign and its scenario"
 )
 internal data class CampaignReport(
     @field:Schema(description = "Unique identifier of the campaign")
@@ -57,7 +57,7 @@ internal data class CampaignReport(
 
     @field:Schema(description = "The list of the scenario reports for the campaign")
     @field:Valid
-    val scenariosReports: List<@Valid ScenarioReport>
+    val scenariosReports: Collection<@Valid ScenarioReport>
 )
 
 /**
@@ -106,7 +106,7 @@ internal data class ScenarioReport(
 
     @field:Schema(description = "The list of the report messages for the scenario")
     @field:Valid
-    val messages: List<@Valid ReportMessage>
+    val messages: Collection<@Valid ReportMessage>
 )
 
 /**
