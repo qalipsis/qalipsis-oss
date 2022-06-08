@@ -59,4 +59,8 @@ internal class InMemoryCampaignService : CampaignService {
         // Nothing to do.
         return Page(0, 0, 0, emptyList())
     }
+
+    override suspend fun saveAborter(tenant: String, aborter: String, campaignKey: String) {
+        // Nothing to do.
+    }
 }

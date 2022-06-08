@@ -106,7 +106,8 @@ internal class ClusterFactoryServiceTest {
                 tags = emptyMap(),
                 replyTo = "",
                 scenarios = emptyList(),
-                tenant = "qalipsis"
+                tenant = "qalipsis",
+                zone = "fr"
             )
         val now = getTimeMock()
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns emptyList()
@@ -134,7 +135,8 @@ internal class ClusterFactoryServiceTest {
                     registrationTimestamp = now,
                     registrationNodeId = handshakeRequest.nodeId,
                     unicastChannel = "directives-unicast-boo",
-                    tenantId = 5243L
+                    tenantId = 5243L,
+                    zone = handshakeRequest.zone
                 )
             )
             factoryStateRepository.save(FactoryStateEntity(now, 123, now, 0, FactoryStateValue.REGISTERED))
@@ -153,7 +155,8 @@ internal class ClusterFactoryServiceTest {
             tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = emptyList(),
-            tenant = "qalipsis"
+            tenant = "qalipsis",
+            zone = "fr"
         )
         val handshakeResponse = relaxedMockk<HandshakeResponse> {
             every { unicastChannel } returns "directives-unicast-boo"
@@ -180,7 +183,8 @@ internal class ClusterFactoryServiceTest {
                     registrationTimestamp = now,
                     registrationNodeId = handshakeRequest.nodeId,
                     unicastChannel = "directives-unicast-boo",
-                    tenantId = 123
+                    tenantId = 123,
+                    zone = handshakeRequest.zone
                 )
             )
             factoryTagRepository.saveAll(listOf(FactoryTagEntity(123, selectorKey, selectorValue)))
@@ -877,7 +881,8 @@ internal class ClusterFactoryServiceTest {
             registrationTimestamp = now,
             registrationNodeId = handshakeRequest.nodeId,
             unicastChannel = "unicast-before",
-            tags = listOf(selector)
+            tags = listOf(selector),
+            zone = "ru"
         )
 
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
@@ -903,6 +908,7 @@ internal class ClusterFactoryServiceTest {
             prop(FactoryEntity::registrationTimestamp).isEqualTo(now)
             prop(FactoryEntity::unicastChannel).isEqualTo("directives-unicast")
             prop(FactoryEntity::tenantId).isEqualTo(321)
+            prop(FactoryEntity::zone).isEqualTo("ru")
         }
         coVerifyOrder {
             tenantRepository.findIdByReference("qalipsis")
