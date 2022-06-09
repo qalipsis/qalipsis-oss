@@ -36,6 +36,10 @@
         <constraints nullable="false" foreignKeyName="campaign_configurer_id_fk" referencedTableName="user"
           referencedColumnNames="id" deleteCascade="false"/>
       </column>
+      <column name="aborter" type="BIGINT">
+        <constraints nullable="true" foreignKeyName="campaign_aborter_id_fk" referencedTableName="user"
+          referencedColumnNames="id" deleteCascade="false"/>
+      </column>
       <column name="tenant_id" type="BIGINT">
         <constraints nullable="false" foreignKeyName="campaign_tenant_id_fk" referencedTableName="tenant"
           referencedColumnNames="id" deleteCascade="true"/>

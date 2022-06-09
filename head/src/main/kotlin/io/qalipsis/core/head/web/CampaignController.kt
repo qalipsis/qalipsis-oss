@@ -6,6 +6,7 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
+import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
@@ -162,5 +163,45 @@ internal class CampaignController(
         ) @Nullable @QueryValue(defaultValue = "20") size: String
     ): HttpResponse<Page<Campaign>> {
         return HttpResponse.ok(campaignService.search(tenant, filter, sort, page.toInt(), size.toInt()))
+    }
+
+    /**
+     * REST endpoint to abort campaign.
+     */
+    @Secured(Permissions.ABORT_CAMPAIGN)
+    @Post("/{campaignKey}/abort")
+    @Operation(
+        summary = "Abort a campaign",
+        description = "Abort a campaign with the provided campaign name and details of abortion",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Campaign aborted successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    suspend fun abort(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Parameter(
+            description = "Campaign name of the campaign to abort",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable campaignKey: String,
+        @Parameter(
+            description = "Force the campaign to fail when set to true, defaults to false",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue(defaultValue = "false") hard: String
+    ): HttpResponse<Unit> {
+        campaignManager.abort(authentication.name, tenant, campaignKey, hard.toBoolean())
+        return HttpResponse.accepted()
     }
 }
