@@ -106,7 +106,7 @@ internal data class ScenarioReport(
 
     @field:Schema(description = "The list of the report messages for the scenario")
     @field:Valid
-    val messages: Collection<@Valid ReportMessage>
+    val messages: List<@Valid ReportMessage>
 )
 
 /**

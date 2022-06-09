@@ -92,7 +92,7 @@ internal class CampaignConverterImpl(
         }
     }
 
-    private fun convertReportMessages(reportMessages: List<io.qalipsis.api.report.ReportMessage>): Collection<ReportMessage> {
+    private fun convertReportMessages(reportMessages: List<io.qalipsis.api.report.ReportMessage>): List<ReportMessage> {
         return reportMessages.map {
             ReportMessage(
                 stepName = it.stepName,
