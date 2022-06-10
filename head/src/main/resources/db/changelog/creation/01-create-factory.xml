@@ -30,6 +30,9 @@
       <column name="unicast_channel" type="varchar(50)">
         <constraints nullable="false"/>
       </column>
+      <column name="zone" type="varchar(3)">
+        <constraints nullable="true"/>
+      </column>
     </createTable>
 
     <createIndex schemaName="qalipsis" indexName="unique_factory_node_idx" tableName="factory" unique="true">

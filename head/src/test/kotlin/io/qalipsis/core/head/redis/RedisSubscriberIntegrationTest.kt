@@ -171,7 +171,8 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
             nodeId = "the-node-id",
             tags = mapOf("key-1" to "value-1", "key-2" to "value-2"),
             replyTo = "the-response",
-            scenarios = emptyList()
+            scenarios = emptyList(),
+            zone = "fr"
         )
         publisherCommands.publish(HANDSHAKE_REQUEST_CHANNEL, serializer.serialize(handshakeRequest)).subscribe()
         countLatch.await()

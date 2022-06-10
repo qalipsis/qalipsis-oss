@@ -51,7 +51,8 @@ internal class InMemoryFactoryService(
             unicastChannel = handshakeResponse.unicastChannel,
             version = Instant.now(),
             tags = handshakeRequest.tags,
-            activeScenarios = handshakeRequest.scenarios.map { it.name }
+            activeScenarios = handshakeRequest.scenarios.map { it.name },
+            zone = handshakeRequest.zone
         )
         handshakeRequest.scenarios.forEach { scenario ->
             factoriesByScenarios.computeIfAbsent(scenario.name) { concurrentSet() } += actualNodeId
@@ -131,7 +132,7 @@ internal class InMemoryFactoryService(
     }
 
     /**
-     * Internal representation of a factory for the in-memory starage, that can be locked.
+     * Internal representation of a factory for the in-memory storage, that can be locked.
      */
     private class LockableFactory(
         nodeId: NodeId,
@@ -143,8 +144,9 @@ internal class InMemoryFactoryService(
         val locked: AtomicBoolean = AtomicBoolean(false),
         val healthState: AtomicReference<Heartbeat> = AtomicReference(
             Heartbeat(nodeId, Instant.now(), Heartbeat.State.REGISTERED)
-        )
-    ) : Factory(nodeId, registrationTimestamp, unicastChannel, version, tags, activeScenarios)
+        ),
+        zone: String?
+    ) : Factory(nodeId, registrationTimestamp, unicastChannel, version, tags, activeScenarios, zone)
 
     private companion object {
 
