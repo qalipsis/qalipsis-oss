@@ -114,7 +114,16 @@ internal class ClusterFactoryService(
             mergeTags(factoryTagRepository, handshakeRequest.tags, entity.tags, entity.id)
 
             if (entity.unicastChannel != handshakeResponse.unicastChannel) {
-                factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+                if (handshakeRequest.zone.isNullOrEmpty()) {
+                    factoryRepository.save(entity.copy(unicastChannel = handshakeResponse.unicastChannel))
+                } else {
+                    factoryRepository.save(
+                        entity.copy(
+                            unicastChannel = handshakeResponse.unicastChannel,
+                            zone = handshakeRequest.zone
+                        )
+                    )
+                }
             }
         }
 
@@ -133,7 +142,8 @@ internal class ClusterFactoryService(
                 registrationTimestamp = Instant.now(),
                 registrationNodeId = handshakeRequest.nodeId,
                 unicastChannel = handshakeResponse.unicastChannel,
-                tenantId = tenantId
+                tenantId = tenantId,
+                zone = handshakeRequest.zone
             )
         )
         if (handshakeRequest.tags.isNotEmpty()) {

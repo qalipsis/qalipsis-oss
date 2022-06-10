@@ -46,8 +46,13 @@ internal class FactoryConfiguration {
      */
     var assignment = Assignment()
 
+    /**
+     * Configuration of a key of a Zone of the factory declared in the head.
+     */
+    var zone: String? = null
+
     override fun toString(): String {
-        return "FactoryConfiguration(nodeId='$nodeId', tags=$tags, metadataPath='$metadataPath', tenant='$tenant', handshake=$handshake, cache=$cache, assignment=$assignment)"
+        return "FactoryConfiguration(nodeId='$nodeId', tags=$tags, metadataPath='$metadataPath', tenant='$tenant', handshake=$handshake, cache=$cache, assignment=$assignment, zoneKey=$zone)"
     }
 
     /**

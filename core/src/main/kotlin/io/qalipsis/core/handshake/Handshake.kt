@@ -14,6 +14,7 @@ import java.time.Duration
  * @property replyTo channel to use for the registration response
  * @property scenarios set of scenarios supported by the factory
  * @property tenant tenant identifier of the factory sending the feedback
+ * @property zone a key of a Zone of the factory declared in the head
  *
  * @author Eric Jessé
  */
@@ -23,7 +24,8 @@ data class HandshakeRequest(
     val tags: Map<String, String>,
     val replyTo: String,
     val scenarios: List<RegistrationScenario>,
-    val tenant: String = ""
+    val tenant: String = "",
+    val zone: String? = null
 )
 
 typealias RegistrationScenario = ScenarioSummary

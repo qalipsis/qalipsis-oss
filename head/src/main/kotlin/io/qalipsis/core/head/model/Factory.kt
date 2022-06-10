@@ -16,7 +16,8 @@ internal open class Factory(
     val unicastChannel: String,
     open val version: Instant,
     val tags: Map<String, String> = emptyMap(),
-    open val activeScenarios: Collection<String> = emptySet()
+    open val activeScenarios: Collection<String> = emptySet(),
+    val zone: String? = null
 ) {
 
     constructor(nodeId: String, unicastChannel: String, broadcastChannel: String) : this(
