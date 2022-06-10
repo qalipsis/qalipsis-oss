@@ -11,3 +11,14 @@ head:
 
 logging:
   console: true
+
+micronaut:
+  security:
+    open-id:
+      strategy-name: openId
+      login-endpoint: https://qalipsis-dev.eu.auth0.com/v2/login
+      logout-endpoint: https://qalipsis-dev.eu.auth0.com/v2/logout
+    disabled:
+      strategy-name: disabled
+      login-endpoint:
+      logout-endpoint:
