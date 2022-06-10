@@ -21,4 +21,6 @@
     <appender-ref ref="console"/>
   </root>
 
+  <include optional="true" file="logback.xml"/>
+
 </configuration>

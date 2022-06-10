@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Local deployment of the QALIPSIS backend</title>
+</head>
+<body>
+<h1>Local deployment of the QALIPSIS backend</h1>
+<div>
+  <h2>Startup</h2>
+  <p>
+    On a Mac/Linux machine, ensure that the file
+    <code>deployment/config/pgadmin/postgres.passfile</code> has the mod 600. Otherwise, it will be ignored.
+  </p>
+
+  <p>Go to the folder <code>deployment</code> and execute <code>docker compose up -d</code> - or <code>docker-compose
+    up -d</code> in earlier versions of Docker.</p>
+  <p>
+    The volumes are persisted to <code>deployment/volumes</code>, delete them for a fresh environment.
+  </p>
+</div>
+
+<div>
+  <h2>Links</h2>
+  <ul>
+    <li><a href="http://localhost:25433" target="_blank">PgAdmin</a></li>
+    <li><a href="http://localhost:4000" target="_blank">Lagoon</a></li>
+  </ul>
+</div>
+
+<div>
+  <h2>Starting the QALIPSIS backend</h2>
+
+  <h3>Head with default configuration</h3>
+  <p>After you started the docker compose script, open a terminal in the folder <code>deployment</code> and execute
+    <code>start-head.sh</code>.</p>
+  <p>QALIPSIS backend is now accessible at the address <code>http://localhost:8080</code>.</p>
+  <p>Press <code>CTRL+C</code> to stop the service.</p>
+
+
+  <h3>Head with Auth0</h3>
+  <p>After you started the docker compose script, open a terminal in the folder <code>deployment</code> and execute
+    <code>start-head-auth0.sh</code>.</p>
+  <p>QALIPSIS backend is now accessible at the address <code>http://localhost:8080</code>.</p>
+  <p>Press <code>CTRL+C</code> to stop the service.</p>
+
+  <h3>Accessing to the API documentation</h3>
+
+  <ul>
+    <li><a href="http://localhost:8080/redoc">Redoc</a></li>
+    <li><a href="http://localhost:8080/swagger-ui">Swagger</a></li>
+    <li><a href="http://localhost:8080/rapidoc">Rapidoc</a></li>
+  </ul>
+</div>
+
+<div>
+  <h2>Shutdown</h2>
+  <p>Go to the folder <code>deployment</code> and execute <code>docker compose down -v</code> - or <code>docker-compose
+    down -v</code> in earlier versions of Docker.</p>
+</div>
+</body>
+</html>
