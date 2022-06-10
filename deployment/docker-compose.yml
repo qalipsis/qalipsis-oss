@@ -1,0 +1,50 @@
+version: '3.0'
+services:
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    command: --appendonly yes --appendfsync always
+    volumes:
+      - ./volumes/redis:/data
+    ports:
+      - "16379:6379/tcp"
+
+  lagoon:
+    image: aerisconsulting/lagoon
+    restart: always
+    command: "-b ZGF0YXNvdXJjZXM6CiAgLSBpZDogbG9jYWwKICAgIHZlbmRvcjogcmVkaXMKICAgIG5hbWU6ICJMb2NhbCBSZWRpcyBmb3IgQ29tbWFuZGVyIGluIERvY2tlciIgCiAgICBib290c3RyYXA6IHJlZGlzOi8vcmVkaXM6NjM3OQ=="
+    depends_on:
+      - redis
+    ports:
+      - "4000:4000"
+
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: qalipsis
+      POSTGRES_USER: qalipsis
+      POSTGRES_PASSWORD: qalipsis
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data/pgdata
+      - ./config/postgres/init-schema.sql:/docker-entrypoint-initdb.d/init-schema.sql
+    ports:
+      - "15432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_DEFAULT_EMAIL: qalipsis@qalipsis.com
+      PGADMIN_DEFAULT_PASSWORD: "qalipsis"
+    volumes:
+      - ./config/pgadmin/servers.json:/pgadmin4/servers.json
+      - ./config/pgadmin/postgres.passfile:/pgadmin4/postgres.passfile
+    ports:
+      - "25433:80"
+    depends_on:
+      - postgres

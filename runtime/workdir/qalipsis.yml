@@ -1,0 +1,20 @@
+micronaut:
+  server:
+    port: 8080
+    cors:
+      enabled: true
+    log-handled-exceptions: true
+
+redis:
+  uri: redis://localhost:16379
+
+logging:
+  console: true
+
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:15432/qalipsis
+    username: qalipsis
+    password: qalipsis
+    maximumPoolSize: 4
+    minimumIdle: 2

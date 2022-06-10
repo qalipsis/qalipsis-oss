@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "QALIPSIS": {
+      "Name": "Local PgSQL for Qalipsis in Docker",
+      "Group": "qalipsis",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "qalipsis",
+      "Username": "qalipsis",
+      "PassFile": "/pgadmin4/postgres.passfile",
+      "SSLMode": "disable"
+    }
+  }
+}

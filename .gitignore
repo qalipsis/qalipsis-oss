@@ -43,3 +43,4 @@ hs_err_pid*
 /**/id.meta
 /**/id.data
 .DS_Store
+/deployment/volumes/

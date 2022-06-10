@@ -81,3 +81,16 @@ dependencies {
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }
+
+task<JavaExec>("runQalipsisHead") {
+    group = "application"
+    description = "Starts the microservice as a Kafka listener to save data into Elasticsearch"
+    mainClass.set("io.qalipsis.runtime.Qalipsis")
+    maxHeapSize = "256m"
+    args(
+        "head", "--persistent",
+        "-c", "logging.level.io.qalipsis.runtime.bootstrap.QalipsisApplicationContext=TRACE"
+    )
+    classpath = sourceSets["main"].runtimeClasspath + project(":head").sourceSets["main"].runtimeClasspath
+    workingDir = File(projectDir, "workdir")
+}
