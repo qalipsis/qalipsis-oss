@@ -34,6 +34,7 @@ import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
@@ -413,5 +414,66 @@ internal class CampaignControllerIntegrationTest {
         // then
         assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
         coVerifyNever { campaignService.search(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `should successfully abort the campaign`() {
+        // given
+        val abortRequest = HttpRequest.POST("/first_campaign/abort", null)
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.ABORT_CAMPAIGN)))
+
+        // when
+        val response = httpClient.toBlocking().exchange(abortRequest, Unit::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignManager.abort("my-user", "my-tenant", "first_campaign", false)
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
+        }
+    }
+
+    @Test
+    fun `should successfully abort the campaign hard`() {
+        // given
+        val abortRequest = HttpRequest.POST("/first_campaign/abort?hard=true", null)
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.ABORT_CAMPAIGN)))
+
+        // when
+        val response = httpClient.toBlocking().exchange(abortRequest, Unit::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignManager.abort("my-user", "my-tenant", "first_campaign", true)
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
+        }
+    }
+
+    @Test
+    fun `should deny aborting campaigns when the permission is missing`() {
+        // given
+        val abortRequest = HttpRequest.POST("/first_campaign/abort?hard=true", null)
+            .header("X-Tenant", "my-tenant")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user"))
+
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                abortRequest,
+                Campaign::class.java
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever { campaignManager.abort(any(), any(), any(), any()) }
     }
 }

@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.any
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
@@ -28,11 +29,13 @@ import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.ScenarioSummary
+import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.states.AbortingState
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
@@ -501,4 +504,112 @@ internal class RedisCampaignManagerTest {
                 typedProp<Boolean>("initialized").isTrue()
             }
         }
+
+    @Test
+    internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
+        //given
+        val campaign = CampaignConfiguration(
+            tenant = "my-tenant",
+            key = "first_campaign",
+            scenarios = linkedMapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+        )
+        campaign.message = "problem"
+        campaign.broadcastChannel = "channel"
+        coEvery {
+            operations.getState("my-tenant", "first_campaign")
+        } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
+
+        // when
+        campaignManager.abort("qalipsis-user", "my-tenant", "first_campaign", true)
+
+        // then
+        val sentDirectives = mutableListOf<Directive>()
+        val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+        coVerifyOrder {
+            campaignManager.get("my-tenant", "first_campaign")
+            operations.getState("my-tenant", "first_campaign")
+            campaignService.saveAborter("my-tenant", "qalipsis-user", "first_campaign")
+            campaignManager.set(capture(newState))
+            headChannel.publishDirective(capture(sentDirectives))
+        }
+        assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
+            prop("context").isSameAs(campaignExecutionContext)
+            prop("operations").isSameAs(operations)
+            typedProp<Boolean>("initialized").isTrue()
+            prop("abortConfiguration").all {
+                typedProp<Boolean>("hard").isEqualTo(true)
+            }
+        }
+        assertThat(sentDirectives).all {
+            hasSize(1)
+            any {
+                it.isInstanceOf(CampaignAbortDirective::class).all {
+                    prop(CampaignAbortDirective::campaignKey).isEqualTo("first_campaign")
+                    prop(CampaignAbortDirective::channel).isEqualTo("channel")
+                    prop(CampaignAbortDirective::abortCampaignConfiguration).all {
+                        typedProp<Boolean>("hard").isEqualTo(true)
+                    }
+                    prop(CampaignAbortDirective::scenarioNames).all {
+                        hasSize(2)
+                        index(0).isEqualTo("scenario-1")
+                        index(1).isEqualTo("scenario-2")
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
+        //given
+        val campaign = CampaignConfiguration(
+            tenant = "my-tenant",
+            key = "first_campaign",
+            scenarios = linkedMapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+        )
+        campaign.message = "problem"
+        campaign.broadcastChannel = "channel"
+        coEvery {
+            operations.getState("my-tenant", "first_campaign")
+        } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
+
+        // when
+        campaignManager.abort("qalipsis-user", "my-tenant", "first_campaign", false)
+
+        // then
+        val sentDirectives = mutableListOf<Directive>()
+        val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+        coVerifyOrder {
+            campaignManager.get("my-tenant", "first_campaign")
+            operations.getState("my-tenant", "first_campaign")
+            campaignService.saveAborter("my-tenant", "qalipsis-user", "first_campaign")
+            campaignManager.set(capture(newState))
+            headChannel.publishDirective(capture(sentDirectives))
+        }
+        assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
+            prop("context").isSameAs(campaignExecutionContext)
+            prop("operations").isSameAs(operations)
+            typedProp<Boolean>("initialized").isTrue()
+            prop("abortConfiguration").all {
+                typedProp<Boolean>("hard").isEqualTo(false)
+            }
+        }
+        assertThat(sentDirectives).all {
+            hasSize(1)
+            any {
+                it.isInstanceOf(CampaignAbortDirective::class).all {
+                    prop(CampaignAbortDirective::campaignKey).isEqualTo("first_campaign")
+                    prop(CampaignAbortDirective::channel).isEqualTo("channel")
+                    prop(CampaignAbortDirective::abortCampaignConfiguration).all {
+                        typedProp<Boolean>("hard").isEqualTo(false)
+                    }
+                    prop(CampaignAbortDirective::scenarioNames).all {
+                        hasSize(2)
+                        index(0).isEqualTo("scenario-1")
+                        index(1).isEqualTo("scenario-2")
+                    }
+                }
+            }
+        }
+    }
 }
