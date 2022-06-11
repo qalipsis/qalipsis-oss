@@ -5,7 +5,8 @@ identity:
   auth0:
     domain: qalipsis-dev.eu.auth0.com
     api-id: 62875116a39915003e089449
-    scopes:
+    oauth2:
+      client-id: "z8ejRvrflQfQzJkrjCR0PN1zwH79zU1n"
       roles: "https://dev.qalipsis.io/roles"
       tenants: "https://dev.qalipsis.io/tenants"
     management:

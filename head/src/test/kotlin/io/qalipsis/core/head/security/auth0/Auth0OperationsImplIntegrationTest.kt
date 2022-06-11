@@ -65,7 +65,7 @@ internal class Auth0OperationsImplIntegrationTest : PostgresqlTemplateTest() {
         // In order to preserve the rate limit, we slow down the access to the management API.
         operations = spyk(originalOperations, recordPrivateCalls = true)
         coEvery { operations["getManagementAPI"]() } coAnswers {
-            Thread.sleep(300)
+            Thread.sleep(500)
             invocation.originalCall.invoke()
         }
     }

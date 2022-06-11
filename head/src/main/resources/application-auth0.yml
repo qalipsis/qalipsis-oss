@@ -3,9 +3,12 @@ identity:
   auth0:
     domain: "my-domain.auth0.com"
     json-web-key-set: 'https://${identity.auth0.domain}/.well-known/jwks.json'
-    scopes:
+    oauth2:
       roles: "https://qalipsis.io/roles"
       tenants: "https://qalipsis.io/tenants"
+      client-id: "-"
+      authorization-url: "https://${identity.auth0.domain}/authorize"
+      revocation-url: "https://${identity.auth0.domain}/revoke"
     management:
       client-id: "-"
       client-secret: "-"
@@ -17,7 +20,7 @@ micronaut:
   security:
     enabled: true
     token:
-      roles-name: "${identity.auth0.scopes.roles}"
+      roles-name: "${identity.auth0.oauth2.roles}"
       name-key: sub
       jwt:
         enabled: true
