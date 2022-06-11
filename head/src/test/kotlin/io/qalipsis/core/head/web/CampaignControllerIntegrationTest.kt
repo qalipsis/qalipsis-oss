@@ -570,7 +570,6 @@ internal class CampaignControllerIntegrationTest {
         val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
             .bearerAuth(jwtGenerator.generateValidToken("my-user"))
 
-
         // when
         val response = assertThrows<HttpClientResponseException> {
             httpClient.toBlocking().exchange(
