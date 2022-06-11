@@ -9,7 +9,11 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ReportMessage
+import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
@@ -121,6 +125,116 @@ internal class CampaignConverterImplTest {
                 scenarios = listOf(
                     Scenario(version = scenarioVersion1, name = "scenario-1", minionsCount = 2534),
                     Scenario(version = scenarioVersion2, name = "scenario-2", minionsCount = 45645)
+                )
+            )
+        )
+    }
+
+    @Test
+    internal fun `should convert the report`() = testDispatcherProvider.runTest {
+        // given
+        val start = Instant.now().minusSeconds(123)
+        val end = Instant.now().minusSeconds(12)
+        val report = CampaignReport(
+            campaignKey = "my-campaign",
+            start = start,
+            end = end,
+            status = ExecutionStatus.SUCCESSFUL,
+            scenariosReports = listOf(
+                ScenarioReport(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario-1",
+                    start = start,
+                    end = end,
+                    startedMinions = 0,
+                    completedMinions = 0,
+                    successfulExecutions = 0,
+                    failedExecutions = 0,
+                    status = ExecutionStatus.FAILED,
+                    messages = listOf(
+                        ReportMessage(
+                            stepName = "my-step-1",
+                            messageId = "message-id-1",
+                            severity = ReportMessageSeverity.INFO,
+                            message = "Hello from test 1"
+                        )
+                    )
+                ),
+                ScenarioReport(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario-2",
+                    start = start,
+                    end = end,
+                    startedMinions = 1,
+                    completedMinions = 1,
+                    successfulExecutions = 1,
+                    failedExecutions = 1,
+                    status = ExecutionStatus.ABORTED,
+                    messages = listOf(
+                        ReportMessage(
+                            stepName = "my-step-2",
+                            messageId = "message-id-2",
+                            severity = ReportMessageSeverity.INFO,
+                            message = "Hello from test 2"
+                        )
+                    )
+                )
+            )
+        )
+
+        // when
+        val result = converter.convertReport(report)
+
+        // then
+        assertThat(result).isDataClassEqualTo(
+            io.qalipsis.core.head.model.CampaignReport(
+                campaignKey = "my-campaign",
+                start = start,
+                end = end,
+                startedMinions = 0,
+                completedMinions = 0,
+                successfulExecutions = 0,
+                failedExecutions = 0,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenariosReports = listOf(
+                    io.qalipsis.core.head.model.ScenarioReport(
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario-1",
+                        start = start,
+                        end = end,
+                        startedMinions = 0,
+                        completedMinions = 0,
+                        successfulExecutions = 0,
+                        failedExecutions = 0,
+                        status = ExecutionStatus.FAILED,
+                        messages = listOf(
+                            io.qalipsis.core.head.model.ReportMessage(
+                                stepName = "my-step-1",
+                                messageId = "message-id-1",
+                                severity = ReportMessageSeverity.INFO,
+                                message = "Hello from test 1"
+                            )
+                        )
+                    ),
+                    io.qalipsis.core.head.model.ScenarioReport(
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario-2",
+                        start = start,
+                        end = end,
+                        startedMinions = 1,
+                        completedMinions = 1,
+                        successfulExecutions = 1,
+                        failedExecutions = 1,
+                        status = ExecutionStatus.ABORTED,
+                        messages = listOf(
+                            io.qalipsis.core.head.model.ReportMessage(
+                                stepName = "my-step-2",
+                                messageId = "message-id-2",
+                                severity = ReportMessageSeverity.INFO,
+                                message = "Hello from test 2"
+                            )
+                        )
+                    )
                 )
             )
         )

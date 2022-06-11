@@ -17,9 +17,11 @@ import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
 import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.annotations.Tenant
 import io.swagger.v3.oas.annotations.Operation
@@ -45,6 +47,7 @@ internal class CampaignController(
     private val campaignManager: CampaignManager,
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
+    private val campaignReportStateKeeper: CampaignReportStateKeeper,
     private val campaignConverter: CampaignConverter
 ) {
 
@@ -202,5 +205,32 @@ internal class CampaignController(
     ): HttpResponse<Unit> {
         campaignManager.abort(authentication.name, tenant, campaignKey, hard.toBoolean())
         return HttpResponse.accepted()
+    }
+
+    /**
+     * REST endpoint to get the complete execution report of a completed campaign.
+     */
+    @Get("/{campaignKey}")
+    @Operation(
+        summary = "Retrieve campaign report",
+        description = "Reports the details of the execution of a completed or running campaign and its scenario",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaign report"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.READ_CAMPAIGN)
+    suspend fun retrieve(
+        @Parameter(
+            description = "Campaign name of the campaign to retrieve the report",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable campaignKey: String,
+    ): HttpResponse<CampaignReport> {
+        return HttpResponse.ok(campaignConverter.convertReport(campaignReportStateKeeper.report(campaignKey)))
     }
 }

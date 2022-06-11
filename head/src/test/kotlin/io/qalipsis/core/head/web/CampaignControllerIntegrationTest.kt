@@ -20,6 +20,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -27,11 +28,13 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
 import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
@@ -60,6 +63,9 @@ internal class CampaignControllerIntegrationTest {
     private lateinit var clusterFactoryService: FactoryService
 
     @RelaxedMockK
+    private lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
+
+    @RelaxedMockK
     private lateinit var campaignConverter: CampaignConverter
 
     @MockBean(FactoryService::class)
@@ -67,6 +73,9 @@ internal class CampaignControllerIntegrationTest {
 
     @MockBean(CampaignService::class)
     fun campaignService() = campaignService
+
+    @MockBean(CampaignReportStateKeeper::class)
+    fun campaignReportStateKeeper() = campaignReportStateKeeper
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
@@ -357,6 +366,82 @@ internal class CampaignControllerIntegrationTest {
 
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
+        }
+    }
+
+    @Test
+    fun `should successfully get the campaign report`() {
+        // given
+        val campaignReport = relaxedMockk<io.qalipsis.api.report.CampaignReport>()
+        val convertedCampaignReport =
+            CampaignReport(
+                campaignKey = "my-campaign",
+                start = Instant.now().minusMillis(1111),
+                end = Instant.now(),
+                startedMinions = 0,
+                completedMinions = 0,
+                successfulExecutions = 0,
+                failedExecutions = 0,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenariosReports = listOf(
+                    io.qalipsis.core.head.model.ScenarioReport(
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario-1",
+                        start = Instant.now().minusMillis(1111),
+                        end = Instant.now(),
+                        startedMinions = 0,
+                        completedMinions = 0,
+                        successfulExecutions = 0,
+                        failedExecutions = 0,
+                        status = ExecutionStatus.FAILED,
+                        messages = listOf(
+                            io.qalipsis.core.head.model.ReportMessage(
+                                stepName = "my-step-1",
+                                messageId = "message-id-1",
+                                severity = ReportMessageSeverity.INFO,
+                                message = "Hello from test 1"
+                            )
+                        )
+                    ),
+                    io.qalipsis.core.head.model.ScenarioReport(
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario-2",
+                        start = Instant.now().minusMillis(1111),
+                        end = Instant.now(),
+                        startedMinions = 1,
+                        completedMinions = 1,
+                        successfulExecutions = 1,
+                        failedExecutions = 1,
+                        status = ExecutionStatus.ABORTED,
+                        messages = listOf(
+                            io.qalipsis.core.head.model.ReportMessage(
+                                stepName = "my-step-2",
+                                messageId = "message-id-2",
+                                severity = ReportMessageSeverity.INFO,
+                                message = "Hello from test 2"
+                            )
+                        )
+                    )
+                )
+            )
+
+        val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
+        coEvery { campaignReportStateKeeper.report("first_campaign") } returns campaignReport
+        coEvery { campaignConverter.convertReport(campaignReport) } returns convertedCampaignReport
+
+        // when
+        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, CampaignReport::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignReportStateKeeper.report("first_campaign")
+            campaignConverter.convertReport(campaignReport)
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(convertedCampaignReport)
+
         }
     }
 }
