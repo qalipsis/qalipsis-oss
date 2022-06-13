@@ -12,7 +12,7 @@ import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.authentication.ServerAuthentication
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.security.RoleName
+import io.qalipsis.core.head.security.Permissions
 import java.util.Optional
 
 /**
@@ -29,7 +29,7 @@ internal class NoSecurityAuthenticationBinder : TypedRequestArgumentBinder<Authe
             Optional.of(
                 ServerAuthentication(
                     Defaults.USER,
-                    RoleName.values().asSequence().flatMap { it.permissions }.toSet(),
+                    Permissions.ALL_PERMISSIONS,
                     emptyMap()
                 )
             )

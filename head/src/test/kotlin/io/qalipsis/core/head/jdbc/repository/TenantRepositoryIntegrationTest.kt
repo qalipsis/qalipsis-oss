@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.api.report.ExecutionStatus
@@ -46,7 +47,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetched = tenantRepository.findById(saved.id)
 
         // then
-        assertThat(fetched).all {
+        assertThat(fetched).isNotNull().all {
             prop(TenantEntity::reference).isEqualTo(saved.reference)
             prop(TenantEntity::displayName).isEqualTo(saved.displayName)
             prop(TenantEntity::description).isEqualTo(saved.description)

@@ -5,6 +5,8 @@ import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
+import io.micronaut.security.annotation.Secured
+import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.configuration.HeadConfiguration
@@ -38,6 +40,7 @@ internal class ZoneController(val headConfiguration: HeadConfiguration) {
             SecurityRequirement(name = "JWT")
         ]
     )
+    @Secured(SecurityRule.IS_AUTHENTICATED)
     suspend fun listZones(): HttpResponse<List<Zone>> {
         return HttpResponse.ok(headConfiguration.zones.toList())
     }
