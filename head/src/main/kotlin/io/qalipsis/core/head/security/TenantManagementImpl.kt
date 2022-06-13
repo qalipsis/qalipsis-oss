@@ -35,4 +35,14 @@ internal class TenantManagementImpl(
         )
 
     }
+
+    override suspend fun findAll(references: Collection<String>): Collection<Tenant> {
+        return tenantRepository.findByReferenceIn(references).map {
+            Tenant(
+                displayName = it.displayName,
+                reference = it.reference,
+                version = it.version
+            )
+        }
+    }
 }

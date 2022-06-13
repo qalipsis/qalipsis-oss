@@ -2,8 +2,10 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.api.report.ExecutionStatus
@@ -46,7 +48,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetched = tenantRepository.findById(saved.id)
 
         // then
-        assertThat(fetched).all {
+        assertThat(fetched).isNotNull().all {
             prop(TenantEntity::reference).isEqualTo(saved.reference)
             prop(TenantEntity::displayName).isEqualTo(saved.displayName)
             prop(TenantEntity::description).isEqualTo(saved.description)
@@ -79,7 +81,6 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should find reference of the tenant by it id`() = testDispatcherProvider.run {
         // given
-        // given
         val saved = tenantRepository.save(tenantPrototype.copy())
 
         // when
@@ -102,7 +103,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    fun `should delete scenario report message on deleteById`(
+    fun `should delete all entities under the tenant on deleteById`(
         factoryRepository: FactoryRepository,
         campaignRepository: CampaignRepository,
         scenarioRepository: ScenarioRepository
@@ -145,5 +146,19 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(scenarioRepository.findAll().count()).isEqualTo(0)
         assertThat(campaignRepository.findAll().count()).isEqualTo(0)
         assertThat(factoryRepository.findAll().count()).isEqualTo(0)
+    }
+
+    @Test
+    internal fun `should retrieve all by references`() = testDispatcherProvider.run {
+        // given
+        val saved1 = tenantRepository.save(tenantPrototype.copy(reference = "ref1"))
+        tenantRepository.save(tenantPrototype.copy(reference = "ref2"))
+        val saved3 = tenantRepository.save(tenantPrototype.copy(reference = "ref3"))
+
+        // when
+        val retrieved = tenantRepository.findByReferenceIn(listOf("ref1", "ref3"))
+
+        // then
+        assertThat(retrieved).containsExactlyInAnyOrder(saved1, saved3)
     }
 }

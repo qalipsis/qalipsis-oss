@@ -3,6 +3,7 @@ package io.qalipsis.core.head.security.auth0
 import com.auth0.json.mgmt.users.User
 import io.micronaut.context.annotation.Replaces
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.security.IdentityManagement
@@ -29,7 +30,7 @@ internal class Auth0IdentityManagement(
     override suspend fun get(tenant: String, identityReference: String): UserIdentity {
         val identity = operations.getUser(identityReference)
         val roles = getRolesNamesInTenant(identityReference, tenant)
-        require(roles.isNotEmpty()) { "The user could not be found in the tenant $tenant" }
+        require(tenant == Defaults.TENANT || roles.isNotEmpty()) { "The user could not be found in the tenant $tenant" }
 
         return UserIdentity(
             id = identity.id,

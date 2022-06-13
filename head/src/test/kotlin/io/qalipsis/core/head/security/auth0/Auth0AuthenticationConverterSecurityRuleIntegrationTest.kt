@@ -2,9 +2,12 @@ package io.qalipsis.core.head.security.auth0
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.containsOnly
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import assertk.assertions.key
 import assertk.assertions.prop
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.http.HttpRequest
@@ -69,7 +72,9 @@ internal class Auth0AuthenticationConverterSecurityRuleIntegrationTest {
             transform("body") { it.body() }.isNotNull().all {
                 prop(CallResult::tenant).isEqualTo("qalipsis-ci-test-1-JRYhP")
                 prop(CallResult::name).isEqualTo("my-user")
-                prop(CallResult::roles).containsOnly(*(Permissions.FOR_TESTER + Permissions.FOR_REPORTER).toTypedArray())
+                prop(CallResult::roles).containsOnly(*(Permissions.FOR_TESTER + Permissions.FOR_REPORTER).toTypedArray() + Permissions.AUTHENTICATED)
+                prop(CallResult::attributes).key("tenants").isInstanceOf(Collection::class)
+                    .containsExactlyInAnyOrder("qalipsis-ci-test-1-JRYhP", "qalipsis-ci-test-2-6whjw")
             }
         }
         coVerifyOnce { userManagement.getUsernameFromIdentityId("auth0|6276c3e0cc44550069a4dd6a") }
@@ -89,7 +94,9 @@ internal class Auth0AuthenticationConverterSecurityRuleIntegrationTest {
             transform("body") { it.body() }.isNotNull().all {
                 prop(CallResult::tenant).isEqualTo("qalipsis-ci-test-1-JRYhP")
                 prop(CallResult::name).isEqualTo("my-user")
-                prop(CallResult::roles).containsOnly(*(Permissions.FOR_TESTER + Permissions.FOR_REPORTER).toTypedArray())
+                prop(CallResult::roles).containsOnly(*(Permissions.FOR_TESTER + Permissions.FOR_REPORTER).toTypedArray() + Permissions.AUTHENTICATED)
+                prop(CallResult::attributes).key("tenants").isInstanceOf(Collection::class)
+                    .containsExactlyInAnyOrder("qalipsis-ci-test-1-JRYhP", "qalipsis-ci-test-2-6whjw")
             }
         }
         coVerifyOnce { userManagement.getUsernameFromIdentityId("auth0|6276c3e0cc44550069a4dd6a") }
@@ -131,7 +138,7 @@ internal class Auth0AuthenticationConverterSecurityRuleIntegrationTest {
             transform("body") { it.body() }.isNotNull().all {
                 prop(CallResult::tenant).isEqualTo("my-tenant")
                 prop(CallResult::name).isEqualTo("my-user")
-                prop(CallResult::roles).containsOnly(*(Permissions.FOR_TESTER).toTypedArray())
+                prop(CallResult::roles).containsOnly(*(Permissions.FOR_TESTER).toTypedArray() + Permissions.AUTHENTICATED)
             }
         }
         confirmVerified(userManagement)

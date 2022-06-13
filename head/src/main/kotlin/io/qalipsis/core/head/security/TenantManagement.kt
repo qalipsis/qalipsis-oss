@@ -15,4 +15,8 @@ internal interface TenantManagement {
      */
     suspend fun create(tenantCreationRequest: TenantCreationRequest): Tenant
 
+    /**
+     * Lists all the tenants with the provided references.
+     */
+    suspend fun findAll(references: Collection<String>): Collection<Tenant>
 }

@@ -6,6 +6,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.core.type.Argument
@@ -82,7 +83,7 @@ internal class ScenarioControllerIntegrationTest {
 
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.all {
+            transform("body") { it.body() }.isNotNull().all {
                 hasSize(2)
                 index(0).isDataClassEqualTo(scenario)
                 index(1).isDataClassEqualTo(scenario2)
@@ -123,7 +124,7 @@ internal class ScenarioControllerIntegrationTest {
 
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.all {
+            transform("body") { it.body() }.isNotNull().all {
                 hasSize(2)
                 index(0).isDataClassEqualTo(scenario)
                 index(1).isDataClassEqualTo(scenario2)
@@ -163,7 +164,7 @@ internal class ScenarioControllerIntegrationTest {
 
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.all {
+            transform("body") { it.body() }.isNotNull().all {
                 hasSize(2)
                 index(0).isDataClassEqualTo(scenario)
                 index(1).isDataClassEqualTo(scenario2)

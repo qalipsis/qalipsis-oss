@@ -12,8 +12,10 @@ import java.time.Instant
 internal data class Tenant(
     @field:Schema(description = "Unique identifier of the tenant")
     val reference: String,
+
     @field:Schema(description = "Name of the tenant for display")
     val displayName: String,
+
     @field:Schema(description = "Last update of the entity")
     val version: Instant
 )

@@ -7,6 +7,12 @@ internal typealias Permission = String
 
 internal object Permissions {
 
+    /**
+     * Virtual permissions assigned to all the authenticated users.
+     * It should not be added to [ALL_PERMISSIONS].
+     */
+    const val AUTHENTICATED = "authenticated"
+
     const val CREATE_CAMPAIGN = "create:campaign"
     const val READ_CAMPAIGN = "read:campaign"
     const val ABORT_CAMPAIGN = "abort:campaign"

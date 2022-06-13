@@ -6,18 +6,16 @@ import io.micronaut.http.HttpRequest
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.authentication.ServerAuthentication
 import io.micronaut.security.filters.AuthenticationFetcher
-import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.security.RoleName
 import io.qalipsis.core.head.security.UserManagement
-import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import kotlin.coroutines.CoroutineContext
 
 /**
  * Normalizes Auth0 authentication relatively to the contextual tenant.
@@ -29,7 +27,7 @@ import kotlin.coroutines.CoroutineContext
 internal class Auth0AuthenticationConverterSecurityRule(
     private val userManagement: UserManagement,
     private val authenticationFetchers: Collection<AuthenticationFetcher>,
-    @Named(Executors.IO_EXECUTOR_NAME) private val coroutineContext: CoroutineContext
+    private val auth0OAuth2Configuration: Auth0Configuration.Auth0OAuth2Configuration
 ) : AuthenticationFetcher {
 
     override fun fetchAuthentication(request: HttpRequest<*>): Publisher<Authentication> {
@@ -52,13 +50,13 @@ internal class Auth0AuthenticationConverterSecurityRule(
                     .filter { role -> role.startsWith("*:") || (tenant != null && role.startsWith("${tenant}:")) }
                     .map { role -> RoleName.fromPublicName(role.substringAfter(":")) }
                     .flatMap { role -> role.permissions }
-                    .toSet()
+                    .toSet() + Permissions.AUTHENTICATED
 
                 Mono.just(
                     ServerAuthentication(
                         username,
                         permissions,
-                        authentication.attributes
+                        authentication.attributes + ("tenants" to authentication.attributes[auth0OAuth2Configuration.tenants])
                     )
                 )
             }
