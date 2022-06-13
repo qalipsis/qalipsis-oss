@@ -543,6 +543,8 @@ internal class CampaignControllerIntegrationTest {
             )
 
         val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user", listOf(Permissions.READ_CAMPAIGN)))
+
         coEvery { campaignReportStateKeeper.report("first_campaign") } returns campaignReport
         coEvery { campaignConverter.convertReport(campaignReport) } returns convertedCampaignReport
 
@@ -559,6 +561,28 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(convertedCampaignReport)
 
+        }
+    }
+
+    @Test
+    fun `should deny getting complete report of completed campaigns when the permission is missing`() {
+        // given
+        val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
+            .bearerAuth(jwtGenerator.generateValidToken("my-user"))
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                getCampaignReportRequest,
+                CampaignReport::class.java
+            )
+        }
+
+        // then
+        assertThat(response).transform("statusCode") { it.status }.isEqualTo(HttpStatus.FORBIDDEN)
+        coVerifyNever {
+            campaignReportStateKeeper.report(any())
+            campaignConverter.convertReport(any())
         }
     }
 }
