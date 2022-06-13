@@ -83,7 +83,6 @@ dependencies {
     implementation("io.micronaut.rxjava3:micronaut-rxjava3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-paranamer:$jacksonVersion")
-    implementation("com.auth0:mvc-auth-commons:1.+")
     implementation("org.apache.commons:commons-lang3:3.+")
 
     kapt("io.micronaut:micronaut-inject-java")

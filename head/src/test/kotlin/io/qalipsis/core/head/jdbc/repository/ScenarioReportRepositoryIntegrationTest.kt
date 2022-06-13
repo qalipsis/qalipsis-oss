@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessageSeverity
@@ -88,7 +89,7 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val fetched = scenarioReportRepository.findById(saved.id)
 
         // then
-        assertThat(fetched).all {
+        assertThat(fetched).isNotNull().all {
             prop(ScenarioReportEntity::id).isEqualTo(saved.id)
             prop(ScenarioReportEntity::campaignReportId).isEqualTo(saved.campaignReportId)
             prop(ScenarioReportEntity::startedMinions).isEqualTo(saved.startedMinions)
