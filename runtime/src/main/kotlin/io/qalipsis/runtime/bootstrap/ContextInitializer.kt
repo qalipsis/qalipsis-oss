@@ -110,7 +110,9 @@ internal class ContextInitializer(
             // Start the campaigns when everything is ready.
             environments.add(ExecutionEnvironments.AUTOSTART)
         }
-        if (!persistent) {
+        if (persistent) {
+            environments.add(ExecutionEnvironments.POSTGRESQL)
+        } else {
             environments.add(ExecutionEnvironments.VOLATILE)
         }
         filterEnabledScenarios(properties)
@@ -125,7 +127,9 @@ internal class ContextInitializer(
             // Start the campaigns when everything is ready.
             environments.add(ExecutionEnvironments.AUTOSTART)
         }
-        if (!persistent) {
+        if (persistent) {
+            environments.add(ExecutionEnvironments.POSTGRESQL)
+        } else {
             environments.add(ExecutionEnvironments.VOLATILE)
         }
     }

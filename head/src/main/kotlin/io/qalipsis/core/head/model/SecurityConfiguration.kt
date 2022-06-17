@@ -26,21 +26,9 @@ import jakarta.inject.Singleton
 @JsonSubTypes(
     JsonSubTypes.Type(value = DisabledSecurityConfiguration::class, name = "DISABLED")
 )
-internal interface SecurityConfiguration {
-
-    @get:Schema(description = "Name of the security strategy")
-    val strategy: SecurityStrategy
-
-}
-
-internal enum class SecurityStrategy {
-    DISABLED
-}
+internal interface SecurityConfiguration
 
 @Singleton
 @Requires(missingBeans = [SecurityConfiguration::class])
 @Introspected
-internal data class DisabledSecurityConfiguration(
-    @get:Schema(description = "Name of the security strategy")
-    override val strategy: SecurityStrategy = SecurityStrategy.DISABLED
-) : SecurityConfiguration
+internal class DisabledSecurityConfiguration : SecurityConfiguration

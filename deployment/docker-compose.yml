@@ -44,6 +44,7 @@ services:
     volumes:
       - ./config/pgadmin/servers.json:/pgadmin4/servers.json
       - ./config/pgadmin/postgres.passfile:/pgadmin4/postgres.passfile
+      - ./volumes/pgadmin/backups:/pgadmin4/backups
     ports:
       - "25433:80"
     depends_on:
