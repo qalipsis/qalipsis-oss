@@ -37,7 +37,7 @@ internal class SingletonStepSpecificationConverter(
 
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
-        if (spec is SingletonStepSpecification && spec.nextSteps.isNotEmpty()) {
+        if ((spec as? SingletonStepSpecification)?.isReallySingleton == true && spec.nextSteps.isNotEmpty()) {
             @Suppress("UNCHECKED_CAST")
             val decoratedStep = creationContext.createdStep as Step<Any?, Any?>
 
@@ -48,6 +48,7 @@ internal class SingletonStepSpecificationConverter(
                 SingletonType.UNICAST -> TopicType.UNICAST
                 SingletonType.BROADCAST -> TopicType.BROADCAST
                 SingletonType.LOOP -> TopicType.LOOP
+                else -> throw IllegalArgumentException("Singletons of type ${singletonConfig.type} are not supported")
             }
             val topicConfig = TopicConfiguration(topicType, singletonConfig.bufferSize, singletonConfig.idleTimeout)
 

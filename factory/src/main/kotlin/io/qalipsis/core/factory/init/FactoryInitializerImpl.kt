@@ -271,7 +271,7 @@ internal class FactoryInitializerImpl(
             DirectedAcyclicGraph(
                 dagId, scenario,
                 isRoot = (actualParent == null),
-                isSingleton = stepSpecification is SingletonStepSpecification,
+                isSingleton = (stepSpecification as? SingletonStepSpecification)?.isReallySingleton == true,
                 isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad),
                 tags = stepSpecification.tags
             )
