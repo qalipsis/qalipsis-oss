@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm")
     kotlin("kapt")
@@ -7,13 +5,6 @@ plugins {
 }
 
 description = "Qalipsis compile time processors"
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.majorVersion
-        javaParameters = true
-    }
-}
 
 kapt {
     includeCompileClasspath = true
@@ -26,7 +17,7 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation(project(":api-dsl"))
     implementation("com.squareup:javapoet:1.+")
-    implementation("com.squareup:kotlinpoet:1.+")
+    implementation("com.squareup:kotlinpoet:1.11.0")
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.+")

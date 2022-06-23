@@ -19,6 +19,11 @@ interface SingletonStepSpecification {
      */
     val singletonConfiguration: SingletonConfiguration
 
+    /**
+     * Specifies whether the step should be really executed as a singleton.
+     */
+    val isReallySingleton: Boolean
+        get() = (singletonConfiguration.type != SingletonType.SEQUENTIAL)
 }
 
 data class SingletonConfiguration(
@@ -59,7 +64,12 @@ enum class SingletonType {
     /**
      * Like [BROADCAST] but looping to the beginning when reaching the end of the values.
      */
-    LOOP
+    LOOP,
+
+    /**
+     * Disables the side-execution of the step and integrates it into its parent execution workflow.
+     */
+    SEQUENTIAL
 
 }
 
@@ -77,7 +87,7 @@ interface UnicastSpecification : SingletonStepSpecification {
      * @param bufferSize Size of the buffer to keep the data before the first subscription.
      * @param idleTimeout Time to idle of a subscription.
      */
-    fun forwardOnce(bufferSize: Int = -1, idleTimeout: Duration = Duration.ZERO) {
+    fun unicast(bufferSize: Int = -1, idleTimeout: Duration = Duration.ZERO) {
         singletonConfiguration.type = SingletonType.UNICAST
         singletonConfiguration.bufferSize = bufferSize
         singletonConfiguration.idleTimeout = idleTimeout
@@ -135,6 +145,22 @@ interface LoopableSpecification : SingletonStepSpecification {
         singletonConfiguration.type = SingletonType.LOOP
         singletonConfiguration.idleTimeout = idleTimeout
         singletonConfiguration.bufferSize = -1
+    }
+
+}
+
+/**
+ * Interface for singleton that can also run as non-singleton.
+ *
+ * @author Eric Jessé
+ */
+interface NoSingletonSpecification : SingletonStepSpecification {
+
+    /**
+     * Disables the singleton-execution of the step and integrates it into its parent execution workflow.
+     */
+    fun sequential() {
+        singletonConfiguration.type = SingletonType.SEQUENTIAL
     }
 
 }

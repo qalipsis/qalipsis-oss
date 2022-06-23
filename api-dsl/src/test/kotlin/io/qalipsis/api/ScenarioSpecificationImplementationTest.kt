@@ -214,6 +214,8 @@ internal class ScenarioSpecificationImplementationTest {
         SingletonStepSpecification {
 
         override val singletonConfiguration: SingletonConfiguration
-            get() = relaxedMockk { }
+            get() = relaxedMockk()
+
+        override val isReallySingleton: Boolean = true
     }
 }

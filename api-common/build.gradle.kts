@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
@@ -9,13 +7,6 @@ plugins {
 }
 
 description = "Qalipsis API - Common module"
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.majorVersion
-        javaParameters = true
-    }
-}
 
 allOpen {
     annotations(

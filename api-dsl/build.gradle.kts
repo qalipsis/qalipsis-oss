@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm")
     kotlin("kapt")
@@ -18,14 +16,6 @@ allOpen {
         "io.micronaut.aop.Around",
         "io.qalipsis.api.annotations.Spec"
     )
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.majorVersion
-        javaParameters = true
-        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
-    }
 }
 
 val micronautVersion: String by project

@@ -69,8 +69,8 @@ internal class ScenarioSpecificationImplementation(
      * Checks whether a new DAG has to be created for [nextStep].
      */
     private fun isNewDag(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>): Boolean {
-        return previousStep is SingletonStepSpecification
-                || nextStep is SingletonStepSpecification
+        return ((previousStep as? SingletonStepSpecification)?.isReallySingleton == true)
+                || ((nextStep as? SingletonStepSpecification)?.isReallySingleton == true)
                 || previousStep.tags != nextStep.tags
     }
 

@@ -36,7 +36,7 @@ fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.flatMap(
  * @author Eric Jessé
  */
 @JvmName("flattenCollection")
-fun <INPUT> StepSpecification<*, Iterable<INPUT>, *>.flatten(): FlatMapStepSpecification<out Iterable<INPUT>, INPUT> {
+fun <INPUT> StepSpecification<*, out Iterable<INPUT>, *>.flatten(): FlatMapStepSpecification<out Iterable<INPUT>, INPUT> {
     return flatMap { it.asFlow() }
 }
 

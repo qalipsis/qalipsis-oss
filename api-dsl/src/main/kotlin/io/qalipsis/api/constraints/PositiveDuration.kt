@@ -9,7 +9,7 @@ import javax.validation.Constraint
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [])
+@Constraint(validatedBy = [PositiveDurationValidator::class])
 annotation class PositiveDuration(
     val message: String = "duration should be strictly positive but was {validatedValue}"
 )

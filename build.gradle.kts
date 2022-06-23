@@ -111,9 +111,12 @@ allprojects {
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
                 jvmTarget = target.majorVersion
+                javaParameters = true
                 freeCompilerArgs += listOf(
+                    "-Xopt-in=kotlin.RequiresOptIn",
                     "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                    "-Xopt-in=kotlinx.coroutines.ObsoleteCoroutinesApi"
+                    "-Xopt-in=kotlinx.coroutines.ObsoleteCoroutinesApi",
+                    "-Xemit-jvm-type-annotations"
                 )
             }
         }

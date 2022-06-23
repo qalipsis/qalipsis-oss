@@ -1,7 +1,6 @@
 package io.qalipsis.api.steps.datasource
 
 import io.qalipsis.api.context.StepContext
-import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -9,7 +8,7 @@ import io.qalipsis.api.steps.AbstractStep
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * General purpose step to read data from a source, transform and forward.
+ * General purpose step to read data from a source sequentially, transform and forward.
  *
  * @property reader the reader providing the raw values in an iterative way
  * @property processor validates and transforms the raw values individually
@@ -21,15 +20,18 @@ import java.util.concurrent.atomic.AtomicLong
  *
  * @author Eric Jessé
  */
-class IterativeDatasourceStep<R, T, O>(
+class SequentialDatasourceStep<R, T, O>(
     name: StepName,
     private val reader: DatasourceIterativeReader<R>,
     private val processor: DatasourceObjectProcessor<R, T>,
     private val converter: DatasourceObjectConverter<T, O>
 ) : AbstractStep<Unit, O>(name, null) {
 
+    private val rowIndex = AtomicLong()
+
     override suspend fun start(context: StepStartStopContext) {
         log.trace { "Starting datasource reader for step $name" }
+        rowIndex.set(0)
         converter.start(context)
         processor.start(context)
         reader.start(context)
@@ -50,25 +52,18 @@ class IterativeDatasourceStep<R, T, O>(
     }
 
     override suspend fun execute(context: StepContext<Unit, O>) {
-        context.isTail = false
-        log.trace { "Iterating datasource reader for step $name" }
-        val rowIndex = AtomicLong()
-        while (reader.hasNext()) {
-            try {
-                val value = processor.process(rowIndex, reader.next())
-                log.trace { "Received one record" }
-                converter.supply(rowIndex, value, context)
-            } catch (e: Exception) {
-                context.addError(StepError(DatasourceException(rowIndex.get() - 1, e.message), this.name))
-            }
+        log.trace { "Sequential datasource reader for step $name" }
+        if (reader.hasNext()) {
+            val value = processor.process(rowIndex, reader.next())
+            log.trace { "Received one record" }
+            converter.supply(rowIndex, value, context)
+        } else {
+            context.isTail = true
         }
-
-        context.isTail = true
     }
 
     companion object {
 
-        @JvmStatic
         private val log = logger()
 
     }

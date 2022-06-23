@@ -1,18 +1,9 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm")
     kotlin("kapt")
 }
 
 description = "Qalipsis Test Utils"
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.majorVersion
-        javaParameters = true
-    }
-}
 
 val micronautVersion: String by project
 val testContainersVersion: String by project
