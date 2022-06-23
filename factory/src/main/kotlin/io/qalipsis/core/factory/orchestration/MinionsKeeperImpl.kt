@@ -58,7 +58,7 @@ internal class MinionsKeeperImpl(
     override fun get(minionId: MinionId) = minions[minionId]!!
 
     override fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion {
-        return singletonMinionsByDagId[scenarioName, dagId]!!
+        return requireNotNull(singletonMinionsByDagId[scenarioName, dagId]) { "the DAG $dagId is not a singleton DAG in the scenario $scenarioName" }
     }
 
     @LogInput
@@ -71,13 +71,16 @@ internal class MinionsKeeperImpl(
         scenarioRegistry[scenarioName]?.let { scenario ->
             // Extracts the DAG being the entry to the scenario for the minion.
             val rootDag = dagIds.asSequence().map { dagId -> scenario[dagId]!! }.firstOrNull { it.isRoot }
+            val singletonMinion = dagIds.size == 1 && scenario[dagIds.first()]!!.isSingleton
+
             val minion = MinionImpl(
-                minionId,
-                campaignKey,
-                scenarioName,
-                rootDag != null && rootDag.isUnderLoad, // Minions that have no root or are under load should not be started yet.
-                rootDag?.isSingleton == true,
-                meterRegistry.gauge(
+                id = minionId,
+                campaignKey = campaignKey,
+                scenarioName = scenarioName,
+                // Only minions that are singleton or not in a root DAG should be immediately started.
+                pauseAtStart = rootDag != null || singletonMinion, // Minions at the root should not be started yet.
+                isSingleton = singletonMinion,
+                executingStepsGauge = meterRegistry.gauge(
                     "minion-running-steps",
                     listOf(
                         Tag.of("campaign", campaignKey),
@@ -107,7 +110,7 @@ internal class MinionsKeeperImpl(
 
             if (rootDag != null) {
                 rootDagsOfMinions[minionId] = rootDag.name
-                eventsLogger.info(
+                eventsLogger.debug(
                     "minion.created",
                     tags = mapOf("campaign" to campaignKey, "scenario" to scenarioName, "minion" to minionId)
                 )
@@ -139,7 +142,7 @@ internal class MinionsKeeperImpl(
             }
             minion.start()
             reportLiveStateRegistry.recordStartedMinion(minion.campaignKey, minion.scenarioName, 1)
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.started",
                 tags = mapOf(
                     "campaign" to minion.campaignKey,
@@ -193,15 +196,15 @@ internal class MinionsKeeperImpl(
         val minionId = minion.id
         val eventsTags =
             mapOf("campaign" to minion.campaignKey, "scenario" to minion.scenarioName, "minion" to minionId)
-        eventsLogger.info("minion.cancellation.started", tags = eventsTags)
+        eventsLogger.debug("minion.cancellation.started", tags = eventsTags)
         dagIdsBySingletonMinionId.remove(minionId)
             ?.let { (scenarioName, dagId) -> singletonMinionsByDagId.remove(scenarioName, dagId) }
         rootDagsOfMinions.remove(minionId)
         try {
             minion.cancel()
-            eventsLogger.info("minion.cancellation.complete", tags = eventsTags)
+            eventsLogger.debug("minion.cancellation.complete", tags = eventsTags)
         } catch (e: Exception) {
-            eventsLogger.info("minion.cancellation.complete", e, tags = eventsTags)
+            eventsLogger.debug("minion.cancellation.complete", e, tags = eventsTags)
         }
     }
 

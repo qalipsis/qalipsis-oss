@@ -13,6 +13,8 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.exceptions.NotInitializedStepException
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -147,9 +149,11 @@ internal class InnerJoinStep<I, O>(
         val secondaryValuesCount: Int
     ) {
         /**
-         * Mutex to suspend the calls the received() until all the values are received.
+         * Mutex to suspend the calls to received() until all the values are received.
          */
         private val countLatch = SuspendedCountLatch(secondaryValuesCount.toLong())
+
+        private val mutex = Mutex()
 
         /**
          * Values received from the secondary [io.qalipsis.api.steps.Step]s so far, indexed by the source [StepName].
@@ -163,8 +167,12 @@ internal class InnerJoinStep<I, O>(
          * @param value Actual value to provide for the correlation.
          */
         suspend fun addValue(stepName: StepName, value: Any?) {
-            secondaryValues[stepName] = value
-            countLatch.decrement()
+            mutex.withLock {
+                if (!secondaryValues.keys.contains(stepName)) {
+                    secondaryValues[stepName] = value
+                    countLatch.decrement()
+                }
+            }
         }
 
         /**

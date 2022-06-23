@@ -39,7 +39,7 @@ internal class IterativeStepDecorator<I, O>(
         val inputValue = context.receive()
 
         // Unmark the context as tail until the very last record.
-        val isDecoratingContextTail = context.isTail
+        val isOuterContextTail = context.isTail
         context.isTail = false
 
         // Reusing the same channel for all the iterations.
@@ -48,33 +48,36 @@ internal class IterativeStepDecorator<I, O>(
         var repetitionIndex = 0L
         while (remainingIterations > 0 && !context.isExhausted) {
             log.trace { "Executing iteration $repetitionIndex for context $context" }
-            val internalContext =
+            val innerContext =
                 context.duplicate(inputChannel = internalInputChannel, stepIterationIndex = repetitionIndex)
-            internalContext.isTail = isDecoratingContextTail && remainingIterations == 1L
-            context.isTail = internalContext.isTail
+            innerContext.isTail = isOuterContextTail && remainingIterations == 1L
+            context.isTail = innerContext.isTail
 
             // Provides the input value again for each iteration.
             if (internalInputChannel.isEmpty) {
                 internalInputChannel.send(inputValue)
             }
             try {
-                executeStep(minion, decorated, internalContext)
-                internalContext.errors.forEach(context::addError)
+                executeStep(minion, decorated, innerContext)
+                innerContext.errors.forEach(context::addError)
             } catch (t: Throwable) {
                 // Resets the isTail flag before leaving.
-                context.isTail = isDecoratingContextTail
+                context.isTail = isOuterContextTail
                 log.debug(t) { "The repeated step ${decorated.name} failed: ${t.message}" }
                 throw t
             }
 
-            if (internalContext.isExhausted) {
+            if (innerContext.isExhausted) {
                 // Resets the isTail flag before leaving.
-                context.isTail = isDecoratingContextTail
+                context.isTail = isOuterContextTail
                 log.debug { "The repeated step ${decorated.name} failed." }
                 context.isExhausted = true
+            } else if (!innerContext.generatedOutput && innerContext.isTail) {
+                remainingIterations = 0
+                log.trace { "Stopping the iteration, because the inner step forced the context to be a tail" }
             } else {
                 remainingIterations--
-                log.trace { "Executed iteration ${internalContext.stepIterationIndex} for context ${context}, remaining $remainingIterations" }
+                log.trace { "Executed iteration ${innerContext.stepIterationIndex} for context ${context}, remaining $remainingIterations" }
 
                 if (remainingIterations > 0) {
                     repetitionIndex++
@@ -83,6 +86,7 @@ internal class IterativeStepDecorator<I, O>(
                 }
             }
         }
+        context.isTail = isOuterContextTail
         log.trace { "End of the iterations for context $context" }
     }
 

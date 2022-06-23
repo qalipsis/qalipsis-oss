@@ -268,13 +268,7 @@ internal class FactoryInitializerImpl(
 
         // Get or create the DAG to attach the step.
         val dag = scenario.createIfAbsent(stepSpecification.directedAcyclicGraphName) { dagId ->
-            DirectedAcyclicGraph(
-                dagId, scenario,
-                isRoot = (actualParent == null),
-                isSingleton = stepSpecification is SingletonStepSpecification,
-                isUnderLoad = (dagId in scenarioSpecification.dagsUnderLoad),
-                tags = stepSpecification.tags
-            )
+            createNewDag(dagId, stepSpecification, scenarioSpecification, parentDag, scenario)
         }
 
         val context =
@@ -301,6 +295,31 @@ internal class FactoryInitializerImpl(
                 stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>
             )
         }
+    }
+
+    // FIXME Write unit tests cases here.
+    @KTestable
+    private fun createNewDag(
+        dagId: DirectedAcyclicGraphName,
+        stepSpecification: StepSpecification<Any?, Any?, *>,
+        scenarioSpecification: ConfiguredScenarioSpecification,
+        parentDag: DirectedAcyclicGraph?,
+        scenario: Scenario
+    ): DirectedAcyclicGraph {
+        // DAGs holding a singleton step, or descendant of a singleton DAG not under load are considered as singleton.
+        val isSingleton = (stepSpecification as? SingletonStepSpecification)?.isReallySingleton == true
+                || (parentDag?.isSingleton == true && !parentDag.isUnderLoad)
+        val isUnderLoad = dagId in scenarioSpecification.dagsUnderLoad
+        // Root DAGs are the one without parent DAG, or being under load with a singleton parent.
+        val isRoot = parentDag == null || (isUnderLoad && parentDag.isSingleton)
+
+        return DirectedAcyclicGraph(
+            dagId, scenario,
+            isRoot = isRoot,
+            isSingleton = isSingleton,
+            isUnderLoad = isUnderLoad,
+            tags = stepSpecification.tags
+        )
     }
 
     /**

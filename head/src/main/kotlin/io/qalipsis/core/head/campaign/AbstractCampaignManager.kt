@@ -107,6 +107,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
 
             headChannel.subscribeFeedback(configuration.feedbackChannel)
             val campaignStartState = create(configuration)
+            log.info { "Starting the campaign $campaignDisplayName with scenarios ${scenarios.map { it.name }} on factories ${configuration.factories.keys}" }
             campaignStartState.inject(campaignExecutionContext)
             processingMutex.withLock {
                 val directives = campaignStartState.init()

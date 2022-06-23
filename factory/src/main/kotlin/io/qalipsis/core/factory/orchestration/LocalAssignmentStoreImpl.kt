@@ -53,6 +53,6 @@ internal class LocalAssignmentStoreImpl(
     override fun reset() {
         actualAssignments.clear()
         rootDagsUnderLoad = scenarioRegistry.all()
-            .associate { scenario -> scenario.name to scenario.dags.first { it.isRoot && it.isUnderLoad }.name }
+            .associate { scenario -> scenario.name to scenario.dags.first { it.isRoot && it.isUnderLoad && !it.isSingleton }.name }
     }
 }

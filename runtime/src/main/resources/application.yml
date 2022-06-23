@@ -62,7 +62,7 @@ micronaut:
   server:
     port: ${monitoring.port}
   metrics:
-    enabled: true
+    enabled: ${meters.enabled}
     binders:
       jvm:
         enabled: ${monitoring.enabled}
@@ -78,3 +78,8 @@ micronaut:
         enabled: ${monitoring.enabled}
       cache:
         enabled: ${monitoring.enabled}
+      netty:
+        channels:
+          enabled: ${monitoring.enabled}
+        bytebuf-allocators:
+          enabled: ${monitoring.enabled}

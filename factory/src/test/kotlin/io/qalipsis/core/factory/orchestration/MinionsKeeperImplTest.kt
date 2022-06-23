@@ -122,7 +122,7 @@ internal class MinionsKeeperImplTest {
                         Tag.of("minion", "my-minion")
                     ), any<AtomicInteger>()
                 )
-                eventsLogger.info(
+                eventsLogger.debug(
                     "minion.created", timestamp = any(),
                     tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
                 )
@@ -207,7 +207,7 @@ internal class MinionsKeeperImplTest {
 
     @Test
     @Timeout(2)
-    internal fun `should create singleton started minion on root dag`() = testCoroutineDispatcher.run {
+    internal fun `should create singleton paused minion on root dag`() = testCoroutineDispatcher.run {
         // given
         val dag = testDag(id = "my-dag-1", isSingleton = true, root = true)
         every { scenarioRegistry.get("my-scenario")?.get("my-dag-1") } returns dag
@@ -238,7 +238,7 @@ internal class MinionsKeeperImplTest {
                     Tag.of("minion", "my-minion")
                 ), any<AtomicInteger>()
             )
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.created", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
@@ -253,7 +253,7 @@ internal class MinionsKeeperImplTest {
             prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
             prop(MinionImpl::isSingleton).isTrue()
             prop("executingStepsGauge").isSameAs(executingStepsGauge)
-            prop(MinionImpl::isStarted).isTrue()
+            prop(MinionImpl::isStarted).isFalse()
         }
         assertThat(minionsKeeper).all {
             typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameAs(minionSlot.captured)
@@ -263,6 +263,59 @@ internal class MinionsKeeperImplTest {
                 .containsOnly(minionSlot.captured)
             typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it["my-scenario", "my-dag-1"] }
                 .isSameAs(minionSlot.captured)
+            typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").key("my-minion")
+                .isEqualTo("my-scenario" to "my-dag-1")
+        }
+    }
+
+    @Test
+    @Timeout(2)
+    internal fun `should create singleton paused minion on non root dag`() = testCoroutineDispatcher.run {
+        // given
+        val dag = testDag(id = "my-dag-1", isSingleton = true, root = false)
+        every { scenarioRegistry.get("my-scenario")?.get("my-dag-1") } returns dag
+
+        val minionsKeeper = MinionsKeeperImpl(
+            scenarioRegistry,
+            runner,
+            eventsLogger,
+            meterRegistry,
+            reportLiveStateRegistry,
+            this
+        )
+
+        // when
+        minionsKeeper.create("my-campaign", "my-scenario", listOf("my-dag-1"), "my-minion")
+
+        // then
+        coVerifyOnce {
+            meterRegistry.gauge(
+                "minion-running-steps",
+                listOf(
+                    Tag.of("campaign", "my-campaign"),
+                    Tag.of("scenario", "my-scenario"),
+                    Tag.of("minion", "my-minion")
+                ), any<AtomicInteger>()
+            )
+        }
+
+        confirmVerified(runner, eventsLogger, meterRegistry, reportLiveStateRegistry)
+
+        val createdMinion = minionsKeeper.getProperty<Map<MinionId, MinionImpl>>("minions")["my-minion"]
+        assertThat(createdMinion).isNotNull().all {
+            prop(MinionImpl::id).isEqualTo("my-minion")
+            prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
+            prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
+            prop(MinionImpl::isSingleton).isTrue()
+            prop("executingStepsGauge").isSameAs(executingStepsGauge)
+            prop(MinionImpl::isStarted).isFalse()
+        }
+        assertThat(minionsKeeper).all {
+            typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").isEmpty()
+            typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").key("my-scenario")
+                .containsOnly(createdMinion)
+            typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it["my-scenario", "my-dag-1"] }
+                .isSameAs(createdMinion)
             typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").key("my-minion")
                 .isEqualTo("my-scenario" to "my-dag-1")
         }
@@ -363,7 +416,7 @@ internal class MinionsKeeperImplTest {
         coVerifyOnce {
             minionToStart.start()
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 1)
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
@@ -410,7 +463,7 @@ internal class MinionsKeeperImplTest {
         coVerifyOnce {
             minionToStart.start()
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 1)
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.started", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
@@ -579,13 +632,13 @@ internal class MinionsKeeperImplTest {
             minion.id
             minion.campaignKey
             minion.scenarioName
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.started",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             minion.cancel()
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.complete",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
@@ -629,13 +682,13 @@ internal class MinionsKeeperImplTest {
             minion.id
             minion.campaignKey
             minion.scenarioName
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.started",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             minion.cancel()
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.complete",
                 value = refEq(theException),
                 timestamp = any(),
@@ -717,13 +770,13 @@ internal class MinionsKeeperImplTest {
             minion1.id
             minion1.campaignKey
             minion1.scenarioName
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.started",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion1")
             )
             minion1.cancel()
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.complete",
                 value = refEq(theException),
                 timestamp = any(),
@@ -733,13 +786,13 @@ internal class MinionsKeeperImplTest {
             minion2.id
             minion2.campaignKey
             minion2.scenarioName
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.started",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion2")
             )
             minion2.cancel()
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.complete",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion2")
@@ -748,13 +801,13 @@ internal class MinionsKeeperImplTest {
             minion3.id
             minion3.campaignKey
             minion3.scenarioName
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.started",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion3")
             )
             minion3.cancel()
-            eventsLogger.info(
+            eventsLogger.debug(
                 "minion.cancellation.complete",
                 timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion3")
