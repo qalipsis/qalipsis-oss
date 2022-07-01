@@ -19,7 +19,7 @@ internal object Defaults {
     /**
      * Reference of QALIPSIS default tenant.
      */
-    const val TENANT = "_qalipsis_"
+    const val TENANT = "_qalipsis_ten_"
 
     /**
      * Profile of QALIPSIS default user.

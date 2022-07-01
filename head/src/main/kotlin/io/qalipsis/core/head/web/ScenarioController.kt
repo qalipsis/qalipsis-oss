@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.web
 
+import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
@@ -12,7 +13,7 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.security.Permissions
-import io.qalipsis.core.head.web.annotations.Tenant
+import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -43,7 +44,8 @@ internal class ScenarioController(
         ]
     )
     @Secured(Permissions.READ_SCENARIO)
-    suspend fun listScenarios(
+    @Timed("scenarios-search")
+    suspend fun searchScenarios(
         @Parameter(
             name = "X-Tenant",
             description = "Contextual tenant",

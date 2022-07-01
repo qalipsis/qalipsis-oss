@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @ExperimentalLettuceCoroutinesApi
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField
@@ -61,10 +61,10 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
 
         // then
         var messagesOfScenario1 =
-            redisCoroutinesCommands.hgetall("_qalipsis_:my-campaign-report:my-scenario-1").toList()
+            redisCoroutinesCommands.hgetall("_qalipsis_ten_:my-campaign-report:my-scenario-1").toList()
                 .associate { it.key to it.value }
         var messagesOfScenario2 =
-            redisCoroutinesCommands.hgetall("_qalipsis_:my-campaign-report:my-scenario-2").toList()
+            redisCoroutinesCommands.hgetall("_qalipsis_ten_:my-campaign-report:my-scenario-2").toList()
                 .associate { it.key to it.value }
         assertThat(messagesOfScenario1).all {
             hasSize(2)
@@ -89,10 +89,10 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
         // then
         assertThat(updatedMessage).isEqualTo(message1)
         messagesOfScenario1 =
-            redisCoroutinesCommands.hgetall("_qalipsis_:my-campaign-report:my-scenario-1").toList()
+            redisCoroutinesCommands.hgetall("_qalipsis_ten_:my-campaign-report:my-scenario-1").toList()
                 .associate { it.key to it.value }
         messagesOfScenario2 =
-            redisCoroutinesCommands.hgetall("_qalipsis_:my-campaign-report:my-scenario-2").toList()
+            redisCoroutinesCommands.hgetall("_qalipsis_ten_:my-campaign-report:my-scenario-2").toList()
                 .associate { it.key to it.value }
         assertThat(messagesOfScenario1).all {
             hasSize(2)
@@ -109,10 +109,10 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
 
         // then
         messagesOfScenario1 =
-            redisCoroutinesCommands.hgetall("_qalipsis_:my-campaign-report:my-scenario-1").toList()
+            redisCoroutinesCommands.hgetall("_qalipsis_ten_:my-campaign-report:my-scenario-1").toList()
                 .associate { it.key to it.value }
         messagesOfScenario2 =
-            redisCoroutinesCommands.hgetall("_qalipsis_:my-campaign-report:my-scenario-2").toList()
+            redisCoroutinesCommands.hgetall("_qalipsis_ten_:my-campaign-report:my-scenario-2").toList()
                 .associate { it.key to it.value }
         assertThat(messagesOfScenario1).all {
             hasSize(1)
@@ -218,5 +218,5 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
     }
 
     private suspend fun getCounter(key: String, field: String): Int? =
-        redisCoroutinesCommands.hget("_qalipsis_:$key", field)?.toInt()
+        redisCoroutinesCommands.hget("_qalipsis_ten_:$key", field)?.toInt()
 }

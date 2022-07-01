@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.web
 
+import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
@@ -23,7 +24,7 @@ import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.security.Permissions
-import io.qalipsis.core.head.web.annotations.Tenant
+import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -68,6 +69,7 @@ internal class CampaignController(
         ]
     )
     @Secured(Permissions.CREATE_CAMPAIGN)
+    @Timed("campaigns-execute")
     suspend fun execute(
         @Parameter(
             name = "X-Tenant",
@@ -104,6 +106,7 @@ internal class CampaignController(
         ]
     )
     @Secured(Permissions.CREATE_CAMPAIGN)
+    @Timed("campaigns-validate")
     suspend fun validate(
         @Parameter(
             name = "X-Tenant",
@@ -125,8 +128,8 @@ internal class CampaignController(
 
     @Get
     @Operation(
-        summary = "List campaigns",
-        description = "List the past and currently running campaigns, the scenarios they executed and their status",
+        summary = "Search campaigns",
+        description = "Search the past and currently running campaigns, with the scenarios they executed and their status",
         responses = [
             ApiResponse(responseCode = "200", description = "Details of the successfully listed campaigns"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
@@ -137,7 +140,8 @@ internal class CampaignController(
         ]
     )
     @Secured(Permissions.READ_CAMPAIGN)
-    suspend fun list(
+    @Timed("campaigns-search")
+    suspend fun search(
         @Parameter(
             name = "X-Tenant",
             description = "Contextual tenant",
@@ -155,12 +159,12 @@ internal class CampaignController(
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue sort: String,
         @Parameter(
-            description = "Field of the campaign to use in order to sort the results",
+            description = "0-based number of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = 0.toString()) page: String,
         @Parameter(
-            description = "Field of the campaign to use in order to sort the results",
+            description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "20") size: String
@@ -184,6 +188,7 @@ internal class CampaignController(
             SecurityRequirement(name = "JWT")
         ]
     )
+    @Timed("campaigns-abort")
     suspend fun abort(
         @Parameter(
             name = "X-Tenant",
@@ -224,6 +229,7 @@ internal class CampaignController(
         ]
     )
     @Secured(Permissions.READ_CAMPAIGN)
+    @Timed("campaigns-retrieve")
     suspend fun retrieve(
         @Parameter(
             description = "Campaign name of the campaign to retrieve the report",

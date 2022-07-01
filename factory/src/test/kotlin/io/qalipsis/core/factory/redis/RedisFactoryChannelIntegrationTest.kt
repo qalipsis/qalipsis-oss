@@ -54,7 +54,7 @@ import java.time.temporal.ChronoUnit
     Property(name = "factory.node-id", value = "my-node"),
     Property(name = "factory.tenant", value = "my-tenant")
 )
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField

@@ -1,4 +1,4 @@
-package io.qalipsis.core.head.web.annotations
+package io.qalipsis.core.head.web.annotation
 
 import io.micronaut.core.bind.annotation.Bindable
 

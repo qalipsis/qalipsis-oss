@@ -1,8 +1,10 @@
 package io.qalipsis.core.head.jdbc.repository
 
+import io.micronaut.context.annotation.Requires
 import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 
 /**
@@ -11,8 +13,9 @@ import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
+@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
 internal interface DirectedAcyclicGraphSelectorRepository :
     CoroutineCrudRepository<DirectedAcyclicGraphTagEntity, Long> {
 
-    suspend fun deleteByDirectedAcyclicGraphIdIn(dagIds: Iterable<Long>): Int
+    suspend fun deleteByDirectedAcyclicGraphIdIn(dagIds: Collection<Long>): Int
 }

@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.web
 
+import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
@@ -40,6 +41,7 @@ internal class ProfileController {
     )
     @Get("/users/profile")
     @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Timed("users-profile")
     suspend fun profile(authentication: Authentication): HttpResponse<Profile> {
         return HttpResponse.ok(Defaults.PROFILE)
     }
@@ -57,6 +59,7 @@ internal class ProfileController {
     )
     @Get("/users/permissions")
     @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Timed("users-permissions")
     suspend fun permissions(authentication: Authentication): HttpResponse<Collection<String>> {
         return HttpResponse.ok(authentication.roles)
     }

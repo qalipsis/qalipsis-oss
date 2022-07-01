@@ -15,7 +15,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
  */
 @ExperimentalLettuceCoroutinesApi
 @Testcontainers
-@MicronautTest(environments = [ExecutionEnvironments.REDIS])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS], startApplication = false)
 abstract class AbstractRedisIntegrationTest : TestPropertyProvider {
 
     @Inject

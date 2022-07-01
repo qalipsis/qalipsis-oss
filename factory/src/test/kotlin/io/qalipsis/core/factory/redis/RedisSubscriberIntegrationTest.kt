@@ -36,7 +36,7 @@ import java.time.Duration
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
 @Property(name = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = ExecutionEnvironments.REDIS)
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField

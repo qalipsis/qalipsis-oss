@@ -26,7 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
 @Testcontainers
-@MicronautTest(environments = [ExecutionEnvironments.REDIS])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS], startApplication = false)
 internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField

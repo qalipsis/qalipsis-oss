@@ -27,9 +27,9 @@ internal class FactoryConfiguration {
     var metadataPath: String = "./metadata"
 
     /**
-     * Identifier of the tenant owning the factory, defaults to "_qalipsis_", only change with care.
+     * Identifier of the tenant owning the factory, defaults to "_qalipsis_ten_", only change with care.
      */
-    var tenant: String = "_qalipsis_"
+    var tenant: String = "_qalipsis_ten_"
 
     /**
      * Configuration of the handshake operations.

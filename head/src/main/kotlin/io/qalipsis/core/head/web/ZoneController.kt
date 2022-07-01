@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.web
 
+import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
@@ -41,6 +42,7 @@ internal class ZoneController(val headConfiguration: HeadConfiguration) {
         ]
     )
     @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Timed("zones-list")
     suspend fun listZones(): HttpResponse<List<Zone>> {
         return HttpResponse.ok(headConfiguration.zones.toList())
     }

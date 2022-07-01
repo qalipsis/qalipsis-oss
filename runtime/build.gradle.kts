@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm")
     kotlin("kapt")
@@ -8,14 +6,6 @@ plugins {
 }
 
 description = "Qalipsis Runtime"
-
-// Configure both compileKotlin and compileTestKotlin.
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.majorVersion
-        javaParameters = true
-    }
-}
 
 allOpen {
     annotations(
