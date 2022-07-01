@@ -19,7 +19,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.security.RoleName
 import io.qalipsis.core.head.web.AuthenticatedController.CallResult
-import io.qalipsis.core.head.web.annotations.Tenant
+import io.qalipsis.core.head.web.annotation.Tenant
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test

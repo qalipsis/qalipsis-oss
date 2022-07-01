@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @ExperimentalLettuceCoroutinesApi
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField

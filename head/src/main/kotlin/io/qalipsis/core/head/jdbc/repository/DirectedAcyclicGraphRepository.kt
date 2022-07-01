@@ -1,9 +1,11 @@
 package io.qalipsis.core.head.jdbc.repository
 
+import io.micronaut.context.annotation.Requires
 import io.micronaut.data.annotation.Join
 import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
+@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
 internal interface DirectedAcyclicGraphRepository : CoroutineCrudRepository<DirectedAcyclicGraphEntity, Long> {
 
     @Join(value = "tags", type = Join.Type.LEFT_FETCH)

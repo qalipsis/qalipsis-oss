@@ -17,11 +17,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Duration
 
-@MicronautTest(environments = [ExecutionEnvironments.FACTORY], packages = ["io.qalipsis.core.factory"])
+@MicronautTest(
+    environments = [ExecutionEnvironments.FACTORY],
+    packages = ["io.qalipsis.core.factory"],
+    startApplication = false
+)
 internal class FactoryConfigurationIntegrationTest {
 
     @Test
-    @MicronautTest
+    @MicronautTest(startApplication = false)
     @Timeout(10)
     internal fun `should create the factory configuration with the default values`(factoryConfiguration: FactoryConfiguration) {
         assertThat(factoryConfiguration).all {
@@ -63,7 +67,7 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.assignment.evaluation-batch-size", value = "67542"),
         Property(name = "factory.assignment.timeout", value = "143s")
     )
-    @MicronautTest
+    @MicronautTest(startApplication = false)
     @Timeout(10)
     internal fun `should create the factory configuration with specified values`(factoryConfiguration: FactoryConfiguration) {
         assertThat(factoryConfiguration).all {

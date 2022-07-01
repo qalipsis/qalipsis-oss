@@ -1,20 +1,71 @@
 package io.qalipsis.core.head.model
 
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.any
+import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.prop
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Inject
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import javax.validation.ConstraintViolation
 
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD])
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD], startApplication = false)
 internal class CampaignReportValidationIntegrationTest {
 
     @Inject
     private lateinit var validator: Validator
+
+    @Test
+    fun `valid report should be successfully validated`() {
+        //given
+        val start = Instant.now().minusSeconds(123)
+        val end = Instant.now().minusSeconds(12)
+        val report = CampaignReport(
+            campaignKey = "the-campaign",
+            start = start,
+            end = end,
+            startedMinions = 0,
+            completedMinions = 0,
+            successfulExecutions = 0,
+            failedExecutions = 0,
+            status = ExecutionStatus.SUCCESSFUL,
+            scenariosReports = listOf(
+                ScenarioReport(
+                    campaignKey = "key",
+                    scenarioName = "scenario",
+                    start = start,
+                    end = end,
+                    startedMinions = 0,
+                    completedMinions = 0,
+                    successfulExecutions = 0,
+                    failedExecutions = 0,
+                    status = ExecutionStatus.FAILED,
+                    messages = listOf(
+                        ReportMessage(
+                            stepName = "my-step-2",
+                            messageId = "the message",
+                            severity = ReportMessageSeverity.INFO,
+                            message = "Hello from test 2"
+                        )
+                    )
+                )
+            )
+        )
+
+        //when
+        val constraintViolation = validator.validate(report)
+
+        //then
+        assertThat(constraintViolation).isEmpty()
+    }
 
     @Test
     fun `campaign key should not be empty`() {
@@ -37,9 +88,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("campaignKey") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must not be blank"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("campaignKey") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+            }
+        }
     }
 
     @Test
@@ -63,9 +118,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("startedMinions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("startedMinions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -89,9 +148,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("completedMinions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("completedMinions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -115,9 +178,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("successfulExecutions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("successfulExecutions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -141,9 +208,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("failedExecutions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("failedExecutions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -180,9 +251,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("campaignKey") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must not be blank"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("campaignKey") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+            }
+        }
     }
 
     @Test
@@ -219,9 +294,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("scenarioName") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must not be blank"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("scenarioName") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+            }
+        }
     }
 
     @Test
@@ -258,9 +337,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("startedMinions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("startedMinions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -297,9 +380,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("completedMinions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("completedMinions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -335,9 +422,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("successfulExecutions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("successfulExecutions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -374,9 +465,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("failedExecutions") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must be greater than or equal to 0"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("failedExecutions") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 0")
+            }
+        }
     }
 
     @Test
@@ -420,9 +515,13 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("stepName") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must not be blank"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("stepName") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+            }
+        }
     }
 
     @Test
@@ -466,8 +565,12 @@ internal class CampaignReportValidationIntegrationTest {
         val constraintViolation = validator.validate(report)
 
         //then
-        Assertions.assertEquals(1, constraintViolation.size)
-        Assertions.assertTrue(constraintViolation.first().propertyPath.any { it.name.equals("messageId") })
-        Assertions.assertTrue(constraintViolation.first().message.equals("must not be blank"))
+        assertThat(constraintViolation).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("messageId") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package io.qalipsis.core.head.web
 
+import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
@@ -39,6 +40,7 @@ internal class ConfigurationController(
         ]
     )
     @Secured(SecurityRule.IS_ANONYMOUS)
+    @Timed("configuration-security")
     suspend fun retrieveSecurity(): HttpResponse<SecurityConfiguration> {
         return HttpResponse.ok(securityConfiguration)
     }

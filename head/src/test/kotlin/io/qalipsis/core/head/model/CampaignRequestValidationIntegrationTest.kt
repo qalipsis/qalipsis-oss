@@ -8,7 +8,7 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD])
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD], startApplication = false)
 internal class CampaignRequestValidationIntegrationTest {
 
     @Inject

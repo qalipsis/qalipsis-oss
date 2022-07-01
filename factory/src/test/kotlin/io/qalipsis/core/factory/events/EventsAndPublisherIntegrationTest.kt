@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Timeout
 internal class EventsAndPublisherIntegrationTest {
 
     @Nested
-    @MicronautTest(environments = ["nopublisher", ExecutionEnvironments.FACTORY])
+    @MicronautTest(environments = ["nopublisher", ExecutionEnvironments.FACTORY], startApplication = false)
     inner class NoPublisher {
 
         @Inject
@@ -53,7 +53,7 @@ internal class EventsAndPublisherIntegrationTest {
     }
 
     @Nested
-    @MicronautTest(environments = ["slf4j-publisher", ExecutionEnvironments.FACTORY])
+    @MicronautTest(environments = ["slf4j-publisher", ExecutionEnvironments.FACTORY], startApplication = false)
     inner class Slf4jPublisher {
 
         @Inject

@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
  * @author rklymenko
  */
 @Testcontainers
-@MicronautTest(environments = [ExecutionEnvironments.POSTGRESQL])
+@MicronautTest(environments = [ExecutionEnvironments.POSTGRESQL], startApplication = false)
 internal abstract class PostgresqlTemplateTest : TestPropertyProvider {
 
     @JvmField

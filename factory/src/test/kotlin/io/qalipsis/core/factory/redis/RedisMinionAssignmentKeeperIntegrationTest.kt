@@ -45,7 +45,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField
@@ -72,7 +72,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Test
     @Timeout(10)
     @Order(1)
-    @MicronautTest
+    @MicronautTest(startApplication = false)
     @PropertySource(Property(name = "factory.assignment.timeout", value = "2s"))
     internal fun `should assign a lot of minions only for the DAGs supported by the factory`(minionAssignmentKeeper: RedisMinionAssignmentKeeper) =
         testDispatcherProvider.run {
@@ -423,7 +423,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     }
 
     @Test
-    @MicronautTest
+    @MicronautTest(startApplication = false)
     @PropertySource(
         Property(name = "factory.assignment.timeout", value = "1ms")
     )
@@ -446,7 +446,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Test
     @Timeout(10)
     @Order(Order.DEFAULT)
-    @MicronautTest
+    @MicronautTest(startApplication = false)
     @PropertySource(
         Property(name = "factory.assignment.timeout", value = "2s"),
         Property(name = "factoryConfiguration.assignment.evaluation-batch-size", value = "61")

@@ -38,7 +38,7 @@
       <column name="id" valueSequenceNext="tenant_seq"/>
       <column name="version" valueDate="CURRENT_TIMESTAMP"/>
       <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
-      <column name="reference" value="_qalipsis_"/>
+      <column name="reference" value="_qalipsis_ten_"/>
       <column name="display_name" value="QALIPSIS"/>
     </insert>
 

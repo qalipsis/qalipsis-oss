@@ -7,7 +7,7 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.rules.SecurityRule
 import io.qalipsis.core.head.security.Permissions
-import io.qalipsis.core.head.web.annotations.Tenant
+import io.qalipsis.core.head.web.annotation.Tenant
 
 /**
  * Controller used for testing the security resolution in different use cases.

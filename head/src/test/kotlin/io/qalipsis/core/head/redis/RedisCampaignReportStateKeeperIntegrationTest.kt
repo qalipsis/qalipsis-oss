@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD], startApplication = false)
 internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisIntegrationTest() {
 
     @RegisterExtension

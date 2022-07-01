@@ -25,7 +25,7 @@ import java.time.Duration
  */
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY])
+@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegrationTest() {
 
     @Inject

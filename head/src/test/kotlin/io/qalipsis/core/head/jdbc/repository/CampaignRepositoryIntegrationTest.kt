@@ -66,7 +66,6 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     private val tenantPrototype = TenantEntity(Instant.now(), "my-tenant", "test-tenant")
 
-
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
         campaignRepository.deleteAll()
