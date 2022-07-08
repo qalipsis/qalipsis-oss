@@ -1,4 +1,4 @@
-rootProject.name = "qalipsis-engine"
+rootProject.name = "qalipsis-oss"
 
 include(
     "core",
