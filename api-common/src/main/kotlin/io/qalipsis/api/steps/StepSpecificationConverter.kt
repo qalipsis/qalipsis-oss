@@ -1,11 +1,14 @@
 package io.qalipsis.api.steps
 
+import io.micronaut.context.annotation.Requires
+
 /**
  * Interface for the converters from [StepSpecification] to a concrete [Step].
  * Each kind of [StepSpecification] should have its own implementation.
  *
  * @author Eric Jessé
  */
+@Requires(env = ["standalone", "factory"])
 interface StepSpecificationConverter<SPEC : StepSpecification<*, *, *>> {
 
     /**
