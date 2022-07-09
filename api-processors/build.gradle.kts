@@ -16,7 +16,7 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation(project(":api-dsl"))
-    implementation("com.squareup:javapoet:1.+")
+    implementation("com.squareup:javapoet:1.13.0")
     implementation("com.squareup:kotlinpoet:1.11.0")
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")

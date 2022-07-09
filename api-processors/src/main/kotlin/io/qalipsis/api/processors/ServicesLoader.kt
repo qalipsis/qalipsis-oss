@@ -1,6 +1,6 @@
 package io.qalipsis.api.processors
 
-import io.micronaut.context.ApplicationContext
+import io.qalipsis.api.processors.injector.Injector
 import io.qalipsis.api.services.ServicesFiles
 
 /**
@@ -10,17 +10,17 @@ import io.qalipsis.api.services.ServicesFiles
 object ServicesLoader {
 
     /**
-     * Loads the services passing the application context as parameter.
+     * Loads the scenarios passing the injector as parameter.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T> loadServices(name: String, context: ApplicationContext): Collection<T> {
-        return this.javaClass.classLoader.getResources("META-INF/qalipsis/${name}")
+    fun <T> loadScenarios(injector: Injector): Collection<T> {
+        return this.javaClass.classLoader.getResources("META-INF/qalipsis/scenarios")
             .toList()
             .flatMap { ServicesFiles.readFile(it.openStream()) }
             .map { loaderClass ->
                 try {
-                    Class.forName(loaderClass).getConstructor(ApplicationContext::class.java)
-                        .newInstance(context) as T
+                    Class.forName(loaderClass).getConstructor(Injector::class.java)
+                        .newInstance(injector) as T
                 } catch (e: NoSuchMethodException) {
                     Class.forName(loaderClass).getConstructor().newInstance() as T
                 }

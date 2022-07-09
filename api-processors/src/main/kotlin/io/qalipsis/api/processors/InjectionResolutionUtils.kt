@@ -25,12 +25,12 @@ internal class InjectionResolutionUtils(private val typeUtils: TypeUtils) {
         }
         return if (property.orElse.isBlank() || isOptional) {
             if (isOptional) {
-                "($paramType) applicationContext.getProperty(\"${property.name}\", ${propertyTypeName})"
+                "($paramType) injector.getProperty(\"${property.name}\", ${propertyTypeName})"
             } else {
-                "applicationContext.getRequiredProperty(\"${property.name}\", ${propertyTypeName})"
+                "injector.getRequiredProperty(\"${property.name}\", ${propertyTypeName})"
             }
         } else {
-            "applicationContext.getProperty(\"${property.name}\", ${propertyTypeName}, ($paramType) applicationContext.getConversionService().convertRequired(\"${property.orElse}\", $propertyTypeName))"
+            "injector.getProperty(\"${property.name}\", ${propertyTypeName}, ($paramType) injector.getConversionService().convertRequired(\"${property.orElse}\", $propertyTypeName))"
         }
     }
 
@@ -38,15 +38,15 @@ internal class InjectionResolutionUtils(private val typeUtils: TypeUtils) {
         return when {
             typeUtils.isOptionalWithGeneric(paramType) -> {
                 val genericType = typeUtils.getTypeOfFirstGeneric(paramType as DeclaredType)
-                """applicationContext.findBean(${genericType}.class)"""
+                """injector.findBean(${genericType}.class)"""
             }
             typeUtils.isIterableWithGeneric(paramType) -> {
                 val genericType = typeUtils.getTypeOfFirstGeneric(paramType as DeclaredType)
-                """($paramType) applicationContext.getConversionService().convertRequired(applicationContext.getBeansOfType(${genericType}.class), 
+                """($paramType) injector.getConversionService().convertRequired(injector.getBeansOfType(${genericType}.class), 
                     ${typeUtils.erase(paramType)}.class)""".trimIndent()
             }
             else -> {
-                """applicationContext.getBean(${paramType}.class)"""
+                """injector.getBean(${paramType}.class)"""
             }
         }
     }
@@ -55,18 +55,18 @@ internal class InjectionResolutionUtils(private val typeUtils: TypeUtils) {
         return when {
             typeUtils.isOptionalWithGeneric(paramType) -> {
                 val genericType = typeUtils.getTypeOfFirstGeneric(paramType as DeclaredType)
-                """applicationContext.findBean(${genericType}.class, io.micronaut.inject.qualifiers.Qualifiers.byName("${named.value}"))"""
+                """injector.findBean(${genericType}.class, io.micronaut.inject.qualifiers.Qualifiers.byName("${named.value}"))"""
             }
             typeUtils.isIterableWithGeneric(paramType) -> {
                 val genericType = typeUtils.getTypeOfFirstGeneric(paramType as DeclaredType)
-                """($paramType) applicationContext.getConversionService().convertRequired(applicationContext.getBeansOfType(${genericType}.class, io.micronaut.inject.qualifiers.Qualifiers.byName("${named.value}")), ${
+                """($paramType) injector.getConversionService().convertRequired(injector.getBeansOfType(${genericType}.class, io.micronaut.inject.qualifiers.Qualifiers.byName("${named.value}")), ${
                     typeUtils.erase(
                         paramType
                     )
                 }.class)"""
             }
             else -> {
-                """applicationContext.getBean(${paramType}.class, io.micronaut.inject.qualifiers.Qualifiers.byName("${named.value}"))"""
+                """injector.getBean(${paramType}.class, io.micronaut.inject.qualifiers.Qualifiers.byName("${named.value}"))"""
             }
         }
     }

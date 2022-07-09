@@ -4,9 +4,9 @@ import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterSpec
 import com.squareup.javapoet.TypeSpec
-import io.micronaut.context.ApplicationContext
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
+import io.qalipsis.api.processors.injector.Injector
 import io.qalipsis.api.services.ServicesFiles
 import jakarta.inject.Named
 import java.io.IOException
@@ -122,7 +122,7 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
                             .addModifiers(Modifier.PUBLIC)
                             .addParameter(
                                 ParameterSpec.builder(
-                                    ApplicationContext::class.java, "applicationContext",
+                                    Injector::class.java, "injector",
                                     Modifier.FINAL
                                 ).build()
                             )

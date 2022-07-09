@@ -7,11 +7,10 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.key
-import io.micronaut.context.ApplicationContext
-import io.micronaut.core.convert.ConversionService
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
 import io.qalipsis.api.processors.ServicesLoader
+import io.qalipsis.api.processors.injector.Injector
 import io.qalipsis.test.io.readFileLines
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions
@@ -49,19 +48,16 @@ internal class ScenarioAnnotationProcessorTest {
         val interfaceToInject: InterfaceToInject = relaxedMockk()
         val injectablesAsList = listOf(classToInject, otherClassToInject)
         val namedInjectablesAsList = listOf(otherClassToInject)
-        val conversionService: ConversionService<*> = relaxedMockk {
-            every { convertRequired(eq("10"), eq(Integer.TYPE)) } returns 10
+
+        val injector: Injector = relaxedMockk {
+            every { conversionService.convertRequired(eq("10"), eq(Integer.TYPE)) } returns 10
             every {
-                convertRequired(
+                conversionService.convertRequired(
                     setOf(classToInject, otherClassToInject),
                     eq(List::class.java)
                 )
             } returns injectablesAsList
-            every { convertRequired(setOf(otherClassToInject), eq(List::class.java)) } returns namedInjectablesAsList
-        }
-
-        val applicationContext: ApplicationContext = relaxedMockk {
-            every { getConversionService() } returns conversionService
+            every { conversionService.convertRequired(setOf(otherClassToInject), eq(List::class.java)) } returns namedInjectablesAsList
 
             every { getBean(ClassToInject::class.java) } returns classToInject
             every { getBean(OtherClassToInject::class.java) } returns otherClassToInject
@@ -86,7 +82,7 @@ internal class ScenarioAnnotationProcessorTest {
             } returns Optional.of("No value")
         }
 
-        ServicesLoader.loadServices<Any>("scenarios", applicationContext)
+        ServicesLoader.loadScenarios<Any>(injector)
 
         assertThat(injectedForMethodOutsideAClass).all {
             key("classToInject").isSameAs(classToInject)
