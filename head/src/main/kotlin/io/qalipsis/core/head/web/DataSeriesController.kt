@@ -13,23 +13,31 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
+import io.qalipsis.api.report.DataField
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
+import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.security.Permissions
+import io.qalipsis.core.head.web.ControllerUtils.asFilters
 import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import javax.annotation.Nullable
 import javax.validation.Valid
+import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotEmpty
+import javax.validation.constraints.Positive
 
 @Validated
 @Controller("/data-series")
@@ -39,7 +47,8 @@ import javax.validation.constraints.NotEmpty
 )
 @Version("1.0")
 internal class DataSeriesController(
-    private val dataSeriesService: DataSeriesService
+    private val dataSeriesService: DataSeriesService,
+    private val dataProvider: DataProvider
 ) {
 
     @Post
@@ -188,4 +197,103 @@ internal class DataSeriesController(
         dataSeriesService.delete(username = authentication.name, tenant = tenant, reference = reference)
         return HttpResponse.status(HttpStatus.ACCEPTED)
     }
+
+    @Get("/{data-type}/names")
+    @Operation(
+        summary = "List some events or meters names to help with auto-completion",
+        responses = [
+            ApiResponse(responseCode = "200", description = "List of first names matching the filter"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.WRITE_DATA_SERIES])
+    suspend fun searchDataNames(
+        @Tenant tenant: String,
+        @Parameter(
+            name = "data-type",
+            description = "Type of the data related to the tags to search",
+            required = false,
+            `in` = ParameterIn.PATH
+        ) @Nullable @PathVariable("data-type") dataType: DataType,
+        @Parameter(
+            description = "Comma-separated list of values to apply as wildcard filters on the names",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        @Parameter(
+            description = "Size of the page to retrieve",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
+    ): Collection<String> {
+        return dataProvider.searchNames(tenant, dataType, filter.asFilters(), size)
+    }
+
+    @Get("/{data-type}/fields")
+    @Operation(
+        summary = "List all the fields that can be used for charts of events or meters",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "List of fields that can be used in reports charts, with their types and units"
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.WRITE_DATA_SERIES])
+    suspend fun listDataFields(
+        @Tenant tenant: String,
+        @Parameter(
+            name = "data-type",
+            description = "Type of the data related to the tags to search",
+            required = false,
+            `in` = ParameterIn.PATH
+        ) @Nullable @PathVariable("data-type") dataType: DataType,
+    ): Collection<DataField> {
+        return dataProvider.listFields(tenant, dataType)
+    }
+
+    @Get("/{data-type}/tags")
+    @Operation(
+        summary = "List some tags to help with auto-completion",
+        responses = [
+            ApiResponse(responseCode = "200", description = "List of first tags matching the filter and their values"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.WRITE_DATA_SERIES])
+    suspend fun searchDataTags(
+        @Tenant tenant: String,
+        @Parameter(
+            name = "data-type",
+            description = "Type of the data related to the tags to search",
+            required = false,
+            `in` = ParameterIn.PATH
+        ) @Nullable @PathVariable("data-type") dataType: DataType,
+        @Parameter(
+            description = "Comma-separated list of values to apply as wildcard filters on the tags names",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        @Parameter(
+            description = "Size of the page to retrieve",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
+    ): Map<String, Collection<String>> {
+        return dataProvider.searchTagsAndValues(tenant, dataType, filter.asFilters(), size)
+    }
+
 }

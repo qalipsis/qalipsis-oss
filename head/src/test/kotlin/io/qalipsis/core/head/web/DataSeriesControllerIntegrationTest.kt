@@ -7,6 +7,7 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
+import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
@@ -20,17 +21,18 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.excludeRecords
 import io.mockk.impl.annotations.MockK
+import io.qalipsis.api.report.DataField
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
-import io.qalipsis.core.head.jdbc.entity.DataType
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.jdbc.entity.Operator
-import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.ColorDataSeriesPatch
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
+import io.qalipsis.core.head.report.DataType
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
@@ -51,12 +53,19 @@ internal class DataSeriesControllerIntegrationTest {
     @MockK
     private lateinit var dataSeriesService: DataSeriesService
 
+    @MockK
+    private lateinit var dataProvider: DataProvider
+
     @MockBean(DataSeriesService::class)
     fun dataSeriesService() = dataSeriesService
+
+    @MockBean(DataProvider::class)
+    fun dataProvider() = dataProvider
 
     @BeforeEach
     internal fun setUp() {
         excludeRecords { dataSeriesService.hashCode() }
+        excludeRecords { dataProvider.hashCode() }
     }
 
     @Test
@@ -66,9 +75,9 @@ internal class DataSeriesControllerIntegrationTest {
             displayName = "Time to response for complex query",
             dataType = DataType.EVENTS,
             color = "#ff761c",
-            filters = setOf(DataSeriesFilter("step", Operator.IS, "http-post-complex-query")),
+            filters = setOf(DataSeriesFilter("step", QueryClauseOperator.IS, "http-post-complex-query")),
             fieldName = "duration",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnit = Duration.ofSeconds(1),
             displayFormat = "#0.000"
         )
@@ -121,7 +130,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataType = DataType.EVENTS,
             color = "the-color",
             filters = setOf(
-                DataSeriesFilter("name", Operator.IS, "value")
+                DataSeriesFilter("name", QueryClauseOperator.IS, "value")
             )
         )
         val dataSeriesPatch = ColorDataSeriesPatch("the-color")
@@ -181,10 +190,10 @@ internal class DataSeriesControllerIntegrationTest {
             displayName = "the-name",
             dataType = DataType.EVENTS,
             filters = setOf(
-                DataSeriesFilter("name", Operator.IS, "value")
+                DataSeriesFilter("name", QueryClauseOperator.IS, "value")
             )
         )
-        val getDataSeriesRequest = HttpRequest.GET<CampaignReport>("/q7232x")
+        val getDataSeriesRequest = HttpRequest.GET<DataSeries>("/q7232x")
         coEvery {
             dataSeriesService.get(
                 username = Defaults.USER,
@@ -207,5 +216,219 @@ internal class DataSeriesControllerIntegrationTest {
 
         }
         confirmVerified(dataSeriesService)
+    }
+
+    @Test
+    internal fun `should search names for the events without filter`() {
+        // given
+        val names = listOf("event-1", "event-2")
+        val request = HttpRequest.GET<List<String>>("/events/names")
+        coEvery { dataProvider.searchNames(any(), any(), any(), any()) } returns names
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.listOf(String::class.java))
+
+        // then
+        coVerifyOnce {
+            dataProvider.searchNames(
+                tenant = Defaults.TENANT,
+                dataType = DataType.EVENTS,
+                filters = emptyList(),
+                size = 20
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(names)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should search names for the meters with filter and page size`() {
+        // given
+        val names = listOf("event-1", "event-2")
+        val request = HttpRequest.GET<List<String>>("/meters/names?filter=filter-1%2Cfilter-2&size=12")
+        coEvery { dataProvider.searchNames(any(), any(), any(), any()) } returns names
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.listOf(String::class.java))
+
+        // then
+        coVerifyOnce {
+            dataProvider.searchNames(
+                tenant = Defaults.TENANT,
+                dataType = DataType.METERS,
+                filters = listOf("filter-1", "filter-2"),
+                size = 12
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(names)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should fail searching names for the meters when the page size is negative`() {
+        // given
+        val request = HttpRequest.GET<List<String>>("/meters/names?size=-12")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, Argument.listOf(String::class.java))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should fail searching names for the meters when the page size is too high`() {
+        // given
+        val request = HttpRequest.GET<List<String>>("/meters/names?size=101")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, Argument.listOf(String::class.java))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should search field names for the events`() {
+        // given
+        val fields = listOf(DataField("1", true), DataField("2", true, "SECONDS"))
+        val request = HttpRequest.GET<List<String>>("/events/fields")
+        coEvery { dataProvider.listFields(any(), any()) } returns fields
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.listOf(DataField::class.java))
+
+        // then
+        coVerifyOnce {
+            dataProvider.listFields(
+                tenant = Defaults.TENANT,
+                dataType = DataType.EVENTS
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(fields)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should search tags for the events without filter`() {
+        // given
+        val tags = mapOf("tag-1" to listOf("value-1", "value-2"), "tag-2" to listOf("value-3", "value-4"))
+        val request = HttpRequest.GET<List<String>>("/events/tags")
+        coEvery { dataProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tags
+
+        // when
+        val response = httpClient.toBlocking()
+            .exchange(request, Argument.mapOf(Argument.of(String::class.java), Argument.listOf(String::class.java)))
+
+        // then
+        coVerifyOnce {
+            dataProvider.searchTagsAndValues(
+                tenant = Defaults.TENANT,
+                dataType = DataType.EVENTS,
+                filters = emptyList(),
+                size = 20
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(tags)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should search tags for the meters with filter and page size`() {
+        // given
+        val tags = mapOf("tag-1" to listOf("value-1", "value-2"), "tag-2" to listOf("value-3", "value-4"))
+        val request = HttpRequest.GET<List<String>>("/meters/tags?filter=filter-1%2Cfilter-2&size=12")
+        coEvery { dataProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tags
+
+        // when
+        val response = httpClient.toBlocking()
+            .exchange(request, Argument.mapOf(Argument.of(String::class.java), Argument.listOf(String::class.java)))
+
+        // then
+        coVerifyOnce {
+            dataProvider.searchTagsAndValues(
+                tenant = Defaults.TENANT,
+                dataType = DataType.METERS,
+                filters = listOf("filter-1", "filter-2"),
+                size = 12
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(tags)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should fail searching tags for the meters when page size is negative`() {
+        // given
+        val request = HttpRequest.GET<List<String>>("/meters/tags?size=-12")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking()
+                .exchange(request, Argument.mapOf(Argument.of(String::class.java), Argument.listOf(String::class.java)))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should fail searching tags for the meters when page size is too high`() {
+        // given
+        val request = HttpRequest.GET<List<String>>("/meters/tags?size=101")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking()
+                .exchange(request, Argument.mapOf(Argument.of(String::class.java), Argument.listOf(String::class.java)))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+
+        }
+        confirmVerified(dataProvider)
     }
 }

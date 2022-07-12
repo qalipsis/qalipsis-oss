@@ -528,7 +528,7 @@ internal class RedisCampaignManagerTest {
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
             operations.getState("my-tenant", "first_campaign")
-            campaignService.saveAborter("my-tenant", "qalipsis-user", "first_campaign")
+            campaignService.setAborter("my-tenant", "qalipsis-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
@@ -582,7 +582,7 @@ internal class RedisCampaignManagerTest {
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
             operations.getState("my-tenant", "first_campaign")
-            campaignService.saveAborter("my-tenant", "qalipsis-user", "first_campaign")
+            campaignService.setAborter("my-tenant", "qalipsis-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }

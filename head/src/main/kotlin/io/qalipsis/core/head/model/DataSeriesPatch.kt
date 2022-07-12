@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.constraints.PositiveDuration
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
+import io.qalipsis.api.report.query.QueryAggregationOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
-import io.qalipsis.core.head.jdbc.entity.SharingMode
+import io.qalipsis.core.head.report.SharingMode
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import javax.validation.Valid
@@ -193,7 +193,7 @@ internal class FieldNameDataSeriesPatch(
 @Introspected
 @Schema(title = "Patch to update the aggregation operation of a data series")
 internal class AggregationOperationDataSeriesPatch(
-    private val aggregationOperation: AggregationOperation
+    private val aggregationOperation: QueryAggregationOperator
 ) : DataSeriesPatch {
 
     override val type: String = TYPE

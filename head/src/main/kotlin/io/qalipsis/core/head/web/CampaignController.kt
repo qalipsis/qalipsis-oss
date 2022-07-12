@@ -24,6 +24,7 @@ import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.security.Permissions
+import io.qalipsis.core.head.web.ControllerUtils.asFilters
 import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -33,6 +34,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import javax.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
+import javax.validation.constraints.Positive
+import javax.validation.constraints.PositiveOrZero
 
 
 /**
@@ -152,7 +155,7 @@ internal class CampaignController(
             description = "Comma-separated list of values to apply as wildcard filters on the campaign, user and scenarios names",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue filter: String,
+        ) @Nullable @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
             description = "Field of the campaign to use in order to sort the results",
             required = false,
@@ -162,14 +165,14 @@ internal class CampaignController(
             description = "0-based number of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = 0.toString()) page: String,
+        ) @Nullable @QueryValue(defaultValue = "0") @PositiveOrZero page: String,
         @Parameter(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "20") size: String
+        ) @Nullable @QueryValue(defaultValue = "20") @Positive size: String
     ): HttpResponse<Page<Campaign>> {
-        return HttpResponse.ok(campaignService.search(tenant, filter, sort, page.toInt(), size.toInt()))
+        return HttpResponse.ok(campaignService.search(tenant, filter.asFilters(), sort, page.toInt(), size.toInt()))
     }
 
     /**
@@ -239,4 +242,5 @@ internal class CampaignController(
     ): HttpResponse<CampaignReport> {
         return HttpResponse.ok(campaignConverter.convertReport(campaignReportStateKeeper.report(campaignKey)))
     }
+
 }

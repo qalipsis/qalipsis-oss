@@ -165,7 +165,7 @@ internal class PersistentCampaignServiceTest {
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", null, null, 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), null, 0, 20)
 
             // then
             assertThat(result).all {
@@ -200,7 +200,7 @@ internal class PersistentCampaignServiceTest {
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", null, "name:asc", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "name:asc", 0, 20)
 
             // then
             assertThat(result).all {
@@ -235,7 +235,7 @@ internal class PersistentCampaignServiceTest {
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", null, "name:desc", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "name:desc", 0, 20)
 
             // then
             assertThat(result).all {
@@ -270,7 +270,7 @@ internal class PersistentCampaignServiceTest {
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", null, "name", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "name", 0, 20)
 
             // then
             assertThat(result).all {
@@ -307,7 +307,7 @@ internal class PersistentCampaignServiceTest {
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", "test, he*lo", "name", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", listOf("test", "he*lo"), "name", 0, 20)
 
             // then
             assertThat(result).all {
@@ -341,7 +341,7 @@ internal class PersistentCampaignServiceTest {
         coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
 
         // when
-        persistentCampaignService.saveAborter("my-tenant", "my-aborter", "my-campaign")
+        persistentCampaignService.setAborter("my-tenant", "my-aborter", "my-campaign")
 
         // then
         val capturedEntity = mutableListOf<CampaignEntity>()

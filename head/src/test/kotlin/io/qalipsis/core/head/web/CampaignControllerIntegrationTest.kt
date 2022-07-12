@@ -230,7 +230,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignService.search(
                 Defaults.TENANT,
-                null,
+                emptyList(),
                 null,
                 0,
                 20
@@ -271,7 +271,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignService.search(
                 Defaults.TENANT,
-                "an*,other",
+                listOf("an*", "other"),
                 null,
                 0,
                 20
@@ -314,7 +314,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignService.search(
                 Defaults.TENANT,
-                "campaign",
+                listOf("campaign"),
                 "name",
                 0,
                 20

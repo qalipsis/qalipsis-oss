@@ -133,7 +133,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 log.trace { "Campaign state $campaignState" }
                 campaignState.inject(campaignExecutionContext)
                 val directives = campaignState.init()
-                campaignService.saveAborter(tenant, aborter, campaignKey)
+                campaignService.setAborter(tenant, aborter, campaignKey)
                 set(campaignState)
                 directives.forEach {
                     headChannel.publishDirective(it)

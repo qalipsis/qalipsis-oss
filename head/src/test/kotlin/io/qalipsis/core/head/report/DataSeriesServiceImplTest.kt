@@ -3,6 +3,7 @@ package io.qalipsis.core.head.report
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.prop
@@ -11,17 +12,18 @@ import io.micronaut.http.exceptions.HttpStatusException
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.qalipsis.api.lang.IdGenerator
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClause
+import io.qalipsis.api.report.query.QueryClauseOperator
+import io.qalipsis.api.report.query.QueryDescription
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
-import io.qalipsis.core.head.jdbc.entity.DataType
-import io.qalipsis.core.head.jdbc.entity.Operator
-import io.qalipsis.core.head.jdbc.entity.SharingMode
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
@@ -31,6 +33,7 @@ import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -55,6 +58,9 @@ internal class DataSeriesServiceImplTest {
     @MockK
     private lateinit var idGenerator: IdGenerator
 
+    @MockK
+    private lateinit var dataProvider: DataProvider
+
     @InjectMockKs
     private lateinit var service: DataSeriesServiceImpl
 
@@ -66,11 +72,13 @@ internal class DataSeriesServiceImplTest {
             coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
+            coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-query"
+
             val dataSeries = DataSeries(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
                 color = "#ff761c",
-                filters = setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = null,
                 aggregationOperation = null,
                 timeframeUnit = Duration.ofSeconds(2),
@@ -88,13 +96,31 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
                 prop(DataSeries::color).isEqualTo("#FF761C")
-                prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+                prop(DataSeries::filters).isEqualTo(
+                    setOf(
+                        DataSeriesFilter(
+                            "field-1",
+                            QueryClauseOperator.IS_IN,
+                            "A,B"
+                        )
+                    )
+                )
                 prop(DataSeries::fieldName).isNull()
-                prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.COUNT)
+                prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
             coVerify {
+                dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
+                    assertThat(it).isDataClassEqualTo(
+                        QueryDescription(
+                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            fieldName = null,
+                            aggregationOperation = QueryAggregationOperator.COUNT,
+                            timeframeUnit = Duration.ofSeconds(2)
+                        )
+                    )
+                })
                 dataSeriesRepository.save(withArg {
                     assertThat(it).all {
                         prop(DataSeriesEntity::id).isEqualTo(-1)
@@ -108,15 +134,15 @@ internal class DataSeriesServiceImplTest {
                         prop(DataSeriesEntity::filters).containsOnly(
                             DataSeriesFilterEntity(
                                 "field-1",
-                                Operator.IS_IN,
+                                QueryClauseOperator.IS_IN,
                                 "A,B"
                             )
                         )
                         prop(DataSeriesEntity::fieldName).isNull()
-                        prop(DataSeriesEntity::aggregationOperation).isEqualTo(AggregationOperation.COUNT)
+                        prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
                         prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(2_000L)
                         prop(DataSeriesEntity::displayFormat).isEqualTo("#0.000")
-                        prop(DataSeriesEntity::query).isNull()
+                        prop(DataSeriesEntity::query).isEqualTo("the-query")
                     }
                 })
             }
@@ -130,13 +156,14 @@ internal class DataSeriesServiceImplTest {
             coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
+            coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-query"
             val dataSeries = DataSeries(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
                 color = "#ff761c",
-                filters = setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = "the field",
-                aggregationOperation = AggregationOperation.AVERAGE,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
                 timeframeUnit = Duration.ofSeconds(2),
                 displayFormat = "#0.000"
             )
@@ -152,13 +179,31 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
                 prop(DataSeries::color).isEqualTo("#FF761C")
-                prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+                prop(DataSeries::filters).isEqualTo(
+                    setOf(
+                        DataSeriesFilter(
+                            "field-1",
+                            QueryClauseOperator.IS_IN,
+                            "A,B"
+                        )
+                    )
+                )
                 prop(DataSeries::fieldName).isEqualTo("the field")
-                prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+                prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
             coVerify {
+                dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
+                    assertThat(it).isDataClassEqualTo(
+                        QueryDescription(
+                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            fieldName = "the field",
+                            aggregationOperation = QueryAggregationOperator.AVERAGE,
+                            timeframeUnit = Duration.ofSeconds(2)
+                        )
+                    )
+                })
                 dataSeriesRepository.save(withArg {
                     assertThat(it).all {
                         prop(DataSeriesEntity::id).isEqualTo(-1)
@@ -172,15 +217,15 @@ internal class DataSeriesServiceImplTest {
                         prop(DataSeriesEntity::filters).containsOnly(
                             DataSeriesFilterEntity(
                                 "field-1",
-                                Operator.IS_IN,
+                                QueryClauseOperator.IS_IN,
                                 "A,B"
                             )
                         )
                         prop(DataSeriesEntity::fieldName).isEqualTo("the field")
-                        prop(DataSeriesEntity::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+                        prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                         prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(2_000L)
                         prop(DataSeriesEntity::displayFormat).isEqualTo("#0.000")
-                        prop(DataSeriesEntity::query).isNull()
+                        prop(DataSeriesEntity::query).isEqualTo("the-query")
                     }
                 })
             }
@@ -198,9 +243,9 @@ internal class DataSeriesServiceImplTest {
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
                 color = "#ff761c",
-                filters = setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = null,
-                aggregationOperation = AggregationOperation.AVERAGE,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
                 timeframeUnit = Duration.ofSeconds(2),
                 displayFormat = "#0.000"
             )
@@ -228,9 +273,9 @@ internal class DataSeriesServiceImplTest {
                 dataType = DataType.EVENTS,
                 sharingMode = SharingMode.READONLY,
                 color = "#FF761C",
-                filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = "the field",
-                aggregationOperation = AggregationOperation.AVERAGE,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
                 timeframeUnitMs = 2_000,
                 displayFormat = "#0.000",
                 query = "the query"
@@ -248,9 +293,17 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
                 prop(DataSeries::color).isEqualTo("#FF761C")
-                prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+                prop(DataSeries::filters).isEqualTo(
+                    setOf(
+                        DataSeriesFilter(
+                            "field-1",
+                            QueryClauseOperator.IS_IN,
+                            "A,B"
+                        )
+                    )
+                )
                 prop(DataSeries::fieldName).isEqualTo("the field")
-                prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+                prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
@@ -272,9 +325,9 @@ internal class DataSeriesServiceImplTest {
             dataType = DataType.EVENTS,
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnitMs = 2_000,
             displayFormat = "#0.000",
             query = "the query"
@@ -292,9 +345,9 @@ internal class DataSeriesServiceImplTest {
             prop(DataSeries::sharingMode).isEqualTo(SharingMode.NONE)
             prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
             prop(DataSeries::color).isEqualTo("#FF761C")
-            prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+            prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")))
             prop(DataSeries::fieldName).isEqualTo("the field")
-            prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+            prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
             prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
             prop(DataSeries::displayFormat).isEqualTo("#0.000")
         }
@@ -316,9 +369,9 @@ internal class DataSeriesServiceImplTest {
             dataType = DataType.EVENTS,
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnitMs = 2_000,
             displayFormat = "#0.000",
             query = "the query"
@@ -338,6 +391,7 @@ internal class DataSeriesServiceImplTest {
     internal fun `should update the data series when shared in write and save if there are changes`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the new query"
             coEvery { dataSeriesRepository.update(any()) } returnsArgument 0
             val entity = DataSeriesEntity(
                 reference = "my-data-series",
@@ -347,9 +401,9 @@ internal class DataSeriesServiceImplTest {
                 dataType = DataType.EVENTS,
                 sharingMode = SharingMode.WRITE,
                 color = "#FF761C",
-                filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = "the field",
-                aggregationOperation = AggregationOperation.AVERAGE,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
                 timeframeUnitMs = 2_000,
                 displayFormat = "#0.000",
                 query = "the query"
@@ -373,6 +427,19 @@ internal class DataSeriesServiceImplTest {
             )
 
             // then
+            coVerifyOnce {
+                dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
+                    assertThat(it).isDataClassEqualTo(
+                        QueryDescription(
+                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            fieldName = "the field",
+                            aggregationOperation = QueryAggregationOperator.AVERAGE,
+                            timeframeUnit = Duration.ofSeconds(2)
+                        )
+                    )
+                })
+            }
+
             assertThat(result).all {
                 prop(DataSeries::reference).isEqualTo("my-data-series")
                 prop(DataSeries::creator).isEqualTo("the-creator")
@@ -380,12 +447,15 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.WRITE)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
                 prop(DataSeries::color).isEqualTo("#FF761C")
-                prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+                prop(DataSeries::filters).isEqualTo(
+                    setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B"))
+                )
                 prop(DataSeries::fieldName).isEqualTo("the field")
-                prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+                prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
+            assertThat(entity.query).isEqualTo("the new query")
             coVerifyOrder {
                 dataSeriesRepository.findByReferenceAndTenant(reference = "my-data-series", tenant = "my-tenant")
                 userRepository.findUsernameById(3912L)
@@ -407,9 +477,9 @@ internal class DataSeriesServiceImplTest {
                 dataType = DataType.EVENTS,
                 sharingMode = SharingMode.WRITE,
                 color = "#FF761C",
-                filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = "the field",
-                aggregationOperation = AggregationOperation.AVERAGE,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
                 timeframeUnitMs = 2_000,
                 displayFormat = "#0.000",
                 query = "the query"
@@ -440,9 +510,11 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.WRITE)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
                 prop(DataSeries::color).isEqualTo("#FF761C")
-                prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+                prop(DataSeries::filters).isEqualTo(
+                    setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B"))
+                )
                 prop(DataSeries::fieldName).isEqualTo("the field")
-                prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+                prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
@@ -453,6 +525,7 @@ internal class DataSeriesServiceImplTest {
                 patch2.apply(refEq(entity))
             }
             coVerifyNever { dataSeriesRepository.update(any()) }
+            confirmVerified(dataProvider)
         }
 
     @Test
@@ -460,6 +533,7 @@ internal class DataSeriesServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             coEvery { dataSeriesRepository.update(any()) } returnsArgument 0
+            coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the new query"
             val entity = DataSeriesEntity(
                 reference = "my-data-series",
                 tenantId = -1,
@@ -468,9 +542,9 @@ internal class DataSeriesServiceImplTest {
                 dataType = DataType.EVENTS,
                 sharingMode = SharingMode.NONE,
                 color = "#FF761C",
-                filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = "the field",
-                aggregationOperation = AggregationOperation.AVERAGE,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
                 timeframeUnitMs = 2_000,
                 displayFormat = "#0.000",
                 query = "the query"
@@ -501,9 +575,17 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.NONE)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
                 prop(DataSeries::color).isEqualTo("#FF761C")
-                prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")))
+                prop(DataSeries::filters).isEqualTo(
+                    setOf(
+                        DataSeriesFilter(
+                            "field-1",
+                            QueryClauseOperator.IS_IN,
+                            "A,B"
+                        )
+                    )
+                )
                 prop(DataSeries::fieldName).isEqualTo("the field")
-                prop(DataSeries::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+                prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
@@ -532,9 +614,9 @@ internal class DataSeriesServiceImplTest {
             dataType = DataType.EVENTS,
             sharingMode = SharingMode.READONLY,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnitMs = 2_000,
             displayFormat = "#0.000",
             query = "the query"
@@ -566,9 +648,9 @@ internal class DataSeriesServiceImplTest {
             dataType = DataType.EVENTS,
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnitMs = 2_000,
             displayFormat = "#0.000",
             query = "the query"
@@ -652,9 +734,9 @@ internal class DataSeriesServiceImplTest {
             dataType = DataType.EVENTS,
             sharingMode = SharingMode.READONLY,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnitMs = 2_000,
             displayFormat = "#0.000",
             query = "the query"
@@ -686,9 +768,9 @@ internal class DataSeriesServiceImplTest {
             dataType = DataType.EVENTS,
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnitMs = 2_000,
             displayFormat = "#0.000",
             query = "the query"

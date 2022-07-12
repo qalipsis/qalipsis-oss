@@ -2,12 +2,12 @@ package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.constraints.PositiveDuration
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
-import io.qalipsis.core.head.jdbc.entity.DataType
-import io.qalipsis.core.head.jdbc.entity.Operator
-import io.qalipsis.core.head.jdbc.entity.SharingMode
+import io.qalipsis.core.head.report.DataType
+import io.qalipsis.core.head.report.SharingMode
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import java.time.Instant
@@ -71,7 +71,7 @@ internal data class DataSeries(
         description = "Aggregation operation to perform on the values pointed out by the field name,\n" +
                 " * in order to scale the values with the time, defaults to count", required = false
     )
-    val aggregationOperation: AggregationOperation?,
+    val aggregationOperation: QueryAggregationOperator?,
 
     @field:PositiveDuration
     @field:Schema(
@@ -95,7 +95,7 @@ internal data class DataSeries(
         color: String? = null,
         filters: Set<DataSeriesFilter> = emptySet(),
         fieldName: String? = null,
-        aggregationOperation: AggregationOperation? = null,
+        aggregationOperation: QueryAggregationOperator? = null,
         timeframeUnit: Duration? = null,
         displayFormat: String? = null
     ) : this(
@@ -146,7 +146,7 @@ internal data class DataSeriesFilter(
     val name: String,
 
     @field:Schema(description = "Operator to perform on the values to filter records", required = true)
-    val operator: Operator,
+    val operator: QueryClauseOperator,
 
     @field:Schema(description = "Can contain wildcards signs * if the operator supports it", required = true)
     @field:NotBlank
