@@ -9,10 +9,10 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
-import io.qalipsis.core.head.jdbc.entity.DataType
-import io.qalipsis.core.head.jdbc.entity.Operator
+import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesFilter
 import jakarta.inject.Inject
@@ -35,9 +35,9 @@ internal class DataSeriesValidationIntegrationTest {
             displayName = "the-name",
             dataType = DataType.EVENTS,
             color = "#FF761C",
-            filters = setOf(DataSeriesFilter("field-1", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the-field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnit = Duration.ofSeconds(2),
             displayFormat = "#0.000"
         )
@@ -246,7 +246,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
-            filters = setOf(DataSeriesFilter("", Operator.IS_IN, "A,B")),
+            filters = setOf(DataSeriesFilter("", QueryClauseOperator.IS_IN, "A,B")),
         )
 
         // when
@@ -268,7 +268,7 @@ internal class DataSeriesValidationIntegrationTest {
         @Test
         internal fun `should deny a filter with blank name`() {
             // given
-            val filter = DataSeriesFilter("   ", Operator.IS_IN, "A,B")
+            val filter = DataSeriesFilter("   ", QueryClauseOperator.IS_IN, "A,B")
 
             // when
             val violations = validator.validate(filter)
@@ -286,7 +286,7 @@ internal class DataSeriesValidationIntegrationTest {
         @Test
         internal fun `should deny a filter with long name`() {
             // given
-            val filter = DataSeriesFilter("A".repeat(61), Operator.IS_IN, "A,B")
+            val filter = DataSeriesFilter("A".repeat(61), QueryClauseOperator.IS_IN, "A,B")
 
             // when
             val violations = validator.validate(filter)
@@ -304,7 +304,7 @@ internal class DataSeriesValidationIntegrationTest {
         @Test
         internal fun `should deny a filter with blank value`() {
             // given
-            val filter = DataSeriesFilter("the-name", Operator.IS_IN, "   ")
+            val filter = DataSeriesFilter("the-name", QueryClauseOperator.IS_IN, "   ")
 
             // when
             val violations = validator.validate(filter)
@@ -322,7 +322,7 @@ internal class DataSeriesValidationIntegrationTest {
         @Test
         internal fun `should deny a filter with long value`() {
             // given
-            val filter = DataSeriesFilter("the-name", Operator.IS_IN, "A".repeat(201))
+            val filter = DataSeriesFilter("the-name", QueryClauseOperator.IS_IN, "A".repeat(201))
 
             // when
             val violations = validator.validate(filter)

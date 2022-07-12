@@ -54,13 +54,13 @@ internal class InMemoryCampaignService : CampaignService {
     }
 
     override suspend fun search(
-        tenant: String, filter: String?, sort: String?, page: Int, size: Int
+        tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
     ): Page<Campaign> {
         // Nothing to do.
         return Page(0, 0, 0, emptyList())
     }
 
-    override suspend fun saveAborter(tenant: String, aborter: String, campaignKey: String) {
+    override suspend fun setAborter(tenant: String, aborter: String, campaignKey: String) {
         // Nothing to do.
     }
 }

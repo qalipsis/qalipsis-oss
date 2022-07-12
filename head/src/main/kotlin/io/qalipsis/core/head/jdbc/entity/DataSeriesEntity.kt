@@ -8,7 +8,11 @@ import io.micronaut.data.annotation.Transient
 import io.micronaut.data.annotation.TypeDef
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.head.model.DataSeriesFilter
+import io.qalipsis.core.head.report.DataType
+import io.qalipsis.core.head.report.SharingMode
 import java.time.Duration
 import java.time.Instant
 import javax.validation.Valid
@@ -78,7 +82,7 @@ internal data class DataSeriesEntity(
     @field:Size(max = 60)
     var fieldName: String?,
 
-    var aggregationOperation: AggregationOperation,
+    var aggregationOperation: QueryAggregationOperator,
 
     @field:Positive
     var timeframeUnitMs: Long?,
@@ -104,7 +108,7 @@ internal data class DataSeriesEntity(
         color: String? = null,
         filters: Collection<DataSeriesFilterEntity> = emptySet(),
         fieldName: String? = null,
-        aggregationOperation: AggregationOperation = AggregationOperation.COUNT,
+        aggregationOperation: QueryAggregationOperator = QueryAggregationOperator.COUNT,
         timeframeUnitMs: Long? = null,
         displayFormat: String? = null,
         query: String? = null
@@ -128,47 +132,6 @@ internal data class DataSeriesEntity(
 }
 
 /**
- * The sharing mode with the other members of the tenant.
- *
- * @author Palina Bril
- */
-@Introspected
-internal enum class SharingMode {
-    READONLY, WRITE, NONE
-}
-
-/**
- * Type of data to fetch
- *
- * @author Palina Bril
- */
-@Introspected
-internal enum class DataType {
-    METERS, EVENTS
-}
-
-/**
- * The operator for filter used to fetch data
- *
- * @author Palina Bril
- */
-@Introspected
-internal enum class Operator {
-    IS, IS_NOT, IS_IN, IS_NOT_IN, LIKE, IS_NOT_LIKE
-}
-
-/**
- * Aggregation operation to perform on the values pointed out by the field name,
- * in order to scale the values with the time.
- *
- * @author Palina Bril
- */
-@Introspected
-internal enum class AggregationOperation {
-    AVERAGE, MAX, MIN, SUM, STANDARD_DEVIATION, COUNT, PERCENTILE_99_9, PERCENTILE_99, PERCENTILE_75
-}
-
-/**
  * Filter to implement for fetching time-series
  * @property name of the field to apply the filter
  * @property operator one of: is, is not , is in, is not in
@@ -182,7 +145,7 @@ internal data class DataSeriesFilterEntity(
     @field:Size(min = 1, max = 60)
     val name: String,
 
-    val operator: Operator,
+    val operator: QueryClauseOperator,
 
     @field:NotBlank
     @field:Size(min = 1, max = 200)

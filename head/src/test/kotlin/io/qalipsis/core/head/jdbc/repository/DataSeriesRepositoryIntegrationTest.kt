@@ -10,11 +10,11 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
-import io.qalipsis.core.head.jdbc.entity.DataType
-import io.qalipsis.core.head.jdbc.entity.Operator
+import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import jakarta.inject.Inject
@@ -52,10 +52,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             displayName = "my-name",
             dataType = DataType.METERS,
             color = "#FFFFFF",
-            filters = setOf(DataSeriesFilterEntity("minionsCount", Operator.IS, "1000")),
+            filters = setOf(DataSeriesFilterEntity("minionsCount", QueryClauseOperator.IS, "1000")),
             timeframeUnitMs = 10_000L,
             fieldName = "my-field",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             displayFormat = "#000.000",
             query = "This is the query"
         )
@@ -96,7 +96,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::filters).isEmpty()
             prop(DataSeriesEntity::color).isNull()
             prop(DataSeriesEntity::fieldName).isNull()
-            prop(DataSeriesEntity::aggregationOperation).isEqualTo(AggregationOperation.COUNT)
+            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
             prop(DataSeriesEntity::timeframeUnitMs).isNull()
             prop(DataSeriesEntity::displayFormat).isNull()
             prop(DataSeriesEntity::query).isNull()
@@ -218,10 +218,16 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
             prop(DataSeriesEntity::displayName).isEqualTo("my-name")
             prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
-            prop(DataSeriesEntity::filters).containsOnly(DataSeriesFilterEntity("minionsCount", Operator.IS, "1000"))
+            prop(DataSeriesEntity::filters).containsOnly(
+                DataSeriesFilterEntity(
+                    "minionsCount",
+                    QueryClauseOperator.IS,
+                    "1000"
+                )
+            )
             prop(DataSeriesEntity::color).isEqualTo("#FFFFFF")
             prop(DataSeriesEntity::fieldName).isEqualTo("my-field")
-            prop(DataSeriesEntity::aggregationOperation).isEqualTo(AggregationOperation.AVERAGE)
+            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
             prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(10_000L)
             prop(DataSeriesEntity::displayFormat).isEqualTo("#000.000")
             prop(DataSeriesEntity::query).isEqualTo("This is the query")
@@ -231,10 +237,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val updated = fetched!!.copy(
             displayName = "my other name",
             color = "#000000",
-            filters = setOf(DataSeriesFilterEntity("campaign", Operator.IS_NOT, "AAA")),
+            filters = setOf(DataSeriesFilterEntity("campaign", QueryClauseOperator.IS_NOT, "AAA")),
             timeframeUnitMs = Duration.ofMinutes(4).toMillis(),
             fieldName = "my-other-field",
-            aggregationOperation = AggregationOperation.MAX,
+            aggregationOperation = QueryAggregationOperator.MAX,
             displayFormat = "##0.0",
             query = "This is the other query"
         )
@@ -250,10 +256,16 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
             prop(DataSeriesEntity::displayName).isEqualTo("my other name")
             prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
-            prop(DataSeriesEntity::filters).containsOnly(DataSeriesFilterEntity("campaign", Operator.IS_NOT, "AAA"))
+            prop(DataSeriesEntity::filters).containsOnly(
+                DataSeriesFilterEntity(
+                    "campaign",
+                    QueryClauseOperator.IS_NOT,
+                    "AAA"
+                )
+            )
             prop(DataSeriesEntity::color).isEqualTo("#000000")
             prop(DataSeriesEntity::fieldName).isEqualTo("my-other-field")
-            prop(DataSeriesEntity::aggregationOperation).isEqualTo(AggregationOperation.MAX)
+            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.MAX)
             prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(240_000L)
             prop(DataSeriesEntity::displayFormat).isEqualTo("##0.0")
             prop(DataSeriesEntity::query).isEqualTo("This is the other query")

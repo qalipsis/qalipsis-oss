@@ -4,10 +4,11 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.exceptions.HttpStatusException
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClause
+import io.qalipsis.api.report.query.QueryDescription
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
-import io.qalipsis.core.head.jdbc.entity.SharingMode
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
@@ -26,7 +27,8 @@ internal class DataSeriesServiceImpl(
     private val dataSeriesRepository: DataSeriesRepository,
     private val tenantRepository: TenantRepository,
     private val userRepository: UserRepository,
-    private val idGenerator: IdGenerator
+    private val idGenerator: IdGenerator,
+    private val dataProvider: DataProvider
 ) : DataSeriesService {
 
     override suspend fun get(username: String, tenant: String, reference: String): DataSeries {
@@ -35,13 +37,12 @@ internal class DataSeriesServiceImpl(
         if (username != creatorName && dataSeriesEntity.sharingMode == SharingMode.NONE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to use this data series")
         }
-        require(username == creatorName || dataSeriesEntity.sharingMode != SharingMode.NONE) { "You do not have the permission to use this data series" }
         return DataSeries(dataSeriesEntity, creatorName)
     }
 
     override suspend fun create(creator: String, tenant: String, dataSeries: DataSeries): DataSeries {
-        val aggregationOperation = dataSeries.aggregationOperation ?: AggregationOperation.COUNT
-        require(aggregationOperation == AggregationOperation.COUNT || !dataSeries.fieldName.isNullOrBlank()) {
+        val aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT
+        require(aggregationOperation == QueryAggregationOperator.COUNT || !dataSeries.fieldName.isNullOrBlank()) {
             "The field name should be set when the aggregation is not count"
         }
         val createdDataSeries = dataSeriesRepository.save(
@@ -55,10 +56,17 @@ internal class DataSeriesServiceImpl(
                 color = dataSeries.color?.uppercase(),
                 filters = dataSeries.filters.map { it.toEntity() },
                 fieldName = dataSeries.fieldName,
-                aggregationOperation = dataSeries.aggregationOperation ?: AggregationOperation.COUNT,
+                aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT,
                 timeframeUnitMs = dataSeries.timeframeUnit?.toMillis(),
                 displayFormat = dataSeries.displayFormat,
-                // TODO Add the generation of the query.
+                query = dataProvider.createQuery(
+                    tenant, dataSeries.dataType, QueryDescription(
+                        filters = dataSeries.filters.map { QueryClause(it.name, it.operator, it.value) },
+                        fieldName = dataSeries.fieldName,
+                        aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT,
+                        timeframeUnit = dataSeries.timeframeUnit
+                    )
+                ).takeUnless(String::isNullOrBlank)
             )
         )
         return DataSeries(createdDataSeries, creator)
@@ -77,11 +85,18 @@ internal class DataSeriesServiceImpl(
         }
         val dataSeriesWasUpdated = patches.map { it.apply(dataSeriesEntity) }.any { it }
         val updatedDataSeries = if (dataSeriesWasUpdated) {
+            dataSeriesEntity.query = dataProvider.createQuery(
+                tenant, dataSeriesEntity.dataType, QueryDescription(
+                    filters = dataSeriesEntity.filters.map { QueryClause(it.name, it.operator, it.value) },
+                    fieldName = dataSeriesEntity.fieldName,
+                    aggregationOperation = dataSeriesEntity.aggregationOperation,
+                    timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration
+                )
+            ).takeUnless(String::isNullOrBlank)
             dataSeriesRepository.update(dataSeriesEntity)
         } else {
             dataSeriesEntity
         }
-        // TODO Add the generation of the query.
         return DataSeries(updatedDataSeries, creatorName)
     }
 

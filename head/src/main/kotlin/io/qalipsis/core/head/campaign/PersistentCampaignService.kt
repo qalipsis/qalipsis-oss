@@ -63,20 +63,16 @@ internal class PersistentCampaignService(
     }
 
     override suspend fun search(
-        tenant: String, filter: String?, sort: String?, page: Int, size: Int
+        tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
     ): QalipsisPage<Campaign> {
         // Default sorting for the campaign is done with the start time in reverse order, because it is always not null.
         val sorting = sort?.let { SortingUtil.sort(it) } ?: Sort.of(Sort.Order.desc(CampaignEntity::start.name))
 
         val pageable = Pageable.from(page, size, sorting)
-        val filters =
-            filter?.let {
-                filter.split(",")
-                    .asSequence().map { it.replace('*', '%') }.map { "%${it.trim()}%" }
-            }?.toList().orEmpty()
 
         val entitiesPage = if (filters.isNotEmpty()) {
-            campaignRepository.findAll(tenant, filters, pageable)
+            val sanitizedFilters = filters.map { it.replace('*', '%') }.map { "%${it.trim()}%" }
+            campaignRepository.findAll(tenant, sanitizedFilters, pageable)
         } else {
             campaignRepository.findAll(tenant, pageable)
         }
@@ -89,7 +85,7 @@ internal class PersistentCampaignService(
         )
     }
 
-    override suspend fun saveAborter(tenant: String, aborter: String, campaignKey: String) {
+    override suspend fun setAborter(tenant: String, aborter: String, campaignKey: String) {
         val campaign = campaignRepository.findByKey(tenant, campaignKey)
         campaignRepository.update(campaign.copy(aborter = userRepository.findIdByUsername(aborter)))
     }

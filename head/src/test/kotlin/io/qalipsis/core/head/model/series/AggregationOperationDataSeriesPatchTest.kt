@@ -5,11 +5,11 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.prop
-import io.qalipsis.core.head.jdbc.entity.AggregationOperation
+import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
-import io.qalipsis.core.head.jdbc.entity.DataType
-import io.qalipsis.core.head.jdbc.entity.Operator
+import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.model.AggregationOperationDataSeriesPatch
 import org.junit.jupiter.api.Test
 
@@ -23,20 +23,20 @@ internal class AggregationOperationDataSeriesPatchTest {
             tenantId = 123,
             creatorId = 432,
             displayName = "the-name",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             dataType = DataType.EVENTS,
             filters = setOf(
-                DataSeriesFilterEntity("name", Operator.IS, "value")
+                DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
-        val patch = AggregationOperationDataSeriesPatch(AggregationOperation.COUNT)
+        val patch = AggregationOperationDataSeriesPatch(QueryAggregationOperator.COUNT)
 
         // when
         val result = patch.apply(dataSeriesEntity)
 
         // then
         assertThat(result).isTrue()
-        assertThat(dataSeriesEntity).prop(DataSeriesEntity::aggregationOperation).isEqualTo(AggregationOperation.COUNT)
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
     }
 
     @Test
@@ -47,13 +47,13 @@ internal class AggregationOperationDataSeriesPatchTest {
             tenantId = 1431,
             creatorId = 123,
             displayName = "the-name",
-            aggregationOperation = AggregationOperation.AVERAGE,
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
             dataType = DataType.EVENTS,
             filters = setOf(
-                DataSeriesFilterEntity("name", Operator.IS, "value")
+                DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
-        val patch = AggregationOperationDataSeriesPatch(AggregationOperation.AVERAGE)
+        val patch = AggregationOperationDataSeriesPatch(QueryAggregationOperator.AVERAGE)
 
         // when
         val result = patch.apply(dataSeriesEntity)
@@ -61,6 +61,6 @@ internal class AggregationOperationDataSeriesPatchTest {
         // then
         assertThat(result).isFalse()
         assertThat(dataSeriesEntity).prop(DataSeriesEntity::aggregationOperation)
-            .isEqualTo(AggregationOperation.AVERAGE)
+            .isEqualTo(QueryAggregationOperator.AVERAGE)
     }
 }

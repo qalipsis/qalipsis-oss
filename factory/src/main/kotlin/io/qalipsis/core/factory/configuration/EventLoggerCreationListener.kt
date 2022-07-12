@@ -22,8 +22,9 @@ internal class EventLoggerCreationListener(
     BeanDestroyedEventListener<EventsLogger> {
 
     override fun onCreated(event: BeanCreatedEvent<EventsLogger>): EventsLogger {
+        tags["tenant"] = "_qalipsis_ten_"
         if (!zone.isNullOrEmpty()) {
-            tags.put("zone", zone)
+            tags["zone"] = zone
         }
         event.bean.apply {
             configureTags(tags)

@@ -5,10 +5,10 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
-import io.qalipsis.core.head.jdbc.entity.DataType
-import io.qalipsis.core.head.jdbc.entity.Operator
+import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.model.ColorDataSeriesPatch
 import org.junit.jupiter.api.Test
 
@@ -25,7 +25,7 @@ internal class ColorDataSeriesPatchTest {
             color = "color",
             dataType = DataType.EVENTS,
             filters = setOf(
-                DataSeriesFilterEntity("name", Operator.IS, "value")
+                DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
         val patch = ColorDataSeriesPatch("new-color")
@@ -49,7 +49,7 @@ internal class ColorDataSeriesPatchTest {
             color = "THE-COLOR",
             dataType = DataType.EVENTS,
             filters = setOf(
-                DataSeriesFilterEntity("name", Operator.IS, "value")
+                DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
         val patch = ColorDataSeriesPatch("the-color")
