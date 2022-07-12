@@ -1,7 +1,6 @@
 package io.qalipsis.core.factory.init
 
 import io.aerisconsulting.catadioptre.KTestable
-import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.order.Ordered
@@ -14,6 +13,7 @@ import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.processors.ServicesLoader
+import io.qalipsis.api.processors.injector.Injector
 import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
@@ -62,7 +62,7 @@ import javax.validation.Valid
 @Validated
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryInitializerImpl(
-    private val applicationContext: ApplicationContext,
+    private val injector: Injector,
     @Named(Executors.GLOBAL_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
     private val initializationContext: InitializationContext,
     private val scenarioRegistry: ScenarioRegistry,
@@ -121,7 +121,7 @@ internal class FactoryInitializerImpl(
                 scenarioSpecificationsKeeper.clear()
                 log.info { "Refreshing the scenarios specifications" }
                 // Load all the scenarios specifications into memory.
-                ServicesLoader.loadServices<Any>("scenarios", applicationContext)
+                ServicesLoader.loadScenarios<Any>(injector)
 
                 scenarioSpecs = scenarioSpecificationsKeeper.asMap()
 

@@ -11,7 +11,6 @@ import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.aerisconsulting.catadioptre.invokeInvisible
-import io.micronaut.context.ApplicationContext
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -27,6 +26,7 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.processors.ServicesLoader
+import io.qalipsis.api.processors.injector.Injector
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
@@ -82,7 +82,7 @@ internal class FactoryInitializerImplTest {
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var applicationContext: ApplicationContext
+    private lateinit var injector: Injector
 
     private val coroutineDispatcher: CoroutineDispatcher = testDispatcherProvider.default()
 
@@ -132,7 +132,7 @@ internal class FactoryInitializerImplTest {
     private val factoryInitializer: FactoryInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
         spyk(
             FactoryInitializerImpl(
-                applicationContext,
+                injector,
                 testDispatcherProvider.default(),
                 initializationContext,
                 scenarioRegistry,
@@ -543,7 +543,7 @@ internal class FactoryInitializerImplTest {
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
         val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
         mockkObject(ServicesLoader)
-        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
+        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
             "scenario-1" to scenarioSpecification1,
             "scenario-2" to scenarioSpecification2
@@ -570,7 +570,7 @@ internal class FactoryInitializerImplTest {
         // then
         val publishedScenarios: MutableList<Collection<Scenario>> = mutableListOf()
         verify {
-            ServicesLoader.loadServices<Any>("scenarios", refEq(applicationContext))
+            ServicesLoader.loadScenarios<Any>(refEq(injector))
             scenarioSpecificationsKeeper.asMap()
             factoryInitializer["convertScenario"](eq("scenario-2"), refEq(scenarioSpecification2))
             factoryInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
@@ -590,7 +590,7 @@ internal class FactoryInitializerImplTest {
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
         val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
         mockkObject(ServicesLoader)
-        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } answers {
+        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } answers {
             Thread.sleep(1500)
             emptyList()
         }
@@ -618,7 +618,7 @@ internal class FactoryInitializerImplTest {
     internal fun `should throw the conversion exception`() {
         // given
         mockkObject(ServicesLoader)
-        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
+        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf("scenario-1" to relaxedMockk { })
         val exception = relaxedMockk<Exception>()
         every { factoryInitializer.convertScenario(any(), any()) } throws exception
@@ -641,7 +641,7 @@ internal class FactoryInitializerImplTest {
     internal fun `should generate an exit status exception when there is no scenario to convert`() {
         // given
         mockkObject(ServicesLoader)
-        every { ServicesLoader.loadServices<Any?>(any(), refEq(applicationContext)) } returns relaxedMockk()
+        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns emptyMap()
 
         // when
