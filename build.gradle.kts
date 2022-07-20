@@ -195,6 +195,13 @@ val testTasks = subprojects.flatMap {
     testTasks
 }
 
+tasks.register("displayVersion") {
+    this.group = "help"
+    doLast {
+        logger.lifecycle("Project version: ${project.version}")
+    }
+}
+
 tasks.register("testReport", TestReport::class) {
     this.group = "verification"
     destinationDir = file("${buildDir}/reports/tests")

@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd ..
-./gradlew clean :runtime:classes :runtime:runQalipsisHead --rerun-tasks --no-build-cache
+./gradlew displayVersion clean :runtime:classes :runtime:runQalipsisHead --rerun-tasks --no-build-cache $*
