@@ -18,7 +18,7 @@ internal class DefaultDataProvider(
     @Nullable private val meterProvider: MeterProvider?
 ) : DataProvider {
 
-    override fun searchNames(
+    override suspend fun searchNames(
         tenant: String,
         dataType: DataType,
         filters: Collection<String>,
@@ -30,14 +30,14 @@ internal class DefaultDataProvider(
         }.orEmpty()
     }
 
-    override fun listFields(tenant: String, dataType: DataType): Collection<DataField> {
+    override suspend fun listFields(tenant: String, dataType: DataType): Collection<DataField> {
         return when (dataType) {
             DataType.EVENTS -> eventProvider?.listFields(tenant)
             DataType.METERS -> meterProvider?.listFields(tenant)
         }.orEmpty()
     }
 
-    override fun searchTagsAndValues(
+    override suspend fun searchTagsAndValues(
         tenant: String,
         dataType: DataType,
         filters: Collection<String>,
@@ -49,7 +49,7 @@ internal class DefaultDataProvider(
         }.orEmpty()
     }
 
-    override fun createQuery(tenant: String, dataType: DataType, query: QueryDescription): String {
+    override suspend fun createQuery(tenant: String, dataType: DataType, query: QueryDescription): String {
         return when (dataType) {
             DataType.EVENTS -> eventProvider?.createQuery(tenant, query)
             DataType.METERS -> meterProvider?.createQuery(tenant, query)

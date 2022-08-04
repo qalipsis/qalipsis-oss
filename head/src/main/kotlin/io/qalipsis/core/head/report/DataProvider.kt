@@ -15,7 +15,7 @@ internal interface DataProvider {
      * @param filters the different filters (potentially with wildcard *) the names should match
      * @param size the maximum count of results to return
      */
-    fun searchNames(
+    suspend fun searchNames(
         tenant: String,
         dataType: DataType,
         filters: Collection<String>,
@@ -28,7 +28,7 @@ internal interface DataProvider {
      * @param tenant the reference of the tenant owning the data
      * @param dataType the type of data to inspect
      */
-    fun listFields(tenant: String, dataType: DataType): Collection<DataField>
+    suspend fun listFields(tenant: String, dataType: DataType): Collection<DataField>
 
     /**
      * Searches tags matching the potential filters and provide also values.
@@ -38,7 +38,7 @@ internal interface DataProvider {
      * @param filters the different filters (potentially with wildcard *) the tags names should match
      * @param size the maximum count of results of tags names and values for each name
      */
-    fun searchTagsAndValues(
+    suspend fun searchTagsAndValues(
         tenant: String,
         dataType: DataType,
         filters: Collection<String>,
@@ -48,6 +48,6 @@ internal interface DataProvider {
     /**
      * Prepares the query on events and returns it wrapped into a JSON object containing potential additional metadata.
      */
-    fun createQuery(tenant: String, dataType: DataType, query: QueryDescription): String
+    suspend fun createQuery(tenant: String, dataType: DataType, query: QueryDescription): String
 
 }
