@@ -23,14 +23,18 @@ interface EventProvider {
      * @param filters the different filters (potentially with wildcard *) the names should match
      * @param size the maximum count of results to return
      */
-    fun searchNames(tenant: String, filters: Collection<String>, @Positive @Max(100) size: Int): Collection<String>
+    suspend fun searchNames(
+        tenant: String,
+        filters: Collection<String>,
+        @Positive @Max(100) size: Int
+    ): Collection<String>
 
     /**
      * List all the fields that can be used for aggregation of data on events.
      *
      * @param tenant the reference of the tenant owning the data
      */
-    fun listFields(tenant: String): Collection<DataField>
+    suspend fun listFields(tenant: String): Collection<DataField>
 
     /**
      * Searches tags matching the potential filters and provide also values.
@@ -39,11 +43,15 @@ interface EventProvider {
      * @param filters the different filters (potentially with wildcard *) the tags names should match
      * @param size the maximum count of results of tags names and values for each name
      */
-    fun searchTagsAndValues(tenant: String, filters: Collection<String>, @Positive @Max(100) size: Int): Map<String, Collection<String>>
+    suspend fun searchTagsAndValues(
+        tenant: String,
+        filters: Collection<String>,
+        @Positive @Max(100) size: Int
+    ): Map<String, Collection<String>>
 
     /**
      * Prepares the query on events and returns it wrapped into a JSON object containing potential additional metadata.
      */
-    fun createQuery(tenant: String, query: QueryDescription): String
+    suspend fun createQuery(tenant: String, query: QueryDescription): String
 
 }
