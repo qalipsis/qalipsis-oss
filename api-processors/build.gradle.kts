@@ -11,6 +11,7 @@ kapt {
 }
 
 val micronautVersion: String by project
+val kotlinSerialization: String by project
 
 dependencies {
     compileOnly(kotlin("stdlib"))
@@ -20,7 +21,7 @@ dependencies {
     implementation("com.squareup:kotlinpoet:1.11.0")
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.+")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
     api("io.micronaut:micronaut-validation")
     api("io.micronaut:micronaut-inject")
     api("io.micronaut:micronaut-graal")

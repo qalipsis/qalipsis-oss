@@ -16,6 +16,7 @@ allOpen {
 
 val micronautVersion: String by project
 val kotlinCoroutinesVersion: String by project
+val kotlinSerialization: String by project
 
 dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
@@ -27,7 +28,7 @@ dependencies {
     api(project(":api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
     // Libraries relevant for the development of plugins.
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.+")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
@@ -42,10 +43,10 @@ dependencies {
     implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micrometer:micrometer-core")
     implementation("com.google.guava:guava:28.2-jre")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:${kotlinSerialization}")
 
     testImplementation(project(":test"))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
 
     testFixturesImplementation(project(":test"))
 }
