@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface DirectedAcyclicGraphRepository : CoroutineCrudRepository<DirectedAcyclicGraphEntity, Long> {
 
     @Join(value = "tags", type = Join.Type.LEFT_FETCH)

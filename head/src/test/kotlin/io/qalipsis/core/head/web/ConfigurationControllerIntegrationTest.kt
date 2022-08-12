@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 internal class ConfigurationControllerIntegrationTest {
 
     @Nested
-    @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
+    @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.TRANSIENT, ExecutionEnvironments.SINGLE_HEAD])
     @PropertySource(
         Property(name = "micronaut.server.log-handled-exceptions", value = "true")
     )

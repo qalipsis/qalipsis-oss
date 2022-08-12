@@ -15,7 +15,7 @@ import java.time.Instant
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(env = [ExecutionEnvironments.VOLATILE])
+    Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
 internal class InMemoryCampaignService : CampaignService {
 

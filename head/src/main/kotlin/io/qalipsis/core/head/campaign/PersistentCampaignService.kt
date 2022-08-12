@@ -25,7 +25,7 @@ import io.qalipsis.core.head.model.Page as QalipsisPage
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+    Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
 internal class PersistentCampaignService(
     private val campaignRepository: CampaignRepository,

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(env = [ExecutionEnvironments.VOLATILE])
+    Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
 internal class InMemoryFactoryService(
     private val scenarioSummaryRepository: ScenarioSummaryRepository

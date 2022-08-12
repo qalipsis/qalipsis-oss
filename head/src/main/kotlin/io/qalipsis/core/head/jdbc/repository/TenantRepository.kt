@@ -13,7 +13,7 @@ import io.qalipsis.core.head.jdbc.entity.TenantEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface TenantRepository : CoroutineCrudRepository<TenantEntity, Long>{
 
     suspend fun findIdByReference(reference: String): Long

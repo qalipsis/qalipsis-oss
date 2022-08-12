@@ -113,7 +113,7 @@ internal class ContextInitializer(
         if (persistent) {
             environments.add(ExecutionEnvironments.POSTGRESQL)
         } else {
-            environments.add(ExecutionEnvironments.VOLATILE)
+            environments.add(ExecutionEnvironments.TRANSIENT)
         }
         filterEnabledScenarios(properties)
     }
@@ -130,7 +130,7 @@ internal class ContextInitializer(
         if (persistent) {
             environments.add(ExecutionEnvironments.POSTGRESQL)
         } else {
-            environments.add(ExecutionEnvironments.VOLATILE)
+            environments.add(ExecutionEnvironments.TRANSIENT)
         }
     }
 

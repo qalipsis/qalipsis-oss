@@ -13,5 +13,5 @@ import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface CampaignReportRepository : CoroutineCrudRepository<CampaignReportEntity, Long>

@@ -49,7 +49,7 @@ import java.time.Instant
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+    Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
 internal class ClusterFactoryService(
     private val factoryRepository: FactoryRepository,

@@ -15,7 +15,7 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, Long> {
 
     @Query("UPDATE scenario SET enabled = FALSE WHERE id = :id")

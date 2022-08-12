@@ -13,7 +13,7 @@ import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface DirectedAcyclicGraphSelectorRepository :
     CoroutineCrudRepository<DirectedAcyclicGraphTagEntity, Long> {
 

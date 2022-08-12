@@ -15,7 +15,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryEntity
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Long> {
 
     @Query(

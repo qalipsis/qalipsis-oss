@@ -13,7 +13,7 @@ import io.qalipsis.core.head.jdbc.entity.UserEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
 
     suspend fun findByUsername(username: String): UserEntity

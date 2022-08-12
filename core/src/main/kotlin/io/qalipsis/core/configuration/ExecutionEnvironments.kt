@@ -9,7 +9,7 @@ object ExecutionEnvironments {
     /**
      * Enables for in-memory repositories instead of persistent ones.
      */
-    const val VOLATILE = "volatile"
+    const val TRANSIENT = "transient"
 
     /**
      * Automatically starts a campaign when the instance is ready. Is only applicable in

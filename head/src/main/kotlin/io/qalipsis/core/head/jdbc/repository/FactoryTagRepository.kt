@@ -13,7 +13,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
  * @author rklymenko
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface FactoryTagRepository : CoroutineCrudRepository<FactoryTagEntity, Long> {
 
     suspend fun findByFactoryIdIn(factoryIds: Collection<Long>): List<FactoryTagEntity>

@@ -13,7 +13,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
  * @author Eric Jessé
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface CampaignScenarioRepository : CoroutineCrudRepository<CampaignScenarioEntity, Long> {
 
     suspend fun findByCampaignId(campaignId: Long): Collection<CampaignScenarioEntity>

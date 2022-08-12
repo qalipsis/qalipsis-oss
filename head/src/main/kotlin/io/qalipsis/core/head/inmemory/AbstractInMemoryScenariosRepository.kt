@@ -13,6 +13,6 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.VOLATILE])
+@Requires(env = [ExecutionEnvironments.TRANSIENT])
 internal class AbstractInMemoryScenariosRepository : AbstractInMemoryRepository<ScenarioSummary, ScenarioName>(),
     ScenarioSummaryRepository

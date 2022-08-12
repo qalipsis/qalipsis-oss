@@ -13,5 +13,5 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface ScenarioReportRepository : CoroutineCrudRepository<ScenarioReportEntity, Long>

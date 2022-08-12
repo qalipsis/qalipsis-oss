@@ -30,7 +30,7 @@ import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
 
 @WithMockk
-@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.VOLATILE, ExecutionEnvironments.SINGLE_HEAD])
+@MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.TRANSIENT, ExecutionEnvironments.SINGLE_HEAD])
 @PropertySource(Property(name = "micronaut.server.log-handled-exceptions", value = "true"))
 internal class ScenarioControllerIntegrationTest {
 

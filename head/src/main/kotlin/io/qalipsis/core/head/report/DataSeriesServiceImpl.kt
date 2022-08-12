@@ -22,7 +22,7 @@ import jakarta.inject.Singleton
  * @author Palina Bril
  */
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal class DataSeriesServiceImpl(
     private val dataSeriesRepository: DataSeriesRepository,
     private val tenantRepository: TenantRepository,

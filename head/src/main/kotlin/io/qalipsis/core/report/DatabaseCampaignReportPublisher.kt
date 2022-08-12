@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.toList
  */
 @Singleton
 @Requirements(
-    Requires(notEnv = [ExecutionEnvironments.VOLATILE]),
+    Requires(notEnv = [ExecutionEnvironments.TRANSIENT]),
     Requires(property = "report.export.database.enabled", defaultValue = "true", value = "false")
 )
 internal class DatabaseCampaignReportPublisher(

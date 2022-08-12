@@ -14,7 +14,7 @@ import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
  * @author Palina Bril
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.VOLATILE])
+@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long> {
 
     @Query(
