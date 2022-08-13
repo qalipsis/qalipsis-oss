@@ -2,34 +2,52 @@ package io.qalipsis.core.head.utils
 
 import io.micronaut.core.beans.BeanIntrospection
 import io.micronaut.data.model.Sort
-import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import io.qalipsis.core.head.jdbc.entity.Entity
+import kotlin.reflect.KClass
 
 internal object SortingUtil {
 
     /**
-     * Sorts results from CampaignRepository
-     * @Param sort is a name of the property to sort. Could also include suffixes ':desc' or ':asc' to define
-     * the sorting order. By default, asc order is used.
+     * Sort a list of entities according to the property with the given name.
+     *
+     * @Param property name of the property to sort. Could also include suffixes ':desc' or ':asc' to define the sorting order, which defaults to asc.
      */
-    fun sort(sort: String, campaignList: List<CampaignEntity>): List<CampaignEntity> {
-        val sortProperty = BeanIntrospection.getIntrospection(CampaignEntity::class.java).beanProperties
+    inline fun <reified T : Entity> List<T>.sortBy(property: String): List<T> {
+        return sortBy(T::class, property)
+    }
+
+    /**
+     * Sort a list of entities according to the property with the given name.
+     *
+     * @param type the Kotlin type of the items of the list, having [property] as a property.
+     * @param property name of the property to sort. Could also include suffixes ':desc' or ':asc' to define the sorting order, which defaults to asc.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Entity> List<T>.sortBy(type: KClass<T>, property: String): List<T> {
+        val sortProperty = BeanIntrospection.getIntrospection(type.java).beanProperties
             .firstOrNull {
-                it.name == sort.trim().split(":").get(0)
+                it.name == property.trim().split(":")[0]
             }
-        val sortOrder = sort.trim().split(":").last()
+        val sortOrder = property.trim().split(":").last().lowercase()
         return if ("desc" == sortOrder) {
-            campaignList.sortedBy { sortProperty?.get(it) as Comparable<Any> }.reversed()
+            this.sortedBy { sortProperty?.get(it) as Comparable<Any> }.reversed()
         } else {
-            campaignList.sortedBy { sortProperty?.get(it) as Comparable<Any> }
+            this.sortedBy { sortProperty?.get(it) as Comparable<Any> }
         }
     }
 
-    fun sort(sort: String): Sort? {
-        val sortProperty = BeanIntrospection.getIntrospection(CampaignEntity::class.java).beanProperties
+    /**
+     * Creates a SQL sorting descriptor to match [type] and the specified [property].
+     *
+     * @param type the entity Kotlin type of the items of the list, having [property] as a property.
+     * @param property name of the property to sort. Could also include suffixes ':desc' or ':asc' to define the sorting order, which defaults to asc.
+     */
+    fun sort(type: KClass<out Entity>, property: String): Sort? {
+        val sortProperty = BeanIntrospection.getIntrospection(type.java).beanProperties
             .firstOrNull {
-                it.name == sort.trim().split(":").get(0)
+                it.name == property.trim().split(":").get(0)
             }
-        val sortOrder = sort.trim().split(":").last()
+        val sortOrder = property.trim().split(":").last().lowercase()
         return if ("desc" == sortOrder) {
             Sort.of(Sort.Order.desc(sortProperty?.name))
         } else {

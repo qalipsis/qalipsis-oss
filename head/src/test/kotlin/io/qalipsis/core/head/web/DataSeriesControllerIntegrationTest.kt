@@ -31,6 +31,7 @@ import io.qalipsis.core.head.model.ColorDataSeriesPatch
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
 import io.qalipsis.core.head.report.DataType
@@ -431,5 +432,190 @@ internal class DataSeriesControllerIntegrationTest {
 
         }
         confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should search data series with the default parameters`() {
+        // given
+        val dataSeries = DataSeries(
+            displayName = "NewData",
+            dataType = DataType.EVENTS,
+            color = "Red",
+            filters = emptySet(),
+            fieldName = "dataSeriesFieldName",
+            aggregationOperation = null,
+            timeframeUnit = Duration.ofHours(1),
+        )
+        val request = HttpRequest.GET<Page<DataSeries>>("/")
+        coEvery {
+            dataSeriesService.searchDataSeries(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
+        } returns Page(0, 1, 1, listOf(dataSeries))
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, DataSeries::class.java))
+
+        //then
+        coVerifyOnce {
+            dataSeriesService.searchDataSeries(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(dataSeries)))
+        }
+    }
+
+    @Test
+    internal fun `should fail for negative page value`() {
+        // given
+        val request = HttpRequest.GET<Page<DataSeries>>("/?page=-2")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, DataSeries::class.java))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @Test
+    internal fun `should fail for negative size value`() {
+        // given
+        val request = HttpRequest.GET<Page<DataSeries>>("/?size=-200")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, DataSeries::class.java))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @Test
+    internal fun `should search for data series with filter and default sorting`() {
+        // given
+        val dataSeries = DataSeries(
+            displayName = "NewData",
+            dataType = DataType.EVENTS,
+            color = "Red",
+            filters = emptySet(),
+            fieldName = "filter-2",
+            aggregationOperation = null,
+            timeframeUnit = Duration.ofHours(1),
+        )
+        val dataSeries2 = DataSeries(
+            displayName = "New-Data2",
+            dataType = DataType.EVENTS,
+            color = "#FFF",
+            filters = emptySet(),
+            fieldName = "foo",
+            aggregationOperation = null,
+            timeframeUnit = Duration.ofHours(2),
+        )
+        val request = HttpRequest.GET<Page<DataSeries>>("?filter=foo,filter-2&size=7")
+        coEvery {
+            dataSeriesService.searchDataSeries(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = listOf("foo", "filter-2"),
+                sort = null,
+                page = 0,
+                size = 7
+            )
+        } returns Page(0, 1, 2, listOf(dataSeries, dataSeries2))
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, DataSeries::class.java))
+
+        // then
+        coVerifyOnce {
+            dataSeriesService.searchDataSeries(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = listOf("foo", "filter-2"),
+                sort = null,
+                page = 0,
+                size = 7
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 2, listOf(dataSeries, dataSeries2)))
+        }
+    }
+
+    @Test
+    internal fun `should search for data series with specified sorting`() {
+        // given
+        val dataSeries = DataSeries(
+            displayName = "NewData",
+            dataType = DataType.EVENTS,
+            color = "Red",
+            filters = emptySet(),
+            fieldName = "filter-2",
+            aggregationOperation = null,
+            timeframeUnit = Duration.ofHours(1),
+        )
+        val dataSeries2 = DataSeries(
+            displayName = "New-Data2",
+            dataType = DataType.EVENTS,
+            color = "Blue",
+            filters = emptySet(),
+            fieldName = "foo",
+            aggregationOperation = null,
+            timeframeUnit = Duration.ofHours(2),
+        )
+        val request = HttpRequest.GET<Page<DataSeries>>("?sort=color&size=7")
+        coEvery {
+            dataSeriesService.searchDataSeries(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = "color",
+                page = 0,
+                size = 7
+            )
+        } returns Page(0, 1, 2, listOf(dataSeries2, dataSeries))
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, DataSeries::class.java))
+
+        // then
+        coVerifyOnce {
+            dataSeriesService.searchDataSeries(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = "color",
+                page = 0,
+                size = 7
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 2, listOf(dataSeries2, dataSeries)))
+        }
     }
 }

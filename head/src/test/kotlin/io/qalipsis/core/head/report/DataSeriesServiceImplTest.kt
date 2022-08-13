@@ -2,11 +2,16 @@ package io.qalipsis.core.head.report
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
+import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.exceptions.HttpStatusException
 import io.mockk.coEvery
@@ -16,6 +21,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.report.query.QueryAggregationOperator
@@ -30,10 +36,12 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.model.converter.DataSeriesConverter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -62,7 +70,10 @@ internal class DataSeriesServiceImplTest {
     private lateinit var dataProvider: DataProvider
 
     @InjectMockKs
-    private lateinit var service: DataSeriesServiceImpl
+    private lateinit var dataSeriesService: DataSeriesServiceImpl
+
+    @RelaxedMockK
+    private lateinit var dataSeriesConverter: DataSeriesConverter
 
     @Test
     internal fun `should create the data series with the default operation and no field name`() =
@@ -86,7 +97,7 @@ internal class DataSeriesServiceImplTest {
             )
 
             // when
-            val result = service.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
+            val result = dataSeriesService.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
 
             // then
             assertThat(result).all {
@@ -169,7 +180,7 @@ internal class DataSeriesServiceImplTest {
             )
 
             // when
-            val result = service.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
+            val result = dataSeriesService.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
 
             // then
             assertThat(result).all {
@@ -252,7 +263,7 @@ internal class DataSeriesServiceImplTest {
 
             // when
             assertThrows<IllegalArgumentException> {
-                service.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
+                dataSeriesService.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
             }
         }
 
@@ -283,7 +294,7 @@ internal class DataSeriesServiceImplTest {
             coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
             // when
-            val result = service.get(username = "my-user", tenant = "my-tenant", reference = "my-data-series")
+            val result = dataSeriesService.get(username = "my-user", tenant = "my-tenant", reference = "my-data-series")
 
             // then
             assertThat(result).all {
@@ -335,7 +346,7 @@ internal class DataSeriesServiceImplTest {
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
-        val result = service.get(username = "the-creator", tenant = "my-tenant", reference = "my-data-series")
+        val result = dataSeriesService.get(username = "the-creator", tenant = "my-tenant", reference = "my-data-series")
 
         // then
         assertThat(result).all {
@@ -380,7 +391,7 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            service.get(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesService.get(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
         }
 
         // then
@@ -419,7 +430,7 @@ internal class DataSeriesServiceImplTest {
             val patch2 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
 
             // when
-            val result = service.update(
+            val result = dataSeriesService.update(
                 username = "my-user",
                 tenant = "my-tenant",
                 reference = "my-data-series",
@@ -495,7 +506,7 @@ internal class DataSeriesServiceImplTest {
             val patch2 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
 
             // when
-            val result = service.update(
+            val result = dataSeriesService.update(
                 username = "my-user",
                 tenant = "my-tenant",
                 reference = "my-data-series",
@@ -560,7 +571,7 @@ internal class DataSeriesServiceImplTest {
             val patch2 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
 
             // when
-            val result = service.update(
+            val result = dataSeriesService.update(
                 username = "the-creator",
                 tenant = "my-tenant",
                 reference = "my-data-series",
@@ -625,7 +636,12 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            service.update(username = "the-user", tenant = "my-tenant", reference = "my-data-series", emptyList())
+            dataSeriesService.update(
+                username = "the-user",
+                tenant = "my-tenant",
+                reference = "my-data-series",
+                emptyList()
+            )
         }
 
         // then
@@ -659,7 +675,12 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            service.update(username = "the-user", tenant = "my-tenant", reference = "my-data-series", emptyList())
+            dataSeriesService.update(
+                username = "the-user",
+                tenant = "my-tenant",
+                reference = "my-data-series",
+                emptyList()
+            )
         }
 
         // then
@@ -682,7 +703,7 @@ internal class DataSeriesServiceImplTest {
         } returns entity
 
         // when
-        service.delete(username = "my-user", tenant = "my-tenant", reference = "my-data-series")
+        dataSeriesService.delete(username = "my-user", tenant = "my-tenant", reference = "my-data-series")
 
         // then
         coVerifyOrder {
@@ -708,7 +729,7 @@ internal class DataSeriesServiceImplTest {
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
-        service.delete(username = "the-creator", tenant = "my-tenant", reference = "my-data-series")
+        dataSeriesService.delete(username = "the-creator", tenant = "my-tenant", reference = "my-data-series")
 
         // then
         coVerifyOrder {
@@ -745,7 +766,7 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            service.delete(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesService.delete(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
         }
 
         // then
@@ -779,10 +800,166 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            service.delete(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesService.delete(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
         }
 
         // then
         assertThat(exception.status).isEqualTo(HttpStatus.FORBIDDEN)
     }
+
+    @Test
+    internal fun `should return the searched data series from the repository with default sorting and no filter`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
+            coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
+            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2
+
+            // when
+            val result = dataSeriesService.searchDataSeries("my-tenant", "user", emptyList(), null, 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOrder {
+                dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable)
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity1))
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
+            }
+            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+        }
+
+    @Test
+    internal fun `should return the searched data series from the repository with specified sorting and no filter`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("fieldName")))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
+            coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
+            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2
+
+            // when
+            val result = dataSeriesService.searchDataSeries("my-tenant", "user", emptyList(), "fieldName", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOrder {
+                dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable)
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity1))
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
+            }
+            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+        }
+
+    @Test
+    internal fun `should return the searched data series from the repository with specified filters and default sort`() =
+        testDispatcherProvider.run {
+            // given
+            val filter1 = "%Un%u_%"
+            val filter2 = "%u_Er%"
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeries(
+                    "my-tenant",
+                    "user",
+                    listOf(filter1, filter2),
+                    pageable
+                )
+            } returns page
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2
+
+            // when
+            val result =
+                dataSeriesService.searchDataSeries("my-tenant", "user", listOf("Un*u_", "u_Er"), null, 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOrder {
+                dataSeriesRepository.searchDataSeries("my-tenant", "user", listOf(filter1, filter2), pageable)
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity1))
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
+            }
+            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+        }
+
+    @Test
+    internal fun `should return the searched data series from the repository with specified sorting and filters`() =
+        testDispatcherProvider.run {
+            // given
+            val filter1 = "%F_oo%"
+            val filter2 = "%Us_r%"
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("fieldName")))
+            val page = Page.of(listOf(dataSeriesEntity2, dataSeriesEntity3), Pageable.from(0, 20), 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeries(
+                    "my-tenant",
+                    "user",
+                    listOf(filter1, filter2),
+                    pageable
+                )
+            } returns page
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeries3 = relaxedMockk<DataSeries>()
+            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries2 andThen dataSeries3
+
+            // when
+            val result =
+                dataSeriesService.searchDataSeries("my-tenant", "user", listOf("F_oo", "Us_r"), "fieldName", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries2, dataSeries3)
+                }
+            }
+            coVerifyOrder {
+                dataSeriesRepository.searchDataSeries("my-tenant", "user", listOf(filter1, filter2), pageable)
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
+                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity3))
+            }
+            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+        }
 }
