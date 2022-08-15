@@ -8,6 +8,7 @@ import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.qalipsis.api.report.DataField
+import io.qalipsis.api.report.DataFieldType
 import io.qalipsis.api.report.EventProvider
 import io.qalipsis.api.report.MeterProvider
 import io.qalipsis.api.report.query.QueryDescription
@@ -64,7 +65,7 @@ internal class DefaultDataProviderTest {
     internal fun `should return fields names of events`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
-        val fields = listOf(DataField("1", true), DataField("2", true, "SECONDS"))
+        val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
         coEvery { eventProvider.listFields(any()) } returns fields
 
         // then
@@ -138,7 +139,7 @@ internal class DefaultDataProviderTest {
     internal fun `should return fields names of meters`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
-        val fields = listOf(DataField("1", true), DataField("2", true, "SECONDS"))
+        val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
         coEvery { meterProvider.listFields(any()) } returns fields
 
         // then

@@ -22,6 +22,7 @@ import io.mockk.confirmVerified
 import io.mockk.excludeRecords
 import io.mockk.impl.annotations.MockK
 import io.qalipsis.api.report.DataField
+import io.qalipsis.api.report.DataFieldType
 import io.qalipsis.api.report.query.QueryAggregationOperator
 import io.qalipsis.api.report.query.QueryClauseOperator
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -313,7 +314,7 @@ internal class DataSeriesControllerIntegrationTest {
     @Test
     internal fun `should search field names for the events`() {
         // given
-        val fields = listOf(DataField("1", true), DataField("2", true, "SECONDS"))
+        val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
         val request = HttpRequest.GET<List<String>>("/events/fields")
         coEvery { dataProvider.listFields(any(), any()) } returns fields
 
