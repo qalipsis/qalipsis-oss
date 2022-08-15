@@ -21,6 +21,7 @@ import io.qalipsis.api.report.DataField
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
 import io.qalipsis.core.head.report.DataType
@@ -38,6 +39,7 @@ import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
+import javax.validation.constraints.PositiveOrZero
 
 @Validated
 @Controller("/data-series")
@@ -294,6 +296,66 @@ internal class DataSeriesController(
         ) @Nullable @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
     ): Map<String, Collection<String>> {
         return dataProvider.searchTagsAndValues(tenant, dataType, filter.asFilters(), size)
+    }
+
+    @Get("/")
+    @Operation(
+        summary = "Search all the data series",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "List of data series that matches the search parameters"
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.READ_DATA_SERIES])
+    suspend fun searchDataSeries(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "sorting matcher for results from queries on the data series",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("sort", defaultValue = "") sort: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Parameter(
+            description = "Comma-separated list of values to apply as wildcard filters on the data series fields",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        @Parameter(
+            description = "Page number to start retrieval from",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
+        @Parameter(
+            description = "Size of the page to retrieve",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
+    ): HttpResponse<Page<DataSeries>> {
+        return HttpResponse.ok(
+            dataSeriesService.searchDataSeries(
+                tenant,
+                authentication.name,
+                filter.asFilters(),
+                sort.takeUnless(String::isNullOrBlank),
+                page,
+                size
+            )
+        )
     }
 
 }

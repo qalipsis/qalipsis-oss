@@ -58,13 +58,15 @@
       </column>
     </createTable>
 
-    <createIndex schemaName="qalipsis" indexName="unique_display_name_by_tenant_data_series_idx" tableName="data_series"
+    <createIndex schemaName="qalipsis" indexName="unique_display_name_by_tenant_data_series_idx"
+      tableName="data_series"
       unique="true">
       <column name="tenant_id"/>
       <column name="display_name"/>
     </createIndex>
 
-    <createIndex schemaName="qalipsis" indexName="unique_reference_data_by_tenant_series_idx" tableName="data_series"
+    <createIndex schemaName="qalipsis" indexName="unique_reference_data_by_tenant_series_idx"
+      tableName="data_series"
       unique="true">
       <column name="tenant_id"/>
       <column name="reference"/>

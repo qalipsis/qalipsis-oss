@@ -1,6 +1,8 @@
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.exceptions.HttpStatusException
 import io.qalipsis.api.lang.IdGenerator
@@ -14,7 +16,10 @@ import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.model.converter.DataSeriesConverter
+import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
+import io.qalipsis.core.head.model.Page as QalipsisPage
 
 /**
  * Default implementation of [DataSeriesService] interface
@@ -28,7 +33,8 @@ internal class DataSeriesServiceImpl(
     private val tenantRepository: TenantRepository,
     private val userRepository: UserRepository,
     private val idGenerator: IdGenerator,
-    private val dataProvider: DataProvider
+    private val dataProvider: DataProvider,
+    private val dataSeriesConverter: DataSeriesConverter
 ) : DataSeriesService {
 
     override suspend fun get(username: String, tenant: String, reference: String): DataSeries {
@@ -110,4 +116,32 @@ internal class DataSeriesServiceImpl(
         }
         dataSeriesRepository.delete(dataSeriesEntity)
     }
+
+    override suspend fun searchDataSeries(
+        tenant: String,
+        username: String,
+        filters: Collection<String>,
+        sort: String?,
+        page: Int,
+        size: Int
+    ): QalipsisPage<DataSeries> {
+        val sorting = sort?.let { SortingUtil.sort(DataSeriesEntity::class, it) }
+            ?: Sort.of(Sort.Order(DataSeriesEntity::displayName.name))
+        val pageable = Pageable.from(page, size, sorting)
+
+        val dataSeriesEntityPage = if (filters.isNotEmpty()) {
+            val sanitizedFilters = filters.map { it.replace('*', '%').replace('?', '_') }.map { "%${it.trim()}%" }
+            println(sanitizedFilters)
+            dataSeriesRepository.searchDataSeries(tenant, username, sanitizedFilters, pageable)
+        } else {
+            dataSeriesRepository.searchDataSeries(tenant, username, pageable)
+        }
+        return QalipsisPage(
+            page = dataSeriesEntityPage.pageNumber,
+            totalPages = dataSeriesEntityPage.totalPages,
+            totalElements = dataSeriesEntityPage.totalSize,
+            elements = dataSeriesEntityPage.content.map { dataSeriesConverter.convertToModel(it) }
+        )
+    }
+
 }

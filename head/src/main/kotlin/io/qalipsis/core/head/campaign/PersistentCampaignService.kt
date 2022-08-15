@@ -66,7 +66,7 @@ internal class PersistentCampaignService(
         tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
     ): QalipsisPage<Campaign> {
         // Default sorting for the campaign is done with the start time in reverse order, because it is always not null.
-        val sorting = sort?.let { SortingUtil.sort(it) } ?: Sort.of(Sort.Order.desc(CampaignEntity::start.name))
+        val sorting = sort?.let { SortingUtil.sort(CampaignEntity::class,it) } ?: Sort.of(Sort.Order.desc(CampaignEntity::start.name))
 
         val pageable = Pageable.from(page, size, sorting)
 
