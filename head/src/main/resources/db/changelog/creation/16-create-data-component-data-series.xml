@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="16" author="jvalere">
+    <createSequence sequenceName="data_component_data_series_seq" schemaName="qalipsis"/>
+    <createTable tableName="data_component_data_series" schemaName="qalipsis">
+      <column name="data_component_id" type="BIGINT" valueSequenceNext="data_component_data_series_seq">
+        <constraints nullable="false"
+                     primaryKey="true"
+                     primaryKeyName="data_component_data_series_pk"
+                     foreignKeyName="data_component_data_series_data_component_id_fk"
+                     referencedTableName="data_component"
+                     referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+      <column name="data_series_id" type="BIGINT" valueSequenceNext="data_component_data_series_seq">
+        <constraints nullable="false"
+                     primaryKey="true"
+                     primaryKeyName="data_component_data_series_pk"
+                     foreignKeyName="data_component_data_series_data_series_id_fk"
+                     referencedTableName="data_series"
+                     referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="14" author="jvalere">
+    <createSequence sequenceName="report_seq" schemaName="qalipsis"/>
+    <createTable tableName="report" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="report_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="report_pk"/>
+      </column>
+      <column name="reference" type="VARCHAR(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="version" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="tenant_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="report_tenant_id_fk" referencedTableName="tenant"
+                     referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+      <column name="creator_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="report_creator_id_fk" referencedTableName="user"
+                     referencedColumnNames="id" deleteCascade="false"/>
+      </column>
+      <column name="display_name" type="VARCHAR(200)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sharing_mode" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="campaign_keys" type="JSONB">
+        <constraints nullable="true"/>
+      </column>
+      <column name="campaign_names_patterns" type="JSONB">
+        <constraints nullable="true"/>
+      </column>
+      <column name="scenario_names_patterns" type="JSONB">
+        <constraints nullable="true"/>
+      </column>
+      <column name="query" type="TEXT">
+        <constraints nullable="true"/>
+      </column>
+    </createTable>
+
+    <createIndex schemaName="qalipsis" indexName="unique_display_name_by_tenant_report_idx" tableName="report"
+      unique="true">
+      <column name="tenant_id"/>
+      <column name="display_name"/>
+    </createIndex>
+
+    <createIndex schemaName="qalipsis" indexName="unique_reference_data_by_tenant_report_idx" tableName="report"
+      unique="true">
+      <column name="tenant_id"/>
+      <column name="reference"/>
+    </createIndex>
+
+  </changeSet>
+</databaseChangeLog>

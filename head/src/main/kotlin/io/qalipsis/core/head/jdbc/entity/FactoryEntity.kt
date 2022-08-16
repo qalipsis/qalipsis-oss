@@ -4,6 +4,7 @@ import io.micronaut.data.annotation.GeneratedValue
 import io.micronaut.data.annotation.Id
 import io.micronaut.data.annotation.MappedEntity
 import io.micronaut.data.annotation.Relation
+import io.micronaut.data.annotation.Relation.Cascade
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
 import io.qalipsis.core.head.model.Factory
@@ -29,7 +30,7 @@ internal data class FactoryEntity(
     val registrationNodeId: String,
     @field:NotBlank
     val unicastChannel: String,
-    @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "factoryId")
+    @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "factoryId", cascade = [Cascade.ALL])
     val tags: List<FactoryTagEntity>,
     val zone: String? = null
 ) : Entity {

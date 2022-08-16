@@ -3,6 +3,7 @@ package io.qalipsis.core.head.jdbc.repository
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
+import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -42,7 +43,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var campaignRepository: CampaignRepository
 
     @Inject
-    private lateinit var campagnScenarioRepository: CampaignScenarioRepository
+    private lateinit var campaignScenarioRepository: CampaignScenarioRepository
 
     @Inject
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
@@ -173,17 +174,18 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id
                 )
             )
-        campagnScenarioRepository.save(CampaignScenarioEntity(saved.id, "the-scenario", 231))
+        campaignScenarioRepository.save(CampaignScenarioEntity(saved.id, "the-scenario", 231))
         campaignFactoryRepository.save(CampaignFactoryEntity(saved.id, factory.id, discarded = false))
-        assertThat(campagnScenarioRepository.findAll().count()).isEqualTo(1)
-        assertThat(campagnScenarioRepository.findAll().count()).isEqualTo(1)
+
+        assertThat(campaignScenarioRepository.findAll().count()).isEqualTo(1)
+        assertThat(campaignFactoryRepository.findAll().count()).isEqualTo(1)
 
         // when
         campaignRepository.deleteById(saved.id)
 
         // then
-        assertThat(campagnScenarioRepository.findAll().count()).isEqualTo(0)
-        assertThat(campagnScenarioRepository.findAll().count()).isEqualTo(0)
+        assertThat(campaignScenarioRepository.findAll().count()).isEqualTo(0)
+        assertThat(campaignFactoryRepository.findAll().count()).isEqualTo(0)
     }
 
     @Test
@@ -426,5 +428,54 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // then
         assertThat(fetched).isNotNull().isDataClassEqualTo(saved)
+    }
+
+    @Test
+    internal fun `should return only campaign keys of the tenant`() = testDispatcherProvider.run{
+        //given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        campaignRepository.save(campaignPrototype.copy(key = "key-1", name = "campaign-1", end = null, tenantId = tenant.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-2", name = "campaign-2", end = null, tenantId = tenant2.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-3", name = "campaign-3", end = null, tenantId = tenant.id))
+
+        // when
+        val campaignKeys = campaignRepository.findKeyByTenantAndKeyIn(tenant = tenant.reference, keys = listOf("key-1", "key-3"))
+        // then
+        assertThat(campaignKeys).all{
+            hasSize(2)
+            containsOnly("key-1", "key-3")
+        }
+
+        //when + then
+        assertThat(campaignRepository.findKeyByTenantAndKeyIn(tenant = tenant.reference, keys = listOf("key-4", "key-2"))).isEmpty()
+    }
+
+    @Test
+    internal fun `should return only campaign keys of the tenant and campaign names patterns`() = testDispatcherProvider.run{
+        //given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        campaignRepository.save(campaignPrototype.copy(key = "key-1", name = "campaign-1", end = null, tenantId = tenant.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-2", name = "CAMPAIGN-2", end = null, tenantId = tenant2.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-3", name = "camp-3", end = null, tenantId = tenant.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-4", name = "CAMPAIGN-4", end = null, tenantId = tenant.id))
+
+        // when
+        val campaignKeys = campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("camp%"))
+        // then
+        assertThat(campaignKeys).all{
+            hasSize(3)
+            containsOnly("key-1", "key-3", "key-4")
+        }
+
+        //when + then
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("camp-_"))).containsOnly("key-3")
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%IG%"))).containsOnly("key-1", "key-4")
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%IG%", "ca_"))).containsOnly("key-1", "key-4")
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%IG%", "ca%"))).containsOnly("key-1", "key-3", "key-4")
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%4"))).containsOnly("key-4")
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%"))).isEmpty()
+        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%", "%4"))).containsOnly("key-4")
     }
 }

@@ -98,4 +98,16 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
     suspend fun searchDataSeries(tenant: String, username: String, pageable: Pageable): Page<DataSeriesEntity>
 
 
+    @Query(
+        """SELECT 
+                CASE 
+                    WHEN EXISTS 
+                        (SELECT 1 FROM data_series 
+                            WHERE reference = :reference AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)) 
+                    THEN TRUE 
+                    ELSE FALSE 
+                END"""
+    )
+    suspend fun checkExistenceByTenantAndReference(tenant: String, reference: String): Boolean
+
 }

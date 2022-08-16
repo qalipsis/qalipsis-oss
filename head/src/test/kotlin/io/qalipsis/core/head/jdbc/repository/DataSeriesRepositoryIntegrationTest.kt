@@ -7,10 +7,12 @@ import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEmpty
+import assertk.assertions.isFalse
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.micronaut.data.model.Pageable
@@ -770,5 +772,18 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::displayName).isEqualTo(dataSeriesWithIdealUser.displayName)
             prop(DataSeriesEntity::tenantId).isEqualTo(dataSeriesWithIdealUser.tenantId)
         }
+    }
+
+    @Test
+    fun `should save then successfully check existence based on reference and tenant`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype)
+        val creator = userRepository.save(userPrototype)
+        dataSeriesRepository.save(dataSeriesPrototype.copy(tenantId = tenant.id, creatorId = creator.id))
+
+        //when + then
+        assertThat(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant", reference = "my-series-1")).isFalse()
+        assertThat(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant", reference = "my-series")).isTrue()
+        assertThat(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant-1", reference = "my-series")).isFalse()
     }
 }

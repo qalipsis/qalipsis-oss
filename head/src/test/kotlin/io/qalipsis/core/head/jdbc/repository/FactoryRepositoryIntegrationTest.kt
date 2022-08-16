@@ -8,6 +8,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotNull
 import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
@@ -64,6 +65,18 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         factoryRepository.deleteAll()
         campaignRepository.deleteAll()
         tenantRepository.deleteAll()
+    }
+
+    @Test
+    internal fun `should save and retrieve minimal factory`() = testDispatcherProvider.run {
+        // given
+        val savedTenant = tenantRepository.save(tenantPrototype.copy())
+        val saved = factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
+
+        // when
+        val retrieved = factoryRepository.findById(saved.id)
+
+        assertThat(retrieved).isNotNull().isDataClassEqualTo(saved)
     }
 
     @Test

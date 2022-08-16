@@ -85,4 +85,21 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
         nativeQuery = true
     )
     suspend fun findAll(tenant: String, pageable: Pageable): Page<CampaignEntity>
+
+    @Query(
+        """SELECT campaign_entity_.key 
+            FROM campaign as campaign_entity_ 
+            WHERE EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)
+                AND campaign_entity_.key IN (:keys)"""
+    )
+    suspend fun findKeyByTenantAndKeyIn(tenant: String, keys: Collection<String>): Set<String>
+
+    @Query(
+        """SELECT distinct campaign_entity_.key 
+            FROM campaign as campaign_entity_ 
+            WHERE campaign_entity_.name ILIKE any (array[:namePatterns]) 
+            AND EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)"""
+    )
+    suspend fun findKeysByTenantAndNamePatterns(tenant: String, namePatterns: Collection<String>): Collection<String>
 }

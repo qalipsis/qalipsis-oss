@@ -18,6 +18,9 @@ import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Long> {
 
+    @Join(value = "tags", type = Join.Type.LEFT_FETCH)
+    override suspend fun findById(id: Long): FactoryEntity?
+
     @Query(
         """SELECT factory.*, 
             factory_tag.id as tags_id, factory_tag.factory_id as tags_factory_id, factory_tag.key as tags_key, factory_tag.value as tags_value
