@@ -7,7 +7,12 @@ import javax.validation.Constraint
  *
  * @author Eric Jessé
  */
-@Target(AnnotationTarget.FIELD, AnnotationTarget.TYPE)
+@Target(
+    AnnotationTarget.FIELD,
+    AnnotationTarget.TYPE,
+    AnnotationTarget.TYPE_PARAMETER,
+    AnnotationTarget.VALUE_PARAMETER
+)
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [PositiveDurationValidator::class])
 annotation class PositiveDuration(

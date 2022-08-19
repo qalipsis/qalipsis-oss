@@ -1,4 +1,4 @@
-package io.qalipsis.api.report.query
+package io.qalipsis.api.query
 
 import io.micronaut.core.annotation.Introspected
 

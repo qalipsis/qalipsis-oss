@@ -2,7 +2,7 @@ package io.qalipsis.api.report
 
 import io.micronaut.context.annotation.Requires
 import io.micronaut.validation.Validated
-import io.qalipsis.api.report.query.QueryDescription
+import io.qalipsis.api.query.QueryDescription
 import javax.validation.constraints.Max
 import javax.validation.constraints.Positive
 
@@ -14,7 +14,7 @@ import javax.validation.constraints.Positive
  */
 @Requires(env = ["standalone", "head"])
 @Validated
-interface MeterProvider {
+interface MeterMetadataProvider {
 
     /**
      * Searches names of meters in the tenant, matching the filters if specified.

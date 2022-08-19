@@ -21,6 +21,7 @@ val kotlinSerialization: String by project
 dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
+    compileOnly("io.swagger.core.v3:swagger-annotations")
 
     compileOnly(kotlin("stdlib"))
     implementation("cool.graph:cuid-java:0.1.1")

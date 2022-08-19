@@ -1,4 +1,4 @@
-package io.qalipsis.api.report.query
+package io.qalipsis.api.query
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.constraints.PositiveDuration
@@ -16,5 +16,11 @@ data class QueryDescription(
     val fieldName: String? = null,
     val aggregationOperation: QueryAggregationOperator = QueryAggregationOperator.COUNT,
     @field:PositiveDuration
-    val timeframeUnit: Duration?
-)
+    val timeframeUnit: Duration? = null
+) {
+    constructor(vararg filters: QueryClause) : this(filters = filters.toList())
+    constructor(fieldName: String, vararg filters: QueryClause) : this(
+        filters = filters.toList(),
+        fieldName = fieldName
+    )
+}
