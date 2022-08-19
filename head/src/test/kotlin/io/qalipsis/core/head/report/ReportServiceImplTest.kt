@@ -2,17 +2,24 @@ package io.qalipsis.core.head.report
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.index
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
+import io.micronaut.data.model.Page
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
@@ -32,6 +39,7 @@ import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.converter.ReportConverter
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_CAMPAIGN_KEYS_NOT_ALLOWED
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_DATA_SERIES_NOT_ALLOWED
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_DELETE_DENY
@@ -40,6 +48,7 @@ import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_UPDATE_DE
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -80,6 +89,9 @@ internal class ReportServiceImplTest {
     @MockK
     private lateinit var idGenerator: IdGenerator
 
+    @RelaxedMockK
+    private lateinit var reportConverter: ReportConverter
+
     @InjectMockKs
     private lateinit var reportServiceImpl: ReportServiceImpl
 
@@ -107,8 +119,6 @@ internal class ReportServiceImplTest {
             coEvery { reportRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference("the-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
-            coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", emptyList()) } returns emptySet()
-            coEvery { campaignScenarioRepository.findNameByCampaignKeys(any()) } returns emptyList()
             coEvery { idGenerator.short() } returns "the-reference"
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(displayName = "report-name")
@@ -149,10 +159,10 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 reportRepository.save(any())
-                campaignScenarioRepository.findNameByCampaignKeys(any())
             }
             coVerifyNever {
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
+                campaignScenarioRepository.findNameByCampaignKeys(any())
             }
         }
 
@@ -163,7 +173,7 @@ internal class ReportServiceImplTest {
         coEvery { tenantRepository.findIdByReference("the-tenant") } returns 123L
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
         coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1", "campaign-key2")) } returns setOf("campaign-key1", "campaign-key2")
-        coEvery { campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
+        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
         coEvery { campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any()) } returns listOf("scenario-1", "scenario-2", "scenario-3")
         coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
         coEvery { dataSeriesRepository.findByReferenceAndTenant("series-ref-1", "the-tenant") } returns dataSeries[0]
@@ -236,7 +246,7 @@ internal class ReportServiceImplTest {
             userRepository.findIdByUsername("the-user")
             reportRepository.save(any())
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any())
+            campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
             userRepository.findUsernameById(any())
         }
@@ -260,7 +270,7 @@ internal class ReportServiceImplTest {
         }
 
     @Test
-    internal fun `should not create the report when data series do not belong to the tenant`() =
+    internal fun `should not create the report when reports do not belong to the tenant`() =
         testDispatcherProvider.runTest {
             // given
             coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", emptyList()) } returns emptySet()
@@ -273,7 +283,7 @@ internal class ReportServiceImplTest {
                 campaignNamesPatterns = listOf("*"),
                 scenarioNamesPatterns = listOf("\\w"),
                 dataComponents = listOf(
-                        DiagramCreationAndUpdateRequest(dataSeriesReferences = listOf("series-ref-1"))
+                    DiagramCreationAndUpdateRequest(dataSeriesReferences = listOf("series-ref-1"))
                 )
             )
 
@@ -289,92 +299,44 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should get the report if shared`() = testDispatcherProvider.runTest {
         // given
-        coEvery { reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "the-tenant", reference = "report-ref", creatorId = 456L) } returns ReportEntity(
-            reference = "report-ref",
-            tenantId = -1,
-            creatorId = 123L,
-            displayName = "report-name",
-            sharingMode = SharingMode.READONLY,
-            campaignNamesPatterns = listOf("*"),
-        )
+        val reportEntity = relaxedMockk<ReportEntity>()
+        val report = relaxedMockk<Report>()
+        coEvery { reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "the-tenant", reference = "report-ref", creatorId = 456L) } returns reportEntity
         coEvery { userRepository.findIdByUsername("other-user") } returns 456L
-        coEvery { userRepository.findUsernameById(123L) } returns "the-user"
-        coEvery { campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any()) } returns listOf("campaign-key1")
-        coEvery { campaignScenarioRepository.findNameByCampaignKeys(any()) } returns listOf("scenario-1", "scenario-2")
+        coEvery { reportConverter.convertToModel(any()) } returns report
 
         // when
         val result = reportServiceImpl.get(tenant = "the-tenant", username = "other-user", reference = "report-ref")
 
         // then
-        assertThat(result).all {
-            prop(Report::reference).isEqualTo("report-ref")
-            prop(Report::creator).isEqualTo("the-user")
-            prop(Report::displayName).isEqualTo("report-name")
-            prop(Report::sharingMode).isEqualTo(SharingMode.READONLY)
-            prop(Report::campaignKeys).hasSize(0)
-            prop(Report::campaignNamesPatterns).hasSize(1)
-            prop(Report::resolvedCampaignKeys).hasSize(1)
-            prop(Report::scenarioNamesPatterns).hasSize(0)
-            prop(Report::resolvedScenarioNames).hasSize(2)
-            prop(Report::dataComponents).hasSize(0)
-        }
-
-        coVerifyNever {
-            reportDataComponentRepository.findByIdInOrderById(any())
-        }
+        assertThat(result).isDataClassEqualTo(report)
 
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
-            userRepository.findUsernameById(123L)
-            campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any())
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            reportConverter.convertToModel(any())
         }
     }
 
     @Test
     internal fun `should get the report if not shared but owned`() = testDispatcherProvider.runTest {
         // given
-        coEvery { reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "the-tenant", reference = "report-ref", creatorId = 456L) } returns ReportEntity(
-            reference = "report-ref",
-            tenantId = -1,
-            creatorId = 456L,
-            displayName = "report-name",
-            sharingMode = SharingMode.NONE,
-            campaignNamesPatterns = listOf("*"),
-        )
+        val reportEntity = relaxedMockk<ReportEntity>()
+        val report = relaxedMockk<Report>()
+        coEvery { reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "the-tenant", reference = "report-ref", creatorId = 456L) } returns reportEntity
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
-        coEvery { campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any()) } returns listOf("campaign-key1")
-        coEvery { campaignScenarioRepository.findNameByCampaignKeys(any()) } returns listOf("scenario-1", "scenario-2")
+        coEvery { reportConverter.convertToModel(any()) } returns report
 
         // when
         val result = reportServiceImpl.get(tenant = "the-tenant", username = "the-user", reference = "report-ref")
 
         // then
-        assertThat(result).all {
-            prop(Report::reference).isEqualTo("report-ref")
-            prop(Report::creator).isEqualTo("the-user")
-            prop(Report::displayName).isEqualTo("report-name")
-            prop(Report::sharingMode).isEqualTo(SharingMode.NONE)
-            prop(Report::campaignKeys).hasSize(0)
-            prop(Report::campaignNamesPatterns).hasSize(1)
-            prop(Report::resolvedCampaignKeys).hasSize(1)
-            prop(Report::scenarioNamesPatterns).hasSize(0)
-            prop(Report::resolvedScenarioNames).hasSize(2)
-            prop(Report::dataComponents).hasSize(0)
-        }
-
-        coVerifyNever {
-            reportDataComponentRepository.findByIdInOrderById(any())
-        }
+        assertThat(result).isDataClassEqualTo(report)
 
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
-            userRepository.findUsernameById(456L)
-            campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any())
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            reportConverter.convertToModel(any())
         }
     }
 
@@ -435,7 +397,7 @@ internal class ReportServiceImplTest {
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
             coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1")) } returns setOf("campaign-key1")
-            coEvery { campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
+            coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
             coEvery { campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any()) } returns listOf("scenario-1", "scenario-2", "scenario-3")
             coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
             coEvery { dataSeriesRepository.findByReferenceAndTenant("series-ref-1", "the-tenant") } returns dataSeries[0]
@@ -518,7 +480,7 @@ internal class ReportServiceImplTest {
                 reportDataComponentRepository.deleteByReportId(any())
                 reportRepository.update(any())
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-                campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any())
+                campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
                 campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
                 userRepository.findUsernameById(456L)
             }
@@ -541,7 +503,7 @@ internal class ReportServiceImplTest {
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
             coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1")) } returns setOf("campaign-key1")
-            coEvery { campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any()) } returns listOf("campaign-key1")
+            coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1")
             coEvery { campaignScenarioRepository.findNameByCampaignKeys(any()) } returns listOf("scenario-1", "scenario-2")
             coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
             coEvery { dataSeriesRepository.findByReferenceAndTenant(any(), "the-tenant") } returns dataSeries[1]
@@ -573,7 +535,7 @@ internal class ReportServiceImplTest {
                 reportRepository.getReportIfUpdatable(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
                 userRepository.findUsernameById(456L)
                 campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1"))
-                campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any())
+                campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
                 campaignScenarioRepository.findNameByCampaignKeys(any())
             }
             coVerifyNever {
@@ -629,7 +591,7 @@ internal class ReportServiceImplTest {
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
         coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1")) } returns setOf("campaign-key1")
-        coEvery { campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
+        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
         coEvery { campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any()) } returns listOf("scenario-1", "scenario-2", "scenario-3")
         coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
         coEvery { dataSeriesRepository.findByReferenceAndTenant("series-ref-2", "the-tenant") } returns dataSeries[1]
@@ -712,7 +674,7 @@ internal class ReportServiceImplTest {
             reportDataComponentRepository.deleteByReportId(any())
             reportRepository.update(any())
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysByTenantAndNamePatterns("the-tenant", any())
+            campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
             userRepository.findUsernameById(456L)
         }
@@ -845,4 +807,180 @@ internal class ReportServiceImplTest {
             reportRepository.delete(any())
         }
     }
+
+    @Test
+    internal fun `should return the searched reports from the repository with default sorting and no filter`() =
+        testDispatcherProvider.run {
+            // given
+            val reportEntity1 = relaxedMockk<ReportEntity>()
+            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val report1 = relaxedMockk<Report>()
+            val report2 = relaxedMockk<Report>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(reportEntity1, reportEntity2), pageable, 2)
+            coEvery { reportRepository.searchReports("my-tenant", "user", pageable) } returns page
+            coEvery { reportConverter.convertToModel(any()) } returns report1 andThen report2
+
+            // when
+            val result = reportServiceImpl.search("my-tenant", "user", emptyList(), null, 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Report>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Report>::elements).all {
+                    hasSize(2)
+                    containsExactly(report1, report2)
+                }
+            }
+            coVerifyOrder {
+                reportRepository.searchReports("my-tenant", "user", pageable)
+                reportConverter.convertToModel(refEq(reportEntity1))
+                reportConverter.convertToModel(refEq(reportEntity2))
+            }
+            confirmVerified(reportRepository, reportConverter)
+        }
+
+    @Test
+    internal fun `should return the searched reports from the repository with sorting asc`() =
+        testDispatcherProvider.run {
+            // given
+            val report1 = relaxedMockk<Report>()
+            val report2 = relaxedMockk<Report>()
+            val reportEntity1 = relaxedMockk<ReportEntity>()
+            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("campaignKeys")))
+            val page = Page.of(listOf(reportEntity1, reportEntity2), pageable, 2)
+            coEvery { reportRepository.searchReports("my-tenant", "user", pageable) } returns page
+            coEvery { reportConverter.convertToModel(any()) } returns report1 andThen report2
+
+            // when
+            val result = reportServiceImpl.search("my-tenant", "user", emptyList(), "campaignKeys:asc", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Report>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Report>::elements).all {
+                    hasSize(2)
+                    containsExactly(report1, report2)
+                }
+            }
+            coVerifyOrder {
+                reportRepository.searchReports("my-tenant", "user", pageable)
+                reportConverter.convertToModel(refEq(reportEntity1))
+                reportConverter.convertToModel(refEq(reportEntity2))
+            }
+            confirmVerified(reportRepository, reportConverter)
+        }
+
+    @Test
+    internal fun `should return the searched reports from the repository with sorting desc`() =
+        testDispatcherProvider.run {
+            // given
+            val report1 = relaxedMockk<Report>()
+            val report2 = relaxedMockk<Report>()
+            val reportEntity1 = relaxedMockk<ReportEntity>()
+            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("campaignKeys")))
+            val page = Page.of(listOf(reportEntity2, reportEntity1), pageable, 2)
+            coEvery { reportRepository.searchReports("my-tenant", "user", pageable) } returns page
+            coEvery { reportConverter.convertToModel(any()) } returns report2 andThen report1
+
+            // when
+            val result = reportServiceImpl.search("my-tenant", "user", emptyList(), "campaignKeys:desc", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Report>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Report>::elements).all {
+                    hasSize(2)
+                    containsExactly(report2, report1)
+                }
+            }
+            coVerifyOrder {
+                reportRepository.searchReports("my-tenant", "user", pageable)
+                reportConverter.convertToModel(refEq(reportEntity2))
+                reportConverter.convertToModel(refEq(reportEntity1))
+            }
+            confirmVerified(reportRepository, reportConverter)
+        }
+
+    @Test
+    internal fun `should return the searched reports from the repository with specified filters and default sort`() =
+        testDispatcherProvider.run {
+            // given
+            val filter1 = "%Un%u_%"
+            val filter2 = "%u_Er%"
+            val reportEntity1 = relaxedMockk<ReportEntity>()
+            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(reportEntity1, reportEntity2), Pageable.from(0, 20), 2)
+            coEvery { reportRepository.searchReports("my-tenant", "user", listOf(filter1, filter2), pageable) } returns page
+            val report1 = relaxedMockk<Report>()
+            val report2 = relaxedMockk<Report>()
+            coEvery { reportConverter.convertToModel(any()) } returns report1 andThen report2
+
+            // when
+            val result =
+                reportServiceImpl.search("my-tenant", "user", listOf("Un*u?", "u?Er"), null, 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Report>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Report>::elements).all {
+                    hasSize(2)
+                    containsExactly(report1, report2)
+                }
+            }
+            coVerifyOrder {
+                reportRepository.searchReports("my-tenant", "user", listOf(filter1, filter2), pageable)
+                reportConverter.convertToModel(refEq(reportEntity1))
+                reportConverter.convertToModel(refEq(reportEntity2))
+            }
+            confirmVerified(reportRepository, reportConverter)
+        }
+
+    @Test
+    internal fun `should return the searched reports from the repository with specified sorting and filters`() =
+        testDispatcherProvider.run {
+            // given
+            val filter1 = "%F_oo%"
+            val filter2 = "%Us_r%"
+            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val reportEntity3 = relaxedMockk<ReportEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("sharingMode")))
+            val page = Page.of(listOf(reportEntity2, reportEntity3), Pageable.from(0, 20), 2)
+            coEvery { reportRepository.searchReports("my-tenant", "user", listOf(filter1, filter2), pageable) } returns page
+            val report2 = relaxedMockk<Report>()
+            val report3 = relaxedMockk<Report>()
+            coEvery { reportConverter.convertToModel(any()) } returns report2 andThen report3
+
+            // when
+            val result =
+                reportServiceImpl.search("my-tenant", "user", listOf("F_oo", "Us_r"), "sharingMode", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.core.head.model.Page<Report>::page).isEqualTo(0)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.core.head.model.Page<Report>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.core.head.model.Page<Report>::elements).all {
+                    hasSize(2)
+                    containsExactly(report2, report3)
+                }
+            }
+            coVerifyOrder {
+                reportRepository.searchReports("my-tenant", "user", listOf(filter1, filter2), pageable)
+                reportConverter.convertToModel(refEq(reportEntity2))
+                reportConverter.convertToModel(refEq(reportEntity3))
+            }
+            confirmVerified(reportRepository, reportConverter)
+        }
 }

@@ -13,22 +13,29 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.Put
+import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.report.ReportService
 import io.qalipsis.core.head.security.Permissions
+import io.qalipsis.core.head.web.ControllerUtils.asFilters
 import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import javax.annotation.Nullable
 import javax.validation.Valid
+import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
+import javax.validation.constraints.Positive
+import javax.validation.constraints.PositiveOrZero
 
 /**
  * @author Joël Valère
@@ -190,5 +197,54 @@ internal class ReportController(
     ): HttpResponse<Unit> {
         reportService.delete(tenant = tenant, username = authentication.name, reference = reference)
         return HttpResponse.status(HttpStatus.ACCEPTED)
+    }
+
+    @Get
+    @Operation(
+        summary = "Search all the reports",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Page of reports matching the criteria"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.READ_REPORT])
+    @Timed("reports-search")
+    suspend fun search(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "Field of the report to use in order to sort the results",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("sort", defaultValue = "") sort: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Parameter(
+            description = "Comma-separated list of values to apply as wildcard filters on the reports fields",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        @Parameter(
+            description = "Page number to start retrieval from",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
+        @Parameter(
+            description = "Size of the page to retrieve",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
+    ): HttpResponse<Page<Report>> {
+        return HttpResponse.ok(reportService.search(tenant, authentication.name, filter.asFilters(), sort.takeUnless(String::isNullOrBlank), page, size))
     }
 }

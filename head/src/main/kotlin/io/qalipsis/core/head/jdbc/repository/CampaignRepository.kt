@@ -102,4 +102,12 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)"""
     )
     suspend fun findKeysByTenantAndNamePatterns(tenant: String, namePatterns: Collection<String>): Collection<String>
+
+    @Query(
+        """SELECT distinct campaign_entity_.key 
+            FROM campaign as campaign_entity_ 
+            WHERE campaign_entity_.tenant_id = :tenantId
+            AND campaign_entity_.name ILIKE any (array[:namePatterns])"""
+    )
+    suspend fun findKeysByTenantIdAndNamePatterns(tenantId: Long, namePatterns: Collection<String>): Collection<String>
 }
