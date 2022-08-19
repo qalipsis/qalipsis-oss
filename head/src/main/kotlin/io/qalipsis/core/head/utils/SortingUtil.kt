@@ -24,11 +24,12 @@ internal object SortingUtil {
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Entity> List<T>.sortBy(type: KClass<T>, property: String): List<T> {
+        val properties = property.trim().split(":")
         val sortProperty = BeanIntrospection.getIntrospection(type.java).beanProperties
             .firstOrNull {
-                it.name == property.trim().split(":")[0]
+                it.name == properties.first()
             }
-        val sortOrder = property.trim().split(":").last().lowercase()
+        val sortOrder = properties.last().lowercase()
         return if ("desc" == sortOrder) {
             this.sortedBy { sortProperty?.get(it) as Comparable<Any> }.reversed()
         } else {
@@ -43,11 +44,12 @@ internal object SortingUtil {
      * @param property name of the property to sort. Could also include suffixes ':desc' or ':asc' to define the sorting order, which defaults to asc.
      */
     fun sort(type: KClass<out Entity>, property: String): Sort? {
+        val properties = property.trim().split(":")
         val sortProperty = BeanIntrospection.getIntrospection(type.java).beanProperties
             .firstOrNull {
-                it.name == property.trim().split(":").get(0)
+                it.name == properties.first()
             }
-        val sortOrder = property.trim().split(":").last().lowercase()
+        val sortOrder = properties.last().lowercase()
         return if ("desc" == sortOrder) {
             Sort.of(Sort.Order.desc(sortProperty?.name))
         } else {

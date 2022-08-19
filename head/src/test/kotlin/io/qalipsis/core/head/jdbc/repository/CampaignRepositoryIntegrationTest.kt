@@ -478,4 +478,33 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%"))).isEmpty()
         assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%", "%4"))).containsOnly("key-4")
     }
+
+    @Test
+    internal fun `should return only campaign keys by tenant id and campaign names patterns`() = testDispatcherProvider.run{
+        //given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        campaignRepository.save(campaignPrototype.copy(key = "key-1", name = "campaign-1", end = null, tenantId = tenant.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-2", name = "CAMPAIGN-2", end = null, tenantId = tenant2.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-3", name = "camp-3", end = null, tenantId = tenant.id))
+        campaignRepository.save(campaignPrototype.copy(key = "key-4", name = "CAMPAIGN-4", end = null, tenantId = tenant.id))
+
+        // when
+        val campaignKeys = campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
+        // then
+        assertThat(campaignKeys).all{
+            hasSize(3)
+            containsOnly("key-1", "key-3", "key-4")
+        }
+
+        //when + then
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp-_"))).containsOnly("key-3")
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%"))).containsOnly("key-1", "key-4")
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%", "ca_", "x"))).containsOnly("key-1", "key-4")
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%", "ca%"))).containsOnly("key-1", "key-3", "key-4")
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%4"))).containsOnly("key-4")
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%", "%4"))).containsOnly("key-4")
+    }
+
 }

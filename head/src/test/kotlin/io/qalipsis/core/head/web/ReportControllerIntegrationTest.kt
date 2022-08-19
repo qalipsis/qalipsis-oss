@@ -7,6 +7,7 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
+import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
@@ -22,7 +23,7 @@ import io.mockk.excludeRecords
 import io.mockk.impl.annotations.MockK
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.model.CampaignReport
+import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.report.ReportService
@@ -201,7 +202,7 @@ internal class ReportControllerIntegrationTest {
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
         )
-        val getReportRequest = HttpRequest.GET<CampaignReport>("/q7232x")
+        val getReportRequest = HttpRequest.GET<Report>("/q7232x")
         coEvery {
             reportService.get(
                 tenant = Defaults.TENANT,
@@ -263,5 +264,205 @@ internal class ReportControllerIntegrationTest {
             transform("body") { it.body() }.isDataClassEqualTo(updatedReport)
         }
         confirmVerified(reportService)
+    }
+
+    @Test
+    internal fun `should search reports with the default parameters`() {
+        // given
+        val report = Report(
+            reference = "q721wx52",
+            version = Instant.EPOCH,
+            creator = "my name",
+            displayName = "the-report",
+            campaignKeys = emptyList(),
+            campaignNamesPatterns = emptyList(),
+            resolvedCampaignKeys = emptyList(),
+            scenarioNamesPatterns = emptyList(),
+            resolvedScenarioNames = emptyList(),
+            dataComponents = emptyList()
+        )
+        val request = HttpRequest.GET<Page<Report>>("/")
+        coEvery {
+            reportService.search(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
+        } returns Page(0, 1, 1, listOf(report))
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, Report::class.java))
+
+        //then
+        coVerifyOnce {
+            reportService.search(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(report)))
+        }
+    }
+
+    @Test
+    internal fun `should fail for negative page value`() {
+        // given
+        val request = HttpRequest.GET<Page<Report>>("/?page=-2")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, Report::class.java))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @Test
+    internal fun `should fail for negative size value`() {
+        // given
+        val request = HttpRequest.GET<Page<Report>>("/?size=-200")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, Report::class.java))
+        }.response
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @Test
+    internal fun `should search for reports with filter and default sorting`() {
+        // given
+        val report = Report(
+            reference = "q721wx52-1",
+            version = Instant.EPOCH,
+            creator = "my name",
+            displayName = "report-name-1",
+            campaignKeys = emptyList(),
+            campaignNamesPatterns = emptyList(),
+            resolvedCampaignKeys = emptyList(),
+            scenarioNamesPatterns = emptyList(),
+            resolvedScenarioNames = emptyList(),
+            dataComponents = emptyList()
+        )
+        val report2 = Report(
+            reference = "q721wx52-2",
+            version = Instant.EPOCH,
+            creator = "my name",
+            displayName = "report-name-2",
+            campaignKeys = emptyList(),
+            campaignNamesPatterns = emptyList(),
+            resolvedCampaignKeys = emptyList(),
+            scenarioNamesPatterns = emptyList(),
+            resolvedScenarioNames = emptyList(),
+            dataComponents = emptyList()
+        )
+        val request = HttpRequest.GET<Page<Report>>("?filter=foo,bar&size=4")
+        coEvery {
+            reportService.search(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = listOf("foo", "bar"),
+                sort = null,
+                page = 0,
+                size = 4
+            )
+        } returns Page(0, 1, 2, listOf(report, report2))
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, Report::class.java))
+
+        // then
+        coVerifyOnce {
+            reportService.search(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = listOf("foo", "bar"),
+                sort = null,
+                page = 0,
+                size = 4
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 2, listOf(report, report2)))
+        }
+    }
+
+    @Test
+    internal fun `should search for reports with specified sorting`() {
+        // given
+        val report = Report(
+            reference = "q721wx52-1",
+            version = Instant.EPOCH,
+            creator = "my name",
+            displayName = "report-name-1",
+            campaignKeys = emptyList(),
+            campaignNamesPatterns = emptyList(),
+            resolvedCampaignKeys = emptyList(),
+            scenarioNamesPatterns = emptyList(),
+            resolvedScenarioNames = emptyList(),
+            dataComponents = emptyList()
+        )
+        val report2 = Report(
+            reference = "q721wx52-2",
+            version = Instant.EPOCH,
+            creator = "my name",
+            displayName = "report-name-2",
+            campaignKeys = emptyList(),
+            campaignNamesPatterns = emptyList(),
+            resolvedCampaignKeys = emptyList(),
+            scenarioNamesPatterns = emptyList(),
+            resolvedScenarioNames = emptyList(),
+            dataComponents = emptyList()
+        )
+        val request = HttpRequest.GET<Page<Report>>("?sort=displayName&size=5")
+        coEvery {
+            reportService.search(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = "displayName",
+                page = 0,
+                size = 5
+            )
+        } returns Page(0, 1, 2, listOf(report, report2))
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.of(Page::class.java, Report::class.java))
+
+        // then
+        coVerifyOnce {
+            reportService.search(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                filters = emptyList(),
+                sort = "displayName",
+                page = 0,
+                size = 5
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 2, listOf(report, report2)))
+        }
     }
 }

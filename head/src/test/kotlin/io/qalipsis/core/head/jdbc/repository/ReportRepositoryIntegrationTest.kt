@@ -3,6 +3,7 @@ package io.qalipsis.core.head.jdbc.repository
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
+import assertk.assertions.doesNotContain
 import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -12,6 +13,8 @@ import assertk.assertions.isNull
 import assertk.assertions.hasSize
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.qalipsis.api.report.query.QueryAggregationOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
@@ -781,5 +784,711 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThrows<DataAccessException> {
             reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = creator2.id)
         }
+    }
+
+    @Test
+    fun `should fetch all reports saved with the default params`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val reportEntity = reportRepository.save(reportPrototype.copy(tenantId = tenant.id, creatorId = creator.id))
+        assertThat(reportRepository.findAll().count()).isEqualTo(1)
+
+        //when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).containsOnly(reportEntity)
+    }
+
+    @Test
+    fun `should fetch all reports and sort them by the sharing mode`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val reportWithWriteSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val reportWithNoSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val reportWithReadSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-3",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-3"
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, Pageable.from(0, 3, Sort.of(Sort.Order("sharingMode")))
+            ).content
+        ).all {
+            hasSize(3)
+            containsOnly(reportWithNoSharingMode, reportWithReadSharingMode, reportWithWriteSharingMode)
+            index(0).prop(ReportEntity::id).isEqualTo(reportWithNoSharingMode.id)
+            index(1).prop(ReportEntity::id).isEqualTo(reportWithReadSharingMode.id)
+            index(2).prop(ReportEntity::id).isEqualTo(reportWithWriteSharingMode.id)
+        }
+    }
+
+    @Test
+    fun `should fetch all reports and sort them by the sharing mode desc`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val reportWithWriteSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val reportWithNoSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val reportWithReadSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-3",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-3"
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, Pageable.from(0, 3, Sort.of(Sort.Order.desc("sharingMode")))
+            ).content
+        ).all {
+            hasSize(3)
+            containsOnly(reportWithNoSharingMode, reportWithReadSharingMode, reportWithWriteSharingMode)
+            index(0).prop(ReportEntity::id).isEqualTo(reportWithWriteSharingMode.id)
+            index(1).prop(ReportEntity::id).isEqualTo(reportWithReadSharingMode.id)
+            index(2).prop(ReportEntity::id).isEqualTo(reportWithNoSharingMode.id)
+        }
+    }
+
+    @Test
+    fun `should fetch all reports that belong to user alone or sharing mode is not none`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+        val report1 = reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val reportWithWriteSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val reportWithNoSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val reportWithReadSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-3",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-3"
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(4)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all {
+            hasSize(3)
+            containsOnly(report1, reportWithWriteSharingMode, reportWithReadSharingMode)
+            index(0).prop(ReportEntity::id).isEqualTo(report1.id)
+            index(1).prop(ReportEntity::id).isEqualTo(reportWithWriteSharingMode.id)
+            index(2).prop(ReportEntity::id).isEqualTo(reportWithReadSharingMode.id)
+            doesNotContain(reportWithNoSharingMode)
+        }
+    }
+
+    @Test
+    fun `should fetch only reports belonging to only the specified tenant`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val otherTenant = tenantRepository.save(tenantPrototype.copy(reference = "other-tenant"))
+        val creator = userRepository.save(userPrototype.copy())
+        val report1 = reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val reportWithOtherTenant = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = otherTenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                otherTenant.reference, creator.username, Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all {
+            hasSize(1)
+            containsOnly(reportWithOtherTenant)
+            doesNotContain(report1)
+        }
+    }
+
+    @Test
+    fun `should find all reports with filter on report display name`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val anotherReport = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%e-1"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all {
+            hasSize(1)
+            containsOnly(anotherReport)
+        }
+    }
+
+    @Test
+    fun `should find all reports with filter on report display name with paging`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val saved1 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val saved2 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).containsOnly(saved1)
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(1, 1, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).containsOnly(saved2)
+    }
+
+    @Test
+    fun `should find all reports with filter on report display name with paging desc`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val saved1 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val saved2 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(0, 1, Sort.of(Sort.Order.desc("displayName")))
+            ).content
+        ).containsOnly(saved2)
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(1, 1, Sort.of(Sort.Order.desc("displayName")))
+            ).content
+        ).containsOnly(saved1)
+    }
+
+    @Test
+    fun `should find all reports with filter on data series display name included in report`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val saved = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name",
+            )
+        )
+        val dataSeriesEntities = dataSeriesRepository.saveAll(
+            dataComponents.map { reportDataComponentEntity ->
+                DataSeriesEntity(
+                    reference = "series-ref_${reportDataComponentEntity.type}",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "my-series-name_${reportDataComponentEntity.type}",
+                    dataType = DataType.METERS
+                )
+            }
+        ).toList()
+        reportDataComponentRepository.saveAll(
+            dataComponents.mapIndexed { index, reportDataComponentEntity ->
+                reportDataComponentEntity.copy(reportId = saved.id, dataSeries = listOf(dataSeriesEntities[index]))
+            }
+        ).toList()
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%-series%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all{
+            hasSize(1)
+            index(0).prop(ReportEntity::id).isEqualTo(saved.id)
+            index(0).prop(ReportEntity::dataComponents).all {
+                hasSize(2)
+                index(0).all {
+                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DIAGRAM)
+                }
+                index(1).all {
+                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DATA_TABLE)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `should find only reports that match filter on data series display name`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val saved = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val dataSeriesEntities = dataSeriesRepository.saveAll(
+            dataComponents.map { reportDataComponentEntity ->
+                DataSeriesEntity(
+                    reference = "series-ref_${reportDataComponentEntity.type}",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "my-series-name_${reportDataComponentEntity.type}",
+                    dataType = DataType.METERS
+                )
+            }
+        ).toList()
+        reportDataComponentRepository.saveAll(
+            dataComponents.mapIndexed { index, reportDataComponentEntity ->
+                reportDataComponentEntity.copy(reportId = saved.id, dataSeries = listOf(dataSeriesEntities[index]))
+            }
+        ).toList()
+
+        val saved2 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val dataSeriesEntities2 = dataSeriesRepository.saveAll(
+            dataComponents.map { reportDataComponentEntity ->
+                DataSeriesEntity(
+                    reference = "${reportDataComponentEntity.type}_series-ref",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "${reportDataComponentEntity.type}my-series",
+                    dataType = DataType.METERS
+                )
+            }
+        ).toList()
+        reportDataComponentRepository.saveAll(
+            dataComponents.mapIndexed { index, reportDataComponentEntity ->
+                reportDataComponentEntity.copy(reportId = saved2.id, dataSeries = listOf(dataSeriesEntities2[index]))
+            }
+        ).toList()
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%-series-%"), Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all{
+            hasSize(1)
+            index(0).prop(ReportEntity::id).isEqualTo(saved.id)
+            index(0).prop(ReportEntity::dataComponents).all {
+                hasSize(2)
+                index(0).all {
+                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DIAGRAM)
+                }
+                index(1).all {
+                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DATA_TABLE)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `should find only shared reports with filter on data series display name`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+        val saved = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val dataSeriesEntities = dataSeriesRepository.saveAll(
+            dataComponents.map { reportDataComponentEntity ->
+                DataSeriesEntity(
+                    reference = "series-ref_${reportDataComponentEntity.type}",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "my-series-name_${reportDataComponentEntity.type}",
+                    dataType = DataType.METERS
+                )
+            }
+        ).toList()
+        reportDataComponentRepository.saveAll(
+            dataComponents.mapIndexed { index, reportDataComponentEntity ->
+                reportDataComponentEntity.copy(reportId = saved.id, dataSeries = listOf(dataSeriesEntities[index]))
+            }
+        ).toList()
+
+        val saved2 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val dataSeriesEntities2 = dataSeriesRepository.saveAll(
+            dataComponents.map { reportDataComponentEntity ->
+                DataSeriesEntity(
+                    reference = "${reportDataComponentEntity.type}_series-ref",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "${reportDataComponentEntity.type}my-series",
+                    dataType = DataType.METERS
+                )
+            }
+        ).toList()
+        reportDataComponentRepository.saveAll(
+            dataComponents.mapIndexed { index, reportDataComponentEntity ->
+                reportDataComponentEntity.copy(reportId = saved2.id, dataSeries = listOf(dataSeriesEntities2[index]))
+            }
+        ).toList()
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%-series%"), Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all{
+            hasSize(1)
+            index(0).prop(ReportEntity::id).isEqualTo(saved.id)
+            index(0).prop(ReportEntity::dataComponents).all {
+                hasSize(2)
+                index(0).all {
+                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DIAGRAM)
+                }
+                index(1).all {
+                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DATA_TABLE)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `should find all reports with filter on report display name case insensitive`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val anotherReport = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%NaME-1"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all {
+            hasSize(1)
+            containsOnly(anotherReport)
+        }
+    }
+
+    @Test
+    fun `should find all reports with filter on username name`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val anotherReport = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("_nother%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all {
+            hasSize(1)
+            containsOnly(anotherReport)
+        }
+    }
+
+    @Test
+    fun `should find all reports with filter on creator display name`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val anotherReport = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%que-u%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).all {
+            hasSize(1)
+            containsOnly(anotherReport)
+        }
+    }
+
+    @Test
+    fun `should fetch nothing if filters don't match`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id
+            )
+        )
+        reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, listOf("%good%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content
+        ).isEmpty()
+    }
+
+    @Test
+    fun `should fetch all reports with paging`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val reportWithWriteSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val reportWithNoSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val reportWithReadSharingMode = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-3",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-3"
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, Pageable.from(0, 2, Sort.of(Sort.Order("sharingMode")))
+            ).content
+        ).containsOnly(reportWithNoSharingMode, reportWithReadSharingMode)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference, creator.username, Pageable.from(1, 2, Sort.of(Sort.Order("sharingMode")))
+            ).content
+        ).containsOnly(reportWithWriteSharingMode)
     }
 }

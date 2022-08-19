@@ -1,6 +1,8 @@
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.data.model.Pageable
+import io.micronaut.data.model.Sort
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
@@ -20,8 +22,11 @@ import io.qalipsis.core.head.model.DataTable
 import io.qalipsis.core.head.model.DataTableCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
+import io.qalipsis.core.head.model.Page as QalipsisPage
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.converter.ReportConverter
+import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.toList
 
@@ -41,7 +46,8 @@ internal class ReportServiceImpl(
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val reportDataComponentRepository: ReportDataComponentRepository,
     private val dataSeriesRepository: DataSeriesRepository,
-    private val idGenerator: IdGenerator
+    private val idGenerator: IdGenerator,
+    private val reportConverter: ReportConverter
 ) : ReportService {
 
     companion object {
@@ -58,12 +64,7 @@ internal class ReportServiceImpl(
         val reportEntity = requireNotNull(reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = tenant, reference = reference, creatorId = currentUserId)) {
             REPORT_FETCH_DENY
         }
-        val creatorName = userRepository.findUsernameById(reportEntity.creatorId)
-        return if (reportEntity.dataComponents.isNotEmpty()) {
-            val dataComponentEntities = reportDataComponentRepository.findByIdInOrderById(reportEntity.dataComponents.map { it.id }).toList()
-            toModel(reportEntity.copy(dataComponents = dataComponentEntities), creatorName, tenant)
-        }else
-            toModel(reportEntity, creatorName, tenant)
+        return reportConverter.convertToModel(reportEntity)
     }
 
     override suspend fun create(
@@ -77,8 +78,10 @@ internal class ReportServiceImpl(
                 REPORT_CAMPAIGN_KEYS_NOT_ALLOWED
             }
         }
-        reportCreationAndUpdateRequest.dataComponents.map {
-            checkDataSeriesInDataComponent(tenant, it)
+        if (reportCreationAndUpdateRequest.dataComponents.isNotEmpty()) {
+            reportCreationAndUpdateRequest.dataComponents.map {
+                checkDataSeriesInDataComponent(tenant, it)
+            }
         }
         var createdReport = reportRepository.save(
             ReportEntity(
@@ -103,7 +106,7 @@ internal class ReportServiceImpl(
                 )
             }
         }
-        return toModel(createdReport, creator, tenant)
+        return toModel(createdReport, creator)
     }
 
     override suspend fun update(
@@ -125,8 +128,10 @@ internal class ReportServiceImpl(
             }
         }
         return if (isUpdateRequired(reportCreationAndUpdateRequest, reportEntity)) {
-            reportCreationAndUpdateRequest.dataComponents.map {
-                checkDataSeriesInDataComponent(tenant, it)
+            if (reportCreationAndUpdateRequest.dataComponents.isNotEmpty()) {
+                reportCreationAndUpdateRequest.dataComponents.map {
+                    checkDataSeriesInDataComponent(tenant, it)
+                }
             }
             reportDataComponentRepository.deleteByReportId(reportEntity.id)
             var updatedReport = reportRepository.update(
@@ -153,9 +158,9 @@ internal class ReportServiceImpl(
                     )
                 }
             }
-            toModel(updatedReport, creatorName, tenant)
+            toModel(updatedReport, creatorName)
         } else {
-            toModel(reportEntity, creatorName, tenant)
+            toModel(reportEntity, creatorName)
         }
     }
 
@@ -167,30 +172,54 @@ internal class ReportServiceImpl(
         reportRepository.delete(reportEntity)
     }
 
+    override suspend fun search(tenant: String, username: String, filters: Collection<String>, sort: String?, page: Int, size: Int): QalipsisPage<Report> {
+        val sorting = sort?.let { SortingUtil.sort(ReportEntity::class, it) }
+            ?: Sort.of(Sort.Order(ReportEntity::displayName.name))
+        val pageable = Pageable.from(page, size, sorting)
+
+        val reportEntityPage = if (filters.isNotEmpty()) {
+            val sanitizedFilters = filters.map { it.replace('*', '%').replace('?', '_') }.map { "%${it.trim()}%" }
+            reportRepository.searchReports(tenant, username, sanitizedFilters, pageable)
+        } else {
+            reportRepository.searchReports(tenant, username, pageable)
+        }
+        return QalipsisPage(
+            page = reportEntityPage.pageNumber,
+            totalPages = reportEntityPage.totalPages,
+            totalElements = reportEntityPage.totalSize,
+            elements = reportEntityPage.content.map { reportConverter.convertToModel(it) }
+        )
+    }
+
     /**
      * Converts a report entity instance to report model instance.
      */
-    private suspend fun toModel(reportEntity: ReportEntity, creator: String, tenant: String): Report {
+    private suspend fun toModel(reportEntity: ReportEntity, creator: String): Report {
         val resolvedCampaignKeys =
-            if (reportEntity.campaignNamesPatterns.isNotEmpty())
-                campaignRepository.findKeysByTenantAndNamePatterns(
-                    tenant,
+            if (reportEntity.campaignNamesPatterns.isNotEmpty()) {
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    reportEntity.tenantId,
                     reportEntity.campaignNamesPatterns.map {
                         it.replace("*", "%").replace("?", "_")
                     }
                 )
+            }
             else emptyList()
         val campaignKeysUnion = reportEntity.campaignKeys.plus(resolvedCampaignKeys).distinct()
         val resolvedScenarioNames =
-            if (reportEntity.scenarioNamesPatterns.isEmpty())
-                campaignScenarioRepository.findNameByCampaignKeys(campaignKeysUnion)
-            else
-                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                    reportEntity.scenarioNamesPatterns.map {
-                        it.replace("*", "%").replace("?", "_")
-                    },
-                    campaignKeysUnion
-                )
+            if (campaignKeysUnion.isNotEmpty()) {
+                if (reportEntity.scenarioNamesPatterns.isEmpty())
+                    campaignScenarioRepository.findNameByCampaignKeys(campaignKeysUnion)
+                else {
+                    campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                        reportEntity.scenarioNamesPatterns.map {
+                            it.replace("*", "%").replace("?", "_")
+                        },
+                        campaignKeysUnion
+                    )
+                }
+            }
+            else emptyList()
         return Report(
             reference = reportEntity.reference,
             version = reportEntity.version,
