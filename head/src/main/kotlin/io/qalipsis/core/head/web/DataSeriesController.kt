@@ -33,7 +33,6 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import javax.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
@@ -218,19 +217,19 @@ internal class DataSeriesController(
         @Parameter(
             name = "data-type",
             description = "Type of the data related to the tags to search",
-            required = false,
+            required = true,
             `in` = ParameterIn.PATH
-        ) @Nullable @PathVariable("data-type") dataType: DataType,
+        ) @PathVariable("data-type") dataType: DataType,
         @Parameter(
             description = "Comma-separated list of values to apply as wildcard filters on the names",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        ) @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
+        ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
     ): Collection<String> {
         return dataProvider.searchNames(tenant, dataType, filter.asFilters(), size)
     }
@@ -256,9 +255,9 @@ internal class DataSeriesController(
         @Parameter(
             name = "data-type",
             description = "Type of the data related to the tags to search",
-            required = false,
+            required = true,
             `in` = ParameterIn.PATH
-        ) @Nullable @PathVariable("data-type") dataType: DataType,
+        ) @PathVariable("data-type") dataType: DataType,
     ): Collection<DataField> {
         return dataProvider.listFields(tenant, dataType)
     }
@@ -281,19 +280,19 @@ internal class DataSeriesController(
         @Parameter(
             name = "data-type",
             description = "Type of the data related to the tags to search",
-            required = false,
+            required = true,
             `in` = ParameterIn.PATH
-        ) @Nullable @PathVariable("data-type") dataType: DataType,
+        ) @PathVariable("data-type") dataType: DataType,
         @Parameter(
             description = "Comma-separated list of values to apply as wildcard filters on the tags names",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        ) @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
+        ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
     ): Map<String, Collection<String>> {
         return dataProvider.searchTagsAndValues(tenant, dataType, filter.asFilters(), size)
     }
@@ -326,25 +325,25 @@ internal class DataSeriesController(
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @QueryValue("sort", defaultValue = "") sort: String,
+        @QueryValue("sort", defaultValue = "") sort: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
             description = "Comma-separated list of values to apply as wildcard filters on the data series fields",
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
             description = "Page number to start retrieval from",
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
+        @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
         @Parameter(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
+        ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
     ): HttpResponse<Page<DataSeries>> {
         return HttpResponse.ok(
             dataSeriesService.searchDataSeries(

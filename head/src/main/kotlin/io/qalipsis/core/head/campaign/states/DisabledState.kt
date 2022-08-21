@@ -14,6 +14,7 @@ internal open class DisabledState(
     override val isCompleted: Boolean = true
 
     override suspend fun doInit(): List<Directive> {
+        context.factoryService.releaseFactories(campaign, campaign.factories.keys)
         context.headChannel.unsubscribeFeedback(campaign.feedbackChannel)
 
         if (context.reportPublishers.isNotEmpty()) {

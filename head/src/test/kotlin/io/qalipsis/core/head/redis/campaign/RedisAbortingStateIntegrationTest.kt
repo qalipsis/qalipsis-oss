@@ -16,12 +16,14 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 
@@ -94,6 +96,9 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
                 prop("error").isSameAs("The campaign was aborted")
                 typedProp<Boolean>("initialized").isFalse()
             }
+            coVerifyOnce {
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.ABORTED)
+            }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -125,7 +130,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
-            confirmVerified(factoryService, campaignReportStateKeeper)
+            confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
         }
 
     @Test

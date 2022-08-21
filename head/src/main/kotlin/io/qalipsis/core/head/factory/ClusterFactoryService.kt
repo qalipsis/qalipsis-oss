@@ -317,10 +317,8 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignKey = campaignRepository.findIdByKeyAndEndIsNull(
-                    campaignConfiguration.tenant, campaignConfiguration.key
-                )
-                campaignFactoryRepository.discard(campaignKey, factoryIds)
+                val campaignId = campaignRepository.findIdByKey(campaignConfiguration.tenant, campaignConfiguration.key)
+                campaignFactoryRepository.discard(campaignId, factoryIds)
             }
         }
     }

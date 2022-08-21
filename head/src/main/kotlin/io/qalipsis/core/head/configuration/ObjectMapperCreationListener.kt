@@ -3,6 +3,7 @@ package io.qalipsis.core.head.configuration
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
@@ -30,6 +31,12 @@ internal class ObjectMapperCreationListener : BeanCreatedEventListener<ObjectMap
                     nullIsSameAsDefault = true
                 )
             )
+
+            enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+            enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+            enable(MapperFeature.AUTO_DETECT_CREATORS)
+            enable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
+            enable(MapperFeature.SORT_CREATOR_PROPERTIES_FIRST)
 
             // Serialization configuration.
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)

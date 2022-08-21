@@ -7,10 +7,12 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.campaign.FactoryConfiguration
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
@@ -32,6 +34,9 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
+
+    @RelaxedMockK
+    protected lateinit var campaignService: CampaignService
 
     @RelaxedMockK
     protected lateinit var factoryService: FactoryService
@@ -77,9 +82,13 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
 
     @BeforeEach
     internal fun setUp() {
-        campaign = spyk(CampaignConfiguration(tenant = "my-tenant", key = "my-campaign").also {
+        campaign = spyk(CampaignConfiguration(
+            tenant = "my-tenant", key = "my-campaign"
+        ).also {
             it.broadcastChannel = "my-broadcast-channel"
             it.feedbackChannel = "my-feedback-channel"
+            it.factories["node-1"] = FactoryConfiguration("node-1-channel")
+            it.factories["node-2"] = FactoryConfiguration("node-2-channel")
         })
     }
 

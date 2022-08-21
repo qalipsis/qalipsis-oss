@@ -9,6 +9,7 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.mockk
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.test.mockk.relaxedMockk
@@ -29,6 +30,7 @@ internal class DisabledStateTest : AbstractStateTest() {
             coEvery { campaignReportStateKeeper.report(any()) } returns report
             coEvery { reportPublisher1.publish(any(), any()) } throws RuntimeException()
             every { campaign.message } returns "this is a message"
+            every { campaign.factories } returns mutableMapOf("node-1" to mockk(), "node-2" to mockk())
             val directives = DisabledState(campaign, true).run {
                 inject(campaignExecutionContext)
                 init()
@@ -47,6 +49,7 @@ internal class DisabledStateTest : AbstractStateTest() {
                 )
             }
             coVerifyOrder {
+                factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.report("my-campaign")
                 reportPublisher1.publish(refEq(campaign), refEq(report))
@@ -63,6 +66,7 @@ internal class DisabledStateTest : AbstractStateTest() {
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.report(any()) } returns report
             every { campaign.message } returns "this is a message"
+            every { campaign.factories } returns mutableMapOf("node-1" to mockk(), "node-2" to mockk())
             val directives = DisabledState(campaign, false).run {
                 inject(campaignExecutionContext)
                 init()
@@ -81,6 +85,7 @@ internal class DisabledStateTest : AbstractStateTest() {
                 )
             }
             coVerifyOrder {
+                factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.report("my-campaign")
                 reportPublisher1.publish(refEq(campaign), refEq(report))

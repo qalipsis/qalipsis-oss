@@ -72,7 +72,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
 
         assertThat(qalipsisCoreSingletonObjectsPackages).all {
             any { it.startsWith("io.qalipsis.core.head") }
-            any { it.startsWith("io.qalipsis.core.report") }
+            none { it.startsWith("io.qalipsis.core.report") }
             none { it.startsWith("io.qalipsis.core.factory") }
         }
 
@@ -156,7 +156,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
 
         assertThat(qalipsisCoreSingletonObjectsPackages).all {
             any { it.startsWith("io.qalipsis.core.head") }
-            any { it.startsWith("io.qalipsis.core.report") }
+            none { it.startsWith("io.qalipsis.core.report") }
             none { it.startsWith("io.qalipsis.core.head.web") }
             none { it.startsWith("io.qalipsis.core.factory") }
         }

@@ -1,7 +1,6 @@
 package io.qalipsis.core.head.web.annotation
 
 import io.micronaut.context.annotation.Infrastructure
-import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.ArgumentBinder
 import io.micronaut.core.convert.ArgumentConversionContext
@@ -15,7 +14,7 @@ import java.util.Optional
  * Binder to inject the default tenant reference when no security is active.
  */
 @Infrastructure
-@Requirements(Requires(env = [ExecutionEnvironments.HEAD]))
+@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 internal class NoOpTenantBinder : AnnotatedRequestArgumentBinder<Tenant, String> {
 
     override fun bind(

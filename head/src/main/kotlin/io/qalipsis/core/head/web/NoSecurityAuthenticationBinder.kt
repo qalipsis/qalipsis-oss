@@ -19,7 +19,7 @@ import java.util.Optional
  * Binder to inject the default user when no security is active.
  */
 @Infrastructure
-@Requirements(Requires(env = [ExecutionEnvironments.HEAD]))
+@Requirements(Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]))
 internal class NoSecurityAuthenticationBinder : TypedRequestArgumentBinder<Authentication> {
     override fun bind(
         context: ArgumentConversionContext<Authentication>,

@@ -80,7 +80,9 @@ internal class FactoryInitializerImpl(
     private val stepStartTimeout: Duration,
     @PositiveDuration
     @Property(name = "scenario.conversion.timeout", defaultValue = "5s")
-    private val conversionTimeout: Duration
+    private val conversionTimeout: Duration,
+    @Property(name = "scenario.allow-empty", defaultValue = "false")
+    private val allowEmptyScenario: Boolean = false,
 ) : ScenariosInitializer, FactoryStartupComponent {
 
     init {
@@ -125,7 +127,7 @@ internal class FactoryInitializerImpl(
 
                 scenarioSpecs = scenarioSpecificationsKeeper.asMap()
 
-                if (scenarioSpecs.isEmpty()) {
+                if (scenarioSpecs.isEmpty() && !allowEmptyScenario) {
                     throw ExitStatusException(IllegalArgumentException("No enabled scenario could be found"), 102)
                 }
 

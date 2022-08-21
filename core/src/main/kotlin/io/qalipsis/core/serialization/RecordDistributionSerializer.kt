@@ -2,6 +2,7 @@ package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.Serializers
 import jakarta.inject.Singleton
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 
@@ -11,6 +12,7 @@ import kotlinx.serialization.encodeToString
  * @author Eric Jessé
  */
 @Singleton
+@ExperimentalSerializationApi
 internal class RecordDistributionSerializer(
     serializers: List<RecordSerializer>
 ) : DistributionSerializer {

@@ -61,6 +61,14 @@ monitoring:
 micronaut:
   server:
     port: ${monitoring.port}
+    cors:
+      enabled: true
+  session:
+    http:
+      cookie: false
+      header: false
+  security:
+    enabled: false
   metrics:
     enabled: ${meters.enabled}
     binders:

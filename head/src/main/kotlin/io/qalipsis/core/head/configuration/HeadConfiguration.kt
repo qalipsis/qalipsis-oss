@@ -36,7 +36,8 @@ internal interface HeadConfiguration {
      * Duration of the heartbeat to emit from the factories.
      */
     @get:Positive
-    val heartbeatDuration: Duration
+    @get:Bindable(defaultValue = "PT30s")
+    val heartbeatDelay: Duration
 
     /**
      * Set of zones to use to execute the scenarios.

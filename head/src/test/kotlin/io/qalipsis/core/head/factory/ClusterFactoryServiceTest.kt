@@ -1329,7 +1329,7 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { campaignRepository.findIdByKeyAndEndIsNull(any(), "my-campaign") } returns 765
+        coEvery { campaignRepository.findIdByKey(any(), "my-campaign") } returns 765
         val campaignConfiguration = mockk<CampaignConfiguration> {
             every { key } returns "my-campaign"
             every { tenant } returns "qalipsis"
@@ -1341,7 +1341,7 @@ internal class ClusterFactoryServiceTest {
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            campaignRepository.findIdByKeyAndEndIsNull("qalipsis", "my-campaign")
+            campaignRepository.findIdByKey("qalipsis", "my-campaign")
             campaignFactoryRepository.discard(765, listOf(12, 32))
         }
         confirmVerified(factoryRepository, campaignRepository, campaignFactoryRepository)

@@ -2,6 +2,7 @@ package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
@@ -26,6 +27,7 @@ internal open class CompletionState(
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             expectedFeedbacks -= feedback.nodeId
             if (expectedFeedbacks.isEmpty()) {
+                context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.SUCCESSFUL)
                 DisabledState(campaign)
             } else {
                 this

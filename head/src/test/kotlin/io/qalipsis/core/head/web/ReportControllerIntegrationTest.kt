@@ -160,10 +160,10 @@ internal class ReportControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
             transform("body") {
                 it.response.getBody(String::class.java).get()
-            }.contains(""""message":"reportCreationAndUpdateRequest.displayName: must not be blank"""")
-            transform("body") {
-                it.response.getBody(String::class.java).get()
-            }.contains(""""message":"reportCreationAndUpdateRequest.displayName: size must be between 1 and 200"""")
+            }.all {
+                contains("""{"property":"reportCreationAndUpdateRequest.displayName","message":"must not be blank"}""")
+                contains("""{"property":"reportCreationAndUpdateRequest.displayName","message":"size must be between 1 and 200"}""")
+            }
         }
         confirmVerified(reportService)
     }

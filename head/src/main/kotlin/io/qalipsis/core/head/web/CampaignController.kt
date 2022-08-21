@@ -45,7 +45,7 @@ import javax.validation.constraints.PositiveOrZero
  */
 @Validated
 @Controller("/campaigns")
-@Requires(env = [ExecutionEnvironments.HEAD])
+@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 internal class CampaignController(
     private val campaignManager: CampaignManager,

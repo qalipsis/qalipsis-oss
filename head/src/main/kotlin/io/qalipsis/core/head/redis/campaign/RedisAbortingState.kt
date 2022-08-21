@@ -2,6 +2,7 @@ package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
@@ -44,6 +45,7 @@ internal class RedisAbortingState(
         return if (feedback is CampaignAbortFeedback && feedback.status.isDone) {
             if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
                 if (abortConfiguration.hard) {
+                    context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.ABORTED)
                     RedisFailureState(campaign, "The campaign was aborted", operations)
                 } else {
                     RedisCompletionState(campaign, operations)

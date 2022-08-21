@@ -1,4 +1,4 @@
-package io.qalipsis.core.report
+package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires

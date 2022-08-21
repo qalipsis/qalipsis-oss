@@ -4,12 +4,17 @@ micronaut:
     cors:
       enabled: true
     log-handled-exceptions: true
-
 redis:
   uri: redis://localhost:16379
 
 logging:
   console: true
+  level:
+    io.qalipsis.runtime.bootstrap.QalipsisApplicationContext: TRACE
+    io.qalipsis.core.factory.orchestration: DEBUG
+    io.qalipsis.core.factory.orchestration.directives.listeners: TRACE
+    io.qalipsis.core.head.campaign: TRACE
+    io.qalipsis.core.head.campaign.states.RunningState: TRACE
 
 datasources:
   default:

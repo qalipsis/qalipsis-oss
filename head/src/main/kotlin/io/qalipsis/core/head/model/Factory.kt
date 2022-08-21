@@ -20,7 +20,7 @@ internal open class Factory(
     val zone: String? = null
 ) {
 
-    constructor(nodeId: String, unicastChannel: String, broadcastChannel: String) : this(
+    constructor(nodeId: String, unicastChannel: String) : this(
         nodeId,
         Instant.now(),
         unicastChannel,

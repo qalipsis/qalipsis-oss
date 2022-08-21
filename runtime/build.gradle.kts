@@ -72,15 +72,21 @@ dependencies {
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }
 
-task<JavaExec>("runQalipsisHead") {
+task<JavaExec>("runQalipsis") {
     group = "application"
-    description = "Starts the microservice as a Kafka listener to save data into Elasticsearch"
+    description = "Starts QALIPSIS standalone, for a PostgreSQL"
     mainClass.set("io.qalipsis.runtime.Qalipsis")
     maxHeapSize = "256m"
     args(
-        "head", "--persistent",
-        "-c", "logging.level.io.qalipsis.runtime.bootstrap.QalipsisApplicationContext=TRACE"
+        "--persistent",
+        "-e", "api-documentation"
     )
-    classpath = sourceSets["main"].runtimeClasspath + project(":head").sourceSets["main"].runtimeClasspath
+    classpath =
+        sourceSets["main"].runtimeClasspath +
+                files("build/classes/kotlin/test", "build/classes/java/test", "build/tmp/kapt3/classes/test") +
+                project(":head").sourceSets["main"].runtimeClasspath +
+                project(":factory").sourceSets["main"].runtimeClasspath
     workingDir = File(projectDir, "workdir")
+
+    dependsOn("testClasses")
 }

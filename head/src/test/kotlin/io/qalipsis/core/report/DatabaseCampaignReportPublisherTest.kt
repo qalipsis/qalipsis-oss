@@ -20,6 +20,7 @@ import io.qalipsis.core.head.jdbc.repository.CampaignReportRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
+import io.qalipsis.core.head.report.DatabaseCampaignReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk

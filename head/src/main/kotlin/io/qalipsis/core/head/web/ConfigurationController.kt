@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
  */
 @Validated
 @Controller("/configuration")
-@Requires(env = [ExecutionEnvironments.HEAD])
+@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 internal class ConfigurationController(
     private val securityConfiguration: SecurityConfiguration

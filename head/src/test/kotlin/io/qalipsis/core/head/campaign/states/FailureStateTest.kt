@@ -12,11 +12,13 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.qalipsis.api.context.NodeId
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 
@@ -84,6 +86,9 @@ internal class FailureStateTest : AbstractStateTest() {
                 typedProp<Boolean>("isSuccessful").isFalse()
                 typedProp<Boolean>("initialized").isFalse()
             }
-            confirmVerified(factoryService, campaignReportStateKeeper)
+            coVerifyOnce {
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)
+            }
+            confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
         }
 }

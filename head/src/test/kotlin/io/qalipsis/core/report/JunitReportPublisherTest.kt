@@ -8,6 +8,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.head.report.JunitReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk

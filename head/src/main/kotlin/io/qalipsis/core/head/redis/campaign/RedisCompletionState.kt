@@ -2,6 +2,7 @@ package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -24,6 +25,7 @@ internal class RedisCompletionState(
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
+                context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.SUCCESSFUL)
                 RedisDisabledState(campaign, true, operations)
             } else {
                 this

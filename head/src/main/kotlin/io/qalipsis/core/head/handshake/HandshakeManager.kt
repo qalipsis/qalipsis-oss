@@ -16,7 +16,7 @@ import jakarta.inject.Singleton
 import org.slf4j.event.Level
 
 /**
- * Component to handle the handshakes coming from the factories..
+ * Component to handle the handshakes coming from the factories.
  *
  * @author Eric Jessé
  */
@@ -41,7 +41,7 @@ internal class HandshakeManager(
             nodeId = actualNodeId,
             unicastChannel = headConfiguration.unicastChannelPrefix + actualNodeId,
             heartbeatChannel = headConfiguration.heartbeatChannel,
-            heartbeatPeriod = headConfiguration.heartbeatDuration
+            heartbeatPeriod = headConfiguration.heartbeatDelay
         )
         log.info { "The factory $actualNodeId just started the handshake, persisting its state..." }
         factoryService.register(actualNodeId, handshakeRequest, response)

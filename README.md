@@ -2,6 +2,10 @@
 
 ![CI](https://github.com/aeris-consulting/qalipsis-engine/actions/workflows/gradle-master.yml/badge.svg)
 
+## Run an instance of QALIPSIS locally
+
+Read the instructions in [deployment/index.html](./deployment/index.html).
+
 ## Build the project in a prepared Docker image
 
 1. Start at the root of the project

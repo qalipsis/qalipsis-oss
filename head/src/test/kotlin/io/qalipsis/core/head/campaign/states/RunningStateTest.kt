@@ -9,6 +9,7 @@ import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotSameAs
 import assertk.assertions.isSameAs
+import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
@@ -195,6 +196,7 @@ internal class RunningStateTest : AbstractStateTest() {
                         )
                     )
                 }
+                prop("expectedScenariosToComplete").isSameAs(state.getProperty("expectedScenariosToComplete"))
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
@@ -230,6 +232,7 @@ internal class RunningStateTest : AbstractStateTest() {
                         )
                     )
                 }
+                prop("expectedScenariosToComplete").isSameAs(state.getProperty("expectedScenariosToComplete"))
             }
             coVerifyOnce { campaignReportStateKeeper.complete("my-campaign", "the scenario") }
             confirmVerified(factoryService, campaignReportStateKeeper)

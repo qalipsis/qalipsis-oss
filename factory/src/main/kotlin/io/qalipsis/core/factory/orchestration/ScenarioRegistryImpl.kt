@@ -1,5 +1,6 @@
 package io.qalipsis.core.factory.orchestration
 
+import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.order.Ordered
 import io.qalipsis.api.context.DirectedAcyclicGraphName
@@ -21,7 +22,10 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class ScenarioRegistryImpl : ScenarioRegistry, ProcessExitCodeSupplier {
+internal class ScenarioRegistryImpl(
+    @Property(name = "scenario.allow-empty", defaultValue = "false")
+    private val allowEmptyScenario: Boolean
+) : ScenarioRegistry, ProcessExitCodeSupplier {
 
     private val scenarios = ConcurrentHashMap<ScenarioName, Scenario>()
 
@@ -50,7 +54,7 @@ internal class ScenarioRegistryImpl : ScenarioRegistry, ProcessExitCodeSupplier 
 
     override suspend fun await(): Optional<Int> {
         // Returns the code 2 when no scenario was found.
-        return if (scenarios.isEmpty()) {
+        return if (scenarios.isEmpty() && !allowEmptyScenario) {
             log.error { "No enabled scenario could be found in the classpath" }
             Optional.of(102)
         } else {

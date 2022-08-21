@@ -7,6 +7,7 @@ import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -21,6 +22,9 @@ internal abstract class AbstractStateTest {
     @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
+
+    @RelaxedMockK
+    protected lateinit var campaignService: CampaignService
 
     @RelaxedMockK
     protected lateinit var factoryService: FactoryService
@@ -52,6 +56,7 @@ internal abstract class AbstractStateTest {
 
     @BeforeEach
     internal fun setUp() {
+        every { campaign.tenant } returns "my-tenant"
         every { campaign.key } returns "my-campaign"
         every { campaign.broadcastChannel } returns "my-broadcast-channel"
         every { campaign.feedbackChannel } returns "my-feedback-channel"

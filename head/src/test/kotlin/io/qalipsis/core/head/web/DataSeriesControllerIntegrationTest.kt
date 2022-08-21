@@ -119,7 +119,10 @@ internal class DataSeriesControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
             transform("body") {
                 it.response.getBody(String::class.java).get()
-            }.contains(""""message":"dataSeries.displayName: must not be blank"""")
+            }.all {
+                contains("""{"property":"dataSeries.displayName","message":"must not be blank"}""")
+                contains("""{"property":"dataSeries.displayName","message":"size must be between 3 and 200"}""")
+            }
         }
         confirmVerified(dataSeriesService)
     }

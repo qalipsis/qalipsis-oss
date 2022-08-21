@@ -2,6 +2,7 @@ package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
@@ -33,6 +34,7 @@ internal open class AbortingState(
             expectedFeedbacks -= feedback.nodeId
             if (expectedFeedbacks.isEmpty()) {
                 if (abortConfiguration.hard) {
+                    context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.ABORTED)
                     FailureState(campaign, "The campaign was aborted")
                 } else {
                     CompletionState(campaign)

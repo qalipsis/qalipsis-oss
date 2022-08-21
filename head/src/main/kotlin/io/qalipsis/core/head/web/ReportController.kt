@@ -30,7 +30,6 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import javax.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
@@ -225,26 +224,35 @@ internal class ReportController(
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @QueryValue("sort", defaultValue = "") sort: String,
+        @QueryValue("sort", defaultValue = "") sort: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
             description = "Comma-separated list of values to apply as wildcard filters on the reports fields",
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @QueryValue("filter", defaultValue = "") filter: String,
+        @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
             description = "Page number to start retrieval from",
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
+        @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
         @Parameter(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
+        ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
     ): HttpResponse<Page<Report>> {
-        return HttpResponse.ok(reportService.search(tenant, authentication.name, filter.asFilters(), sort.takeUnless(String::isNullOrBlank), page, size))
+        return HttpResponse.ok(
+            reportService.search(
+                tenant,
+                authentication.name,
+                filter.asFilters(),
+                sort.takeUnless(String::isNullOrBlank),
+                page,
+                size
+            )
+        )
     }
 }

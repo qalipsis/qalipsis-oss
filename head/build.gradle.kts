@@ -51,7 +51,6 @@ dependencies {
     implementation("com.google.guava:guava:29.0-jre")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
     implementation("cool.graph:cuid-java:0.1.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
     implementation("io.micronaut.data:micronaut-data-jdbc")

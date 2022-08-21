@@ -1,7 +1,8 @@
-package io.qalipsis.core.report
+package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.util.StringUtils
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
@@ -24,7 +25,11 @@ import kotlinx.coroutines.flow.toList
 @Singleton
 @Requirements(
     Requires(notEnv = [ExecutionEnvironments.TRANSIENT]),
-    Requires(property = "report.export.database.enabled", defaultValue = "true", value = "false")
+    Requires(
+        property = "report.export.database.enabled",
+        notEquals = StringUtils.FALSE,
+        defaultValue = StringUtils.TRUE
+    )
 )
 internal class DatabaseCampaignReportPublisher(
     private val campaignRepository: CampaignRepository,

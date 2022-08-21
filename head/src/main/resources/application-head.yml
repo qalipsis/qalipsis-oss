@@ -1,34 +1,7 @@
-micronaut:
-  server:
-    port: 8080
-    cors:
-      enabled: true
-  session:
-    http:
-      cookie: false
-      header: false
-  security:
-    enabled: false
-  router:
-    static-resources:
-      swagger:
-        paths: classpath:META-INF/swagger
-        mapping: /swagger/**
-      swagger-ui:
-        paths: classpath:META-INF/swagger/views/swagger-ui
-        mapping: /swagger-ui/**
-      rapidoc:
-        paths: classpath:META-INF/swagger/views/rapidoc
-        mapping: /rapidoc/**
-      redoc:
-        paths: classpath:META-INF/swagger/views/redoc
-        mapping: /redoc/**
-
 head:
   handshake-request-channel: handshake-request
   unicast-channel-prefix: unicast-
   heartbeat-channel: heartbeat
-  heartbeat-duration: 30s
   zones: [ ]
 
 distributed:

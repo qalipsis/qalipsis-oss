@@ -67,7 +67,8 @@ internal open class RunningState(
                             minionIds = listOf(feedback.minionId),
                             channel = campaign.broadcastChannel
                         )
-                    )
+                    ),
+                    expectedScenariosToComplete = expectedScenariosToComplete
                 )
             }
             feedback is EndOfCampaignScenarioFeedback -> {
@@ -79,7 +80,8 @@ internal open class RunningState(
                             scenarioName = feedback.scenarioName,
                             channel = campaign.broadcastChannel
                         )
-                    )
+                    ),
+                    expectedScenariosToComplete = expectedScenariosToComplete
                 )
             }
             feedback is CampaignScenarioShutdownFeedback -> {
@@ -88,6 +90,7 @@ internal open class RunningState(
                     context.campaignReportStateKeeper.complete(feedback.campaignKey)
                     CompletionState(campaign)
                 } else {
+                    log.trace { "List of remaining scenarios in the campaign ${feedback.campaignKey}: $expectedScenariosToComplete" }
                     this
                 }
             }

@@ -4,7 +4,7 @@ report:
       enabled: true
     junit:
       enabled: false
-      folder: build/test-results/qalipsis
+      folder: test-results
 
 head:
   handshake-request-channel: handshake-request

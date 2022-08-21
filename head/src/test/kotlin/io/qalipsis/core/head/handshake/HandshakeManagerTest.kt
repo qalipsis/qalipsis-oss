@@ -45,7 +45,7 @@ internal class HandshakeManagerTest {
         every { headConfiguration.handshakeRequestChannel } returns ""
         every { headConfiguration.unicastChannelPrefix } returns "the-unicast-channel-prefix-"
         every { headConfiguration.heartbeatChannel } returns "the-heartbeat-channel"
-        every { headConfiguration.heartbeatDuration } returns Duration.ofSeconds(123)
+        every { headConfiguration.heartbeatDelay } returns Duration.ofSeconds(123)
         every { headConfiguration.zones } returns setOf(Zone("by", "belarus", "description"))
     }
 
