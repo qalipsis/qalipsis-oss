@@ -4,6 +4,7 @@ import io.aerisconsulting.catadioptre.setProperty
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.pubsub.api.reactive.RedisPubSubReactiveCommands
 import io.micronaut.context.annotation.Property
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.confirmVerified
@@ -17,6 +18,7 @@ import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.directives.TestSingleUseDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.HandshakeResponseListener
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.core.serialization.DistributionSerializer
@@ -26,6 +28,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import jakarta.inject.Named
+import kotlinx.coroutines.delay
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -58,6 +61,9 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
     @RelaxedMockK(name = "handshakeResponseListener2")
     private lateinit var handshakeResponseListener2: HandshakeResponseListener
 
+    @RelaxedMockK
+    private lateinit var factoryConfiguration: FactoryConfiguration
+
     @Inject
     private lateinit var redisFactoryChannel: RedisFactoryChannel
 
@@ -71,6 +77,9 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
     @Inject
     @field:Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME)
     private lateinit var subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>
+
+    @MockBean(FactoryConfiguration::class)
+    fun factoryConfiguration() = factoryConfiguration
 
     @Inject
     private lateinit var serializer: DistributionSerializer
@@ -217,11 +226,12 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
 
     @Test
     @Timeout(5)
-    internal fun `should receive the handshake response`() = testDispatcherProvider.run {
+    internal fun `should receive the handshake response when the node IDs match`() = testDispatcherProvider.run {
         // given
         val countLatch = SuspendedCountLatch(2)
         coEvery { handshakeResponseListener1.notify(any()) } coAnswers { countLatch.decrement() }
         coEvery { handshakeResponseListener2.notify(any()) } coAnswers { countLatch.decrement() }
+        every { factoryConfiguration.nodeId } returns "the-handshake-node-id"
 
         // when
         redisFactoryChannel.subscribeHandshakeResponse(HANDSHAKE_RESPONSE_CHANNEL)
@@ -240,6 +250,34 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
             handshakeResponseListener1.notify(eq(handshakeResponse))
             handshakeResponseListener2.notify(eq(handshakeResponse))
         }
+        confirmVerified(
+            directiveListener1,
+            directiveListener2,
+            directiveListener3,
+            handshakeResponseListener1,
+            handshakeResponseListener2
+        )
+    }
+
+    @Test
+    @Timeout(5)
+    internal fun `should ignore the handshake response when the node IDs do not match`() = testDispatcherProvider.run {
+        // given
+        every { factoryConfiguration.nodeId } returns "the-handshake-node-id"
+
+        // when
+        redisFactoryChannel.subscribeHandshakeResponse(HANDSHAKE_RESPONSE_CHANNEL)
+        val handshakeResponse = HandshakeResponse(
+            handshakeNodeId = "the-different-handshake-node-id",
+            nodeId = "the-node-id",
+            unicastChannel = "the-unicast",
+            heartbeatChannel = "the-heartbeat",
+            heartbeatPeriod = Duration.ofSeconds(2)
+        )
+        publisherCommands.publish(HANDSHAKE_RESPONSE_CHANNEL, serializer.serialize(handshakeResponse)).subscribe()
+        delay(500)
+
+        // then
         confirmVerified(
             directiveListener1,
             directiveListener2,

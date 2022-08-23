@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.event.Level
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.annotation.PreDestroy
 
 /**
@@ -78,7 +79,7 @@ internal class CampaignAutoStarter(
 
     private val notificationMutex = Mutex(false)
 
-    private var runningCampaign = false
+    private var runningCampaign = AtomicBoolean(false)
 
     @KTestable
     private lateinit var campaign: CampaignConfiguration
@@ -95,12 +96,17 @@ internal class CampaignAutoStarter(
     override suspend fun notify(heartbeat: Heartbeat) {
         registrationCount.await()
         notificationMutex.withLock {
-            if (heartbeat.state == Heartbeat.State.HEALTHY) {
-                healthyFactories += heartbeat.nodeId
-                if (healthyFactories.size >= autostartCampaignConfiguration.requiredFactories && !runningCampaign) {
+            log.debug { "Heartbeat: ${heartbeat.nodeId} to ${heartbeat.state}" }
+            if (heartbeat.state == Heartbeat.State.HEALTHY && healthyFactories.add(heartbeat.nodeId)) {
+                log.debug { "Healthy factories: $healthyFactories" }
+                if (healthyFactories.size >= autostartCampaignConfiguration.requiredFactories
+                    && runningCampaign.compareAndSet(false, true)
+                ) {
+                    log.debug { "Registered scenarios: $registeredScenarios" }
                     if (registeredScenarios.isNotEmpty()) {
-                        delay(autostartCampaignConfiguration.triggerOffset.toMillis())
-                        log.info { "Starting the campaign ${autostartCampaignConfiguration.name} for the scenario(s) ${registeredScenarios.joinToString()}" }
+                        val delay = autostartCampaignConfiguration.triggerOffset.toMillis()
+                        log.info { "Starting the campaign ${autostartCampaignConfiguration.name} for the scenario(s) ${registeredScenarios.joinToString()} in $delay ms" }
+                        delay(delay)
                         campaignLatch.lock()
                         val scenariosConfigs =
                             factoryService.getActiveScenarios(
@@ -117,7 +123,6 @@ internal class CampaignAutoStarter(
                             scenarios = scenariosConfigs
                         )
                         campaignManager.get().start(Defaults.USER, autostartCampaignConfiguration.name, campaign)
-                        runningCampaign = true
                     } else {
                         log.error { "No executable scenario was found" }
                         error = "No executable scenario was found"
@@ -144,6 +149,7 @@ internal class CampaignAutoStarter(
         campaign.factories.forEach { (_, factory) ->
             headChannel.publishDirective(FactoryShutdownDirective(factory.unicastChannel))
         }
+        runningCampaign.set(false)
         campaignLatch.release()
     }
 

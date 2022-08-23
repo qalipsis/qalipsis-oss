@@ -5,6 +5,7 @@ import io.micronaut.core.order.Ordered
 import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.Latch
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryShutdownDirective
@@ -57,14 +58,17 @@ internal class HandshakeBlocker(
         super.init()
     }
 
+    @LogInput
     fun notifySuccessfulRegistration() {
         timeoutJob.cancel()
     }
 
+    @LogInput
     override suspend fun join() {
         registeredLatch.await()
     }
 
+    @LogInput
     override fun cancel() {
         timeoutJob.cancel()
         registeredLatch.cancel()
@@ -84,6 +88,7 @@ internal class HandshakeBlocker(
         return directive is FactoryShutdownDirective
     }
 
+    @LogInput
     override suspend fun notify(directive: FactoryShutdownDirective) {
         running = false
         timeoutJob.cancel()
