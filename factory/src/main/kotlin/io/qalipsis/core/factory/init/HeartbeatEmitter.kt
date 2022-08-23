@@ -1,8 +1,10 @@
 package io.qalipsis.core.factory.init
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.order.Ordered
 import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.factory.communication.FactoryChannel
@@ -43,9 +45,11 @@ internal class HeartbeatEmitter(
 
     private var heartbeatJob: Job? = null
 
+    @LogInput
     override suspend fun notify(response: HandshakeResponse) {
         heartbeatChannel = response.heartbeatChannel
         nodeId = response.nodeId
+        log.trace { "Starting the heartbeat routine" }
         heartbeatJob = coroutineScope.launch {
             try {
                 while (running) {
@@ -56,6 +60,7 @@ internal class HeartbeatEmitter(
                         campaignManager.runningCampaign.campaignKey.takeUnless(String::isBlank)
                     )
                     try {
+                        log.trace { "Sending $heartbeat to $heartbeatChannel" }
                         factoryChannel.publishHeartbeat(heartbeatChannel, heartbeat)
                     } catch (e: Exception) {
                         if (e is CancellationException) {
@@ -90,6 +95,10 @@ internal class HeartbeatEmitter(
                 )
             }
         }
+    }
+
+    override fun getOrder(): Int {
+        return Ordered.LOWEST_PRECEDENCE
     }
 
     private companion object {

@@ -1,6 +1,7 @@
 package io.qalipsis.core.factory.init
 
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.configuration.CommunicationChannelConfiguration
@@ -22,6 +23,7 @@ internal class ClusterInitializationContext(
     factoryChannel
 ) {
 
+    @LogInput
     override suspend fun notify(response: HandshakeResponse) {
         super.notify(response)
         handshakeBlocker.notifySuccessfulRegistration()

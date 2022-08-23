@@ -1,5 +1,6 @@
 package io.qalipsis.core.factory.communication
 
+import io.micronaut.core.order.Ordered
 import io.qalipsis.core.handshake.HandshakeResponse
 
 /**
@@ -7,7 +8,7 @@ import io.qalipsis.core.handshake.HandshakeResponse
  *
  * @author Eric Jessé
  */
-interface HandshakeResponseListener {
+interface HandshakeResponseListener : Ordered {
 
     /**
      * Processes the [HandshakeResponse].

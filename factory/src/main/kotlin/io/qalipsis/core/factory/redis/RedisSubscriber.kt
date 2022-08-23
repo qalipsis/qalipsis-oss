@@ -13,6 +13,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.HandshakeResponseListener
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.lifetime.FactoryStartupComponent
 import io.qalipsis.core.serialization.DistributionSerializer
@@ -32,9 +33,10 @@ import java.io.Closeable
 )
 @ExperimentalLettuceCoroutinesApi
 internal class RedisSubscriber(
+    private val factoryConfiguration: FactoryConfiguration,
     private val factoryChannel: RedisFactoryChannel,
-    private val directiveListeners: Collection<DirectiveListener<*>>,
-    private val handshakeResponseListeners: Collection<HandshakeResponseListener>,
+    private val directiveListeners: List<DirectiveListener<*>>,
+    private val handshakeResponseListeners: List<HandshakeResponseListener>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
     private val directiveRegistry: DirectiveRegistry,
     @Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME) private val subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>,
@@ -106,9 +108,11 @@ internal class RedisSubscriber(
      * Dispatches the [HandshakeResponse] to all the relevant [HandshakeResponseListener] in isolated coroutines.
      */
     private fun dispatch(response: HandshakeResponse) {
-        log.trace { "Dispatching the handshake response" }
-        handshakeResponseListeners.stream().forEach { listener ->
-            orchestrationCoroutineScope.launch { listener.notify(response) }
+        if (response.handshakeNodeId == factoryConfiguration.nodeId) {
+            log.trace { "Dispatching the handshake response" }
+            handshakeResponseListeners.stream().forEach { listener ->
+                orchestrationCoroutineScope.launch { listener.notify(response) }
+            }
         }
     }
 
