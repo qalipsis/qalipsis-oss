@@ -73,7 +73,7 @@ internal class CampaignController(
             SecurityRequirement(name = "JWT")
         ]
     )
-    @Secured(Permissions.CREATE_CAMPAIGN)
+    @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-execute")
     suspend fun execute(
         @Parameter(
@@ -110,7 +110,7 @@ internal class CampaignController(
             SecurityRequirement(name = "JWT")
         ]
     )
-    @Secured(Permissions.CREATE_CAMPAIGN)
+    @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-validate")
     suspend fun validate(
         @Parameter(

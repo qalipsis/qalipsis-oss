@@ -32,7 +32,7 @@ internal class AuthenticatedController {
     }
 
     @Get("/secure")
-    @Secured(value = [Permissions.CREATE_CAMPAIGN])
+    @Secured(value = [Permissions.WRITE_CAMPAIGN])
     suspend fun secure(
         @Tenant tenant: String,
         authentication: Authentication

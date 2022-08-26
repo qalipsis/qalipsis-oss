@@ -7,7 +7,7 @@ internal typealias Permission = String
 
 internal object Permissions {
 
-    const val CREATE_CAMPAIGN = "create:campaign"
+    const val WRITE_CAMPAIGN = "write:campaign"
     const val READ_CAMPAIGN = "read:campaign"
     const val READ_SCENARIO = "read:scenario"
     const val WRITE_DATA_SERIES = "write:series"
@@ -16,7 +16,7 @@ internal object Permissions {
     const val WRITE_REPORT = "write:report"
 
     val FOR_TESTER = setOf(
-        CREATE_CAMPAIGN,
+        WRITE_CAMPAIGN,
         READ_CAMPAIGN,
         READ_SCENARIO,
         WRITE_DATA_SERIES
@@ -36,7 +36,7 @@ internal object Permissions {
     val FOR_BILLING_ADMINISTRATOR = emptySet<Permission>()
 
     val ALL_PERMISSIONS = setOf(
-        CREATE_CAMPAIGN,
+        WRITE_CAMPAIGN,
         READ_CAMPAIGN,
         READ_SCENARIO,
         WRITE_DATA_SERIES,
