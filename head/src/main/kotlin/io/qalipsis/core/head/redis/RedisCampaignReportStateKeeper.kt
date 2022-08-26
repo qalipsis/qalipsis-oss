@@ -78,7 +78,7 @@ internal class RedisCampaignReportStateKeeper(
         }
     }
 
-    override suspend fun report(campaignKey: CampaignKey): CampaignReport {
+    override suspend fun generateReport(campaignKey: CampaignKey): CampaignReport {
         val scenarios =
             redisSetCommands.smembers("$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
 

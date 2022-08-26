@@ -426,7 +426,7 @@ internal class CampaignControllerIntegrationTest {
             )
 
         val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
-        coEvery { campaignReportStateKeeper.report("first_campaign") } returns campaignReport
+        coEvery { campaignReportStateKeeper.generateReport("first_campaign") } returns campaignReport
         coEvery { campaignConverter.convertReport(campaignReport) } returns convertedCampaignReport
 
         // when
@@ -434,7 +434,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignReportStateKeeper.report("first_campaign")
+            campaignReportStateKeeper.generateReport("first_campaign")
             campaignConverter.convertReport(campaignReport)
         }
 

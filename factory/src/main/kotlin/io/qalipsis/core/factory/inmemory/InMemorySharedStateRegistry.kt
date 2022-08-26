@@ -46,7 +46,7 @@ internal class InMemorySharedStateRegistry(
     }
 
     override suspend fun get(definitions: Iterable<SharedStateDefinition>): Map<String, Any?> {
-        return definitions.map { it.sharedStateName to get<Any>(it) }.toMap()
+        return definitions.associate { it.sharedStateName to get<Any>(it) }
     }
 
     override suspend fun <T> remove(definition: SharedStateDefinition): T? {

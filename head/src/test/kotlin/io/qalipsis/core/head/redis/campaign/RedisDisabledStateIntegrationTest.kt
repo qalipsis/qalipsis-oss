@@ -32,7 +32,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             operations.setState(campaign.tenant, campaign.key, CampaignRedisState.COMPLETION_STATE)
             operations.prepareAssignmentsForFeedbackExpectations(campaign)
             val report = relaxedMockk<CampaignReport>()
-            coEvery { campaignReportStateKeeper.report(any()) } returns report
+            coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
             coEvery { reportPublisher1.publish(any(), any()) } throws RuntimeException()
 
             // when
@@ -58,7 +58,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             coVerifyOrder {
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
-                campaignReportStateKeeper.report("my-campaign")
+                campaignReportStateKeeper.generateReport("my-campaign")
                 reportPublisher1.publish(refEq(campaign), refEq(report))
                 reportPublisher2.publish(refEq(campaign), refEq(report))
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
@@ -74,7 +74,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             operations.setState(campaign.tenant, campaign.key, CampaignRedisState.FAILURE_STATE)
             operations.prepareAssignmentsForFeedbackExpectations(campaign)
             val report = relaxedMockk<CampaignReport>()
-            coEvery { campaignReportStateKeeper.report(any()) } returns report
+            coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
             // when
             every { campaign.message } returns "this is a message"
             val directives = RedisDisabledState(campaign, false, operations).run {
@@ -97,7 +97,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             coVerifyOrder {
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
-                campaignReportStateKeeper.report("my-campaign")
+                campaignReportStateKeeper.generateReport("my-campaign")
                 reportPublisher1.publish(refEq(campaign), refEq(report))
                 reportPublisher2.publish(refEq(campaign), refEq(report))
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))

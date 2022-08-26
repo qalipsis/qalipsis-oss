@@ -4,12 +4,14 @@ import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
@@ -209,9 +211,9 @@ internal class CampaignController(
             description = "Force the campaign to fail when set to true, defaults to false",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "false") hard: String
+        ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean
     ): HttpResponse<Unit> {
-        campaignManager.abort(authentication.name, tenant, campaignKey, hard.toBoolean())
+        campaignManager.abort(authentication.name, tenant, campaignKey, hard)
         return HttpResponse.accepted()
     }
 
@@ -240,7 +242,11 @@ internal class CampaignController(
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
     ): HttpResponse<CampaignReport> {
-        return HttpResponse.ok(campaignConverter.convertReport(campaignReportStateKeeper.report(campaignKey)))
+        val report = campaignReportStateKeeper.generateReport(campaignKey) ?: throw HttpStatusException(
+            HttpStatus.NOT_FOUND,
+            "No campaign report is currently available for the selected campaign"
+        )
+        return HttpResponse.ok(campaignConverter.convertReport(report))
     }
 
 }

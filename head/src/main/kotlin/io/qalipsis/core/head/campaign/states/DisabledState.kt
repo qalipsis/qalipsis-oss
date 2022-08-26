@@ -18,10 +18,11 @@ internal open class DisabledState(
         context.headChannel.unsubscribeFeedback(campaign.feedbackChannel)
 
         if (context.reportPublishers.isNotEmpty()) {
-            val report = context.campaignReportStateKeeper.report(campaignKey)
-            context.reportPublishers.forEach { publisher ->
-                tryAndLogOrNull(log) {
-                    publisher.publish(campaign, report)
+            context.campaignReportStateKeeper.generateReport(campaignKey)?.let { report ->
+                context.reportPublishers.forEach { publisher ->
+                    tryAndLogOrNull(log) {
+                        publisher.publish(campaign, report)
+                    }
                 }
             }
         }

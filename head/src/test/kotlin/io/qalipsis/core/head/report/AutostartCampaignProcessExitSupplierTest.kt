@@ -35,7 +35,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     internal fun `should not return any code when campaign was in success`() = testDispatcherProvider.runTest {
         // given
         every { autostartCampaignConfiguration.name } returns "my-campaign"
-        coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.SUCCESSFUL
+        coEvery { campaignReportStateKeeper.generateReport("my-campaign")?.status } returns ExecutionStatus.SUCCESSFUL
 
         // when
         val result = autostartCampaignProcessExitSupplier.await()
@@ -48,7 +48,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     internal fun `should not return any code when campaign was with warning`() = testDispatcherProvider.runTest {
         // given
         every { autostartCampaignConfiguration.name } returns "my-campaign"
-        coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.WARNING
+        coEvery { campaignReportStateKeeper.generateReport("my-campaign")?.status } returns ExecutionStatus.WARNING
 
         // when
         val result = autostartCampaignProcessExitSupplier.await()
@@ -61,7 +61,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     internal fun `should return 201 when campaign failed`() = testDispatcherProvider.runTest {
         // given
         every { autostartCampaignConfiguration.name } returns "my-campaign"
-        coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.FAILED
+        coEvery { campaignReportStateKeeper.generateReport("my-campaign")?.status } returns ExecutionStatus.FAILED
 
         // when
         val result = autostartCampaignProcessExitSupplier.await()
@@ -74,7 +74,7 @@ internal class AutostartCampaignProcessExitSupplierTest {
     internal fun `should return 202 when campaign was aborted`() = testDispatcherProvider.runTest {
         // given
         every { autostartCampaignConfiguration.name } returns "my-campaign"
-        coEvery { campaignReportStateKeeper.report("my-campaign").status } returns ExecutionStatus.ABORTED
+        coEvery { campaignReportStateKeeper.generateReport("my-campaign")?.status } returns ExecutionStatus.ABORTED
 
         // when
         val result = autostartCampaignProcessExitSupplier.await()

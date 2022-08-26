@@ -11,6 +11,7 @@ import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
+import io.qalipsis.api.steps.delay
 import io.qalipsis.api.steps.pipe
 import io.qalipsis.api.steps.returns
 import io.qalipsis.api.steps.verify
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import java.time.Duration
 
 /**
  * @author Eric Jessé
@@ -193,4 +195,14 @@ internal class QalipsisBootstrapIntegrationTest {
             .blackHole()
     }
 
+    @Scenario
+    fun longRunningScenario() {
+        scenario("long-running-scenario") {
+            minionsCount = 1
+            rampUp { regular(1000, 1) }
+        }.start()
+            .pipe<Unit>()
+            .delay(Duration.ofSeconds(30))
+            .blackHole()
+    }
 }

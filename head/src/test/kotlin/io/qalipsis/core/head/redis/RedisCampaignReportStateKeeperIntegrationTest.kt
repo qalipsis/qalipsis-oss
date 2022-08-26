@@ -60,7 +60,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         val afterCompleteScenario3 = Instant.now()
         registry.complete("my-campaign")
 
-        val report = registry.report("my-campaign")
+        val report = registry.generateReport("my-campaign")
 
         // then
         assertThat(report).all {
@@ -154,7 +154,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         registry.abort("my-campaign")
         val afterAbort = Instant.now()
 
-        val report = registry.report("my-campaign")
+        val report = registry.generateReport("my-campaign")
 
         // then
         assertThat(report).all {

@@ -39,5 +39,5 @@ internal interface CampaignReportStateKeeper {
     /**
      * Reports the state of all the scenarios executed in a campaign.
      */
-    suspend fun report(campaignKey: CampaignKey): CampaignReport
+    suspend fun generateReport(campaignKey: CampaignKey): CampaignReport?
 }
