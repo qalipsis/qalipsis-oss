@@ -1,9 +1,9 @@
 package io.qalipsis.core.head.campaign
 
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.Page
 
 /**
  * Service in charge of maintaining the campaigns.

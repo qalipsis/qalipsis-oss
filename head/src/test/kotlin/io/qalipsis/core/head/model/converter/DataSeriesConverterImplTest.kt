@@ -3,7 +3,7 @@ package io.qalipsis.core.head.model.converter
 import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
 import io.mockk.impl.annotations.InjectMockKs
-import io.qalipsis.api.report.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.report.DataType

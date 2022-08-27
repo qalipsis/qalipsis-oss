@@ -19,6 +19,7 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -30,7 +31,6 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
-import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter

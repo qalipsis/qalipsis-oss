@@ -21,9 +21,9 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.excludeRecords
 import io.mockk.impl.annotations.MockK
+import io.qalipsis.api.query.Page
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.report.ReportService

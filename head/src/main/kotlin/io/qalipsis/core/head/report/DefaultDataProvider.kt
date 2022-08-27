@@ -1,9 +1,9 @@
 package io.qalipsis.core.head.report
 
+import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.api.report.DataField
-import io.qalipsis.api.report.EventProvider
-import io.qalipsis.api.report.MeterProvider
-import io.qalipsis.api.report.query.QueryDescription
+import io.qalipsis.api.report.EventMetadataProvider
+import io.qalipsis.api.report.MeterMetadataProvider
 import jakarta.inject.Singleton
 import javax.annotation.Nullable
 
@@ -14,8 +14,8 @@ import javax.annotation.Nullable
  */
 @Singleton
 internal class DefaultDataProvider(
-    @Nullable private val eventProvider: EventProvider?,
-    @Nullable private val meterProvider: MeterProvider?
+    @Nullable private val eventProvider: EventMetadataProvider?,
+    @Nullable private val meterProvider: MeterMetadataProvider?
 ) : DataProvider {
 
     override suspend fun searchNames(

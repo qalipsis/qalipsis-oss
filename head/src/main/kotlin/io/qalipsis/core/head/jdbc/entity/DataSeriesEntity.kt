@@ -8,8 +8,8 @@ import io.micronaut.data.annotation.Transient
 import io.micronaut.data.annotation.TypeDef
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
-import io.qalipsis.api.report.query.QueryAggregationOperator
-import io.qalipsis.api.report.query.QueryClauseOperator
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode

@@ -17,11 +17,11 @@ import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
+import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.DataField
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesPatch
-import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
 import io.qalipsis.core.head.report.DataType
@@ -321,7 +321,7 @@ internal class DataSeriesController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "sorting matcher for results from queries on the data series",
+            description = "Sorting property and order, example: name:DESC",
             required = false,
             `in` = ParameterIn.QUERY
         )

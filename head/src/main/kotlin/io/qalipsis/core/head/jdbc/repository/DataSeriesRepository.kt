@@ -24,14 +24,17 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
             FROM data_series
             WHERE reference = :reference AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)"""
     )
-    suspend fun findByReferenceAndTenant(reference: String, tenant: String): DataSeriesEntity
+    suspend fun findByTenantAndReference(tenant: String, reference: String): DataSeriesEntity
 
     @Query(
-        """SELECT query
+        """SELECT *
             FROM data_series
-            WHERE reference = :reference AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)"""
+            WHERE reference in (:references) AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)"""
     )
-    suspend fun findQueryByReferenceAndTenant(reference: String, tenant: String): String
+    suspend fun findAllByTenantAndReferences(
+        tenant: String,
+        references: Collection<String>
+    ): List<DataSeriesEntity>
 
     @Query(
         value = """SELECT * 

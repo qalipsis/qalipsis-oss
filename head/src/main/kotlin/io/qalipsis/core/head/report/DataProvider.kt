@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.report
 
+import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.api.report.DataField
-import io.qalipsis.api.report.query.QueryDescription
 import javax.validation.constraints.Max
 import javax.validation.constraints.Positive
 

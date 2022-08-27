@@ -169,10 +169,10 @@ internal class PersistentCampaignServiceTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
                     hasSize(2)
                     containsExactly(campaign1, campaign2)
                 }
@@ -204,10 +204,10 @@ internal class PersistentCampaignServiceTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
                     hasSize(2)
                     containsExactly(campaign1, campaign2)
                 }
@@ -239,10 +239,10 @@ internal class PersistentCampaignServiceTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
                     hasSize(2)
                     containsExactly(campaign1, campaign2)
                 }
@@ -274,10 +274,10 @@ internal class PersistentCampaignServiceTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
                     hasSize(2)
                     containsExactly(campaign1, campaign2)
                 }
@@ -311,10 +311,10 @@ internal class PersistentCampaignServiceTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<Campaign>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<Campaign>::elements).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
                     hasSize(2)
                     containsExactly(campaign1, campaign2)
                 }

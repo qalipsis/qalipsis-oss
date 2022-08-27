@@ -9,8 +9,8 @@ import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
+import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
@@ -22,13 +22,13 @@ import io.qalipsis.core.head.model.DataTable
 import io.qalipsis.core.head.model.DataTableCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
-import io.qalipsis.core.head.model.Page as QalipsisPage
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.model.converter.ReportConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.toList
+import io.qalipsis.api.query.Page as QalipsisPage
 
 /**
  * Default implementation of [ReportService] interface
@@ -331,9 +331,7 @@ internal class ReportServiceImpl(
         tenant: String,
         dataSeries: List<String>
     ): ReportDataComponentEntity {
-        val dataSeriesEntities = dataSeries.map {
-            dataSeriesRepository.findByReferenceAndTenant(it, tenant)
-        }
+        val dataSeriesEntities = dataSeriesRepository.findAllByTenantAndReferences(tenant, dataSeries)
         return ReportDataComponentEntity(reportId = reportId, type = type, dataSeries = dataSeriesEntities)
     }
 }

@@ -3,15 +3,15 @@ package io.qalipsis.core.head.report
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import io.mockk.confirmVerified
 import io.mockk.coEvery
+import io.mockk.confirmVerified
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.api.report.DataField
 import io.qalipsis.api.report.DataFieldType
-import io.qalipsis.api.report.EventProvider
-import io.qalipsis.api.report.MeterProvider
-import io.qalipsis.api.report.query.QueryDescription
+import io.qalipsis.api.report.EventMetadataProvider
+import io.qalipsis.api.report.MeterMetadataProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -26,10 +26,10 @@ internal class DefaultDataProviderTest {
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK
-    private lateinit var eventProvider: EventProvider
+    private lateinit var eventProvider: EventMetadataProvider
 
     @MockK
-    private lateinit var meterProvider: MeterProvider
+    private lateinit var meterProvider: MeterMetadataProvider
 
     @Test
     internal fun `should return empty lists and maps when no event provider is set`() = testDispatcherProvider.runTest {

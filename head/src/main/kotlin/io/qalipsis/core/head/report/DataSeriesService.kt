@@ -1,8 +1,8 @@
 package io.qalipsis.core.head.report
 
+import io.qalipsis.api.query.Page
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesPatch
-import io.qalipsis.core.head.model.Page
 
 /**
  * Service to proceed (get, save, update, delete, search) the storage in database of the data series.

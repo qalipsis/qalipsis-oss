@@ -19,7 +19,7 @@ import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.count
 import java.time.Instant
-import io.qalipsis.core.head.model.Page as QalipsisPage
+import io.qalipsis.api.query.Page as QalipsisPage
 
 
 @Singleton

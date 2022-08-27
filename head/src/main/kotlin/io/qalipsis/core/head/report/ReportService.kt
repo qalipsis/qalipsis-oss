@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.report
 
-import io.qalipsis.core.head.model.Page
+import io.qalipsis.api.query.Page
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 
