@@ -11,6 +11,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.head.jdbc.entity.UserEntity
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
@@ -31,12 +32,16 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     private lateinit var campaignRepository: CampaignRepository
 
     @Inject
+    private lateinit var userRepository: UserRepository
+
+    @Inject
     private lateinit var tenantRepository: TenantRepository
 
     private lateinit var campaignReportPrototype: CampaignReportEntity
 
     @BeforeEach
     fun init() = testDispatcherProvider.run {
+        val savedUser = userRepository.save(UserEntity(displayName = "dis-user", username = "my-user"))
         val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
         val campaignPrototype =
             CampaignEntity(
@@ -47,7 +52,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,
                 tenantId = tenant.id,
-                configurer = 1
+                configurer = savedUser.id
             )
         val campaign = campaignRepository.save(campaignPrototype.copy())
         campaignReportPrototype =
@@ -64,6 +69,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     fun tearDown() = testDispatcherProvider.run {
         campaignReportRepository.deleteAll()
         tenantRepository.deleteAll()
+        userRepository.deleteAll()
     }
 
     @Test
@@ -123,5 +129,30 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         // then
         assertThat(scenarioReportRepository.findAll().count()).isEqualTo(0)
         assertThat(campaignReportRepository.findAll().count()).isEqualTo(0)
+    }
+
+    @Test
+    fun `should retrieve by campaign id`() = testDispatcherProvider.run {
+        // given
+        val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+        val campaign = CampaignEntity(
+            key = "campaign-1",
+            name = "campaign 1",
+            configurer = savedUser.id,
+            tenantId = tenant.id
+        )
+        val savedCampaign = campaignRepository.save(campaign)
+        val saved = campaignReportRepository.save(campaignReportPrototype.copy(campaignId = savedCampaign.id))
+        campaignReportRepository.save(campaignReportPrototype.copy())
+
+        // when
+        val fetched = campaignReportRepository.findByCampaignId(saved.campaignId)
+
+        // then
+        assertThat(fetched).isNotNull().all {
+            prop(CampaignReportEntity::id).isEqualTo(saved.id)
+            prop(CampaignReportEntity::campaignId).isEqualTo(savedCampaign.id)
+        }
     }
 }

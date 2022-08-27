@@ -35,6 +35,7 @@ import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
@@ -66,6 +67,9 @@ internal class CampaignControllerIntegrationTest {
     private lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
 
     @RelaxedMockK
+    private lateinit var campaignReportProvider: CampaignReportProvider
+
+    @RelaxedMockK
     private lateinit var campaignConverter: CampaignConverter
 
     @MockBean(FactoryService::class)
@@ -76,6 +80,9 @@ internal class CampaignControllerIntegrationTest {
 
     @MockBean(CampaignReportStateKeeper::class)
     fun campaignReportStateKeeper() = campaignReportStateKeeper
+
+    @MockBean(CampaignReportProvider::class)
+    fun campaignReportProvider() = campaignReportProvider
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
@@ -370,7 +377,7 @@ internal class CampaignControllerIntegrationTest {
     }
 
     @Test
-    fun `should successfully get the campaign report`() {
+    fun `should successfully retrieve the campaign report per tenant`() {
         // given
         val campaignReport = relaxedMockk<io.qalipsis.api.report.CampaignReport>()
         val convertedCampaignReport =
@@ -426,7 +433,12 @@ internal class CampaignControllerIntegrationTest {
             )
 
         val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
-        coEvery { campaignReportStateKeeper.generateReport("first_campaign") } returns campaignReport
+        coEvery {
+            campaignReportProvider.retrieveCampaignReport(
+                "_qalipsis_ten_",
+                "first_campaign"
+            )
+        } returns campaignReport
         coEvery { campaignConverter.convertReport(campaignReport) } returns convertedCampaignReport
 
         // when
@@ -434,14 +446,12 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignReportStateKeeper.generateReport("first_campaign")
+            campaignReportProvider.retrieveCampaignReport("_qalipsis_ten_", "first_campaign")
             campaignConverter.convertReport(campaignReport)
         }
-
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(convertedCampaignReport)
-
         }
     }
 }

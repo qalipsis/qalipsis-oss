@@ -65,7 +65,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         // then
         assertThat(report).all {
             prop(CampaignReport::campaignKey).isEqualTo("my-campaign")
-            prop(CampaignReport::start).isBetween(beforeStart, afterStart)
+            prop(CampaignReport::start).isNotNull().isBetween(beforeStart, afterStart)
             prop(CampaignReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
             prop(CampaignReport::status).isEqualTo(ExecutionStatus.WARNING)
             prop(CampaignReport::startedMinions).isEqualTo(54 + 32)
@@ -159,7 +159,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         // then
         assertThat(report).all {
             prop(CampaignReport::campaignKey).isEqualTo("my-campaign")
-            prop(CampaignReport::start).isBetween(beforeStart, afterStart)
+            prop(CampaignReport::start).isNotNull().isBetween(beforeStart, afterStart)
             prop(CampaignReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
             prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)
             prop(CampaignReport::startedMinions).isEqualTo(54 + 32)
