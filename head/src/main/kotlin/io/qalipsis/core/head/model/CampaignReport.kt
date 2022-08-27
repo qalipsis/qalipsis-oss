@@ -28,7 +28,7 @@ internal data class CampaignReport(
     val campaignKey: CampaignKey,
 
     @field:Schema(description = "Date and time when the campaign started")
-    val start: Instant,
+    val start: Instant?,
 
     @field:Schema(
         description = "Date and time when the campaign was completed, whether successfully or not",

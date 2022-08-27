@@ -19,6 +19,7 @@ import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Singleton
@@ -33,7 +34,7 @@ import javax.annotation.PreDestroy
 internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     private val idGenerator: IdGenerator,
     @Value("\${campaign.report.cache.time-to-live:PT10M}") cacheExpire: Duration
-) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker {
+) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker, CampaignReportProvider {
 
     @KTestable
     private val campaignStates: LoadingCache<CampaignKey, MutableMap<ScenarioName, InMemoryScenarioReportingExecutionState>> =
@@ -164,4 +165,11 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         }?.toCampaignReport()
     }
 
+    @LogInputAndOutput
+    override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignReport {
+        join()
+        return campaignStates.get(campaignKey)?.map { (_, runningScenarioCampaign) ->
+            runningScenarioCampaign.toReport(campaignKey)
+        }?.toCampaignReport() ?: throw IllegalArgumentException("No report found for the expected campaign")
+    }
 }

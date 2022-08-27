@@ -598,4 +598,57 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
                 prop(CampaignReport::scenariosReports).hasSize(2)
             }
         }
+
+    @Test
+    @Timeout(1)
+    internal fun `should retrieve a report for all the scenarios of the campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignReportProvider =
+                StandaloneInMemoryCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+            campaignReportProvider.start("the campaign", "the scenario 1")
+            campaignReportProvider.start("the campaign", "the scenario 2")
+            campaignReportProvider.complete("the campaign", "the scenario 1")
+            campaignReportProvider.complete("the campaign", "the scenario 2")
+            val states = campaignReportProvider.campaignStates().asMap()["the campaign"]!!
+            val state1 = states["the scenario 1"]!!
+            val state2 = states["the scenario 2"]!!
+
+            state1.end = Instant.now().minusSeconds(123)
+            state1.startedMinionsCounter.addAndGet(1231)
+            state1.completedMinionsCounter.addAndGet(234)
+            state1.successfulStepExecutionsCounter.addAndGet(7643)
+            state1.failedStepExecutionsCounter.addAndGet(2345)
+            state1.messages["the id 1"] =
+                ReportMessage("step 1", "the id 1", ReportMessageSeverity.ABORT, " The message 1")
+            state1.messages["the id 2"] =
+                ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
+
+            state2.end = Instant.now()
+            state2.startedMinionsCounter.addAndGet(765)
+            state2.completedMinionsCounter.addAndGet(345)
+            state2.successfulStepExecutionsCounter.addAndGet(854)
+            state2.failedStepExecutionsCounter.addAndGet(3567)
+            state2.messages["the id 3"] =
+                ReportMessage("step 1", "the id 3", ReportMessageSeverity.ERROR, " The message 3")
+            state2.messages["the id 4"] =
+                ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
+            campaignReportProvider.complete("the campaign")
+
+            // when
+            val report = campaignReportProvider.retrieveCampaignReport("my-tenant", "the campaign")
+
+            // then
+            assertThat(report).all {
+                prop(CampaignReport::campaignKey).isEqualTo("the campaign")
+                prop(CampaignReport::start).isEqualTo(state1.start)
+                prop(CampaignReport::end).isEqualTo(state2.end)
+                prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)
+                prop(CampaignReport::startedMinions).isEqualTo(1231 + 765)
+                prop(CampaignReport::completedMinions).isEqualTo(234 + 345)
+                prop(CampaignReport::successfulExecutions).isEqualTo(7643 + 854)
+                prop(CampaignReport::failedExecutions).isEqualTo(2345 + 3567)
+                prop(CampaignReport::scenariosReports).hasSize(2)
+            }
+        }
 }

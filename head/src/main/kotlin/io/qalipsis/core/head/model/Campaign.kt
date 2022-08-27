@@ -32,7 +32,7 @@ internal data class Campaign(
     val speedFactor: Double,
 
     @field:Schema(description = "Date and time when the campaign started", required = true)
-    val start: Instant,
+    val start: Instant?,
 
     @field:Schema(
         description = "Date and time when the campaign was completed, whether successfully or not",

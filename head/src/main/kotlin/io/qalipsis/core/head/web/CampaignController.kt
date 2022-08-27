@@ -4,14 +4,12 @@ import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
-import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.QueryValue
-import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
@@ -24,7 +22,7 @@ import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
-import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
 import io.qalipsis.core.head.web.annotation.Tenant
@@ -53,8 +51,8 @@ internal class CampaignController(
     private val campaignManager: CampaignManager,
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
-    private val campaignReportStateKeeper: CampaignReportStateKeeper,
-    private val campaignConverter: CampaignConverter
+    private val campaignConverter: CampaignConverter,
+    private val campaignReportProvider: CampaignReportProvider,
 ) {
 
     /**
@@ -237,16 +235,18 @@ internal class CampaignController(
     @Timed("campaigns-retrieve")
     suspend fun retrieve(
         @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
             description = "Campaign name of the campaign to retrieve the report",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
     ): HttpResponse<CampaignReport> {
-        val report = campaignReportStateKeeper.generateReport(campaignKey) ?: throw HttpStatusException(
-            HttpStatus.NOT_FOUND,
-            "No campaign report is currently available for the selected campaign"
-        )
+        val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
         return HttpResponse.ok(campaignConverter.convertReport(report))
     }
-
 }

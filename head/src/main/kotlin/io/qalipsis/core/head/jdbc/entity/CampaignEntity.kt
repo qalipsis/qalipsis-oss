@@ -41,7 +41,7 @@ internal data class CampaignEntity(
     val name: String,
     @field:Size(max = 300)
     val speedFactor: Double,
-    val start: Instant,
+    val start: Instant?,
     val end: Instant?,
     val result: ExecutionStatus?,
     val configurer: Long,
@@ -53,7 +53,7 @@ internal data class CampaignEntity(
         key: String,
         name: String,
         speedFactor: Double = 1.0,
-        start: Instant = Instant.now(),
+        start: Instant? = Instant.now(),
         end: Instant? = null,
         result: ExecutionStatus? = null,
         configurer: Long,

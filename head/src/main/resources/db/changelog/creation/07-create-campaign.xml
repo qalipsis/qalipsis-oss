@@ -24,7 +24,7 @@
         <constraints nullable="true"/>
       </column>
       <column name="start" type="timestamp">
-        <constraints nullable="false"/>
+        <constraints nullable="true"/>
       </column>
       <column name="end" type="timestamp">
         <constraints nullable="true"/>

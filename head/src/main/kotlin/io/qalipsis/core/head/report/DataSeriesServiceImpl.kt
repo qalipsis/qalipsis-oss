@@ -131,7 +131,6 @@ internal class DataSeriesServiceImpl(
 
         val dataSeriesEntityPage = if (filters.isNotEmpty()) {
             val sanitizedFilters = filters.map { it.replace('*', '%').replace('?', '_') }.map { "%${it.trim()}%" }
-            println(sanitizedFilters)
             dataSeriesRepository.searchDataSeries(tenant, username, sanitizedFilters, pageable)
         } else {
             dataSeriesRepository.searchDataSeries(tenant, username, pageable)
