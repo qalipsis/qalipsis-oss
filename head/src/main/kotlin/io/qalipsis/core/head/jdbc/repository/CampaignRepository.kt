@@ -110,4 +110,18 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             AND campaign_entity_.name ILIKE any (array[:namePatterns])"""
     )
     suspend fun findKeysByTenantIdAndNamePatterns(tenantId: Long, namePatterns: Collection<String>): Collection<String>
+
+    @Query(
+        value =
+        """SELECT 
+                MIN("start") as "minStart", 
+                MAX(COALESCE("end", NOW())) as "maxEnd", 
+                (EXTRACT(EPOCH FROM MAX(AGE(COALESCE("end", NOW()), start))))::int as "maxDurationSec"
+            FROM campaign as campaign_entity_
+            WHERE key in (:campaignKeys)
+                AND EXISTS 
+                    (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)"""
+    )
+    suspend fun findInstantsAndDuration(tenant: String, campaignKeys: Collection<String>): CampaignsInstantsAndDuration?
+
 }

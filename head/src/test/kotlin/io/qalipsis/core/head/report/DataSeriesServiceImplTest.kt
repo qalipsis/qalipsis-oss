@@ -24,10 +24,10 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.lang.IdGenerator
-import io.qalipsis.api.report.query.QueryAggregationOperator
-import io.qalipsis.api.report.query.QueryClause
-import io.qalipsis.api.report.query.QueryClauseOperator
-import io.qalipsis.api.report.query.QueryDescription
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClause
+import io.qalipsis.api.query.QueryClauseOperator
+import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
@@ -272,9 +272,9 @@ internal class DataSeriesServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             coEvery {
-                dataSeriesRepository.findByReferenceAndTenant(
-                    "my-data-series",
-                    "my-tenant"
+                dataSeriesRepository.findByTenantAndReference(
+                    "my-tenant",
+                    "my-data-series"
                 )
             } returns DataSeriesEntity(
                 reference = "my-data-series",
@@ -324,9 +324,9 @@ internal class DataSeriesServiceImplTest {
     internal fun `should get the data series when owned if not shared`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns DataSeriesEntity(
             reference = "my-data-series",
@@ -368,9 +368,9 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not get the data series when not shared`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns DataSeriesEntity(
             reference = "my-data-series",
@@ -420,9 +420,9 @@ internal class DataSeriesServiceImplTest {
                 query = "the query"
             )
             coEvery {
-                dataSeriesRepository.findByReferenceAndTenant(
-                    "my-data-series",
-                    "my-tenant"
+                dataSeriesRepository.findByTenantAndReference(
+                    "my-tenant",
+                    "my-data-series"
                 )
             } returns entity
             coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
@@ -468,7 +468,7 @@ internal class DataSeriesServiceImplTest {
             }
             assertThat(entity.query).isEqualTo("the new query")
             coVerifyOrder {
-                dataSeriesRepository.findByReferenceAndTenant(reference = "my-data-series", tenant = "my-tenant")
+                dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
                 userRepository.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
@@ -496,9 +496,9 @@ internal class DataSeriesServiceImplTest {
                 query = "the query"
             )
             coEvery {
-                dataSeriesRepository.findByReferenceAndTenant(
-                    "my-data-series",
-                    "my-tenant"
+                dataSeriesRepository.findByTenantAndReference(
+                    "my-tenant",
+                    "my-data-series"
                 )
             } returns entity
             coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
@@ -530,7 +530,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
             coVerifyOrder {
-                dataSeriesRepository.findByReferenceAndTenant(reference = "my-data-series", tenant = "my-tenant")
+                dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
                 userRepository.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
@@ -561,9 +561,9 @@ internal class DataSeriesServiceImplTest {
                 query = "the query"
             )
             coEvery {
-                dataSeriesRepository.findByReferenceAndTenant(
-                    "my-data-series",
-                    "my-tenant"
+                dataSeriesRepository.findByTenantAndReference(
+                    "my-tenant",
+                    "my-data-series"
                 )
             } returns entity
             coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
@@ -601,7 +601,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
             coVerifyOrder {
-                dataSeriesRepository.findByReferenceAndTenant(reference = "my-data-series", tenant = "my-tenant")
+                dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
                 userRepository.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
@@ -613,9 +613,9 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not update the data series when shared in read`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns DataSeriesEntity(
             reference = "my-data-series",
@@ -652,9 +652,9 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not update the data series when not shared`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns DataSeriesEntity(
             reference = "my-data-series",
@@ -696,9 +696,9 @@ internal class DataSeriesServiceImplTest {
             every { sharingMode } returns SharingMode.WRITE
         }
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns entity
 
@@ -707,7 +707,7 @@ internal class DataSeriesServiceImplTest {
 
         // then
         coVerifyOrder {
-            dataSeriesRepository.findByReferenceAndTenant(reference = "my-data-series", tenant = "my-tenant")
+            dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
             dataSeriesRepository.delete(refEq(entity))
         }
     }
@@ -721,9 +721,9 @@ internal class DataSeriesServiceImplTest {
             every { sharingMode } returns SharingMode.NONE
         }
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns entity
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
@@ -733,7 +733,7 @@ internal class DataSeriesServiceImplTest {
 
         // then
         coVerifyOrder {
-            dataSeriesRepository.findByReferenceAndTenant(reference = "my-data-series", tenant = "my-tenant")
+            dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
             userRepository.findUsernameById(3912L)
             dataSeriesRepository.delete(refEq(entity))
         }
@@ -743,9 +743,9 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not delete the data series when shared in read`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns DataSeriesEntity(
             reference = "my-data-series",
@@ -777,9 +777,9 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not delete the data series when not shared`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByReferenceAndTenant(
-                "my-data-series",
-                "my-tenant"
+            dataSeriesRepository.findByTenantAndReference(
+                "my-tenant",
+                "my-data-series"
             )
         } returns DataSeriesEntity(
             reference = "my-data-series",
@@ -825,10 +825,10 @@ internal class DataSeriesServiceImplTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
                     hasSize(2)
                     containsExactly(dataSeries1, dataSeries2)
                 }
@@ -859,10 +859,10 @@ internal class DataSeriesServiceImplTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
                     hasSize(2)
                     containsExactly(dataSeries1, dataSeries2)
                 }
@@ -903,10 +903,10 @@ internal class DataSeriesServiceImplTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
                     hasSize(2)
                     containsExactly(dataSeries1, dataSeries2)
                 }
@@ -947,10 +947,10 @@ internal class DataSeriesServiceImplTest {
 
             // then
             assertThat(result).all {
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::page).isEqualTo(0)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalPages).isEqualTo(1)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::totalElements).isEqualTo(2)
-                prop(io.qalipsis.core.head.model.Page<DataSeries>::elements).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
                     hasSize(2)
                     containsExactly(dataSeries2, dataSeries3)
                 }

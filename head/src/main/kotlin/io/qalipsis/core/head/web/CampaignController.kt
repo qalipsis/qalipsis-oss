@@ -15,6 +15,7 @@ import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
+import io.qalipsis.api.query.Page
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -22,7 +23,6 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
-import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.security.Permissions

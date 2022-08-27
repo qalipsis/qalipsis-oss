@@ -2,8 +2,8 @@ package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.constraints.PositiveDuration
-import io.qalipsis.api.report.query.QueryAggregationOperator
-import io.qalipsis.api.report.query.QueryClauseOperator
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.report.DataType

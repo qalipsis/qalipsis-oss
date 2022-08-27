@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
@@ -492,19 +493,156 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val campaignKeys = campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
         // then
-        assertThat(campaignKeys).all{
+        assertThat(campaignKeys).all {
             hasSize(3)
             containsOnly("key-1", "key-3", "key-4")
         }
 
         //when + then
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp-_"))).containsOnly("key-3")
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%"))).containsOnly("key-1", "key-4")
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%", "ca_", "x"))).containsOnly("key-1", "key-4")
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%", "ca%"))).containsOnly("key-1", "key-3", "key-4")
+        assertThat(
+            campaignRepository.findKeysByTenantIdAndNamePatterns(
+                tenant.id,
+                listOf("camp-_")
+            )
+        ).containsOnly("key-3")
+        assertThat(
+            campaignRepository.findKeysByTenantIdAndNamePatterns(
+                tenant.id,
+                listOf("%IG%")
+            )
+        ).containsOnly("key-1", "key-4")
+        assertThat(
+            campaignRepository.findKeysByTenantIdAndNamePatterns(
+                tenant.id,
+                listOf("%IG%", "ca_", "x")
+            )
+        ).containsOnly("key-1", "key-4")
+        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%", "ca%"))).containsOnly(
+            "key-1",
+            "key-3",
+            "key-4"
+        )
         assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%4"))).containsOnly("key-4")
         assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%", "%4"))).containsOnly("key-4")
+        assertThat(
+            campaignRepository.findKeysByTenantIdAndNamePatterns(
+                tenant.id,
+                listOf("GN%", "%4")
+            )
+        ).containsOnly("key-4")
     }
 
+
+    @Test
+    internal fun `should return the min start, max end and max duration when all the campaigns are ended`() =
+        testDispatcherProvider.run {
+            // given
+            val start1 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(23)
+            val end1 = start1 + Duration.ofSeconds(16)
+
+            val start2 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(22)
+            val end2 = start2 + Duration.ofSeconds(1_236)
+
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val otherTenant = tenantRepository.save(TenantEntity(Instant.now(), "other-tenant", "other-tenant"))
+            campaignRepository.saveAll(
+                listOf(
+                    campaignPrototype.copy(tenantId = tenant.id, key = "camp-1", start = start1, end = end1),
+                    campaignPrototype.copy(tenantId = tenant.id, key = "camp-2", start = start2, end = end2),
+                    // "Noise entities" to verify the clauses.
+                    campaignPrototype.copy(
+                        tenantId = tenant.id,
+                        key = "camp-3",
+                        start = Instant.EPOCH,
+                        end = Instant.now() + Duration.ofDays(365)
+                    ),
+                    campaignPrototype.copy(
+                        tenantId = otherTenant.id,
+                        key = "camp-1",
+                        start = Instant.EPOCH,
+                        end = Instant.now() + Duration.ofDays(365)
+                    ),
+                    campaignPrototype.copy(
+                        tenantId = otherTenant.id,
+                        key = "camp-2",
+                        start = Instant.EPOCH,
+                        end = Instant.now() + Duration.ofDays(365)
+                    )
+                )
+            ).count()
+
+            // when
+            val result = campaignRepository.findInstantsAndDuration("my-tenant", setOf("camp-1", "camp-2"))
+
+            // then
+            assertThat(result).isNotNull().all {
+                prop(CampaignsInstantsAndDuration::minStart).isEqualTo(start1)
+                prop(CampaignsInstantsAndDuration::maxEnd).isEqualTo(end2)
+                prop(CampaignsInstantsAndDuration::maxDurationSec).isEqualTo(Duration.between(start2, end2).toSeconds())
+            }
+        }
+
+    @Test
+    internal fun `should return the min start, max end and max duration when the longest campaigns are not ended`() =
+        testDispatcherProvider.run {
+            // given
+            val start1 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(23)
+            val end1 = start1 + Duration.ofSeconds(16)
+
+            val start2 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(22)
+
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val otherTenant = tenantRepository.save(TenantEntity(Instant.now(), "other-tenant", "other-tenant"))
+            campaignRepository.saveAll(
+                listOf(
+                    campaignPrototype.copy(tenantId = tenant.id, key = "camp-1", start = start1, end = end1),
+                    campaignPrototype.copy(tenantId = tenant.id, key = "camp-2", start = start2, end = null),
+                    // "Noise entities" to verify the clauses.
+                    campaignPrototype.copy(
+                        tenantId = tenant.id,
+                        key = "camp-3",
+                        start = Instant.EPOCH,
+                        end = Instant.now() + Duration.ofDays(365)
+                    ),
+                    campaignPrototype.copy(
+                        tenantId = otherTenant.id,
+                        key = "camp-1",
+                        start = Instant.EPOCH,
+                        end = Instant.now() + Duration.ofDays(365)
+                    ),
+                    campaignPrototype.copy(
+                        tenantId = otherTenant.id,
+                        key = "camp-2",
+                        start = Instant.EPOCH,
+                        end = Instant.now() + Duration.ofDays(365)
+                    )
+                )
+            ).count()
+
+            // when
+            val justBeforeQuery = Instant.now()
+            val result = campaignRepository.findInstantsAndDuration("my-tenant", setOf("camp-1", "camp-2"))
+
+            // then
+            assertThat(result).isNotNull().all {
+                prop(CampaignsInstantsAndDuration::minStart).isEqualTo(start1)
+                prop(CampaignsInstantsAndDuration::maxEnd).isNotNull().isGreaterThanOrEqualTo(justBeforeQuery)
+                prop(CampaignsInstantsAndDuration::maxDurationSec).isNotNull()
+                    .isGreaterThanOrEqualTo(Duration.ofMinutes(22).toSeconds())
+            }
+        }
+
+    @Test
+    internal fun `should return neither start, end nor duration when no specified campaign exists`() =
+        testDispatcherProvider.run {
+            // when
+            val result = campaignRepository.findInstantsAndDuration("my-tenant", setOf("camp-1", "camp-2"))
+
+            // then
+            assertThat(result).isNotNull().all {
+                prop(CampaignsInstantsAndDuration::minStart).isNull()
+                prop(CampaignsInstantsAndDuration::maxEnd).isNull()
+                prop(CampaignsInstantsAndDuration::maxDurationSec).isNull()
+            }
+        }
 }

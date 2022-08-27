@@ -17,8 +17,8 @@ import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
+import io.qalipsis.api.query.Page
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.model.Page
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.report.ReportService

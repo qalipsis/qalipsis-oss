@@ -6,9 +6,9 @@ import io.micronaut.data.model.Sort
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.exceptions.HttpStatusException
 import io.qalipsis.api.lang.IdGenerator
-import io.qalipsis.api.report.query.QueryAggregationOperator
-import io.qalipsis.api.report.query.QueryClause
-import io.qalipsis.api.report.query.QueryDescription
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClause
+import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
@@ -19,7 +19,7 @@ import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.core.head.model.converter.DataSeriesConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
-import io.qalipsis.core.head.model.Page as QalipsisPage
+import io.qalipsis.api.query.Page as QalipsisPage
 
 /**
  * Default implementation of [DataSeriesService] interface
@@ -38,7 +38,7 @@ internal class DataSeriesServiceImpl(
 ) : DataSeriesService {
 
     override suspend fun get(username: String, tenant: String, reference: String): DataSeries {
-        val dataSeriesEntity = dataSeriesRepository.findByReferenceAndTenant(reference = reference, tenant = tenant)
+        val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant = tenant, reference = reference)
         val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId)
         if (username != creatorName && dataSeriesEntity.sharingMode == SharingMode.NONE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to use this data series")
@@ -84,7 +84,7 @@ internal class DataSeriesServiceImpl(
         reference: String,
         patches: Collection<DataSeriesPatch>
     ): DataSeries {
-        val dataSeriesEntity = dataSeriesRepository.findByReferenceAndTenant(reference, tenant)
+        val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant, reference)
         val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId)
         if (username != creatorName && dataSeriesEntity.sharingMode != SharingMode.WRITE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to update this data series")
@@ -107,7 +107,7 @@ internal class DataSeriesServiceImpl(
     }
 
     override suspend fun delete(username: String, tenant: String, reference: String) {
-        val dataSeriesEntity = dataSeriesRepository.findByReferenceAndTenant(reference, tenant)
+        val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant, reference)
         if (dataSeriesEntity.sharingMode != SharingMode.WRITE && username != userRepository.findUsernameById(
                 dataSeriesEntity.creatorId
             )

@@ -14,12 +14,14 @@ internal object Permissions {
     const val READ_DATA_SERIES = "read:series"
     const val READ_REPORT = "read:report"
     const val WRITE_REPORT = "write:report"
+    const val READ_TIME_SERIES = "read:time-series"
 
     val FOR_TESTER = setOf(
         WRITE_CAMPAIGN,
         READ_CAMPAIGN,
         READ_SCENARIO,
-        WRITE_DATA_SERIES
+        WRITE_DATA_SERIES,
+        READ_TIME_SERIES,
     )
 
     val FOR_REPORTER = setOf(
@@ -28,7 +30,9 @@ internal object Permissions {
         READ_DATA_SERIES,
         WRITE_DATA_SERIES,
         READ_REPORT,
-        WRITE_REPORT
+        WRITE_REPORT,
+        WRITE_DATA_SERIES,
+        READ_TIME_SERIES,
     )
 
     val FOR_TENANT_ADMINISTRATOR = emptySet<Permission>()
@@ -42,7 +46,9 @@ internal object Permissions {
         WRITE_DATA_SERIES,
         READ_DATA_SERIES,
         READ_REPORT,
-        WRITE_REPORT
+        WRITE_REPORT,
+        READ_DATA_SERIES,
+        READ_TIME_SERIES,
     )
 
 }

@@ -9,12 +9,12 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
-import io.qalipsis.api.report.query.QueryAggregationOperator
-import io.qalipsis.api.report.query.QueryClauseOperator
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesFilter
+import io.qalipsis.core.head.report.DataType
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested

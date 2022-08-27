@@ -7,8 +7,8 @@ import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEmpty
-import assertk.assertions.isFalse
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
@@ -17,8 +17,8 @@ import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
-import io.qalipsis.api.report.query.QueryAggregationOperator
-import io.qalipsis.api.report.query.QueryClauseOperator
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
@@ -254,7 +254,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
         val beforeUpdate = Instant.now()
         dataSeriesRepository.update(updated)
-        fetched = dataSeriesRepository.findByReferenceAndTenant(reference = "my-series", tenant = "my-tenant")
+        fetched = dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-series")
 
         // then
         assertThat(fetched).isNotNull().all {
