@@ -26,7 +26,7 @@ import java.time.Instant
  */
 data class CampaignReport(
     val campaignKey: CampaignKey,
-    val start: Instant,
+    val start: Instant?,
     val end: Instant?,
     val startedMinions: Int = 0,
     val completedMinions: Int = 0,
