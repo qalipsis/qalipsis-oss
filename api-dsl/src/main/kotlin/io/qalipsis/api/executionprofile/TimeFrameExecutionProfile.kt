@@ -14,21 +14,21 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.RampUpSpecification
+import io.qalipsis.api.scenario.ExecutionProfileSpecification
 
 /**
- * Ramp-up Strategy to start an adaptive count of minions in a limited time frame.
+ * Execution profile strategy to start an adaptive count of minions in a limited time frame.
  *
  * The global speed factor applies on the duration of the time frame and period between launches, increasing or decreasing them.
  *
  * @author Eric Jessé
  */
-data class TimeFrameRampUp(private val periodInMs: Long, private val timeFrameInMs: Long) : RampUpStrategy {
+data class TimeFrameExecutionProfile(private val periodInMs: Long, private val timeFrameInMs: Long) : ExecutionProfile {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        TimeFrameRampUpIterator(
+        TimeFrameExecutionProfileIterator(
             (periodInMs / speedFactor).toLong(), (timeFrameInMs / speedFactor).toLong(),
             totalMinionsCount
         )
@@ -37,7 +37,7 @@ data class TimeFrameRampUp(private val periodInMs: Long, private val timeFrameIn
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as TimeFrameRampUp
+        other as TimeFrameExecutionProfile
 
         if (periodInMs != other.periodInMs) return false
         if (timeFrameInMs != other.timeFrameInMs) return false
@@ -52,10 +52,10 @@ data class TimeFrameRampUp(private val periodInMs: Long, private val timeFrameIn
     }
 
 
-    inner class TimeFrameRampUpIterator(
+    inner class TimeFrameExecutionProfileIterator(
         private val periodInMs: Long, timeFrameInMs: Long,
         totalMinionsCount: Int
-    ) : RampUpStrategyIterator {
+    ) : ExecutionProfileIterator {
 
         private var remainingMinions = totalMinionsCount
 
@@ -68,12 +68,16 @@ data class TimeFrameRampUp(private val periodInMs: Long, private val timeFrameIn
             remainingMinions -= minionsCount
             return MinionsStartingLine(minionsCount, periodInMs)
         }
+
+        override fun hasNext(): Boolean {
+            return remainingMinions > 0
+        }
     }
 }
 
 /**
  * Start an adaptive count of minions in a limited time frame.
  */
-fun RampUpSpecification.timeframe(periodInMs: Long, timeFrameInMs: Long) {
-    strategy(TimeFrameRampUp(periodInMs, timeFrameInMs))
+fun ExecutionProfileSpecification.timeframe(periodInMs: Long, timeFrameInMs: Long) {
+    strategy(TimeFrameExecutionProfile(periodInMs, timeFrameInMs))
 }

@@ -14,24 +14,20 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.scenario
+
+import io.qalipsis.api.executionprofile.ExecutionProfile
+
 
 /**
- * Ramp-up of minions on a scenario are defined as a sequence of starts, which are described by a [MinionsStartingLine].
- *
- * @see io.qalipsis.core.factory.orchestration.rampup.RampUpStrategy
- * @see io.qalipsis.core.factory.orchestration.rampup.RampUpStrategyIterator
+ * Interface of a specification supporting the configuration of a ramp-up to start minions.
  *
  * @author Eric Jessé
  */
-data class MinionsStartingLine(
-    /**
-     * Number of minions to start on the next starting line.
-     */
-    val count: Int,
+interface ExecutionProfileSpecification {
 
     /**
-     * Offset of the start, related to the first start of the sequence.
+     * Defines the ramp-up strategy to start all the minions on a scenario.
      */
-    val offsetMs: Long
-)
+    fun strategy(executionProfile: ExecutionProfile)
+}

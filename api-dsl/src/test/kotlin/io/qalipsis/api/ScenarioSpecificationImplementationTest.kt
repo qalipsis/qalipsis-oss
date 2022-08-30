@@ -22,7 +22,7 @@ import assertk.assertions.containsAll
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import io.mockk.every
-import io.qalipsis.api.rampup.RampUpStrategy
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -57,14 +57,14 @@ internal class ScenarioSpecificationImplementationTest {
     @Test
     @Timeout(3)
     internal fun `should create a scenario with a ramp-up strategy`() {
-        val rampUpStrategy: RampUpStrategy = relaxedMockk { }
+        val executionProfile: ExecutionProfile = relaxedMockk { }
         val scenario = scenario("my-scenario") {
-            rampUp {
-                strategy(rampUpStrategy)
+            profile {
+                strategy(executionProfile)
             }
         } as ConfiguredScenarioSpecification
 
-        assertSame(rampUpStrategy, scenario.rampUpStrategy)
+        assertSame(executionProfile, scenario.executionProfile)
         assertSame(scenario, scenariosSpecifications["my-scenario"])
     }
 

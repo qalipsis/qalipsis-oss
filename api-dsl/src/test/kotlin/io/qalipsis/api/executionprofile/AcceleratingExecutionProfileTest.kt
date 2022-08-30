@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
 import io.qalipsis.api.scenario.scenario
@@ -24,24 +24,24 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-internal class AcceleratingRampUpTest {
+internal class AcceleratingExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
         val scenario = scenario("my-scenario") {
-            rampUp {
+            profile {
                 faster(1, 2.0, 3, 4)
             }
         } as ScenarioSpecificationImplementation
 
-        assertEquals(AcceleratingRampUp(1, 2.0, 3, 4), scenario.rampUpStrategy)
+        assertEquals(AcceleratingExecutionProfile(1, 2.0, 3, 4), scenario.executionProfile)
     }
 
     @Test
     internal fun `should accelerate the pace until the limit`() {
-        val strategy = AcceleratingRampUp(100, 2.0, 10, 4)
+        val executionProfile = AcceleratingExecutionProfile(100, 2.0, 10, 4)
 
-        val iterator = strategy.iterator(22, 1.0)
+        val iterator = executionProfile.iterator(22, 1.0)
 
         assertEquals(MinionsStartingLine(4, 100), iterator.next())
         assertEquals(MinionsStartingLine(4, 50), iterator.next())
@@ -54,9 +54,9 @@ internal class AcceleratingRampUpTest {
 
     @Test
     internal fun `should accelerate the pace with factor until the limit`() {
-        val strategy = AcceleratingRampUp(100, 2.0, 10, 4)
+        val executionProfile = AcceleratingExecutionProfile(100, 2.0, 10, 4)
 
-        val iterator = strategy.iterator(22, 2.0)
+        val iterator = executionProfile.iterator(22, 2.0)
 
         assertEquals(MinionsStartingLine(4, 100), iterator.next())
         assertEquals(MinionsStartingLine(4, 25), iterator.next())

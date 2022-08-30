@@ -14,31 +14,30 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.RampUpSpecification
+import io.qalipsis.api.scenario.ExecutionProfileSpecification
 
 /**
  *
- * Ramp-up Strategy to let the user define his own strategy based upon the total count of minions to start.
+ * Execution profile strategy to let the user define his own strategy based upon the total count of minions to start.
  *
  * The global speed factor is passed to the ramp-up specifications.
  *
  * @author Eric Jessé
  */
-class UserDefinedRampUp(
+class UserDefinedExecutionProfile(
     private val specification: (pastPeriodMs: Long, totalMinionsCount: Int, speedFactor: Double) -> MinionsStartingLine
-) :
-    RampUpStrategy {
+) : ExecutionProfile {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        UserDefinedRampUpIterator(totalMinionsCount, speedFactor, specification)
+        UserDefinedExecutionProfileIterator(totalMinionsCount, speedFactor, specification)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as UserDefinedRampUp
+        other as UserDefinedExecutionProfile
 
         if (specification != other.specification) return false
 
@@ -49,11 +48,10 @@ class UserDefinedRampUp(
         return specification.hashCode()
     }
 
-    inner class UserDefinedRampUpIterator(
+    inner class UserDefinedExecutionProfileIterator(
         private val totalMinionsCount: Int, private val speedFactor: Double,
         private val specification: (pastPeriodMs: Long, totalMinionsCount: Int, speedFactor: Double) -> MinionsStartingLine
-    ) :
-        RampUpStrategyIterator {
+    ) : ExecutionProfileIterator {
 
         private var pastPeriodMs = 0L
 
@@ -67,14 +65,18 @@ class UserDefinedRampUp(
 
             return MinionsStartingLine(minionsCount, result.offsetMs)
         }
+
+        override fun hasNext(): Boolean {
+            return remainingMinions > 0
+        }
     }
 }
 
 /**
  * Define a flexible strategy based upon past period and total count of minions to start.
  */
-fun RampUpSpecification.define(
+fun ExecutionProfileSpecification.define(
     specification: ((pastPeriodMs: Long, totalMinions: Int, speedFactor: Double) -> MinionsStartingLine)
 ) {
-    strategy(UserDefinedRampUp(specification))
+    strategy(UserDefinedExecutionProfile(specification))
 }

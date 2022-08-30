@@ -14,27 +14,27 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.RampUpSpecification
+import io.qalipsis.api.scenario.ExecutionProfileSpecification
 
 /**
- * Ramp-up Strategy to start a constant number of minions at a constant pace.
+ * Execution profile strategy to start a constant number of minions at a constant pace.
  *
  * The global speed factor applies on the constant period, reducing or increasing it.
  *
  * @author Eric Jessé
  */
-data class RegularRampUp(private val periodInMs: Long, private val minionsCountProLaunch: Int) : RampUpStrategy {
+data class RegularExecutionProfile(private val periodInMs: Long, private val minionsCountProLaunch: Int) : ExecutionProfile {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        RegularRampUpIterator((periodInMs / speedFactor).toLong(), minionsCountProLaunch, totalMinionsCount)
+        RegularExecutionProfileIterator((periodInMs / speedFactor).toLong(), minionsCountProLaunch, totalMinionsCount)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as RegularRampUp
+        other as RegularExecutionProfile
 
         if (periodInMs != other.periodInMs) return false
         if (minionsCountProLaunch != other.minionsCountProLaunch) return false
@@ -48,10 +48,10 @@ data class RegularRampUp(private val periodInMs: Long, private val minionsCountP
         return result
     }
 
-    inner class RegularRampUpIterator(
+    inner class RegularExecutionProfileIterator(
         private val periodInMs: Long, private val minionsCountProLaunch: Int,
         totalMinionsCount: Int
-    ) : RampUpStrategyIterator {
+    ) : ExecutionProfileIterator {
 
         private var remainingMinions = totalMinionsCount
 
@@ -60,12 +60,16 @@ data class RegularRampUp(private val periodInMs: Long, private val minionsCountP
             remainingMinions -= minionsCount
             return MinionsStartingLine(minionsCount, periodInMs)
         }
+
+        override fun hasNext(): Boolean {
+            return remainingMinions > 0
+        }
     }
 }
 
 /**
  * Start a constant number of minions at a constant pace.
  */
-fun RampUpSpecification.regular(periodMs: Long, minionsCountProLaunch: Int) {
-    strategy(RegularRampUp(periodMs, minionsCountProLaunch))
+fun ExecutionProfileSpecification.regular(periodMs: Long, minionsCountProLaunch: Int) {
+    strategy(RegularExecutionProfile(periodMs, minionsCountProLaunch))
 }

@@ -16,7 +16,7 @@
 
 package io.qalipsis.api.scenario
 
-import io.qalipsis.api.rampup.RampUpStrategy
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.retry.RetryPolicy
 
 /**
@@ -32,9 +32,9 @@ interface ConfiguredScenarioSpecification : StepSpecificationRegistry {
     val minionsCount: Int
 
     /**
-     * [RampUpStrategy] defining how the start of the minion should evolve in the scenario.
+     * [ExecutionProfile] defining how the start of the minion should evolve in the scenario.
      */
-    val rampUpStrategy: RampUpStrategy?
+    val executionProfile: ExecutionProfile?
 
     /**
      * Default [RetryPolicy] defined for all the steps of the scenario, when not otherwise specified.

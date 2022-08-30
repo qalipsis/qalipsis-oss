@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
 import io.qalipsis.api.scenario.scenario
@@ -24,40 +24,40 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-internal class TimeFrameRampUpTest {
+internal class RegularExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
         val scenario = scenario("my-scenario") {
-            rampUp {
-                timeframe(1, 20)
+            profile {
+                regular(1, 2)
             }
         } as ScenarioSpecificationImplementation
 
-        assertEquals(TimeFrameRampUp(1, 20), scenario.rampUpStrategy)
+        assertEquals(RegularExecutionProfile(1, 2), scenario.executionProfile)
     }
 
     @Test
-    internal fun `should provide adaptive count at constant pace`() {
-        val strategy = TimeFrameRampUp(10, 35)
+    internal fun `should provide constant count at constant pace`() {
+        val executionProfile = RegularExecutionProfile(10, 5)
 
-        val iterator = strategy.iterator(10, 1.0)
+        val iterator = executionProfile.iterator(11, 1.0)
 
-        assertEquals(MinionsStartingLine(4, 10), iterator.next())
-        assertEquals(MinionsStartingLine(4, 10), iterator.next())
-        assertEquals(MinionsStartingLine(2, 10), iterator.next())
+        assertEquals(MinionsStartingLine(5, 10), iterator.next())
+        assertEquals(MinionsStartingLine(5, 10), iterator.next())
+        assertEquals(MinionsStartingLine(1, 10), iterator.next())
         assertEquals(MinionsStartingLine(0, 10), iterator.next())
     }
 
     @Test
-    internal fun `should provide adaptive count with factor at constant pace`() {
-        val strategy = TimeFrameRampUp(10, 35)
+    internal fun `should provide constant count with factor at constant pace`() {
+        val executionProfile = RegularExecutionProfile(10, 5)
 
-        val iterator = strategy.iterator(10, 2.0)
+        val iterator = executionProfile.iterator(11, 2.0)
 
-        assertEquals(MinionsStartingLine(4, 5), iterator.next())
-        assertEquals(MinionsStartingLine(4, 5), iterator.next())
-        assertEquals(MinionsStartingLine(2, 5), iterator.next())
+        assertEquals(MinionsStartingLine(5, 5), iterator.next())
+        assertEquals(MinionsStartingLine(5, 5), iterator.next())
+        assertEquals(MinionsStartingLine(1, 5), iterator.next())
         assertEquals(MinionsStartingLine(0, 5), iterator.next())
     }
 

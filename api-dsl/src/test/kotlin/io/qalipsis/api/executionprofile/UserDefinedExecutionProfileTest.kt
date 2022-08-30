@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
 import io.qalipsis.api.scenario.scenario
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-internal class UserDefinedRampUpTest {
+internal class UserDefinedExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
@@ -32,12 +32,12 @@ internal class UserDefinedRampUpTest {
             { _, _, _ -> MinionsStartingLine(10, 10) }
 
         val scenario = scenario("my-scenario") {
-            rampUp {
+            profile {
                 define(specification)
             }
         } as ScenarioSpecificationImplementation
 
-        assertEquals(UserDefinedRampUp(specification), scenario.rampUpStrategy)
+        assertEquals(UserDefinedExecutionProfile(specification), scenario.executionProfile)
     }
 
     @Test
@@ -47,9 +47,9 @@ internal class UserDefinedRampUpTest {
                 val period = if (pastPeriodMs == 0L) 200L else pastPeriodMs
                 MinionsStartingLine(totalMinionsCount / 3, (period / speedFactor).toLong())
             }
-        val strategy = UserDefinedRampUp(specification)
+        val executionProfile = UserDefinedExecutionProfile(specification)
 
-        val iterator = strategy.iterator(21, 2.0)
+        val iterator = executionProfile.iterator(21, 2.0)
 
         assertEquals(MinionsStartingLine(7, 100), iterator.next())
         assertEquals(MinionsStartingLine(7, 50), iterator.next())

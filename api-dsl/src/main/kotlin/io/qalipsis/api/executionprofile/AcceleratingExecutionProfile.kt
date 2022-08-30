@@ -14,9 +14,9 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.RampUpSpecification
+import io.qalipsis.api.scenario.ExecutionProfileSpecification
 
 /**
  *
@@ -31,13 +31,13 @@ import io.qalipsis.api.scenario.RampUpSpecification
  * @property minPeriodMs the minimal period between launches, in milliseconds.
  * @property minionsCountProLaunch the number of minions to start at each launch.
  */
-class AcceleratingRampUp(
+class AcceleratingExecutionProfile(
     private val startPeriodMs: Long, private val accelerator: Double,
     private val minPeriodMs: Long, private val minionsCountProLaunch: Int
-) : RampUpStrategy {
+) : ExecutionProfile {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        AcceleratingRampUpIterator(
+        AcceleratingExecutionProfileIterator(
             startPeriodMs, accelerator * speedFactor,
             minPeriodMs, minionsCountProLaunch, totalMinionsCount
         )
@@ -46,7 +46,7 @@ class AcceleratingRampUp(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as AcceleratingRampUp
+        other as AcceleratingExecutionProfile
 
         if (startPeriodMs != other.startPeriodMs) return false
         if (accelerator != other.accelerator) return false
@@ -64,11 +64,10 @@ class AcceleratingRampUp(
         return result
     }
 
-    inner class AcceleratingRampUpIterator(
+    inner class AcceleratingExecutionProfileIterator(
         startPeriodMs: Long, accelerator: Double, private val minPeriodMs: Long,
         private val minionsCountProLaunch: Int, totalMinionsCount: Int
-    ) :
-        RampUpStrategyIterator {
+    ) : ExecutionProfileIterator {
 
         private var nextPeriod = startPeriodMs
 
@@ -85,15 +84,19 @@ class AcceleratingRampUp(
 
             return result
         }
+
+        override fun hasNext(): Boolean {
+            return remainingMinions > 0
+        }
     }
 }
 
 /**
  * Start a constant number of minions launched at an accelerating pace.
  */
-fun RampUpSpecification.faster(
+fun ExecutionProfileSpecification.faster(
     startPeriodMs: Long, accelerator: Double, minPeriodMs: Long,
     minionsCountProLaunch: Int
 ) {
-    strategy(AcceleratingRampUp(startPeriodMs, accelerator, minPeriodMs, minionsCountProLaunch))
+    strategy(AcceleratingExecutionProfile(startPeriodMs, accelerator, minPeriodMs, minionsCountProLaunch))
 }

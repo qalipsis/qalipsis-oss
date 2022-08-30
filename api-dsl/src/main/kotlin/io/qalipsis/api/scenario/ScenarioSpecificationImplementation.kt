@@ -21,7 +21,7 @@ import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
-import io.qalipsis.api.rampup.RampUpStrategy
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap
 internal class ScenarioSpecificationImplementation(
     internal val name: String
 ) : StepSpecificationRegistry, ConfigurableScenarioSpecification, ConfiguredScenarioSpecification,
-    RampUpSpecification, StartScenarioSpecification {
+    ExecutionProfileSpecification, StartScenarioSpecification {
 
     override var minionsCount = 1
 
@@ -46,7 +46,7 @@ internal class ScenarioSpecificationImplementation(
     @KTestable
     private val registeredSteps = ConcurrentHashMap<String, ImmutableSlot<StepSpecification<*, *, *>>>()
 
-    override var rampUpStrategy: RampUpStrategy? = null
+    override var executionProfile: ExecutionProfile? = null
 
     override var retryPolicy: RetryPolicy? = null
 
@@ -109,12 +109,12 @@ internal class ScenarioSpecificationImplementation(
 
     override fun exists(stepName: StepName) = registeredSteps.containsKey(stepName)
 
-    override fun rampUp(specification: RampUpSpecification.() -> Unit) {
+    override fun profile(specification: ExecutionProfileSpecification.() -> Unit) {
         this.specification()
     }
 
-    override fun strategy(rampUpStrategy: RampUpStrategy) {
-        this.rampUpStrategy = rampUpStrategy
+    override fun strategy(executionProfile: ExecutionProfile) {
+        this.executionProfile = executionProfile
     }
 
     override fun retryPolicy(retryPolicy: RetryPolicy) {

@@ -26,7 +26,7 @@ interface ConfigurableScenarioSpecification : RetrySpecification {
     /**
      * Defines how the start of the minion should evolve in the scenario.
      */
-    fun rampUp(specification: RampUpSpecification.() -> Unit)
+    fun profile(specification: ExecutionProfileSpecification.() -> Unit)
 
     /**
      * Default number of minions. This value is multiplied by a runtime factor to provide the total number of minions on the scenario.

@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
 import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
 import io.qalipsis.api.scenario.scenario
@@ -24,24 +24,24 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-internal class ProgressiveVolumeRampUpTest {
+internal class ProgressiveVolumeExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
         val scenario = scenario("my-scenario") {
-            rampUp {
+            profile {
                 more(1, 2, 3.0, 4)
             }
         } as ScenarioSpecificationImplementation
 
-        assertEquals(ProgressiveVolumeRampUp(1, 2, 3.0, 4), scenario.rampUpStrategy)
+        assertEquals(ProgressiveVolumeExecutionProfile(1, 2, 3.0, 4), scenario.executionProfile)
     }
 
     @Test
     internal fun `should increase the volume until the limit`() {
-        val strategy = ProgressiveVolumeRampUp(50, 2, 2.0, 7)
+        val executionProfile = ProgressiveVolumeExecutionProfile(50, 2, 2.0, 7)
 
-        val iterator = strategy.iterator(16, 1.0)
+        val iterator = executionProfile.iterator(16, 1.0)
 
         assertEquals(MinionsStartingLine(2, 50), iterator.next())
         assertEquals(MinionsStartingLine(4, 50), iterator.next())
@@ -52,9 +52,9 @@ internal class ProgressiveVolumeRampUpTest {
 
     @Test
     internal fun `should increase the volume with factor until the limit`() {
-        val strategy = ProgressiveVolumeRampUp(50, 2, 2.0, 25)
+        val executionProfile = ProgressiveVolumeExecutionProfile(50, 2, 2.0, 25)
 
-        val iterator = strategy.iterator(50, 2.0)
+        val iterator = executionProfile.iterator(50, 2.0)
 
         assertEquals(MinionsStartingLine(2, 50), iterator.next())
         assertEquals(MinionsStartingLine(8, 50), iterator.next())

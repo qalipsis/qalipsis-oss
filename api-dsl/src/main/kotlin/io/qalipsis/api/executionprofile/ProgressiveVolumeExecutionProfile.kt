@@ -14,13 +14,13 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.RampUpSpecification
+import io.qalipsis.api.scenario.ExecutionProfileSpecification
 
 /**
  *
- * Ramp-up Strategy to increase the volume of minions in a constant pace.
+ * Execution profile strategy to increase the volume of minions in a constant pace.
  *
  * The global speed factor applies number of of minions pro launch, reducing or increasing it.
  *
@@ -31,14 +31,13 @@ import io.qalipsis.api.scenario.RampUpSpecification
  * @property multiplier
  * @property maxMinionsCountProLaunch
  */
-class ProgressiveVolumeRampUp(
+class ProgressiveVolumeExecutionProfile(
     private val periodMs: Long, private val minionsCountProLaunchAtStart: Int,
     private val multiplier: Double, private val maxMinionsCountProLaunch: Int
-) :
-    RampUpStrategy {
+) : ExecutionProfile {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        ProgressiveVolumeRampUpIterator(
+        ProgressiveVolumeExecutionProfileIterator(
             periodMs, minionsCountProLaunchAtStart, multiplier * speedFactor,
             maxMinionsCountProLaunch, totalMinionsCount
         )
@@ -47,7 +46,7 @@ class ProgressiveVolumeRampUp(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ProgressiveVolumeRampUp
+        other as ProgressiveVolumeExecutionProfile
 
         if (periodMs != other.periodMs) return false
         if (minionsCountProLaunchAtStart != other.minionsCountProLaunchAtStart) return false
@@ -65,12 +64,12 @@ class ProgressiveVolumeRampUp(
         return result
     }
 
-    inner class ProgressiveVolumeRampUpIterator(
+    inner class ProgressiveVolumeExecutionProfileIterator(
         private val periodMs: Long, minionsCountProLaunchAtStart: Int,
         private val multiplier: Double,
         private val maxMinionsCountProLaunch: Int, totalMinionsCount: Int
     ) :
-        RampUpStrategyIterator {
+        ExecutionProfileIterator {
 
         private var nextVolume = minionsCountProLaunchAtStart
 
@@ -84,15 +83,18 @@ class ProgressiveVolumeRampUp(
             return result
         }
 
+        override fun hasNext(): Boolean {
+            return remainingMinions > 0
+        }
     }
 }
 
 /**
  * Increase the volume of minions to start at a constant pace.
  */
-fun RampUpSpecification.more(
+fun ExecutionProfileSpecification.more(
     periodMs: Long, minionsCountProLaunchAtStart: Int, multiplier: Double,
     maxMinionsCountProLaunch: Int
 ) {
-    strategy(ProgressiveVolumeRampUp(periodMs, minionsCountProLaunchAtStart, multiplier, maxMinionsCountProLaunch))
+    strategy(ProgressiveVolumeExecutionProfile(periodMs, minionsCountProLaunchAtStart, multiplier, maxMinionsCountProLaunch))
 }

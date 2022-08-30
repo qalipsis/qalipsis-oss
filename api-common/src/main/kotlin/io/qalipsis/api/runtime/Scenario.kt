@@ -20,7 +20,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
-import io.qalipsis.api.rampup.RampUpStrategy
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
 
@@ -28,14 +28,14 @@ import io.qalipsis.api.steps.Step
  * A [Scenario] represents a full chain of [DirectedAcyclicGraph]s containing all the steps to perform.
  *
  * @property name name of the scenario
- * @property rampUpStrategy defines how fast the minions should be started when executing the scenario
+ * @property executionProfile defines how the minions should be started when executing the scenario
  * @property defaultRetryPolicy defines on the steps of the scenario when none is explicitly set
  * @property minionsCount default minions count to run the scenario when runtime factor is 1
  * @property dags collection of the [DirectedAcyclicGraph] of the scenario
  */
 interface Scenario {
     val name: ScenarioName
-    val rampUpStrategy: RampUpStrategy
+    val executionProfile: ExecutionProfile
     val defaultRetryPolicy: RetryPolicy
     val minionsCount: Int
     val dags: Collection<DirectedAcyclicGraph>

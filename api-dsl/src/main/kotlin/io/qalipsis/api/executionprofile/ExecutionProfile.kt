@@ -14,22 +14,22 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.rampup
+package io.qalipsis.api.executionprofile
 
 /**
  *
- * [RampUpStrategy] is an accessor to a [RampUpStrategyIterator]. The [RampUpStrategy] is part of the definition of the
+ * [ExecutionProfile] is an accessor to a [ExecutionProfileIterator]. The [ExecutionProfile] is part of the definition of the
  * scenario and defines the pace to start the minions.
  *
  * @author Eric Jessé
  */
-interface RampUpStrategy {
+interface ExecutionProfile {
 
     /**
-     * Generates a new [RampUpStrategyIterator] to define a new sequence of starts.
+     * Generates a new [ExecutionProfileIterator] to define a new sequence of starts.
      *
      * @param totalMinionsCount the total number of minions that will be started for the scenario.
      * @param speedFactor the factor to accelerate (when greater than 1) or slower (between 0 and 1) the ramp-up.
      */
-    fun iterator(totalMinionsCount: Int, speedFactor: Double): RampUpStrategyIterator
+    fun iterator(totalMinionsCount: Int, speedFactor: Double): ExecutionProfileIterator
 }

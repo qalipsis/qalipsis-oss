@@ -14,20 +14,24 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.scenario
-
-import io.qalipsis.api.rampup.RampUpStrategy
-
+package io.qalipsis.api.executionprofile
 
 /**
- * Interface of a specification supporting the configuration of a ramp-up to start minions.
+ * [ExecutionProfileIterator] defines how fast the [io.qalipsis.api.orchestration.Minion]s has to be started to simulate the load
+ * on a scenario.
  *
  * @author Eric Jessé
  */
-interface RampUpSpecification {
+interface ExecutionProfileIterator {
 
     /**
-     * Defines the ramp-up strategy to start all the minions on a scenario.
+     * Defines the starting lines for the strategy.
      */
-    fun strategy(rampUpStrategy: RampUpStrategy)
+    fun next(): MinionsStartingLine
+
+    /**
+     * Returns true if there is at least one [MinionsStartingLine] remaining.
+     */
+    fun hasNext(): Boolean
+
 }
