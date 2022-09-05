@@ -25,7 +25,7 @@ internal data class ScenarioReportEntity(
     @field:Version
     override val version: Instant,
     @field:NotBlank
-    @field:Size(min = 1, max = 20)
+    @field:Size(min = 1, max = 255)
     val name: String,
     val campaignReportId: Long,
     val start: Instant,
