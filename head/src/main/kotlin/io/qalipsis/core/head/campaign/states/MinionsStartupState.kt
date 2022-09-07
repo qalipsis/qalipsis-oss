@@ -10,7 +10,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.rampup.RampUpConfiguration
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 
 internal open class MinionsStartupState(
     protected val campaign: CampaignConfiguration
@@ -21,7 +21,7 @@ internal open class MinionsStartupState(
             MinionsRampUpPreparationDirective(
                 campaignKey = campaignKey,
                 scenarioName = scenarioName,
-                rampUpConfiguration = RampUpConfiguration(campaign.startOffsetMs, campaign.speedFactor),
+                executionProfileConfiguration = ExecutionProfileConfiguration(campaign.startOffsetMs, campaign.speedFactor),
                 channel = campaign.broadcastChannel
             )
         }

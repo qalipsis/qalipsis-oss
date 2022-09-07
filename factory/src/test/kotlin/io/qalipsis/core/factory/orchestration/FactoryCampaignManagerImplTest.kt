@@ -20,13 +20,14 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.rampup.MinionsStartingLine
-import io.qalipsis.api.rampup.RampUpStrategy
-import io.qalipsis.api.rampup.RampUpStrategyIterator
+import io.qalipsis.api.executionprofile.ExecutionProfile
+import io.qalipsis.api.executionprofile.ExecutionProfileIterator
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.directives.MinionStartDefinition
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
@@ -35,13 +36,14 @@ import io.qalipsis.core.factory.orchestration.catadioptre.runningScenarios
 import io.qalipsis.core.factory.steps.ContextConsumer
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.rampup.RampUpConfiguration
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
+import java.time.Duration
+import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -52,8 +54,6 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.util.Optional
 
 @WithMockk
 internal class FactoryCampaignManagerImplTest {
@@ -63,7 +63,7 @@ internal class FactoryCampaignManagerImplTest {
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var rampUpStrategy: RampUpStrategy
+    private lateinit var executionProfile: ExecutionProfile
 
     @RelaxedMockK
     private lateinit var minionsKeeper: MinionsKeeper
@@ -269,20 +269,21 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
-            val rampUpConfiguration = RampUpConfiguration(2000, 3.0)
+            val executionProfileConfiguration = ExecutionProfileConfiguration(2000, 3.0)
             val scenario = relaxedMockk<Scenario> {
                 every { name } returns "my-scenario"
-                every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
+                every { executionProfile } returns this@FactoryCampaignManagerImplTest.executionProfile
             }
             coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
                     (0..27).map { "minion-$it" }
-            every { rampUpStrategy.iterator(28, 3.0) } returns relaxedMockk {
+            every { executionProfile.iterator(28, 3.0) } returns relaxedMockk {
+                every { hasNext() } returns true
                 every { next() } returns MinionsStartingLine(-1, 500)
             }
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
-                factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, rampUpConfiguration)
+                factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, executionProfileConfiguration)
             }
 
             // then
@@ -298,21 +299,22 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should throw exception when start offset is zero`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        val rampUpConfiguration = RampUpConfiguration(2000, 2.0)
+        val executionProfileConfiguration = ExecutionProfileConfiguration(2000, 2.0)
         val scenario = relaxedMockk<Scenario> {
             every { name } returns "my-scenario"
-            every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
+            every { executionProfile } returns this@FactoryCampaignManagerImplTest.executionProfile
         }
         val allMinionsUnderLoad = (0..2).map { "minion-$it" }
         coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
                 allMinionsUnderLoad
-        every { rampUpStrategy.iterator(allMinionsUnderLoad.size, 2.0) } returns relaxedMockk {
+        every { executionProfile.iterator(allMinionsUnderLoad.size, 2.0) } returns relaxedMockk {
+            every { hasNext() } returns true
             every { next() } returns MinionsStartingLine(100, 0)
         }
 
         // when
         val exception = assertThrows<IllegalArgumentException> {
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, rampUpConfiguration)
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, executionProfileConfiguration)
         }
 
         // then
@@ -328,21 +330,22 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should throw exception when start offset is negative`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        val rampUpConfiguration = RampUpConfiguration(2000, 1.0)
+        val executionProfileConfiguration = ExecutionProfileConfiguration(2000, 1.0)
         val scenario = relaxedMockk<Scenario> {
             every { name } returns "my-scenario"
-            every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
+            every { executionProfile } returns this@FactoryCampaignManagerImplTest.executionProfile
         }
         val allMinionsUnderLoad = (0..9).map { "minion-$it" }
         coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
                 allMinionsUnderLoad
-        every { rampUpStrategy.iterator(allMinionsUnderLoad.size, 1.0) } returns relaxedMockk {
+        every { executionProfile.iterator(allMinionsUnderLoad.size, 1.0) } returns relaxedMockk {
+            every { hasNext() } returns true
             every { next() } returns MinionsStartingLine(100, -1)
         }
 
         // when
         val exception = assertThrows<IllegalArgumentException> {
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, rampUpConfiguration)
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, executionProfileConfiguration)
         }
 
         // then
@@ -358,28 +361,29 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should create the start definition of all the minions`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
-        val rampUpConfiguration = RampUpConfiguration(2000, 2.0)
+        val executionProfileConfiguration = ExecutionProfileConfiguration(2000, 2.0)
         val scenario = relaxedMockk<Scenario> {
             every { name } returns "my-scenario"
-            every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
+            every { executionProfile } returns this@FactoryCampaignManagerImplTest.executionProfile
         }
         val allMinionsUnderLoad = (0..27).map { "minion-$it" }
         coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
                 allMinionsUnderLoad
 
-        val rampUpStrategyIterator = relaxedMockk<RampUpStrategyIterator> {
+        val executionProfileIterator = relaxedMockk<ExecutionProfileIterator> {
+            every { hasNext() } returns true
             every { next() } returnsMany listOf(
                 MinionsStartingLine(12, 500),
                 MinionsStartingLine(10, 800),
                 MinionsStartingLine(6, 1200)
             )
         }
-        every { rampUpStrategy.iterator(allMinionsUnderLoad.size, 2.0) } returns rampUpStrategyIterator
+        every { executionProfile.iterator(allMinionsUnderLoad.size, 2.0) } returns executionProfileIterator
 
         // when
         val start = System.currentTimeMillis() + 2000
         val minionsStartDefinitions =
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, rampUpConfiguration)
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, executionProfileConfiguration)
 
         // then
         assertThat(minionsStartDefinitions).all {
@@ -407,41 +411,45 @@ internal class FactoryCampaignManagerImplTest {
 
         coVerifyOrder {
             minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario")
-            rampUpStrategy.iterator(28, 2.0)
-            rampUpStrategyIterator.next()
-            rampUpStrategyIterator.next()
-            rampUpStrategyIterator.next()
+            executionProfile.iterator(28, 2.0)
+            executionProfileIterator.hasNext()
+            executionProfileIterator.next()
+            executionProfileIterator.hasNext()
+            executionProfileIterator.next()
+            executionProfileIterator.hasNext()
+            executionProfileIterator.next()
         }
-        confirmVerified(minionAssignmentKeeper, rampUpStrategy, rampUpStrategyIterator)
+        confirmVerified(minionAssignmentKeeper, executionProfile, executionProfileIterator)
     }
 
     @Test
     @Timeout(1)
-    internal fun `should create the start definition of all the minions even when the ramp-up strategy schedules to many starts`() =
+    internal fun `should create the start definition of all the minions even when the execution profile schedules to many starts`() =
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
-            val rampUpConfiguration = RampUpConfiguration(2000, 2.0)
+            val executionProfileConfiguration = ExecutionProfileConfiguration(2000, 2.0)
             val scenario = relaxedMockk<Scenario> {
                 every { name } returns "my-scenario"
-                every { rampUpStrategy } returns this@FactoryCampaignManagerImplTest.rampUpStrategy
+                every { executionProfile } returns this@FactoryCampaignManagerImplTest.executionProfile
             }
             val allMinionsUnderLoad = (0..27).map { "minion-$it" }
             coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
                     allMinionsUnderLoad
 
-            val rampUpStrategyIterator = relaxedMockk<RampUpStrategyIterator> {
+            val executionProfileIterator = relaxedMockk<ExecutionProfileIterator> {
+                every { hasNext() } returns true
                 every { next() } returnsMany listOf(
                     MinionsStartingLine(12, 500),
                     MinionsStartingLine(100, 800)
                 )
             }
-            every { rampUpStrategy.iterator(allMinionsUnderLoad.size, 2.0) } returns rampUpStrategyIterator
+            every { executionProfile.iterator(allMinionsUnderLoad.size, 2.0) } returns executionProfileIterator
 
             // when
             val start = System.currentTimeMillis() + 2000
             val minionsStartDefinitions =
-                factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, rampUpConfiguration)
+                factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, executionProfileConfiguration)
 
             // then
             assertThat(minionsStartDefinitions).all {
@@ -463,11 +471,50 @@ internal class FactoryCampaignManagerImplTest {
 
             coVerifyOrder {
                 minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario")
-                rampUpStrategy.iterator(28, 2.0)
-                rampUpStrategyIterator.next()
-                rampUpStrategyIterator.next()
+                executionProfile.iterator(28, 2.0)
+                executionProfileIterator.hasNext()
+                executionProfileIterator.next()
+                executionProfileIterator.hasNext()
+                executionProfileIterator.next()
             }
-            confirmVerified(minionAssignmentKeeper, rampUpStrategy, rampUpStrategyIterator)
+            confirmVerified(minionAssignmentKeeper, executionProfile, executionProfileIterator)
+        }
+
+    @Test
+    @Timeout(1)
+    internal fun `should not create the start definition when there are no starting lines`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val factoryCampaignManager = buildCampaignManager()
+            val executionProfileConfiguration = ExecutionProfileConfiguration(2000, 2.0)
+            val scenario = relaxedMockk<Scenario> {
+                every { name } returns "my-scenario"
+                every { executionProfile } returns this@FactoryCampaignManagerImplTest.executionProfile
+            }
+            val allMinionsUnderLoad = (0..27).map { "minion-$it" }
+            coEvery { minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario") } returns
+                    allMinionsUnderLoad
+
+            val executionProfileIterator = relaxedMockk<ExecutionProfileIterator> {
+                every { hasNext() } returns false
+            }
+            every { executionProfile.iterator(allMinionsUnderLoad.size, 2.0) } returns executionProfileIterator
+
+            // when
+            val minionsStartDefinitions =
+                factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, executionProfileConfiguration)
+
+            // then
+            assertThat(minionsStartDefinitions).all {
+                hasSize(0)
+            }
+
+            coVerifyOrder {
+                minionAssignmentKeeper.getIdsOfMinionsUnderLoad("my-campaign", "my-scenario")
+                executionProfile.iterator(28, 2.0)
+                executionProfileIterator.hasNext()
+            }
+            confirmVerified(minionAssignmentKeeper, executionProfile, executionProfileIterator)
         }
 
     @Test

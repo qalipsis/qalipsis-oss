@@ -17,22 +17,22 @@ import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.MinionStartDefinition
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.steps.ContextConsumer
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.rampup.RampUpConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import java.time.Duration
+import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
-import java.time.Duration
-import java.util.Optional
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
@@ -95,21 +95,21 @@ internal class FactoryCampaignManagerImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun prepareMinionsRampUp(
+    override suspend fun prepareMinionsExecutionProfile(
         campaignKey: CampaignKey,
         scenario: Scenario,
-        rampUpConfiguration: RampUpConfiguration
+        executionProfileConfiguration: ExecutionProfileConfiguration
     ): List<MinionStartDefinition> {
         val minionsStartDefinitions = mutableListOf<MinionStartDefinition>()
         val minionsUnderLoad =
             minionAssignmentKeeper.getIdsOfMinionsUnderLoad(campaignKey, scenario.name).toMutableList()
-        val rampUpStrategyIterator =
-            scenario.rampUpStrategy.iterator(minionsUnderLoad.size, rampUpConfiguration.speedFactor)
-        var start = System.currentTimeMillis() + rampUpConfiguration.startOffsetMs
+        val executionProfileIterator =
+            scenario.executionProfile.iterator(minionsUnderLoad.size, executionProfileConfiguration.speedFactor)
+        var start = System.currentTimeMillis() + executionProfileConfiguration.startOffsetMs
 
-        log.debug { "Creating the ramp-up for ${minionsUnderLoad.size} minions on campaign $campaignKey of scenario ${scenario.name}" }
-        while (minionsUnderLoad.isNotEmpty()) {
-            val nextStartingLine = rampUpStrategyIterator.next()
+        log.debug { "Creating the execution profile for ${minionsUnderLoad.size} minions on campaign $campaignKey of scenario ${scenario.name}" }
+        while (minionsUnderLoad.isNotEmpty() && executionProfileIterator.hasNext()) {
+            val nextStartingLine = executionProfileIterator.next()
             require(nextStartingLine.count >= 0) { "The number of minions to start at next starting line cannot be negative, but was ${nextStartingLine.count}" }
             require(nextStartingLine.offsetMs > 0) { "The time offset of the next starting line should be strictly positive, but was ${nextStartingLine.offsetMs} ms" }
             start += nextStartingLine.offsetMs
@@ -119,7 +119,7 @@ internal class FactoryCampaignManagerImpl(
             }
         }
 
-        log.debug { "Ramp-up creation is complete on campaign $campaignKey of scenario ${scenario.name}" }
+        log.debug { "Execution profile creation is complete on campaign $campaignKey of scenario ${scenario.name}" }
         return minionsStartDefinitions
     }
 

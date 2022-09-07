@@ -20,7 +20,7 @@ import org.slf4j.event.Level
 
 /**
  *
- * The [CampaignLaunch5MinionsRampUpPreparationDirectiveListener] is responsible for generating the ramp-up strategy to start all
+ * The [CampaignLaunch5MinionsRampUpPreparationDirectiveListener] is responsible for generating the execution profile to start all
  * the [io.qalipsis.api.orchestration.Minion]s for the execution of a scenario.
  *
  * @author Eric Jessé
@@ -49,8 +49,8 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
         factoryChannel.publishFeedback(feedback)
         try {
             val scenario = scenarioRegistry[directive.scenarioName]!!
-            val minionsStartDefinitions = factoryCampaignManager.prepareMinionsRampUp(
-                directive.campaignKey, scenario, directive.rampUpConfiguration
+            val minionsStartDefinitions = factoryCampaignManager.prepareMinionsExecutionProfile(
+                directive.campaignKey, scenario, directive.executionProfileConfiguration
             )
 
             minionsStartDefinitions.windowed(400, 400, true).forEach { def ->

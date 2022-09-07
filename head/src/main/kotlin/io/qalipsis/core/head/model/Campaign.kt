@@ -26,7 +26,7 @@ internal data class Campaign(
     val name: String,
 
     @field:Schema(
-        description = "Speed factor to apply on the ramp-up strategy, each strategy will apply it differently depending on its own implementation",
+        description = "Speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation",
         required = true
     )
     val speedFactor: Double,

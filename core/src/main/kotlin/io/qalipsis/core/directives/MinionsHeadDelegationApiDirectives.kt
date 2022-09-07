@@ -2,7 +2,7 @@ package io.qalipsis.core.directives
 
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.core.rampup.RampUpConfiguration
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -54,7 +54,7 @@ data class MinionsDeclarationDirectiveReference(
 data class MinionsRampUpPreparationDirective(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
-    val rampUpConfiguration: RampUpConfiguration = RampUpConfiguration(3000, 1.0),
+    val executionProfileConfiguration: ExecutionProfileConfiguration = ExecutionProfileConfiguration(3000, 1.0),
     override val channel: DispatcherChannel
 ) : SingleUseDirective<MinionsRampUpPreparationDirectiveReference>(),
     CampaignManagementDirective {

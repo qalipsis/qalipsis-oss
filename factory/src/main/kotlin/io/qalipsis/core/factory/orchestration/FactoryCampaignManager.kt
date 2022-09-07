@@ -8,7 +8,7 @@ import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
-import io.qalipsis.core.rampup.RampUpConfiguration
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 
 internal interface FactoryCampaignManager : CampaignLifeCycleAware {
 
@@ -32,10 +32,10 @@ internal interface FactoryCampaignManager : CampaignLifeCycleAware {
     /**
      * Calculates the ramping of all the minions under load for the given scenario.
      */
-    suspend fun prepareMinionsRampUp(
+    suspend fun prepareMinionsExecutionProfile(
         campaignKey: CampaignKey,
         scenario: Scenario,
-        rampUpConfiguration: RampUpConfiguration
+        executionProfileConfiguration: ExecutionProfileConfiguration
     ): List<MinionStartDefinition>
 
     suspend fun notifyCompleteMinion(

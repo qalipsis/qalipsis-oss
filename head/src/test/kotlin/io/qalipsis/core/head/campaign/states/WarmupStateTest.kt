@@ -31,7 +31,7 @@ internal class WarmupStateTest : AbstractStateTest() {
     }
 
     @Test
-    fun `should return the directives for ramp-up for each scenario`() = testDispatcherProvider.runTest {
+    fun `should return the directives for profile for each scenario`() = testDispatcherProvider.runTest {
         // given
         every { campaign.factories } returns mutableMapOf(
             "node-1" to relaxedMockk {

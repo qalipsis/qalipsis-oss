@@ -6,8 +6,8 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.annotations.Scenario
+import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.lang.concurrentList
-import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.filter
 import io.qalipsis.api.steps.filterNotNull
@@ -17,10 +17,10 @@ import io.qalipsis.api.steps.onEach
 import io.qalipsis.api.steps.returns
 import io.qalipsis.api.steps.singletonPipe
 import io.qalipsis.runtime.test.QalipsisTestRunner
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.util.concurrent.atomic.AtomicInteger
 
 internal class InnerJoinStepScenarioIntegrationTest {
 
@@ -79,7 +79,7 @@ object InnerJoinStepScenario {
 
         scenario("inner-join-scenario-test") {
             minionsCount = minionsNumber
-            rampUp { regular(100, minionsNumber) }
+            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns<Int> { counter1.getAndIncrement() }.configure {
@@ -119,7 +119,7 @@ object InnerJoinStepScenario {
 
         scenario("inner-join-scenario-test-without-output") {
             minionsCount = minionsNumber
-            rampUp { regular(100, minionsNumber) }
+            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns<Int> { counter1.getAndIncrement() }.configure {

@@ -247,7 +247,7 @@ internal class ScenarioImplTest {
     ): ScenarioImpl {
         val scenarioImpl = ScenarioImpl(
             name = "my-scenario",
-            rampUpStrategy = relaxedMockk(),
+            executionProfile = relaxedMockk(),
             factoryChannel = factoryChannel,
             stepStartTimeout = stepStartTimeout
         )

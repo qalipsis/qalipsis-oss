@@ -38,7 +38,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
     }
 
     @Test
-    fun `should return the directives for ramp-up for each scenario`() = testDispatcherProvider.run {
+    fun `should return the directives for profile for each scenario`() = testDispatcherProvider.run {
         // given
         every { campaign.factories } returns mutableMapOf(
             "node-1" to relaxedMockk {

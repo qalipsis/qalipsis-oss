@@ -7,9 +7,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.context.MinionId
+import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
-import io.qalipsis.api.rampup.regular
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.filter
 import io.qalipsis.api.steps.flatten
@@ -20,10 +20,10 @@ import io.qalipsis.api.steps.returns
 import io.qalipsis.api.steps.stage
 import io.qalipsis.api.steps.verify
 import io.qalipsis.runtime.test.QalipsisTestRunner
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.util.concurrent.atomic.AtomicInteger
 
 
 internal class StageStepScenarioIntegrationTest {
@@ -103,7 +103,7 @@ object StageStepScenario {
     fun stageStepScenario() {
         scenario("stage-scenario-test") {
             minionsCount = minionsNumber
-            rampUp { regular(100, minionsNumber) }
+            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns(initialCounter.getAndIncrement())
@@ -120,7 +120,7 @@ object StageStepScenario {
     fun stageStepScenarioWithoutOutput() {
         scenario("stage-scenario-test-without-output") {
             minionsCount = minionsNumber
-            rampUp { regular(100, minionsNumber) }
+            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns(initialCounter.getAndIncrement())
@@ -140,7 +140,7 @@ object StageStepScenario {
 
         scenario("stage-scenario-test-with-failure") {
             minionsCount = minionsNumber
-            rampUp { regular(100, minionsNumber) }
+            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns(initialCounter.getAndIncrement())

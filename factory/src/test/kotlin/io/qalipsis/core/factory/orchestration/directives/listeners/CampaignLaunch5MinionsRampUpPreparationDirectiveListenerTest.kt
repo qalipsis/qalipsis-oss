@@ -17,7 +17,7 @@ import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
-import io.qalipsis.core.rampup.RampUpConfiguration
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -82,16 +82,16 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
     @Test
     @Timeout(2)
     internal fun `should process the directive when not already read`() = testCoroutineDispatcher.run {
-        val rampUpConfiguration = relaxedMockk<RampUpConfiguration>()
+        val executionProfileConfiguration = relaxedMockk<ExecutionProfileConfiguration>()
         val directive =
-            MinionsRampUpPreparationDirective("my-campaign", "my-scenario", rampUpConfiguration, "")
+            MinionsRampUpPreparationDirective("my-campaign", "my-scenario", executionProfileConfiguration, "")
         val scenario = relaxedMockk<Scenario> {
             every { name } returns "my-scenario"
         }
         every { scenarioRegistry.get("my-scenario") } returns scenario
         val minionsStartDefinitions = (1..650).map { relaxedMockk<MinionStartDefinition>() }
         coEvery {
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
         } returns minionsStartDefinitions
 
         // when
@@ -107,7 +107,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                 )
             )
             scenarioRegistry["my-scenario"]
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
             factoryChannel.publishDirective(
                 MinionsStartDirective(
                     campaignKey = "my-campaign",
@@ -137,15 +137,15 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
     @Test
     @Timeout(2)
     internal fun `should fail to process the directive when not already read`() = testCoroutineDispatcher.run {
-        val rampUpConfiguration = relaxedMockk<RampUpConfiguration>()
+        val executionProfileConfiguration = relaxedMockk<ExecutionProfileConfiguration>()
         val directive =
-            MinionsRampUpPreparationDirective("my-campaign", "my-scenario", rampUpConfiguration, "")
+            MinionsRampUpPreparationDirective("my-campaign", "my-scenario", executionProfileConfiguration, "")
         val scenario = relaxedMockk<Scenario> {
             every { name } returns "my-scenario"
         }
         every { scenarioRegistry["my-scenario"] } returns scenario
         coEvery {
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
         } throws RuntimeException("A problem occurred")
 
         // when
@@ -161,7 +161,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                 )
             )
             scenarioRegistry["my-scenario"]
-            factoryCampaignManager.prepareMinionsRampUp("my-campaign", scenario, refEq(rampUpConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
                     campaignKey = "my-campaign",
