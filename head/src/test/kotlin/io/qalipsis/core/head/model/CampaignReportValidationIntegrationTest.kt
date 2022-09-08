@@ -9,8 +9,11 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.micronaut.validation.validator.Validator
+import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test

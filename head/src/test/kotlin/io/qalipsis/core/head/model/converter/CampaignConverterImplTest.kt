@@ -187,7 +187,7 @@ internal class CampaignConverterImplTest {
 
         // then
         assertThat(result).isDataClassEqualTo(
-            io.qalipsis.core.head.model.CampaignReport(
+            CampaignReport(
                 campaignKey = "my-campaign",
                 start = start,
                 end = end,
@@ -197,7 +197,7 @@ internal class CampaignConverterImplTest {
                 failedExecutions = 0,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenariosReports = listOf(
-                    io.qalipsis.core.head.model.ScenarioReport(
+                    ScenarioReport(
                         campaignKey = "my-campaign",
                         scenarioName = "my-scenario-1",
                         start = start,
@@ -208,7 +208,7 @@ internal class CampaignConverterImplTest {
                         failedExecutions = 0,
                         status = ExecutionStatus.FAILED,
                         messages = listOf(
-                            io.qalipsis.core.head.model.ReportMessage(
+                            ReportMessage(
                                 stepName = "my-step-1",
                                 messageId = "message-id-1",
                                 severity = ReportMessageSeverity.INFO,
@@ -216,7 +216,7 @@ internal class CampaignConverterImplTest {
                             )
                         )
                     ),
-                    io.qalipsis.core.head.model.ScenarioReport(
+                    ScenarioReport(
                         campaignKey = "my-campaign",
                         scenarioName = "my-scenario-2",
                         start = start,
@@ -227,7 +227,7 @@ internal class CampaignConverterImplTest {
                         failedExecutions = 1,
                         status = ExecutionStatus.ABORTED,
                         messages = listOf(
-                            io.qalipsis.core.head.model.ReportMessage(
+                            ReportMessage(
                                 stepName = "my-step-2",
                                 messageId = "message-id-2",
                                 severity = ReportMessageSeverity.INFO,

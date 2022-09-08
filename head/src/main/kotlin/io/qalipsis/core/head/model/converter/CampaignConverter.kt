@@ -21,7 +21,7 @@ internal interface CampaignConverter {
     suspend fun convertToModel(campaignEntity: CampaignEntity): Campaign
 
     /**
-     * Converts from [CampaignReport] to [io.qalipsis.core.head.model.CampaignReport].
+     * Converts from [CampaignReport] to [CampaignReport].
      */
-    suspend fun convertReport(campaignReport: CampaignReport): io.qalipsis.core.head.model.CampaignReport
+    suspend fun convertReport(campaignReport: CampaignReport): CampaignReport
 }
