@@ -16,22 +16,58 @@
 
 package io.qalipsis.api.report
 
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.CampaignKey
+import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
+import javax.validation.Valid
+import javax.validation.constraints.NotBlank
+import javax.validation.constraints.PositiveOrZero
 
 /**
  * Aggregated report of all the scenarios of a campaign.
  *
  * @author Eric Jessé
  */
+@Introspected
+@Schema(
+    name = "Report of campaign execution",
+    title = "Details of the execution of a completed or running campaign and its scenario"
+)
 data class CampaignReport(
+    @field:Schema(description = "Unique identifier of the campaign")
+    @field:NotBlank
     val campaignKey: CampaignKey,
+
+    @field:Schema(description = "Date and time when the campaign started")
     val start: Instant?,
+
+    @field:Schema(
+        description = "Date and time when the campaign was completed, whether successfully or not",
+        required = false
+    )
     val end: Instant?,
+
+    @field:Schema(description = "Counts of minions when the campaign started")
+    @field:PositiveOrZero
     val startedMinions: Int = 0,
+
+    @field:Schema(description = "Counts of minions that completed the campaign")
+    @field:PositiveOrZero
     val completedMinions: Int = 0,
+
+    @field:Schema(description = "Counts of minions that successfully completed the campaign")
+    @field:PositiveOrZero
     val successfulExecutions: Int = 0,
+
+    @field:Schema(description = "Counts of minions that failed to execute the campaign")
+    @field:PositiveOrZero
     val failedExecutions: Int = 0,
+
+    @field:Schema(description = "Overall execution status of the campaign")
     val status: ExecutionStatus,
+
+    @field:Schema(description = "The list of the scenario reports for the campaign")
+    @field:Valid
     val scenariosReports: List<ScenarioReport> = emptyList()
 )

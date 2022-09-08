@@ -16,16 +16,33 @@
 
 package io.qalipsis.api.report
 
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.StepName
+import io.swagger.v3.oas.annotations.media.Schema
+import javax.validation.constraints.NotBlank
 
 /**
  * Message for a [ScenarioReport].
  *
  * @author Eric Jessé
  */
+@Introspected
+@Schema(
+    name = "Details about report message of a completed scenario",
+    title = "Details for the scenario report message to retrieve from the REST endpoint"
+)
 data class ReportMessage(
+    @field:Schema(description = "Identifier of the step")
+    @field:NotBlank
     val stepName: StepName,
+
+    @field:Schema(description = "Identifier of the message")
+    @field:NotBlank
     val messageId: Any,
+
+    @field:Schema(description = "Severity of the report message")
     val severity: ReportMessageSeverity,
+
+    @field:Schema(description = "The message itself")
     val message: String
 )
