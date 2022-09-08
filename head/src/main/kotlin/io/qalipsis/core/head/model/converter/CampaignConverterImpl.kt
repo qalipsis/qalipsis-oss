@@ -4,15 +4,15 @@ import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.report.CampaignReport
+import io.qalipsis.api.report.ReportMessage
+import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
-import io.qalipsis.core.head.model.ReportMessage
 import io.qalipsis.core.head.model.Scenario
-import io.qalipsis.core.head.model.ScenarioReport
 import io.qalipsis.core.head.model.ScenarioRequest
 import jakarta.inject.Singleton
 
@@ -61,7 +61,7 @@ internal class CampaignConverterImpl(
         )
     }
 
-    override suspend fun convertReport(campaignReport: io.qalipsis.api.report.CampaignReport): CampaignReport {
+    override suspend fun convertReport(campaignReport: CampaignReport): CampaignReport {
         return CampaignReport(
             campaignKey = campaignReport.campaignKey,
             start = campaignReport.start,
@@ -75,7 +75,7 @@ internal class CampaignConverterImpl(
         )
     }
 
-    private fun convertScenarioReport(scenariosReports: List<io.qalipsis.api.report.ScenarioReport>): Collection<ScenarioReport> {
+    private fun convertScenarioReport(scenariosReports: List<ScenarioReport>): List<ScenarioReport> {
         return scenariosReports.map {
             ScenarioReport(
                 campaignKey = it.campaignKey,
@@ -92,7 +92,7 @@ internal class CampaignConverterImpl(
         }
     }
 
-    private fun convertReportMessages(reportMessages: List<io.qalipsis.api.report.ReportMessage>): List<ReportMessage> {
+    private fun convertReportMessages(reportMessages: List<ReportMessage>): List<ReportMessage> {
         return reportMessages.map {
             ReportMessage(
                 stepName = it.stepName,

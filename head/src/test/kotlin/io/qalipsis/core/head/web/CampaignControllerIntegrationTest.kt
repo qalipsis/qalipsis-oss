@@ -20,8 +20,11 @@ import io.mockk.coVerifyOrder
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.query.Page
+import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -29,7 +32,6 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignReport
 import io.qalipsis.core.head.model.CampaignRequest
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
@@ -379,7 +381,7 @@ internal class CampaignControllerIntegrationTest {
     @Test
     fun `should successfully retrieve the campaign report per tenant`() {
         // given
-        val campaignReport = relaxedMockk<io.qalipsis.api.report.CampaignReport>()
+        val campaignReport = relaxedMockk<CampaignReport>()
         val convertedCampaignReport =
             CampaignReport(
                 campaignKey = "my-campaign",
@@ -391,7 +393,7 @@ internal class CampaignControllerIntegrationTest {
                 failedExecutions = 0,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenariosReports = listOf(
-                    io.qalipsis.core.head.model.ScenarioReport(
+                    ScenarioReport(
                         campaignKey = "my-campaign",
                         scenarioName = "my-scenario-1",
                         start = Instant.now().minusMillis(1111),
@@ -402,7 +404,7 @@ internal class CampaignControllerIntegrationTest {
                         failedExecutions = 0,
                         status = ExecutionStatus.FAILED,
                         messages = listOf(
-                            io.qalipsis.core.head.model.ReportMessage(
+                            ReportMessage(
                                 stepName = "my-step-1",
                                 messageId = "message-id-1",
                                 severity = ReportMessageSeverity.INFO,
@@ -410,7 +412,7 @@ internal class CampaignControllerIntegrationTest {
                             )
                         )
                     ),
-                    io.qalipsis.core.head.model.ScenarioReport(
+                    ScenarioReport(
                         campaignKey = "my-campaign",
                         scenarioName = "my-scenario-2",
                         start = Instant.now().minusMillis(1111),
@@ -421,7 +423,7 @@ internal class CampaignControllerIntegrationTest {
                         failedExecutions = 1,
                         status = ExecutionStatus.ABORTED,
                         messages = listOf(
-                            io.qalipsis.core.head.model.ReportMessage(
+                            ReportMessage(
                                 stepName = "my-step-2",
                                 messageId = "message-id-2",
                                 severity = ReportMessageSeverity.INFO,
