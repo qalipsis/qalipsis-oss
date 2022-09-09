@@ -1,6 +1,6 @@
 # QALIPSIS
 
-![CI](https://github.com/aeris-consulting/qalipsis-engine/actions/workflows/gradle-master.yml/badge.svg)
+![CI](https://github.com/qalipsis/qalipsis-oss/actions/workflows/gradle-master.yml/badge.svg)
 
 ## Run an instance of QALIPSIS locally
 
