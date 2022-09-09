@@ -58,6 +58,9 @@ import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineDispatcher
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -66,9 +69,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
@@ -470,7 +470,7 @@ internal class FactoryInitializerImplTest {
         val scenarioRootSteps = emptyList<StepSpecification<*, *, *>>()
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk {
             every { dagsUnderLoad } returns listOf("")
-            every { rampUpStrategy } returns relaxedMockk()
+            every { executionProfile } returns relaxedMockk()
             every { retryPolicy } returns relaxedMockk()
             every { minionsCount } returns 123
             every { rootSteps } returns scenarioRootSteps
@@ -494,7 +494,7 @@ internal class FactoryInitializerImplTest {
         assertThat(scenario).all {
             prop(Scenario::name).isEqualTo("my-scenario")
             prop(Scenario::minionsCount).isEqualTo(123)
-            prop(Scenario::rampUpStrategy).isSameAs(scenarioSpecification.rampUpStrategy)
+            prop(Scenario::executionProfile).isSameAs(scenarioSpecification.executionProfile)
             prop(Scenario::defaultRetryPolicy).isSameAs(scenarioSpecification.retryPolicy)
         }
 
@@ -510,10 +510,10 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    internal fun `should not convert scenario without ramp-up`() {
+    internal fun `should not convert scenario without profile`() {
         // given
         val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk {
-            every { rampUpStrategy } returns null
+            every { executionProfile } returns null
             every { retryPolicy } returns relaxedMockk()
             every { minionsCount } returns 123
             every { rootSteps } returns relaxedMockk()

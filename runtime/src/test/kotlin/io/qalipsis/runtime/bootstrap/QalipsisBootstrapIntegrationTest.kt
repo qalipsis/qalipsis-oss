@@ -8,7 +8,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import io.qalipsis.api.annotations.Scenario
-import io.qalipsis.api.rampup.regular
+import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
 import io.qalipsis.api.steps.delay
@@ -17,15 +17,15 @@ import io.qalipsis.api.steps.returns
 import io.qalipsis.api.steps.verify
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.time.Duration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
-import java.time.Duration
 
 /**
  * @author Eric Jessé
@@ -178,7 +178,7 @@ internal class QalipsisBootstrapIntegrationTest {
     fun doNothingScenario() {
         scenario("do-nothing-scenario") {
             minionsCount = 1
-            rampUp { regular(1000, 1) }
+            profile { regular(1000, 1) }
         }.start()
             .returns(Unit)
             .blackHole()
@@ -188,7 +188,7 @@ internal class QalipsisBootstrapIntegrationTest {
     fun failingScenario() {
         scenario("failing-scenario") {
             minionsCount = 1
-            rampUp { regular(1000, 1) }
+            profile { regular(1000, 1) }
         }.start()
             .pipe<Unit>()
             .verify { assertThat(true).isFalse() }
@@ -199,7 +199,7 @@ internal class QalipsisBootstrapIntegrationTest {
     fun longRunningScenario() {
         scenario("long-running-scenario") {
             minionsCount = 1
-            rampUp { regular(1000, 1) }
+            profile { regular(1000, 1) }
         }.start()
             .pipe<Unit>()
             .delay(Duration.ofSeconds(30))

@@ -8,7 +8,7 @@ import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
-import io.qalipsis.api.rampup.RampUpStrategy
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
@@ -19,13 +19,13 @@ import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.core.factory.context.StepContextImpl
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
 import io.qalipsis.test.mockk.relaxedMockk
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  *
@@ -66,13 +66,13 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
 
 internal fun testScenario(
     id: ScenarioName = "my-scenario",
-    rampUpStrategy: RampUpStrategy = relaxedMockk(),
+    executionProfile: ExecutionProfile = relaxedMockk(),
     minionsCount: Int = 1,
     configure: suspend Scenario.() -> Unit = {}
 ): Scenario {
     val scenario = ScenarioImpl(
         id,
-        rampUpStrategy = rampUpStrategy,
+        executionProfile = executionProfile,
         minionsCount = minionsCount,
         factoryChannel = relaxedMockk()
     )

@@ -5,9 +5,9 @@ import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.rampup.RampUpStrategy
 import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class ScenarioImpl(
     override val name: ScenarioName,
-    override val rampUpStrategy: RampUpStrategy,
+    override val executionProfile: ExecutionProfile,
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
     private val factoryChannel: FactoryChannel,

@@ -41,10 +41,6 @@ import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.core.lifetime.FactoryStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -52,6 +48,10 @@ import java.util.concurrent.TimeUnit
 import javax.annotation.Nullable
 import javax.annotation.PreDestroy
 import javax.validation.Valid
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 /**
  * Default implementation of [ScenariosInitializer].
@@ -174,13 +174,13 @@ internal class FactoryInitializerImpl(
             )
         }
 
-        val rampUpStrategy = scenarioSpecification.rampUpStrategy ?: throw InvalidSpecificationException(
-            "The scenario $scenarioName requires a ramp-up strategy"
+        val executionProfile = scenarioSpecification.executionProfile ?: throw InvalidSpecificationException(
+            "The scenario $scenarioName requires an execution profile"
         )
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario = ScenarioImpl(
             scenarioName,
-            rampUpStrategy = rampUpStrategy,
+            executionProfile = executionProfile,
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,
             stepStartTimeout = stepStartTimeout,

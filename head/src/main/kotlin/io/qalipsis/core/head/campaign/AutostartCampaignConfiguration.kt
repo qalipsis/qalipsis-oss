@@ -18,7 +18,7 @@ import javax.validation.constraints.PositiveOrZero
  * @property triggerOffset time to wait before the campaign is triggered, to let the factories process the handshake response
  * @property minionsCountPerScenario when set to a non-null value, specifies the number of minions to create for each scenario
  * @property minionsFactor when minionsCountPerCampaign is not set, the factor applies to the default minions count of each scenario
- * @property speedFactor speed factor for the ramp-up
+ * @property speedFactor speed factor for the execution profile
  * @property startOffset offset (in milliseconds) to apply to the ramp-up directive to be sure all the directives for all the scenarios are received when it really comes to start
  *
  * @author Eric Jessé

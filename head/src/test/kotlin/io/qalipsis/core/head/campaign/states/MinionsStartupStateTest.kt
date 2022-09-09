@@ -21,7 +21,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.rampup.RampUpConfiguration
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -35,7 +35,7 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
     }
 
     @Test
-    fun `should return the directives for ramp-up for each scenario`() = testDispatcherProvider.runTest {
+    fun `should return the directives for profile for each scenario`() = testDispatcherProvider.runTest {
         // given
         val state = MinionsStartupState(campaign)
         every { campaign.startOffsetMs } returns 1234L
@@ -55,13 +55,13 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-1",
-                    RampUpConfiguration(1234L, 153.42),
+                    ExecutionProfileConfiguration(1234L, 153.42),
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
-                    RampUpConfiguration(1234L, 153.42),
+                    ExecutionProfileConfiguration(1234L, 153.42),
                     "my-broadcast-channel"
                 )
             )

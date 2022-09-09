@@ -21,11 +21,11 @@ import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.configuration.AbortCampaignConfiguration
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.rampup.RampUpConfiguration
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
@@ -40,7 +40,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     }
 
     @Test
-    fun `should return the directives for ramp-up for each scenario`() = testDispatcherProvider.run {
+    fun `should return the directives for profile for each scenario`() = testDispatcherProvider.run {
         // given
         val campaignConfiguration = campaign.copy(
             startOffsetMs = 1234L,
@@ -69,13 +69,13 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-1",
-                    RampUpConfiguration(1234L, 153.42),
+                    ExecutionProfileConfiguration(1234L, 153.42),
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
-                    RampUpConfiguration(1234L, 153.42),
+                    ExecutionProfileConfiguration(1234L, 153.42),
                     "my-broadcast-channel"
                 )
             )

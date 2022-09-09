@@ -28,7 +28,7 @@ data class ScenarioSummary(
     @field:Schema(description = "The list of directed acyclic graphs structuring the workflow of the scenario")
     val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>,
     @field:Schema(description = "The name of the ramp up strategy to start the minions in the scenario, defaults to 'user-defined'")
-    val rampUpStrategyName: String = "user-defined"
+    val executionProfileName: String = "user-defined"
 ) : InMemoryEntity<ScenarioName>
 
 /**

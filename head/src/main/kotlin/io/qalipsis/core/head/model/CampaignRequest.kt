@@ -27,7 +27,7 @@ internal data class CampaignRequest(
     @field:Size(min = 3, max = 300)
     val name: String,
 
-    @field:Schema(description = "Speed factor to apply on the ramp-up strategy, each strategy will apply it differently depending on its own implementation")
+    @field:Schema(description = "Speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation")
     @field:Positive
     @field:Max(999)
     val speedFactor: Double = 1.0,

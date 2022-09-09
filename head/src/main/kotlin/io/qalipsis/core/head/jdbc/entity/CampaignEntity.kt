@@ -18,7 +18,7 @@ import javax.validation.constraints.Size
  * @property tenantId internal database ID of the tenant owning the campaign
  * @property key unique public identifier of the campaign in the tenant, generated
  * @property name display name of the campaign
- * @property speedFactor speed factor to apply on the ramp-up strategy, each strategy will apply it differently depending on its own implementation
+ * @property speedFactor speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation
  * @property start when the campaign was started
  * @property end when the campaign was completed, successfully or not
  * @property result overall execution status of the campaign
