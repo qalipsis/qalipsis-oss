@@ -44,27 +44,30 @@ data class ScenarioReport(
     @field:NotBlank
     val scenarioName: ScenarioName,
 
-    @field:Schema(description = "Date and time when the scenario started")
-    val start: Instant,
+    @field:Schema(description = "Date and time when the scenario started", required = false)
+    val start: Instant?,
 
-    @field:Schema(description = "Date and time when the scenario was completed, whether successfully or not")
-    val end: Instant,
+    @field:Schema(
+        description = "Date and time when the scenario was completed, whether successfully or not",
+        required = false
+    )
+    val end: Instant?,
 
-    @field:Schema(description = "Counts of minions when the scenario started")
+    @field:Schema(description = "Counts of minions when the scenario started", required = false)
     @field:PositiveOrZero
-    val startedMinions: Int,
+    val startedMinions: Int?,
 
-    @field:Schema(description = "Counts of minions that completed their scenario")
+    @field:Schema(description = "Counts of minions that completed their scenario", required = false)
     @field:PositiveOrZero
-    val completedMinions: Int,
+    val completedMinions: Int?,
 
-    @field:Schema(description = "Counts of minions that successfully completed their scenario")
+    @field:Schema(description = "Counts of minions that successfully completed their scenario", required = false)
     @field:PositiveOrZero
-    val successfulExecutions: Int,
+    val successfulExecutions: Int?,
 
-    @field:Schema(description = "Counts of minions that failed to execute their scenario")
+    @field:Schema(description = "Counts of minions that failed to execute their scenario", required = false)
     @field:PositiveOrZero
-    val failedExecutions: Int,
+    val failedExecutions: Int?,
 
     @field:Schema(description = "Overall execution status of the scenario")
     val status: ExecutionStatus,

@@ -39,7 +39,7 @@ data class CampaignReport(
     @field:NotBlank
     val campaignKey: CampaignKey,
 
-    @field:Schema(description = "Date and time when the campaign started")
+    @field:Schema(description = "Date and time when the campaign started", required = false)
     val start: Instant?,
 
     @field:Schema(
@@ -48,21 +48,21 @@ data class CampaignReport(
     )
     val end: Instant?,
 
-    @field:Schema(description = "Counts of minions when the campaign started")
+    @field:Schema(description = "Counts of minions when the campaign started", required = false)
     @field:PositiveOrZero
-    val startedMinions: Int = 0,
+    val startedMinions: Int?,
 
-    @field:Schema(description = "Counts of minions that completed the campaign")
+    @field:Schema(description = "Counts of minions that completed the campaign", required = false)
     @field:PositiveOrZero
-    val completedMinions: Int = 0,
+    val completedMinions: Int?,
 
-    @field:Schema(description = "Counts of minions that successfully completed the campaign")
+    @field:Schema(description = "Counts of minions that successfully completed the campaign", required = false)
     @field:PositiveOrZero
-    val successfulExecutions: Int = 0,
+    val successfulExecutions: Int?,
 
-    @field:Schema(description = "Counts of minions that failed to execute the campaign")
+    @field:Schema(description = "Counts of minions that failed to execute the campaign", required = false)
     @field:PositiveOrZero
-    val failedExecutions: Int = 0,
+    val failedExecutions: Int?,
 
     @field:Schema(description = "Overall execution status of the campaign")
     val status: ExecutionStatus,
