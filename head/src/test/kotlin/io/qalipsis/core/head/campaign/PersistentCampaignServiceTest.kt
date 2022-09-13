@@ -67,10 +67,9 @@ internal class PersistentCampaignServiceTest {
     private lateinit var persistentCampaignService: PersistentCampaignService
 
     @Test
-    internal fun `should save the new campaign`() = testDispatcherProvider.run {
+    internal fun `should create the new campaign`() = testDispatcherProvider.run {
         // given
         coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
-        val now = getTimeMock()
         val campaign = CampaignConfiguration(
             tenant = "my-tenant",
             key = "my-campaign",
@@ -104,15 +103,14 @@ internal class PersistentCampaignServiceTest {
                     key = "my-campaign",
                     name = "This is a campaign",
                     speedFactor = 123.2,
-                    start = now,
                     configurer = 199,
                     tenantId = 8165L
                 )
             )
             campaignScenarioRepository.saveAll(
                 listOf(
-                    CampaignScenarioEntity(8126, "scenario-1", 6272),
-                    CampaignScenarioEntity(8126, "scenario-2", 12321)
+                    CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
+                    CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
                 )
             )
             campaignConverter.convertToModel(refEq(savedEntity))
@@ -134,7 +132,7 @@ internal class PersistentCampaignServiceTest {
         // then
         assertThat(result).isSameAs(convertedCampaign)
         coVerifyOnce {
-            campaignRepository.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)
+            campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED)
             campaignRepository.findByKey("my-tenant", "my-campaign")
             campaignConverter.convertToModel(refEq(campaignEntity))
         }
@@ -341,7 +339,7 @@ internal class PersistentCampaignServiceTest {
         coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
 
         // when
-        persistentCampaignService.setAborter("my-tenant", "my-aborter", "my-campaign")
+        persistentCampaignService.abort("my-tenant", "my-aborter", "my-campaign")
 
         // then
         val capturedEntity = mutableListOf<CampaignEntity>()

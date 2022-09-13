@@ -47,16 +47,23 @@ internal class JunitReportPublisherTest {
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignKey = campaignKey, start = start, end = end, scenariosReports = listOf(
+            campaignKey = campaignKey,
+            start = start,
+            end = end,
+            startedMinions = 123,
+            completedMinions = 4231,
+            successfulExecutions = 42,
+            failedExecutions = 234,
+            scenariosReports = listOf(
                 ScenarioReport(
                     campaignKey = campaignKey,
                     scenarioName = "bar",
                     start = start,
                     end = end,
-                    startedMinions = 1,
-                    completedMinions = 1,
-                    successfulExecutions = 1,
-                    failedExecutions = 1,
+                    startedMinions = 2342,
+                    completedMinions = 23,
+                    successfulExecutions = 4234,
+                    failedExecutions = 45,
                     status = ExecutionStatus.SUCCESSFUL,
                     messages = listOf(
                         ReportMessage(
@@ -97,16 +104,23 @@ internal class JunitReportPublisherTest {
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignKey = campaignKey, start = start, end = end, scenariosReports = listOf(
+            campaignKey = campaignKey,
+            start = start,
+            end = end,
+            startedMinions = 123,
+            completedMinions = 4231,
+            successfulExecutions = 42,
+            failedExecutions = 234,
+            scenariosReports = listOf(
                 ScenarioReport(
                     campaignKey = campaignKey,
                     scenarioName = "bar2",
                     start = start,
                     end = end,
-                    startedMinions = 1,
-                    completedMinions = 1,
-                    successfulExecutions = 1,
-                    failedExecutions = 1,
+                    startedMinions = 2342,
+                    completedMinions = 23,
+                    successfulExecutions = 4234,
+                    failedExecutions = 45,
                     status = ExecutionStatus.SUCCESSFUL,
                     messages = listOf(
                         ReportMessage(
@@ -155,7 +169,12 @@ internal class JunitReportPublisherTest {
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignKey = campaignName1, start = start, end = end, scenariosReports = listOf(
+            campaignKey = campaignName1, start = start, end = end,
+            startedMinions = 123,
+            completedMinions = 4231,
+            successfulExecutions = 42,
+            failedExecutions = 234,
+            scenariosReports = listOf(
                 ScenarioReport(
                     campaignKey = campaignName1,
                     scenarioName = "bar3",

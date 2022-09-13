@@ -175,7 +175,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id
                 )
             )
-        campaignScenarioRepository.save(CampaignScenarioEntity(saved.id, "the-scenario", 231))
+        campaignScenarioRepository.save(CampaignScenarioEntity(saved.id, "the-scenario", minionsCount = 231))
         campaignFactoryRepository.save(CampaignFactoryEntity(saved.id, factory.id, discarded = false))
 
         assertThat(campaignScenarioRepository.findAll().count()).isEqualTo(1)
@@ -190,7 +190,61 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    internal fun `should close the open campaign`() = testDispatcherProvider.run {
+    internal fun `should start the created campaign`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val alreadyClosedCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "1",
+                    start = Instant.now(),
+                    tenantId = tenant.id,
+                    end = null,
+                    result = null
+                )
+            )
+        val openCampaign = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "2",
+                start = null,
+                tenantId = tenant.id,
+                end = null,
+                result = null
+            )
+        )
+        val otherOpenCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "3",
+                    name = "other-campaign",
+                    start = null,
+                    tenantId = tenant.id,
+                    end = null,
+                    result = null
+                )
+            )
+
+        // when
+        val beforeCall = Instant.now()
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
+        campaignRepository.start("my-tenant", "2")
+
+        // then
+        assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
+            .isDataClassEqualTo(alreadyClosedCampaign)
+        assertThat(campaignRepository.findById(otherOpenCampaign.id)).isNotNull().isDataClassEqualTo(otherOpenCampaign)
+        assertThat(campaignRepository.findById(openCampaign.id)).isNotNull().all {
+            prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::name).isEqualTo(openCampaign.name)
+            prop(CampaignEntity::start).isNotNull().isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
+            prop(CampaignEntity::end).isNull()
+            prop(CampaignEntity::result).isNull()
+        }
+    }
+
+    @Test
+    internal fun `should complete the open campaign`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val alreadyClosedCampaign =
@@ -209,7 +263,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val beforeCall = Instant.now()
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.close("my-tenant", "2", ExecutionStatus.FAILED)
+        campaignRepository.complete("my-tenant", "2", ExecutionStatus.FAILED)
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -432,105 +486,227 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    internal fun `should return only campaign keys of the tenant`() = testDispatcherProvider.run{
+    internal fun `should return only campaign keys of the tenant`() = testDispatcherProvider.run {
         //given
         val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
         val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
-        campaignRepository.save(campaignPrototype.copy(key = "key-1", name = "campaign-1", end = null, tenantId = tenant.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-2", name = "campaign-2", end = null, tenantId = tenant2.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-3", name = "campaign-3", end = null, tenantId = tenant.id))
+        campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-1",
+                name = "campaign-1",
+                end = null,
+                tenantId = tenant.id
+            )
+        )
+        campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-2",
+                name = "campaign-2",
+                end = null,
+                tenantId = tenant2.id
+            )
+        )
+        campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-3",
+                name = "campaign-3",
+                end = null,
+                tenantId = tenant.id
+            )
+        )
 
         // when
-        val campaignKeys = campaignRepository.findKeyByTenantAndKeyIn(tenant = tenant.reference, keys = listOf("key-1", "key-3"))
+        val campaignKeys =
+            campaignRepository.findKeyByTenantAndKeyIn(tenant = tenant.reference, keys = listOf("key-1", "key-3"))
         // then
-        assertThat(campaignKeys).all{
+        assertThat(campaignKeys).all {
             hasSize(2)
             containsOnly("key-1", "key-3")
         }
 
         //when + then
-        assertThat(campaignRepository.findKeyByTenantAndKeyIn(tenant = tenant.reference, keys = listOf("key-4", "key-2"))).isEmpty()
+        assertThat(
+            campaignRepository.findKeyByTenantAndKeyIn(
+                tenant = tenant.reference,
+                keys = listOf("key-4", "key-2")
+            )
+        ).isEmpty()
     }
 
     @Test
-    internal fun `should return only campaign keys of the tenant and campaign names patterns`() = testDispatcherProvider.run{
-        //given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
-        campaignRepository.save(campaignPrototype.copy(key = "key-1", name = "campaign-1", end = null, tenantId = tenant.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-2", name = "CAMPAIGN-2", end = null, tenantId = tenant2.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-3", name = "camp-3", end = null, tenantId = tenant.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-4", name = "CAMPAIGN-4", end = null, tenantId = tenant.id))
+    internal fun `should return only campaign keys of the tenant and campaign names patterns`() =
+        testDispatcherProvider.run {
+            //given
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
+            val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-1",
+                    name = "campaign-1",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-2",
+                    name = "CAMPAIGN-2",
+                    end = null,
+                    tenantId = tenant2.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-3",
+                    name = "camp-3",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-4",
+                    name = "CAMPAIGN-4",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
 
-        // when
-        val campaignKeys = campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("camp%"))
-        // then
-        assertThat(campaignKeys).all{
-            hasSize(3)
-            containsOnly("key-1", "key-3", "key-4")
+            // when
+            val campaignKeys = campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("camp%"))
+            // then
+            assertThat(campaignKeys).all {
+                hasSize(3)
+                containsOnly("key-1", "key-3", "key-4")
+            }
+
+            //when + then
+            assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("camp-_"))).containsOnly(
+                "key-3"
+            )
+            assertThat(
+                campaignRepository.findKeysByTenantAndNamePatterns(
+                    "tenant-ref",
+                    listOf("%IG%")
+                )
+            ).containsOnly("key-1", "key-4")
+            assertThat(
+                campaignRepository.findKeysByTenantAndNamePatterns(
+                    "tenant-ref",
+                    listOf("%IG%", "ca_")
+                )
+            ).containsOnly("key-1", "key-4")
+            assertThat(
+                campaignRepository.findKeysByTenantAndNamePatterns(
+                    "tenant-ref",
+                    listOf("%IG%", "ca%")
+                )
+            ).containsOnly("key-1", "key-3", "key-4")
+            assertThat(
+                campaignRepository.findKeysByTenantAndNamePatterns(
+                    "tenant-ref",
+                    listOf("%4")
+                )
+            ).containsOnly("key-4")
+            assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%"))).isEmpty()
+            assertThat(
+                campaignRepository.findKeysByTenantAndNamePatterns(
+                    "tenant-ref",
+                    listOf("GN%", "%4")
+                )
+            ).containsOnly("key-4")
         }
-
-        //when + then
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("camp-_"))).containsOnly("key-3")
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%IG%"))).containsOnly("key-1", "key-4")
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%IG%", "ca_"))).containsOnly("key-1", "key-4")
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%IG%", "ca%"))).containsOnly("key-1", "key-3", "key-4")
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("%4"))).containsOnly("key-4")
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%"))).isEmpty()
-        assertThat(campaignRepository.findKeysByTenantAndNamePatterns("tenant-ref", listOf("GN%", "%4"))).containsOnly("key-4")
-    }
 
     @Test
-    internal fun `should return only campaign keys by tenant id and campaign names patterns`() = testDispatcherProvider.run{
-        //given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
-        campaignRepository.save(campaignPrototype.copy(key = "key-1", name = "campaign-1", end = null, tenantId = tenant.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-2", name = "CAMPAIGN-2", end = null, tenantId = tenant2.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-3", name = "camp-3", end = null, tenantId = tenant.id))
-        campaignRepository.save(campaignPrototype.copy(key = "key-4", name = "CAMPAIGN-4", end = null, tenantId = tenant.id))
+    internal fun `should return only campaign keys by tenant id and campaign names patterns`() =
+        testDispatcherProvider.run {
+            //given
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
+            val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-1",
+                    name = "campaign-1",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-2",
+                    name = "CAMPAIGN-2",
+                    end = null,
+                    tenantId = tenant2.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-3",
+                    name = "camp-3",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-4",
+                    name = "CAMPAIGN-4",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
 
-        // when
-        val campaignKeys = campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
-        // then
-        assertThat(campaignKeys).all {
-            hasSize(3)
-            containsOnly("key-1", "key-3", "key-4")
+            // when
+            val campaignKeys = campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
+            // then
+            assertThat(campaignKeys).all {
+                hasSize(3)
+                containsOnly("key-1", "key-3", "key-4")
+            }
+
+            //when + then
+            assertThat(
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    tenant.id,
+                    listOf("camp-_")
+                )
+            ).containsOnly("key-3")
+            assertThat(
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    tenant.id,
+                    listOf("%IG%")
+                )
+            ).containsOnly("key-1", "key-4")
+            assertThat(
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    tenant.id,
+                    listOf("%IG%", "ca_", "x")
+                )
+            ).containsOnly("key-1", "key-4")
+            assertThat(
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    tenant.id,
+                    listOf("%IG%", "ca%")
+                )
+            ).containsOnly(
+                "key-1",
+                "key-3",
+                "key-4"
+            )
+            assertThat(
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    tenant.id,
+                    listOf("%4")
+                )
+            ).containsOnly("key-4")
+            assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
+            assertThat(
+                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                    tenant.id,
+                    listOf("GN%", "%4")
+                )
+            ).containsOnly("key-4")
         }
-
-        //when + then
-        assertThat(
-            campaignRepository.findKeysByTenantIdAndNamePatterns(
-                tenant.id,
-                listOf("camp-_")
-            )
-        ).containsOnly("key-3")
-        assertThat(
-            campaignRepository.findKeysByTenantIdAndNamePatterns(
-                tenant.id,
-                listOf("%IG%")
-            )
-        ).containsOnly("key-1", "key-4")
-        assertThat(
-            campaignRepository.findKeysByTenantIdAndNamePatterns(
-                tenant.id,
-                listOf("%IG%", "ca_", "x")
-            )
-        ).containsOnly("key-1", "key-4")
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%IG%", "ca%"))).containsOnly(
-            "key-1",
-            "key-3",
-            "key-4"
-        )
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("%4"))).containsOnly("key-4")
-        assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
-        assertThat(
-            campaignRepository.findKeysByTenantIdAndNamePatterns(
-                tenant.id,
-                listOf("GN%", "%4")
-            )
-        ).containsOnly("key-4")
-    }
 
 
     @Test

@@ -140,16 +140,20 @@ internal class CampaignConverterImplTest {
             start = start,
             end = end,
             status = ExecutionStatus.SUCCESSFUL,
+            startedMinions = 12,
+            completedMinions = 786,
+            successfulExecutions = 456,
+            failedExecutions = 321,
             scenariosReports = listOf(
                 ScenarioReport(
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario-1",
                     start = start,
                     end = end,
-                    startedMinions = 0,
-                    completedMinions = 0,
-                    successfulExecutions = 0,
-                    failedExecutions = 0,
+                    startedMinions = null,
+                    completedMinions = null,
+                    successfulExecutions = null,
+                    failedExecutions = null,
                     status = ExecutionStatus.FAILED,
                     messages = listOf(
                         ReportMessage(
@@ -165,10 +169,10 @@ internal class CampaignConverterImplTest {
                     scenarioName = "my-scenario-2",
                     start = start,
                     end = end,
-                    startedMinions = 1,
-                    completedMinions = 1,
-                    successfulExecutions = 1,
-                    failedExecutions = 1,
+                    startedMinions = 41,
+                    completedMinions = 541,
+                    successfulExecutions = 632,
+                    failedExecutions = 234,
                     status = ExecutionStatus.ABORTED,
                     messages = listOf(
                         ReportMessage(
@@ -191,10 +195,10 @@ internal class CampaignConverterImplTest {
                 campaignKey = "my-campaign",
                 start = start,
                 end = end,
-                startedMinions = 0,
-                completedMinions = 0,
-                successfulExecutions = 0,
-                failedExecutions = 0,
+                startedMinions = 12,
+                completedMinions = 786,
+                successfulExecutions = 456,
+                failedExecutions = 321,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenariosReports = listOf(
                     ScenarioReport(
@@ -202,10 +206,10 @@ internal class CampaignConverterImplTest {
                         scenarioName = "my-scenario-1",
                         start = start,
                         end = end,
-                        startedMinions = 0,
-                        completedMinions = 0,
-                        successfulExecutions = 0,
-                        failedExecutions = 0,
+                        startedMinions = null,
+                        completedMinions = null,
+                        successfulExecutions = null,
+                        failedExecutions = null,
                         status = ExecutionStatus.FAILED,
                         messages = listOf(
                             ReportMessage(
@@ -221,10 +225,10 @@ internal class CampaignConverterImplTest {
                         scenarioName = "my-scenario-2",
                         start = start,
                         end = end,
-                        startedMinions = 1,
-                        completedMinions = 1,
-                        successfulExecutions = 1,
-                        failedExecutions = 1,
+                        startedMinions = 41,
+                        completedMinions = 541,
+                        successfulExecutions = 632,
+                        failedExecutions = 234,
                         status = ExecutionStatus.ABORTED,
                         messages = listOf(
                             ReportMessage(
@@ -234,6 +238,90 @@ internal class CampaignConverterImplTest {
                                 message = "Hello from test 2"
                             )
                         )
+                    )
+                )
+            )
+        )
+    }
+
+    @Test
+    internal fun `should convert the incomplete report`() = testDispatcherProvider.runTest {
+        // given
+        val report = CampaignReport(
+            campaignKey = "my-campaign",
+            start = null,
+            end = null,
+            status = ExecutionStatus.QUEUED,
+            startedMinions = null,
+            completedMinions = null,
+            successfulExecutions = null,
+            failedExecutions = null,
+            scenariosReports = listOf(
+                ScenarioReport(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario-1",
+                    start = null,
+                    end = null,
+                    startedMinions = null,
+                    completedMinions = null,
+                    successfulExecutions = null,
+                    failedExecutions = null,
+                    status = ExecutionStatus.QUEUED,
+                    messages = emptyList()
+                ),
+                ScenarioReport(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario-2",
+                    start = null,
+                    end = null,
+                    startedMinions = null,
+                    completedMinions = null,
+                    successfulExecutions = null,
+                    failedExecutions = null,
+                    status = ExecutionStatus.QUEUED,
+                    messages = emptyList()
+                )
+            )
+        )
+
+        // when
+        val result = converter.convertReport(report)
+
+        // then
+        assertThat(result).isDataClassEqualTo(
+            CampaignReport(
+                campaignKey = "my-campaign",
+                start = null,
+                end = null,
+                startedMinions = null,
+                completedMinions = null,
+                successfulExecutions = null,
+                failedExecutions = null,
+                status = ExecutionStatus.QUEUED,
+                scenariosReports = listOf(
+                    ScenarioReport(
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario-1",
+                        start = null,
+                        end = null,
+                        startedMinions = null,
+                        completedMinions = null,
+                        successfulExecutions = null,
+                        failedExecutions = null,
+                        status = ExecutionStatus.QUEUED,
+                        messages = emptyList()
+                    ),
+                    ScenarioReport(
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario-2",
+                        start = null,
+                        end = null,
+                        startedMinions = null,
+                        completedMinions = null,
+                        successfulExecutions = null,
+                        failedExecutions = null,
+                        status = ExecutionStatus.QUEUED,
+                        messages = emptyList()
                     )
                 )
             )

@@ -1,6 +1,8 @@
 package io.qalipsis.core.head.campaign
 
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.model.Campaign
@@ -22,10 +24,16 @@ internal interface CampaignService {
         campaignConfiguration: CampaignConfiguration
     ): Campaign
 
+    suspend fun open(tenant: String, campaignKey: CampaignKey)
+
+    suspend fun openScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName)
+
+    suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName)
+
     /**
      * Marks a campaign as complete.
      */
-    suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign
+    suspend fun close(tenant: String, campaignKey: CampaignKey, result: ExecutionStatus): Campaign
 
     /**
      * Returns list of all campaigns. Filter is a comma-separated list of values to apply
@@ -37,5 +45,5 @@ internal interface CampaignService {
     /**
      * Sets the user who aborted the campaign.
      */
-    suspend fun setAborter(tenant: String, aborter: String, campaignKey: String)
+    suspend fun abort(tenant: String, aborter: String, campaignKey: CampaignKey)
 }

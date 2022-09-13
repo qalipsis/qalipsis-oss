@@ -166,7 +166,7 @@ internal class ReportServiceImplTest {
             }
             coVerifyNever {
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-                campaignScenarioRepository.findNameByCampaignKeys(any())
+                campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             }
         }
 
@@ -188,10 +188,7 @@ internal class ReportServiceImplTest {
             "campaign-key3"
         )
         coEvery {
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                any(),
-                any()
-            )
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
         } returns listOf("scenario-1", "scenario-2", "scenario-3")
         coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
         coEvery {
@@ -283,7 +280,7 @@ internal class ReportServiceImplTest {
             reportRepository.save(any())
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(any())
         }
     }
@@ -494,10 +491,7 @@ internal class ReportServiceImplTest {
                 )
             } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
             coEvery {
-                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                    any(),
-                    any()
-                )
+                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             } returns listOf("scenario-1", "scenario-2", "scenario-3")
             coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
 
@@ -597,7 +591,7 @@ internal class ReportServiceImplTest {
                 reportRepository.update(any())
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
                 campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
                 userRepository.findUsernameById(456L)
             }
         }
@@ -633,7 +627,7 @@ internal class ReportServiceImplTest {
                     any()
                 )
             } returns listOf("campaign-key1")
-            coEvery { campaignScenarioRepository.findNameByCampaignKeys(any()) } returns listOf(
+            coEvery { campaignScenarioRepository.findNameByCampaignKeys(any(), any()) } returns listOf(
                 "scenario-1",
                 "scenario-2"
             )
@@ -673,7 +667,7 @@ internal class ReportServiceImplTest {
                 userRepository.findUsernameById(456L)
                 campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1"))
                 campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-                campaignScenarioRepository.findNameByCampaignKeys(any())
+                campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             }
             coVerifyNever {
                 reportRepository.update(any())
@@ -761,10 +755,7 @@ internal class ReportServiceImplTest {
             "campaign-key3"
         )
         coEvery {
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                any(),
-                any()
-            )
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
         } returns listOf("scenario-1", "scenario-2", "scenario-3")
         coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
         coEvery {
@@ -863,7 +854,7 @@ internal class ReportServiceImplTest {
             reportRepository.update(any())
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(456L)
         }
     }

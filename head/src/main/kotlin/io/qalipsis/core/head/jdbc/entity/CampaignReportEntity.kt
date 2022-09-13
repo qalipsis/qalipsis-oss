@@ -6,6 +6,7 @@ import io.micronaut.data.annotation.MappedEntity
 import io.micronaut.data.annotation.Relation
 import io.micronaut.data.annotation.Version
 import io.micronaut.data.model.naming.NamingStrategies
+import io.qalipsis.api.report.ExecutionStatus
 import java.time.Instant
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.PositiveOrZero
@@ -32,6 +33,7 @@ internal data class CampaignReportEntity(
     val successfulExecutions: Int,
     @field:PositiveOrZero
     val failedExecutions: Int,
+    val status: ExecutionStatus,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "campaignReportId")
     val scenariosReports: List<ScenarioReportEntity>
 ) : Entity {
@@ -42,10 +44,11 @@ internal data class CampaignReportEntity(
         completedMinions: Int = 0,
         successfulExecutions: Int = 0,
         failedExecutions: Int = 0,
+        status: ExecutionStatus,
         scenariosReports: List<ScenarioReportEntity> = emptyList()
     ) : this(
         -1,
         Instant.EPOCH,
-        campaignId, startedMinions, completedMinions, successfulExecutions, failedExecutions, scenariosReports
+        campaignId, startedMinions, completedMinions, successfulExecutions, failedExecutions, status, scenariosReports
     )
 }

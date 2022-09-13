@@ -60,6 +60,7 @@ internal class RedisRunningState(
             )
             feedback is EndOfCampaignScenarioFeedback -> {
                 context.campaignReportStateKeeper.complete(feedback.campaignKey, feedback.scenarioName)
+                context.campaignService.closeScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)
                 RedisRunningState(
                     campaign, operations, true, listOf(
                         CampaignScenarioShutdownDirective(

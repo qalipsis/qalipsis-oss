@@ -53,14 +53,22 @@ internal data class CampaignEntity(
         key: String,
         name: String,
         speedFactor: Double = 1.0,
-        start: Instant? = Instant.now(),
+        start: Instant? = null,
         end: Instant? = null,
         result: ExecutionStatus? = null,
         configurer: Long,
         aborter: Long? = null
     ) : this(
-        -1,
-        Instant.EPOCH, tenantId, key,
-        name, speedFactor, start, end, result, configurer, aborter
+        id = -1,
+        version = Instant.EPOCH,
+        tenantId = tenantId,
+        key = key,
+        name = name,
+        speedFactor = speedFactor,
+        start = start,
+        end = end,
+        result = result,
+        configurer = configurer,
+        aborter = aborter
     )
 }

@@ -120,7 +120,8 @@ internal class DatabaseCampaignReportPublisherTest {
                     startedMinions = 1000,
                     completedMinions = 990,
                     successfulExecutions = 990,
-                    failedExecutions = 10
+                    failedExecutions = 10,
+                    status = ExecutionStatus.SUCCESSFUL
                 )
             )
             scenarioReportRepository.saveAll(

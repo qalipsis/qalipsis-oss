@@ -209,9 +209,10 @@ internal class ReportServiceImpl(
         val resolvedScenarioNames =
             if (campaignKeysUnion.isNotEmpty()) {
                 if (reportEntity.scenarioNamesPatterns.isEmpty())
-                    campaignScenarioRepository.findNameByCampaignKeys(campaignKeysUnion)
+                    campaignScenarioRepository.findNameByCampaignKeys(reportEntity.tenantId, campaignKeysUnion)
                 else {
                     campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                        reportEntity.tenantId,
                         reportEntity.scenarioNamesPatterns.map {
                             it.replace("*", "%").replace("?", "_")
                         },

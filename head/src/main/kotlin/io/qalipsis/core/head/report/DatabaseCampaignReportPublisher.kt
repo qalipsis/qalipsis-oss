@@ -54,17 +54,20 @@ internal class DatabaseCampaignReportPublisher(
                 )
             )
         }
-        scenarioReportMessageRepository.saveAll(scenarioReportMessageEntitiesToSave).toList()
+        if (scenarioReportMessageEntitiesToSave.isNotEmpty()) {
+            scenarioReportMessageRepository.saveAll(scenarioReportMessageEntitiesToSave).toList()
+        }
     }
 
     private suspend fun saveCampaignReport(tenant: String, campaignReport: CampaignReport): CampaignReportEntity {
         return campaignReportRepository.save(
             CampaignReportEntity(
-                campaignRepository.findIdByKey(tenant, campaignReport.campaignKey),
-                campaignReport.startedMinions,
-                campaignReport.completedMinions,
-                campaignReport.successfulExecutions,
-                campaignReport.failedExecutions
+                campaignId = campaignRepository.findIdByKey(tenant, campaignReport.campaignKey),
+                startedMinions = campaignReport.startedMinions!!,
+                completedMinions = campaignReport.completedMinions!!,
+                successfulExecutions = campaignReport.successfulExecutions!!,
+                failedExecutions = campaignReport.failedExecutions!!,
+                status = campaignReport.status
             )
         )
     }
@@ -76,12 +79,12 @@ internal class DatabaseCampaignReportPublisher(
         return ScenarioReportEntity(
             scenarioReport.scenarioName,
             campaignReportEntityId,
-            scenarioReport.start,
-            scenarioReport.end,
-            scenarioReport.startedMinions,
-            scenarioReport.completedMinions,
-            scenarioReport.successfulExecutions,
-            scenarioReport.failedExecutions,
+            scenarioReport.start!!,
+            scenarioReport.end!!,
+            scenarioReport.startedMinions!!,
+            scenarioReport.completedMinions!!,
+            scenarioReport.successfulExecutions!!,
+            scenarioReport.failedExecutions!!,
             scenarioReport.status
         )
     }

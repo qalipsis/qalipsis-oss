@@ -62,7 +62,8 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
                 startedMinions = 1000,
                 completedMinions = 990,
                 successfulExecutions = 990,
-                failedExecutions = 10
+                failedExecutions = 10,
+                status = ExecutionStatus.SUCCESSFUL
             )
         val campaignReportEntity = campaignReportRepository.save(campaignReportPrototype)
         val scenarioReportPrototype =

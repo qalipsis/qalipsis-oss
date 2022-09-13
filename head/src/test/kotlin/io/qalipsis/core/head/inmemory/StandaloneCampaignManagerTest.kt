@@ -195,8 +195,13 @@ internal class StandaloneCampaignManagerTest {
             val sentDirectives = mutableListOf<Directive>()
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
-                factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
                 campaignService.create("qalipsis-user", "This is a campaign", refEq(campaign))
+                factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
+                campaignService.open("my-tenant", "my-campaign")
+                campaignService.openScenario("my-tenant", "my-campaign", "scenario-1")
+                campaignReportStateKeeper.start("my-campaign", "scenario-1")
+                campaignService.openScenario("my-tenant", "my-campaign", "scenario-2")
+                campaignReportStateKeeper.start("my-campaign", "scenario-2")
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(campaign),
@@ -318,7 +323,7 @@ internal class StandaloneCampaignManagerTest {
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
-            campaignService.setAborter("my-tenant", "qalipsis-user", "first_campaign")
+            campaignService.abort("my-tenant", "qalipsis-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
@@ -370,7 +375,7 @@ internal class StandaloneCampaignManagerTest {
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
-            campaignService.setAborter("my-tenant", "qalipsis-user", "first_campaign")
+            campaignService.abort("my-tenant", "qalipsis-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
