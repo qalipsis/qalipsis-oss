@@ -67,7 +67,7 @@ internal class PersistentCampaignServiceTest {
     private lateinit var persistentCampaignService: PersistentCampaignService
 
     @Test
-    internal fun `should create the new campaign`() = testDispatcherProvider.run {
+    internal fun `should create the new campaign without timeout`() = testDispatcherProvider.run {
         // given
         coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
         val campaign = CampaignConfiguration(
@@ -103,6 +103,64 @@ internal class PersistentCampaignServiceTest {
                     key = "my-campaign",
                     name = "This is a campaign",
                     speedFactor = 123.2,
+                    scheduledMinions = 18593,
+                    configurer = 199,
+                    tenantId = 8165L
+                )
+            )
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
+                    CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
+                )
+            )
+            campaignConverter.convertToModel(refEq(savedEntity))
+        }
+        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
+    }
+
+
+    @Test
+    internal fun `should create the new campaign with timeout`() = testDispatcherProvider.run {
+        // given
+        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
+        val campaign = CampaignConfiguration(
+            tenant = "my-tenant",
+            key = "my-campaign",
+            speedFactor = 123.2,
+            timeoutDurationSec = 715,
+            hardTimeout = true,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioConfiguration(
+                    6272
+                ),
+                "scenario-2" to ScenarioConfiguration(
+                    12321
+                )
+            )
+        )
+        val convertedCampaign = relaxedMockk<Campaign>()
+        coEvery { campaignConverter.convertToModel(any()) } returns convertedCampaign
+        val savedEntity = relaxedMockk<CampaignEntity> {
+            every { id } returns 8126
+        }
+        coEvery { campaignRepository.save(any()) } returns savedEntity
+        coEvery { userRepository.findIdByUsername("qalipsis-user") } returns 199
+
+        // when
+        val result = persistentCampaignService.create("qalipsis-user", "This is a campaign", campaign)
+
+        // then
+        assertThat(result).isSameAs(convertedCampaign)
+        coVerifyOrder {
+            userRepository.findIdByUsername("qalipsis-user")
+            campaignRepository.save(
+                CampaignEntity(
+                    key = "my-campaign",
+                    name = "This is a campaign",
+                    speedFactor = 123.2,
+                    scheduledMinions = 18593,
+                    hardTimeout = true,
                     configurer = 199,
                     tenantId = 8165L
                 )
@@ -332,6 +390,7 @@ internal class PersistentCampaignServiceTest {
             key = "my-campaign",
             name = "This is a campaign",
             speedFactor = 123.2,
+            scheduledMinions = 345,
             start = now,
             configurer = 199
         )
@@ -356,6 +415,7 @@ internal class PersistentCampaignServiceTest {
                     CampaignEntity(
                         key = "my-campaign",
                         name = "This is a campaign",
+                        scheduledMinions = 345,
                         speedFactor = 123.2,
                         start = now,
                         configurer = 199,

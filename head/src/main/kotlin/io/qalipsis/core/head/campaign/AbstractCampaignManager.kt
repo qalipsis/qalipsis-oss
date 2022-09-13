@@ -24,6 +24,7 @@ import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Instant
 
 /**
  * Service in charge of keeping track of the campaigns executions across the whole cluster.
@@ -81,9 +82,11 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         val factories = factoryService.getAvailableFactoriesForScenarios(configuration.tenant, selectedScenarios)
         require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
 
-        campaignService.open(configuration.tenant, configuration.key)
+        val start = Instant.now()
+        val timeout = configuration.timeoutDurationSec?.let { start.plusSeconds(it) }
+        campaignService.start(configuration.tenant, configuration.key, start, timeout)
         selectedScenarios.forEach {
-            campaignService.openScenario(configuration.tenant, configuration.key, it)
+            campaignService.startScenario(configuration.tenant, configuration.key, it, start)
             campaignReportStateKeeper.start(configuration.key, it)
         }
         try {

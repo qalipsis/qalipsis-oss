@@ -110,6 +110,7 @@ internal class RedisCampaignManagerTest {
             val campaign = CampaignConfiguration(
                 tenant = "my-tenant",
                 key = "my-campaign",
+                timeoutDurationSec = 128,
                 scenarios = linkedMapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
             )
             val createdCampaign = relaxedMockk<Campaign>()
@@ -190,10 +191,10 @@ internal class RedisCampaignManagerTest {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 campaignService.create("qalipsis-user", "This is a campaign", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
-                campaignService.open("my-tenant", "my-campaign")
-                campaignService.openScenario("my-tenant", "my-campaign", "scenario-1")
+                campaignService.start("my-tenant", "my-campaign", any(), isNull(inverse = true))
+                campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
-                campaignService.openScenario("my-tenant", "my-campaign", "scenario-2")
+                campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
@@ -294,8 +295,8 @@ internal class RedisCampaignManagerTest {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1"))
                 campaignService.create("qalipsis-user", "This is a campaign", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1"))
-                campaignService.open("my-tenant", "my-campaign")
-                campaignService.openScenario("my-tenant", "my-campaign", "scenario-1")
+                campaignService.start("my-tenant", "my-campaign", any(), isNull())
+                campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1"))
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)

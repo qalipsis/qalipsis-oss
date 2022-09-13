@@ -23,6 +23,8 @@ import java.time.Instant
 )
 internal class InMemoryCampaignService : CampaignService {
 
+    private var currentCampaignConfiguration: CampaignConfiguration? = null
+
     private var currentCampaign: Campaign? = null
 
     private val updateLock = Mutex(false)
@@ -32,12 +34,15 @@ internal class InMemoryCampaignService : CampaignService {
         campaignDisplayName: String,
         campaignConfiguration: CampaignConfiguration
     ): Campaign {
+        currentCampaignConfiguration = campaignConfiguration
         return updateLock.withLock {
             currentCampaign = Campaign(
                 version = Instant.now(),
                 key = campaignConfiguration.key,
                 name = campaignDisplayName,
                 speedFactor = campaignConfiguration.speedFactor,
+                scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
+                hardTimeout = campaignConfiguration.hardTimeout,
                 start = null,
                 end = null,
                 result = null,
@@ -54,13 +59,18 @@ internal class InMemoryCampaignService : CampaignService {
         }
     }
 
-    override suspend fun open(tenant: String, campaignKey: CampaignKey) {
+    override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
         updateLock.withLock {
-            currentCampaign = currentCampaign?.copy(start = Instant.now())
+            currentCampaign = currentCampaign?.copy(start = Instant.now(), timeout = timeout)
         }
     }
 
-    override suspend fun openScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) = Unit
+    override suspend fun startScenario(
+        tenant: String,
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        start: Instant
+    ) = Unit
 
     override suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) = Unit
 

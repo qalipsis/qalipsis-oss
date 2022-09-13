@@ -8,6 +8,7 @@ import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
+import java.time.Instant
 
 /**
  * Micronaut data repository to operate with [CampaignScenarioEntity].
@@ -24,11 +25,11 @@ internal interface CampaignScenarioRepository : CoroutineCrudRepository<Campaign
      * Marks the not yet started scenario with the specified name [scenarioName] of campaign [campaignKey] as started.
      */
     @Query(
-        """UPDATE campaign_scenario SET version = NOW(), "start" = NOW() WHERE name = :scenarioName AND "start" IS NULL 
+        """UPDATE campaign_scenario SET version = NOW(), "start" = :start WHERE name = :scenarioName AND "start" IS NULL 
         AND EXISTS (SELECT * FROM campaign WHERE key = :campaignKey AND campaign_scenario.campaign_id = campaign.id 
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id))"""
     )
-    suspend fun start(tenant: String, campaignKey: String, scenarioName: ScenarioName): Int
+    suspend fun start(tenant: String, campaignKey: String, scenarioName: ScenarioName, start: Instant): Int
 
     /**
      * Marks the scenario with the specified name [scenarioName] of campaign [campaignKey] as complete with the provided [result].

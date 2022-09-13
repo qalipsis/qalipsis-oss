@@ -15,6 +15,7 @@ internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
         campaignKey = first().campaignKey,
         start = this.asSequence().mapNotNull { it.start }.minOrNull(),
         end = this.asSequence().mapNotNull { it.end }.maxOrNull(),
+        scheduledMinions = null,
         startedMinions = this.asSequence().mapNotNull { it.startedMinions }.sum(),
         completedMinions = this.asSequence().mapNotNull { it.completedMinions }.sum(),
         successfulExecutions = this.asSequence().mapNotNull { it.successfulExecutions }.sum(),

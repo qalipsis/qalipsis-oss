@@ -20,6 +20,7 @@ import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.count
+import java.time.Instant
 import io.qalipsis.api.query.Page as QalipsisPage
 
 
@@ -46,6 +47,8 @@ internal class PersistentCampaignService(
                 tenantId = tenantRepository.findIdByReference(campaignConfiguration.tenant),
                 key = campaignConfiguration.key,
                 name = campaignDisplayName,
+                scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
+                hardTimeout = campaignConfiguration.hardTimeout ?: false,
                 speedFactor = campaignConfiguration.speedFactor,
                 configurer = userRepository.findIdByUsername(configurer)
             )
@@ -57,12 +60,17 @@ internal class PersistentCampaignService(
         return campaignConverter.convertToModel(campaign)
     }
 
-    override suspend fun open(tenant: String, campaignKey: CampaignKey) {
-        campaignRepository.start(tenant, campaignKey)
+    override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
+        campaignRepository.start(tenant, campaignKey, start, timeout)
     }
 
-    override suspend fun openScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) {
-        campaignScenarioRepository.start(tenant, campaignKey, scenarioName)
+    override suspend fun startScenario(
+        tenant: String,
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        start: Instant
+    ) {
+        campaignScenarioRepository.start(tenant, campaignKey, scenarioName, start)
     }
 
     override suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) {

@@ -10,6 +10,7 @@ import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import java.time.Instant
 
 /**
  * Micronaut data repository to operate with [CampaignEntity].
@@ -48,10 +49,10 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
      * Marks the not yet started campaign with the specified name [campaignKey] as started.
      */
     @Query(
-        """UPDATE campaign SET version = NOW(), "start" = NOW() WHERE key = :campaignKey AND "start" IS NULL 
+        """UPDATE campaign SET version = NOW(), "start" = :start, timeout = :timeout WHERE key = :campaignKey AND "start" IS NULL 
         AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun start(tenant: String, campaignKey: String): Int
+    suspend fun start(tenant: String, campaignKey: String, start: Instant, timeout: Instant?): Int
 
     /**
      * Marks the open campaign with the specified name [campaignKey] as complete with the provided [result].

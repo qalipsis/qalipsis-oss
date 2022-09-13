@@ -62,6 +62,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             speedFactor = 123.0,
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
+            scheduledMinions = 123,
+            hardTimeout = true,
             result = ExecutionStatus.SUCCESSFUL,
             configurer = 1L // Default user.
         )
@@ -190,7 +192,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    internal fun `should start the created campaign`() = testDispatcherProvider.run {
+    internal fun `should start the created campaign with a timeout`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val alreadyClosedCampaign =
@@ -226,8 +228,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when
         val beforeCall = Instant.now()
-        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.start("my-tenant", "2")
+        val start = Instant.now().plusSeconds(12)
+        campaignRepository.start("my-tenant", "2", start, start.plusSeconds(123))
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -236,7 +238,64 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(campaignRepository.findById(openCampaign.id)).isNotNull().all {
             prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::name).isEqualTo(openCampaign.name)
-            prop(CampaignEntity::start).isNotNull().isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::start).isEqualTo(start)
+            prop(CampaignEntity::timeout).isEqualTo(start.plusSeconds(123))
+            prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
+            prop(CampaignEntity::end).isNull()
+            prop(CampaignEntity::result).isNull()
+        }
+    }
+
+
+    @Test
+    internal fun `should start the created campaign without timeout`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val alreadyClosedCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "1",
+                    start = Instant.now(),
+                    tenantId = tenant.id,
+                    end = null,
+                    result = null
+                )
+            )
+        val openCampaign = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "2",
+                start = null,
+                tenantId = tenant.id,
+                end = null,
+                result = null
+            )
+        )
+        val otherOpenCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "3",
+                    name = "other-campaign",
+                    start = null,
+                    tenantId = tenant.id,
+                    end = null,
+                    result = null
+                )
+            )
+
+        // when
+        val beforeCall = Instant.now()
+        val start = Instant.now().plusSeconds(12)
+        campaignRepository.start("my-tenant", "2", start, null)
+
+        // then
+        assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
+            .isDataClassEqualTo(alreadyClosedCampaign)
+        assertThat(campaignRepository.findById(otherOpenCampaign.id)).isNotNull().isDataClassEqualTo(otherOpenCampaign)
+        assertThat(campaignRepository.findById(openCampaign.id)).isNotNull().all {
+            prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::name).isEqualTo(openCampaign.name)
+            prop(CampaignEntity::start).isEqualTo(start)
+            prop(CampaignEntity::timeout).isNull()
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isNull()

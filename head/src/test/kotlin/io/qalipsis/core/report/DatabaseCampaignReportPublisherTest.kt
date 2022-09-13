@@ -101,6 +101,7 @@ internal class DatabaseCampaignReportPublisherTest {
             campaignKey = "my-campaign",
             start = now.minusSeconds(1000),
             end = now.minusSeconds(500),
+            scheduledMinions = 1,
             startedMinions = 1000,
             completedMinions = 990,
             successfulExecutions = 990,

@@ -50,6 +50,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
                 key = "the-campaign-id",
                 name = "This is a campaign",
                 speedFactor = 123.0,
+                scheduledMinions = 345,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,

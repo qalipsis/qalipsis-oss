@@ -4,6 +4,7 @@ import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.report.ExecutionStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
+import javax.validation.constraints.PositiveOrZero
 
 /**
  * External representation of a campaign.
@@ -30,6 +31,19 @@ internal data class Campaign(
         required = true
     )
     val speedFactor: Double,
+
+    @field:Schema(description = "Counts of minions scheduled to be started", required = false)
+    @field:PositiveOrZero
+    val scheduledMinions: Int?,
+
+    @field:Schema(description = "Instant when the campaign should be aborted", required = false)
+    val timeout: Instant? = null,
+
+    @field:Schema(
+        description = "Specifies whether the campaign should generate a failure (true) when the timeout is reached",
+        required = false
+    )
+    val hardTimeout: Boolean? = null,
 
     @field:Schema(description = "Date and time when the campaign started", required = true)
     val start: Instant?,
