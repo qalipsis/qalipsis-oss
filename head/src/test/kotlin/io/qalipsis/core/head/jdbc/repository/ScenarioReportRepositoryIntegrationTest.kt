@@ -56,7 +56,16 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 configurer = 1
             )
         )
-        val campaignReport = campaignReportRepository.save(CampaignReportEntity(campaign.id, 1000, 990, 990, 10))
+        val campaignReport = campaignReportRepository.save(
+            CampaignReportEntity(
+                campaignId = campaign.id,
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                status = ExecutionStatus.SUCCESSFUL
+            )
+        )
 
         scenarioReportPrototype =
             ScenarioReportEntity(

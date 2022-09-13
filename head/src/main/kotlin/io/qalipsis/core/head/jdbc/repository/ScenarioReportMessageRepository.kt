@@ -14,4 +14,8 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
  */
 @JdbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface ScenarioReportMessageRepository : CoroutineCrudRepository<ScenarioReportMessageEntity, Long>
+internal interface ScenarioReportMessageRepository : CoroutineCrudRepository<ScenarioReportMessageEntity, Long> {
+
+    suspend fun findByScenarioReportIdInOrderById(scenarioReportsIds: Collection<Long>): List<ScenarioReportMessageEntity>
+
+}

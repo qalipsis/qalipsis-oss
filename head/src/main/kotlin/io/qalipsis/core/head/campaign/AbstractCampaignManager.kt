@@ -77,11 +77,13 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
         require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
 
+        val createdCampaign = campaignService.create(configurer, campaignDisplayName, configuration)
         val factories = factoryService.getAvailableFactoriesForScenarios(configuration.tenant, selectedScenarios)
         require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
 
-        val createdCampaign = campaignService.create(configurer, campaignDisplayName, configuration)
+        campaignService.open(configuration.tenant, configuration.key)
         selectedScenarios.forEach {
+            campaignService.openScenario(configuration.tenant, configuration.key, it)
             campaignReportStateKeeper.start(configuration.key, it)
         }
         try {
@@ -133,7 +135,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 log.trace { "Campaign state $campaignState" }
                 campaignState.inject(campaignExecutionContext)
                 val directives = campaignState.init()
-                campaignService.setAborter(tenant, aborter, campaignKey)
+                campaignService.abort(tenant, aborter, campaignKey)
                 set(campaignState)
                 campaignReportStateKeeper.abort(campaignKey)
                 directives.forEach {

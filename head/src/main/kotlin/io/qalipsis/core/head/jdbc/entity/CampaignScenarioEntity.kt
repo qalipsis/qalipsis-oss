@@ -29,16 +29,24 @@ internal data class CampaignScenarioEntity(
     val name: String,
     @field:Positive
     @field:Max(1000000)
-    val minionsCount: Int
+    val minionsCount: Int,
+    val start: Instant?,
+    val end: Instant?,
 ) : Entity {
 
     constructor(
         campaignId: Long,
         name: String,
+        start: Instant? = null,
+        end: Instant? = null,
         minionsCount: Int
     ) : this(
-        -1,
-        Instant.EPOCH,
-        campaignId, name, minionsCount
+        id = -1,
+        version = Instant.EPOCH,
+        campaignId = campaignId,
+        name = name,
+        minionsCount = minionsCount,
+        start = start,
+        end = end
     )
 }

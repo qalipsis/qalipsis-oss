@@ -2,6 +2,24 @@
 <html lang="en">
 <head>
   <title>Local deployment of the QALIPSIS backend</title>
+
+  <style>
+    td {
+      border: 1px dotted #999;
+    }
+
+  </style>
+
+  <script type="text/javascript">
+    function toggleDisplay(elementId) {
+      const elt = document.getElementById(elementId)
+      if (elt.style.display == 'none') {
+        elt.style.display = 'block'
+      } else {
+        elt.style.display = 'none'
+      }
+    }
+  </script>
 </head>
 <body>
 <h1>Local deployment of the QALIPSIS backend</h1>
@@ -35,6 +53,68 @@
     <code>start-qalipsis.sh</code>.</p>
   <p>QALIPSIS backend is now accessible at the address <code>http://localhost:8080</code>.</p>
   <p>Press <code>CTRL+C</code> to stop the service.</p>
+
+  <div style="border: 2px solid red;padding: 10px;">
+    <h4>Non-backward compatible database schema</h4>
+    In the current early phase of the project (as long as QALIPSIS is not officially deployed anywhere),
+    it might happen that some DB changes break the compatibility and prevent the service from starting.
+
+    <p onclick="toggleDisplay('block-1')" style="cursor: pointer"><em>Toggle details</em></p>
+
+    <div id="block-1" style="display: none">
+      When such a problem occurs, stop all the docker containers, delete the folder <code>deployment/volumes</code> and
+      start everything again.
+      <br/><br/>
+      An example of error is as follows: <br/><br/>
+      <code>
+        io.micronaut.context.exceptions.BeanInstantiationException: Bean definition [javax.sql.DataSource] could not be
+        loaded: Migration failed! Liquibase encountered an exception.<br/>
+        at io.micronaut.context.DefaultBeanContext.initializeContext(DefaultBeanContext.java:1939)<br/>
+        at io.micronaut.context.DefaultApplicationContext.initializeContext(DefaultApplicationContext.java:236)<br/>
+        at io.micronaut.context.DefaultBeanContext.readAllBeanDefinitionClasses(DefaultBeanContext.java:3454)<br/>
+        at io.micronaut.context.DefaultBeanContext.start(DefaultBeanContext.java:330)<br/>
+        at io.micronaut.context.DefaultApplicationContext.start(DefaultApplicationContext.java:182)<br/>
+        at io.micronaut.context.ApplicationContextBuilder.start(ApplicationContextBuilder.java:244)<br/>
+        at io.qalipsis.runtime.bootstrap.QalipsisBootstrap.call(QalipsisBootstrap.kt:104)<br/>
+        at io.qalipsis.runtime.bootstrap.QalipsisBootstrap.call(QalipsisBootstrap.kt:17)<br/>
+        at picocli.CommandLine.executeUserObject(CommandLine.java:1953)<br/>
+        at picocli.CommandLine.access$1300(CommandLine.java:145)<br/>
+        at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2352)<br/>
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2346)<br/>
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2311)<br/>
+        at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2179)<br/>
+        at picocli.CommandLine.execute(CommandLine.java:2078)<br/>
+        at io.qalipsis.runtime.bootstrap.QalipsisBootstrap.start(QalipsisBootstrap.kt:82)<br/>
+        at io.qalipsis.runtime.Qalipsis.main(Qalipsis.kt:18)<br/>
+        Caused by: io.micronaut.runtime.exceptions.ApplicationStartupException: Migration failed! Liquibase encountered
+        an exception.<br/>
+        at io.micronaut.liquibase.LiquibaseMigrationRunner.migrate(LiquibaseMigrationRunner.java:162)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrationRunner.forceRun(LiquibaseMigrationRunner.java:121)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrator.run(LiquibaseMigrator.java:62)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrationRunner.lambda$null$0(LiquibaseMigrationRunner.java:92)<br/>
+        at java.base/java.util.Optional.ifPresent(Optional.java:183)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrationRunner.lambda$onCreated$1(LiquibaseMigrationRunner.java:90)<br/>
+        at java.base/java.util.Optional.ifPresent(Optional.java:183)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrationRunner.onCreated(LiquibaseMigrationRunner.java:87)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrator.onCreated(LiquibaseMigrator.java:40)<br/>
+        at io.micronaut.liquibase.LiquibaseMigrationRunner.onCreated(LiquibaseMigrationRunner.java:62)<br/>
+        at io.micronaut.context.DefaultBeanContext.doCreateBean(DefaultBeanContext.java:2394)<br/>
+        at io.micronaut.context.DefaultBeanContext.createAndRegisterSingletonInternal(DefaultBeanContext.java:3282)<br/>
+        at io.micronaut.context.DefaultBeanContext.createAndRegisterSingleton(DefaultBeanContext.java:3268)<br/>
+        at io.micronaut.context.DefaultBeanContext.loadContextScopeBean(DefaultBeanContext.java:2654)<br/>
+        at io.micronaut.context.DefaultBeanContext.initializeContext(DefaultBeanContext.java:1933)<br/>
+        ... 16 more<br/>
+        Caused by: liquibase.exception.ValidationFailedException: Validation Failed:<br/>
+        Caused by: io.micronaut.runtime.exceptions.ApplicationStartupException: Migration failed! Liquibase encountered
+        an exception.<br/>
+        <br/>
+        1 change sets check sum<br/>
+        db/changelog/creation/08-create-campaign-scenario.xml::07::ejesse was: 8:eca1c8d7227a6d0073bb038c3c3e478e but is
+        now: 8:181f33f19d7137b60b113f1931fa4e7f<br/>
+      </code>
+      <br/>
+    </div>
+  </div>
 
   <h3>Accessing to the API documentation</h3>
 

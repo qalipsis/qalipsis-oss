@@ -45,13 +45,22 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     suspend fun findIdByKey(tenant: String, campaignKey: String): Long
 
     /**
+     * Marks the not yet started campaign with the specified name [campaignKey] as started.
+     */
+    @Query(
+        """UPDATE campaign SET version = NOW(), "start" = NOW() WHERE key = :campaignKey AND "start" IS NULL 
+        AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun start(tenant: String, campaignKey: String): Int
+
+    /**
      * Marks the open campaign with the specified name [campaignKey] as complete with the provided [result].
      */
     @Query(
         """UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE key = :campaignKey AND "end" IS NULL 
         AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Int
+    suspend fun complete(tenant: String, campaignKey: String, result: ExecutionStatus): Int
 
     @Query(
         value = """SELECT *

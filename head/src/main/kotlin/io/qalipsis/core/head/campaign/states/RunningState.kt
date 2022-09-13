@@ -73,6 +73,7 @@ internal open class RunningState(
             }
             feedback is EndOfCampaignScenarioFeedback -> {
                 context.campaignReportStateKeeper.complete(feedback.campaignKey, feedback.scenarioName)
+                context.campaignService.closeScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)
                 RunningState(
                     campaign, listOf(
                         CampaignScenarioShutdownDirective(

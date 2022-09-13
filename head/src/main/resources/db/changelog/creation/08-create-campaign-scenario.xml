@@ -21,6 +21,12 @@
       <column name="name" type="VARCHAR(255)">
         <constraints nullable="false"/>
       </column>
+      <column name="start" type="timestamp">
+        <constraints nullable="true"/>
+      </column>
+      <column name="end" type="timestamp">
+        <constraints nullable="true"/>
+      </column>
       <column name="minions_count" type="INT">
         <constraints nullable="true"/>
       </column>

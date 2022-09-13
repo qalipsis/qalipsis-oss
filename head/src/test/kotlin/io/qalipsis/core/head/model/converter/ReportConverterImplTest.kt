@@ -32,6 +32,7 @@ import java.time.Instant
  * @author Joël Valère
  */
 @WithMockk
+// FIXME Improve the verification of the mocks: add real values on verification and use confirmedVerified instead of coVerifiyNever.
 internal class ReportConverterImplTest {
 
     @JvmField
@@ -97,8 +98,8 @@ internal class ReportConverterImplTest {
         coVerifyNever {
             reportDataComponentRepository.findByIdInOrderById(any())
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
+            campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             dataSeriesConverter.convertToModel(any())
         }
     }
@@ -129,8 +130,18 @@ internal class ReportConverterImplTest {
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2 andThen dataSeries3
-        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
-        coEvery { campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any()) } returns listOf("scenario-1", "scenario-2", "scenario-3")
+        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
+            "campaign-key1",
+            "campaign-key2",
+            "campaign-key3"
+        )
+        coEvery {
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                any(),
+                any(),
+                any()
+            )
+        } returns listOf("scenario-1", "scenario-2", "scenario-3")
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -183,14 +194,14 @@ internal class ReportConverterImplTest {
         coVerifyOrder {
             reportDataComponentRepository.findByIdInOrderById(any())
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(456L)
             dataSeriesConverter.convertToModel(any())
             dataSeriesConverter.convertToModel(any())
             dataSeriesConverter.convertToModel(any())
         }
         coVerifyNever {
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            campaignScenarioRepository.findNameByCampaignKeys(any(), any())
         }
     }
 
@@ -199,8 +210,14 @@ internal class ReportConverterImplTest {
         //given
         val version = Instant.now().minusMillis(1)
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
-        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
-        coEvery { campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any()) } returns listOf("scenario-1", "scenario-2", "scenario-3")
+        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
+            "campaign-key1",
+            "campaign-key2",
+            "campaign-key3"
+        )
+        coEvery {
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
+        } returns listOf("scenario-1", "scenario-2", "scenario-3")
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -236,12 +253,12 @@ internal class ReportConverterImplTest {
         )
         coVerifyOrder {
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(456L)
         }
         coVerifyNever {
             reportDataComponentRepository.findByIdInOrderById(any())
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             dataSeriesConverter.convertToModel(any())
         }
     }
@@ -272,7 +289,9 @@ internal class ReportConverterImplTest {
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2 andThen dataSeries3
-        coEvery { campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any()) } returns listOf("scenario-1", "scenario-2", "scenario-3")
+        coEvery {
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
+        } returns listOf("scenario-1", "scenario-2", "scenario-3")
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -324,7 +343,7 @@ internal class ReportConverterImplTest {
         )
         coVerifyOrder {
             reportDataComponentRepository.findByIdInOrderById(any())
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(456L)
             dataSeriesConverter.convertToModel(any())
             dataSeriesConverter.convertToModel(any())
@@ -332,7 +351,7 @@ internal class ReportConverterImplTest {
         }
         coVerifyNever {
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            campaignScenarioRepository.findNameByCampaignKeys(any(), any())
         }
     }
 
@@ -362,8 +381,17 @@ internal class ReportConverterImplTest {
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2 andThen dataSeries3
-        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
-        coEvery { campaignScenarioRepository.findNameByCampaignKeys(any()) } returns listOf("scenario-1", "scenario-2", "scenario-3", "scenario-4")
+        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
+            "campaign-key1",
+            "campaign-key2",
+            "campaign-key3"
+        )
+        coEvery { campaignScenarioRepository.findNameByCampaignKeys(any(), any()) } returns listOf(
+            "scenario-1",
+            "scenario-2",
+            "scenario-3",
+            "scenario-4"
+        )
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -416,14 +444,14 @@ internal class ReportConverterImplTest {
         coVerifyOrder {
             reportDataComponentRepository.findByIdInOrderById(any())
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
-            campaignScenarioRepository.findNameByCampaignKeys(any())
+            campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             userRepository.findUsernameById(456L)
             dataSeriesConverter.convertToModel(any())
             dataSeriesConverter.convertToModel(any())
             dataSeriesConverter.convertToModel(any())
         }
         coVerifyNever {
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any())
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
         }
     }
 }

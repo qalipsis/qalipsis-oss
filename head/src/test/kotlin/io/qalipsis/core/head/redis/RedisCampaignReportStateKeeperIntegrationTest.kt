@@ -76,7 +76,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                 hasSize(3)
                 transform { it.associateBy { it.scenarioName } }.all {
                     key("my-scenario-1").all {
-                        prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull()
                             .isBetween(beforeCompleteScenario1, beforeCompleteScenario2)
                         prop(ScenarioReport::status).isEqualTo(ExecutionStatus.WARNING)
@@ -110,7 +110,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                     }
 
                     key("my-scenario-2").all {
-                        prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull()
                             .isBetween(beforeCompleteScenario2, beforeCompleteScenario3)
                         prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
@@ -130,7 +130,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                     }
 
                     key("my-scenario-3").all {
-                        prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
                         prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
                         prop(ScenarioReport::startedMinions).isEqualTo(0)
@@ -170,7 +170,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                 hasSize(3)
                 transform { it.associateBy { it.scenarioName } }.all {
                     key("my-scenario-1").all {
-                        prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
                         prop(ScenarioReport::status).isEqualTo(ExecutionStatus.ABORTED)
                         prop(ScenarioReport::startedMinions).isEqualTo(54)
@@ -203,7 +203,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                     }
 
                     key("my-scenario-2").all {
-                        prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
                         prop(ScenarioReport::status).isEqualTo(ExecutionStatus.ABORTED)
                         prop(ScenarioReport::startedMinions).isEqualTo(32)
@@ -222,7 +222,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                     }
 
                     key("my-scenario-3").all {
-                        prop(ScenarioReport::start).isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
                         prop(ScenarioReport::status).isEqualTo(ExecutionStatus.ABORTED)
                         prop(ScenarioReport::startedMinions).isEqualTo(0)

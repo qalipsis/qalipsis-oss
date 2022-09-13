@@ -24,7 +24,7 @@ internal class ReportConverterImpl(
     private val dataSeriesConverter: DataSeriesConverter,
     private val reportDataComponentRepository: ReportDataComponentRepository,
     private val userRepository: UserRepository
-): ReportConverter {
+) : ReportConverter {
 
     override suspend fun convertToModel(reportEntity: ReportEntity): Report {
         val dataComponentEntities = if (reportEntity.dataComponents.isNotEmpty()) {
@@ -43,9 +43,10 @@ internal class ReportConverterImpl(
         val resolvedScenarioNames =
             if (campaignKeysUnion.isNotEmpty())
                 if (reportEntity.scenarioNamesPatterns.isEmpty())
-                    campaignScenarioRepository.findNameByCampaignKeys(campaignKeysUnion)
+                    campaignScenarioRepository.findNameByCampaignKeys(reportEntity.tenantId, campaignKeysUnion)
                 else
                     campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                        reportEntity.tenantId,
                         reportEntity.scenarioNamesPatterns.map {
                             it.replace("*", "%").replace("?", "_")
                         },
@@ -63,7 +64,7 @@ internal class ReportConverterImpl(
             resolvedCampaignKeys = resolvedCampaignKeys.toList(),
             scenarioNamesPatterns = reportEntity.scenarioNamesPatterns.toList(),
             resolvedScenarioNames = resolvedScenarioNames,
-            dataComponents = if(dataComponentEntities.isNotEmpty())
+            dataComponents = if (dataComponentEntities.isNotEmpty())
                 dataComponentEntities.map { toModel(it) } else emptyList()
         )
     }

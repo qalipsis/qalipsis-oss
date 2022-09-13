@@ -2,6 +2,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
@@ -61,7 +63,8 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 startedMinions = 1000,
                 completedMinions = 990,
                 successfulExecutions = 990,
-                failedExecutions = 10
+                failedExecutions = 10,
+                ExecutionStatus.SUCCESSFUL
             )
     }
 
@@ -150,9 +153,21 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val fetched = campaignReportRepository.findByCampaignId(saved.campaignId)
 
         // then
-        assertThat(fetched).isNotNull().all {
-            prop(CampaignReportEntity::id).isEqualTo(saved.id)
-            prop(CampaignReportEntity::campaignId).isEqualTo(savedCampaign.id)
+        assertThat(fetched).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(CampaignReportEntity::id).isEqualTo(saved.id)
+                prop(CampaignReportEntity::campaignId).isEqualTo(savedCampaign.id)
+            }
         }
+    }
+
+    @Test
+    fun `should not retrieve by campaign id when it does not exist`() = testDispatcherProvider.run {
+        // when
+        val fetched = campaignReportRepository.findByCampaignId(-1)
+
+        // then
+        assertThat(fetched).isEmpty()
     }
 }

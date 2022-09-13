@@ -5,6 +5,8 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
@@ -18,7 +20,6 @@ import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.count
-import java.time.Instant
 import io.qalipsis.api.query.Page as QalipsisPage
 
 
@@ -46,19 +47,30 @@ internal class PersistentCampaignService(
                 key = campaignConfiguration.key,
                 name = campaignDisplayName,
                 speedFactor = campaignConfiguration.speedFactor,
-                start = Instant.now(),
                 configurer = userRepository.findIdByUsername(configurer)
             )
         )
         campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->
-            CampaignScenarioEntity(campaign.id, scenarioName, scenario.minionsCount)
+            CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
         }).count()
 
         return campaignConverter.convertToModel(campaign)
     }
 
+    override suspend fun open(tenant: String, campaignKey: CampaignKey) {
+        campaignRepository.start(tenant, campaignKey)
+    }
+
+    override suspend fun openScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) {
+        campaignScenarioRepository.start(tenant, campaignKey, scenarioName)
+    }
+
+    override suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) {
+        campaignScenarioRepository.complete(tenant, campaignKey, scenarioName)
+    }
+
     override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
-        campaignRepository.close(tenant, campaignKey, result)
+        campaignRepository.complete(tenant, campaignKey, result)
         return campaignConverter.convertToModel(campaignRepository.findByKey(tenant, campaignKey))
     }
 
@@ -66,7 +78,11 @@ internal class PersistentCampaignService(
         tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
     ): QalipsisPage<Campaign> {
         // Default sorting for the campaign is done with the start time in reverse order, because it is always not null.
-        val sorting = sort?.let { SortingUtil.sort(CampaignEntity::class,it) } ?: Sort.of(Sort.Order.desc(CampaignEntity::start.name))
+        val sorting = sort?.let { SortingUtil.sort(CampaignEntity::class, it) } ?: Sort.of(
+            Sort.Order.desc(
+                CampaignEntity::start.name
+            )
+        )
 
         val pageable = Pageable.from(page, size, sorting)
 
@@ -85,7 +101,7 @@ internal class PersistentCampaignService(
         )
     }
 
-    override suspend fun setAborter(tenant: String, aborter: String, campaignKey: String) {
+    override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
         val campaign = campaignRepository.findByKey(tenant, campaignKey)
         campaignRepository.update(campaign.copy(aborter = userRepository.findIdByUsername(aborter)))
     }
