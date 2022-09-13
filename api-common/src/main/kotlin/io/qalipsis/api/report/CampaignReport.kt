@@ -48,9 +48,22 @@ data class CampaignReport(
     )
     val end: Instant?,
 
+    @field:Schema(description = "Counts of minions scheduled to be started", required = false)
+    @field:PositiveOrZero
+    val scheduledMinions: Int?,
+
     @field:Schema(description = "Counts of minions when the campaign started", required = false)
     @field:PositiveOrZero
     val startedMinions: Int?,
+
+    @field:Schema(description = "Instant when the campaign should be aborted", required = false)
+    val timeout: Instant? = null,
+
+    @field:Schema(
+        description = "Specifies whether the campaign should generate a failure (true) when the timeout is reached",
+        required = false
+    )
+    val hardTimeout: Boolean? = null,
 
     @field:Schema(description = "Counts of minions that completed the campaign", required = false)
     @field:PositiveOrZero

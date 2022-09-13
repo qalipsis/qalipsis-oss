@@ -30,6 +30,8 @@ data class CampaignConfiguration(
     val key: CampaignKey,
     val speedFactor: Double = 1.0,
     val startOffsetMs: Long = 1000,
+    val timeoutDurationSec: Long? = null,
+    val hardTimeout: Boolean? = null,
     val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap()
 ) {
 
