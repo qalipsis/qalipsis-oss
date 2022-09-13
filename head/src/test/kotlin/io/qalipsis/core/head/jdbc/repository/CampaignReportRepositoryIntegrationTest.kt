@@ -50,6 +50,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
                 key = "the-campaign-id",
                 name = "This is a campaign",
                 speedFactor = 123.0,
+                scheduledMinions = 345,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),
                 result = ExecutionStatus.SUCCESSFUL,
@@ -142,6 +143,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val campaign = CampaignEntity(
             key = "campaign-1",
             name = "campaign 1",
+            scheduledMinions = 345,
             configurer = savedUser.id,
             tenantId = tenant.id
         )

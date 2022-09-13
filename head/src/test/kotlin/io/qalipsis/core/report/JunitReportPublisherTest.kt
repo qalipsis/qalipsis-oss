@@ -50,6 +50,7 @@ internal class JunitReportPublisherTest {
             campaignKey = campaignKey,
             start = start,
             end = end,
+            scheduledMinions = 987,
             startedMinions = 123,
             completedMinions = 4231,
             successfulExecutions = 42,
@@ -107,6 +108,7 @@ internal class JunitReportPublisherTest {
             campaignKey = campaignKey,
             start = start,
             end = end,
+            scheduledMinions = 987,
             startedMinions = 123,
             completedMinions = 4231,
             successfulExecutions = 42,
@@ -169,7 +171,10 @@ internal class JunitReportPublisherTest {
         val end = Instant.now()
 
         val campaignReport = CampaignReport(
-            campaignKey = campaignName1, start = start, end = end,
+            campaignKey = campaignName1,
+            start = start,
+            end = end,
+            scheduledMinions = 987,
             startedMinions = 123,
             completedMinions = 4231,
             successfulExecutions = 42,

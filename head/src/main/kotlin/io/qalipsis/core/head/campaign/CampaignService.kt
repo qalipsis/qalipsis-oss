@@ -6,6 +6,7 @@ import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.model.Campaign
+import java.time.Instant
 
 /**
  * Service in charge of maintaining the campaigns.
@@ -24,9 +25,9 @@ internal interface CampaignService {
         campaignConfiguration: CampaignConfiguration
     ): Campaign
 
-    suspend fun open(tenant: String, campaignKey: CampaignKey)
+    suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?)
 
-    suspend fun openScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName)
+    suspend fun startScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName, start: Instant)
 
     suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName)
 

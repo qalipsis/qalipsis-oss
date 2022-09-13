@@ -37,6 +37,8 @@ internal class CampaignConverterImpl(
             key = idGenerator.short(),
             speedFactor = campaign.speedFactor,
             startOffsetMs = campaign.startOffsetMs,
+            timeoutDurationSec = campaign.timeout?.toSeconds(),
+            hardTimeout = campaign.hardTimeout,
             scenarios = convertScenarioRequestsToConfigurations(campaign.scenarios)
         )
     }
@@ -47,6 +49,9 @@ internal class CampaignConverterImpl(
             key = campaignEntity.key,
             name = campaignEntity.name,
             speedFactor = campaignEntity.speedFactor,
+            scheduledMinions = campaignEntity.scheduledMinions,
+            timeout = campaignEntity.timeout,
+            hardTimeout = campaignEntity.hardTimeout,
             start = campaignEntity.start,
             end = campaignEntity.end,
             result = campaignEntity.result,
@@ -66,6 +71,7 @@ internal class CampaignConverterImpl(
             campaignKey = campaignReport.campaignKey,
             start = campaignReport.start,
             end = campaignReport.end,
+            scheduledMinions = campaignReport.scheduledMinions,
             startedMinions = campaignReport.startedMinions,
             completedMinions = campaignReport.completedMinions,
             successfulExecutions = campaignReport.successfulExecutions,

@@ -19,6 +19,9 @@ import javax.validation.constraints.Size
  * @property key unique public identifier of the campaign in the tenant, generated
  * @property name display name of the campaign
  * @property speedFactor speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation
+ * @property scheduledMinions the number of minions planned to be executed over all the scenarios of the campaign
+ * @property timeout instant when the campaign should be automatically aborted for timeout
+ * @property hardTimeout specifies whether the timeout should be applied in hard mode (generates a failure) or soft (just shutdown everything).
  * @property start when the campaign was started
  * @property end when the campaign was completed, successfully or not
  * @property result overall execution status of the campaign
@@ -41,6 +44,9 @@ internal data class CampaignEntity(
     val name: String,
     @field:Size(max = 300)
     val speedFactor: Double,
+    val scheduledMinions: Int,
+    val timeout: Instant? = null,
+    val hardTimeout: Boolean? = null,
     val start: Instant?,
     val end: Instant?,
     val result: ExecutionStatus?,
@@ -53,6 +59,9 @@ internal data class CampaignEntity(
         key: String,
         name: String,
         speedFactor: Double = 1.0,
+        scheduledMinions: Int,
+        timeout: Instant? = null,
+        hardTimeout: Boolean = false,
         start: Instant? = null,
         end: Instant? = null,
         result: ExecutionStatus? = null,
@@ -65,6 +74,9 @@ internal data class CampaignEntity(
         key = key,
         name = name,
         speedFactor = speedFactor,
+        scheduledMinions = scheduledMinions,
+        timeout = timeout,
+        hardTimeout = hardTimeout,
         start = start,
         end = end,
         result = result,

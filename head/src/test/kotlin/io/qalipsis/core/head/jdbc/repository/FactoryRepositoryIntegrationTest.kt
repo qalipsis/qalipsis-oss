@@ -361,6 +361,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         name = "This is a campaign",
                         end = null,
                         tenantId = savedTenant2.id,
+                        scheduledMinions = 345,
                         configurer = 1
                     )
                 )
@@ -432,6 +433,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     name = "This is a campaign",
                     end = Instant.now(),
                     tenantId = savedTenant2.id,
+                    scheduledMinions = 345,
                     configurer = 1
                 )
             )
@@ -515,6 +517,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         name = "This is a campaign",
                         end = null,
                         tenantId = savedTenant2.id,
+                        scheduledMinions = 345,
                         configurer = 1
                     )
                 )

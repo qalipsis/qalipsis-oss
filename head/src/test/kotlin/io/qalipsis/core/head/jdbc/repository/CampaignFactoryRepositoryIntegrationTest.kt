@@ -41,6 +41,7 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
             speedFactor = 123.0,
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
+            scheduledMinions = 345,
             result = ExecutionStatus.SUCCESSFUL,
             configurer = 1
         )

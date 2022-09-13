@@ -23,6 +23,15 @@
       <column name="speed_factor" type="decimal(6,3)">
         <constraints nullable="true"/>
       </column>
+      <column name="scheduled_minions" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="timeout" type="timestamp">
+        <constraints nullable="true"/>
+      </column>
+      <column name="hard_timeout" type="boolean">
+        <constraints nullable="true"/>
+      </column>
       <column name="start" type="timestamp">
         <constraints nullable="true"/>
       </column>

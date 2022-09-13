@@ -115,6 +115,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = saved.id,
                 key = "the-campaign-id",
                 name = "This is a campaign",
+                scheduledMinions = 345,
                 speedFactor = 123.0,
                 start = Instant.now() - Duration.ofSeconds(173),
                 end = Instant.now(),

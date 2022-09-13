@@ -9,6 +9,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isLessThanOrEqualTo
 import assertk.assertions.isNotEmpty
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.qalipsis.api.report.ExecutionStatus
@@ -48,6 +49,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
             name = "This is my new campaign",
             speedFactor = 123.0,
             start = Instant.now() - Duration.ofSeconds(173),
+            scheduledMinions = 12,
             end = Instant.now(),
             result = ExecutionStatus.SUCCESSFUL,
             configurer = 1L // Default user.
@@ -85,8 +87,8 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
 
         // when
         val beforeCall = Instant.now()
-        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignScenarioRepository.start("my-tenant", "1", "the-scenario")
+        val start = Instant.now().plusSeconds(12)
+        campaignScenarioRepository.start("my-tenant", "1", "the-scenario", start)
 
         // then
         assertThat(campaignScenarioRepository.findById(openScenarioOnCampaign2.id)).isNotNull()
@@ -96,7 +98,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
         assertThat(campaignScenarioRepository.findById(openScenarioOnCampaign1.id)).isNotNull().all {
             prop(CampaignScenarioEntity::version).isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignScenarioEntity::name).isEqualTo("the-scenario")
-            prop(CampaignScenarioEntity::start).isNotNull().isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignScenarioEntity::start).isEqualTo(start)
         }
     }
 
@@ -116,14 +118,14 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
 
         // when
         val beforeCall = Instant.now()
-        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignScenarioRepository.start("my-tenant", "1", "the-scenario")
+        val start = Instant.now().plusSeconds(12)
+        campaignScenarioRepository.start("my-tenant", "1", "the-scenario", start)
 
         // then
         assertThat(campaignScenarioRepository.findById(closedScenarioOnCampaign1.id)).isNotNull().all {
             prop(CampaignScenarioEntity::version).isEqualTo(closedScenarioOnCampaign1.version)
             prop(CampaignScenarioEntity::name).isEqualTo("the-scenario")
-            prop(CampaignScenarioEntity::start).isNotNull().isLessThanOrEqualTo(beforeCall)
+            prop(CampaignScenarioEntity::start).isNotNull().isNotEqualTo(start)
         }
     }
 

@@ -26,6 +26,7 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 import java.time.Instant
 
 @WithMockk
@@ -48,7 +49,7 @@ internal class CampaignConverterImplTest {
     private lateinit var converter: CampaignConverterImpl
 
     @Test
-    internal fun `should convert the request`() = testDispatcherProvider.runTest {
+    internal fun `should convert the minimal request`() = testDispatcherProvider.runTest {
         // given
         every { idGenerator.short() } returns "my-campaign"
         val request = CampaignRequest(
@@ -68,6 +69,39 @@ internal class CampaignConverterImplTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
+                timeoutDurationSec = null,
+                hardTimeout = null,
+                scenarios = mapOf("Scenario1" to ScenarioConfiguration(1), "Scenario2" to ScenarioConfiguration(11))
+            )
+        )
+    }
+
+
+    @Test
+    internal fun `should convert the complete request`() = testDispatcherProvider.runTest {
+        // given
+        every { idGenerator.short() } returns "my-campaign"
+        val request = CampaignRequest(
+            name = "Anything",
+            speedFactor = 1.43,
+            startOffsetMs = 123,
+            timeout = Duration.ofSeconds(2345),
+            hardTimeout = true,
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+
+        // when
+        val result = converter.convertRequest("my-tenant", request)
+
+        // then
+        assertThat(result).isDataClassEqualTo(
+            CampaignConfiguration(
+                tenant = "my-tenant",
+                key = "my-campaign",
+                speedFactor = 1.43,
+                startOffsetMs = 123,
+                timeoutDurationSec = 2345L,
+                hardTimeout = true,
                 scenarios = mapOf("Scenario1" to ScenarioConfiguration(1), "Scenario2" to ScenarioConfiguration(11))
             )
         )
@@ -101,6 +135,9 @@ internal class CampaignConverterImplTest {
             tenantId = 4573645,
             key = "my-campaign",
             name = "This is a campaign",
+            scheduledMinions = 123,
+            timeout = end.plusSeconds(1),
+            hardTimeout = true,
             speedFactor = 123.62,
             start = start,
             end = end,
@@ -118,6 +155,9 @@ internal class CampaignConverterImplTest {
                 key = "my-campaign",
                 name = "This is a campaign",
                 speedFactor = 123.62,
+                scheduledMinions = 123,
+                timeout = end.plusSeconds(1),
+                hardTimeout = true,
                 start = start,
                 end = end,
                 result = ExecutionStatus.FAILED,
@@ -140,6 +180,7 @@ internal class CampaignConverterImplTest {
             start = start,
             end = end,
             status = ExecutionStatus.SUCCESSFUL,
+            scheduledMinions = 123,
             startedMinions = 12,
             completedMinions = 786,
             successfulExecutions = 456,
@@ -197,6 +238,7 @@ internal class CampaignConverterImplTest {
                 end = end,
                 startedMinions = 12,
                 completedMinions = 786,
+                scheduledMinions = 123,
                 successfulExecutions = 456,
                 failedExecutions = 321,
                 status = ExecutionStatus.SUCCESSFUL,
@@ -252,6 +294,7 @@ internal class CampaignConverterImplTest {
             start = null,
             end = null,
             status = ExecutionStatus.QUEUED,
+            scheduledMinions = 123,
             startedMinions = null,
             completedMinions = null,
             successfulExecutions = null,
@@ -293,6 +336,7 @@ internal class CampaignConverterImplTest {
                 campaignKey = "my-campaign",
                 start = null,
                 end = null,
+                scheduledMinions = 123,
                 startedMinions = null,
                 completedMinions = null,
                 successfulExecutions = null,
