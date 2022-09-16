@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD], startApplication = false)
-internal class CampaignRequestValidationIntegrationTest {
+internal class CampaignConfigurationValidationIntegrationTest {
 
     @Inject
     private lateinit var validator: Validator
@@ -17,13 +17,13 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `minions count should be less the maximum value`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(1000001), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -34,13 +34,13 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `minions count should be positive`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(-1), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -51,13 +51,13 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `campaign name should be greater then minimum value`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "ju",
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -68,13 +68,13 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `campaign name should be less then maximum value`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = RandomStringUtils.randomAlphanumeric(301),
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -85,13 +85,13 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `scenarios must not be empty`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             scenarios = emptyMap()
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -102,14 +102,14 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `speed factor should be less the maximum value`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             speedFactor = 1000.0,
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(10000), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -120,14 +120,14 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `speed factor should be positive`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             speedFactor = -1.0,
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -138,14 +138,14 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `startOffsetMs should be less the maximum value`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             startOffsetMs = 15001,
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(10000), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)
@@ -156,14 +156,14 @@ internal class CampaignRequestValidationIntegrationTest {
     @Test
     fun `startOffsetMs should be positive`() {
         //given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just-test",
             startOffsetMs = -1,
             scenarios = mutableMapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
 
         //when
-        val constraintViolation = validator.validate(campaignRequest)
+        val constraintViolation = validator.validate(campaignConfiguration)
 
         //then
         Assertions.assertEquals(1, constraintViolation.size)

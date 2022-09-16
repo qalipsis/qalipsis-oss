@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
 
@@ -44,7 +44,7 @@ internal abstract class AbstractCampaignExecutionState<C : CampaignExecutionCont
         return this
     }
 
-    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<C> {
+    override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<C> {
         return this
     }
 }

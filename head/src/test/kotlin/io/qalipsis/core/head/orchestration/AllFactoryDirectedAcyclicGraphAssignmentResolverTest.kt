@@ -6,9 +6,9 @@ import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.key
 import io.mockk.every
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
-import io.qalipsis.api.campaign.ScenarioConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.test.mockk.relaxedMockk
@@ -21,7 +21,7 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
     @Test
     internal fun `should assign all the scenarios to all the factories`() {
         // given
-        val campaign = CampaignConfiguration(
+        val campaign = RunningCampaign(
             key = "my-campaign",
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(

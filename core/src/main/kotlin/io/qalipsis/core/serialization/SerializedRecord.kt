@@ -1,5 +1,6 @@
 package io.qalipsis.core.serialization
 
+import io.qalipsis.api.serialization.ByteArrayKotlinSerializer
 import io.qalipsis.api.serialization.SerializableClass
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

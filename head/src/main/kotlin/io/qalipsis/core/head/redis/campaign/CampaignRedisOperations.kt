@@ -4,16 +4,18 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.serialization.ProtobufSerializers
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.collect
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromHexString
+import kotlinx.serialization.encodeToHexString
 
+@OptIn(ExperimentalSerializationApi::class)
 @ExperimentalLettuceCoroutinesApi
 @Singleton
 internal class CampaignRedisOperations(
@@ -22,17 +24,17 @@ internal class CampaignRedisOperations(
     private val redisHashCommands: RedisHashCoroutinesCommands<String, String>
 ) {
 
-    suspend fun saveConfiguration(campaign: CampaignConfiguration) {
+    suspend fun saveConfiguration(campaign: RunningCampaign) {
         redisHashCommands.hset(
             "campaign-management:{${campaign.tenant}:${campaign.key}}",
-            mapOf("configuration" to Json.encodeToString(campaign))
+            mapOf("configuration" to ProtobufSerializers.protobuf.encodeToHexString(campaign))
         )
     }
 
     /**
      * Creates brand new feedback expectations initialized with the collection of factories identifiers.
      */
-    suspend fun prepareFactoriesForFeedbackExpectations(campaign: CampaignConfiguration) {
+    suspend fun prepareFactoriesForFeedbackExpectations(campaign: RunningCampaign) {
         val key = buildExpectedFeedbackKey(campaign.tenant, campaign.key)
         redisKeyCommands.unlink(key)
         if (campaign.factories.isNotEmpty()) {
@@ -43,7 +45,7 @@ internal class CampaignRedisOperations(
     /**
      * Creates brand new feedback expectations initialized with the collection of scenarios identifiers.
      */
-    suspend fun prepareScenariosForFeedbackExpectations(campaign: CampaignConfiguration) {
+    suspend fun prepareScenariosForFeedbackExpectations(campaign: RunningCampaign) {
         val key = buildExpectedFeedbackKey(campaign.tenant, campaign.key)
         redisKeyCommands.unlink(key)
         if (campaign.scenarios.isNotEmpty()) {
@@ -54,7 +56,7 @@ internal class CampaignRedisOperations(
     /**
      * Creates brand new feedback expectations initialized with the scenarios for each factory.
      */
-    suspend fun prepareAssignmentsForFeedbackExpectations(campaign: CampaignConfiguration) {
+    suspend fun prepareAssignmentsForFeedbackExpectations(campaign: RunningCampaign) {
         prepareFactoriesForFeedbackExpectations(campaign)
         campaign.factories.forEach { (factory, config) ->
             val key = buildFactoryAssignmentFeedbackKey(campaign.tenant, campaign.key, factory)
@@ -121,19 +123,21 @@ internal class CampaignRedisOperations(
     /**
      * Fetches the current state of the campaign.
      */
-    suspend fun getState(tenant: String, campaignKey: CampaignKey): Pair<CampaignConfiguration, CampaignRedisState>? {
+    suspend fun getState(tenant: String, campaignKey: CampaignKey): Pair<RunningCampaign, CampaignRedisState>? {
         val campaignDetails = mutableMapOf<String, String>()
         redisHashCommands.hgetall("campaign-management:{$tenant:$campaignKey}")
             .collect { campaignDetails[it.key] = it.value }
         val state = campaignDetails["state"]?.let { CampaignRedisState.valueOf(it) }
-        val campaign = campaignDetails["configuration"]?.let { Json.decodeFromString<CampaignConfiguration>(it) }
+        val campaign = campaignDetails["configuration"]?.let {
+            ProtobufSerializers.protobuf.decodeFromHexString<RunningCampaign>(it)
+        }
         return campaign?.let { it to state!! }
     }
 
     /**
      * Cleans all the data used for the campaign.
      */
-    suspend fun clean(campaign: CampaignConfiguration) {
+    suspend fun clean(campaign: RunningCampaign) {
         redisKeyCommands.unlink("campaign-management:{${campaign.tenant}:${campaign.key}}")
         redisKeyCommands.unlink(buildExpectedFeedbackKey(campaign.tenant, campaign.key))
         campaign.factories.keys.forEach { factory ->

@@ -19,10 +19,10 @@ import javax.validation.constraints.Size
  */
 @Introspected
 @Schema(
-    name = "Start campaign with campaignConfiguration request",
+    name = "Describe the details of a campaign to execute",
     title = "Details for the campaign configuration to start a new campaign into QALIPSIS"
 )
-internal data class CampaignRequest(
+internal data class CampaignConfiguration(
     @field:Schema(description = "Name of the campaign", required = true)
     @field:NotBlank
     @field:Size(min = 3, max = 300)

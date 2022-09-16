@@ -11,7 +11,6 @@ import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.report.JunitReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.Assert
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -81,7 +80,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { key } returns campaignKey }, campaignReport)
+        junitReportPublisher.publish(campaignKey, campaignReport)
 
         //then
         val generatedReport =
@@ -145,7 +144,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { key } returns campaignKey }, campaignReport)
+        junitReportPublisher.publish(campaignKey, campaignReport)
 
 
         //then
@@ -235,7 +234,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(relaxedMockk { every { key } returns "foo" }, campaignReport)
+        junitReportPublisher.publish("foo", campaignReport)
 
         //then
         campaignReport.scenariosReports.forEach {

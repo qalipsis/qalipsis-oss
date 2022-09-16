@@ -7,17 +7,17 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.key
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryConfiguration
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.FactoryConfiguration
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import org.junit.jupiter.api.Test
 
-internal class CampaignConfigurationTest {
+internal class RunningCampaignTest {
 
     @Test
     internal fun `should unassign the scenario from the factory`() {
         // given
-        val campaign = CampaignConfiguration(key = "my-campaign")
+        val campaign = RunningCampaign(key = "my-campaign")
         campaign.factories += mapOf(
             "factory-1" to FactoryConfiguration(
                 "",
@@ -83,7 +83,7 @@ internal class CampaignConfigurationTest {
     @Test
     internal fun `should unassign the factory`() {
         // given
-        val campaign = CampaignConfiguration(key = "my-campaign")
+        val campaign = RunningCampaign(key = "my-campaign")
         campaign.factories += mapOf(
             "factory-1" to FactoryConfiguration(
                 "",

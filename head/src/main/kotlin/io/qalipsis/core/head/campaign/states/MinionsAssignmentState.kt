@@ -1,8 +1,8 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.feedbacks.Feedback
@@ -14,7 +14,7 @@ import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 
 internal open class MinionsAssignmentState(
-    protected val campaign: CampaignConfiguration
+    protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     private val expectedFeedbacks =
@@ -76,7 +76,7 @@ internal open class MinionsAssignmentState(
         }
     }
 
-    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+    override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<CampaignExecutionContext> {
         return AbortingState(campaign, abortConfiguration, "The campaign was aborted")
     }
 

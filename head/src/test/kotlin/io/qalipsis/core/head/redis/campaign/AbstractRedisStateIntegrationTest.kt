@@ -6,8 +6,8 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.HeadChannel
@@ -63,7 +63,7 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
         listOf(reportPublisher1, reportPublisher2)
     }
 
-    protected lateinit var campaign: CampaignConfiguration
+    protected lateinit var campaign: RunningCampaign
 
     @Inject
     protected lateinit var operations: CampaignRedisOperations
@@ -82,7 +82,7 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
 
     @BeforeEach
     internal fun setUp() {
-        campaign = spyk(CampaignConfiguration(
+        campaign = spyk(RunningCampaign(
             tenant = "my-tenant", key = "my-campaign"
         ).also {
             it.broadcastChannel = "my-broadcast-channel"

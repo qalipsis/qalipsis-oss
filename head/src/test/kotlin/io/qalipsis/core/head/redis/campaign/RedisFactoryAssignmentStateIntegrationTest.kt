@@ -17,9 +17,9 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -116,8 +116,8 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             }
         }
         assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
-            prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
-            prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
+            prop(Pair<RunningCampaign, CampaignRedisState>::first).isDataClassEqualTo(campaign)
+            prop(Pair<RunningCampaign, CampaignRedisState>::second).isEqualTo(CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
@@ -249,7 +249,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
         }
 
         // when
-        val newState = state.abort(AbortCampaignConfiguration())
+        val newState = state.abort(AbortRunningCampaign())
 
         // then
         assertThat(newState).isInstanceOf(RedisAbortingState::class).all {

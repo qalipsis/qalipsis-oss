@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
@@ -12,7 +12,7 @@ import io.qalipsis.core.head.campaign.states.CompletionState
 
 @ExperimentalLettuceCoroutinesApi
 internal class RedisCompletionState(
-    campaign: CampaignConfiguration,
+    campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
 ) : CompletionState(campaign) {
 

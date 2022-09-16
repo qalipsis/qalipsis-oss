@@ -1,13 +1,13 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.Directive
 
 internal open class DisabledState(
-    protected val campaign: CampaignConfiguration,
+    protected val campaign: RunningCampaign,
     private val isSuccessful: Boolean = true
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
@@ -21,7 +21,7 @@ internal open class DisabledState(
             context.campaignReportStateKeeper.generateReport(campaignKey)?.let { report ->
                 context.reportPublishers.forEach { publisher ->
                     tryAndLogOrNull(log) {
-                        publisher.publish(campaign, report)
+                        publisher.publish(campaign.key, report)
                     }
                 }
             }

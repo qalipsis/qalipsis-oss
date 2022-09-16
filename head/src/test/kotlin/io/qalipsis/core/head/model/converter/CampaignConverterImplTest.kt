@@ -6,20 +6,16 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.lang.IdGenerator
-import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.api.report.ReportMessage
-import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -51,8 +47,8 @@ internal class CampaignConverterImplTest {
     @Test
     internal fun `should convert the minimal request`() = testDispatcherProvider.runTest {
         // given
-        every { idGenerator.short() } returns "my-campaign"
-        val request = CampaignRequest(
+        every { idGenerator.long() } returns "my-campaign"
+        val request = CampaignConfiguration(
             name = "Anything",
             speedFactor = 1.43,
             startOffsetMs = 123,
@@ -60,28 +56,26 @@ internal class CampaignConverterImplTest {
         )
 
         // when
-        val result = converter.convertRequest("my-tenant", request)
+        val result = converter.convertConfiguration("my-tenant", request)
 
         // then
         assertThat(result).isDataClassEqualTo(
-            CampaignConfiguration(
+            RunningCampaign(
                 tenant = "my-tenant",
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                timeoutDurationSec = null,
-                hardTimeout = null,
+                hardTimeout = false,
                 scenarios = mapOf("Scenario1" to ScenarioConfiguration(1), "Scenario2" to ScenarioConfiguration(11))
             )
         )
     }
 
-
     @Test
     internal fun `should convert the complete request`() = testDispatcherProvider.runTest {
         // given
-        every { idGenerator.short() } returns "my-campaign"
-        val request = CampaignRequest(
+        every { idGenerator.long() } returns "my-campaign"
+        val request = CampaignConfiguration(
             name = "Anything",
             speedFactor = 1.43,
             startOffsetMs = 123,
@@ -91,16 +85,15 @@ internal class CampaignConverterImplTest {
         )
 
         // when
-        val result = converter.convertRequest("my-tenant", request)
+        val result = converter.convertConfiguration("my-tenant", request)
 
         // then
         assertThat(result).isDataClassEqualTo(
-            CampaignConfiguration(
+            RunningCampaign(
                 tenant = "my-tenant",
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                timeoutDurationSec = 2345L,
                 hardTimeout = true,
                 scenarios = mapOf("Scenario1" to ScenarioConfiguration(1), "Scenario2" to ScenarioConfiguration(11))
             )
@@ -170,205 +163,4 @@ internal class CampaignConverterImplTest {
         )
     }
 
-    @Test
-    internal fun `should convert the report`() = testDispatcherProvider.runTest {
-        // given
-        val start = Instant.now().minusSeconds(123)
-        val end = Instant.now().minusSeconds(12)
-        val report = CampaignReport(
-            campaignKey = "my-campaign",
-            start = start,
-            end = end,
-            status = ExecutionStatus.SUCCESSFUL,
-            scheduledMinions = 123,
-            startedMinions = 12,
-            completedMinions = 786,
-            successfulExecutions = 456,
-            failedExecutions = 321,
-            scenariosReports = listOf(
-                ScenarioReport(
-                    campaignKey = "my-campaign",
-                    scenarioName = "my-scenario-1",
-                    start = start,
-                    end = end,
-                    startedMinions = null,
-                    completedMinions = null,
-                    successfulExecutions = null,
-                    failedExecutions = null,
-                    status = ExecutionStatus.FAILED,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "my-step-1",
-                            messageId = "message-id-1",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "Hello from test 1"
-                        )
-                    )
-                ),
-                ScenarioReport(
-                    campaignKey = "my-campaign",
-                    scenarioName = "my-scenario-2",
-                    start = start,
-                    end = end,
-                    startedMinions = 41,
-                    completedMinions = 541,
-                    successfulExecutions = 632,
-                    failedExecutions = 234,
-                    status = ExecutionStatus.ABORTED,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "my-step-2",
-                            messageId = "message-id-2",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "Hello from test 2"
-                        )
-                    )
-                )
-            )
-        )
-
-        // when
-        val result = converter.convertReport(report)
-
-        // then
-        assertThat(result).isDataClassEqualTo(
-            CampaignReport(
-                campaignKey = "my-campaign",
-                start = start,
-                end = end,
-                startedMinions = 12,
-                completedMinions = 786,
-                scheduledMinions = 123,
-                successfulExecutions = 456,
-                failedExecutions = 321,
-                status = ExecutionStatus.SUCCESSFUL,
-                scenariosReports = listOf(
-                    ScenarioReport(
-                        campaignKey = "my-campaign",
-                        scenarioName = "my-scenario-1",
-                        start = start,
-                        end = end,
-                        startedMinions = null,
-                        completedMinions = null,
-                        successfulExecutions = null,
-                        failedExecutions = null,
-                        status = ExecutionStatus.FAILED,
-                        messages = listOf(
-                            ReportMessage(
-                                stepName = "my-step-1",
-                                messageId = "message-id-1",
-                                severity = ReportMessageSeverity.INFO,
-                                message = "Hello from test 1"
-                            )
-                        )
-                    ),
-                    ScenarioReport(
-                        campaignKey = "my-campaign",
-                        scenarioName = "my-scenario-2",
-                        start = start,
-                        end = end,
-                        startedMinions = 41,
-                        completedMinions = 541,
-                        successfulExecutions = 632,
-                        failedExecutions = 234,
-                        status = ExecutionStatus.ABORTED,
-                        messages = listOf(
-                            ReportMessage(
-                                stepName = "my-step-2",
-                                messageId = "message-id-2",
-                                severity = ReportMessageSeverity.INFO,
-                                message = "Hello from test 2"
-                            )
-                        )
-                    )
-                )
-            )
-        )
-    }
-
-    @Test
-    internal fun `should convert the incomplete report`() = testDispatcherProvider.runTest {
-        // given
-        val report = CampaignReport(
-            campaignKey = "my-campaign",
-            start = null,
-            end = null,
-            status = ExecutionStatus.QUEUED,
-            scheduledMinions = 123,
-            startedMinions = null,
-            completedMinions = null,
-            successfulExecutions = null,
-            failedExecutions = null,
-            scenariosReports = listOf(
-                ScenarioReport(
-                    campaignKey = "my-campaign",
-                    scenarioName = "my-scenario-1",
-                    start = null,
-                    end = null,
-                    startedMinions = null,
-                    completedMinions = null,
-                    successfulExecutions = null,
-                    failedExecutions = null,
-                    status = ExecutionStatus.QUEUED,
-                    messages = emptyList()
-                ),
-                ScenarioReport(
-                    campaignKey = "my-campaign",
-                    scenarioName = "my-scenario-2",
-                    start = null,
-                    end = null,
-                    startedMinions = null,
-                    completedMinions = null,
-                    successfulExecutions = null,
-                    failedExecutions = null,
-                    status = ExecutionStatus.QUEUED,
-                    messages = emptyList()
-                )
-            )
-        )
-
-        // when
-        val result = converter.convertReport(report)
-
-        // then
-        assertThat(result).isDataClassEqualTo(
-            CampaignReport(
-                campaignKey = "my-campaign",
-                start = null,
-                end = null,
-                scheduledMinions = 123,
-                startedMinions = null,
-                completedMinions = null,
-                successfulExecutions = null,
-                failedExecutions = null,
-                status = ExecutionStatus.QUEUED,
-                scenariosReports = listOf(
-                    ScenarioReport(
-                        campaignKey = "my-campaign",
-                        scenarioName = "my-scenario-1",
-                        start = null,
-                        end = null,
-                        startedMinions = null,
-                        completedMinions = null,
-                        successfulExecutions = null,
-                        failedExecutions = null,
-                        status = ExecutionStatus.QUEUED,
-                        messages = emptyList()
-                    ),
-                    ScenarioReport(
-                        campaignKey = "my-campaign",
-                        scenarioName = "my-scenario-2",
-                        start = null,
-                        end = null,
-                        startedMinions = null,
-                        completedMinions = null,
-                        successfulExecutions = null,
-                        failedExecutions = null,
-                        status = ExecutionStatus.QUEUED,
-                        messages = emptyList()
-                    )
-                )
-            )
-        )
-    }
 }

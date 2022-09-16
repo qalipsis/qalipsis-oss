@@ -23,7 +23,6 @@ import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import io.qalipsis.core.head.report.DatabaseCampaignReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -57,7 +56,7 @@ internal class DatabaseCampaignReportPublisherTest {
     internal fun `should save the new campaign`() = testDispatcherProvider.run {
         // given
         val now = getTimeMock()
-        coEvery { campaignRepository.findIdByKey(any(), "my-campaign") } returns 8
+        coEvery { campaignRepository.findIdByKey("my-campaign") } returns 8
         val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
             every { id } returns 10L
             every { name } returns "my-scenario"
@@ -111,7 +110,7 @@ internal class DatabaseCampaignReportPublisherTest {
         )
 
         // when
-        databaseCampaignReportPublisher.publish(relaxedMockk(), campaignReport)
+        databaseCampaignReportPublisher.publish("my-campaign", campaignReport)
 
         // then
         coVerifyOrder {

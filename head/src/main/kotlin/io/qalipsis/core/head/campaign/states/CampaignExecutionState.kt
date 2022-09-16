@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -42,10 +42,10 @@ internal interface CampaignExecutionState<C : CampaignExecutionContext> {
     suspend fun process(feedback: Feedback): CampaignExecutionState<C>
 
     /**
-     * Receives [AbortCampaignConfiguration] and returns the [AbortingState].
+     * Receives [AbortRunningCampaign] and returns the [AbortingState].
      *
      * @return the [AbortingState] with abortConfiguration and error message
      */
-    suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<C>
+    suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<C>
 
 }

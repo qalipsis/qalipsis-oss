@@ -20,9 +20,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkStatic
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -30,6 +29,8 @@ import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -38,6 +39,7 @@ import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -71,33 +73,31 @@ internal class PersistentCampaignServiceTest {
         // given
         coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
         val campaign = CampaignConfiguration(
-            tenant = "my-tenant",
-            key = "my-campaign",
+            name = "This is a campaign",
             speedFactor = 123.2,
             scenarios = mapOf(
-                "scenario-1" to ScenarioConfiguration(
-                    6272
-                ),
-                "scenario-2" to ScenarioConfiguration(
-                    12321
-                )
+                "scenario-1" to ScenarioRequest(6272),
+                "scenario-2" to ScenarioRequest(12321)
             )
         )
-        val convertedCampaign = relaxedMockk<Campaign>()
-        coEvery { campaignConverter.convertToModel(any()) } returns convertedCampaign
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+        }
+        coEvery { campaignConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
         coEvery { campaignRepository.save(any()) } returns savedEntity
-        coEvery { userRepository.findIdByUsername("qalipsis-user") } returns 199
+        coEvery { userRepository.findIdByUsername("my-user") } returns 199
 
         // when
-        val result = persistentCampaignService.create("qalipsis-user", "This is a campaign", campaign)
+        val result = persistentCampaignService.create("my-tenant", "my-user", campaign)
 
         // then
-        assertThat(result).isSameAs(convertedCampaign)
+        assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
-            userRepository.findIdByUsername("qalipsis-user")
+            campaignConverter.convertConfiguration("my-tenant", refEq(campaign))
+            userRepository.findIdByUsername("my-user")
             campaignRepository.save(
                 CampaignEntity(
                     key = "my-campaign",
@@ -114,7 +114,6 @@ internal class PersistentCampaignServiceTest {
                     CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
                 )
             )
-            campaignConverter.convertToModel(refEq(savedEntity))
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
     }
@@ -125,35 +124,37 @@ internal class PersistentCampaignServiceTest {
         // given
         coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
         val campaign = CampaignConfiguration(
-            tenant = "my-tenant",
-            key = "my-campaign",
+            name = "This is a campaign",
             speedFactor = 123.2,
-            timeoutDurationSec = 715,
+            timeout = Duration.ofSeconds(715),
             hardTimeout = true,
             scenarios = mapOf(
-                "scenario-1" to ScenarioConfiguration(
+                "scenario-1" to ScenarioRequest(
                     6272
                 ),
-                "scenario-2" to ScenarioConfiguration(
+                "scenario-2" to ScenarioRequest(
                     12321
                 )
             )
         )
-        val convertedCampaign = relaxedMockk<Campaign>()
-        coEvery { campaignConverter.convertToModel(any()) } returns convertedCampaign
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+        }
+        coEvery { campaignConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
         coEvery { campaignRepository.save(any()) } returns savedEntity
-        coEvery { userRepository.findIdByUsername("qalipsis-user") } returns 199
+        coEvery { userRepository.findIdByUsername("my-user") } returns 199
 
         // when
-        val result = persistentCampaignService.create("qalipsis-user", "This is a campaign", campaign)
+        val result = persistentCampaignService.create("my-tenant", "my-user", campaign)
 
         // then
-        assertThat(result).isSameAs(convertedCampaign)
+        assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
-            userRepository.findIdByUsername("qalipsis-user")
+            campaignConverter.convertConfiguration("my-tenant", refEq(campaign))
+            userRepository.findIdByUsername("my-user")
             campaignRepository.save(
                 CampaignEntity(
                     key = "my-campaign",
@@ -171,7 +172,6 @@ internal class PersistentCampaignServiceTest {
                     CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
                 )
             )
-            campaignConverter.convertToModel(refEq(savedEntity))
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
     }
@@ -180,7 +180,7 @@ internal class PersistentCampaignServiceTest {
     internal fun `should close the running campaign`() = testDispatcherProvider.run {
         // given
         val campaignEntity = relaxedMockk<CampaignEntity>()
-        coEvery { campaignRepository.findByKey("my-tenant", "my-campaign") } returns campaignEntity
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaignEntity
         val convertedCampaign = relaxedMockk<Campaign>()
         coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns convertedCampaign
 
@@ -191,7 +191,7 @@ internal class PersistentCampaignServiceTest {
         assertThat(result).isSameAs(convertedCampaign)
         coVerifyOnce {
             campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED)
-            campaignRepository.findByKey("my-tenant", "my-campaign")
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             campaignConverter.convertToModel(refEq(campaignEntity))
         }
         confirmVerified(campaignRepository, campaignScenarioRepository)
@@ -394,7 +394,7 @@ internal class PersistentCampaignServiceTest {
             start = now,
             configurer = 199
         )
-        coEvery { campaignRepository.findByKey("my-tenant", "my-campaign") } returns campaign
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
         coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
 
         // when
@@ -403,7 +403,7 @@ internal class PersistentCampaignServiceTest {
         // then
         val capturedEntity = mutableListOf<CampaignEntity>()
         coVerifyOnce {
-            campaignRepository.findByKey("my-tenant", "my-campaign")
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             userRepository.findIdByUsername("my-aborter")
             campaignRepository.update(capture(capturedEntity))
         }

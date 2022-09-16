@@ -59,7 +59,7 @@ dependencies {
     implementation("io.micronaut.liquibase:micronaut-liquibase")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
@@ -80,6 +80,7 @@ dependencies {
     kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
     kapt("io.micronaut.data:micronaut-data-processor")
     kapt("io.micronaut.openapi:micronaut-openapi")
+    kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
 
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")

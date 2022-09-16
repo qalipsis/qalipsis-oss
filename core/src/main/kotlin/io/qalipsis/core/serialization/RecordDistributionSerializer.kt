@@ -1,10 +1,10 @@
 package io.qalipsis.core.serialization
 
-import io.qalipsis.api.serialization.Serializers
+import io.qalipsis.api.serialization.ProtobufSerializers
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 
 /**
  * Implementation of [DistributionSerializer] using a [SerializedRecord] to transport the data.
@@ -20,11 +20,11 @@ internal class RecordDistributionSerializer(
     private val sortedSerializers = serializers.sortedBy(RecordSerializer::order)
 
     override fun <T> serialize(entity: T, serializationContext: SerializationContext): ByteArray {
-        return Serializers.json.encodeToString(serializeAsRecord(entity, serializationContext)).encodeToByteArray()
+        return ProtobufSerializers.protobuf.encodeToByteArray(serializeAsRecord(entity, serializationContext))
     }
 
     override fun <T> deserialize(source: ByteArray, deserializationContext: DeserializationContext): T? {
-        val record: SerializedRecord = Serializers.json.decodeFromString(source.decodeToString())
+        val record: SerializedRecord = ProtobufSerializers.protobuf.decodeFromByteArray(source)
         return deserializeRecord(record)
     }
 

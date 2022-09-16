@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.factory
 
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.ScenarioSummary
@@ -29,12 +29,12 @@ internal interface FactoryService : HeartbeatListener {
     /**
      * Marks all the specified factories as busy and lock them for future use.
      */
-    suspend fun lockFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>)
+    suspend fun lockFactories(runningCampaign: RunningCampaign, factories: Collection<NodeId>)
 
     /**
      * Releases the factories to make them available for further campaigns.
      */
-    suspend fun releaseFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>)
+    suspend fun releaseFactories(runningCampaign: RunningCampaign, factories: Collection<NodeId>)
 
     /**
      * Returns all the scenario currently available in the cluster with the given identifiers.

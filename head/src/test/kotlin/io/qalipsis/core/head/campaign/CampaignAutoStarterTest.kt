@@ -6,11 +6,9 @@ import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isTrue
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.ScenarioConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.FactoryShutdownDirective
@@ -20,6 +18,8 @@ import io.qalipsis.core.head.campaign.catadioptre.campaign
 import io.qalipsis.core.head.campaign.catadioptre.campaignLatch
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
+import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -60,14 +60,14 @@ internal class CampaignAutoStarterTest {
     @RelaxedMockK
     private lateinit var headChannel: HeadChannel
 
-    private val autostartConfiguration = object : AutostartCampaignConfiguration {
-        override val name: String = "my-campaign"
-        override val requiredFactories: Int = 1
-        override val triggerOffset: Duration = Duration.ofMillis(456)
-        override val minionsCountPerScenario: Int = 0
-        override val minionsFactor: Double = 1.87
-        override val speedFactor: Double = 54.87
-        override val startOffset: Duration = Duration.ofMillis(12367)
+    private val autostartConfiguration = AutostartCampaignConfiguration().apply {
+        name = "my-campaign"
+        requiredFactories = 1
+        triggerOffset = Duration.ofMillis(456)
+        minionsCountPerScenario = 0
+        minionsFactor = 1.87
+        speedFactor = 54.87
+        startOffset = Duration.ofMillis(12367)
     }
 
     @JvmField
@@ -81,7 +81,7 @@ internal class CampaignAutoStarterTest {
 
     @Test
     @Timeout(3)
-    internal fun `should start a campaign with the specified name when enough factories are registered`() =
+    internal fun `should not start a campaign with the specified name when not enough factories are registered`() =
         testCoroutineDispatcher.run {
             // given
             every { campaignManagerProvider.get() } returns campaignManager
@@ -89,14 +89,14 @@ internal class CampaignAutoStarterTest {
                 factoryService,
                 campaignManagerProvider,
                 campaignReportStateKeeper,
-                object : AutostartCampaignConfiguration {
-                    override val name: String = "my-campaign"
-                    override val requiredFactories: Int = 2
-                    override val triggerOffset: Duration = Duration.ofMillis(456)
-                    override val minionsCountPerScenario: Int = 0
-                    override val minionsFactor: Double = 1.87
-                    override val speedFactor: Double = 54.87
-                    override val startOffset: Duration = Duration.ofMillis(12367)
+                AutostartCampaignConfiguration().apply {
+                    name = "my-campaign"
+                    requiredFactories = 2
+                    triggerOffset = Duration.ofMillis(456)
+                    minionsCountPerScenario = 0
+                    minionsFactor = 1.87
+                    speedFactor = 54.87
+                    startOffset = Duration.ofMillis(12367)
                 },
                 headChannel
             )
@@ -139,16 +139,15 @@ internal class CampaignAutoStarterTest {
             assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(420)) // Should have waited triggerOffset.
             coVerifyOnce {
                 campaignManager.start(
+                    Defaults.TENANT,
                     Defaults.USER,
-                    "my-campaign",
                     CampaignConfiguration(
-                        tenant = Defaults.TENANT,
-                        key = "my-campaign",
+                        name = "my-campaign",
                         speedFactor = 54.87,
                         startOffsetMs = 12367,
                         scenarios = mapOf(
-                            "scenario-1" to ScenarioConfiguration(minionsCount = 18),
-                            "scenario-3" to ScenarioConfiguration(minionsCount = 187),
+                            "scenario-1" to ScenarioRequest(minionsCount = 18),
+                            "scenario-3" to ScenarioRequest(minionsCount = 187),
                         )
                     )
                 )
@@ -175,9 +174,6 @@ internal class CampaignAutoStarterTest {
 
             // then
             assertThat(campaignAutoStarter.campaignLatch().isLocked).isFalse()
-            coVerify {
-                campaignReportStateKeeper.abort("my-campaign")
-            }
 
             // when
             val exception = assertThrows<RuntimeException> {
@@ -216,6 +212,8 @@ internal class CampaignAutoStarterTest {
         testCoroutineDispatcher.run {
             // given
             every { campaignManagerProvider.get() } returns campaignManager
+            val runningCampaign = relaxedMockk<RunningCampaign>()
+            coEvery { campaignManager.start(any(), any(), any()) } returns runningCampaign
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
                 campaignManagerProvider,
@@ -276,6 +274,8 @@ internal class CampaignAutoStarterTest {
         testCoroutineDispatcher.run {
             // given
             every { campaignManagerProvider.get() } returns campaignManager
+            val runningCampaign = relaxedMockk<RunningCampaign>()
+            coEvery { campaignManager.start(any(), any(), any()) } returns runningCampaign
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
                 campaignManagerProvider,

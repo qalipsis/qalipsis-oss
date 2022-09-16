@@ -4,8 +4,8 @@ import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
@@ -29,7 +29,7 @@ import kotlin.math.ceil
 internal class AllFactoryDirectedAcyclicGraphAssignmentResolver : FactoryDirectedAcyclicGraphAssignmentResolver {
 
     override fun resolveFactoriesAssignments(
-        campaignConfiguration: CampaignConfiguration,
+        runningCampaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: Collection<ScenarioSummary>
     ): Table<NodeId, ScenarioName, FactoryScenarioAssignment> {

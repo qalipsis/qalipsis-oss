@@ -19,7 +19,7 @@ import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verify
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.events.EventsLogger

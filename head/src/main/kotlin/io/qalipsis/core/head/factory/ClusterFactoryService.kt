@@ -3,7 +3,7 @@ package io.qalipsis.core.head.factory
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -300,24 +300,23 @@ internal class ClusterFactoryService(
     }
 
     @LogInput
-    override suspend fun lockFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
+    override suspend fun lockFactories(runningCampaign: RunningCampaign, factories: Collection<NodeId>) {
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignKey = campaignRepository.findIdByKeyAndEndIsNull(
-                    campaignConfiguration.tenant, campaignConfiguration.key
-                )
+                val campaignKey =
+                    campaignRepository.findIdByTenantAndKeyAndEndIsNull(runningCampaign.tenant, runningCampaign.key)
                 campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignKey, it) }).count()
             }
         }
     }
 
     @LogInput
-    override suspend fun releaseFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
+    override suspend fun releaseFactories(runningCampaign: RunningCampaign, factories: Collection<NodeId>) {
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignId = campaignRepository.findIdByKey(campaignConfiguration.tenant, campaignConfiguration.key)
+                val campaignId = campaignRepository.findIdByTenantAndKey(runningCampaign.tenant, runningCampaign.key)
                 campaignFactoryRepository.discard(campaignId, factoryIds)
             }
         }

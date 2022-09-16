@@ -104,13 +104,13 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when + then
         assertThrows<EmptyResultException> {
-            campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved.key)
+            campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key)
         }
 
         // when
         campaignRepository.update(saved.copy(end = null))
 
-        assertThat(campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved.key)).isEqualTo(saved.id)
+        assertThat(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key)).isEqualTo(saved.id)
     }
 
     @Test
@@ -132,18 +132,18 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
 
             // when + then
-            assertThat(campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved.key)).isEqualTo(saved.id)
+            assertThat(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key)).isEqualTo(saved.id)
 
             assertThat(
-                campaignRepository.findIdByKeyAndEndIsNull("qalipsis-2", saved2.key)
+                campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved2.key)
             ).isEqualTo(saved2.id)
 
             assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByKeyAndEndIsNull("my-tenant", saved2.key))
+                assertThat(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved2.key))
             }
 
             assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByKeyAndEndIsNull("qalipsis-2", saved.key))
+                assertThat(campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved.key))
             }
         }
 
@@ -538,7 +538,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val saved = campaignRepository.save(campaignPrototype.copy(key = "name-11", tenantId = tenant.id))
 
         // when
-        val fetched = campaignRepository.findByKey("tenant-11", saved.key)
+        val fetched = campaignRepository.findByTenantAndKey("tenant-11", saved.key)
 
         // then
         assertThat(fetched).isNotNull().isDataClassEqualTo(saved)
@@ -779,7 +779,6 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val end2 = start2 + Duration.ofSeconds(1_236)
 
             val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-            val otherTenant = tenantRepository.save(TenantEntity(Instant.now(), "other-tenant", "other-tenant"))
             campaignRepository.saveAll(
                 listOf(
                     campaignPrototype.copy(tenantId = tenant.id, key = "camp-1", start = start1, end = end1),
@@ -788,18 +787,6 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     campaignPrototype.copy(
                         tenantId = tenant.id,
                         key = "camp-3",
-                        start = Instant.EPOCH,
-                        end = Instant.now() + Duration.ofDays(365)
-                    ),
-                    campaignPrototype.copy(
-                        tenantId = otherTenant.id,
-                        key = "camp-1",
-                        start = Instant.EPOCH,
-                        end = Instant.now() + Duration.ofDays(365)
-                    ),
-                    campaignPrototype.copy(
-                        tenantId = otherTenant.id,
-                        key = "camp-2",
                         start = Instant.EPOCH,
                         end = Instant.now() + Duration.ofDays(365)
                     )
@@ -827,7 +814,6 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val start2 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(22)
 
             val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-            val otherTenant = tenantRepository.save(TenantEntity(Instant.now(), "other-tenant", "other-tenant"))
             campaignRepository.saveAll(
                 listOf(
                     campaignPrototype.copy(tenantId = tenant.id, key = "camp-1", start = start1, end = end1),
@@ -836,18 +822,6 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     campaignPrototype.copy(
                         tenantId = tenant.id,
                         key = "camp-3",
-                        start = Instant.EPOCH,
-                        end = Instant.now() + Duration.ofDays(365)
-                    ),
-                    campaignPrototype.copy(
-                        tenantId = otherTenant.id,
-                        key = "camp-1",
-                        start = Instant.EPOCH,
-                        end = Instant.now() + Duration.ofDays(365)
-                    ),
-                    campaignPrototype.copy(
-                        tenantId = otherTenant.id,
-                        key = "camp-2",
                         start = Instant.EPOCH,
                         end = Instant.now() + Duration.ofDays(365)
                     )

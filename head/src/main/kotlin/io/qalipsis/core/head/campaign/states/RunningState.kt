@@ -1,10 +1,10 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
@@ -19,7 +19,7 @@ import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
 
 internal open class RunningState(
-    protected val campaign: CampaignConfiguration,
+    protected val campaign: RunningCampaign,
     private val directivesForInit: List<Directive> = emptyList(),
     private val expectedScenariosToComplete: MutableSet<ScenarioName> = concurrentSet(campaign.scenarios.keys)
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
@@ -101,7 +101,7 @@ internal open class RunningState(
         }
     }
 
-    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+    override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<CampaignExecutionContext> {
         return AbortingState(campaign, abortConfiguration, "The campaign was aborted")
     }
 

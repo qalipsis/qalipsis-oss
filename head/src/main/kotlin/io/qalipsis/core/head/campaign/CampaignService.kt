@@ -1,11 +1,12 @@
 package io.qalipsis.core.head.campaign
 
-import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
 import java.time.Instant
 
 /**
@@ -20,10 +21,12 @@ internal interface CampaignService {
      * @param configurer consider the user's name  who configure the campaign
      */
     suspend fun create(
+        tenant: String,
         configurer: String,
-        campaignDisplayName: String,
         campaignConfiguration: CampaignConfiguration
-    ): Campaign
+    ): RunningCampaign
+
+    suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign
 
     suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?)
 

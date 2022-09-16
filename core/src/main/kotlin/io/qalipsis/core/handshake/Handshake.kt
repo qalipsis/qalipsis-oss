@@ -2,7 +2,7 @@ package io.qalipsis.core.handshake
 
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.serialization.DurationKotlinSerializer
+import io.qalipsis.api.serialization.DurationKotlinSerializer
 import kotlinx.serialization.Serializable
 import java.time.Duration
 

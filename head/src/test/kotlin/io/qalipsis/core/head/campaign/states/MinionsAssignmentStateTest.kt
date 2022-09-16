@@ -15,7 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -300,7 +300,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
         }
 
         // when
-        val newState = state.abort(AbortCampaignConfiguration())
+        val newState = state.abort(AbortRunningCampaign())
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {

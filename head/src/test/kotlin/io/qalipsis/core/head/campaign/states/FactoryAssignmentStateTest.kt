@@ -13,9 +13,9 @@ import assertk.assertions.prop
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -239,7 +239,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         }
 
         // when
-        val newState = state.abort(AbortCampaignConfiguration())
+        val newState = state.abort(AbortRunningCampaign())
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {

@@ -1,7 +1,7 @@
 package io.qalipsis.core.heartbeat
 
 import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.core.serialization.InstantKotlinSerializer
+import io.qalipsis.api.serialization.InstantKotlinSerializer
 import kotlinx.serialization.Serializable
 import java.time.Instant
 

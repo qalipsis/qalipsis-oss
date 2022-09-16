@@ -22,13 +22,13 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.mockk.slot
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryConfiguration
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.campaigns.FactoryConfiguration
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
@@ -42,8 +42,9 @@ import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
-import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
+import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import io.qalipsis.test.assertk.prop
@@ -111,18 +112,21 @@ internal class StandaloneCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                key = "my-campaign",
-                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
-                tenant = "my-tenant"
-            ).apply { broadcastChannel = "my-broadcast-channel" }
-            val createdCampaign = relaxedMockk<Campaign>()
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                )
+            )
+            val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
             coEvery {
                 campaignService.create(
-                    "qalipsis-user",
-                    "This is a campaign",
+                    "my-tenant",
+                    "my-user",
                     refEq(campaign)
                 )
-            } returns createdCampaign
+            } returns runningCampaign
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
@@ -134,10 +138,7 @@ internal class StandaloneCampaignManagerTest {
             val factory3 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
             coEvery {
-                factoryService.getAvailableFactoriesForScenarios(
-                    campaign.tenant,
-                    setOf("scenario-1", "scenario-2")
-                )
+                factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
             } returns
                     listOf(factory1, factory2, factory3)
 
@@ -152,18 +153,18 @@ internal class StandaloneCampaignManagerTest {
                 .build()
             coEvery {
                 assignmentResolver.resolveFactoriesAssignments(
-                    refEq(campaign),
+                    refEq(runningCampaign),
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
                 )
             } returns assignments
 
             // when
-            val result = campaignManager.start("qalipsis-user", "This is a campaign", campaign)
+            val result = campaignManager.start("my-tenant", "my-user", campaign)
 
             // then
-            assertThat(result).isSameAs(createdCampaign)
-            assertThat(campaign.factories).all {
+            assertThat(result).isSameAs(runningCampaign)
+            assertThat(runningCampaign.factories).all {
                 hasSize(2)
                 key("factory-1").all {
                     prop(FactoryConfiguration::unicastChannel).isEqualTo("unicast-channel-1")
@@ -189,26 +190,26 @@ internal class StandaloneCampaignManagerTest {
             }
             assertThat(campaignManager).typedProp<CampaignExecutionState<CampaignExecutionContext>>("currentCampaignState")
                 .isInstanceOf(FactoryAssignmentState::class).all {
-                    prop("campaign").isSameAs(campaign)
+                    prop("campaign").isSameAs(runningCampaign)
                     typedProp<Boolean>("initialized").isTrue()
                 }
             val sentDirectives = mutableListOf<Directive>()
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
-                campaignService.create("qalipsis-user", "This is a campaign", refEq(campaign))
-                factoryService.getAvailableFactoriesForScenarios(campaign.tenant, setOf("scenario-1", "scenario-2"))
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
+                factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.start("my-tenant", "my-campaign", any(), isNull())
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
-                factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2", "factory-3"))
+                factoryService.lockFactories(refEq(runningCampaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
-                    refEq(campaign),
+                    refEq(runningCampaign),
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
                 )
-                factoryService.releaseFactories(refEq(campaign), listOf("factory-2"))
+                factoryService.releaseFactories(refEq(runningCampaign), listOf("factory-2"))
                 headChannel.subscribeFeedback("feedbacks")
                 headChannel.publishDirective(capture(sentDirectives))
                 headChannel.publishDirective(capture(sentDirectives))
@@ -266,9 +267,9 @@ internal class StandaloneCampaignManagerTest {
         testDispatcherProvider.run {
             // given
             val campaign = CampaignConfiguration(
-                key = "my-campaign",
+                name = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
-            ).apply { broadcastChannel = "my-broadcast-channel" }
+            )
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns
@@ -276,7 +277,7 @@ internal class StandaloneCampaignManagerTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start("qalipsis-user", "This is a campaign", campaign)
+                campaignManager.start("my-tenant", "my-user", campaign)
             }
         }
 
@@ -291,7 +292,7 @@ internal class StandaloneCampaignManagerTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start("qalipsis-user", "This is a campaign", relaxedMockk())
+                campaignManager.start("my-tenant", "my-user", relaxedMockk())
             }
         }
 
@@ -309,21 +310,21 @@ internal class StandaloneCampaignManagerTest {
                             "first_campaign",
                             "channel",
                             listOf("scenario-1", "scenario-2"),
-                            AbortCampaignConfiguration(true)
+                            AbortRunningCampaign(true)
                         )
                     )
                 }
             })
 
         // when
-        campaignManager.abort("qalipsis-user", "my-tenant", "first_campaign", true)
+        campaignManager.abort("my-user", "my-tenant", "first_campaign", true)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
-            campaignService.abort("my-tenant", "qalipsis-user", "first_campaign")
+            campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
@@ -334,7 +335,7 @@ internal class StandaloneCampaignManagerTest {
                 it.isInstanceOf(CampaignAbortDirective::class).all {
                     prop(CampaignAbortDirective::campaignKey).isEqualTo("first_campaign")
                     prop(CampaignAbortDirective::channel).isEqualTo("channel")
-                    prop(CampaignAbortDirective::abortCampaignConfiguration).all {
+                    prop(CampaignAbortDirective::abortRunningCampaign).all {
                         typedProp<Boolean>("hard").isEqualTo(true)
                     }
                     prop(CampaignAbortDirective::scenarioNames).all {
@@ -361,21 +362,21 @@ internal class StandaloneCampaignManagerTest {
                             "first_campaign",
                             "channel",
                             listOf("scenario-1", "scenario-2"),
-                            AbortCampaignConfiguration(false)
+                            AbortRunningCampaign(false)
                         )
                     )
                 }
             })
 
         // when
-        campaignManager.abort("qalipsis-user", "my-tenant", "first_campaign", false)
+        campaignManager.abort("my-user", "my-tenant", "first_campaign", false)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
-            campaignService.abort("my-tenant", "qalipsis-user", "first_campaign")
+            campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
@@ -386,7 +387,7 @@ internal class StandaloneCampaignManagerTest {
                 it.isInstanceOf(CampaignAbortDirective::class).all {
                     prop(CampaignAbortDirective::campaignKey).isEqualTo("first_campaign")
                     prop(CampaignAbortDirective::channel).isEqualTo("channel")
-                    prop(CampaignAbortDirective::abortCampaignConfiguration).all {
+                    prop(CampaignAbortDirective::abortRunningCampaign).all {
                         typedProp<Boolean>("hard").isEqualTo(false)
                     }
                     prop(CampaignAbortDirective::scenarioNames).all {
