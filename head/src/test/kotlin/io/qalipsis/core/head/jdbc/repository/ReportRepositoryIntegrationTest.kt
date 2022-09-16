@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
@@ -28,6 +47,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
@@ -724,9 +744,14 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when + then
-        assertThrows<DataAccessException> {
-            reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "my-tenant", reference = "report-ref", creatorId = creator2.id)
-        }
+        val report = reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
+            tenant = "my-tenant",
+            reference = "report-ref",
+            creatorId = creator2.id
+        )
+
+        // then
+        Assertions.assertNull(report)
     }
 
     @Test
@@ -780,10 +805,15 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             )
         )
 
-        // when + then
-        assertThrows<DataAccessException> {
-            reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = creator2.id)
-        }
+        // when
+        val report = reportRepository.getReportIfUpdatable(
+            tenant = "my-tenant",
+            reference = "report-ref",
+            creatorId = creator2.id
+        )
+
+        // then
+        Assertions.assertNull(report)
     }
 
     @Test

@@ -1,7 +1,26 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.runtime.bootstrap
 
 import io.micronaut.context.ApplicationContext
-import io.qalipsis.runtime.bootstrap.DeploymentRole.STANDALONE
+import io.qalipsis.runtime.bootstrap.DeploymentRole.AUTO
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -60,12 +79,13 @@ internal class QalipsisBootstrap : Callable<Unit> {
     @Parameters(
         description = [
             "Role of the started process:",
-            "   - standalone (default)",
+            "   - auto (default)",
+            "   - standalone",
             "   - head",
             "   - factory"
-        ], defaultValue = "standalone", completionCandidates = DeploymentRoleAutoCompletion::class, arity = "0..1"
+        ], defaultValue = "auto", completionCandidates = DeploymentRoleAutoCompletion::class, arity = "0..1"
     )
-    private var role: DeploymentRole = STANDALONE
+    private var role: DeploymentRole = AUTO
 
     internal lateinit var applicationContext: ApplicationContext
 
@@ -94,7 +114,7 @@ internal class QalipsisBootstrap : Callable<Unit> {
             persistent = persistent
         )
         val applicationContextBuilder = contextInitializer.build()
-        val appContext = QalipsisApplicationContext(role)
+        val appContext = QalipsisApplicationContext(contextInitializer.role)
 
         exitCode = try {
             // Refer to Micronaut.start() for reference.

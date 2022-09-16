@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 plugins {
     kotlin("jvm")
     kotlin("kapt")
@@ -18,16 +37,8 @@ allOpen {
     )
 }
 
-val testContainersVersion: String by project
-val micronautVersion: String by project
-val mockkVersion: String by project
-val catadioptreVersion: String by project
-val awaitilityVersion: String by project
-
 dependencies {
-    compileOnly(kotlin("stdlib"))
-
-    compileOnly(platform("io.micronaut:micronaut-bom:$micronautVersion"))
+    implementation(platform("io.qalipsis:dev-platform:${project.version}"))
     compileOnly("org.graalvm.nativeimage:svm")
 
     api("io.qalipsis:api-common:${project.version}")
@@ -37,7 +48,6 @@ dependencies {
     compileOnly(project(":factory"))
     compileOnly(project(":head"))
 
-    api(platform("io.micronaut:micronaut-bom:$micronautVersion"))
     api("ch.qos.logback:logback-classic")
     api("info.picocli:picocli")
     api("io.micronaut.picocli:micronaut-picocli")
@@ -48,26 +58,27 @@ dependencies {
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
 
-    kapt(platform("io.micronaut:micronaut-bom:$micronautVersion"))
+    kapt(platform("io.qalipsis:dev-platform:${project.version}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    testFixturesCompileOnly(kotlin("stdlib"))
-    testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin:$catadioptreVersion")
+    testFixturesImplementation(platform("io.qalipsis:dev-platform:${project.version}"))
+    testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin")
 
+    testImplementation(platform("io.qalipsis:dev-platform:${project.version}"))
     testImplementation(project(":head"))
     testImplementation(project(":factory"))
     testImplementation(testFixtures(project(":core")))
-    testImplementation("io.mockk:mockk:$mockkVersion")
+    testImplementation("io.mockk:mockk")
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-    testImplementation("org.testcontainers:postgresql:$testContainersVersion")
-    testImplementation("org.awaitility:awaitility-kotlin:$awaitilityVersion")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.awaitility:awaitility-kotlin")
 
-    kaptTest(platform("io.micronaut:micronaut-bom:$micronautVersion"))
+    kaptTest(platform("io.qalipsis:dev-platform:${project.version}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }

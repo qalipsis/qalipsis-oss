@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -30,72 +49,63 @@ allOpen {
     )
 }
 
-val micronautVersion: String by project
-val kotlinCoroutinesVersion: String by project
-val testContainersVersion: String by project
-val jacksonVersion: String by project
-val kotlinSerialization: String by project
-val catadioptreVersion: String by project
-
-
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
 kapt.useBuildCache = false
 
 
 dependencies {
+    implementation(platform("io.qalipsis:dev-platform:${project.version}"))
     api("io.micronaut.redis:micronaut-redis-lettuce")
-    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
-    compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
+    compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
 
-    compileOnly(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:${kotlinCoroutinesVersion}")
-    implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
 
     implementation("io.qalipsis:api-common:${project.version}")
     implementation("io.qalipsis:api-dsl:${project.version}")
     implementation("io.qalipsis:api-processors:${project.version}")
 
-    implementation("com.google.guava:guava:29.0-jre")
-    implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
-    implementation("cool.graph:cuid-java:0.1.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("com.google.guava:guava")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+    implementation("cool.graph:cuid-java")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
-    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kapt(platform("io.qalipsis:dev-platform:${project.version}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
     kapt("io.qalipsis:api-processors:${project.version}")
-    kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
-    kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
+    kapt("io.aeris-consulting:catadioptre-annotations")
+    kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
+    testImplementation(platform("io.qalipsis:dev-platform:${project.version}"))
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-    testImplementation("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
+    testImplementation("io.aeris-consulting:catadioptre-kotlin")
     testImplementation(testFixtures("io.qalipsis:api-dsl:${project.version}"))
     testImplementation(testFixtures("io.qalipsis:api-common:${project.version}"))
     testImplementation(testFixtures(project(":runtime")))
-    testImplementation("org.testcontainers:testcontainers:$testContainersVersion")
+    testImplementation("org.testcontainers:testcontainers")
 
-    kaptTest(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kaptTest(platform("io.qalipsis:dev-platform:${project.version}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 
-    testFixturesApi("org.testcontainers:testcontainers:$testContainersVersion")
+    testFixturesApi(platform("io.qalipsis:dev-platform:${project.version}"))
+    testFixturesApi("org.testcontainers:testcontainers")
     testFixturesApi("io.qalipsis:api-common:${project.version}")
     testFixturesImplementation("io.micronaut.test:micronaut-test-junit5")
     testFixturesImplementation("io.micronaut:micronaut-runtime")
-    testFixturesImplementation("org.testcontainers:junit-jupiter:$testContainersVersion")
-    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
+    testFixturesImplementation("org.testcontainers:junit-jupiter")
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
 }
 

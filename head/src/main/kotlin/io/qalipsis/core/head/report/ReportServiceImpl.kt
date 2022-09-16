@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requires
@@ -51,17 +70,26 @@ internal class ReportServiceImpl(
 ) : ReportService {
 
     companion object {
-        const val REPORT_FETCH_DENY = "This report does not exist in your tenant or you do not have the permission to fetch it"
-        const val REPORT_UPDATE_DENY = "This report does not exist in your tenant or you do not have the permission to update it"
-        const val REPORT_DELETE_DENY = "This report does not exist in your tenant or you do not have the permission to delete it"
+        const val REPORT_FETCH_DENY =
+            "This report does not exist in your tenant or you do not have the permission to fetch it"
+        const val REPORT_UPDATE_DENY =
+            "This report does not exist in your tenant or you do not have the permission to update it"
+        const val REPORT_DELETE_DENY =
+            "This report does not exist in your tenant or you do not have the permission to delete it"
         const val REPORT_DATA_SERIES_NOT_ALLOWED =
             "Some selected data series of your data components cannot be found in your tenant. You can only add data series of your tenant in this report"
         const val REPORT_CAMPAIGN_KEYS_NOT_ALLOWED = "Not all specified campaign keys belong to the tenant"
     }
 
     override suspend fun get(tenant: String, username: String, reference: String): Report {
-        val currentUserId = userRepository.findIdByUsername(username = username)
-        val reportEntity = requireNotNull(reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = tenant, reference = reference, creatorId = currentUserId)) {
+        val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
+        val reportEntity = requireNotNull(
+            reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
+                tenant = tenant,
+                reference = reference,
+                creatorId = currentUserId
+            )
+        ) {
             REPORT_FETCH_DENY
         }
         return reportConverter.convertToModel(reportEntity)
@@ -73,7 +101,8 @@ internal class ReportServiceImpl(
         reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
     ): Report {
         if (reportCreationAndUpdateRequest.campaignKeys.isNotEmpty()) {
-            val existingCampaignKeys = campaignRepository.findKeyByTenantAndKeyIn(tenant, reportCreationAndUpdateRequest.campaignKeys)
+            val existingCampaignKeys =
+                campaignRepository.findKeyByTenantAndKeyIn(tenant, reportCreationAndUpdateRequest.campaignKeys)
             require(existingCampaignKeys == reportCreationAndUpdateRequest.campaignKeys.toSet()) {
                 REPORT_CAMPAIGN_KEYS_NOT_ALLOWED
             }
@@ -87,7 +116,7 @@ internal class ReportServiceImpl(
             ReportEntity(
                 reference = idGenerator.short(),
                 tenantId = tenantRepository.findIdByReference(tenant),
-                creatorId = userRepository.findIdByUsername(creator),
+                creatorId = requireNotNull(userRepository.findIdByUsername(creator)),
                 displayName = reportCreationAndUpdateRequest.displayName,
                 sharingMode = reportCreationAndUpdateRequest.sharingMode,
                 campaignKeys = reportCreationAndUpdateRequest.campaignKeys,
@@ -115,14 +144,21 @@ internal class ReportServiceImpl(
         reference: String,
         reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
     ): Report {
-        val currentUserId = userRepository.findIdByUsername(username = username)
-        val reportEntity = requireNotNull(reportRepository.getReportIfUpdatable(tenant = tenant, reference = reference, currentUserId)){
+        val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
+        val reportEntity = requireNotNull(
+            reportRepository.getReportIfUpdatable(
+                tenant = tenant,
+                reference = reference,
+                currentUserId
+            )
+        ) {
             REPORT_UPDATE_DENY
         }
-        val creatorName = userRepository.findUsernameById(reportEntity.creatorId)
+        val creatorName = userRepository.findUsernameById(reportEntity.creatorId) ?: ""
 
         if (reportCreationAndUpdateRequest.campaignKeys.isNotEmpty()) {
-            val existingCampaignKeys = campaignRepository.findKeyByTenantAndKeyIn(tenant, reportCreationAndUpdateRequest.campaignKeys)
+            val existingCampaignKeys =
+                campaignRepository.findKeyByTenantAndKeyIn(tenant, reportCreationAndUpdateRequest.campaignKeys)
             require(existingCampaignKeys == reportCreationAndUpdateRequest.campaignKeys.toSet()) {
                 REPORT_CAMPAIGN_KEYS_NOT_ALLOWED
             }
@@ -165,14 +201,27 @@ internal class ReportServiceImpl(
     }
 
     override suspend fun delete(tenant: String, username: String, reference: String) {
-        val currentUserId = userRepository.findIdByUsername(username = username)
-        val reportEntity = requireNotNull(reportRepository.getReportIfUpdatable(tenant = tenant, reference = reference, currentUserId)){
+        val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
+        val reportEntity = requireNotNull(
+            reportRepository.getReportIfUpdatable(
+                tenant = tenant,
+                reference = reference,
+                currentUserId
+            )
+        ) {
             REPORT_DELETE_DENY
         }
         reportRepository.delete(reportEntity)
     }
 
-    override suspend fun search(tenant: String, username: String, filters: Collection<String>, sort: String?, page: Int, size: Int): QalipsisPage<Report> {
+    override suspend fun search(
+        tenant: String,
+        username: String,
+        filters: Collection<String>,
+        sort: String?,
+        page: Int,
+        size: Int
+    ): QalipsisPage<Report> {
         val sorting = sort?.let { SortingUtil.sort(ReportEntity::class, it) }
             ?: Sort.of(Sort.Order(ReportEntity::displayName.name))
         val pageable = Pageable.from(page, size, sorting)
@@ -203,8 +252,7 @@ internal class ReportServiceImpl(
                         it.replace("*", "%").replace("?", "_")
                     }
                 )
-            }
-            else emptyList()
+            } else emptyList()
         val campaignKeysUnion = reportEntity.campaignKeys.plus(resolvedCampaignKeys).distinct()
         val resolvedScenarioNames =
             if (campaignKeysUnion.isNotEmpty()) {
@@ -219,8 +267,7 @@ internal class ReportServiceImpl(
                         campaignKeysUnion
                     )
                 }
-            }
-            else emptyList()
+            } else emptyList()
         return Report(
             reference = reportEntity.reference,
             version = reportEntity.version,
@@ -243,11 +290,20 @@ internal class ReportServiceImpl(
      * Converts a data component entity instance to data component model instance.
      */
     private suspend fun toModel(dataComponentEntity: ReportDataComponentEntity): DataComponent {
-
         return if (dataComponentEntity.type == Diagram.TYPE) {
-            Diagram(datas = dataComponentEntity.dataSeries.map { DataSeries(it, userRepository.findUsernameById(it.creatorId))})
+            Diagram(datas = dataComponentEntity.dataSeries.map {
+                DataSeries(
+                    it,
+                    userRepository.findUsernameById(it.creatorId) ?: ""
+                )
+            })
         } else {
-            DataTable(datas = dataComponentEntity.dataSeries.map {DataSeries(it, userRepository.findUsernameById(it.creatorId))})
+            DataTable(datas = dataComponentEntity.dataSeries.map {
+                DataSeries(
+                    it,
+                    userRepository.findUsernameById(it.creatorId) ?: ""
+                )
+            })
         }
     }
 

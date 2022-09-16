@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
@@ -12,7 +31,6 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.EmptyResultException
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.report.ExecutionStatus
@@ -29,8 +47,8 @@ import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -103,9 +121,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when + then
-        assertThrows<EmptyResultException> {
-            campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key)
-        }
+        Assertions.assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key))
 
         // when
         campaignRepository.update(saved.copy(end = null))
@@ -138,13 +154,9 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved2.key)
             ).isEqualTo(saved2.id)
 
-            assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved2.key))
-            }
+            Assertions.assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved2.key))
 
-            assertThrows<EmptyResultException> {
-                assertThat(campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved.key))
-            }
+            Assertions.assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved.key))
         }
 
     @Test

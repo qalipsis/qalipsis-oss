@@ -1,12 +1,31 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.factory
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
-import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
@@ -304,9 +323,11 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignKey =
-                    campaignRepository.findIdByTenantAndKeyAndEndIsNull(runningCampaign.tenant, runningCampaign.key)
-                campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignKey, it) }).count()
+                campaignRepository.findIdByTenantAndKeyAndEndIsNull(runningCampaign.tenant, runningCampaign.key)
+                    ?.let { campaignId ->
+                        campaignFactoryRepository.saveAll(factoryIds.map { CampaignFactoryEntity(campaignId, it) })
+                            .count()
+                    }
             }
         }
     }
@@ -316,8 +337,10 @@ internal class ClusterFactoryService(
         if (factories.isNotEmpty()) {
             val factoryIds = factoryRepository.findIdByNodeIdIn(factories)
             if (factoryIds.isNotEmpty()) {
-                val campaignId = campaignRepository.findIdByTenantAndKey(runningCampaign.tenant, runningCampaign.key)
-                campaignFactoryRepository.discard(campaignId, factoryIds)
+                campaignRepository.findIdByTenantAndKey(runningCampaign.tenant, runningCampaign.key)
+                    ?.let { campaignId ->
+                        campaignFactoryRepository.discard(campaignId, factoryIds)
+                    }
             }
         }
     }

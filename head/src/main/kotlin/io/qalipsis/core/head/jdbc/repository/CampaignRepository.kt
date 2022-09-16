@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.jdbc.repository
 
 import io.micronaut.context.annotation.Requires
@@ -31,7 +50,7 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             WHERE key = :campaignKey AND "end" IS NULL AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByTenantAndKeyAndEndIsNull(tenant: String, campaignKey: String): Long
+    suspend fun findIdByTenantAndKeyAndEndIsNull(tenant: String, campaignKey: String): Long?
 
     @Query(
         """SELECT *
@@ -39,7 +58,7 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             WHERE key = :campaignKey AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findByTenantAndKey(tenant: String, campaignKey: String): CampaignEntity
+    suspend fun findByTenantAndKey(tenant: String, campaignKey: String): CampaignEntity?
 
     @Query(
         """SELECT campaign.id
@@ -47,7 +66,7 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             WHERE key = :campaignKey AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByTenantAndKey(tenant: String, campaignKey: String): Long
+    suspend fun findIdByTenantAndKey(tenant: String, campaignKey: String): Long?
 
     /**
      * Marks the not yet started campaign with the specified name [campaignKey] as started.

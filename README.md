@@ -1,27 +1,152 @@
-# QALIPSIS
+# <a src="https://qalipsis.io"><img src="http://assets.qalipsis.io/qalipsis-logo.png" style="height:60px;width:60px;position:relative;top:18px;margin-right:20px;"/>QALIPSIS</a>
 
 ![CI](https://github.com/qalipsis/qalipsis-oss/actions/workflows/gradle-master.yml/badge.svg)
 
-## Run an instance of QALIPSIS locally
+## Introduction
 
-Read the instructions in [deployment/index.html](./deployment/index.html).
+This repository contains the core modules of QALIPSIS, an enterprise-grade load and performance-testing tool especially
+designed for distributed systems. It is a step above other load test applications that merely evaluate your system
+internally.
 
-## Build the project in a prepared Docker image
+* QALIPSIS is developer-centric with a low learning curve that makes it easy to use and extremely efficient.
+* QALIPSIS is developed in Kotlin to gain the benefits of the Java ecosystem and provide seamless system performance.
+* QALIPSIS is designed to test the performance of distributed and monolithic systems.
+* QALIPSIS collects data from operating systems, databases, and monitoring tools.
+* QALIPSIS cross-checks system metrics and performs data verification to ensure that the test systems is performing as
+  expected.
 
-1. Start at the root of the project
-1. Create the builder image: `docker build ./docker/builder -t aerisconsulting/openjdk:11`
-1. Start the builder image in your local folder:
-    1. For Unix-like systems: `docker run -it --rm -v $(pwd):/scripts -w /scripts aerisconsulting/openjdk:11 bash`
-    1. For Windows: `docker run -it --rm -v %CD%:/scripts -w /scripts aerisconsulting/openjdk:11 bash`
-1. Now you are "in" the builder image, execute Gradle with the tasks you need: `./gradlew clean asciidoctor assemble`
+## Features
 
-   **Windows only**: Ensure that git is **not** converting line endings of gradlew from Unix style (LF) to Windows
-   style (CRLF), otherwise the builder will fail when executing `./gradlew`. Automatic conversion can be disabled
-   via `git config core.autocrlf false`.
-1. Avoid to restart your image too often in order to keep the Gradle / Maven cache. You can also map the folders between
-   your machine and the container and add limits to the CPU and memory to verify that the tests pass under constrained
-   resources:
-    1. For Unix-like
-       systems: `docker run -it --rm --cpus=2 --memory=4g -v $(pwd):/scripts -v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -w /scripts aerisconsulting/openjdk:11 bash`
-    1. For
-       Windows: `docker run -it --rm --cpus=2 --memory=4g -v %CD%:/scripts -v %USERPROFILE% /.m2:/root/.m2 -w /scripts aerisconsulting/openjdk:11 bash`  
+### User-friendly interface
+
+The QALIPSIS Graphical User Interface (GUI) allows users, depending on their role, to configure and run load tests with
+capabilities including, but not limited to:
+
+* Start/Stop
+* Configure the Load Distribution
+* Increase/Decrease the Number of Simulated Users
+* View Reports
+* Schedule a Test
+
+### Automation friendly performance verification
+
+Using the Command Line Interface (CLI) or the Gradle plugin, you can automatically and repeatedly verify the condition
+and performance of your system.
+
+### User-friendly operation
+
+With QALIPSIS you are never far from setting up your next load, performance, and end-to-end test campaign.
+
+Start with the creation of a pre-configured project from [QALIPSIS bootstrap](https://bootstrap.qalipsis.io), then
+develop code in your IDE.
+
+QALIPSIS provides a Gradle plugin to simplify the configuration, packaging and deployment of your scenarios to your
+on-premise installation or QALIPSIS Cloud.
+
+You do not need to be a Kotlin expert or a master in the technology that you want to test. QALIPSIS DSL is a
+meta-language that most users can learn within minute and it provides the means to execute all of the operations in your
+scenarios.
+
+Further documentation and examples guide you through your more advanced use cases.
+
+Downloading a ready-to-use project for your IDE is easy with QALIPSIS and allows integration with popular DevOps tools
+to test your software and track the impact of recent changes.
+
+### Aggregated assertions
+
+Aggregated assertions allow you to verify the overall results on a scenario. You can define thresholds to make a test
+succeed or fail and immediately get insights about the performance and consistency of your tested system.
+
+### Testing, performance, and geographical distribution
+
+* QALIPSIS can test distributed systems.
+* QALIPSIS can perform as a distributed system.
+* QALIPSIS can simulate load from several geographic locations to run comparisons based on location.
+
+### Live results, integration and monitoring
+
+QALIPSIS events and meters provide extended details of load-test operations, providing users with various options for
+accessing the results. The results visualizations and dashboards, with details of each test-case execution, provide
+valuable insight for identifying the bottlenecks in your applications and uncovering the components and conditions of
+failures.
+
+QALIPSIS Gradle Plugin integrates the automated execution of QALIPSIS scenarios with your CI/CD pipelines, in order to
+validate the performance and functionalities on a regular and frequent basis. This helps you to uncover the problems
+immediately after they were introduced in your system and save a lot of time and money in their resolution.
+
+Alternatively, you can also use QALIPSIS for constant monitoring: a long-running campaign allows you to monitor the
+availability and responsiveness of your system over a long period of time. Even the statistics of running campaigns are
+accessible in real-time and you can observe their evolution and detect issues at their earliest occurrence.
+Time-to-solution is made faster by the ability to analyze the problem in real time and conditions.
+
+### Concurrent load simulations and data ingestion
+
+Combining the double benefit of a lightweight architecture and a deployment as a cluster, QALIPSIS makes its possible to
+simulate the load from thousands to millions of users (e.g., website visitors, connected IoT devices, etc.).
+
+You can execute load, performance and end-to-end test campaigns running several scenarios, and analyze how behaviors of
+certain personas affect the experience of others.
+
+Finally, QALIPSIS does not only inject outgoing data to your system to test, but also ingests incoming data sources to
+compare their values with the ones generated by your tests. You can now cross-verify requests and responses with
+infrastructure metrics and messages and databases records.
+
+### Operating system independent
+
+QALIPSIS load and performance testing can be performed from any operating system supporting Java with the same
+impressive results.
+
+## Benefits
+
+QALIPSIS was designed with distributed systems and current developer practices in mind. It provides a testing framework
+to allow developers to work in a real-world environment, writing and running load tests without a steep learning curve.
+
+### For developers
+
+QALIPSIS empowers developers to:
+
+* Choose their own testing tools and preferred programming language for writing load-test scenarios.
+* Cross-verify data from different sources: bring responses to requests, infrastructure metrics, middleware events and
+  database records in the same port to compare them and verify that they match your expectations.
+* Unlock the full power of the Java ecosystem by making use of any library, protocol or system.
+* Reuse pieces of their own software to faster develop scenarios.
+* Simulate users, third-party software and IoT devices.
+* Simulate real-user and device behavior to make load tests more relevant.
+* Generate detailed and relevant results by using distributed tracing markers to follow the complete execution workflow
+  from end to end.
+* Customize reports and dashboards.
+* Perform tests on development machines, containers and virtual machines with excellent results.
+* Integrate their standard DevOps workflow for performance testing before the deployment of health checks on production
+  environments.
+* Create a scenario in just a few minutes by enabling utilization of any Java library of choice (such as JUnit,
+  Hamcrest, AssertJ) or pieces of software or proprietary libraries.
+* Test non-http technologies using numerous plug-ins, such as databases and messaging platforms.
+
+### For IT operations teams
+
+QALIPSIS provides IT Operations teams solutions to:
+
+* Monitor how deployments and other IT operations can affect the availability and overall performance of the system.
+* Expose bottlenecks and find correlations between load and resource consumption by unifying the verification of
+  load-test and infrastructure metrics.
+* Identify issues before users and customers do by verifying the size and configuration of the system's infrastructure.
+* Examine how the system performs during normal and peak loads by running load tests from different geographic locations
+  at varying times.
+* Generate exceptional results on virtual engines, containers and conventional development machines.
+* Allow for implementation and integration of verifications in their standard DevOps workflow.
+
+## Official website
+
+You can learn more about QALIPSIS under https://qalipsis.io.
+
+## Documentation
+
+The complete documentation of QALIPSIS is available under https://docs.qalipsis.io.
+
+## Examples
+
+You can find examples of QALIPSIS scenarios under https://github.com/qalipsis/qalipsis-examples.
+
+## License
+
+QALIPSIS OSS is distributed under the AGPL 3.0, the terms can be read [here](./LICENSE).
