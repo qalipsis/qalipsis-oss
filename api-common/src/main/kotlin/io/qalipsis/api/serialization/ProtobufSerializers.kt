@@ -14,23 +14,24 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.report
+package io.qalipsis.api.serialization
 
-import io.qalipsis.api.context.CampaignKey
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.protobuf.ProtoBuf
 
 /**
- * Service in charge of publishing the campaigns reports.
+ * Configured Protobuf serializer.
  *
- * @author Palina Bril
+ * @author Eric Jessé
  */
-interface CampaignReportPublisher {
+object ProtobufSerializers {
 
     /**
-     * Publishes a report for a completed campaign.
-     *
-     * @param campaignKey the key identifying the campaign
-     * @param report report of the completed campaign
+     * Configured Kotlin native [Protobuf].
      */
-    suspend fun publish(campaignKey: CampaignKey, report: CampaignReport)
+    @ExperimentalSerializationApi
+    val protobuf = ProtoBuf {
+        encodeDefaults = true
+    }
 
 }

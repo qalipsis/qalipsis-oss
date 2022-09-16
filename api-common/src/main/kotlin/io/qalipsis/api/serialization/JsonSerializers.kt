@@ -14,23 +14,30 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.report
+package io.qalipsis.api.serialization
 
-import io.qalipsis.api.context.CampaignKey
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
 
 /**
- * Service in charge of publishing the campaigns reports.
+ * Configured JSON serializer.
  *
- * @author Palina Bril
+ * @author Eric Jessé
  */
-interface CampaignReportPublisher {
+object JsonSerializers {
 
     /**
-     * Publishes a report for a completed campaign.
-     *
-     * @param campaignKey the key identifying the campaign
-     * @param report report of the completed campaign
+     * Configured Kotlin native [Json].
      */
-    suspend fun publish(campaignKey: CampaignKey, report: CampaignReport)
+    @ExperimentalSerializationApi
+    val json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+        encodeDefaults = true
+        explicitNulls = false
+        allowStructuredMapKeys = true
+        allowSpecialFloatingPointValues = true
+        classDiscriminator = "#cl"
+    }
 
 }

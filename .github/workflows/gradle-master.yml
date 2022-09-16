@@ -61,12 +61,3 @@ jobs:
 
       - name: Build
         run: ./gradlew build
-
-      - name: Upload JARs
-        uses: actions/upload-artifact@v2
-        with:
-          name: Jars
-          path: |
-            ./**/build/libs/*.jar
-            !./**/build/libs/*-javadoc.jar
-

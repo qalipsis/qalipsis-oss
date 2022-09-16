@@ -38,14 +38,14 @@ dependencies {
     compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.swagger.core.v3:swagger-annotations")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${kotlinSerialization}")
 
     compileOnly(kotlin("stdlib"))
     implementation("cool.graph:cuid-java:0.1.1")
     api(project(":api-dev"))
     api(project(":api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    // Libraries relevant for the development of plugins.
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
     api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
@@ -65,5 +65,6 @@ dependencies {
     testImplementation(project(":test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
 
+    testFixturesCompileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
     testFixturesImplementation(project(":test"))
 }

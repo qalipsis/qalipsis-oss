@@ -23,7 +23,8 @@ import assertk.assertions.isEqualTo
 import io.qalipsis.api.serialization.SerialFormatWrapper
 import io.qalipsis.api.serialization.SerializablePerson
 import io.qalipsis.api.serialization.SerializablePersonSerializationWrapper
-import io.qalipsis.api.serialization.Serializers
+import io.qalipsis.api.serialization.SerializersProvider
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.Test
 
@@ -33,6 +34,7 @@ data class SerializableTeam(
     val members: List<SerializablePerson>
 )
 
+@ExperimentalSerializationApi
 @io.qalipsis.api.serialization.Serializable([SerializablePerson::class])
 internal class SerializationTest {
 
@@ -42,7 +44,7 @@ internal class SerializationTest {
 
     @Test
     internal fun `should load all the serializers classes`() {
-        val classes = Serializers.loadSerializers()
+        val classes = SerializersProvider.serialFormatWrappers
 
         assertThat(classes.map { it::class }).containsAll(
             SerializableTeamSerializationWrapper::class,
