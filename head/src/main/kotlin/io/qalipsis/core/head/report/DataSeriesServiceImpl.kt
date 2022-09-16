@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requires
@@ -39,7 +58,7 @@ internal class DataSeriesServiceImpl(
 
     override suspend fun get(username: String, tenant: String, reference: String): DataSeries {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant = tenant, reference = reference)
-        val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId)
+        val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId) ?: ""
         if (username != creatorName && dataSeriesEntity.sharingMode == SharingMode.NONE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to use this data series")
         }
@@ -55,7 +74,7 @@ internal class DataSeriesServiceImpl(
             DataSeriesEntity(
                 reference = idGenerator.short(),
                 tenantId = tenantRepository.findIdByReference(tenant),
-                creatorId = userRepository.findIdByUsername(creator),
+                creatorId = requireNotNull(userRepository.findIdByUsername(creator)),
                 displayName = dataSeries.displayName,
                 sharingMode = dataSeries.sharingMode,
                 dataType = dataSeries.dataType,
@@ -85,7 +104,7 @@ internal class DataSeriesServiceImpl(
         patches: Collection<DataSeriesPatch>
     ): DataSeries {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant, reference)
-        val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId)
+        val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId) ?: ""
         if (username != creatorName && dataSeriesEntity.sharingMode != SharingMode.WRITE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to update this data series")
         }

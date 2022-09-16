@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
@@ -5,18 +24,12 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
 plugins {
     idea
     java
-    kotlin("jvm") version "1.5.31"
-    kotlin("kapt") version "1.5.31"
-    kotlin("plugin.allopen") version "1.5.31"
-    kotlin("plugin.serialization") version "1.5.31"
-    kotlin("plugin.noarg") version "1.5.31"
-    id("net.ltgt.apt") version "0.21" apply false
-
-    id("nebula.contacts") version "5.1.0"
-    id("nebula.info") version "9.1.1"
-    id("nebula.maven-publish") version "17.0.0"
-    id("nebula.maven-scm") version "17.0.0"
-    id("nebula.maven-manifest") version "17.0.0"
+    kotlin("jvm") version "1.6.21"
+    kotlin("kapt") version "1.6.21"
+    kotlin("plugin.allopen") version "1.6.21"
+    kotlin("plugin.serialization") version "1.6.21"
+    kotlin("plugin.noarg") version "1.6.21"
+    `maven-publish`
     signing
 }
 
@@ -42,33 +55,8 @@ val testNumCpuCore: String? by project
 allprojects {
     group = "io.qalipsis"
     version = File(rootDir, "project.version").readText().trim()
-
-    apply(plugin = "java")
-    apply(plugin = "net.ltgt.apt")
-    apply(plugin = "nebula.contacts")
-    apply(plugin = "nebula.info")
-    apply(plugin = "nebula.maven-publish")
-    apply(plugin = "nebula.maven-scm")
-    apply(plugin = "nebula.maven-manifest")
-    apply(plugin = "nebula.maven-developer")
     apply(plugin = "signing")
-    apply(plugin = "nebula.source-jar")
-
-    infoBroker {
-        excludedManifestProperties = listOf(
-            "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
-            "Built-OS", "Build-Host", "Build-Job", "Build-Host", "Build-Job", "Build-Number", "Build-Id", "Build-Url",
-            "Built-Status"
-        )
-    }
-
-    contacts {
-        addPerson("eric.jesse@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
-            moniker = "Eric Jessé"
-            github = "ericjesse"
-            role("Owner")
-        })
-    }
+    apply(plugin = "maven-publish")
 
     repositories {
         mavenLocal()
@@ -77,11 +65,6 @@ allprojects {
             name = "maven-central-snapshots"
             setUrl("https://oss.sonatype.org/content/repositories/snapshots")
         }
-    }
-
-    configure<JavaPluginConvention> {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 
     signing {
@@ -101,6 +84,60 @@ allprojects {
                 credentials {
                     username = ossrhUsername
                     password = ossrhPassword
+                }
+            }
+        }
+    }
+
+    if (isNotPlatform()) {
+        logger.lifecycle("Applying the Java configuration on $name")
+        configureNotPlatform()
+    } else {
+        logger.lifecycle("Ignoring the Java configuration on $name")
+    }
+}
+
+
+/**
+ * Verifies whether a Gradle project is a Java platform module.
+ */
+fun Project.isNotPlatform() = !name.contains("platform")
+
+/**
+ * Applies the configuration for non-platform modules.
+ */
+fun Project.configureNotPlatform() {
+    apply(plugin = "java")
+
+    configure<JavaPluginConvention> {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                from(components["java"])
+                pom {
+
+                    name.set(this@configureNotPlatform.name)
+                    description.set(this@configureNotPlatform.description)
+                    url.set("https://qalipsis.io")
+                    licenses {
+                        license {
+                            name.set("GNU AFFERO GENERAL PUBLIC LICENSE, Version 3 (AGPL-3.0)")
+                            url.set("http://opensource.org/licenses/AGPL-3.0")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("ericjesse")
+                            name.set("Eric Jessé")
+                        }
+                    }
+                    scm {
+                        url.set("https://github.com/qalipsis/qalipsis-oss.git/")
+                    }
                 }
             }
         }

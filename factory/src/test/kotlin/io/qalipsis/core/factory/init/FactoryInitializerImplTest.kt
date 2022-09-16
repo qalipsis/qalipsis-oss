@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.factory.init
 
 import assertk.all
@@ -25,8 +44,7 @@ import io.mockk.unmockkObject
 import io.mockk.verify
 import io.mockk.verifyOrder
 import io.qalipsis.api.exceptions.InvalidSpecificationException
-import io.qalipsis.api.processors.ServicesLoader
-import io.qalipsis.api.processors.injector.Injector
+import io.qalipsis.api.injector.Injector
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
@@ -58,9 +76,6 @@ import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Duration
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineDispatcher
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -69,6 +84,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
@@ -154,7 +172,7 @@ internal class FactoryInitializerImplTest {
 
     @AfterEach
     internal fun tearDown() {
-        unmockkObject(ServicesLoader)
+        unmockkObject(FactoryServicesLoader)
     }
 
     @Test
@@ -542,8 +560,8 @@ internal class FactoryInitializerImplTest {
         // given
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
         val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
-        mockkObject(ServicesLoader)
-        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
+        mockkObject(FactoryServicesLoader)
+        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
             "scenario-1" to scenarioSpecification1,
             "scenario-2" to scenarioSpecification2
@@ -570,7 +588,7 @@ internal class FactoryInitializerImplTest {
         // then
         val publishedScenarios: MutableList<Collection<Scenario>> = mutableListOf()
         verify {
-            ServicesLoader.loadScenarios<Any>(refEq(injector))
+            FactoryServicesLoader.loadScenarios<Any>(refEq(injector))
             scenarioSpecificationsKeeper.asMap()
             factoryInitializer["convertScenario"](eq("scenario-2"), refEq(scenarioSpecification2))
             factoryInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
@@ -589,8 +607,8 @@ internal class FactoryInitializerImplTest {
         // given
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
         val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
-        mockkObject(ServicesLoader)
-        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } answers {
+        mockkObject(FactoryServicesLoader)
+        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } answers {
             Thread.sleep(1500)
             emptyList()
         }
@@ -617,8 +635,8 @@ internal class FactoryInitializerImplTest {
     @Timeout(4)
     internal fun `should throw the conversion exception`() {
         // given
-        mockkObject(ServicesLoader)
-        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
+        mockkObject(FactoryServicesLoader)
+        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns mapOf("scenario-1" to relaxedMockk { })
         val exception = relaxedMockk<Exception>()
         every { factoryInitializer.convertScenario(any(), any()) } throws exception
@@ -640,8 +658,8 @@ internal class FactoryInitializerImplTest {
     @Timeout(4)
     internal fun `should generate an exit status exception when there is no scenario to convert`() {
         // given
-        mockkObject(ServicesLoader)
-        every { ServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
+        mockkObject(FactoryServicesLoader)
+        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
         every { scenarioSpecificationsKeeper.asMap() } returns emptyMap()
 
         // when

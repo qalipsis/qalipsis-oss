@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.runtime.bootstrap
 
 import assertk.all
@@ -17,15 +36,15 @@ import io.qalipsis.api.steps.returns
 import io.qalipsis.api.steps.verify
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
-import java.time.Duration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.time.Duration
 
 /**
  * @author Eric Jessé
@@ -103,7 +122,8 @@ internal class QalipsisBootstrapIntegrationTest {
                     "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                     "-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                     "-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                    "-c", "logging.level.io.qalipsis.core.factory.init.FactoryInitializerImpl=TRACE"
+                    "-c", "logging.level.io.qalipsis.core.factory.init.FactoryInitializerImpl=TRACE",
+                    "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE"
                 )
             )
 

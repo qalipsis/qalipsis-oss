@@ -91,3 +91,8 @@ micronaut:
           enabled: ${monitoring.enabled}
         bytebuf-allocators:
           enabled: ${monitoring.enabled}
+
+netty:
+  default:
+    allocator:
+      max-order: 3

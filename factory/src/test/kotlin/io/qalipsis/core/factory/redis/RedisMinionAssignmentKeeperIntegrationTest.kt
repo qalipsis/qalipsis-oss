@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.factory.redis
 
 import assertk.all
@@ -19,10 +38,10 @@ import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verify
-import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore

@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 plugins {
     kotlin("jvm")
     kotlin("kapt")
@@ -19,28 +38,15 @@ allOpen {
     )
 }
 
-val micronautVersion: String by project
-val kotlinCoroutinesVersion: String by project
-val testContainersVersion: String by project
-val jacksonVersion: String by project
-val catadioptreVersion: String by project
-val kotlinSerialization: String by project
-
-val postgresqlDriverVersion = "42.3.1"
-
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
 kapt.useBuildCache = false
 
 
 dependencies {
-    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    implementation(platform("io.qalipsis:dev-platform:${project.version}"))
     compileOnly("org.graalvm.nativeimage:svm")
-    compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
+    compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
-
-    compileOnly(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
 
     implementation(project(":core"))
     implementation("io.qalipsis:api-common:${project.version}")
@@ -48,18 +54,18 @@ dependencies {
     implementation("io.qalipsis:api-processors:${project.version}")
 
     implementation("io.micronaut.security:micronaut-security")
-    implementation("com.google.guava:guava:29.0-jre")
-    implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
-    implementation("cool.graph:cuid-java:0.1.1")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+    implementation("com.google.guava:guava")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+    implementation("cool.graph:cuid-java")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
     implementation("io.micronaut.data:micronaut-data-jdbc")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
-    implementation("org.postgresql:postgresql:$postgresqlDriverVersion")
+    implementation("org.postgresql:postgresql")
     implementation("io.micronaut.liquibase:micronaut-liquibase")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
@@ -69,35 +75,38 @@ dependencies {
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
     implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
     implementation("io.micronaut.rxjava3:micronaut-rxjava3")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.module:jackson-module-paranamer:$jacksonVersion")
-    implementation("org.apache.commons:commons-lang3:3.+")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.module:jackson-module-paranamer")
+    implementation("org.apache.commons:commons-lang3")
 
+    kapt(platform("io.qalipsis:dev-platform:${project.version}"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
     kapt("io.qalipsis:api-processors:${project.version}")
-    kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
+    kapt("io.aeris-consulting:catadioptre-annotations")
     kapt("io.micronaut.data:micronaut-data-processor")
     kapt("io.micronaut.openapi:micronaut-openapi")
-    kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
+    kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
+    testImplementation(platform("io.qalipsis:dev-platform:${project.version}"))
     testImplementation("io.qalipsis:test:${project.version}")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-    testImplementation("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
+    testImplementation("io.aeris-consulting:catadioptre-kotlin")
     testImplementation(testFixtures("io.qalipsis:api-dsl:${project.version}"))
     testImplementation(testFixtures("io.qalipsis:api-common:${project.version}"))
     testImplementation(testFixtures(project(":runtime")))
     testImplementation(testFixtures(project(":core")))
-    testImplementation("org.testcontainers:testcontainers:${testContainersVersion}")
-    testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:postgresql")
 
-    testImplementation("org.bouncycastle:bcprov-jdk15on:1.64")
-    testImplementation("org.bouncycastle:bcprov-ext-jdk15on:1.64")
-    testImplementation("org.bouncycastle:bcpkix-jdk15on:1.64")
+    testImplementation("org.bouncycastle:bcprov-jdk15on")
+    testImplementation("org.bouncycastle:bcprov-ext-jdk15on")
+    testImplementation("org.bouncycastle:bcpkix-jdk15on")
 
+    kaptTest(platform("io.qalipsis:dev-platform:${project.version}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
 }
