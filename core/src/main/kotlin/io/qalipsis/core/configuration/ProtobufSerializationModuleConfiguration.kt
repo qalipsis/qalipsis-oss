@@ -1,10 +1,26 @@
+/*
+ * Copyright 2022 AERIS IT Solutions GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package io.qalipsis.core.configuration
 
 import io.micronaut.context.annotation.Factory
 import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.serialization.Serializers
+import io.qalipsis.api.serialization.ProtobufSerializers
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.CampaignShutdownDirective
@@ -41,15 +57,15 @@ import io.qalipsis.core.feedbacks.MinionsStartFeedback
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.SerializersModuleBuilder
 import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.protobuf.ProtoBuf
 
 /**
- * Kotlin Json Serialization configuration.
+ * Kotlin Protobuf Serialization configuration.
  *
- * Creates a [Json] instance properly configured with serializer modules for subclasses of [Feedback] and [Directive].
+ * Creates a [Protobuf] instance properly configured with serializer modules for subclasses of [Feedback] and [Directive].
  * This way Kotlin serialization can serialize and deserialize data using Interfaces or Parent classes and still keep reference to the original class.
  * It is needed to explicitly declare polymorphic relations due to Kotlin serialization limitations related to polymorphic objects.
  * See more [here](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/polymorphism.md).
@@ -59,14 +75,14 @@ import kotlinx.serialization.modules.polymorphic
 @Factory
 @Requirements(
     Requires(notEnv = [ExecutionEnvironments.STANDALONE]),
-    Requires(missingBeans = [JsonSerializationModuleConfiguration::class])
+    Requires(missingBeans = [ProtobufSerializationModuleConfiguration::class])
 )
 @ExperimentalSerializationApi
-open class JsonSerializationModuleConfiguration {
+open class ProtobufSerializationModuleConfiguration {
 
     @Singleton
     @Primary
-    fun json() = Json(from = Serializers.json) {
+    fun protobuf() = ProtoBuf(from = ProtobufSerializers.protobuf) {
         serializersModule = SerializersModule {
             factoryApiDirectives(this)
             minionApiDirectives(this)

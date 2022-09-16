@@ -59,8 +59,8 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
-                reportPublisher1.publish(refEq(campaign), refEq(report))
-                reportPublisher2.publish(refEq(campaign), refEq(report))
+                reportPublisher1.publish("my-campaign", refEq(report))
+                reportPublisher2.publish("my-campaign", refEq(report))
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
             }
             confirmVerified(factoryService, campaignReportStateKeeper, campaignAutoStarter)
@@ -98,8 +98,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
-                reportPublisher1.publish(refEq(campaign), refEq(report))
-                reportPublisher2.publish(refEq(campaign), refEq(report))
+                reportPublisher1.publish("my-campaign", refEq(report))
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
             }
             assertThat(connection.sync().keys("*").count()).isEqualTo(0)

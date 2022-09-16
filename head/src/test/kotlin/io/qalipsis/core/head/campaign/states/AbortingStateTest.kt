@@ -11,9 +11,9 @@ import assertk.assertions.isTrue
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.api.campaign.ScenarioConfiguration
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -27,7 +27,7 @@ internal class AbortingStateTest : AbstractStateTest() {
 
     @Test
     fun `should not be a completion state`() {
-        assertThat(AbortingState(campaign, AbortCampaignConfiguration(), "").isCompleted).isFalse()
+        assertThat(AbortingState(campaign, AbortRunningCampaign(), "").isCompleted).isFalse()
     }
 
     @Test
@@ -39,7 +39,7 @@ internal class AbortingStateTest : AbstractStateTest() {
         )
 
         // when
-        val directives = AbortingState(campaign, AbortCampaignConfiguration(), "").run {
+        val directives = AbortingState(campaign, AbortRunningCampaign(), "").run {
             inject(campaignExecutionContext)
             init()
         }
@@ -64,7 +64,7 @@ internal class AbortingStateTest : AbstractStateTest() {
             // given
             every { campaign.factories } returns mutableMapOf("node-1" to relaxedMockk(),)
 
-            val state = AbortingState(campaign, AbortCampaignConfiguration(hard = false), "")
+            val state = AbortingState(campaign, AbortRunningCampaign(hard = false), "")
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -90,7 +90,7 @@ internal class AbortingStateTest : AbstractStateTest() {
             // given
             every { campaign.factories } returns mutableMapOf("node-1" to relaxedMockk())
 
-            val state = AbortingState(campaign, AbortCampaignConfiguration(hard = true),"")
+            val state = AbortingState(campaign, AbortRunningCampaign(hard = true), "")
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -123,7 +123,7 @@ internal class AbortingStateTest : AbstractStateTest() {
                 "node-2" to relaxedMockk()
             )
 
-            val state = AbortingState(campaign, AbortCampaignConfiguration(),"this error")
+            val state = AbortingState(campaign, AbortRunningCampaign(), "this error")
             state.run {
                 inject(campaignExecutionContext)
                 init()

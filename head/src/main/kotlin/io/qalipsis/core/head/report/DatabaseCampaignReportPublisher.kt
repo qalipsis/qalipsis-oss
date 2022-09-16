@@ -3,7 +3,7 @@ package io.qalipsis.core.head.report
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.util.StringUtils
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.api.report.ReportMessage
@@ -38,8 +38,8 @@ internal class DatabaseCampaignReportPublisher(
     private val scenarioReportMessageRepository: ScenarioReportMessageRepository
 ) : CampaignReportPublisher {
 
-    override suspend fun publish(campaign: CampaignConfiguration, report: CampaignReport) {
-        val campaignReportEntity = saveCampaignReport(campaign.tenant, report)
+    override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
+        val campaignReportEntity = saveCampaignReport(report)
         val scenarioReportEntitiesToSave = report.scenariosReports.map {
             mapToScenarioReportEntity(it, campaignReportEntity.id)
         }.toList()
@@ -59,10 +59,10 @@ internal class DatabaseCampaignReportPublisher(
         }
     }
 
-    private suspend fun saveCampaignReport(tenant: String, campaignReport: CampaignReport): CampaignReportEntity {
+    private suspend fun saveCampaignReport(campaignReport: CampaignReport): CampaignReportEntity {
         return campaignReportRepository.save(
             CampaignReportEntity(
-                campaignId = campaignRepository.findIdByKey(tenant, campaignReport.campaignKey),
+                campaignId = campaignRepository.findIdByKey(campaignReport.campaignKey),
                 startedMinions = campaignReport.startedMinions!!,
                 completedMinions = campaignReport.completedMinions!!,
                 successfulExecutions = campaignReport.successfulExecutions!!,

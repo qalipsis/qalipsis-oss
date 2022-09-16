@@ -1,6 +1,6 @@
 package io.qalipsis.core.factory.campaign
 
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.directives.DispatcherChannel
 

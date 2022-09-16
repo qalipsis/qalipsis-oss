@@ -5,7 +5,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.campaign.Campaign

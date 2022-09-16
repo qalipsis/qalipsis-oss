@@ -21,13 +21,17 @@ import java.time.Instant
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
 
+    suspend fun findIdByKey(campaignKey: String): Long
+
+    suspend fun findByKey(campaignKey: String): CampaignEntity
+
     @Query(
         """SELECT campaign.id
             FROM campaign
             WHERE key = :campaignKey AND "end" IS NULL AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByKeyAndEndIsNull(tenant: String, campaignKey: String): Long
+    suspend fun findIdByTenantAndKeyAndEndIsNull(tenant: String, campaignKey: String): Long
 
     @Query(
         """SELECT *
@@ -35,7 +39,7 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             WHERE key = :campaignKey AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findByKey(tenant: String, campaignKey: String): CampaignEntity
+    suspend fun findByTenantAndKey(tenant: String, campaignKey: String): CampaignEntity
 
     @Query(
         """SELECT campaign.id
@@ -43,7 +47,7 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             WHERE key = :campaignKey AND EXISTS 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun findIdByKey(tenant: String, campaignKey: String): Long
+    suspend fun findIdByTenantAndKey(tenant: String, campaignKey: String): Long
 
     /**
      * Marks the not yet started campaign with the specified name [campaignKey] as started.

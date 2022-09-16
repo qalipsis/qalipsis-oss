@@ -4,10 +4,10 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
-import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
@@ -16,6 +16,7 @@ import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
@@ -38,15 +39,16 @@ internal class PersistentCampaignService(
 ) : CampaignService {
 
     override suspend fun create(
+        tenant: String,
         configurer: String,
-        campaignDisplayName: String,
         campaignConfiguration: CampaignConfiguration
-    ): Campaign {
+    ): RunningCampaign {
+        val runningCampaign = campaignConverter.convertConfiguration(tenant, campaignConfiguration)
         val campaign = campaignRepository.save(
             CampaignEntity(
-                tenantId = tenantRepository.findIdByReference(campaignConfiguration.tenant),
-                key = campaignConfiguration.key,
-                name = campaignDisplayName,
+                tenantId = tenantRepository.findIdByReference(tenant),
+                key = runningCampaign.key,
+                name = campaignConfiguration.name,
                 scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
                 hardTimeout = campaignConfiguration.hardTimeout ?: false,
                 speedFactor = campaignConfiguration.speedFactor,
@@ -57,7 +59,11 @@ internal class PersistentCampaignService(
             CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
         }).count()
 
-        return campaignConverter.convertToModel(campaign)
+        return runningCampaign
+    }
+
+    override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign {
+        return campaignConverter.convertToModel(campaignRepository.findByTenantAndKey(tenant, campaignKey))
     }
 
     override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
@@ -79,7 +85,7 @@ internal class PersistentCampaignService(
 
     override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
         campaignRepository.complete(tenant, campaignKey, result)
-        return campaignConverter.convertToModel(campaignRepository.findByKey(tenant, campaignKey))
+        return retrieve(tenant, campaignKey)
     }
 
     override suspend fun search(
@@ -110,7 +116,7 @@ internal class PersistentCampaignService(
     }
 
     override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
-        val campaign = campaignRepository.findByKey(tenant, campaignKey)
+        val campaign = campaignRepository.findByTenantAndKey(tenant, campaignKey)
         campaignRepository.update(campaign.copy(aborter = userRepository.findIdByUsername(aborter)))
     }
 

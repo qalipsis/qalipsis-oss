@@ -13,7 +13,7 @@ import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsShutdownDirective
@@ -284,7 +284,7 @@ internal class RunningStateTest : AbstractStateTest() {
         }
 
         // when
-        val newState = state.abort(AbortCampaignConfiguration())
+        val newState = state.abort(AbortRunningCampaign())
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {

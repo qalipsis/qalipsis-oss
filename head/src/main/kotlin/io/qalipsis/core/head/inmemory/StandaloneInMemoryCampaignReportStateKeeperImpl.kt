@@ -160,9 +160,9 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     @LogInputAndOutput
     override suspend fun generateReport(campaignKey: CampaignKey): CampaignReport? {
         join()
-        return campaignStates.get(campaignKey)?.map { (_, runningScenarioCampaign) ->
-            runningScenarioCampaign.toReport(campaignKey)
-        }?.toCampaignReport()
+        val scenariosReports = campaignStates.get(campaignKey)
+            ?.map { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
+        return scenariosReports?.toCampaignReport()
     }
 
     @LogInputAndOutput

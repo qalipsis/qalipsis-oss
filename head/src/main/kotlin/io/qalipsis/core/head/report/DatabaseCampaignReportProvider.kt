@@ -31,7 +31,7 @@ internal class DatabaseCampaignReportProvider(
 ) : CampaignReportProvider {
 
     override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignReport {
-        val campaignEntity = campaignRepository.findByKey(tenant = tenant, campaignKey)
+        val campaignEntity = campaignRepository.findByTenantAndKey(tenant, campaignKey)
         campaignReportRepository.findByCampaignId(campaignEntity.id)
         // When working with the database, the report is only available once the campaign is complete.
         return campaignReportRepository.findByCampaignId(campaignEntity.id).firstOrNull()?.let { reportEntity ->

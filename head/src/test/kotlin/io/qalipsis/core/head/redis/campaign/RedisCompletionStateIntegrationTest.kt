@@ -17,9 +17,9 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.FactoryConfiguration
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.FactoryConfiguration
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
@@ -73,8 +73,8 @@ internal class RedisCompletionStateIntegrationTest : AbstractRedisStateIntegrati
             )
         }
         assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
-            prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
-            prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.COMPLETION_STATE)
+            prop(Pair<RunningCampaign, CampaignRedisState>::first).isDataClassEqualTo(campaign)
+            prop(Pair<RunningCampaign, CampaignRedisState>::second).isEqualTo(CampaignRedisState.COMPLETION_STATE)
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }

@@ -3,7 +3,7 @@ package io.qalipsis.core.head.report
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.annotation.Value
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.api.report.ReportMessage
@@ -29,9 +29,9 @@ internal class JunitReportPublisher(
     @Value("\${report.export.junit.folder}") private val reportFolder: String
 ) : CampaignReportPublisher {
 
-    override suspend fun publish(campaign: CampaignConfiguration, report: CampaignReport) {
+    override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }!!
-        val dir = File(reportFolder, campaign.key)
+        val dir = File(reportFolder, campaignKey)
         dir.mkdirs()
 
         report.scenariosReports.forEach {

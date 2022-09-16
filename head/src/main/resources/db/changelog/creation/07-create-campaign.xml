@@ -15,7 +15,7 @@
         <constraints nullable="false"/>
       </column>
       <column name="key" type="varchar(60)">
-        <constraints nullable="false"/>
+        <constraints nullable="false" unique="true" uniqueConstraintName="unique_campaign_key_idx"/>
       </column>
       <column name="name" type="varchar(300)">
         <constraints nullable="false"/>
@@ -54,10 +54,5 @@
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
     </createTable>
-
-    <createIndex schemaName="qalipsis" indexName="unique_campaign_key_idx" tableName="campaign" unique="true">
-      <column name="tenant_id"/>
-      <column name="key"/>
-    </createIndex>
   </changeSet>
 </databaseChangeLog>

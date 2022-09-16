@@ -1,9 +1,7 @@
 package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.SerialFormatWrapper
-import io.qalipsis.api.serialization.Serializers
-import io.qalipsis.core.serialization.builtin.StringSerializationWrapper
-import io.qalipsis.core.serialization.builtin.UnitSerializationWrapper
+import io.qalipsis.api.serialization.SerializersProvider
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.reflect.KClass
@@ -24,15 +22,7 @@ internal class SerialFormatRecordSerializer : RecordSerializer {
     /**
      * Map of all the serializers, accessible by the types they support.
      */
-    private val serializersByType = Serializers.loadSerializers()
-        .flatMap { ser -> ser.types.map { type -> type to ser } }
-        .groupBy { (key, _) -> key }
-        .mapValues { (_, value) -> value.map { it.second } }
-        .toMap() +
-            mapOf(
-                String::class to listOf(StringSerializationWrapper()),
-                Unit::class to listOf(UnitSerializationWrapper()),
-            )
+    private val serializersByType = SerializersProvider.serialFormatWrappersByType
 
     /**
      * All the qualifiers of the supported serializers.

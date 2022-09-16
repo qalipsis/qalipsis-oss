@@ -2,7 +2,8 @@ package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments.HEAD
@@ -23,7 +24,7 @@ import java.time.Duration
 )
 internal class ConsoleReportPublisher : CampaignReportPublisher {
 
-    override suspend fun publish(campaign: CampaignConfiguration, report: CampaignReport) {
+    override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }
 
         println(

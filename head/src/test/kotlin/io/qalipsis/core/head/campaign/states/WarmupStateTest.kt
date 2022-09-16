@@ -12,7 +12,7 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -297,7 +297,7 @@ internal class WarmupStateTest : AbstractStateTest() {
         }
 
         // when
-        val newState = state.abort(AbortCampaignConfiguration())
+        val newState = state.abort(AbortRunningCampaign())
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {

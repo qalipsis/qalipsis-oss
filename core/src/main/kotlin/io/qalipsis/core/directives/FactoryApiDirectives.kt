@@ -1,9 +1,9 @@
 package io.qalipsis.core.directives
 
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.validation.constraints.NotEmpty
@@ -106,7 +106,7 @@ data class CampaignAbortDirective(
     /**
      * Configuration defining soft/hard aborting mode.
      */
-    val abortCampaignConfiguration: AbortCampaignConfiguration = AbortCampaignConfiguration(hard = true)
+    val abortRunningCampaign: AbortRunningCampaign = AbortRunningCampaign(hard = true)
 ) : DescriptiveDirective(), CampaignManagementDirective {
 
     override var tenant: String = ""

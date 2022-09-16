@@ -1,6 +1,6 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.CampaignShutdownDirective
@@ -9,7 +9,7 @@ import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 
 internal open class FailureState(
-    protected val campaign: CampaignConfiguration,
+    protected val campaign: RunningCampaign,
     private val error: String
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 

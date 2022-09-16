@@ -1,27 +1,22 @@
 package io.qalipsis.core.head.model.converter
 
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.report.CampaignReport
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.CampaignConfiguration
 
 /**
- * Interface of convertor from [CampaignRequest] to [CampaignConfiguration].
+ * Interface of convertor from [CampaignConfiguration] to [RunningCampaign].
  *
  * @author Palina Bril
  */
 internal interface CampaignConverter {
 
     /**
-     * Converts from [CampaignRequest] to [CampaignConfiguration].
+     * Converts from [CampaignConfiguration] to [RunningCampaign].
      */
-    suspend fun convertRequest(tenant: String, campaign: CampaignRequest): CampaignConfiguration
+    suspend fun convertConfiguration(tenant: String, campaign: CampaignConfiguration): RunningCampaign
 
     suspend fun convertToModel(campaignEntity: CampaignEntity): Campaign
 
-    /**
-     * Converts from [CampaignReport] to [CampaignReport].
-     */
-    suspend fun convertReport(campaignReport: CampaignReport): CampaignReport
 }

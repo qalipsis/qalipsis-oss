@@ -1,17 +1,17 @@
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.Feedback
 
 internal open class AbortingState(
-    protected val campaign: CampaignConfiguration,
-    protected val abortConfiguration: AbortCampaignConfiguration,
+    protected val campaign: RunningCampaign,
+    protected val abortConfiguration: AbortRunningCampaign,
     protected val error: String
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
@@ -24,7 +24,7 @@ internal open class AbortingState(
                 campaignKey = campaignKey,
                 channel = campaign.broadcastChannel,
                 scenarioNames = campaign.scenarios.keys.toList(),
-                abortCampaignConfiguration = AbortCampaignConfiguration(abortConfiguration.hard)
+                abortRunningCampaign = AbortRunningCampaign(abortConfiguration.hard)
             )
         )
     }

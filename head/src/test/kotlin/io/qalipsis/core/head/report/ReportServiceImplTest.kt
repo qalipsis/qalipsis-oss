@@ -117,7 +117,7 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             coEvery { reportRepository.save(any()) } returnsArgument 0
-            coEvery { tenantRepository.findIdByReference("the-tenant") } returns 123L
+            coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
 
@@ -125,7 +125,7 @@ internal class ReportServiceImplTest {
 
             // when
             val result = reportServiceImpl.create(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 creator = "the-user",
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
             )
@@ -174,13 +174,10 @@ internal class ReportServiceImplTest {
     internal fun `should create the report by specifying all fields`() = testDispatcherProvider.runTest {
         // given
         coEvery { reportRepository.save(any()) } returnsArgument 0
-        coEvery { tenantRepository.findIdByReference("the-tenant") } returns 123L
+        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
         coEvery {
-            campaignRepository.findKeyByTenantAndKeyIn(
-                "the-tenant",
-                listOf("campaign-key1", "campaign-key2")
-            )
+            campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1", "campaign-key2"))
         } returns setOf("campaign-key1", "campaign-key2")
         coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
             "campaign-key1",
@@ -190,12 +187,12 @@ internal class ReportServiceImplTest {
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
         } returns listOf("scenario-1", "scenario-2", "scenario-3")
-        coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
+        coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("my-tenant", any()) } returns true
         coEvery {
-            dataSeriesRepository.findAllByTenantAndReferences("the-tenant", listOf("series-ref-1"))
+            dataSeriesRepository.findAllByTenantAndReferences("my-tenant", listOf("series-ref-1"))
         } returns listOf(dataSeries[0])
         coEvery {
-            dataSeriesRepository.findAllByTenantAndReferences("the-tenant", listOf("series-ref-2"))
+            dataSeriesRepository.findAllByTenantAndReferences("my-tenant", listOf("series-ref-2"))
         } returns listOf(dataSeries[1])
         coEvery { reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>()) } returns flowOf(
             ReportDataComponentEntity(
@@ -228,7 +225,7 @@ internal class ReportServiceImplTest {
 
         // when
         val result = reportServiceImpl.create(
-            tenant = "the-tenant",
+            tenant = "my-tenant",
             creator = "the-user",
             reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
         )
@@ -273,9 +270,9 @@ internal class ReportServiceImplTest {
             )
         }
         coVerifyOrder {
-            campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1", "campaign-key2"))
-            dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "the-tenant", reference = any())
-            tenantRepository.findIdByReference("the-tenant")
+            campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1", "campaign-key2"))
+            dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant", reference = any())
+            tenantRepository.findIdByReference("my-tenant")
             userRepository.findIdByUsername("the-user")
             reportRepository.save(any())
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
@@ -290,10 +287,7 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             coEvery {
-                campaignRepository.findKeyByTenantAndKeyIn(
-                    "the-tenant",
-                    listOf("campaign-key1")
-                )
+                campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1"))
             } returns emptySet()
 
             val reportCreationAndUpdateRequest =
@@ -302,7 +296,7 @@ internal class ReportServiceImplTest {
             // when
             val exception = assertThrows<IllegalArgumentException> {
                 reportServiceImpl.create(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     creator = "the-user",
                     reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
                 )
@@ -316,8 +310,8 @@ internal class ReportServiceImplTest {
     internal fun `should not create the report when reports do not belong to the tenant`() =
         testDispatcherProvider.runTest {
             // given
-            coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", emptyList()) } returns emptySet()
-            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns false
+            coEvery { campaignRepository.findKeyByTenantAndKeyIn("my-tenant", emptyList()) } returns emptySet()
+            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("my-tenant", any()) } returns false
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
                 displayName = "report-name",
@@ -333,7 +327,7 @@ internal class ReportServiceImplTest {
             // when
             val exception = assertThrows<IllegalArgumentException> {
                 reportServiceImpl.create(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     creator = "the-user",
                     reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
                 )
@@ -350,7 +344,7 @@ internal class ReportServiceImplTest {
         val report = relaxedMockk<Report>()
         coEvery {
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 456L
             )
@@ -359,7 +353,7 @@ internal class ReportServiceImplTest {
         coEvery { reportConverter.convertToModel(any()) } returns report
 
         // when
-        val result = reportServiceImpl.get(tenant = "the-tenant", username = "other-user", reference = "report-ref")
+        val result = reportServiceImpl.get(tenant = "my-tenant", username = "other-user", reference = "report-ref")
 
         // then
         assertThat(result).isDataClassEqualTo(report)
@@ -367,7 +361,7 @@ internal class ReportServiceImplTest {
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 456L
             )
@@ -382,7 +376,7 @@ internal class ReportServiceImplTest {
         val report = relaxedMockk<Report>()
         coEvery {
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 456L
             )
@@ -391,7 +385,7 @@ internal class ReportServiceImplTest {
         coEvery { reportConverter.convertToModel(any()) } returns report
 
         // when
-        val result = reportServiceImpl.get(tenant = "the-tenant", username = "the-user", reference = "report-ref")
+        val result = reportServiceImpl.get(tenant = "my-tenant", username = "the-user", reference = "report-ref")
 
         // then
         assertThat(result).isDataClassEqualTo(report)
@@ -399,7 +393,7 @@ internal class ReportServiceImplTest {
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 456L
             )
@@ -413,7 +407,7 @@ internal class ReportServiceImplTest {
         val creatorId = 456L
         coEvery {
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = creatorId
             )
@@ -422,7 +416,7 @@ internal class ReportServiceImplTest {
 
         // when
         val exception = assertThrows<java.lang.IllegalArgumentException> {
-            reportServiceImpl.get(tenant = "the-tenant", username = "the-user", reference = "report-ref")
+            reportServiceImpl.get(tenant = "my-tenant", username = "the-user", reference = "report-ref")
         }
 
         // then
@@ -436,7 +430,7 @@ internal class ReportServiceImplTest {
             val creatorId = 456L
             coEvery {
                 reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     reference = "report-ref",
                     creatorId = creatorId
                 )
@@ -445,7 +439,7 @@ internal class ReportServiceImplTest {
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
-                reportServiceImpl.get(tenant = "the-tenant", username = "the-user", reference = "report-ref")
+                reportServiceImpl.get(tenant = "my-tenant", username = "the-user", reference = "report-ref")
             }
 
             // then
@@ -474,14 +468,14 @@ internal class ReportServiceImplTest {
             )
             coEvery {
                 reportRepository.getReportIfUpdatable(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     reference = "report-ref",
                     creatorId = 456L
                 )
             } returns reportEntity
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
-            coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1")) } returns setOf(
+            coEvery { campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1")) } returns setOf(
                 "campaign-key1"
             )
             coEvery {
@@ -493,11 +487,11 @@ internal class ReportServiceImplTest {
             coEvery {
                 campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             } returns listOf("scenario-1", "scenario-2", "scenario-3")
-            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
+            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("my-tenant", any()) } returns true
 
             coEvery {
                 dataSeriesRepository.findAllByTenantAndReferences(
-                    "the-tenant",
+                    "my-tenant",
                     listOf("series-ref-1")
                 )
             } returns listOf(dataSeries[0])
@@ -523,7 +517,7 @@ internal class ReportServiceImplTest {
 
             // when
             val result = reportServiceImpl.update(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 username = "the-user",
                 reference = "report-ref",
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
@@ -584,9 +578,9 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 userRepository.findIdByUsername("the-user")
-                reportRepository.getReportIfUpdatable(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
+                reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = 456L)
                 userRepository.findUsernameById(456L)
-                campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1"))
+                campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1"))
                 reportDataComponentRepository.deleteByReportId(any())
                 reportRepository.update(any())
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
@@ -611,14 +605,14 @@ internal class ReportServiceImplTest {
             )
             coEvery {
                 reportRepository.getReportIfUpdatable(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     reference = "report-ref",
                     creatorId = 456L
                 )
             } returns reportEntity
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
-            coEvery { campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1")) } returns setOf(
+            coEvery { campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1")) } returns setOf(
                 "campaign-key1"
             )
             coEvery {
@@ -631,8 +625,8 @@ internal class ReportServiceImplTest {
                 "scenario-1",
                 "scenario-2"
             )
-            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
-            coEvery { dataSeriesRepository.findByTenantAndReference("the-tenant", any()) } returns dataSeries[1]
+            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("my-tenant", any()) } returns true
+            coEvery { dataSeriesRepository.findByTenantAndReference("my-tenant", any()) } returns dataSeries[1]
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
                 displayName = "report-name",
@@ -643,7 +637,7 @@ internal class ReportServiceImplTest {
 
             // when
             val result = reportServiceImpl.update(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 username = "the-user",
                 reference = "report-ref",
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
@@ -663,9 +657,9 @@ internal class ReportServiceImplTest {
                 prop(Report::dataComponents).hasSize(0)
             }
             coVerifyOrder {
-                reportRepository.getReportIfUpdatable(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
+                reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = 456L)
                 userRepository.findUsernameById(456L)
-                campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1"))
+                campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1"))
                 campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
                 campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             }
@@ -687,7 +681,7 @@ internal class ReportServiceImplTest {
             )
             coEvery {
                 reportRepository.getReportIfUpdatable(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     reference = "report-ref",
                     creatorId = 456L
                 )
@@ -696,7 +690,7 @@ internal class ReportServiceImplTest {
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
             coEvery {
                 campaignRepository.findKeyByTenantAndKeyIn(
-                    "the-tenant",
+                    "my-tenant",
                     listOf("campaign-key1")
                 )
             } returns emptySet()
@@ -709,7 +703,7 @@ internal class ReportServiceImplTest {
             // when
             val exception = assertThrows<IllegalArgumentException> {
                 reportServiceImpl.update(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     username = "the-user",
                     reference = "report-ref",
                     reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
@@ -736,7 +730,7 @@ internal class ReportServiceImplTest {
         )
         coEvery {
             reportRepository.getReportIfUpdatable(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 456L
             )
@@ -745,7 +739,7 @@ internal class ReportServiceImplTest {
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
         coEvery {
             campaignRepository.findKeyByTenantAndKeyIn(
-                "the-tenant",
+                "my-tenant",
                 listOf("campaign-key1")
             )
         } returns setOf("campaign-key1")
@@ -757,10 +751,10 @@ internal class ReportServiceImplTest {
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
         } returns listOf("scenario-1", "scenario-2", "scenario-3")
-        coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("the-tenant", any()) } returns true
+        coEvery { dataSeriesRepository.checkExistenceByTenantAndReference("my-tenant", any()) } returns true
         coEvery {
             dataSeriesRepository.findAllByTenantAndReferences(
-                "the-tenant",
+                "my-tenant",
                 listOf("series-ref-2")
             )
         } returns listOf(dataSeries[1])
@@ -786,7 +780,7 @@ internal class ReportServiceImplTest {
 
         // when
         val result = reportServiceImpl.update(
-            tenant = "the-tenant",
+            tenant = "my-tenant",
             username = "the-user",
             reference = "report-ref",
             reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
@@ -847,9 +841,9 @@ internal class ReportServiceImplTest {
         }
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
-            reportRepository.getReportIfUpdatable(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
+            reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = 456L)
             userRepository.findUsernameById(456L)
-            campaignRepository.findKeyByTenantAndKeyIn("the-tenant", listOf("campaign-key1"))
+            campaignRepository.findKeyByTenantAndKeyIn("my-tenant", listOf("campaign-key1"))
             reportDataComponentRepository.deleteByReportId(any())
             reportRepository.update(any())
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
@@ -865,7 +859,7 @@ internal class ReportServiceImplTest {
             // given
             coEvery {
                 reportRepository.getReportIfUpdatable(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     reference = "report-ref",
                     creatorId = 456L
                 )
@@ -879,7 +873,7 @@ internal class ReportServiceImplTest {
             // when
             val exception = assertThrows<IllegalArgumentException> {
                 reportServiceImpl.update(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     username = "the-user",
                     reference = "report-ref",
                     reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
@@ -895,7 +889,7 @@ internal class ReportServiceImplTest {
         // given
         coEvery {
             reportRepository.getReportIfUpdatable(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 123L
             )
@@ -909,7 +903,7 @@ internal class ReportServiceImplTest {
         // when
         val exception = assertThrows<IllegalArgumentException> {
             reportServiceImpl.update(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 username = "other-user",
                 reference = "report-ref",
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
@@ -934,7 +928,7 @@ internal class ReportServiceImplTest {
         coEvery { reportRepository.delete(any()) } returns 1
         coEvery {
             reportRepository.getReportIfUpdatable(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 123L
             )
@@ -942,12 +936,12 @@ internal class ReportServiceImplTest {
         coEvery { userRepository.findIdByUsername("other-user") } returns 123L
 
         // when
-        reportServiceImpl.delete(tenant = "the-tenant", username = "other-user", reference = "report-ref")
+        reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", reference = "report-ref")
 
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getReportIfUpdatable(tenant = "the-tenant", reference = "report-ref", creatorId = 123L)
+            reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = 123L)
             reportRepository.delete(reportEntity)
         }
     }
@@ -965,7 +959,7 @@ internal class ReportServiceImplTest {
         )
         coEvery {
             reportRepository.getReportIfUpdatable(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = 456L
             )
@@ -974,12 +968,12 @@ internal class ReportServiceImplTest {
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
 
         // when
-        reportServiceImpl.delete(tenant = "the-tenant", username = "the-user", reference = "report-ref")
+        reportServiceImpl.delete(tenant = "my-tenant", username = "the-user", reference = "report-ref")
 
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
-            reportRepository.getReportIfUpdatable(tenant = "the-tenant", reference = "report-ref", creatorId = 456L)
+            reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = 456L)
             reportRepository.delete(reportEntity)
         }
     }
@@ -990,7 +984,7 @@ internal class ReportServiceImplTest {
             // given
             coEvery {
                 reportRepository.getReportIfUpdatable(
-                    tenant = "the-tenant",
+                    tenant = "my-tenant",
                     reference = "report-ref",
                     creatorId = 123L
                 )
@@ -1000,7 +994,7 @@ internal class ReportServiceImplTest {
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
-                reportServiceImpl.delete(tenant = "the-tenant", username = "other-user", reference = "report-ref")
+                reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", reference = "report-ref")
             }
 
             // then
@@ -1016,7 +1010,7 @@ internal class ReportServiceImplTest {
         val creatorId = 456L
         coEvery {
             reportRepository.getReportIfUpdatable(
-                tenant = "the-tenant",
+                tenant = "my-tenant",
                 reference = "report-ref",
                 creatorId = creatorId
             )
@@ -1025,7 +1019,7 @@ internal class ReportServiceImplTest {
 
         // when
         val exception = assertThrows<IllegalArgumentException> {
-            reportServiceImpl.delete(tenant = "the-tenant", username = "other-user", reference = "report-ref")
+            reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", reference = "report-ref")
         }
 
         // then

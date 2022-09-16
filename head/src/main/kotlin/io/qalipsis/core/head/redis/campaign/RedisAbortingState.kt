@@ -1,9 +1,9 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -13,8 +13,8 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 
 @ExperimentalLettuceCoroutinesApi
 internal class RedisAbortingState(
-    campaign: CampaignConfiguration,
-    abortConfiguration: AbortCampaignConfiguration,
+    campaign: RunningCampaign,
+    abortConfiguration: AbortRunningCampaign,
     error: String,
     private val operations: CampaignRedisOperations
 ) : AbortingState(campaign, abortConfiguration, error) {
@@ -23,11 +23,11 @@ internal class RedisAbortingState(
      * This constructor can only be used to rebuild the state, after it was already initialized.
      */
     constructor(
-        campaign: CampaignConfiguration,
+        campaign: RunningCampaign,
         operations: CampaignRedisOperations
     ) : this(
         campaign,
-        AbortCampaignConfiguration(),
+        AbortRunningCampaign(),
         campaign.message!!,
         operations
     )

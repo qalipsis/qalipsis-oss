@@ -3,7 +3,7 @@ package io.qalipsis.core.head.inmemory
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.beans.BeanIntrospection
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
@@ -97,12 +97,12 @@ internal class InMemoryFactoryService(
     }
 
     @LogInput
-    override suspend fun lockFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
+    override suspend fun lockFactories(runningCampaign: RunningCampaign, factories: Collection<NodeId>) {
         factories.forEach { nodeId -> factoriesByNodeId[nodeId]?.locked?.set(true) }
     }
 
     @LogInput
-    override suspend fun releaseFactories(campaignConfiguration: CampaignConfiguration, factories: Collection<NodeId>) {
+    override suspend fun releaseFactories(runningCampaign: RunningCampaign, factories: Collection<NodeId>) {
         factories.forEach { nodeId -> factoriesByNodeId[nodeId]?.locked?.set(false) }
     }
 

@@ -20,8 +20,7 @@ import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignRequest
-import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
@@ -51,7 +50,6 @@ internal class CampaignController(
     private val campaignManager: CampaignManager,
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
-    private val campaignConverter: CampaignConverter,
     private val campaignReportProvider: CampaignReportProvider,
 ) {
 
@@ -81,15 +79,10 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
-        @Body @Valid campaign: CampaignRequest
+        @Body @Valid campaign: CampaignConfiguration
     ): HttpResponse<Campaign> {
-        return HttpResponse.ok(
-            campaignManager.start(
-                authentication.name,
-                campaign.name,
-                campaignConverter.convertRequest(tenant, campaign)
-            )
-        )
+        val campaignKey = campaignManager.start(tenant, authentication.name, campaign).key
+        return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
     }
 
     /**
@@ -116,7 +109,7 @@ internal class CampaignController(
             description = "Contextual tenant",
             required = true,
             `in` = ParameterIn.HEADER
-        ) @NotBlank @Tenant tenant: String, @Body @Valid campaign: CampaignRequest
+        ) @NotBlank @Tenant tenant: String, @Body @Valid campaign: CampaignConfiguration
     ): HttpResponse<String> {
         return if (clusterFactoryService.getActiveScenarios(
                 tenant,
@@ -247,6 +240,6 @@ internal class CampaignController(
         ) @NotBlank @PathVariable campaignKey: String,
     ): HttpResponse<CampaignReport> {
         val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
-        return HttpResponse.ok(campaignConverter.convertReport(report))
+        return HttpResponse.ok(report)
     }
 }

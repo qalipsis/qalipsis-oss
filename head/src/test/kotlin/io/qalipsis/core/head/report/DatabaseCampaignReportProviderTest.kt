@@ -59,10 +59,7 @@ internal class DatabaseCampaignReportProviderTest {
         val end = now.plusMillis(790976)
         // given
         coEvery {
-            campaignRepository.findByKey(
-                "my-tenant",
-                "campaign-1"
-            )
+            campaignRepository.findByTenantAndKey("my-tenant", "campaign-1")
         } returns CampaignEntity(
             id = 1,
             version = now,
@@ -190,10 +187,7 @@ internal class DatabaseCampaignReportProviderTest {
         val end = now.plusMillis(790976)
         // given
         coEvery {
-            campaignRepository.findByKey(
-                "my-tenant",
-                "campaign-1"
-            )
+            campaignRepository.findByTenantAndKey("my-tenant", "campaign-1")
         } returns CampaignEntity(
             id = 1,
             version = now,

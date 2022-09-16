@@ -17,14 +17,15 @@ import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -32,10 +33,9 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignRequest
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
-import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -71,9 +71,6 @@ internal class CampaignControllerIntegrationTest {
     @RelaxedMockK
     private lateinit var campaignReportProvider: CampaignReportProvider
 
-    @RelaxedMockK
-    private lateinit var campaignConverter: CampaignConverter
-
     @MockBean(FactoryService::class)
     fun clusterFactoryService() = clusterFactoryService
 
@@ -89,18 +86,23 @@ internal class CampaignControllerIntegrationTest {
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
 
-    @MockBean(CampaignConverter::class)
-    fun campaignConfigurationConverter() = campaignConverter
-
     @Test
     fun `should successfully start valid campaign`() {
         // given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "This is a campaign",
             scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
-        val campaignConfiguration = relaxedMockk<CampaignConfiguration>()
-        coEvery { campaignConverter.convertRequest(any(), any()) } returns campaignConfiguration
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+        }
+        coEvery {
+            campaignManager.start(
+                Defaults.TENANT,
+                Defaults.USER,
+                eq(campaignConfiguration)
+            )
+        } returns runningCampaign
         val createdCampaign = Campaign(
             version = Instant.now(),
             key = RandomStringUtils.randomAlphanumeric(10),
@@ -116,16 +118,10 @@ internal class CampaignControllerIntegrationTest {
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
         )
-        coEvery {
-            campaignManager.start(
-                Defaults.USER,
-                "This is a campaign",
-                refEq(campaignConfiguration)
-            )
-        } returns createdCampaign
+        coEvery { campaignService.retrieve(Defaults.TENANT, "my-campaign") } returns createdCampaign
 
         // when
-        val executeRequest = HttpRequest.POST("/", campaignRequest)
+        val executeRequest = HttpRequest.POST("/", campaignConfiguration)
         val response = httpClient.toBlocking().exchange(
             executeRequest,
             Campaign::class.java
@@ -133,9 +129,9 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOrder {
-            campaignConverter.convertRequest(Defaults.TENANT, campaignRequest)
             // Called with the default user.
-            campaignManager.start(Defaults.USER, "This is a campaign", refEq(campaignConfiguration))
+            campaignManager.start(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
         assertThat(response).all {
@@ -147,17 +143,17 @@ internal class CampaignControllerIntegrationTest {
     @Test
     fun `should fail when starting campaign with invalid configuration`() {
         // given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "ju",
             scenarios = mapOf("Scenario1" to ScenarioRequest(5))
         )
-        val executeRequest = HttpRequest.POST("/", campaignRequest)
+        val executeRequest = HttpRequest.POST("/", campaignConfiguration)
 
         // when
         val response = assertThrows<HttpClientResponseException> {
             httpClient.toBlocking().exchange(
                 executeRequest,
-                CampaignRequest::class.java
+                CampaignConfiguration::class.java
             )
         }
 
@@ -173,11 +169,11 @@ internal class CampaignControllerIntegrationTest {
     @Test
     fun `should successfully validate valid campaign`() {
         // given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just",
             scenarios = mapOf("Scenario1" to ScenarioRequest(5))
         )
-        val validateRequest = HttpRequest.POST("/validate", campaignRequest)
+        val validateRequest = HttpRequest.POST("/validate", campaignConfiguration)
             .header("Accept-Language", "en")
 
         coEvery { clusterFactoryService.getActiveScenarios(Defaults.TENANT, any()) } returns listOf(
@@ -195,12 +191,12 @@ internal class CampaignControllerIntegrationTest {
     @Test
     fun `should fail when validating campaign with unexisting scenario`() {
         // given
-        val campaignRequest = CampaignRequest(
+        val campaignConfiguration = CampaignConfiguration(
             name = "just",
             scenarios = mapOf("Scenario1" to ScenarioRequest(5))
         )
         coEvery { clusterFactoryService.getActiveScenarios(Defaults.TENANT, any()) } returns emptyList()
-        val validateRequest = HttpRequest.POST("/validate", campaignRequest)
+        val validateRequest = HttpRequest.POST("/validate", campaignConfiguration)
             .header("Accept-Language", "en")
 
         // when
@@ -385,8 +381,7 @@ internal class CampaignControllerIntegrationTest {
     @Test
     fun `should successfully retrieve the campaign report per tenant`() {
         // given
-        val campaignReport = relaxedMockk<CampaignReport>()
-        val convertedCampaignReport =
+        val campaignReport =
             CampaignReport(
                 campaignKey = "my-campaign",
                 start = Instant.now().minusMillis(1111),
@@ -441,24 +436,19 @@ internal class CampaignControllerIntegrationTest {
 
         val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
         coEvery {
-            campaignReportProvider.retrieveCampaignReport(
-                "_qalipsis_ten_",
-                "first_campaign"
-            )
+            campaignReportProvider.retrieveCampaignReport(Defaults.TENANT, "first_campaign")
         } returns campaignReport
-        coEvery { campaignConverter.convertReport(campaignReport) } returns convertedCampaignReport
 
         // when
         val response = httpClient.toBlocking().exchange(getCampaignReportRequest, CampaignReport::class.java)
 
         // then
         coVerifyOnce {
-            campaignReportProvider.retrieveCampaignReport("_qalipsis_ten_", "first_campaign")
-            campaignConverter.convertReport(campaignReport)
+            campaignReportProvider.retrieveCampaignReport(Defaults.TENANT, "first_campaign")
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.isEqualTo(convertedCampaignReport)
+            transform("body") { it.body() }.isEqualTo(campaignReport)
         }
     }
 }

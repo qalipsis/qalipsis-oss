@@ -3,8 +3,6 @@ package io.qalipsis.core.head.campaign
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.api.campaign.ScenarioConfiguration
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
@@ -12,6 +10,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.CompleteCampaignDirective
@@ -22,6 +21,8 @@ import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
+import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.core.lifetime.HeadStartupComponent
@@ -82,7 +83,7 @@ internal class CampaignAutoStarter(
     private var runningCampaign = AtomicBoolean(false)
 
     @KTestable
-    private lateinit var campaign: CampaignConfiguration
+    private lateinit var campaign: RunningCampaign
 
     override fun getStartupOrder() = Int.MIN_VALUE + 1
 
@@ -113,19 +114,23 @@ internal class CampaignAutoStarter(
                                 Defaults.TENANT,
                                 registeredScenarios
                             ).associate { scenario ->
-                                scenario.name to ScenarioConfiguration(calculateMinionsCount(scenario))
+                                scenario.name to ScenarioRequest(calculateMinionsCount(scenario))
                             }
-                        campaign = CampaignConfiguration(
+                        campaign = campaignManager.get().start(
                             tenant = Defaults.TENANT,
-                            key = autostartCampaignConfiguration.name,
-                            speedFactor = autostartCampaignConfiguration.speedFactor,
-                            startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
-                            scenarios = scenariosConfigs
+                            configurer = Defaults.USER,
+                            configuration = CampaignConfiguration(
+                                name = autostartCampaignConfiguration.name,
+                                speedFactor = autostartCampaignConfiguration.speedFactor,
+                                startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
+                                scenarios = scenariosConfigs
+                            )
                         )
-                        campaignManager.get().start(Defaults.USER, autostartCampaignConfiguration.name, campaign)
+                        autostartCampaignConfiguration.generatedKey = campaign.key
                     } else {
                         log.error { "No executable scenario was found" }
                         error = "No executable scenario was found"
+                        // Call the abort to generate a failure.
                         campaignReportStateKeeper.abort(autostartCampaignConfiguration.name)
                         campaignLatch.release()
                     }

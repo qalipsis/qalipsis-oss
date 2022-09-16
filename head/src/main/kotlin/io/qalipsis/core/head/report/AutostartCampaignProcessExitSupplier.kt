@@ -23,7 +23,7 @@ internal class AutostartCampaignProcessExitSupplier(
 ) : ProcessExitCodeSupplier {
 
     override suspend fun await(): Optional<Int> {
-        val reportStatus = campaignReportStateKeeper.generateReport(autostartCampaignConfiguration.name)?.status
+        val reportStatus = campaignReportStateKeeper.generateReport(autostartCampaignConfiguration.generatedKey)?.status
         return if (reportStatus == null || reportStatus.exitCode < 0 || reportStatus == ExecutionStatus.SUCCESSFUL || reportStatus == ExecutionStatus.WARNING) {
             Optional.empty()
         } else {

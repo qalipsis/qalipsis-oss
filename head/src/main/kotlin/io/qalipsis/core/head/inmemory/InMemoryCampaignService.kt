@@ -2,14 +2,17 @@ package io.qalipsis.core.head.inmemory
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
 import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
@@ -21,25 +24,33 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
-internal class InMemoryCampaignService : CampaignService {
-
-    private var currentCampaignConfiguration: CampaignConfiguration? = null
+internal class InMemoryCampaignService(
+    private val idGenerator: IdGenerator
+) : CampaignService {
 
     private var currentCampaign: Campaign? = null
 
     private val updateLock = Mutex(false)
 
     override suspend fun create(
+        tenant: String,
         configurer: String,
-        campaignDisplayName: String,
         campaignConfiguration: CampaignConfiguration
-    ): Campaign {
-        currentCampaignConfiguration = campaignConfiguration
-        return updateLock.withLock {
+    ): RunningCampaign {
+        val runningCampaign = RunningCampaign(
+            tenant = tenant,
+            key = idGenerator.short(),
+            speedFactor = campaignConfiguration.speedFactor,
+            startOffsetMs = campaignConfiguration.startOffsetMs,
+            hardTimeout = campaignConfiguration.hardTimeout ?: false,
+            scenarios = campaignConfiguration.scenarios.mapValues { ScenarioConfiguration(it.value.minionsCount) }
+        )
+
+        updateLock.withLock {
             currentCampaign = Campaign(
                 version = Instant.now(),
-                key = campaignConfiguration.key,
-                name = campaignDisplayName,
+                key = runningCampaign.key,
+                name = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
                 scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
                 hardTimeout = campaignConfiguration.hardTimeout,
@@ -57,6 +68,12 @@ internal class InMemoryCampaignService : CampaignService {
             )
             currentCampaign!!
         }
+
+        return runningCampaign
+    }
+
+    override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign {
+        return currentCampaign!!
     }
 
     override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {

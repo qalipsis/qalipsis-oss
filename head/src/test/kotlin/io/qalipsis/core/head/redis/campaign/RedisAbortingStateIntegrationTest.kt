@@ -15,9 +15,9 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -32,7 +32,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
 
     @Test
     fun `should not be a completion state`() {
-        assertThat(RedisAbortingState(campaign, AbortCampaignConfiguration(), "", operations).isCompleted).isFalse()
+        assertThat(RedisAbortingState(campaign, AbortRunningCampaign(), "", operations).isCompleted).isFalse()
     }
 
     @Test
@@ -47,7 +47,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
 
         // when
-        val directives = RedisAbortingState(campaign, AbortCampaignConfiguration(), "Aborting campaign", operations).run {
+        val directives = RedisAbortingState(campaign, AbortRunningCampaign(), "Aborting campaign", operations).run {
             inject(campaignExecutionContext)
             init()
         }
@@ -61,8 +61,8 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
             )
         }
         assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
-            prop(Pair<CampaignConfiguration, CampaignRedisState>::first).isDataClassEqualTo(campaign)
-            prop(Pair<CampaignConfiguration, CampaignRedisState>::second).isEqualTo(CampaignRedisState.ABORTING_STATE)
+            prop(Pair<RunningCampaign, CampaignRedisState>::first).isDataClassEqualTo(campaign)
+            prop(Pair<RunningCampaign, CampaignRedisState>::second).isEqualTo(CampaignRedisState.ABORTING_STATE)
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
@@ -75,7 +75,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
 
             val state = RedisAbortingState(
                 campaign,
-                AbortCampaignConfiguration(hard = true),
+                AbortRunningCampaign(hard = true),
                 "The campaign was aborted",
                 operations
             )
@@ -110,7 +110,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
 
             val state = RedisAbortingState(
                 campaign,
-                AbortCampaignConfiguration(hard = false),
+                AbortRunningCampaign(hard = false),
                 "The campaign was aborted",
                 operations
             )
@@ -138,7 +138,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
         // given
         val state = RedisAbortingState(
             campaign,
-            AbortCampaignConfiguration(true),
+            AbortRunningCampaign(true),
             "The campaign was aborted",
             operations
         )
@@ -148,7 +148,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
         }
 
         // when
-        val newState = state.abort(AbortCampaignConfiguration())
+        val newState = state.abort(AbortRunningCampaign())
 
         // then
         assertThat(newState).isInstanceOf(RedisAbortingState::class).all {

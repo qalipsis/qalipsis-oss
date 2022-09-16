@@ -6,7 +6,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.communication.FactoryChannel
@@ -43,7 +43,7 @@ internal class CampaignAbortDirectiveListenerTest {
             campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
-            abortCampaignConfiguration = AbortCampaignConfiguration()
+            abortRunningCampaign = AbortRunningCampaign()
         )
         every { factoryCampaignManager.isLocallyExecuted("my-campaign") } returns true
 
@@ -57,7 +57,7 @@ internal class CampaignAbortDirectiveListenerTest {
             campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
-            abortCampaignConfiguration = AbortCampaignConfiguration()
+            abortRunningCampaign = AbortRunningCampaign()
         )
         every { factoryCampaignManager.isLocallyExecuted("my-campaign") } returns false
 
@@ -76,7 +76,7 @@ internal class CampaignAbortDirectiveListenerTest {
             campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
-            abortCampaignConfiguration = AbortCampaignConfiguration()
+            abortRunningCampaign = AbortRunningCampaign()
         )
 
         // when
@@ -110,7 +110,7 @@ internal class CampaignAbortDirectiveListenerTest {
             campaignKey = "my-campaign",
             channel = "broadcast",
             scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
-            abortCampaignConfiguration = AbortCampaignConfiguration()
+            abortRunningCampaign = AbortRunningCampaign()
         )
         coEvery { factoryCampaignManager.shutdownScenario(any(), any()) } throws RuntimeException("A problem occurred")
 

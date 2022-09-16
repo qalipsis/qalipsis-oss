@@ -3,6 +3,7 @@ package io.qalipsis.core.head.campaign
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.annotation.Bindable
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import java.time.Duration
 import javax.validation.constraints.NotBlank
@@ -25,31 +26,29 @@ import javax.validation.constraints.PositiveOrZero
  */
 @Requires(env = [ExecutionEnvironments.AUTOSTART])
 @ConfigurationProperties("campaign")
-internal interface AutostartCampaignConfiguration {
+internal class AutostartCampaignConfiguration {
 
     @get:NotBlank
-    val name: String
+    lateinit var name: String
 
     @get:Positive
-    @get:Bindable(defaultValue = "1")
-    val requiredFactories: Int
+    var requiredFactories: Int = 1
 
     @get:Positive
-    @get:Bindable(defaultValue = "500ms")
-    val triggerOffset: Duration
+    var triggerOffset: Duration = Duration.ofMillis(500)
 
     @get:PositiveOrZero
-    val minionsCountPerScenario: Int
+    var minionsCountPerScenario: Int = 1
 
     @get:Positive
-    @get:Bindable(defaultValue = "1")
-    val minionsFactor: Double
+    var minionsFactor: Double = 1.0
 
     @get:Positive
-    @get:Bindable(defaultValue = "1")
-    val speedFactor: Double
+    var speedFactor: Double = 1.0
 
     @get:Positive
     @get:Bindable(defaultValue = "1s")
-    val startOffset: Duration
+    var startOffset: Duration = Duration.ofMillis(1_000)
+
+    lateinit var generatedKey: CampaignKey
 }

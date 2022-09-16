@@ -5,7 +5,7 @@ package io.qalipsis.core.head.redis.campaign
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -52,7 +52,7 @@ internal class RedisCampaignManager(
 ) {
 
     @LogInputAndOutput
-    override suspend fun create(campaign: CampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> =
+    override suspend fun create(campaign: RunningCampaign): CampaignExecutionState<CampaignExecutionContext> =
         RedisFactoryAssignmentState(campaign, redisOperations)
 
     @LogInput

@@ -1,8 +1,8 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.qalipsis.api.campaign.CampaignConfiguration
-import io.qalipsis.core.configuration.AbortCampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -13,7 +13,7 @@ import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 
 @ExperimentalLettuceCoroutinesApi
 internal class RedisFactoryAssignmentState(
-    campaign: CampaignConfiguration,
+    campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
 ) : FactoryAssignmentState(campaign) {
 
@@ -45,7 +45,7 @@ internal class RedisFactoryAssignmentState(
         }
     }
 
-    override suspend fun abort(abortConfiguration: AbortCampaignConfiguration): CampaignExecutionState<CampaignExecutionContext> {
+    override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<CampaignExecutionContext> {
         return RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
     }
 }

@@ -1,7 +1,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
@@ -12,7 +12,7 @@ import io.qalipsis.core.head.campaign.states.FailureState
 
 @ExperimentalLettuceCoroutinesApi
 internal class RedisFailureState(
-    campaign: CampaignConfiguration,
+    campaign: RunningCampaign,
     error: String,
     private val operations: CampaignRedisOperations
 ) : FailureState(campaign, error) {
@@ -21,11 +21,11 @@ internal class RedisFailureState(
      * This constructor can only be used to rebuild the state, after it was already initialized.
      */
     constructor(
-        campaign: CampaignConfiguration,
+        campaign: RunningCampaign,
         operations: CampaignRedisOperations
     ) : this(
         campaign,
-        campaign.message!!,
+        campaign.message,
         operations
     )
 

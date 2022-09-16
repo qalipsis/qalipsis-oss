@@ -3,7 +3,7 @@ package io.qalipsis.core.head.campaign.states
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.campaign.CampaignConfiguration
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
@@ -30,7 +30,7 @@ internal abstract class AbstractStateTest {
     protected lateinit var factoryService: FactoryService
 
     @RelaxedMockK
-    protected lateinit var campaign: CampaignConfiguration
+    protected lateinit var campaign: RunningCampaign
 
     @RelaxedMockK
     protected lateinit var campaignReportStateKeeper: CampaignReportStateKeeper

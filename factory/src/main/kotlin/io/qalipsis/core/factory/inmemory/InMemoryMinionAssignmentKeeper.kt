@@ -3,7 +3,7 @@ package io.qalipsis.core.factory.inmemory
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.campaign.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId

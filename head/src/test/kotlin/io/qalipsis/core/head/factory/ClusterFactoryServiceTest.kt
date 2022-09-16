@@ -16,8 +16,8 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
-import io.qalipsis.api.campaign.CampaignConfiguration
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
@@ -48,7 +48,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.flow.flowOf
-import org.junit.Assert
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
@@ -106,7 +106,7 @@ internal class ClusterFactoryServiceTest {
                 tags = emptyMap(),
                 replyTo = "",
                 scenarios = emptyList(),
-                tenant = "qalipsis",
+                tenant = "my-tenant",
                 zone = "fr"
             )
         val now = getTimeMock()
@@ -128,7 +128,7 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn("qalipsis", listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn("my-tenant", listOf(actualNodeId))
             factoryRepository.save(
                 FactoryEntity(
                     nodeId = actualNodeId,
@@ -155,7 +155,7 @@ internal class ClusterFactoryServiceTest {
             tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = emptyList(),
-            tenant = "qalipsis",
+            tenant = "my-tenant",
             zone = "fr"
         )
         val handshakeResponse = relaxedMockk<HandshakeResponse> {
@@ -176,7 +176,7 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn("qalipsis", listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn("my-tenant", listOf(actualNodeId))
             factoryRepository.save(
                 FactoryEntity(
                     nodeId = actualNodeId,
@@ -203,7 +203,7 @@ internal class ClusterFactoryServiceTest {
                 tags = emptyMap(),
                 replyTo = "",
                 scenarios = emptyList(),
-                tenant = "qalipsis"
+                tenant = "my-tenant"
             )
         val now = getTimeMock()
         val factoryEntity = FactoryEntity(
@@ -239,7 +239,7 @@ internal class ClusterFactoryServiceTest {
             prop(FactoryEntity::tenantId).isEqualTo(1276L)
         }
         coVerifyOrder {
-            factoryRepository.findByNodeIdIn("qalipsis", listOf(actualNodeId))
+            factoryRepository.findByNodeIdIn("my-tenant", listOf(actualNodeId))
             factoryRepository.save(any())
         }
         coVerifyNever {
@@ -547,14 +547,14 @@ internal class ClusterFactoryServiceTest {
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "saveScenariosAndDependencies",
-            "qalipsis",
+            "my-tenant",
             handshakeRequest.scenarios,
             factoryEntity
         )
 
         //then
         coVerifyOrder {
-            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
+            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
             scenarioRepository.saveAll(any<Iterable<ScenarioEntity>>())
             directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>())
         }
@@ -608,14 +608,14 @@ internal class ClusterFactoryServiceTest {
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "saveScenariosAndDependencies",
-            "qalipsis",
+            "my-tenant",
             handshakeRequest.scenarios,
             factoryEntity
         )
 
         //then
         coVerifyOrder {
-            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
+            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
             scenarioRepository.updateAll(listOf(scenarioEntity.copy(enabled = true)))
             directedAcyclicGraphRepository.saveAll(handshakeRequest.scenarios.flatMap { it.directedAcyclicGraphs }
@@ -693,14 +693,14 @@ internal class ClusterFactoryServiceTest {
         // when
         clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
             "saveScenariosAndDependencies",
-            "qalipsis",
+            "my-tenant",
             handshakeRequest.scenarios,
             factoryEntity
         )
 
         //then
         coVerifyOrder {
-            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
+            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
             directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(scenarioEntity.dags.map { it.id })
             scenarioRepository.updateAll(listOf(scenarioEntity.copy(enabled = true)))
@@ -864,7 +864,7 @@ internal class ClusterFactoryServiceTest {
             tags = mapOf(selectorKey to selectorValue),
             replyTo = "",
             scenarios = listOf(newRegistrationScenario),
-            tenant = "qalipsis"
+            tenant = "my-tenant"
         )
         val handshakeResponse = HandshakeResponse(
             handshakeNodeId = "testNodeId",
@@ -888,7 +888,7 @@ internal class ClusterFactoryServiceTest {
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
         val scenarioEntity = createScenario(now, factoryEntity.id, dag, true)
 
-        coEvery { tenantRepository.findIdByReference("qalipsis") } returns 123
+        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns listOf(factoryEntity)
         coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
@@ -911,11 +911,11 @@ internal class ClusterFactoryServiceTest {
             prop(FactoryEntity::zone).isEqualTo("ru")
         }
         coVerifyOrder {
-            tenantRepository.findIdByReference("qalipsis")
-            factoryRepository.findByNodeIdIn("qalipsis", listOf(actualNodeId))
+            tenantRepository.findIdByReference("my-tenant")
+            factoryRepository.findByNodeIdIn("my-tenant", listOf(actualNodeId))
             factoryRepository.save(any())
             factoryStateRepository.save(any())
-            scenarioRepository.findByFactoryId("qalipsis", factoryEntity.id)
+            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
             directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
             scenarioRepository.updateAll(listOf(scenarioEntity))
             directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>())
@@ -968,23 +968,21 @@ internal class ClusterFactoryServiceTest {
             scenarioRepository.findActiveByName(any(), ids)
         }
 
-        Assert.assertEquals(
-            scenarioEntities.map { scenario ->
-                ScenarioSummary(
-                    name = scenario.name,
-                    minionsCount = scenario.defaultMinionsCount,
-                    directedAcyclicGraphs = scenario.dags.map { dag ->
-                        DirectedAcyclicGraphSummary(
-                            name = dag.name,
-                            isSingleton = dag.singleton,
-                            isRoot = false,
-                            isUnderLoad = dag.underLoad,
-                            numberOfSteps = dag.numberOfSteps,
-                            tags = emptyMap()
-                        )
-                    })
-            }, scenarios
-        )
+        assertEquals(scenarioEntities.map { scenario ->
+            ScenarioSummary(
+                name = scenario.name,
+                minionsCount = scenario.defaultMinionsCount,
+                directedAcyclicGraphs = scenario.dags.map { dag ->
+                    DirectedAcyclicGraphSummary(
+                        name = dag.name,
+                        isSingleton = dag.singleton,
+                        isRoot = false,
+                        isUnderLoad = dag.underLoad,
+                        numberOfSteps = dag.numberOfSteps,
+                        tags = emptyMap()
+                    )
+                })
+        }, scenarios)
 
         confirmVerified(scenarioRepository)
     }
@@ -1027,23 +1025,21 @@ internal class ClusterFactoryServiceTest {
             scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
         }
 
-        Assert.assertEquals(
-            scenarioEntities.map { scenario ->
-                ScenarioSummary(
-                    name = scenario.name,
-                    minionsCount = scenario.defaultMinionsCount,
-                    directedAcyclicGraphs = scenario.dags.map { dag ->
-                        DirectedAcyclicGraphSummary(
-                            name = dag.name,
-                            isSingleton = dag.singleton,
-                            isRoot = false,
-                            isUnderLoad = dag.underLoad,
-                            numberOfSteps = dag.numberOfSteps,
-                            tags = emptyMap()
-                        )
-                    })
-            }, scenarios
-        )
+        assertEquals(scenarioEntities.map { scenario ->
+            ScenarioSummary(
+                name = scenario.name,
+                minionsCount = scenario.defaultMinionsCount,
+                directedAcyclicGraphs = scenario.dags.map { dag ->
+                    DirectedAcyclicGraphSummary(
+                        name = dag.name,
+                        isSingleton = dag.singleton,
+                        isRoot = false,
+                        isUnderLoad = dag.underLoad,
+                        numberOfSteps = dag.numberOfSteps,
+                        tags = emptyMap()
+                    )
+                })
+        }, scenarios)
 
         confirmVerified(scenarioRepository)
     }
@@ -1105,23 +1101,21 @@ internal class ClusterFactoryServiceTest {
             scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
         }
 
-        Assert.assertEquals(
-            scenarioEntities.map { scenario ->
-                ScenarioSummary(
-                    name = scenario.name,
-                    minionsCount = scenario.defaultMinionsCount,
-                    directedAcyclicGraphs = scenario.dags.map { dag ->
-                        DirectedAcyclicGraphSummary(
-                            name = dag.name,
-                            isSingleton = dag.singleton,
-                            isRoot = false,
-                            isUnderLoad = dag.underLoad,
-                            numberOfSteps = dag.numberOfSteps,
-                            tags = emptyMap()
-                        )
-                    })
-            }.reversed(), scenarios2
-        )
+        assertEquals(scenarioEntities.map { scenario ->
+            ScenarioSummary(
+                name = scenario.name,
+                minionsCount = scenario.defaultMinionsCount,
+                directedAcyclicGraphs = scenario.dags.map { dag ->
+                    DirectedAcyclicGraphSummary(
+                        name = dag.name,
+                        isSingleton = dag.singleton,
+                        isRoot = false,
+                        isUnderLoad = dag.underLoad,
+                        numberOfSteps = dag.numberOfSteps,
+                        tags = emptyMap()
+                    )
+                })
+        }.reversed(), scenarios2)
 
         confirmVerified(scenarioRepository)
     }
@@ -1183,23 +1177,21 @@ internal class ClusterFactoryServiceTest {
             scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
         }
 
-        Assert.assertEquals(
-            scenarioEntities.map { scenario ->
-                ScenarioSummary(
-                    name = scenario.name,
-                    minionsCount = scenario.defaultMinionsCount,
-                    directedAcyclicGraphs = scenario.dags.map { dag ->
-                        DirectedAcyclicGraphSummary(
-                            name = dag.name,
-                            isSingleton = dag.singleton,
-                            isRoot = false,
-                            isUnderLoad = dag.underLoad,
-                            numberOfSteps = dag.numberOfSteps,
-                            tags = emptyMap()
-                        )
-                    })
-            }, scenarios2
-        )
+        assertEquals(scenarioEntities.map { scenario ->
+            ScenarioSummary(
+                name = scenario.name,
+                minionsCount = scenario.defaultMinionsCount,
+                directedAcyclicGraphs = scenario.dags.map { dag ->
+                    DirectedAcyclicGraphSummary(
+                        name = dag.name,
+                        isSingleton = dag.singleton,
+                        isRoot = false,
+                        isUnderLoad = dag.underLoad,
+                        numberOfSteps = dag.numberOfSteps,
+                        tags = emptyMap()
+                    )
+                })
+        }, scenarios2)
 
         confirmVerified(scenarioRepository)
     }
@@ -1274,19 +1266,19 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { campaignRepository.findIdByKeyAndEndIsNull(any(), "my-campaign") } returns 765
-        val campaignConfiguration = mockk<CampaignConfiguration> {
+        coEvery { campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", "my-campaign") } returns 765
+        val runningCampaign = mockk<RunningCampaign> {
             every { key } returns "my-campaign"
-            every { tenant } returns "qalipsis"
+            every { tenant } returns "my-tenant"
         }
 
         // when
-        clusterFactoryService.lockFactories(campaignConfiguration, factories)
+        clusterFactoryService.lockFactories(runningCampaign, factories)
 
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            campaignRepository.findIdByKeyAndEndIsNull("qalipsis", "my-campaign")
+            campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", "my-campaign")
             campaignFactoryRepository.saveAll(
                 listOf(
                     CampaignFactoryEntity(765, 12),
@@ -1303,10 +1295,10 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns emptyList()
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { key } returns "my-campaign" }
+        val runningCampaign = mockk<RunningCampaign> { every { key } returns "my-campaign" }
 
         // when
-        clusterFactoryService.lockFactories(campaignConfiguration, factories)
+        clusterFactoryService.lockFactories(runningCampaign, factories)
 
         // then
         coVerifyOrder {
@@ -1329,19 +1321,19 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns listOf(12, 32)
-        coEvery { campaignRepository.findIdByKey(any(), "my-campaign") } returns 765
-        val campaignConfiguration = mockk<CampaignConfiguration> {
+        coEvery { campaignRepository.findIdByTenantAndKey("my-tenant", "my-campaign") } returns 765
+        val runningCampaign = mockk<RunningCampaign> {
             every { key } returns "my-campaign"
-            every { tenant } returns "qalipsis"
+            every { tenant } returns "my-tenant"
         }
 
         // when
-        clusterFactoryService.releaseFactories(campaignConfiguration, factories)
+        clusterFactoryService.releaseFactories(runningCampaign, factories)
 
         // then
         coVerifyOrder {
             factoryRepository.findIdByNodeIdIn(refEq(factories))
-            campaignRepository.findIdByKey("qalipsis", "my-campaign")
+            campaignRepository.findIdByTenantAndKey("my-tenant", "my-campaign")
             campaignFactoryRepository.discard(765, listOf(12, 32))
         }
         confirmVerified(factoryRepository, campaignRepository, campaignFactoryRepository)
@@ -1352,10 +1344,10 @@ internal class ClusterFactoryServiceTest {
         // given
         val factories = listOf("factory-1", "factory-2")
         coEvery { factoryRepository.findIdByNodeIdIn(refEq(factories)) } returns emptyList()
-        val campaignConfiguration = mockk<CampaignConfiguration> { every { key } returns "my-campaign" }
+        val runningCampaign = mockk<RunningCampaign> { every { key } returns "my-campaign" }
 
         // when
-        clusterFactoryService.releaseFactories(campaignConfiguration, factories)
+        clusterFactoryService.releaseFactories(runningCampaign, factories)
 
         // then
         coVerifyOrder {
@@ -1405,16 +1397,5 @@ internal class ClusterFactoryServiceTest {
                     dag.numberOfSteps,
                     dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) })
             )
-        )
-
-    private fun convertDagSummaryToEntity(dag: DirectedAcyclicGraphSummary) =
-        DirectedAcyclicGraphEntity(
-            -1,
-            dag.name,
-            dag.isRoot,
-            dag.isSingleton,
-            dag.isUnderLoad,
-            dag.numberOfSteps,
-            dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) }
         )
 }
