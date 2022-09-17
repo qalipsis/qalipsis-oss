@@ -21,7 +21,7 @@ import java.time.Instant
  */
 object InstantKotlinSerializer : KSerializer<Instant> {
 
-    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
+    override val descriptor = PrimitiveSerialDescriptor("QInstant", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): Instant {
         return Instant.parse(decoder.decodeString())

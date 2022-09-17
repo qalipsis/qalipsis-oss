@@ -25,8 +25,8 @@ import assertk.assertions.isSameAs
 import assertk.assertions.key
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
-import io.qalipsis.api.processors.ServicesLoader
-import io.qalipsis.api.processors.injector.Injector
+import io.qalipsis.api.injector.Injector
+import io.qalipsis.api.services.ServicesFiles
 import io.qalipsis.test.io.readFileLines
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions
@@ -73,7 +73,12 @@ internal class ScenarioAnnotationProcessorTest {
                     eq(List::class.java)
                 )
             } returns injectablesAsList
-            every { conversionService.convertRequired(setOf(otherClassToInject), eq(List::class.java)) } returns namedInjectablesAsList
+            every {
+                conversionService.convertRequired(
+                    setOf(otherClassToInject),
+                    eq(List::class.java)
+                )
+            } returns namedInjectablesAsList
 
             every { getBean(ClassToInject::class.java) } returns classToInject
             every { getBean(OtherClassToInject::class.java) } returns otherClassToInject
@@ -98,7 +103,7 @@ internal class ScenarioAnnotationProcessorTest {
             } returns Optional.of("No value")
         }
 
-        ServicesLoader.loadScenarios<Any>(injector)
+        loadScenarios<Any>(injector)
 
         assertThat(injectedForMethodOutsideAClass).all {
             key("classToInject").isSameAs(classToInject)
@@ -147,5 +152,22 @@ internal class ScenarioAnnotationProcessorTest {
             key("mayBeProperty").isNotNull().isInstanceOf(Optional::class.java).transform { it.get() }
                 .isEqualTo("No value")
         }
+    }
+
+    /**
+     * Loads the scenarios and inject the relevant resources.
+     */
+    private fun <T> loadScenarios(injector: Injector): Collection<T> {
+        return this.javaClass.classLoader.getResources("META-INF/qalipsis/scenarios")
+            .toList()
+            .flatMap { ServicesFiles.readFile(it.openStream()) }
+            .map { loaderClass ->
+                try {
+                    Class.forName(loaderClass).getConstructor(Injector::class.java)
+                        .newInstance(injector) as T
+                } catch (e: NoSuchMethodException) {
+                    Class.forName(loaderClass).getConstructor().newInstance() as T
+                }
+            }
     }
 }

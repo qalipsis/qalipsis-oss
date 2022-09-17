@@ -36,30 +36,21 @@ tasks.withType<KotlinCompile> {
     }
 }
 
-val micronautVersion: String by project
-val kotlinCoroutinesVersion: String by project
-val jacksonVersion: String by project
-val catadioptreVersion: String by project
-
 kotlin.sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/source/kaptKotlin/catadioptre"))
 kapt.useBuildCache = false
 
 dependencies {
-    compileOnly(kotlin("stdlib"))
-    compileOnly("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
-    api("io.github.microutils:kotlin-logging-jvm:2.0.6")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${kotlinCoroutinesVersion}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion")
-    implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    implementation(platform(project(":dev-platform")))
+    compileOnly("io.aeris-consulting:catadioptre-annotations")
+
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     compileOnly("io.micronaut:micronaut-runtime")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
 
-    compileOnly("org.slf4j:slf4j-api")
-
     testImplementation(project(":test"))
-    testImplementation("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
-    kapt("io.aeris-consulting:catadioptre-annotations:${catadioptreVersion}")
+    testImplementation("io.aeris-consulting:catadioptre-kotlin")
+    kapt(platform(project(":dev-platform")))
+    kapt("io.aeris-consulting:catadioptre-annotations")
 }

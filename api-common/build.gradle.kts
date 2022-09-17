@@ -30,41 +30,35 @@ allOpen {
     )
 }
 
-val micronautVersion: String by project
-val kotlinCoroutinesVersion: String by project
-val kotlinSerialization: String by project
-
 dependencies {
-    compileOnly(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    implementation(platform(project(":dev-platform")))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.swagger.core.v3:swagger-annotations")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
-    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${kotlinSerialization}")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
-    compileOnly(kotlin("stdlib"))
-    implementation("cool.graph:cuid-java:0.1.1")
+    implementation("cool.graph:cuid-java")
     api(project(":api-dev"))
     api(project(":api-dsl"))
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}")
-    api(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("javax.annotation:javax.annotation-api")
     api("io.micronaut:micronaut-validation")
 
-    kapt(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
+    kapt(platform(project(":dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    implementation(platform("io.micronaut:micronaut-bom:${micronautVersion}"))
     implementation("io.micrometer:micrometer-core")
-    implementation("com.google.guava:guava:28.2-jre")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:${kotlinSerialization}")
+    implementation("com.google.guava:guava")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
 
     testImplementation(project(":test"))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
-    testFixturesCompileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinSerialization}")
+    testFixtures(platform(project(":dev-platform")))
+    testFixturesCompileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
     testFixturesImplementation(project(":test"))
 }

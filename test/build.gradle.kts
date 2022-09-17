@@ -21,28 +21,24 @@ plugins {
 
 description = "Qalipsis Test Utils"
 
-val micronautVersion: String by project
-val testContainersVersion: String by project
-val assertkVersion: String by project
-val mockkVersion: String by project
-val kotlinCoroutinesVersion: String by project
-val catadioptreVersion: String by project
-
 dependencies {
-    compileOnly(kotlin("stdlib"))
-    api(kotlin("reflect"))
+    api(platform(project(":dev-platform")))
+
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+
     implementation(project(":api-common"))
-    api(platform("io.micronaut:micronaut-bom:$micronautVersion"))
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${kotlinCoroutinesVersion}")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-debug:${kotlinCoroutinesVersion}")
+    api("io.micronaut.test:micronaut-test-junit5")
+    api(platform("io.micronaut:micronaut-bom"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-debug")
     api("org.junit.jupiter:junit-jupiter")
-    api("io.mockk:mockk:$mockkVersion")
+    api("io.mockk:mockk")
     api("org.skyscreamer:jsonassert:1.5.0")
-    api("com.willowtreeapps.assertk:assertk:$assertkVersion")
-    api("com.willowtreeapps.assertk:assertk-jvm:$assertkVersion")
-    api("org.testcontainers:testcontainers:$testContainersVersion")
-    api("io.aeris-consulting:catadioptre-kotlin:${catadioptreVersion}")
-    api("org.testcontainers:junit-jupiter:$testContainersVersion") {
+    api("com.willowtreeapps.assertk:assertk")
+    api("com.willowtreeapps.assertk:assertk-jvm")
+    api("org.testcontainers:testcontainers")
+    api("io.aeris-consulting:catadioptre-kotlin")
+    api("org.testcontainers:junit-jupiter") {
         exclude("junit", "junit")
     }
     api("ch.qos.logback:logback-classic")

@@ -22,17 +22,17 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 plugins {
     idea
     java
-    kotlin("jvm") version "1.5.31"
-    kotlin("plugin.serialization") version "1.5.31"
-    kotlin("kapt") version "1.5.31"
-    kotlin("plugin.allopen") version "1.5.31"
-    id("net.ltgt.apt") version "0.21" apply false
+    kotlin("jvm") version "1.6.21"
+    kotlin("plugin.serialization") version "1.6.21"
+    kotlin("kapt") version "1.6.21"
+    kotlin("plugin.allopen") version "1.6.21"
 
     id("nebula.contacts") version "5.1.0"
     id("nebula.info") version "9.1.1"
-    id("nebula.maven-publish") version "17.0.0"
-    id("nebula.maven-scm") version "17.0.0"
-    id("nebula.maven-manifest") version "17.0.0"
+    id("nebula.maven-publish") version "17.3.3"
+    id("nebula.maven-scm") version "17.3.3"
+    id("nebula.maven-manifest") version "17.3.3"
+    id("nebula.maven-apache-license") version "17.3.3"
     signing
 }
 
@@ -59,14 +59,13 @@ allprojects {
     group = "io.qalipsis"
     version = File(rootDir, "project.version").readText().trim()
 
-    apply(plugin = "java")
-    apply(plugin = "net.ltgt.apt")
     apply(plugin = "nebula.contacts")
     apply(plugin = "nebula.info")
     apply(plugin = "nebula.maven-publish")
     apply(plugin = "nebula.maven-scm")
     apply(plugin = "nebula.maven-manifest")
     apply(plugin = "nebula.maven-developer")
+    apply(plugin = "nebula.maven-apache-license")
     apply(plugin = "signing")
     apply(plugin = "nebula.javadoc-jar")
     apply(plugin = "nebula.source-jar")
@@ -88,13 +87,7 @@ allprojects {
     }
 
     repositories {
-        mavenLocal()
         mavenCentral()
-    }
-
-    configure<JavaPluginConvention> {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 
     signing {
@@ -117,6 +110,30 @@ allprojects {
                 }
             }
         }
+    }
+
+    if (isNotPlatform()) {
+        logger.lifecycle("Applying the Java configuration on $name")
+        configureNotPlatform()
+    } else {
+        logger.lifecycle("Ignoring the Java configuration on $name")
+    }
+}
+
+/**
+ * Verifies whether a Gradle project is a Java platform module.
+ */
+fun Project.isNotPlatform() = !name.contains("platform")
+
+/**
+ * Applies the configuration for non-platform modules.
+ */
+fun Project.configureNotPlatform() {
+    apply(plugin = "java")
+
+    configure<JavaPluginConvention> {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     tasks {
@@ -197,7 +214,6 @@ allprojects {
     }
 
 }
-
 
 val testTasks = subprojects.flatMap {
     val testTasks = mutableListOf<Test>()

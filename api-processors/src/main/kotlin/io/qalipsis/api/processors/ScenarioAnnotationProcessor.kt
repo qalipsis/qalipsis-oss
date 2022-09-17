@@ -16,13 +16,13 @@
 
 package io.qalipsis.api.processors
 
+import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterSpec
 import com.squareup.javapoet.TypeSpec
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
-import io.qalipsis.api.processors.injector.Injector
 import io.qalipsis.api.services.ServicesFiles
 import jakarta.inject.Named
 import java.io.IOException
@@ -138,7 +138,8 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
                             .addModifiers(Modifier.PUBLIC)
                             .addParameter(
                                 ParameterSpec.builder(
-                                    Injector::class.java, "injector",
+                                    ClassName.bestGuess("io.qalipsis.api.injector.Injector"),
+                                    "injector",
                                     Modifier.FINAL
                                 ).build()
                             )

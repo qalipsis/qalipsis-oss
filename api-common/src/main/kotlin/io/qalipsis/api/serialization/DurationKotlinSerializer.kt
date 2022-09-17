@@ -21,7 +21,7 @@ import java.time.Duration
  */
 object DurationKotlinSerializer : KSerializer<Duration> {
 
-    override val descriptor = PrimitiveSerialDescriptor("Duration", PrimitiveKind.STRING)
+    override val descriptor = PrimitiveSerialDescriptor("QDuration", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): Duration {
         return Duration.parse(decoder.decodeString())
