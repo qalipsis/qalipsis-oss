@@ -107,6 +107,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
         // when
         val beforeCall = Instant.now()
         val start = Instant.now().plusSeconds(12)
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
         campaignScenarioRepository.start("my-tenant", "1", "the-scenario", start)
 
         // then

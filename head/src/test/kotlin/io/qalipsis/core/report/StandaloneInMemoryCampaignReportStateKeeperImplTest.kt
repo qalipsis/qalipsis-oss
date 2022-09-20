@@ -35,6 +35,7 @@ import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.head.inmemory.InMemoryScenarioReportingExecutionState
 import io.qalipsis.core.head.inmemory.StandaloneInMemoryCampaignReportStateKeeperImpl
 import io.qalipsis.core.head.inmemory.catadioptre.campaignStates
+import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import kotlinx.coroutines.TimeoutCancellationException
@@ -659,15 +660,16 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
 
             // then
             assertThat(report).all {
-                prop(CampaignReport::campaignKey).isEqualTo("the campaign")
-                prop(CampaignReport::start).isEqualTo(state1.start)
-                prop(CampaignReport::end).isEqualTo(state2.end)
-                prop(CampaignReport::status).isEqualTo(ExecutionStatus.ABORTED)
-                prop(CampaignReport::startedMinions).isEqualTo(1231 + 765)
-                prop(CampaignReport::completedMinions).isEqualTo(234 + 345)
-                prop(CampaignReport::successfulExecutions).isEqualTo(7643 + 854)
-                prop(CampaignReport::failedExecutions).isEqualTo(2345 + 3567)
-                prop(CampaignReport::scenariosReports).hasSize(2)
+                prop(CampaignExecutionDetails::key).isEqualTo("the campaign")
+                prop(CampaignExecutionDetails::name).isEqualTo("the campaign")
+                prop(CampaignExecutionDetails::start).isEqualTo(state1.start)
+                prop(CampaignExecutionDetails::end).isEqualTo(state2.end)
+                prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
+                prop(CampaignExecutionDetails::startedMinions).isEqualTo(1231 + 765)
+                prop(CampaignExecutionDetails::completedMinions).isEqualTo(234 + 345)
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643 + 854)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345 + 3567)
+                prop(CampaignExecutionDetails::scenariosReports).hasSize(2)
             }
         }
 }

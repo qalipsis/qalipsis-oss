@@ -22,6 +22,8 @@ package io.qalipsis.core.head.report
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
 
 /**
  * Consolidates a collection of [ScenarioReportingExecutionState] into a [CampaignReport].
@@ -50,3 +52,51 @@ internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
         scenariosReports = toList()
     )
 }
+
+/**
+ * Consolidates a collection of [ScenarioReportingExecutionState] into a [CampaignExecutionDetails].
+ *
+ * @author Eric Jessé
+ */
+internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignExecutionDetails {
+
+    return CampaignExecutionDetails(
+        key = first().campaignKey,
+        name = first().campaignKey,
+        start = this.asSequence().mapNotNull { it.start }.minOrNull(),
+        end = this.asSequence().mapNotNull { it.end }.maxOrNull(),
+        scheduledMinions = null,
+        startedMinions = this.asSequence().mapNotNull { it.startedMinions }.sum(),
+        completedMinions = this.asSequence().mapNotNull { it.completedMinions }.sum(),
+        successfulExecutions = this.asSequence().mapNotNull { it.successfulExecutions }.sum(),
+        failedExecutions = this.asSequence().mapNotNull { it.failedExecutions }.sum(),
+        status = when {
+            any { it.status == ExecutionStatus.ABORTED } -> ExecutionStatus.ABORTED
+            any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
+            any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
+            none { it.start == null } -> ExecutionStatus.QUEUED
+            any { it.end == null } -> ExecutionStatus.IN_PROGRESS
+            else -> ExecutionStatus.SUCCESSFUL
+        },
+        scenariosReports = this.map {
+            ScenarioExecutionDetails(
+                id = it.scenarioName,
+                name = it.scenarioName,
+                start = it.start,
+                end = it.end,
+                startedMinions = it.startedMinions,
+                completedMinions = it.completedMinions,
+                successfulExecutions = it.successfulExecutions,
+                failedExecutions = it.failedExecutions,
+                status = when {
+                    it.start != null -> ExecutionStatus.QUEUED
+                    it.end == null -> ExecutionStatus.IN_PROGRESS
+                    else -> it.status
+                },
+                messages = it.messages
+            )
+        }
+    )
+}
+
+

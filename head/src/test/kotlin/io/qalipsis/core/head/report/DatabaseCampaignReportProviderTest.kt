@@ -30,11 +30,9 @@ import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
@@ -44,6 +42,8 @@ import io.qalipsis.core.head.jdbc.repository.CampaignReportRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
+import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.Test
@@ -93,9 +93,7 @@ internal class DatabaseCampaignReportProviderTest {
             configurer = 3
         )
         coEvery {
-            campaignReportRepository.findByCampaignId(
-                1
-            )
+            campaignReportRepository.findByCampaignId(1)
         } returns listOf(
             CampaignReportEntity(
                 id = 1,
@@ -148,39 +146,40 @@ internal class DatabaseCampaignReportProviderTest {
 
         // then
         assertThat(result).all {
-            prop(CampaignReport::campaignKey).isEqualTo("campaign-1")
-            prop(CampaignReport::start).isEqualTo(now)
-            prop(CampaignReport::end).isEqualTo(end)
-            prop(CampaignReport::startedMinions).isEqualTo(5)
-            prop(CampaignReport::completedMinions).isEqualTo(3)
-            prop(CampaignReport::successfulExecutions).isEqualTo(3)
-            prop(CampaignReport::failedExecutions).isEqualTo(2)
-            prop(CampaignReport::status).isEqualTo(ExecutionStatus.FAILED)
-            prop(CampaignReport::scenariosReports).all {
+            prop(CampaignExecutionDetails::key).isEqualTo("campaign-1")
+            prop(CampaignExecutionDetails::name).isEqualTo("my-campaign")
+            prop(CampaignExecutionDetails::start).isEqualTo(now)
+            prop(CampaignExecutionDetails::end).isEqualTo(end)
+            prop(CampaignExecutionDetails::startedMinions).isEqualTo(5)
+            prop(CampaignExecutionDetails::completedMinions).isEqualTo(3)
+            prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(3)
+            prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2)
+            prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.FAILED)
+            prop(CampaignExecutionDetails::scenariosReports).all {
                 hasSize(2)
                 index(0).all {
-                    prop(ScenarioReport::campaignKey).isEqualTo("campaign-1")
-                    prop(ScenarioReport::scenarioName).isEqualTo("scenario-1")
-                    prop(ScenarioReport::start).isEqualTo(now)
-                    prop(ScenarioReport::end).isEqualTo(end)
-                    prop(ScenarioReport::startedMinions).isEqualTo(22)
-                    prop(ScenarioReport::completedMinions).isEqualTo(3)
-                    prop(ScenarioReport::successfulExecutions).isEqualTo(14)
-                    prop(ScenarioReport::failedExecutions).isEqualTo(13)
-                    prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
-                    prop(ScenarioReport::messages).isEmpty()
+                    prop(ScenarioExecutionDetails::id).isEqualTo("scenario-1")
+                    prop(ScenarioExecutionDetails::name).isEqualTo("scenario-1")
+                    prop(ScenarioExecutionDetails::start).isEqualTo(now)
+                    prop(ScenarioExecutionDetails::end).isEqualTo(end)
+                    prop(ScenarioExecutionDetails::startedMinions).isEqualTo(22)
+                    prop(ScenarioExecutionDetails::completedMinions).isEqualTo(3)
+                    prop(ScenarioExecutionDetails::successfulExecutions).isEqualTo(14)
+                    prop(ScenarioExecutionDetails::failedExecutions).isEqualTo(13)
+                    prop(ScenarioExecutionDetails::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+                    prop(ScenarioExecutionDetails::messages).isEmpty()
                 }
                 index(1).all {
-                    prop(ScenarioReport::campaignKey).isEqualTo("campaign-1")
-                    prop(ScenarioReport::scenarioName).isEqualTo("scenario-2")
-                    prop(ScenarioReport::start).isEqualTo(now.plusSeconds(2))
-                    prop(ScenarioReport::end).isEqualTo(end.plusSeconds(3))
-                    prop(ScenarioReport::startedMinions).isEqualTo(22)
-                    prop(ScenarioReport::completedMinions).isEqualTo(13)
-                    prop(ScenarioReport::successfulExecutions).isEqualTo(11)
-                    prop(ScenarioReport::failedExecutions).isEqualTo(18)
-                    prop(ScenarioReport::status).isEqualTo(ExecutionStatus.ABORTED)
-                    prop(ScenarioReport::messages).all {
+                    prop(ScenarioExecutionDetails::id).isEqualTo("scenario-2")
+                    prop(ScenarioExecutionDetails::name).isEqualTo("scenario-2")
+                    prop(ScenarioExecutionDetails::start).isEqualTo(now.plusSeconds(2))
+                    prop(ScenarioExecutionDetails::end).isEqualTo(end.plusSeconds(3))
+                    prop(ScenarioExecutionDetails::startedMinions).isEqualTo(22)
+                    prop(ScenarioExecutionDetails::completedMinions).isEqualTo(13)
+                    prop(ScenarioExecutionDetails::successfulExecutions).isEqualTo(11)
+                    prop(ScenarioExecutionDetails::failedExecutions).isEqualTo(18)
+                    prop(ScenarioExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
+                    prop(ScenarioExecutionDetails::messages).all {
                         hasSize(2)
                         index(0).all {
                             prop(ReportMessage::stepName).isEqualTo("step-1")
@@ -237,39 +236,40 @@ internal class DatabaseCampaignReportProviderTest {
 
         // then
         assertThat(result).all {
-            prop(CampaignReport::campaignKey).isEqualTo("campaign-1")
-            prop(CampaignReport::start).isEqualTo(now)
-            prop(CampaignReport::end).isEqualTo(end)
-            prop(CampaignReport::startedMinions).isNull()
-            prop(CampaignReport::completedMinions).isNull()
-            prop(CampaignReport::successfulExecutions).isNull()
-            prop(CampaignReport::failedExecutions).isNull()
-            prop(CampaignReport::status).isEqualTo(ExecutionStatus.IN_PROGRESS)
-            prop(CampaignReport::scenariosReports).all {
+            prop(CampaignExecutionDetails::key).isEqualTo("campaign-1")
+            prop(CampaignExecutionDetails::name).isEqualTo("my-campaign")
+            prop(CampaignExecutionDetails::start).isEqualTo(now)
+            prop(CampaignExecutionDetails::end).isEqualTo(end)
+            prop(CampaignExecutionDetails::startedMinions).isNull()
+            prop(CampaignExecutionDetails::completedMinions).isNull()
+            prop(CampaignExecutionDetails::successfulExecutions).isNull()
+            prop(CampaignExecutionDetails::failedExecutions).isNull()
+            prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+            prop(CampaignExecutionDetails::scenariosReports).all {
                 hasSize(2)
                 index(0).all {
-                    prop(ScenarioReport::campaignKey).isEqualTo("campaign-1")
-                    prop(ScenarioReport::scenarioName).isEqualTo("scenario-1")
-                    prop(ScenarioReport::start).isNull()
-                    prop(ScenarioReport::end).isNull()
-                    prop(ScenarioReport::startedMinions).isNull()
-                    prop(ScenarioReport::completedMinions).isNull()
-                    prop(ScenarioReport::successfulExecutions).isNull()
-                    prop(ScenarioReport::failedExecutions).isNull()
-                    prop(ScenarioReport::status).isEqualTo(ExecutionStatus.QUEUED)
-                    prop(ScenarioReport::messages).isEmpty()
+                    prop(ScenarioExecutionDetails::id).isEqualTo("scenario-1")
+                    prop(ScenarioExecutionDetails::name).isEqualTo("scenario-1")
+                    prop(ScenarioExecutionDetails::start).isNull()
+                    prop(ScenarioExecutionDetails::end).isNull()
+                    prop(ScenarioExecutionDetails::startedMinions).isNull()
+                    prop(ScenarioExecutionDetails::completedMinions).isNull()
+                    prop(ScenarioExecutionDetails::successfulExecutions).isNull()
+                    prop(ScenarioExecutionDetails::failedExecutions).isNull()
+                    prop(ScenarioExecutionDetails::status).isEqualTo(ExecutionStatus.QUEUED)
+                    prop(ScenarioExecutionDetails::messages).isEmpty()
                 }
                 index(1).all {
-                    prop(ScenarioReport::campaignKey).isEqualTo("campaign-1")
-                    prop(ScenarioReport::scenarioName).isEqualTo("scenario-2")
-                    prop(ScenarioReport::start).isEqualTo(now.plusMillis(1))
-                    prop(ScenarioReport::end).isNull()
-                    prop(ScenarioReport::startedMinions).isNull()
-                    prop(ScenarioReport::completedMinions).isNull()
-                    prop(ScenarioReport::successfulExecutions).isNull()
-                    prop(ScenarioReport::failedExecutions).isNull()
-                    prop(ScenarioReport::status).isEqualTo(ExecutionStatus.IN_PROGRESS)
-                    prop(ScenarioReport::messages).isEmpty()
+                    prop(ScenarioExecutionDetails::id).isEqualTo("scenario-2")
+                    prop(ScenarioExecutionDetails::name).isEqualTo("scenario-2")
+                    prop(ScenarioExecutionDetails::start).isEqualTo(now.plusMillis(1))
+                    prop(ScenarioExecutionDetails::end).isNull()
+                    prop(ScenarioExecutionDetails::startedMinions).isNull()
+                    prop(ScenarioExecutionDetails::completedMinions).isNull()
+                    prop(ScenarioExecutionDetails::successfulExecutions).isNull()
+                    prop(ScenarioExecutionDetails::failedExecutions).isNull()
+                    prop(ScenarioExecutionDetails::status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+                    prop(ScenarioExecutionDetails::messages).isEmpty()
                 }
             }
         }

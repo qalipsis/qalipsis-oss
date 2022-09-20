@@ -20,7 +20,7 @@
 package io.qalipsis.core.head.report
 
 import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.api.report.CampaignReport
+import io.qalipsis.core.head.model.CampaignExecutionDetails
 
 /**
  * Service to retrieve the report of a campaign from a database.
@@ -34,5 +34,5 @@ interface CampaignReportProvider {
      * @param tenant the reference of the tenant owning the data.
      * @param campaignKey the ID of the campaign to retrieve
      */
-    suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignReport
+    suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails
 }

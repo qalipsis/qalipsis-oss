@@ -41,9 +41,10 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.FAILED
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.api.report.ReportMessageSeverity.INFO
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
@@ -53,7 +54,9 @@ import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.model.Scenario
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.CampaignReportProvider
@@ -400,9 +403,10 @@ internal class CampaignControllerIntegrationTest {
     @Test
     fun `should successfully retrieve the campaign report per tenant`() {
         // given
-        val campaignReport =
-            CampaignReport(
-                campaignKey = "my-campaign",
+        val campaignExecutionDetails =
+            CampaignExecutionDetails(
+                key = "my-campaign",
+                name = "This is the campaign",
                 start = Instant.now().minusMillis(1111),
                 end = Instant.now(),
                 scheduledMinions = 1,
@@ -412,28 +416,28 @@ internal class CampaignControllerIntegrationTest {
                 failedExecutions = 0,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenariosReports = listOf(
-                    ScenarioReport(
-                        campaignKey = "my-campaign",
-                        scenarioName = "my-scenario-1",
+                    ScenarioExecutionDetails(
+                        id = "my-scenario-1",
+                        name = "The scenario 1",
                         start = Instant.now().minusMillis(1111),
                         end = Instant.now(),
                         startedMinions = 0,
                         completedMinions = 0,
                         successfulExecutions = 0,
                         failedExecutions = 0,
-                        status = ExecutionStatus.FAILED,
+                        status = FAILED,
                         messages = listOf(
                             ReportMessage(
                                 stepName = "my-step-1",
                                 messageId = "message-id-1",
-                                severity = ReportMessageSeverity.INFO,
+                                severity = INFO,
                                 message = "Hello from test 1"
                             )
                         )
                     ),
-                    ScenarioReport(
-                        campaignKey = "my-campaign",
-                        scenarioName = "my-scenario-2",
+                    ScenarioExecutionDetails(
+                        id = "my-scenario-2",
+                        name = "The scenario 2",
                         start = Instant.now().minusMillis(1111),
                         end = Instant.now(),
                         startedMinions = 1,
@@ -456,10 +460,10 @@ internal class CampaignControllerIntegrationTest {
         val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
         coEvery {
             campaignReportProvider.retrieveCampaignReport(Defaults.TENANT, "first_campaign")
-        } returns campaignReport
+        } returns campaignExecutionDetails
 
         // when
-        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, CampaignReport::class.java)
+        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, CampaignExecutionDetails::class.java)
 
         // then
         coVerifyOnce {
@@ -467,7 +471,7 @@ internal class CampaignControllerIntegrationTest {
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.isEqualTo(campaignReport)
+            transform("body") { it.body() }.isEqualTo(campaignExecutionDetails)
         }
     }
 }

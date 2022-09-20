@@ -37,8 +37,10 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.CampaignReportProvider
+import io.qalipsis.core.head.report.toCampaignExecutionDetails
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Singleton
@@ -185,10 +187,10 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     }
 
     @LogInputAndOutput
-    override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignReport {
+    override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails {
         join()
         return campaignStates.get(campaignKey)?.map { (_, runningScenarioCampaign) ->
             runningScenarioCampaign.toReport(campaignKey)
-        }?.toCampaignReport() ?: throw IllegalArgumentException("No report found for the expected campaign")
+        }?.toCampaignExecutionDetails() ?: throw IllegalArgumentException("No report found for the expected campaign")
     }
 }

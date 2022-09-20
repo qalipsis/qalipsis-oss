@@ -33,13 +33,13 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
@@ -257,7 +257,7 @@ internal class CampaignController(
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
-    ): HttpResponse<CampaignReport> {
+    ): HttpResponse<CampaignExecutionDetails> {
         val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
         return HttpResponse.ok(report)
     }

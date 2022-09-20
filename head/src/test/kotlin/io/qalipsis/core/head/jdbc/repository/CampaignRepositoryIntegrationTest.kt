@@ -241,6 +241,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val beforeCall = Instant.now()
         val start = Instant.now().plusSeconds(12)
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
         campaignRepository.start("my-tenant", "2", start, start.plusSeconds(123))
 
         // then
@@ -297,6 +298,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val beforeCall = Instant.now()
         val start = Instant.now().plusSeconds(12)
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
         campaignRepository.start("my-tenant", "2", start, null)
 
         // then
@@ -842,6 +844,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             // when
             val justBeforeQuery = Instant.now()
+            delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
             val result = campaignRepository.findInstantsAndDuration("my-tenant", setOf("camp-1", "camp-2"))
 
             // then
