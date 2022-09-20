@@ -21,6 +21,7 @@ package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.head.model.configuration.ExternalExecutionProfileConfiguration
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import javax.validation.Valid
@@ -90,5 +91,10 @@ internal data class ScenarioRequest(
     @field:Schema(description = "Counts of minions that will be assigned to the scenario")
     @field:Positive
     @field:Max(1000000)
-    val minionsCount: Int
+    val minionsCount: Int,
+
+    @field:Schema(description = "The configuration of the execution profile to execute a scenario")
+    @field:Valid
+    @field:NotEmpty
+    val externalExecutionProfileConfiguration: ExternalExecutionProfileConfiguration? = null
 )

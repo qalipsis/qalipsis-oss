@@ -23,20 +23,19 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
-import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
+import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import jakarta.inject.Singleton
+import java.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Instant
 
 @Singleton
 @Requirements(
@@ -44,7 +43,7 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
 internal class InMemoryCampaignService(
-    private val idGenerator: IdGenerator
+    private val campaignConfigurationConverter: CampaignConfigurationConverter
 ) : CampaignService {
 
     private var currentCampaign: Campaign? = null
@@ -56,14 +55,7 @@ internal class InMemoryCampaignService(
         configurer: String,
         campaignConfiguration: CampaignConfiguration
     ): RunningCampaign {
-        val runningCampaign = RunningCampaign(
-            tenant = tenant,
-            key = idGenerator.short(),
-            speedFactor = campaignConfiguration.speedFactor,
-            startOffsetMs = campaignConfiguration.startOffsetMs,
-            hardTimeout = campaignConfiguration.hardTimeout ?: false,
-            scenarios = campaignConfiguration.scenarios.mapValues { ScenarioConfiguration(it.value.minionsCount) }
-        )
+        val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, campaignConfiguration)
 
         updateLock.withLock {
             currentCampaign = Campaign(

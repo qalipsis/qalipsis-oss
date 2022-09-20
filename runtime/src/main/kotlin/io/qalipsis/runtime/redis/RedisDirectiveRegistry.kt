@@ -31,25 +31,29 @@ import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.directives.SingleUseDirective
 import io.qalipsis.core.directives.SingleUseDirectiveReference
-import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Singleton
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromHexString
+import kotlinx.serialization.encodeToHexString
+import kotlinx.serialization.protobuf.ProtoBuf
 
 /**
  * Implementation of [DirectiveRegistry] hosting the [Directive]s into Redis,
  * used for deployments other than [STANDALONE].
  *
  * @property idGenerator ID generator to create the directives keys.
- * @property serializer serializer for redis messages.
+ * @property protobuf: Protobuf serializer configured to support directives.
  * @property redisListCommands redis Coroutines commands.
  *
  * @author Eric Jessé
  */
+@ExperimentalSerializationApi
 @Singleton
 @Requires(notEnv = [STANDALONE])
 @ExperimentalLettuceCoroutinesApi
 internal class RedisDirectiveRegistry(
     private val idGenerator: IdGenerator,
-    private val serializer: DistributionSerializer,
+    private val protobuf: ProtoBuf,
     private val redisListCommands: RedisListCoroutinesCommands<String, String>
 ) : DirectiveRegistry {
 
@@ -58,9 +62,10 @@ internal class RedisDirectiveRegistry(
         channel: DispatcherChannel,
         directive: SingleUseDirective<*>
     ): SingleUseDirectiveReference {
+        log.trace { "Directive to reference: $directive" }
         val key = "${channel}:${idGenerator.long()}"
         val reference = directive.toReference(key)
-        redisListCommands.lpush(key, serializer.serialize(directive).decodeToString())
+        redisListCommands.lpush(key, protobuf.encodeToHexString(directive as Directive))
         return reference
     }
 
@@ -69,7 +74,7 @@ internal class RedisDirectiveRegistry(
         log.trace { "Reading single use directive with key ${reference.key}" }
         return redisListCommands.lpop(reference.key)?.let {
             log.trace { "Single use directive with key ${reference.key} was just retrieved (and removed)" }
-            serializer.deserialize<SingleUseDirective<T>>(it.encodeToByteArray())
+            protobuf.decodeFromHexString<Directive>(it)
         }
     }
 

@@ -32,18 +32,21 @@ import assertk.assertions.isSameAs
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.executionprofile.CompletionMode.FORCED
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.Stage
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
-import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
-import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 
 internal class MinionsStartupStateTest : AbstractStateTest() {
@@ -59,7 +62,31 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
         val state = MinionsStartupState(campaign)
         every { campaign.startOffsetMs } returns 1234L
         every { campaign.speedFactor } returns 153.42
-        every { campaign.scenarios } returns mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+        every { campaign.scenarios } returns mapOf(
+            "scenario-1" to ScenarioConfiguration(
+                minionsCount = 54,
+                DefaultExecutionProfileConfiguration()
+            ),
+            "scenario-2" to ScenarioConfiguration(
+                minionsCount = 255,
+                StageExecutionProfileConfiguration(
+                    stages = listOf(
+                        Stage(
+                            minionsCount = 123,
+                            rampUpDurationMs = 234,
+                            totalDurationMs = 34534,
+                            resolutionMs = 6454
+                        ),
+                        Stage(
+                            minionsCount = 463,
+                            rampUpDurationMs = 3245,
+                            totalDurationMs = 6453454,
+                            resolutionMs = 234
+                        )
+                    ), completion = FORCED
+                )
+            )
+        )
 
         // when
         val directives = state.run {
@@ -74,13 +101,30 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-1",
-                    ExecutionProfileConfiguration(1234L, 153.42),
+                    DefaultExecutionProfileConfiguration(1234L, 153.42),
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
-                    ExecutionProfileConfiguration(1234L, 153.42),
+                    StageExecutionProfileConfiguration(
+                        stages = listOf(
+                            Stage(
+                                minionsCount = 123,
+                                rampUpDurationMs = 234,
+                                totalDurationMs = 34534,
+                                resolutionMs = 6454
+                            ),
+                            Stage(
+                                minionsCount = 463,
+                                rampUpDurationMs = 3245,
+                                totalDurationMs = 6453454,
+                                resolutionMs = 234
+                            )
+                        ),
+                        completion = FORCED,
+                        startOffsetMs = 1234L, speedFactor = 153.42
+                    ),
                     "my-broadcast-channel"
                 )
             )

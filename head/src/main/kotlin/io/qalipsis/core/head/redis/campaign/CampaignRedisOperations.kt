@@ -26,12 +26,12 @@ import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.serialization.ProtobufSerializers
 import io.qalipsis.core.campaigns.RunningCampaign
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromHexString
 import kotlinx.serialization.encodeToHexString
+import kotlinx.serialization.protobuf.ProtoBuf
 
 @OptIn(ExperimentalSerializationApi::class)
 @ExperimentalLettuceCoroutinesApi
@@ -39,13 +39,14 @@ import kotlinx.serialization.encodeToHexString
 internal class CampaignRedisOperations(
     private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,
     private val redisSetCommands: RedisSetCoroutinesCommands<String, String>,
-    private val redisHashCommands: RedisHashCoroutinesCommands<String, String>
+    private val redisHashCommands: RedisHashCoroutinesCommands<String, String>,
+    private val protoBuf: ProtoBuf
 ) {
 
     suspend fun saveConfiguration(campaign: RunningCampaign) {
         redisHashCommands.hset(
             "campaign-management:{${campaign.tenant}:${campaign.key}}",
-            mapOf("configuration" to ProtobufSerializers.protobuf.encodeToHexString(campaign))
+            mapOf("configuration" to protoBuf.encodeToHexString(campaign))
         )
     }
 
@@ -147,7 +148,7 @@ internal class CampaignRedisOperations(
             .collect { campaignDetails[it.key] = it.value }
         val state = campaignDetails["state"]?.let { CampaignRedisState.valueOf(it) }
         val campaign = campaignDetails["configuration"]?.let {
-            ProtobufSerializers.protobuf.decodeFromHexString<RunningCampaign>(it)
+            protoBuf.decodeFromHexString<RunningCampaign>(it)
         }
         return campaign?.let { it to state!! }
     }

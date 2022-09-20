@@ -70,7 +70,9 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
     @Timeout(2)
     internal fun `should accept MinionsRampUpPreparationDirectiveReference`() {
         val directive =
-            MinionsRampUpPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
+            MinionsRampUpPreparationDirectiveReference(
+                "my-directive", "my-campaign", "my-scenario"
+            )
         every { factoryCampaignManager.isLocallyExecuted("my-campaign", "my-scenario") } returns true
 
         assertTrue(processor.accept(directive))
@@ -90,7 +92,9 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
     @Timeout(2)
     internal fun `should not accept MinionsRampUpPreparationDirectiveReference for unknown scenario`() {
         val directive =
-            MinionsRampUpPreparationDirectiveReference("my-directive", "my-campaign", "my-scenario")
+            MinionsRampUpPreparationDirectiveReference(
+                "my-directive", "my-campaign", "my-scenario"
+            )
         every { factoryCampaignManager.isLocallyExecuted("my-campaign", "my-scenario") } returns false
 
         assertFalse(processor.accept(directive))
@@ -110,7 +114,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         every { scenarioRegistry.get("my-scenario") } returns scenario
         val minionsStartDefinitions = (1..650).map { relaxedMockk<MinionStartDefinition>() }
         coEvery {
-            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile(
+                "my-campaign",
+                scenario,
+                refEq(executionProfileConfiguration)
+            )
         } returns minionsStartDefinitions
 
         // when
@@ -126,7 +134,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                 )
             )
             scenarioRegistry["my-scenario"]
-            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile(
+                "my-campaign",
+                scenario,
+                refEq(executionProfileConfiguration)
+            )
             factoryChannel.publishDirective(
                 MinionsStartDirective(
                     campaignKey = "my-campaign",
@@ -164,7 +176,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         }
         every { scenarioRegistry["my-scenario"] } returns scenario
         coEvery {
-            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile(
+                "my-campaign",
+                scenario,
+                refEq(executionProfileConfiguration)
+            )
         } throws RuntimeException("A problem occurred")
 
         // when
@@ -180,7 +196,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                 )
             )
             scenarioRegistry["my-scenario"]
-            factoryCampaignManager.prepareMinionsExecutionProfile("my-campaign", scenario, refEq(executionProfileConfiguration))
+            factoryCampaignManager.prepareMinionsExecutionProfile(
+                "my-campaign",
+                scenario,
+                refEq(executionProfileConfiguration)
+            )
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
                     campaignKey = "my-campaign",

@@ -34,6 +34,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.assertk.prop
@@ -53,8 +54,8 @@ internal class AbortingStateTest : AbstractStateTest() {
     fun `should return campaign abort directive on init`() = testDispatcherProvider.runTest {
         // given
         every { campaign.scenarios } returns mapOf(
-            "scenario-1" to ScenarioConfiguration(2),
-            "scenario-2" to ScenarioConfiguration(5)
+            "scenario-1" to ScenarioConfiguration(2, DefaultExecutionProfileConfiguration()),
+            "scenario-2" to ScenarioConfiguration(5, DefaultExecutionProfileConfiguration())
         )
 
         // when

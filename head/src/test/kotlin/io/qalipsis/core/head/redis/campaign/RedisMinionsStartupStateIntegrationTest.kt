@@ -36,18 +36,21 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.executionprofile.CompletionMode
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.Stage
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
-import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 
 @ExperimentalLettuceCoroutinesApi
@@ -61,19 +64,40 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     @Test
     fun `should return the directives for profile for each scenario`() = testDispatcherProvider.run {
         // given
-        val RunningCampaign = campaign.copy(
+        val runningCampaign = campaign.copy(
             startOffsetMs = 1234L,
             speedFactor = 153.42,
             scenarios = mapOf(
-                "scenario-1" to relaxedMockk(),
-                "scenario-2" to relaxedMockk()
+                "scenario-1" to ScenarioConfiguration(
+                    minionsCount = 54,
+                    DefaultExecutionProfileConfiguration()
+                ),
+                "scenario-2" to ScenarioConfiguration(
+                    minionsCount = 255,
+                    StageExecutionProfileConfiguration(
+                        stages = listOf(
+                            Stage(
+                                minionsCount = 123,
+                                rampUpDurationMs = 234,
+                                totalDurationMs = 34534,
+                                resolutionMs = 6454
+                            ),
+                            Stage(
+                                minionsCount = 463,
+                                rampUpDurationMs = 3245,
+                                totalDurationMs = 6453454,
+                                resolutionMs = 234
+                            )
+                        ), completion = CompletionMode.FORCED
+                    )
+                )
             )
         ).also {
             it.broadcastChannel = "my-broadcast-channel"
             it.feedbackChannel = "my-feedback-channel"
         }
-        val state = RedisMinionsStartupState(RunningCampaign, operations)
-        operations.saveConfiguration(RunningCampaign)
+        val state = RedisMinionsStartupState(runningCampaign, operations)
+        operations.saveConfiguration(runningCampaign)
 
         // when
         val directives = state.run {
@@ -88,19 +112,36 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-1",
-                    ExecutionProfileConfiguration(1234L, 153.42),
+                    DefaultExecutionProfileConfiguration(1234L, 153.42),
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
-                    ExecutionProfileConfiguration(1234L, 153.42),
+                    StageExecutionProfileConfiguration(
+                        stages = listOf(
+                            Stage(
+                                minionsCount = 123,
+                                rampUpDurationMs = 234,
+                                totalDurationMs = 34534,
+                                resolutionMs = 6454
+                            ),
+                            Stage(
+                                minionsCount = 463,
+                                rampUpDurationMs = 3245,
+                                totalDurationMs = 6453454,
+                                resolutionMs = 234
+                            )
+                        ),
+                        completion = CompletionMode.FORCED,
+                        startOffsetMs = 1234L, speedFactor = 153.42
+                    ),
                     "my-broadcast-channel"
                 )
             )
         }
         assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
-            prop(Pair<RunningCampaign, CampaignRedisState>::first).isDataClassEqualTo(RunningCampaign)
+            prop(Pair<RunningCampaign, CampaignRedisState>::first).isDataClassEqualTo(runningCampaign)
             prop(Pair<RunningCampaign, CampaignRedisState>::second).isEqualTo(CampaignRedisState.MINIONS_STARTUP_STATE)
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -109,8 +150,8 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
-        val RunningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-        val state = RedisMinionsStartupState(RunningCampaign, operations)
+        val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+        val state = RedisMinionsStartupState(runningCampaign, operations)
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -125,7 +166,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(RunningCampaign)
+            prop("campaign").isSameAs(runningCampaign)
             prop("error").isEqualTo("this is the error 1")
         }
 
@@ -138,7 +179,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(RunningCampaign)
+            prop("campaign").isSameAs(runningCampaign)
             prop("error").isEqualTo("this is the error 2")
         }
 
@@ -151,7 +192,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(RunningCampaign)
+            prop("campaign").isSameAs(runningCampaign)
             prop("error").isEqualTo("this is the error 3")
         }
 
@@ -162,8 +203,8 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     internal fun `should return a failure state when the feedback is failure without error message`() =
         testDispatcherProvider.run {
             // given
-            val RunningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-            val state = RedisMinionsStartupState(RunningCampaign, operations)
+            val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+            val state = RedisMinionsStartupState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -179,7 +220,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
 
             // then
             assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(RunningCampaign)
+                prop("campaign").isSameAs(runningCampaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -189,8 +230,8 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     internal fun `should return itself in case of any unsupported feedback`() =
         testDispatcherProvider.run {
             // given
-            val RunningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-            val state = RedisMinionsStartupState(RunningCampaign, operations)
+            val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+            val state = RedisMinionsStartupState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -208,8 +249,8 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     internal fun `should return a new RedisRunningState when a completed MinionsStartFeedback is received`() =
         testDispatcherProvider.run {
             // given
-            val RunningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-            val state = RedisMinionsStartupState(RunningCampaign, operations)
+            val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+            val state = RedisMinionsStartupState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -222,7 +263,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
             // then
             assertThat(newState).isInstanceOf(RedisRunningState::class).all {
                 isNotSameAs(state)
-                prop("campaign").isSameAs(RunningCampaign)
+                prop("campaign").isSameAs(runningCampaign)
                 typedProp<Boolean>("initialized").isFalse()
                 typedProp<Collection<Directive>>("directivesForInit").isEmpty()
             }

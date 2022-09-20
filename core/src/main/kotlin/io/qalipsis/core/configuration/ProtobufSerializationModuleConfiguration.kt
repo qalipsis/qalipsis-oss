@@ -21,7 +21,6 @@ package io.qalipsis.core.configuration
 
 import io.micronaut.context.annotation.Factory
 import io.micronaut.context.annotation.Primary
-import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.serialization.ProtobufSerializers
 import io.qalipsis.core.directives.CampaignAbortDirective
@@ -42,6 +41,13 @@ import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.directives.SingleUseDirective
 import io.qalipsis.core.directives.SingleUseDirectiveReference
+import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
@@ -68,7 +74,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 /**
  * Kotlin Protobuf Serialization configuration.
  *
- * Creates a [Protobuf] instance properly configured with serializer modules for subclasses of [Feedback] and [Directive].
+ * Creates a [ProtoBuf] instance properly configured with serializer modules for subclasses of [Feedback] and [Directive].
  * This way Kotlin serialization can serialize and deserialize data using Interfaces or Parent classes and still keep reference to the original class.
  * It is needed to explicitly declare polymorphic relations due to Kotlin serialization limitations related to polymorphic objects.
  * See more [here](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/polymorphism.md).
@@ -76,30 +82,23 @@ import kotlinx.serialization.protobuf.ProtoBuf
  * @author Gabriel Moraes
  */
 @Factory
-@Requirements(
-    Requires(notEnv = [ExecutionEnvironments.STANDALONE]),
-    Requires(missingBeans = [ProtobufSerializationModuleConfiguration::class])
-)
+@Requires(notEnv = [ExecutionEnvironments.STANDALONE])
 @ExperimentalSerializationApi
-open class ProtobufSerializationModuleConfiguration {
+internal class ProtobufSerializationModuleConfiguration {
 
     @Singleton
     @Primary
-    fun protobuf() = ProtoBuf(from = ProtobufSerializers.protobuf) {
-        serializersModule = SerializersModule {
-            factoryApiDirectives(this)
-            minionApiDirectives(this)
-            minionHeadDelegationApiDirectives(this)
-            feedbacksSerializer(this)
-            configure(this)
+    fun protobuf(configurers: Collection<ProtobufSerializationConfigurer> = emptyList()) =
+        ProtoBuf(from = ProtobufSerializers.protobuf) {
+            serializersModule = SerializersModule {
+                factoryApiDirectives(this)
+                minionApiDirectives(this)
+                minionHeadDelegationApiDirectives(this)
+                feedbacksSerializer(this)
+                executionProfileConfigurations(this)
+                configurers.forEach { it.configure(this) }
+            }
         }
-    }
-
-    /**
-     * Method to overwrite to add local types to the initialization.
-     */
-    protected open fun configure(builderAction: SerializersModuleBuilder): SerializersModuleBuilder =
-        builderAction
 
     private fun factoryApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
         return builderAction.apply {
@@ -192,6 +191,28 @@ open class ProtobufSerializationModuleConfiguration {
                 subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
                 subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
                 subclass(CampaignAbortFeedback::class, CampaignAbortFeedback.serializer())
+            }
+        }
+    }
+
+    private fun executionProfileConfigurations(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
+        return builderAction.apply {
+            polymorphic(ExecutionProfileConfiguration::class) {
+                subclass(RegularExecutionProfileConfiguration::class, RegularExecutionProfileConfiguration.serializer())
+                subclass(
+                    AcceleratingExecutionProfileConfiguration::class,
+                    AcceleratingExecutionProfileConfiguration.serializer()
+                )
+                subclass(
+                    ProgressiveVolumeExecutionProfileConfiguration::class,
+                    ProgressiveVolumeExecutionProfileConfiguration.serializer()
+                )
+                subclass(StageExecutionProfileConfiguration::class, StageExecutionProfileConfiguration.serializer())
+                subclass(
+                    TimeFrameExecutionProfileConfiguration::class,
+                    TimeFrameExecutionProfileConfiguration.serializer()
+                )
+                subclass(DefaultExecutionProfileConfiguration::class, DefaultExecutionProfileConfiguration.serializer())
             }
         }
     }

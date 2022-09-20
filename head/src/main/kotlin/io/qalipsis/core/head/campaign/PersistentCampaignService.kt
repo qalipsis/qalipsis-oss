@@ -36,11 +36,12 @@ import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
-import kotlinx.coroutines.flow.count
 import java.time.Instant
+import kotlinx.coroutines.flow.count
 import io.qalipsis.api.query.Page as QalipsisPage
 
 
@@ -54,6 +55,7 @@ internal class PersistentCampaignService(
     private val userRepository: UserRepository,
     private val tenantRepository: TenantRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository,
+    private val campaignConfigurationConverter: CampaignConfigurationConverter,
     private val campaignConverter: CampaignConverter
 ) : CampaignService {
 
@@ -62,7 +64,7 @@ internal class PersistentCampaignService(
         configurer: String,
         campaignConfiguration: CampaignConfiguration
     ): RunningCampaign {
-        val runningCampaign = campaignConverter.convertConfiguration(tenant, campaignConfiguration)
+        val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, campaignConfiguration)
         val campaign = campaignRepository.save(
             CampaignEntity(
                 tenantId = tenantRepository.findIdByReference(tenant),

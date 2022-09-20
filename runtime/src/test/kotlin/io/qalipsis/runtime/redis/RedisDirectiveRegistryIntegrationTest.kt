@@ -29,9 +29,9 @@ import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import assertk.assertions.startsWith
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.directives.SingleUseDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
-import io.qalipsis.core.directives.TestSingleUseDirective
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -67,7 +67,7 @@ internal class RedisDirectiveRegistryIntegrationTest : AbstractRedisIntegrationT
     @Timeout(10)
     internal fun saveAndReadSingleUseDirective() = testDispatcherProvider.run {
         // given
-        val directive = TestSingleUseDirective(100)
+        val directive = MinionsDeclarationDirective("campaign", "scenario", 1, channel = "broadcast")
 
         // when
         val prepared = registry.prepareBeforeSend("the-channel", directive)

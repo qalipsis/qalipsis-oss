@@ -28,6 +28,13 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.executionprofile.AcceleratingExecutionProfile
+import io.qalipsis.api.executionprofile.ExecutionProfile
+import io.qalipsis.api.executionprofile.ProgressiveVolumeExecutionProfile
+import io.qalipsis.api.executionprofile.RegularExecutionProfile
+import io.qalipsis.api.executionprofile.Stage
+import io.qalipsis.api.executionprofile.StageExecutionProfile
+import io.qalipsis.api.executionprofile.TimeFrameExecutionProfile
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -36,7 +43,12 @@ import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.MinionStartDefinition
+import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.steps.ContextConsumer
@@ -44,14 +56,14 @@ import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import java.time.Duration
+import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
-import java.time.Duration
-import java.util.Optional
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
@@ -123,7 +135,10 @@ internal class FactoryCampaignManagerImpl(
         val minionsUnderLoad =
             minionAssignmentKeeper.getIdsOfMinionsUnderLoad(campaignKey, scenario.name).toMutableList()
         val executionProfileIterator =
-            scenario.executionProfile.iterator(minionsUnderLoad.size, executionProfileConfiguration.speedFactor)
+            convertExecutionProfile(executionProfileConfiguration, scenario.executionProfile).iterator(
+                minionsUnderLoad.size,
+                executionProfileConfiguration.speedFactor
+            )
         var start = System.currentTimeMillis() + executionProfileConfiguration.startOffsetMs
 
         log.debug { "Creating the execution profile for ${minionsUnderLoad.size} minions on campaign $campaignKey of scenario ${scenario.name}" }
@@ -140,6 +155,42 @@ internal class FactoryCampaignManagerImpl(
 
         log.debug { "Execution profile creation is complete on campaign $campaignKey of scenario ${scenario.name}" }
         return minionsStartDefinitions
+    }
+
+    @KTestable
+    private fun convertExecutionProfile(configuration: ExecutionProfileConfiguration, defaultExecutionProfile: ExecutionProfile): ExecutionProfile {
+        return when (configuration) {
+            is AcceleratingExecutionProfileConfiguration -> AcceleratingExecutionProfile(
+                configuration.startPeriodMs,
+                configuration.accelerator,
+                configuration.minPeriodMs,
+                configuration.minionsCountProLaunch
+            )
+            is RegularExecutionProfileConfiguration -> RegularExecutionProfile(
+                configuration.periodInMs,
+                configuration.minionsCountProLaunch
+            )
+            is ProgressiveVolumeExecutionProfileConfiguration -> ProgressiveVolumeExecutionProfile(
+                configuration.periodMs,
+                configuration.minionsCountProLaunchAtStart,
+                configuration.multiplier,
+                configuration.maxMinionsCountProLaunch
+            )
+            is StageExecutionProfileConfiguration -> StageExecutionProfile(
+                configuration.stages.map { Stage(
+                    it.minionsCount,
+                    it.rampUpDurationMs,
+                    it.totalDurationMs,
+                    it.resolutionMs
+                ) },
+                configuration.completion
+            )
+            is TimeFrameExecutionProfileConfiguration -> TimeFrameExecutionProfile(
+                configuration.periodInMs,
+                configuration.timeFrameInMs
+            )
+            else -> defaultExecutionProfile
+        }
     }
 
     @LogInput

@@ -22,6 +22,7 @@ package io.qalipsis.core.campaigns
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.persistence.InMemoryEntity
 import io.swagger.v3.oas.annotations.media.Schema
 import kotlinx.serialization.Serializable
@@ -44,10 +45,10 @@ data class ScenarioSummary(
     override var name: ScenarioName,
     @field:Schema(description = "Default count of minions executing the scenario")
     val minionsCount: Int,
-    @field:Schema(description = "The list of directed acyclic graphs structuring the workflow of the scenario")
+    @field:Schema(description = "List of directed acyclic graphs structuring the workflow of the scenario")
     val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>,
-    @field:Schema(description = "The name of the ramp up strategy to start the minions in the scenario, defaults to 'user-defined'")
-    val executionProfileName: String = "user-defined"
+    @field:Schema(description = "Details of the execution profile to start the minions in the scenario")
+    val executionProfileConfiguration: ExecutionProfileConfiguration? = null
 ) : InMemoryEntity<ScenarioName>
 
 /**

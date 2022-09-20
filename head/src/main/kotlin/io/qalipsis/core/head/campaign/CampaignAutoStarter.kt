@@ -48,12 +48,12 @@ import io.qalipsis.core.lifetime.HeadStartupComponent
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.annotation.PreDestroy
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.event.Level
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.annotation.PreDestroy
 
 /**
  * Component to automatically starts the execution of a campaign with all the scenarios as soon as

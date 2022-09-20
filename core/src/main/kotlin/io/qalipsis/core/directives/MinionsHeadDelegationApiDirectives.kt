@@ -60,7 +60,7 @@ data class MinionsDeclarationDirectiveReference(
     override val key: DirectiveKey,
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName
-) : SingleUseDirectiveReference(), CampaignManagementDirective{
+) : SingleUseDirectiveReference(), CampaignManagementDirective {
 
     override var tenant: String = ""
 }
@@ -73,7 +73,7 @@ data class MinionsDeclarationDirectiveReference(
 data class MinionsRampUpPreparationDirective(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
-    val executionProfileConfiguration: ExecutionProfileConfiguration = ExecutionProfileConfiguration(3000, 1.0),
+    val executionProfileConfiguration: ExecutionProfileConfiguration,
     override val channel: DispatcherChannel
 ) : SingleUseDirective<MinionsRampUpPreparationDirectiveReference>(),
     CampaignManagementDirective {
@@ -94,7 +94,7 @@ data class MinionsRampUpPreparationDirectiveReference(
     override val key: DirectiveKey,
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName
-) : SingleUseDirectiveReference(), CampaignManagementDirective{
+) : SingleUseDirectiveReference(), CampaignManagementDirective {
 
     override var tenant: String = ""
 }
