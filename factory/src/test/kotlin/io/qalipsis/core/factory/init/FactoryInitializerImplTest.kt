@@ -38,19 +38,18 @@ import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.mockk.justRun
-import io.mockk.mockkObject
 import io.mockk.spyk
-import io.mockk.unmockkObject
 import io.mockk.verify
 import io.mockk.verifyOrder
 import io.qalipsis.api.exceptions.InvalidSpecificationException
-import io.qalipsis.api.injector.Injector
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
+import io.qalipsis.api.scenario.Injector
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
+import io.qalipsis.api.scenario.TestScenarioFactory
 import io.qalipsis.api.steps.PipeStepSpecification
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
@@ -77,7 +76,6 @@ import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineDispatcher
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -167,12 +165,6 @@ internal class FactoryInitializerImplTest {
                 Duration.ofSeconds(1)
             ), recordPrivateCalls = true
         )
-    }
-
-
-    @AfterEach
-    internal fun tearDown() {
-        unmockkObject(FactoryServicesLoader)
     }
 
     @Test
@@ -560,9 +552,7 @@ internal class FactoryInitializerImplTest {
         // given
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
         val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
-        mockkObject(FactoryServicesLoader)
-        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
-        every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
+        every { scenarioSpecificationsKeeper.scenariosSpecifications } returns mapOf(
             "scenario-1" to scenarioSpecification1,
             "scenario-2" to scenarioSpecification2
         )
@@ -588,8 +578,6 @@ internal class FactoryInitializerImplTest {
         // then
         val publishedScenarios: MutableList<Collection<Scenario>> = mutableListOf()
         verify {
-            FactoryServicesLoader.loadScenarios<Any>(refEq(injector))
-            scenarioSpecificationsKeeper.asMap()
             factoryInitializer["convertScenario"](eq("scenario-2"), refEq(scenarioSpecification2))
             factoryInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
             initializationContext["startHandshake"](capture(publishedScenarios))
@@ -605,25 +593,7 @@ internal class FactoryInitializerImplTest {
     @Timeout(4)
     internal fun `should generate an exception when the conversion is too long`() {
         // given
-        val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
-        val scenarioSpecification2: ConfiguredScenarioSpecification = relaxedMockk { }
-        mockkObject(FactoryServicesLoader)
-        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } answers {
-            Thread.sleep(1500)
-            emptyList()
-        }
-        every { scenarioSpecificationsKeeper.asMap() } returns mapOf(
-            "scenario-1" to scenarioSpecification1,
-            "scenario-2" to scenarioSpecification2
-        )
-        val scenario1: Scenario = relaxedMockk { }
-        val scenario2: Scenario = relaxedMockk { }
-        every {
-            factoryInitializer.convertScenario(eq("scenario-1"), refEq(scenarioSpecification1))
-        } returns scenario1
-        every {
-            factoryInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
-        } returns scenario2
+        every { scenarioSpecificationsKeeper.reload() } answers { Thread.sleep(1500) }
 
         // when
         assertThrows<TimeoutException> {
@@ -635,9 +605,7 @@ internal class FactoryInitializerImplTest {
     @Timeout(4)
     internal fun `should throw the conversion exception`() {
         // given
-        mockkObject(FactoryServicesLoader)
-        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
-        every { scenarioSpecificationsKeeper.asMap() } returns mapOf("scenario-1" to relaxedMockk { })
+        every { scenarioSpecificationsKeeper.scenariosSpecifications } returns mapOf("scenario-1" to TestScenarioFactory.scenario())
         val exception = relaxedMockk<Exception>()
         every { factoryInitializer.convertScenario(any(), any()) } throws exception
 
@@ -653,14 +621,11 @@ internal class FactoryInitializerImplTest {
         }
     }
 
-
     @Test
     @Timeout(4)
     internal fun `should generate an exit status exception when there is no scenario to convert`() {
         // given
-        mockkObject(FactoryServicesLoader)
-        every { FactoryServicesLoader.loadScenarios<Any>(refEq(injector)) } returns relaxedMockk()
-        every { scenarioSpecificationsKeeper.asMap() } returns emptyMap()
+        every { scenarioSpecificationsKeeper.scenariosSpecifications } returns emptyMap()
 
         // when
         val caught = assertThrows<ExitStatusException> {

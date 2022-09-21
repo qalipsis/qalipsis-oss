@@ -27,9 +27,9 @@ import io.qalipsis.api.steps.returns
 
 object DeploymentTestScenario {
 
-    @Scenario
+    @Scenario("deployment-test")
     fun scenario() {
-        scenario("deployment-test") {
+        scenario {
             minionsCount = 10_000
             profile { regular(1000, 2000) }
         }.start()

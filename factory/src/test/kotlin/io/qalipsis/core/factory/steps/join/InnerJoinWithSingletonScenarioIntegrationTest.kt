@@ -90,13 +90,13 @@ object InnerJoinStepScenario {
 
     val capturedValues = concurrentList<Int>()
 
-    @Scenario
+    @Scenario("inner-join-scenario-test")
     fun innerJoinScenario() {
 
         val counter1 = AtomicInteger(0)
         val counter2 = AtomicInteger(0)
 
-        scenario("inner-join-scenario-test") {
+        scenario {
             minionsCount = minionsNumber
             profile { regular(100, minionsNumber) }
         }
@@ -131,12 +131,12 @@ object InnerJoinStepScenario {
             .onEach(capturedValues::add)
     }
 
-    @Scenario
+    @Scenario("inner-join-scenario-test-without-output")
     fun innerJoinScenarioWithoutOutput() {
         val counter1 = AtomicInteger(0)
         val counter2 = AtomicInteger(0)
 
-        scenario("inner-join-scenario-test-without-output") {
+        scenario {
             minionsCount = minionsNumber
             profile { regular(100, minionsNumber) }
         }

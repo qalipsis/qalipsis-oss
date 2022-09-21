@@ -213,8 +213,8 @@ internal class ContextInitializer(
      * Loads the profiles defined in the plugins.
      */
     private fun loadPlugins(): Collection<String> {
-        return this.javaClass.classLoader.getResources("META-INF/qalipsis/plugin")
-            .toList()
+        return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/plugin")
+            .asSequence()
             .flatMap { ServicesFiles.readFile(it.openStream()) }
             .flatMap { it.split(",") }
             .map { it.trim() }

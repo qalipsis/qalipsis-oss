@@ -29,13 +29,14 @@ import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.exceptions.InvalidSpecificationException
-import io.qalipsis.api.injector.Injector
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
+import io.qalipsis.api.scenario.Injector
+import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.ErrorProcessingStep
@@ -117,7 +118,7 @@ internal class FactoryInitializerImpl(
     // Sort the decorator converters in the expected order.
     private val stepSpecificationDecoratorConverters = stepSpecificationDecoratorConverters.sortedBy { it.order }
 
-    private lateinit var scenarioSpecs: Map<ScenarioName, ConfiguredScenarioSpecification>
+    private lateinit var scenarioSpecs: Map<ScenarioName, ScenarioSpecification>
 
     override fun getStartupOrder() = Ordered.LOWEST_PRECEDENCE
 
@@ -138,12 +139,10 @@ internal class FactoryInitializerImpl(
     override fun refresh() {
         CompletableFuture.supplyAsync {
             try {
-                scenarioSpecificationsKeeper.clear()
                 log.info { "Refreshing the scenarios specifications" }
-                // Load all the scenarios specifications into memory.
-                FactoryServicesLoader.loadScenarios<Any>(injector)
+                scenarioSpecificationsKeeper.reload()
 
-                scenarioSpecs = scenarioSpecificationsKeeper.asMap()
+                scenarioSpecs = scenarioSpecificationsKeeper.scenariosSpecifications
 
                 if (scenarioSpecs.isEmpty() && !allowEmptyScenario) {
                     throw ExitStatusException(IllegalArgumentException("No enabled scenario could be found"), 102)
@@ -152,7 +151,8 @@ internal class FactoryInitializerImpl(
                 val allScenarios = mutableListOf<Scenario>()
                 scenarioSpecs.forEach { (scenarioName, scenarioSpecification) ->
                     log.info { "Converting the scenario specification $scenarioName" }
-                    val scenario = convertScenario(scenarioName, scenarioSpecification)
+                    val scenario =
+                        convertScenario(scenarioName, scenarioSpecification as ConfiguredScenarioSpecification)
                     allScenarios.add(scenario)
                     scenario.dags.forEach { dag ->
                         dagsByScenario.computeIfAbsent(scenarioName) { ConcurrentHashMap() }[dag.name] = dag

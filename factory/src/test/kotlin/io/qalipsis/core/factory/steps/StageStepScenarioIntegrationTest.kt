@@ -118,9 +118,9 @@ object StageStepScenario {
 
     val capturedValues = concurrentList<String>()
 
-    @Scenario
+    @Scenario("stage-scenario-test")
     fun stageStepScenario() {
-        scenario("stage-scenario-test") {
+        scenario {
             minionsCount = minionsNumber
             profile { regular(100, minionsNumber) }
         }
@@ -135,9 +135,9 @@ object StageStepScenario {
             .onEach(capturedValues::add)
     }
 
-    @Scenario
+    @Scenario("stage-scenario-test-without-output")
     fun stageStepScenarioWithoutOutput() {
-        scenario("stage-scenario-test-without-output") {
+        scenario {
             minionsCount = minionsNumber
             profile { regular(100, minionsNumber) }
         }
@@ -153,11 +153,11 @@ object StageStepScenario {
             }
     }
 
-    @Scenario
+    @Scenario("stage-scenario-test-with-failure")
     fun stageStepScenarioWithFailure() {
         val visitedMinions = concurrentSet<MinionId>()
 
-        scenario("stage-scenario-test-with-failure") {
+        scenario {
             minionsCount = minionsNumber
             profile { regular(100, minionsNumber) }
         }
