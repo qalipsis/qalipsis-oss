@@ -33,14 +33,14 @@ plugins {
     signing
 }
 
+description = "Qalipsis OSS"
+
 /**
  * Target version of the generated JVM bytecode.
  */
 val target = JavaVersion.VERSION_11
 
-configure<JavaPluginConvention> {
-    description = "Qalipsis Engine"
-
+java {
     sourceCompatibility = target
     targetCompatibility = target
 }

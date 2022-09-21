@@ -22,7 +22,7 @@ package io.qalipsis.core.factory.injector
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.Qualifier
 import io.micronaut.core.convert.ConversionService
-import io.qalipsis.api.injector.Injector
+import io.qalipsis.api.scenario.Injector
 import jakarta.inject.Singleton
 import java.util.Optional
 

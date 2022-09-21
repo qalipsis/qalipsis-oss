@@ -194,9 +194,9 @@ internal class QalipsisBootstrapIntegrationTest {
         assertThat(qalipsisBootstrap.applicationContext.isRunning).isFalse()
     }
 
-    @Scenario
+    @Scenario("do-nothing-scenario")
     fun doNothingScenario() {
-        scenario("do-nothing-scenario") {
+        scenario {
             minionsCount = 1
             profile { regular(1000, 1) }
         }.start()
@@ -204,9 +204,9 @@ internal class QalipsisBootstrapIntegrationTest {
             .blackHole()
     }
 
-    @Scenario
+    @Scenario("failing-scenario")
     fun failingScenario() {
-        scenario("failing-scenario") {
+        scenario {
             minionsCount = 1
             profile { regular(1000, 1) }
         }.start()
@@ -215,9 +215,9 @@ internal class QalipsisBootstrapIntegrationTest {
             .blackHole()
     }
 
-    @Scenario
+    @Scenario("long-running-scenario")
     fun longRunningScenario() {
-        scenario("long-running-scenario") {
+        scenario {
             minionsCount = 1
             profile { regular(1000, 1) }
         }.start()
