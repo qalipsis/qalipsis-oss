@@ -22,6 +22,7 @@ package io.qalipsis.core.directives
 import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
 import io.qalipsis.core.configuration.ProtobufSerializationModuleConfiguration
+import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
@@ -55,6 +56,10 @@ internal class MinionsHeadDelegationApiDirectivesTest {
         val directive: Directive = MinionsRampUpPreparationDirective(
             "campaign",
             "scenario",
+            executionProfileConfiguration = RegularExecutionProfileConfiguration(
+                periodInMs = 1000,
+                minionsCountProLaunch = 10
+            ),
             channel = "broadcast"
         )
         val serialized = protobuf.encodeToByteArray(directive)

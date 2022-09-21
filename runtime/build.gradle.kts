@@ -57,6 +57,7 @@ dependencies {
     api("io.micronaut:micronaut-validation")
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
     kapt(platform("io.qalipsis:dev-platform:${project.version}"))
     kapt("io.micronaut:micronaut-inject-java")

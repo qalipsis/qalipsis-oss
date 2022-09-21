@@ -50,17 +50,18 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
+import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -80,6 +81,9 @@ internal class PersistentCampaignServiceTest {
 
     @RelaxedMockK
     private lateinit var tenantRepository: TenantRepository
+
+    @RelaxedMockK
+    private lateinit var campaignConfigurationConverter: CampaignConfigurationConverter
 
     @RelaxedMockK
     private lateinit var campaignConverter: CampaignConverter
@@ -102,7 +106,7 @@ internal class PersistentCampaignServiceTest {
         val runningCampaign = relaxedMockk<RunningCampaign> {
             every { key } returns "my-campaign"
         }
-        coEvery { campaignConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
+        coEvery { campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
@@ -115,7 +119,7 @@ internal class PersistentCampaignServiceTest {
         // then
         assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
-            campaignConverter.convertConfiguration("my-tenant", refEq(campaign))
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
             userRepository.findIdByUsername("my-user")
             campaignRepository.save(
                 CampaignEntity(
@@ -159,7 +163,7 @@ internal class PersistentCampaignServiceTest {
         val runningCampaign = relaxedMockk<RunningCampaign> {
             every { key } returns "my-campaign"
         }
-        coEvery { campaignConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
+        coEvery { campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
@@ -172,7 +176,7 @@ internal class PersistentCampaignServiceTest {
         // then
         assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
-            campaignConverter.convertConfiguration("my-tenant", refEq(campaign))
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
             userRepository.findIdByUsername("my-user")
             campaignRepository.save(
                 CampaignEntity(
@@ -257,7 +261,7 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConverter)
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
         }
 
     @Test
@@ -292,7 +296,7 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConverter)
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
         }
 
     @Test
@@ -327,7 +331,7 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConverter)
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
         }
 
     @Test
@@ -362,7 +366,7 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConverter)
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
         }
 
     @Test
@@ -399,7 +403,7 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConverter)
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
         }
 
     @Test

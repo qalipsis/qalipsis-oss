@@ -22,31 +22,23 @@ package io.qalipsis.core.head.model.converter
 import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.core.campaigns.RunningCampaign
-import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
-import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import java.time.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.time.Instant
 
 @WithMockk
 internal class CampaignConverterImplTest {
-
     @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
@@ -57,67 +49,8 @@ internal class CampaignConverterImplTest {
     @RelaxedMockK
     private lateinit var scenarioRepository: CampaignScenarioRepository
 
-    @RelaxedMockK
-    private lateinit var idGenerator: IdGenerator
-
     @InjectMockKs
     private lateinit var converter: CampaignConverterImpl
-
-    @Test
-    internal fun `should convert the minimal request`() = testDispatcherProvider.runTest {
-        // given
-        every { idGenerator.long() } returns "my-campaign"
-        val request = CampaignConfiguration(
-            name = "Anything",
-            speedFactor = 1.43,
-            startOffsetMs = 123,
-            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
-        )
-
-        // when
-        val result = converter.convertConfiguration("my-tenant", request)
-
-        // then
-        assertThat(result).isDataClassEqualTo(
-            RunningCampaign(
-                tenant = "my-tenant",
-                key = "my-campaign",
-                speedFactor = 1.43,
-                startOffsetMs = 123,
-                hardTimeout = false,
-                scenarios = mapOf("Scenario1" to ScenarioConfiguration(1), "Scenario2" to ScenarioConfiguration(11))
-            )
-        )
-    }
-
-    @Test
-    internal fun `should convert the complete request`() = testDispatcherProvider.runTest {
-        // given
-        every { idGenerator.long() } returns "my-campaign"
-        val request = CampaignConfiguration(
-            name = "Anything",
-            speedFactor = 1.43,
-            startOffsetMs = 123,
-            timeout = Duration.ofSeconds(2345),
-            hardTimeout = true,
-            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
-        )
-
-        // when
-        val result = converter.convertConfiguration("my-tenant", request)
-
-        // then
-        assertThat(result).isDataClassEqualTo(
-            RunningCampaign(
-                tenant = "my-tenant",
-                key = "my-campaign",
-                speedFactor = 1.43,
-                startOffsetMs = 123,
-                hardTimeout = true,
-                scenarios = mapOf("Scenario1" to ScenarioConfiguration(1), "Scenario2" to ScenarioConfiguration(11))
-            )
-        )
-    }
 
     @Test
     internal fun `should convert to the model`() = testDispatcherProvider.runTest {
@@ -181,5 +114,4 @@ internal class CampaignConverterImplTest {
             )
         )
     }
-
 }

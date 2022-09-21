@@ -24,7 +24,6 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
@@ -36,11 +35,14 @@ internal open class MinionsStartupState(
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
     override suspend fun doInit(): List<Directive> {
-        return campaign.scenarios.keys.map { scenarioName ->
+        return campaign.scenarios.map { (scenarioName, scenarioConfiguration) ->
             MinionsRampUpPreparationDirective(
                 campaignKey = campaignKey,
                 scenarioName = scenarioName,
-                executionProfileConfiguration = ExecutionProfileConfiguration(campaign.startOffsetMs, campaign.speedFactor),
+                executionProfileConfiguration = scenarioConfiguration.executionProfileConfiguration.clone(
+                    startOffsetMs = campaign.startOffsetMs,
+                    speedFactor = campaign.speedFactor
+                ),
                 channel = campaign.broadcastChannel
             )
         }

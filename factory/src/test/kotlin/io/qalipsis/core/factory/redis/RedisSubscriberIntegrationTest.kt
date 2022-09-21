@@ -33,8 +33,8 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
-import io.qalipsis.core.directives.TestSingleUseDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.HandshakeResponseListener
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
@@ -47,13 +47,13 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import jakarta.inject.Named
+import java.time.Duration
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
@@ -222,7 +222,7 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
         })
 
         // when
-        val directive = TestSingleUseDirective()
+        val directive = MinionsDeclarationDirective("campaign", "scenario", 1, channel = BROADCAST_CHANNEL)
         redisFactoryChannel.publishDirective(directive)
         countLatch.await()
 

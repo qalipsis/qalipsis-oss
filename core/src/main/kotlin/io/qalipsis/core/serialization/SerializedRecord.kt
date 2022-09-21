@@ -19,10 +19,15 @@
 
 package io.qalipsis.core.serialization
 
-import io.qalipsis.api.serialization.ByteArrayKotlinSerializer
 import io.qalipsis.api.serialization.SerializableClass
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import java.util.Base64
 import kotlin.reflect.KClass
 
 /**
@@ -36,7 +41,7 @@ import kotlin.reflect.KClass
  */
 @Serializable
 class SerializedRecord(
-    @SerialName("v") @Serializable(with = ByteArrayKotlinSerializer::class) val value: ByteArray,
+    @SerialName("v") @Serializable(with = OtherByteArrayKotlinSerializer::class) val value: ByteArray,
     @SerialName("t") val type: SerializableClass,
     @SerialName("s") val serializer: String,
     @SerialName("m") val metadata: Map<String, String> = emptyMap()
@@ -73,6 +78,23 @@ class SerializedRecord(
             serializer: String,
             metadata: Map<String, String> = emptyMap()
         ) = SerializedRecord(value, SerializableClass(type.java), serializer, metadata)
+    }
+
+    object OtherByteArrayKotlinSerializer : KSerializer<ByteArray> {
+
+        private val base64Encoder = Base64.getEncoder()
+
+        private val base64Decoder = Base64.getDecoder()
+
+        override val descriptor = PrimitiveSerialDescriptor("QByteArray", PrimitiveKind.STRING)
+
+        override fun serialize(encoder: Encoder, value: ByteArray) {
+            encoder.encodeString(base64Encoder.encodeToString(value))
+        }
+
+        override fun deserialize(decoder: Decoder): ByteArray {
+            return base64Decoder.decode(decoder.decodeString())
+        }
     }
 
 }

@@ -19,35 +19,30 @@
 
 package io.qalipsis.core.factory.configuration
 
-import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.configuration.ProtobufSerializationModuleConfiguration
+import io.qalipsis.core.configuration.ProtobufSerializationConfigurer
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.factory.orchestration.TransportableCompletionContext
 import io.qalipsis.core.factory.orchestration.TransportableContext
 import io.qalipsis.core.factory.orchestration.TransportableStepContext
+import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.modules.SerializersModuleBuilder
 import kotlinx.serialization.modules.polymorphic
 
 /**
- * Kotlin Json Serialization configuration.
- *
- * Creates a [Protobuf] instance properly configured with serializer modules for subclasses of [io.qalipsis.core.factory.orchestration.TransportableContext].
- * This way Kotlin serialization can serialize and deserialize data using Interfaces or Parent classes and still keep reference to the original class.
- * It is needed to explicitly declare polymorphic relations due to Kotlin serialization limitations related to polymorphic objects.
- * See more [here](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/polymorphism.md).
+ * Kotlin Protobuf serialization configuration for the factory.
  *
  * @author Gabriel Moraes
  */
-@Context
+@Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalSerializationApi
-internal class FactoryProtobufSerializationModuleConfiguration : ProtobufSerializationModuleConfiguration() {
+internal class FactoryProtobufSerializationModuleConfiguration : ProtobufSerializationConfigurer {
 
-    override fun configure(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
+    override fun configure(serializersModuleBuilder: SerializersModuleBuilder) {
+        serializersModuleBuilder.apply {
             polymorphic(Directive::class) {
                 subclass(TransportableContext::class, TransportableContext.serializer())
                 subclass(TransportableCompletionContext::class, TransportableCompletionContext.serializer())

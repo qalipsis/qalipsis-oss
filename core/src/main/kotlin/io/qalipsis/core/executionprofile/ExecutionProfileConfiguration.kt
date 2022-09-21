@@ -19,6 +19,8 @@
 
 package io.qalipsis.core.executionprofile
 
+import io.qalipsis.api.executionprofile.CompletionMode
+import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 
 /**
@@ -30,7 +32,117 @@ import kotlinx.serialization.Serializable
  * @author Eric Jessé
  */
 @Serializable
-data class ExecutionProfileConfiguration(
-    val startOffsetMs: Long = 3000,
-    val speedFactor: Double = 1.0,
+@Polymorphic
+sealed interface ExecutionProfileConfiguration {
+    val startOffsetMs: Long
+    val speedFactor: Double
+
+    fun clone(
+        startOffsetMs: Long = this.startOffsetMs,
+        speedFactor: Double = this.speedFactor
+    ): ExecutionProfileConfiguration
+}
+
+@Serializable
+data class RegularExecutionProfileConfiguration(
+    val periodInMs: Long,
+    val minionsCountProLaunch: Int,
+    override val startOffsetMs: Long = 3000,
+    override val speedFactor: Double = 1.0
+) : ExecutionProfileConfiguration {
+
+    override fun clone(startOffsetMs: Long, speedFactor: Double): RegularExecutionProfileConfiguration {
+        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    }
+}
+
+@Serializable
+data class AcceleratingExecutionProfileConfiguration(
+    val startPeriodMs: Long,
+    val accelerator: Double,
+    val minPeriodMs: Long,
+    val minionsCountProLaunch: Int,
+    override val startOffsetMs: Long = 3000,
+    override val speedFactor: Double = 1.0
+) : ExecutionProfileConfiguration {
+
+    override fun clone(startOffsetMs: Long, speedFactor: Double): AcceleratingExecutionProfileConfiguration {
+        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    }
+}
+
+@Serializable
+data class ProgressiveVolumeExecutionProfileConfiguration(
+    val periodMs: Long,
+    val minionsCountProLaunchAtStart: Int,
+    val multiplier: Double,
+    val maxMinionsCountProLaunch: Int,
+    override val startOffsetMs: Long = 3000,
+    override val speedFactor: Double = 1.0
+) : ExecutionProfileConfiguration {
+
+    override fun clone(startOffsetMs: Long, speedFactor: Double): ProgressiveVolumeExecutionProfileConfiguration {
+        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    }
+}
+
+@Serializable
+data class StageExecutionProfileConfiguration(
+    val stages: List<Stage>,
+    val completion: CompletionMode,
+    override val startOffsetMs: Long = 3000,
+    override val speedFactor: Double = 1.0
+) : ExecutionProfileConfiguration {
+
+    override fun clone(startOffsetMs: Long, speedFactor: Double): StageExecutionProfileConfiguration {
+        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    }
+}
+
+@Serializable
+data class TimeFrameExecutionProfileConfiguration(
+    val periodInMs: Long,
+    val timeFrameInMs: Long,
+    override val startOffsetMs: Long = 3000,
+    override val speedFactor: Double = 1.0
+) : ExecutionProfileConfiguration {
+
+    override fun clone(startOffsetMs: Long, speedFactor: Double): TimeFrameExecutionProfileConfiguration {
+        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    }
+}
+
+@Serializable
+data class DefaultExecutionProfileConfiguration(
+    override val startOffsetMs: Long = 3000,
+    override val speedFactor: Double = 1.0
+) : ExecutionProfileConfiguration {
+
+    override fun clone(startOffsetMs: Long, speedFactor: Double): DefaultExecutionProfileConfiguration {
+        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    }
+}
+
+@Serializable
+data class Stage(
+
+    /**
+     * Total number of minions to start in the stage.
+     */
+    val minionsCount: Int,
+
+    /**
+     * Minions ramp up duration, in milliseconds.
+     */
+    val rampUpDurationMs: Long,
+
+    /**
+     * Stage duration, in milliseconds.
+     */
+    val totalDurationMs: Long,
+
+    /**
+     * Minimal duration between two triggering of minions start, default to 500 ms.
+     */
+    val resolutionMs: Long = 500
 )

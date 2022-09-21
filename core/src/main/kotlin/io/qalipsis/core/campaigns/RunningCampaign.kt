@@ -23,9 +23,10 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
-import kotlinx.serialization.Serializable
+import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotEmpty
+import kotlinx.serialization.Serializable
 
 /**
  * Configuration of a running campaign in QALIPSIS.
@@ -89,7 +90,8 @@ data class RunningCampaign(
 
 @Serializable
 data class ScenarioConfiguration(
-    val minionsCount: Int
+    val minionsCount: Int,
+    val executionProfileConfiguration: ExecutionProfileConfiguration
 )
 
 @Serializable

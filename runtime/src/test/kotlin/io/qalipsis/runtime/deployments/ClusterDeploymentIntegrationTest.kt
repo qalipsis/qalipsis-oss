@@ -57,6 +57,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
             "-c", "logging.level.io.qalipsis.core.head.redis.campaign.RedisFactoryAssignmentState=TRACE",
             "-c", "logging.level.io.qalipsis.core.head.campaign.CampaignAutoStarter=TRACE",
+            "-c", "logging.level.io.qalipsis.runtime.redis.RedisDirectiveRegistry=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
@@ -64,7 +65,8 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
             "-c", "logging.level.io.qalipsis.core.factory=INFO",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            "-c", "logging.level.io.qalipsis.core.factory.init=TRACE"
+            "-c", "logging.level.io.qalipsis.core.factory.init=TRACE",
+            "-c", "logging.level.io.qalipsis.runtime.redis.RedisDirectiveRegistry=TRACE"
         )
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)

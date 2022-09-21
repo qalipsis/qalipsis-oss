@@ -29,6 +29,7 @@ import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.campaigns.ScenarioSummary
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
@@ -44,10 +45,12 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolverTest {
             key = "my-campaign",
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(
-                    minionsCount = 54
+                    minionsCount = 54,
+                    DefaultExecutionProfileConfiguration()
                 ),
                 "scenario-2" to ScenarioConfiguration(
                     minionsCount = 433,
+                    DefaultExecutionProfileConfiguration()
                 )
             )
         )
