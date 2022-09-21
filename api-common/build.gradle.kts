@@ -30,12 +30,17 @@ allOpen {
     )
 }
 
+kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
+kapt.useBuildCache = false
+
 dependencies {
     implementation(platform(project(":dev-platform")))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    compileOnly("io.aeris-consulting:catadioptre-annotations")
+    compileOnly("io.aeris-consulting:catadioptre-kotlin")
 
     implementation("cool.graph:cuid-java")
     api(project(":api-dev"))
@@ -50,15 +55,18 @@ dependencies {
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
+    kapt("io.aeris-consulting:catadioptre-annotations")
 
     implementation("io.micrometer:micrometer-core")
     implementation("com.google.guava:guava")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
+    testImplementation("io.aeris-consulting:catadioptre-kotlin")
 
     testImplementation(project(":test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
-    testFixtures(platform(project(":dev-platform")))
+    testFixturesImplementation(platform(project(":dev-platform")))
     testFixturesCompileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
+    testFixturesImplementation("org.apache.commons:commons-lang3")
     testFixturesImplementation(project(":test"))
 }

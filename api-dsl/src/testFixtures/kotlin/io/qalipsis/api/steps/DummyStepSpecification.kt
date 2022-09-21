@@ -17,7 +17,7 @@
 package io.qalipsis.api.steps
 
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.scenario.scenario
+import io.qalipsis.api.scenario.TestScenarioFactory
 import kotlin.reflect.KClass
 
 /**
@@ -60,7 +60,7 @@ inline fun <reified INPUT : Any, OUTPUT : Any> StepSpecification<*, INPUT, *>.ca
 class DummyStepSpecification : AbstractStepSpecification<Unit, Int, DummyStepSpecification>() {
 
     init {
-        scenario = scenario("my-scenario") as StepSpecificationRegistry
+        scenario = TestScenarioFactory.scenario() as StepSpecificationRegistry
     }
 
     override fun add(step: StepSpecification<*, *, *>) {

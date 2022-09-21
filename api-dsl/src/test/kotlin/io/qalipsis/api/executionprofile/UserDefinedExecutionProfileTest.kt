@@ -16,8 +16,10 @@
 
 package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
-import io.qalipsis.api.scenario.scenario
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import io.qalipsis.api.scenario.TestScenarioFactory
+import io.qalipsis.test.assertk.prop
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -31,13 +33,13 @@ internal class UserDefinedExecutionProfileTest {
         val specification: (Long, Int, Double) -> MinionsStartingLine =
             { _, _, _ -> MinionsStartingLine(10, 10) }
 
-        val scenario = scenario("my-scenario") {
+        val scenario = TestScenarioFactory.scenario {
             profile {
                 define(specification)
             }
-        } as ScenarioSpecificationImplementation
+        }
 
-        assertEquals(UserDefinedExecutionProfile(specification), scenario.executionProfile)
+        assertThat(scenario).prop("executionProfile").isEqualTo(UserDefinedExecutionProfile(specification))
     }
 
     @Test

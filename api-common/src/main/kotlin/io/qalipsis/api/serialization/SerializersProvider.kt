@@ -36,7 +36,7 @@ object SerializersProvider {
      * All the [SerialFormatWrapper]s found in the classpath.
      */
     val serialFormatWrappers: Collection<SerialFormatWrapper<*>> =
-        this.javaClass.classLoader.getResources("META-INF/qalipsis/serializers")
+        this.javaClass.classLoader.getResources("META-INF/services/qalipsis/serializers")
             .toList()
             .flatMap { ServicesFiles.readFile(it.openStream()) }
             .map { loaderClass ->

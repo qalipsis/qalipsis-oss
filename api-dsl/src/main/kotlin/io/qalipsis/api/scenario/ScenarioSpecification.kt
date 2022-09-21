@@ -16,7 +16,8 @@
 
 package io.qalipsis.api.scenario
 
-import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.services.ServicesFiles
+import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
 
 /**
  * Overall interface for a scenario specification, as visible by the scenario developers.
@@ -44,15 +45,37 @@ interface StartScenarioSpecification : ScenarioSpecification {
 
 }
 
-internal val scenariosSpecifications = mutableMapOf<ScenarioName, ConfiguredScenarioSpecification>()
+/**
+ * Interface of service in charge of creating new implementations of [ConfigurableScenarioSpecification] and
+ * [StartScenarioSpecification] when the function [scenario] is called in a context of
+ * loading the scenarios.
+ */
+interface ScenarioFactory {
 
+    fun newScenario(): ConfigurableScenarioSpecification
+
+}
+
+/**
+ * Dynamically created instance of [ScenarioFactory].
+ */
+private val scenarioFactory: ScenarioFactory by lazy(SYNCHRONIZED) {
+    ConfigurableScenarioSpecification::class.java.classLoader
+        .getResourceAsStream("META-INF/services/qalipsis/scenarioFactory")!!.use { stream ->
+            val scenarioFactoryClass = ServicesFiles.readFile(stream).first()
+            Class.forName(scenarioFactoryClass).getConstructor().newInstance() as ScenarioFactory
+        }
+}
+
+/**
+ * Declares a new scenario to execute into QALIPSIS.
+ *
+ * @param configuration provides utilities to tweak the newly created scenario.
+ */
 fun scenario(
-    name: ScenarioName,
     configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }
 ): StartScenarioSpecification {
-    val scenario = ScenarioSpecificationImplementation(name)
+    val scenario = scenarioFactory.newScenario()
     scenario.configuration()
-    scenariosSpecifications[name] = scenario
-
-    return scenario
+    return scenario as StartScenarioSpecification
 }

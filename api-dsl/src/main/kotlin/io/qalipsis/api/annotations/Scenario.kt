@@ -38,4 +38,21 @@ package io.qalipsis.api.annotations
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Scenario
+annotation class Scenario(
+
+    /**
+     * Unique identifier or the scenario, should be kebab-cased, ex: `this-is-my-scenario`.
+     */
+    val name: String = "",
+
+    /**
+     * Display name or user-friendly description of the scenario, defaults to an empty string.
+     */
+    val description: String = "",
+
+    /**
+     * Version of the scenario, should be a dot-separated version, defaults to `0.<compilation-instant>`.
+     */
+    val version: String = ""
+
+)

@@ -29,7 +29,7 @@ internal val injectedIntoConstructor = mutableMapOf<String, Any?>()
 internal val injectedIntoScenarioOfClass = mutableMapOf<String, Any?>()
 internal val injectedIntoScenarioOfObject = mutableMapOf<String, Any?>()
 
-@Scenario
+@Scenario(name = "a-method-outside-a-class", description = "Scenario in a file", version = "0.1")
 internal fun aMethodOutsideAClass(
     classToInject: ClassToInject,
     mayBeOtherClassToInject: Optional<OtherClassToInject>,
@@ -72,7 +72,7 @@ internal class ScenarioClass(
         injectedIntoConstructor["mayBeProperty"] = mayBeProperty
     }
 
-    @Scenario
+    @Scenario("a-method-inside-a-class", description = "Scenario in a class", version = "0.2.3")
     fun aMethodInsideAClass(
         classToInject: ClassToInject,
         mayBeOtherClassToInject: Optional<OtherClassToInject>,
@@ -95,7 +95,7 @@ internal class ScenarioClass(
 
     object ScenarioDeclaration {
 
-        @Scenario
+        @Scenario("a-method-inside-an-object", version = "1.34")
         fun aMethodInsideAnObject(
             classToInject: ClassToInject,
             mayBeOtherClassToInject: Optional<OtherClassToInject>,

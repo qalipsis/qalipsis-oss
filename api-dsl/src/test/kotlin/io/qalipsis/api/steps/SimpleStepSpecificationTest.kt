@@ -16,9 +16,12 @@
 
 package io.qalipsis.api.steps
 
+import assertk.assertThat
+import assertk.assertions.index
+import assertk.assertions.isEqualTo
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.scenario.scenario
+import io.qalipsis.api.scenario.TestScenarioFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -38,11 +41,12 @@ internal class SimpleStepSpecificationTest {
 
     @Test
     internal fun `should add simple step to scenario`() {
-        val scenario = scenario("my-scenario") as StepSpecificationRegistry
+        val scenario = TestScenarioFactory.scenario() as StepSpecificationRegistry
         val specification: suspend (context: StepContext<Unit, String>) -> Unit = { _ -> }
         scenario.execute(specification)
 
-        assertEquals(SimpleStepSpecification(specification), scenario.rootSteps[0])
+        assertThat(scenario.rootSteps).index(0)
+            .isEqualTo(SimpleStepSpecification(specification))
     }
 
 }

@@ -20,18 +20,24 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isLessThan
+import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.key
+import assertk.assertions.matches
+import assertk.assertions.prop
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
-import io.qalipsis.api.injector.Injector
+import io.qalipsis.api.scenario.Injector
+import io.qalipsis.api.scenario.ScenarioLoader
 import io.qalipsis.api.services.ServicesFiles
 import io.qalipsis.test.io.readFileLines
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.time.Duration
+import java.time.Instant
 import java.util.Optional
 
 /**
@@ -44,21 +50,22 @@ internal class ScenarioAnnotationProcessorTest {
      */
     @Test
     internal fun `annotated methods should have been listed at compilation time`() {
-        val scenarioResources = this.javaClass.classLoader.getResources("META-INF/qalipsis/scenarios").toList()
+        val scenarioResources = this.javaClass.classLoader.getResources("META-INF/services/qalipsis/scenarios").toList()
 
         Assertions.assertEquals(1, scenarioResources.size)
         val scenarios = readFileLines(scenarioResources[0].openStream(), true, "#").toSet()
 
         val expected = setOf(
-            "io.qalipsis.api.scenariosloader.ScenarioClassKt\$aMethodOutsideAClass",
-            "io.qalipsis.api.scenariosloader.ScenarioDeclaration\$aMethodInsideAnObject",
-            "io.qalipsis.api.scenariosloader.ScenarioClass\$aMethodInsideAClass"
+            "a-method-outside-a-class\tScenario in a file\t0.1\tio.qalipsis.api.scenariosloader.ScenarioClassKt\$\$aMethodOutsideAClass",
+            "a-method-inside-an-object\t\t1.34\tio.qalipsis.api.scenariosloader.ScenarioDeclaration\$\$aMethodInsideAnObject",
+            "a-method-inside-a-class\tScenario in a class\t0.2.3\tio.qalipsis.api.scenariosloader.ScenarioClass\$\$aMethodInsideAClass"
         )
         Assertions.assertEquals(expected, scenarios)
     }
 
     @Test
     internal fun `should load the annotated scenarios`() {
+        // given
         val classToInject: ClassToInject = relaxedMockk()
         val otherClassToInject: OtherClassToInject = relaxedMockk()
         val interfaceToInject: InterfaceToInject = relaxedMockk()
@@ -103,7 +110,19 @@ internal class ScenarioAnnotationProcessorTest {
             } returns Optional.of("No value")
         }
 
-        loadScenarios<Any>(injector)
+        // when
+        val beforeLoad = Instant.now()
+        val scenariosLoader = createScenariosLoader()
+        scenariosLoader.forEach { scenariosProvider ->
+            assertThat(scenariosProvider).all {
+                prop(ScenarioLoader::name).isNotNull().matches(Regex("^[-0-9a-z]+$"))
+                prop(ScenarioLoader::version).isNotNull().isNotEmpty()
+                prop(ScenarioLoader::buildAt).isLessThan(beforeLoad)
+            }
+
+            // Trigger the loading of the scenario.
+            scenariosProvider.load(injector)
+        }
 
         assertThat(injectedForMethodOutsideAClass).all {
             key("classToInject").isSameAs(classToInject)
@@ -157,17 +176,13 @@ internal class ScenarioAnnotationProcessorTest {
     /**
      * Loads the scenarios and inject the relevant resources.
      */
-    private fun <T> loadScenarios(injector: Injector): Collection<T> {
-        return this.javaClass.classLoader.getResources("META-INF/qalipsis/scenarios")
+    private fun createScenariosLoader(): Collection<ScenarioLoader> {
+        return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/scenarios")
             .toList()
             .flatMap { ServicesFiles.readFile(it.openStream()) }
-            .map { loaderClass ->
-                try {
-                    Class.forName(loaderClass).getConstructor(Injector::class.java)
-                        .newInstance(injector) as T
-                } catch (e: NoSuchMethodException) {
-                    Class.forName(loaderClass).getConstructor().newInstance() as T
-                }
+            .map { scenarioMetadata ->
+                val loaderClass = scenarioMetadata.split("\t")[3]
+                Class.forName(loaderClass).getConstructor().newInstance() as ScenarioLoader
             }
     }
 }

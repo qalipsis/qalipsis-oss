@@ -16,8 +16,10 @@
 
 package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
-import io.qalipsis.api.scenario.scenario
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import io.qalipsis.api.scenario.TestScenarioFactory
+import io.qalipsis.test.assertk.prop
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -28,13 +30,13 @@ internal class AcceleratingExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
-        val scenario = scenario("my-scenario") {
+        val scenario = TestScenarioFactory.scenario {
             profile {
                 faster(1, 2.0, 3, 4)
             }
-        } as ScenarioSpecificationImplementation
+        }
 
-        assertEquals(AcceleratingExecutionProfile(1, 2.0, 3, 4), scenario.executionProfile)
+        assertThat(scenario).prop("executionProfile").isEqualTo(AcceleratingExecutionProfile(1, 2.0, 3, 4))
     }
 
     @Test

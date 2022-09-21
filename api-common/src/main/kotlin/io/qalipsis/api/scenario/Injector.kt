@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.injector
+package io.qalipsis.api.scenario
 
 import io.micronaut.context.Qualifier
 import io.micronaut.core.annotation.NonNull

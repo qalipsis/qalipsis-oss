@@ -69,7 +69,7 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
 
         const val SERIALIZABLE_CLASS_NAME = "kotlinx.serialization.Serializable"
 
-        const val SERIALIZERS_PATH = "META-INF/qalipsis/serializers"
+        const val SERIALIZERS_PATH = "META-INF/services/qalipsis/serializers"
 
         // Property pointing to the folder where Kapt generates sources.
         const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"

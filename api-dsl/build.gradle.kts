@@ -58,8 +58,10 @@ dependencies {
     kapt("io.micronaut:micronaut-graal")
     kapt("io.aeris-consulting:catadioptre-annotations")
 
-    testFixturesApi(platform(project(":dev-platform")))
     testImplementation(project(":test"))
     testImplementation(testFixtures(project(":api-common")))
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
+
+    testFixturesApi(platform(project(":dev-platform")))
+    testFixturesImplementation(testFixtures(project(":api-common")))
 }

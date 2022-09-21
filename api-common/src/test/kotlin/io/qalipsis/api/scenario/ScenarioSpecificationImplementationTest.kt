@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api
+package io.qalipsis.api.scenario
 
 import assertk.all
 import assertk.assertThat
@@ -22,13 +22,7 @@ import assertk.assertions.containsAll
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import io.mockk.every
-import io.qalipsis.api.executionprofile.ExecutionProfile
-import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
-import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
-import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.scenario.catadioptre.registeredSteps
-import io.qalipsis.api.scenario.scenario
-import io.qalipsis.api.scenario.scenariosSpecifications
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
 import io.qalipsis.api.steps.SingletonStepSpecification
@@ -46,27 +40,6 @@ import org.junit.jupiter.api.assertThrows
  * @author Eric Jessé
  */
 internal class ScenarioSpecificationImplementationTest {
-
-    @Test
-    internal fun `should create an empty scenario`() {
-        val scenario = scenario("my-scenario")
-
-        assertSame(scenario, scenariosSpecifications["my-scenario"])
-    }
-
-    @Test
-    @Timeout(3)
-    internal fun `should create a scenario with a ramp-up strategy`() {
-        val executionProfile: ExecutionProfile = relaxedMockk { }
-        val scenario = scenario("my-scenario") {
-            profile {
-                strategy(executionProfile)
-            }
-        } as ConfiguredScenarioSpecification
-
-        assertSame(executionProfile, scenario.executionProfile)
-        assertSame(scenario, scenariosSpecifications["my-scenario"])
-    }
 
     @Test
     @Timeout(3)

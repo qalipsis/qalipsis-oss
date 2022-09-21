@@ -16,13 +16,15 @@
 
 package io.qalipsis.api.executionprofile
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import io.mockk.spyk
-import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
-import io.qalipsis.api.scenario.scenario
+import io.qalipsis.api.scenario.TestScenarioFactory
+import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.verifyExactly
-import java.time.Duration
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 /**
  * @author Svetlana Paliashchuk
@@ -31,7 +33,7 @@ internal class StageExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
-        val scenario = scenario("my-scenario") {
+        val scenario = TestScenarioFactory.scenario {
             profile {
                 stages {
                     stage(
@@ -43,16 +45,15 @@ internal class StageExecutionProfileTest {
                     stage(minionsCount = 15, rampUpDurationMs = 500, totalDurationMs = 1500, resolutionMs = 500)
                 }
             }
-        } as ScenarioSpecificationImplementation
+        }
 
-        Assertions.assertEquals(
+        assertThat(scenario).prop("executionProfile").isEqualTo(
             StageExecutionProfile(
                 listOf(
                     Stage(minionsCount = 234, rampUpDurationMs = 12000, totalDurationMs = 12000, resolutionMs = 500),
                     Stage(minionsCount = 15, rampUpDurationMs = 500, totalDurationMs = 1500, resolutionMs = 500)
                 ), CompletionMode.FORCED
-            ),
-            scenario.executionProfile
+            )
         )
     }
 

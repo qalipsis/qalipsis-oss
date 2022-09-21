@@ -21,7 +21,7 @@ import assertk.assertThat
 import assertk.assertions.*
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.scenario.StepSpecificationRegistry
-import io.qalipsis.api.scenario.scenario
+import io.qalipsis.api.scenario.TestScenarioFactory
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -126,7 +126,7 @@ internal class StageStepSpecificationTest {
 
     @Test
     internal fun `should add a minimal stage to the scenario and transport the right input types`() {
-        val scenario = scenario("my-scenario") as StepSpecificationRegistry
+        val scenario = TestScenarioFactory.scenario() as StepSpecificationRegistry
         val nextStep = scenario.stage {
             returns("").captureInputAndReturn(Double::class)
         }.configure { name = "no-name" }.captureInputAndReturn(Unit::class)
@@ -174,7 +174,7 @@ internal class StageStepSpecificationTest {
     @Test
     internal fun `should add a configured stage to the scenario with existing steps and transport the right input types`() {
         val retryPolicy: RetryPolicy = relaxedMockk()
-        val scenario = scenario("my-scenario") as StepSpecificationRegistry
+        val scenario = TestScenarioFactory.scenario() as StepSpecificationRegistry
         scenario.returns(1).configure { name = "step-1" }
         scenario.returns(2).configure { name = "step-2" }
 

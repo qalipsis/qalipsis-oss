@@ -16,22 +16,27 @@
 
 package io.qalipsis.api.scenario
 
+import io.micronaut.context.annotation.Property
 import io.qalipsis.api.context.ScenarioName
+import jakarta.inject.Singleton
+import java.util.Optional
 
 /**
- * Service providing an access to the scenario specifications to load at startup.
+ * Default implementation of the [ScenarioSpecificationsKeeper].
  *
  * @author Eric Jessé
  */
-interface ScenarioSpecificationsKeeper {
+@Singleton
+internal class DefaultScenarioSpecificationsKeeper(
+    private val injector: Injector,
+    @Property(name = "scenarios-selectors") private val scenariosSelectors: Optional<String>
+) : ScenarioSpecificationsKeeper {
 
-    /**
-     * Clears the scenario specifications in the factory.
-     */
-    fun clear()
+    override val scenariosSpecifications = mutableMapOf<ScenarioName, ConfiguredScenarioSpecification>()
 
-    /**
-     * Returns the map of specifications in the factory.
-     */
-    fun asMap(): Map<ScenarioName, ConfiguredScenarioSpecification>
+    override fun reload() {
+        scenariosSpecifications.clear()
+        scenariosSpecifications.putAll(ClasspathScenarioInitializer.reload(injector, scenariosSelectors.orElse(null)))
+    }
+
 }

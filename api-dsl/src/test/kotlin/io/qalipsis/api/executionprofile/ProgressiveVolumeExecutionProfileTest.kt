@@ -16,8 +16,10 @@
 
 package io.qalipsis.api.executionprofile
 
-import io.qalipsis.api.scenario.ScenarioSpecificationImplementation
-import io.qalipsis.api.scenario.scenario
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import io.qalipsis.api.scenario.TestScenarioFactory
+import io.qalipsis.test.assertk.prop
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -28,13 +30,13 @@ internal class ProgressiveVolumeExecutionProfileTest {
 
     @Test
     internal fun `should define the strategy on the scenario`() {
-        val scenario = scenario("my-scenario") {
+        val scenario = TestScenarioFactory.scenario {
             profile {
                 more(1, 2, 3.0, 4)
             }
-        } as ScenarioSpecificationImplementation
+        }
 
-        assertEquals(ProgressiveVolumeExecutionProfile(1, 2, 3.0, 4), scenario.executionProfile)
+        assertThat(scenario).prop("executionProfile").isEqualTo(ProgressiveVolumeExecutionProfile(1, 2, 3.0, 4))
     }
 
     @Test

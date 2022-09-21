@@ -19,9 +19,9 @@ package io.qalipsis.api.scenario
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
-import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.StepSpecification
