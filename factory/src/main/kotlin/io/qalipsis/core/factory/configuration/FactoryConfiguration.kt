@@ -66,12 +66,17 @@ internal class FactoryConfiguration {
     var assignment = Assignment()
 
     /**
+     * This object contains the values to validate the campaign.
+     */
+    var campaign = Campaign()
+
+    /**
      * Configuration of a key of a Zone of the factory declared in the head.
      */
     var zone: String? = null
 
     override fun toString(): String {
-        return "FactoryConfiguration(nodeId='$nodeId', tags=$tags, metadataPath='$metadataPath', tenant='$tenant', handshake=$handshake, cache=$cache, assignment=$assignment, zoneKey=$zone)"
+        return "FactoryConfiguration(nodeId='$nodeId', tags=$tags, metadataPath='$metadataPath', tenant='$tenant', handshake=$handshake, cache=$cache, assignment=$assignment, campaign=$campaign, zoneKey=$zone)"
     }
 
     /**
@@ -143,6 +148,20 @@ internal class FactoryConfiguration {
             return "Assignment(evaluationBatchSize=$evaluationBatchSize, timeout=$timeout)"
         }
 
+    }
+
+    @ConfigurationProperties("campaign.configuration")
+    class Campaign {
+
+        /**
+         * The maximal number of step specifications in a step scenario.
+         */
+        @field:Positive
+        var maxScenarioStepSpecificationsCount: Int = 100
+
+        override fun toString(): String {
+            return "Campaign(maxScenarioStepSpecificationsCount=$maxScenarioStepSpecificationsCount)"
+        }
     }
 
     companion object {

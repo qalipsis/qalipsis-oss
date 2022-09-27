@@ -45,7 +45,6 @@ import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
-import io.qalipsis.api.scenario.Injector
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -59,6 +58,7 @@ import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.init.catadioptre.convertScenario
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
@@ -75,6 +75,9 @@ import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineDispatcher
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -82,9 +85,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
@@ -96,9 +96,6 @@ internal class FactoryInitializerImplTest {
     @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
-
-    @RelaxedMockK
-    private lateinit var injector: Injector
 
     private val coroutineDispatcher: CoroutineDispatcher = testDispatcherProvider.default()
 
@@ -141,6 +138,9 @@ internal class FactoryInitializerImplTest {
     @RelaxedMockK
     private lateinit var handshakeBlocker: HandshakeBlocker
 
+    @RelaxedMockK
+    private lateinit var factoryConfiguration: FactoryConfiguration
+
     private val stepStartTimeout: Duration = Duration.ofSeconds(30)
 
     private val conversionTimeout: Duration = Duration.ofSeconds(1)
@@ -148,7 +148,6 @@ internal class FactoryInitializerImplTest {
     private val factoryInitializer: FactoryInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
         spyk(
             FactoryInitializerImpl(
-                injector,
                 testDispatcherProvider.default(),
                 initializationContext,
                 scenarioRegistry,
@@ -160,6 +159,7 @@ internal class FactoryInitializerImplTest {
                 idGenerator,
                 dagTransitionStepFactory,
                 factoryChannel,
+                factoryConfiguration,
                 handshakeBlocker,
                 Duration.ofSeconds(30),
                 Duration.ofSeconds(1)
@@ -170,6 +170,7 @@ internal class FactoryInitializerImplTest {
     @Test
     internal fun `should successfully init the factory`() {
         // given
+
         justRun { factoryInitializer.refresh() }
 
         // when
@@ -180,6 +181,33 @@ internal class FactoryInitializerImplTest {
             factoryInitializer.refresh()
         }
         confirmVerified(handshakeBlocker, initializationContext, factoryChannel, runner)
+    }
+
+    @Test
+    internal fun `should fail to init the factory when the number of step specifications in scenario step exceeds the limit`() {
+        // given
+        every { factoryConfiguration.campaign.maxScenarioStepSpecificationsCount } returns 100
+        val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk {
+            every { size } returns 1003
+        }
+        every { scenarioSpecificationsKeeper.scenariosSpecifications } returns mapOf("scenario-1" to scenarioSpecification)
+
+        // when
+        val exception = assertThrows<Exception> {
+            factoryInitializer.init()
+        }
+
+        // then
+        assertThat(exception.message).isEqualTo("java.lang.IllegalArgumentException: " +
+                "The maximal number of steps specifications in a step scenario should not exceed 100, but was 1003")
+
+        verifyOrder {
+            factoryInitializer.refresh()
+            scenarioSpecificationsKeeper.reload()
+            scenarioSpecificationsKeeper.scenariosSpecifications
+            handshakeBlocker.cancel()
+        }
+        confirmVerified(handshakeBlocker, initializationContext, factoryChannel, runner, scenarioSpecificationsKeeper)
     }
 
     @Test
