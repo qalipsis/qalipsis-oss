@@ -31,6 +31,9 @@ internal class StartScenarioSpecificationWrapper(
     private val dagId: DirectedAcyclicGraphName
 ) : StepSpecificationRegistry {
 
+    override val size
+        get() = delegated.size
+
     override val rootSteps: List<StepSpecification<*, *, *>>
         get() = delegated.rootSteps
 

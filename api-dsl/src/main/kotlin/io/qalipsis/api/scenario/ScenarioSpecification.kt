@@ -26,7 +26,13 @@ import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
  *
  * @author Eric Jessé
  */
-interface ScenarioSpecification
+interface ScenarioSpecification {
+
+    /**
+     * The number of steps specifications in a step scenario.
+     */
+    val size: Long
+}
 
 
 /**

@@ -54,7 +54,10 @@ internal class ScenarioSpecificationImplementation(
 
     override var dagsUnderLoad = concurrentSet<DirectedAcyclicGraphName>()
 
+    override var size: Long = 0
+
     override fun add(step: StepSpecification<*, *, *>) {
+        size++
         step.scenario = this
         rootSteps.add(step)
         register(step)
