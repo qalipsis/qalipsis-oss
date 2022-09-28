@@ -35,7 +35,6 @@ import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.scenario.ConfiguredScenarioSpecification
-import io.qalipsis.api.scenario.Injector
 import io.qalipsis.api.scenario.ScenarioSpecification
 import io.qalipsis.api.scenario.ScenarioSpecificationsKeeper
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -50,6 +49,7 @@ import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
@@ -60,10 +60,6 @@ import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.core.lifetime.FactoryStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -71,6 +67,10 @@ import java.util.concurrent.TimeUnit
 import javax.annotation.Nullable
 import javax.annotation.PreDestroy
 import javax.validation.Valid
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 /**
  * Default implementation of [ScenariosInitializer].
@@ -81,7 +81,6 @@ import javax.validation.Valid
 @Validated
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryInitializerImpl(
-    private val injector: Injector,
     @Named(Executors.GLOBAL_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
     private val initializationContext: InitializationContext,
     private val scenarioRegistry: ScenarioRegistry,
@@ -93,6 +92,7 @@ internal class FactoryInitializerImpl(
     private val idGenerator: IdGenerator,
     private val dagTransitionStepFactory: DagTransitionStepFactory,
     private val factoryChannel: FactoryChannel,
+    private val factoryConfiguration: FactoryConfiguration,
     @Nullable private val handshakeBlocker: HandshakeBlocker?,
     @PositiveDuration
     @Property(name = "campaign.step.start-timeout", defaultValue = "30s")
@@ -150,9 +150,13 @@ internal class FactoryInitializerImpl(
 
                 val allScenarios = mutableListOf<Scenario>()
                 scenarioSpecs.forEach { (scenarioName, scenarioSpecification) ->
+                    scenarioSpecification as ConfiguredScenarioSpecification
+                    require(scenarioSpecification.size <= factoryConfiguration.campaign.maxScenarioStepSpecificationsCount)
+                    { "The maximal number of steps specifications in a step scenario should not exceed ${factoryConfiguration.campaign.maxScenarioStepSpecificationsCount}, but was ${scenarioSpecification.size}" }
+
                     log.info { "Converting the scenario specification $scenarioName" }
                     val scenario =
-                        convertScenario(scenarioName, scenarioSpecification as ConfiguredScenarioSpecification)
+                        convertScenario(scenarioName, scenarioSpecification)
                     allScenarios.add(scenario)
                     scenario.dags.forEach { dag ->
                         dagsByScenario.computeIfAbsent(scenarioName) { ConcurrentHashMap() }[dag.name] = dag

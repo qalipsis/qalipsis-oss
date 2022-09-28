@@ -32,9 +32,9 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import java.time.Duration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.time.Duration
 
 @MicronautTest(
     environments = [ExecutionEnvironments.FACTORY],
@@ -66,6 +66,9 @@ internal class FactoryConfigurationIntegrationTest {
                 prop(FactoryConfiguration.Assignment::evaluationBatchSize).isEqualTo(100)
                 prop(FactoryConfiguration.Assignment::timeout).isEqualTo(Duration.ofSeconds(10))
             }
+            prop(FactoryConfiguration::campaign).all {
+                prop(FactoryConfiguration.Campaign::maxScenarioStepSpecificationsCount).isEqualTo(100)
+            }
         }
     }
 
@@ -84,7 +87,8 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.cache.keyPrefix", value = "some-other-registry"),
         Property(name = "factory.metadata-path", value = "./another-metadata-path"),
         Property(name = "factory.assignment.evaluation-batch-size", value = "67542"),
-        Property(name = "factory.assignment.timeout", value = "143s")
+        Property(name = "factory.assignment.timeout", value = "143s"),
+        Property(name = "factory.campaign.configuration.maxScenarioStepSpecificationsCount", value = "550")
     )
     @MicronautTest(startApplication = false)
     @Timeout(10)
@@ -111,6 +115,9 @@ internal class FactoryConfigurationIntegrationTest {
             prop(FactoryConfiguration::assignment).all {
                 prop(FactoryConfiguration.Assignment::evaluationBatchSize).isEqualTo(67542)
                 prop(FactoryConfiguration.Assignment::timeout).isEqualTo(Duration.ofSeconds(143))
+            }
+            prop(FactoryConfiguration::campaign).all {
+                prop(FactoryConfiguration.Campaign::maxScenarioStepSpecificationsCount).isEqualTo(550)
             }
         }
     }
