@@ -22,6 +22,7 @@ package io.qalipsis.core.factory.configuration
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micronaut.configuration.metrics.aggregator.MeterRegistryConfigurer
+import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
@@ -34,12 +35,13 @@ import jakarta.inject.Singleton
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryTagsMeterRegistryConfigurer(
+    @Property(name = "factory.tenant", defaultValue = "_qalipsis_ten_") private val tenant: String,
     private val factoryConfiguration: FactoryConfiguration
 ) : MeterRegistryConfigurer<MeterRegistry> {
 
     override fun configure(meterRegistry: MeterRegistry) {
         val tags = factoryConfiguration.tags.map { (key, value) -> Tag.of(key, value) }.toMutableSet()
-        tags += Tag.of("tenant", "_qalipsis_ten_")
+        tags += Tag.of("tenant", tenant)
         factoryConfiguration.zone?.let {
             tags += Tag.of("zone", it)
         }

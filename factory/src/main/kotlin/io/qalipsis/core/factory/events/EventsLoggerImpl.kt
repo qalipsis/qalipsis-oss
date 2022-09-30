@@ -86,6 +86,24 @@ internal class EventsLoggerImpl(
      */
     private val logMethod = if (enabled) this::checkLevelAndLog else null
 
+    init {
+        log.info {
+            val printableConfiguration = listOf(
+                "enabled: $enabled",
+                "publishers: ${publishers.joinToString { it::class.java.name }}",
+                "tags: ${tags.joinToString()}",
+                "root level: $rootLevel",
+                "configured levels: ${declaredLevels.joinToString()}",
+            )
+            "Configuration of the events logger: ${
+                printableConfiguration.joinToString(
+                    separator = "\n\t",
+                    prefix = "\n\t"
+                )
+            }"
+        }
+    }
+
     override fun start() {
         if (enabled) {
             publishers.forEach(EventsPublisher::start)

@@ -23,6 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -31,6 +32,7 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.data.exceptions.DataAccessException
+import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
@@ -56,6 +58,9 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Inject
     private lateinit var repository: ScenarioRepository
+
+    @Inject
+    private lateinit var dagRepository: DirectedAcyclicGraphRepository
 
     @Inject
     private lateinit var tenantRepository: TenantRepository
@@ -214,19 +219,60 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             )
             repository.save(scenario.copy())
             val scenario2 = repository.save(scenario.copy(name = "another-name", factoryId = factory2.id))
+            dagRepository.saveAll(
+                listOf(
+                    DirectedAcyclicGraphEntity(
+                        scenarioId = scenario2.id,
+                        name = "dag-A",
+                        isRoot = true,
+                        singleton = false,
+                        underLoad = true,
+                        numberOfSteps = 13
+                    )
+                )
+            ).toList()
             val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
+            dagRepository.saveAll(
+                listOf(
+                    DirectedAcyclicGraphEntity(
+                        scenarioId = scenario3.id,
+                        name = "dag-1",
+                        isRoot = true,
+                        singleton = false,
+                        underLoad = true,
+                        numberOfSteps = 13
+                    ),
+                    DirectedAcyclicGraphEntity(
+                        scenarioId = scenario3.id,
+                        name = "dag-2",
+                        isRoot = true,
+                        singleton = false,
+                        underLoad = true,
+                        numberOfSteps = 13
+                    )
+                )
+            ).toList()
             repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
 
             // when + then
             assertThat(
-                repository.findActiveByName("my-tenant", listOf("test", "another-name")).map { it.id }).containsOnly(
-                scenario3.id
-            )
+                repository.findActiveByName("my-tenant", listOf("test", "another-name"))
+            ).all {
+                hasSize(1)
+                index(0).all {
+                    prop(ScenarioEntity::id).isEqualTo(scenario3.id)
+                    prop(ScenarioEntity::dags).hasSize(2)
+                }
+            }
             assertThat(
                 repository.findActiveByName("my-other-tenant", listOf("test", "another-name"))
-                    .map { it.id }).containsOnly(
-                scenario2.id
-            )
+            ).all {
+                hasSize(1)
+                index(0).all {
+                    prop(ScenarioEntity::id).isEqualTo(scenario2.id)
+                    prop(ScenarioEntity::dags).hasSize(1)
+                }
+            }
         }
 
     @Test

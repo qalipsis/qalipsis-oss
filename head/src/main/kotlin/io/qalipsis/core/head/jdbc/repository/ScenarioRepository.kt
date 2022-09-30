@@ -47,21 +47,37 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
     override suspend fun deleteAll(entities: Iterable<ScenarioEntity>): Int
 
     @Query(
-        "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE name in (:names) AND enabled = true AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)"
+        """SELECT *, 
+            dag.id as dag_id, dag.version as dag_version, dag.scenario_id as dag_scenario_id, dag.name as dag_name,
+            dag.root as dag_root, dag.singleton as dag_singleton, dag.under_load as dag_under_load, dag.number_of_steps as dag_number_of_steps
+            FROM scenario 
+            LEFT JOIN directed_acyclic_graph as dag ON scenario.id = dag.scenario_id
+            INNER JOIN factory ON scenario.factory_id = factory.id WHERE scenario.name in (:names) AND scenario.enabled = true AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)
+        """
     )
-    @Join(value = "dags", type = Join.Type.LEFT)
+    @Join(value = "dags", alias = "dag_")
     suspend fun findActiveByName(tenant: String, names: Collection<String>): List<ScenarioEntity>
 
     @Query(
-        "SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id WHERE factory_id = :factoryId AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)"
+        """SELECT *, 
+            dag.id as dag_id, dag.version as dag_version, dag.scenario_id as dag_scenario_id, dag.name as dag_name,
+            dag.root as dag_root, dag.singleton as dag_singleton, dag.under_load as dag_under_load, dag.number_of_steps as dag_number_of_steps
+            FROM scenario 
+            LEFT JOIN directed_acyclic_graph as dag ON scenario.id = dag.scenario_id
+            INNER JOIN factory ON factory_id = factory.id WHERE factory_id = :factoryId AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id)"""
     )
-    @Join(value = "dags", type = Join.Type.LEFT)
+    @Join(value = "dags", alias = "dag_")
     suspend fun findByFactoryId(tenant: String, factoryId: Long): List<ScenarioEntity>
 
     @Query(
-        """SELECT * FROM scenario LEFT JOIN factory ON factory_id = factory.id 
+        """SELECT *, 
+            dag.id as dag_id, dag.version as dag_version, dag.scenario_id as dag_scenario_id, dag.name as dag_name,
+            dag.root as dag_root, dag.singleton as dag_singleton, dag.under_load as dag_under_load, dag.number_of_steps as dag_number_of_steps
+            FROM scenario 
+            LEFT JOIN directed_acyclic_graph as dag ON scenario.id = dag.scenario_id
+            INNER JOIN factory ON factory_id = factory.id 
             WHERE enabled = true 
-            AND EXISTS -- The factory should be healthy as latest known state within  the last 2 minutes.
+            AND EXISTS -- The factory should be healthy as latest known state within the last 2 minutes.
                 (SELECT * FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'HEALTHY' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
                 AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'HEALTHY' and health_timestamp > fs.health_timestamp))
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
@@ -70,7 +86,7 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
             CASE :sort WHEN 'id' THEN scenario.id END 
             """
     )
-    @Join(value = "dags", type = Join.Type.LEFT)
+    @Join(value = "dags", alias = "dag_")
     suspend fun findAllActiveWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
 
     private companion object {

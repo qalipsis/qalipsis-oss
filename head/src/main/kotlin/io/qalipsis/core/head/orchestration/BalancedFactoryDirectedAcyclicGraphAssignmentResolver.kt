@@ -45,7 +45,7 @@ import kotlin.math.ceil
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(missingBeans = [FactoryDirectedAcyclicGraphAssignmentResolver::class])
 )
-internal class AllFactoryDirectedAcyclicGraphAssignmentResolver : FactoryDirectedAcyclicGraphAssignmentResolver {
+internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolver : FactoryDirectedAcyclicGraphAssignmentResolver {
 
     override fun resolveFactoriesAssignments(
         runningCampaign: RunningCampaign,
@@ -53,11 +53,14 @@ internal class AllFactoryDirectedAcyclicGraphAssignmentResolver : FactoryDirecte
         scenarios: Collection<ScenarioSummary>
     ): Table<NodeId, ScenarioName, FactoryScenarioAssignment> {
         val scenariosConfiguration = scenarios
-            .associate {
-                it.name to FactoryScenarioAssignment(
-                    it.name,
-                    it.directedAcyclicGraphs.map(DirectedAcyclicGraphSummary::name),
-                    ceil(it.minionsCount.toDouble() / factories.size).toInt()
+            .associate { scenario ->
+                val configurationFromCampaign = runningCampaign.scenarios[scenario.name]
+                val scenarioMinionsCount = configurationFromCampaign?.minionsCount ?: scenario.minionsCount
+
+                scenario.name to FactoryScenarioAssignment(
+                    scenario.name,
+                    scenario.directedAcyclicGraphs.map(DirectedAcyclicGraphSummary::name),
+                    ceil(scenarioMinionsCount.toDouble() / factories.size).toInt()
                 )
             }
         val result = HashBasedTable.create<NodeId, ScenarioName, FactoryScenarioAssignment>()

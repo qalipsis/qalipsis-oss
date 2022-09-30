@@ -20,6 +20,8 @@
 
 <configuration scan="true" scanPeriod="30 seconds">
 
+  <property name="nodeName" scope="context" value="${NODE_NAME:-UNDEFINED}"/>
+  <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}}/${nodeName}.log}"/>
   <property name="LOG_PATTERN"
     value="${LOG_PATTERN:-%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t / %X{campaign} / %X{scenario} / %X{minion} / %X{step} / %X{job}] %logger.%M.%L : %m%n}"/>
 
@@ -30,16 +32,92 @@
     </encoder>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <!-- Minimum logging level to be presented in the console logs-->
-      <level>TRACE</level>
+      <level>INFO</level>
     </filter>
+  </appender>
+
+  <appender name="flatfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_FILE}</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+      <maxFileSize>${LOG_FILE_MAX_SIZE:-30MB}</maxFileSize>
+      <maxHistory>${LOG_FILE_MAX_HISTORY:-3}</maxHistory>
+      <totalSizeCap>${LOG_FILE_TOTAL_SIZE_CAP:-100MB}</totalSizeCap>
+    </rollingPolicy>
+    <encoder>
+      <pattern>${LOG_PATTERN}</pattern>
+      <charset>utf8</charset>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <!-- Minimum logging level to be presented in the console logs-->
+      <level>${MIN_FLAT_FILE_LOG_LEVEL:-OFF}</level>
+    </filter>
+  </appender>
+
+  <!-- Appender to log to file in a JSON format -->
+  <appender name="logstash" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_FILE}.json</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_FILE}.json.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+      <maxFileSize>${LOG_FILE_MAX_SIZE:-30MB}</maxFileSize>
+      <maxHistory>${LOG_FILE_MAX_HISTORY:-3}</maxHistory>
+      <totalSizeCap>${LOG_FILE_TOTAL_SIZE_CAP:-100MB}</totalSizeCap>
+    </rollingPolicy>
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <timestamp>
+          <timeZone>UTC</timeZone>
+        </timestamp>
+        <pattern>
+          <pattern>
+            {
+            "severity": "%level",
+            "service": "${appName}",
+            "thread": "%thread",
+            "campaign": "%X{campaign:-}",
+            "scenario": "%X{scenario:-}",
+            "minion": "%X{minion:-}",
+            "step": "%X{step:-}",
+            "job": "%X{job:-}",
+            "class": "%logger",
+            "method": "%M",
+            "line": "%L"
+            }
+          </pattern>
+        </pattern>
+        <message>
+          <fieldName>logMessage</fieldName>
+        </message>
+        <stackTrace>
+          <fieldName>stackTrace</fieldName>
+          <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+            <exclude>net\.sf\.cglib\..*</exclude>
+            <exclude>jdk\.internal\..*</exclude>
+            <exclude>io\.micronaut\.aop\.chain\..*proceed\(.*</exclude> <!-- Micronaut interception chain -->
+            <exclude>io\.micronaut\..*\.intercept\(.*</exclude> <!-- Micronaut interceptors -->
+            <exclude>.*\.\$[\w]*Definition\$Intercepted.*</exclude> <!-- Micronaut interception wrappers -->
+            <exclude>.*\.\$[\w]*Definition\$\$.*</exclude> <!-- Micronaut wrappers -->
+            <maxDepthPerThrowable>30</maxDepthPerThrowable>
+            <rootCauseFirst>true</rootCauseFirst>
+            <!-- 1000000 is the limit for Elasticsearch highlighting. -->
+            <maxLength>1000000</maxLength>
+          </throwableConverter>
+        </stackTrace>
+      </providers>
+    </encoder>
   </appender>
 
   <logger name="events" level="TRACE" additivity="false"/>
 
   <root level="${LOGGING_LEVEL:-INFO}">
     <appender-ref ref="console"/>
+    <appender-ref ref="flatfile"/>
+    <appender-ref ref="logstash"/>
   </root>
 
-  <include optional="true" file="logback.xml"/>
+  <include optional="true" resource="logback-qalipsis.xml"/>
+  <include optional="true" resource="config/logback-qalipsis.xml"/>
+  <include optional="true" file="logback-qalipsis.xml"/>
+  <include optional="true" file="config/logback-qalipsis.xml"/>
 
 </configuration>
