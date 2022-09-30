@@ -58,6 +58,7 @@ dependencies {
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
     kapt(platform("io.qalipsis:dev-platform:${project.version}"))
     kapt("io.micronaut:micronaut-inject-java")

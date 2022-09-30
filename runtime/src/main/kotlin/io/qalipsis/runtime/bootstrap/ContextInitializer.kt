@@ -129,7 +129,10 @@ internal class ContextInitializer(
         }
 
         if (configurationFiles.isNotEmpty()) {
+            log.info { "Loading the additional configuration from ${configurationFiles.joinToString()}" }
             System.setProperty(Environment.PROPERTY_SOURCES_KEY, configurationFiles.joinToString())
+        } else {
+            log.info { "No additional external configuration to load" }
         }
     }
 
@@ -291,7 +294,7 @@ internal class ContextInitializer(
     ): T {
         var choice: T? = null
         while (choice == null) {
-            print("${message} ")
+            print("$message ")
             try {
                 choice = readLine()?.conversion()
                 if (choice == null || !validation(choice)) {
