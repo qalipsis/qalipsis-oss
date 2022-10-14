@@ -24,6 +24,7 @@ package io.qalipsis.core.head.redis.campaign
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -38,7 +39,9 @@ import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Component to manage a new Campaign for all the known scenarios when the campaign management is shared across
@@ -58,6 +61,7 @@ internal class RedisCampaignManager(
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     private val campaignExecutionContext: CampaignExecutionContext,
     private val redisOperations: CampaignRedisOperations,
 ) : AbstractCampaignManager<CampaignExecutionContext>(
@@ -67,6 +71,7 @@ internal class RedisCampaignManager(
     campaignService,
     campaignReportStateKeeper,
     headConfiguration,
+    coroutineScope,
     campaignExecutionContext
 ) {
 
@@ -85,10 +90,12 @@ internal class RedisCampaignManager(
                 currentState.first,
                 redisOperations
             )
+
             CampaignRedisState.MINIONS_ASSIGNMENT_STATE -> RedisMinionsAssignmentState(
                 currentState.first,
                 redisOperations
             )
+
             CampaignRedisState.WARMUP_STATE -> RedisWarmupState(currentState.first, redisOperations)
             CampaignRedisState.MINIONS_STARTUP_STATE -> RedisMinionsStartupState(currentState.first, redisOperations)
             CampaignRedisState.RUNNING_STATE -> RedisRunningState(currentState.first, redisOperations)

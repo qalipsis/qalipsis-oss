@@ -399,7 +399,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
         val report = campaignStateKeeper.generateReport("the campaign")
 
         // then
-        assertThat(report).all {
+        assertThat(report).isNotNull().all {
             prop(CampaignReport::campaignKey).isEqualTo("the campaign")
             prop(CampaignReport::start).isNotNull()
             prop(CampaignReport::end).isNotNull()
@@ -447,7 +447,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             val report = campaignStateKeeper.generateReport("the campaign")
 
             // then
-            assertThat(report).all {
+            assertThat(report).isNotNull().all {
                 prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state1.end)
@@ -500,7 +500,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             val report = campaignStateKeeper.generateReport("the campaign")
 
             // then
-            assertThat(report).all {
+            assertThat(report).isNotNull().all {
                 prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state1.end)
@@ -553,7 +553,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             val report = campaignStateKeeper.generateReport("the campaign")
 
             // then
-            assertThat(report).all {
+            assertThat(report).isNotNull().all {
                 prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state2.end)
@@ -606,7 +606,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImplTest {
             val report = campaignStateKeeper.generateReport("the campaign")
 
             // then
-            assertThat(report).all {
+            assertThat(report).isNotNull().all {
                 prop(CampaignReport::campaignKey).isEqualTo("the campaign")
                 prop(CampaignReport::start).isEqualTo(state1.start)
                 prop(CampaignReport::end).isEqualTo(state2.end)

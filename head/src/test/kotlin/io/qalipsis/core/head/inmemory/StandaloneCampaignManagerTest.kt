@@ -37,12 +37,12 @@ import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.impl.annotations.SpyK
 import io.mockk.slot
+import io.mockk.spyk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -56,11 +56,9 @@ import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
-import io.qalipsis.core.head.campaign.states.EmptyState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.model.ScenarioRequest
@@ -71,12 +69,14 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
-import org.junit.jupiter.api.AfterEach
+import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
+@Timeout(5)
 internal class StandaloneCampaignManagerTest {
 
     @JvmField
@@ -104,17 +104,9 @@ internal class StandaloneCampaignManagerTest {
     @RelaxedMockK
     private lateinit var campaignExecutionContext: CampaignExecutionContext
 
-    @InjectMockKs
-    @SpyK(recordPrivateCalls = true)
-    private lateinit var campaignManager: StandaloneCampaignManager
-
-    @AfterEach
-    internal fun tearDown() {
-        campaignManager.currentCampaignState(EmptyState)
-    }
-
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
+        val campaignManager = standaloneCampaignManager(relaxedMockk())
         assertThat(
             campaignManager.accept(
                 relaxedMockk(
@@ -130,6 +122,7 @@ internal class StandaloneCampaignManagerTest {
     internal fun `should start a new campaign when all the scenarios are currently supported and release the unused factories`() =
         testDispatcherProvider.run {
             // given
+            val campaignManager = standaloneCampaignManager(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -140,11 +133,7 @@ internal class StandaloneCampaignManagerTest {
             )
             val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
             coEvery {
-                campaignService.create(
-                    "my-tenant",
-                    "my-user",
-                    refEq(campaign)
-                )
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
             } returns runningCampaign
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
@@ -158,8 +147,7 @@ internal class StandaloneCampaignManagerTest {
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
             coEvery {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
-            } returns
-                    listOf(factory1, factory2, factory3)
+            } returns listOf(factory1, factory2, factory3)
 
             val assignments = ImmutableTable.builder<NodeId, ScenarioName, FactoryScenarioAssignment>()
                 .put("factory-1", "scenario-1", FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")))
@@ -177,9 +165,13 @@ internal class StandaloneCampaignManagerTest {
                     listOf(scenario1, scenario2)
                 )
             } returns assignments
+            val countDown = SuspendedCountLatch(2)
+            coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
 
             // when
             val result = campaignManager.start("my-tenant", "my-user", campaign)
+            // Wait for the latest directive to be sent.
+            countDown.await()
 
             // then
             assertThat(result).isSameAs(runningCampaign)
@@ -217,17 +209,17 @@ internal class StandaloneCampaignManagerTest {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
-                campaignService.start("my-tenant", "my-campaign", any(), isNull())
-                campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
-                campaignReportStateKeeper.start("my-campaign", "scenario-1")
-                campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
-                campaignReportStateKeeper.start("my-campaign", "scenario-2")
                 factoryService.lockFactories(refEq(runningCampaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(runningCampaign),
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
                 )
+                campaignService.start("my-tenant", "my-campaign", any(), isNull())
+                campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
+                campaignReportStateKeeper.start("my-campaign", "scenario-1")
+                campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
+                campaignReportStateKeeper.start("my-campaign", "scenario-2")
                 factoryService.releaseFactories(refEq(runningCampaign), listOf("factory-2"))
                 headChannel.subscribeFeedback("feedbacks")
                 headChannel.publishDirective(capture(sentDirectives))
@@ -281,10 +273,12 @@ internal class StandaloneCampaignManagerTest {
             }
         }
 
+
     @Test
     internal fun `should not start a new campaign when some scenarios are currently not supported`() =
         testDispatcherProvider.run {
             // given
+            val campaignManager = standaloneCampaignManager(this)
             val campaign = CampaignConfiguration(
                 name = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
@@ -304,6 +298,7 @@ internal class StandaloneCampaignManagerTest {
     internal fun `should not start a new campaign when one is already running`() =
         testDispatcherProvider.run {
             // given
+            val campaignManager = standaloneCampaignManager(this)
             campaignManager.setProperty("currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                     every { isCompleted } returns false
@@ -318,6 +313,7 @@ internal class StandaloneCampaignManagerTest {
     @Test
     internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
         //given
+        val campaignManager = standaloneCampaignManager(this)
         campaignManager.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -370,6 +366,7 @@ internal class StandaloneCampaignManagerTest {
     @Test
     internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
         //given
+        val campaignManager = standaloneCampaignManager(this)
         campaignManager.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -418,4 +415,18 @@ internal class StandaloneCampaignManagerTest {
             }
         }
     }
+
+    private fun standaloneCampaignManager(scope: CoroutineScope) =
+        spyk(
+            StandaloneCampaignManager(
+                headChannel,
+                factoryService,
+                assignmentResolver,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                scope,
+                campaignExecutionContext
+            ), recordPrivateCalls = true
+        )
 }

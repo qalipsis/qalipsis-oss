@@ -21,6 +21,7 @@ package io.qalipsis.core.head.inmemory
 
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -36,7 +37,9 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Component to manage a new Campaign for all the known scenarios.
@@ -52,6 +55,7 @@ internal class StandaloneCampaignManager(
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     campaignExecutionContext: CampaignExecutionContext,
 ) : AbstractCampaignManager<CampaignExecutionContext>(
     headChannel,
@@ -60,6 +64,7 @@ internal class StandaloneCampaignManager(
     campaignService,
     campaignReportStateKeeper,
     headConfiguration,
+    coroutineScope,
     campaignExecutionContext
 ) {
 
