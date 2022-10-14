@@ -16,6 +16,7 @@ factory:
 
   assignment:
     evaluation-batch-size: 100
+    strategy: single-location
     timeout: 10s
 
   graceful-shutdown:

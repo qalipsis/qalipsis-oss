@@ -91,7 +91,8 @@ internal interface MinionAssignmentKeeper {
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionId: MinionId,
-        dagIds: Collection<DirectedAcyclicGraphName>
+        dagIds: Collection<DirectedAcyclicGraphName>,
+        mightRestart: Boolean = false
     ): CampaignCompletionState
 
     /**

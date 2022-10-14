@@ -24,6 +24,9 @@ import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.collections.Table
 import io.qalipsis.core.collections.concurrentTableOf
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -49,29 +52,56 @@ internal class LocalAssignmentStoreImpl(
     override val assignments: Table<ScenarioName, MinionId, out Collection<DirectedAcyclicGraphName>>
         get() = actualAssignments
 
+    @LogInputAndOutput
     override fun hasMinionsAssigned(scenarioName: ScenarioName): Boolean {
-        return actualAssignments[scenarioName]?.isNotEmpty() == true
+        return (actualAssignments[scenarioName]?.isNotEmpty() == true).also {
+            log.trace {
+                if (it) {
+                    "The scenario $scenarioName has minions running locally"
+                } else {
+                    "The scenario $scenarioName has no minion running locally"
+                }
+            }
+        }
     }
 
+    @LogInput
     override fun save(scenarioName: ScenarioName, assignments: Map<MinionId, Collection<DirectedAcyclicGraphName>>) {
         assignments.forEach { (minionId, dagsIds) ->
+            log.trace { "Marking the DAGs $dagsIds of scenario $scenarioName as executed locally for the minion $minionId" }
             actualAssignments.computeIfAbsent(scenarioName, minionId) { concurrentSet() } += dagsIds
         }
     }
 
+    @LogInputAndOutput
     override fun isLocal(scenarioName: ScenarioName, minionId: MinionId, dagId: DirectedAcyclicGraphName): Boolean {
         return actualAssignments[scenarioName, minionId]?.contains(dagId) ?: false
     }
 
+    @LogInputAndOutput
     override fun hasRootUnderLoadLocally(scenarioName: ScenarioName, minionId: MinionId): Boolean {
         return rootDagsUnderLoad[scenarioName]?.let { dagId ->
-            isLocal(scenarioName, minionId, dagId)
+            isLocal(scenarioName, minionId, dagId).also {
+                log.trace {
+                    if (it) {
+                        "The minion $minionId is running the root DAG $dagId of the scenario $scenarioName locally"
+                    } else {
+                        "The minion $minionId is not running the root DAG $dagId of the scenario $scenarioName locally"
+                    }
+                }
+            }
         } ?: false
     }
 
+    @LogInput
     override fun reset() {
+        log.trace { "Resetting the local assignments" }
         actualAssignments.clear()
         rootDagsUnderLoad = scenarioRegistry.all()
             .associate { scenario -> scenario.name to scenario.dags.first { it.isRoot && it.isUnderLoad && !it.isSingleton }.name }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

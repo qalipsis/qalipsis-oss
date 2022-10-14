@@ -19,6 +19,8 @@
 
 package io.qalipsis.core.redis
 
+import io.qalipsis.api.logging.LoggerHelper.logger
+
 object RedisUtils {
 
     /**
@@ -41,9 +43,15 @@ object RedisUtils {
         val resource =
             requireNotNull(this::class.java.getResourceAsStream(name)) { "Redis script $name cannot be found" }
 
-        // Removes the blank lines and comments to optimize the compilation.
-        return resource.bufferedReader(Charsets.UTF_8).readLines()
+        val scriptLines = resource.bufferedReader(Charsets.UTF_8).readLines()
             .filterNot { it.isBlank() || it.trimStart().startsWith("--") }
-            .joinToString("\n").encodeToByteArray()
+            .joinToString("\n")
+
+        log.trace { "Loading the LUA script with following content:\n$scriptLines" }
+
+        // Removes the blank lines and comments to optimize the compilation.
+        return scriptLines.encodeToByteArray()
     }
+
+    private val log = logger()
 }

@@ -36,6 +36,8 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.mockk.confirmVerified
+import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verify
 import io.qalipsis.api.context.DirectedAcyclicGraphName
@@ -65,7 +67,10 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @ExperimentalLettuceCoroutinesApi
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
-internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegrationTest() {
+@PropertySource(
+    Property(name = "factory.assignment.strategy", value = "distributed-minion")
+)
+internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField
     @RegisterExtension
@@ -93,7 +98,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Order(1)
     @MicronautTest(startApplication = false)
     @PropertySource(Property(name = "factory.assignment.timeout", value = "2s"))
-    internal fun `should assign a lot of minions only for the DAGs supported by the factory`(minionAssignmentKeeper: RedisMinionAssignmentKeeper) =
+    internal fun `should assign a lot of minions only for the DAGs supported by the factory`(minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper) =
         testDispatcherProvider.run {
             // given
             val factory1 = "the-factory-1"
@@ -277,6 +282,8 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
                 localAssignmentStore.save(SCENARIO_2, refEq(assignedFactory1Scenario2))
                 localAssignmentStore.save(SCENARIO_2, refEq(assignedFactory2Scenario2))
             }
+            excludeRecords { localAssignmentStore.hashCode() }
+            confirmVerified(localAssignmentStore)
 
             // when
             val assignmentScenario1 = minionAssignmentKeeper.getFactoriesChannels(
@@ -310,7 +317,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Timeout(10)
     @Order(2)
     internal fun `should not mark anything complete when not all the DAGS for all the minions are complete`(
-        minionAssignmentKeeper: RedisMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         MINIONS_SCENARIO_1.forEach { minion ->
             assertThat(
@@ -347,7 +354,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Timeout(10)
     @Order(3)
     internal fun `should mark the minion complete when all the DAGS for all but 1 minion are complete`(
-        minionAssignmentKeeper: RedisMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         MINIONS_SCENARIO_1.subList(0, MINIONS_COUNT_IN_EACH_SCENARIO - 1).forEach { minion ->
             assertThat(
@@ -384,7 +391,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Timeout(10)
     @Order(4)
     internal fun `should not complete the scenario when a singleton minion of a scenario is completed but a minion under load still runs`(
-        minionAssignmentKeeper: RedisMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(
@@ -405,7 +412,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Timeout(10)
     @Order(5)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`(
-        minionAssignmentKeeper: RedisMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(
@@ -425,7 +432,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     @Timeout(10)
     @Order(6)
     internal fun `should complete the campaign when the latest minion of the latest scenario completes its latest DAG`(
-        minionAssignmentKeeper: RedisMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(
@@ -448,7 +455,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
     )
     @Timeout(2)
     @Order(-1)
-    internal fun `should assign until the timeout`(minionAssignmentKeeper: RedisMinionAssignmentKeeper) =
+    internal fun `should assign until the timeout`(minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper) =
         testDispatcherProvider.run {
             // given
             minionAssignmentKeeper.maxMinionsCountsByScenario().apply {
@@ -470,7 +477,7 @@ internal class RedisMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegra
         Property(name = "factory.assignment.timeout", value = "2s"),
         Property(name = "factoryConfiguration.assignment.evaluation-batch-size", value = "61")
     )
-    internal fun `should assign allowed count of minions`(minionAssignmentKeeper: RedisMinionAssignmentKeeper) =
+    internal fun `should assign allowed count of minions`(minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper) =
         testDispatcherProvider.run {
             // given
             val campaign = "the-campaign-${(100 * Math.random()).toInt()}"
