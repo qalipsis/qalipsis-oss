@@ -36,11 +36,6 @@ internal enum class RoleName(
     SUPER_ADMINISTRATOR("super-admin", Permissions.ALL_PERMISSIONS),
 
     /**
-     * Role of user having the rights to edit the billing details of the tenant.
-     */
-    BILLING_ADMINISTRATOR("billing-admin", Permissions.FOR_BILLING_ADMINISTRATOR),
-
-    /**
      * Role of user having the rights to edit the tenant details and its users.
      */
     TENANT_ADMINISTRATOR("tenant-admin", Permissions.FOR_TENANT_ADMINISTRATOR),

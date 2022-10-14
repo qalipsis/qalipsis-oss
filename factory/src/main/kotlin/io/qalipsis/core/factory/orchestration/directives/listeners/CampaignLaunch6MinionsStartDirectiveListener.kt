@@ -58,8 +58,14 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsStartDirective) {
         try {
-            val relevantMinions = directive.startDefinitions.filter {
-                localAssignmentStore.hasRootUnderLoadLocally(directive.scenarioName, it.minionId)
+            val relevantMinions = directive.startDefinitions.filter { definition ->
+                localAssignmentStore.hasRootUnderLoadLocally(directive.scenarioName, definition.minionId).also {
+                    if (it) {
+                        "The minion ${definition.minionId} is running the root DAG of the scenario ${directive.scenarioName} locally"
+                    } else {
+                        "The minion ${definition.minionId} is not running the root DAG of the scenario ${directive.scenarioName} locally"
+                    }
+                }
             }
             if (relevantMinions.isNotEmpty()) {
                 val feedback = MinionsStartFeedback(
@@ -73,6 +79,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
                 }
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
             } else {
+                log.trace { "None of the minion to start are in the local factory" }
                 val feedback = MinionsStartFeedback(
                     campaignKey = directive.campaignKey,
                     scenarioName = directive.scenarioName,

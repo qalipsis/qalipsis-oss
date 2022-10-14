@@ -19,13 +19,14 @@
 
 package io.qalipsis.core.factory.init
 
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
-import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.redis.RedisDistributedMinionAssignmentKeeper
 import io.qalipsis.core.factory.steps.ContextForwarder
 import io.qalipsis.core.factory.steps.DeadEndStep
 import io.qalipsis.core.factory.steps.DistributedDagTransitionStep
@@ -36,8 +37,9 @@ import jakarta.inject.Singleton
  *
  * @author Eric Jessé
  */
+@ExperimentalLettuceCoroutinesApi
 @Singleton
-@Requires(notEnv = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
+@Requires(beans = [RedisDistributedMinionAssignmentKeeper::class])
 internal class DistributedDagTransitionStepFactory(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val localAssignmentStore: LocalAssignmentStore,

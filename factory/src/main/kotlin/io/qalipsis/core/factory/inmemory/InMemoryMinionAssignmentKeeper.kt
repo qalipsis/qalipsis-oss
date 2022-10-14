@@ -55,9 +55,14 @@ internal class InMemoryMinionAssignmentKeeper(
 ) : MinionAssignmentKeeper {
 
     /**
-     * Number of DAGs to execute by scenario and minion.
+     * Originally assigned count of DAGs to execute by scenario and minion.
      */
-    private val dagsCountByMinions = concurrentTableOf<ScenarioName, MinionId, AtomicInteger>()
+    private val scheduledDagsCountByMinions = concurrentTableOf<ScenarioName, MinionId, AtomicInteger>()
+
+    /**
+     * Currently assigned count of DAGs to execute by scenario and minion.
+     */
+    private val remainingDagsCountByMinions = concurrentTableOf<ScenarioName, MinionId, AtomicInteger>()
 
     /**
      * Collection of minions under load by scenario.
@@ -71,6 +76,10 @@ internal class InMemoryMinionAssignmentKeeper(
 
     private val executionCompleteMutex = Mutex(false)
 
+    init {
+        log.debug { "Using the InMemoryMinionAssignmentKeeper to assign the minions" }
+    }
+
     /**
      * The assignment of DAGs to a factory is not relevant when there is only one factory.
      */
@@ -78,7 +87,8 @@ internal class InMemoryMinionAssignmentKeeper(
         campaignKey: CampaignKey,
         assignments: Collection<FactoryScenarioAssignment>
     ) {
-        dagsCountByMinions.clear()
+        scheduledDagsCountByMinions.clear()
+        remainingDagsCountByMinions.clear()
         minionsByScenarios.clear()
         localAssignmentStore.reset()
     }
@@ -96,7 +106,7 @@ internal class InMemoryMinionAssignmentKeeper(
         minionIds.forEach { minionId ->
             assignments.computeIfAbsent(minionId) { concurrentSet() } += dagIds
             if (underLoad) {
-                dagsCountByMinions.computeIfAbsent(scenarioName, minionId) { AtomicInteger() }
+                scheduledDagsCountByMinions.computeIfAbsent(scenarioName, minionId) { AtomicInteger() }
                     .addAndGet(dagIds.size)
             }
         }
@@ -109,8 +119,9 @@ internal class InMemoryMinionAssignmentKeeper(
         }
     }
 
-    override suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName) =
-        Unit
+    override suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName) {
+        remainingDagsCountByMinions.putAll(scheduledDagsCountByMinions)
+    }
 
     override suspend fun getIdsOfMinionsUnderLoad(
         campaignKey: CampaignKey,
@@ -132,7 +143,8 @@ internal class InMemoryMinionAssignmentKeeper(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionId: MinionId,
-        dagIds: Collection<DirectedAcyclicGraphName>
+        dagIds: Collection<DirectedAcyclicGraphName>,
+        mightRestart: Boolean
     ): CampaignCompletionState {
         val state = CampaignCompletionState()
 
@@ -140,27 +152,19 @@ internal class InMemoryMinionAssignmentKeeper(
         if (singletonMinions.remove(minionId)) {
             state.minionComplete = true
         } else {
-            val remainingDagsForMinion = dagsCountByMinions[scenarioName, minionId]?.addAndGet(-1 * dagIds.size)
+            val remainingDagsForMinion =
+                remainingDagsCountByMinions[scenarioName, minionId]?.addAndGet(-1 * dagIds.size)
             if (remainingDagsForMinion == 0) {
                 log.trace { "The minion under load with ID $minionId of campaign $campaignKey executed all its steps and is now complete" }
                 state.minionComplete = true
-                executionCompleteMutex.withLock {
-                    dagsCountByMinions.remove(scenarioName, minionId)
-                    minionsByScenarios[scenarioName]!!.let { minionsInScenario ->
-                        minionsInScenario.remove(minionId)
-
-                        // The verification of the completeness of the scenario and campaign are synchronized to avoid collision.
-                        if (minionsInScenario.isEmpty()) {
-                            log.debug { "The scenario $scenarioName of campaign $campaignKey is now complete" }
-                            state.scenarioComplete = true
-                            minionsByScenarios.remove(scenarioName)
-                            if (minionsByScenarios.isEmpty()) {
-                                log.debug { "The campaign $campaignKey is now complete" }
-                                state.campaignComplete = true
-                                localAssignmentStore.reset()
-                            }
-                        }
-                    }
+                if (mightRestart) {
+                    remainingDagsCountByMinions.put(
+                        scenarioName,
+                        minionId,
+                        scheduledDagsCountByMinions[scenarioName, minionId]!!
+                    )
+                } else {
+                    cleanMinionDataAndEvaluateScenarioCompletion(scenarioName, minionId, campaignKey, state)
                 }
             } else {
                 log.trace { "The minion with ID $minionId of campaign $campaignKey has still ${remainingDagsForMinion} DAGs to complete" }
@@ -168,6 +172,33 @@ internal class InMemoryMinionAssignmentKeeper(
         }
 
         return state
+    }
+
+    private suspend fun cleanMinionDataAndEvaluateScenarioCompletion(
+        scenarioName: ScenarioName,
+        minionId: MinionId,
+        campaignKey: CampaignKey,
+        state: CampaignCompletionState
+    ) {
+        scheduledDagsCountByMinions.remove(scenarioName, minionId)
+        remainingDagsCountByMinions.remove(scenarioName, minionId)
+        executionCompleteMutex.withLock {
+            minionsByScenarios[scenarioName]!!.let { minionsInScenario ->
+                minionsInScenario.remove(minionId)
+
+                // The verification of the completeness of the scenario and campaign are synchronized to avoid collision.
+                if (minionsInScenario.isEmpty()) {
+                    log.debug { "The scenario $scenarioName of campaign $campaignKey is now complete" }
+                    state.scenarioComplete = true
+                    minionsByScenarios.remove(scenarioName)
+                    if (minionsByScenarios.isEmpty()) {
+                        log.debug { "The campaign $campaignKey is now complete" }
+                        state.campaignComplete = true
+                        localAssignmentStore.reset()
+                    }
+                }
+            }
+        }
     }
 
     override suspend fun getFactoriesChannels(

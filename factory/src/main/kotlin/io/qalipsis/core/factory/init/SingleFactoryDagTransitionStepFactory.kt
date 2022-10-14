@@ -23,7 +23,6 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
-import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.steps.DagTransitionStep
 import io.qalipsis.core.factory.steps.DeadEndStep
@@ -35,7 +34,7 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
+@Requires(missingBeans = [DagTransitionStepFactory::class])
 internal class SingleFactoryDagTransitionStepFactory(
     private val factoryCampaignManager: FactoryCampaignManager
 ) : DagTransitionStepFactory {
