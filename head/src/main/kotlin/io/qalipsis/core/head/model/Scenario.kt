@@ -43,11 +43,11 @@ internal data class Scenario(
 
     @field:NotBlank
     @field:Size(min = 2, max = 255)
-    @field:Schema(description = "Display name of the scenario", required = true)
+    @field:Schema(description = "Display name of the scenario", required = true, example = "my-first-scenario")
     val name: String,
 
     @field:Positive
     @field:Max(1000000)
-    @field:Schema(description = "Number of minions executed in the scenario", required = true)
+    @field:Schema(description = "Number of minions executed in the scenario", required = true, example = "100")
     val minionsCount: Int
 )

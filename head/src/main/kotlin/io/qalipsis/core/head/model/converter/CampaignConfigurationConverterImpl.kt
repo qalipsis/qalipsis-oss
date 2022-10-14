@@ -53,11 +53,12 @@ internal class CampaignConfigurationConverterImpl(
     }
 
     private fun defineExecutionProfileConfiguration(scenario: ScenarioRequest): ExecutionProfileConfiguration {
-        return when (val config = scenario.externalExecutionProfileConfiguration) {
+        return when (val config = scenario.executionProfile) {
             is RegularExternalExecutionProfileConfiguration -> RegularExecutionProfileConfiguration(
                 config.periodInMs,
                 config.minionsCountProLaunch
             )
+
             is AcceleratingExternalExecutionProfileConfiguration -> AcceleratingExecutionProfileConfiguration(
                 config.startPeriodMs,
                 config.accelerator,

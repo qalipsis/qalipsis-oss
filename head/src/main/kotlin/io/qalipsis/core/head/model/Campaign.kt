@@ -47,11 +47,12 @@ internal data class Campaign(
 
     @field:Schema(
         description = "Speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation",
-        required = true
+        required = true,
+        example = "1.0"
     )
     val speedFactor: Double,
 
-    @field:Schema(description = "Counts of minions scheduled to be started", required = false)
+    @field:Schema(description = "Counts of minions scheduled to be started", required = false, example = "100")
     @field:PositiveOrZero
     val scheduledMinions: Int?,
 
@@ -76,7 +77,7 @@ internal data class Campaign(
     @field:Schema(description = "Overall execution status of the campaign when completed", required = false)
     val result: ExecutionStatus?,
 
-    @field:Schema(description = "Name of the user, who created the campaign", required = false)
+    @field:Schema(description = "Name of the user, who created the campaign", required = false, example = "John Doe")
     val configurerName: String?,
 
     @field:Schema(description = "Scenarios being part of the campaign", required = true)

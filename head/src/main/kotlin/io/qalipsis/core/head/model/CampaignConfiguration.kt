@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import javax.validation.Valid
 import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
@@ -50,7 +51,8 @@ internal data class CampaignConfiguration(
 
     @field:Schema(
         description = "Speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation",
-        required = true
+        required = true,
+        example = "1.0"
     )
     @field:Positive
     @field:Max(999)
@@ -58,20 +60,28 @@ internal data class CampaignConfiguration(
 
     @field:Schema(
         description = "Time to wait before the first minion is executed, it should take the latency of the factories into consideration",
-        required = true
+        required = true,
+        example = "1000"
     )
     @field:PositiveOrZero
     @field:Max(15000)
     val startOffsetMs: Long = 1000,
 
-    @field:Schema(description = "Limit duration of the whole campaign before it is aborted", required = false)
+    @field:Schema(
+        description = "Limit duration of the whole campaign before it is aborted",
+        required = false,
+        example = "PT2M"
+    )
     @field:PositiveOrZero
     val timeout: Duration? = null,
 
     @field:Schema(description = "Limit duration of the whole campaign before it is aborted", required = false)
     val hardTimeout: Boolean? = null,
 
-    @field:Schema(description = "The map of the scenarios for the new campaign", required = true)
+    @field:Schema(
+        description = "The map of the scenarios for the new campaign", required = true,
+        example = """{"my-first-scenario": {"minionsCount": 100, "executionProfile": {"type": "STAGE", "stages": [{"minionsCount": 100, "rampUpDurationMs": 10000, "totalDurationMs": 60000, "completion": "GRACEFUL"}]}}, "zones": {"FR": 40, "US": 30, "CN": 30}}""",
+    )
     @field:Valid
     @field:NotEmpty
     val scenarios: Map<@NotBlank ScenarioName, @Valid ScenarioRequest>
@@ -88,13 +98,20 @@ internal data class CampaignConfiguration(
     title = "Details for the scenario configuration to start a new campaign into QALIPSIS"
 )
 internal data class ScenarioRequest(
-    @field:Schema(description = "Counts of minions that will be assigned to the scenario")
+    @field:Schema(description = "Counts of minions that will be assigned to the scenario", example = "100")
     @field:Positive
     @field:Max(1000000)
     val minionsCount: Int,
 
-    @field:Schema(description = "The configuration of the execution profile to execute a scenario")
+    @field:Schema(
+        description = "The configuration of the execution profile to execute a scenario",
+        example = """{"type": "STAGE", "stages": [{"minionsCount": 100, "rampUpDurationMs": 10000, "totalDurationMs": 60000, "completion": "GRACEFUL"}]}}"""
+    )
     @field:Valid
     @field:NotEmpty
-    val externalExecutionProfileConfiguration: ExternalExecutionProfileConfiguration? = null
+    val executionProfile: ExternalExecutionProfileConfiguration? = null,
+
+    @field:Schema(description = "Distribution of the execution by zone", example = """{"FR":40, "US": 30, "CN": 30}""")
+    @field:Valid
+    val zones: Map<@NotBlank String, @Min(1) @Max(100) Int>? = null
 )
