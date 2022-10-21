@@ -56,12 +56,12 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -106,7 +106,12 @@ internal class PersistentCampaignServiceTest {
         val runningCampaign = relaxedMockk<RunningCampaign> {
             every { key } returns "my-campaign"
         }
-        coEvery { campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration(
+                "my-tenant",
+                refEq(campaign)
+            )
+        } returns runningCampaign
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
@@ -128,7 +133,8 @@ internal class PersistentCampaignServiceTest {
                     speedFactor = 123.2,
                     scheduledMinions = 18593,
                     configurer = 199,
-                    tenantId = 8165L
+                    tenantId = 8165L,
+                    configuration = campaign
                 )
             )
             campaignScenarioRepository.saveAll(
@@ -163,7 +169,12 @@ internal class PersistentCampaignServiceTest {
         val runningCampaign = relaxedMockk<RunningCampaign> {
             every { key } returns "my-campaign"
         }
-        coEvery { campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign)) } returns runningCampaign
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration(
+                "my-tenant",
+                refEq(campaign)
+            )
+        } returns runningCampaign
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
@@ -186,7 +197,8 @@ internal class PersistentCampaignServiceTest {
                     scheduledMinions = 18593,
                     hardTimeout = true,
                     configurer = 199,
-                    tenantId = 8165L
+                    tenantId = 8165L,
+                    configuration = campaign
                 )
             )
             campaignScenarioRepository.saveAll(

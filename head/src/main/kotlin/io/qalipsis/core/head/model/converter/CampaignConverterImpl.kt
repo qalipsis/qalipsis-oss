@@ -56,7 +56,8 @@ internal class CampaignConverterImpl(
                     scenarioEntity.name,
                     scenarioEntity.minionsCount
                 )
-            }
+            },
+            configuration = campaignEntity.configuration
         )
     }
 }

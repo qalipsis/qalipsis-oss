@@ -261,4 +261,39 @@ internal class CampaignController(
         val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
         return HttpResponse.ok(report)
     }
+
+    /**
+     * REST endpoint to replay the campaign.
+     */
+    @Post("/{campaignKey}/replay")
+    @Operation(
+        summary = "Replay the campaign",
+        description = "Replay campaign with the provided campaign key",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Campaign replayed successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.WRITE_CAMPAIGN)
+    @Timed("campaigns-replay")
+    suspend fun replay(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "Campaign name to retrieve the campaign",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable campaignKey: String,
+        @Parameter(hidden = true) authentication: Authentication
+    ): HttpResponse<Campaign> {
+        return HttpResponse.ok(campaignManager.replay(tenant, campaignKey, authentication.name))
+    }
 }

@@ -40,6 +40,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
@@ -196,6 +197,16 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 }
             }
         }
+    }
+
+    override suspend fun replay(tenant: String, campaignKey: String, configurer: String): Campaign {
+        val campaign = requireNotNull(
+            campaignService.retrieve(
+                tenant, campaignKey
+            )
+        ) { "Campaign with key $campaignKey is not found" }
+        start(tenant, configurer, campaign.configuration!!)
+        return campaign
     }
 
     abstract suspend fun create(
