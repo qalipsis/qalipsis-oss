@@ -223,7 +223,7 @@ internal class CampaignController(
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean
     ): HttpResponse<Unit> {
-        campaignManager.abort(authentication.name, tenant, campaignKey, hard)
+        campaignManager.abort(tenant, authentication.name, campaignKey, hard)
         return HttpResponse.accepted()
     }
 
@@ -294,6 +294,7 @@ internal class CampaignController(
         ) @NotBlank @PathVariable campaignKey: String,
         @Parameter(hidden = true) authentication: Authentication
     ): HttpResponse<Campaign> {
-        return HttpResponse.ok(campaignManager.replay(tenant, campaignKey, authentication.name))
+        val newCampaignKey = campaignManager.replay(tenant, authentication.name, campaignKey).key
+        return HttpResponse.ok(campaignService.retrieve(tenant, newCampaignKey))
     }
 }

@@ -40,7 +40,6 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
@@ -181,7 +180,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     }
 
     @LogInput
-    override suspend fun abort(aborter: String, tenant: String, campaignKey: String, hard: Boolean) {
+    override suspend fun abort(tenant: String, aborter: String, campaignKey: String, hard: Boolean) {
         tryAndLog(log) {
             processingMutex.withLock {
                 val sourceCampaignState = get(tenant, campaignKey)
@@ -199,14 +198,13 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         }
     }
 
-    override suspend fun replay(tenant: String, campaignKey: String, configurer: String): Campaign {
+    override suspend fun replay(tenant: String, configurer: String, campaignKey: String): RunningCampaign {
         val campaign = requireNotNull(
             campaignService.retrieve(
                 tenant, campaignKey
             )
-        ) { "Campaign with key $campaignKey is not found" }
-        start(tenant, configurer, campaign.configuration!!)
-        return campaign
+        ) { "The configuration of campaign with key $campaignKey could not be found" }
+        return start(tenant, configurer, campaign.configuration!!)
     }
 
     abstract suspend fun create(

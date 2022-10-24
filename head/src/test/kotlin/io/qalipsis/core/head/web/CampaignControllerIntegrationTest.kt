@@ -374,7 +374,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.abort(Defaults.USER, Defaults.TENANT, "first_campaign", false)
+            campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", false)
         }
 
         assertThat(response).all {
@@ -392,7 +392,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.abort(Defaults.USER, Defaults.TENANT, "first_campaign", true)
+            campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", true)
         }
 
         assertThat(response).all {
@@ -497,9 +497,13 @@ internal class CampaignControllerIntegrationTest {
                 scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
             )
         )
+        val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign-new")
         val replayRequest = HttpRequest.POST("/my-campaign/replay", null)
         coEvery {
-            campaignManager.replay(Defaults.TENANT, "my-campaign", Defaults.USER)
+            campaignManager.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+        } returns runningCampaign
+        coEvery {
+            campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
         } returns campaign
 
         // when
@@ -507,7 +511,8 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.replay(Defaults.TENANT, "my-campaign", Defaults.USER)
+            campaignManager.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+            campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)

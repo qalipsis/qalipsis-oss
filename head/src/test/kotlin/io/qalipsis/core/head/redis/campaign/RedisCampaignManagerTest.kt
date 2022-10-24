@@ -567,7 +567,7 @@ internal class RedisCampaignManagerTest {
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
 
         // when
-        campaignManager.abort("my-user", "my-tenant", "first_campaign", true)
+        campaignManager.abort("my-tenant", "my-user", "first_campaign", true)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
@@ -622,7 +622,7 @@ internal class RedisCampaignManagerTest {
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
 
         // when
-        campaignManager.abort("my-user", "my-tenant", "first_campaign", false)
+        campaignManager.abort("my-tenant", "my-user", "first_campaign", false)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
@@ -706,80 +706,18 @@ internal class RedisCampaignManagerTest {
             configuration = campaignConfiguration
         )
         coEvery { campaignService.retrieve("my-tenant", "my-campaign") } returns campaign
-        coEvery {
-            campaignService.create(
-                "my-tenant",
-                "my-user",
-                refEq(campaignConfiguration)
-            )
-        } returns runningCampaign
-        val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
-        val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
-        val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
-        coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns
-                listOf(scenario1, scenario2, scenario3)
-        val factory1 =
-            relaxedMockk<Factory> { every { nodeId } returns "factory-1"; every { unicastChannel } returns "unicast-channel-1" }
-        val factory2 = relaxedMockk<Factory> { every { nodeId } returns "factory-2" };
-        val factory3 =
-            relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
-        coEvery {
-            factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
-        } returns listOf(factory1, factory2, factory3)
-        coJustRun { factoryService.lockFactories(any(), any()) }
-
-        val assignments = ImmutableTable.builder<NodeId, ScenarioName, FactoryScenarioAssignment>()
-            .put("factory-1", "scenario-1", FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")))
-            .put("factory-1", "scenario-2", FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762))
-            .put(
-                "factory-3",
-                "scenario-2",
-                FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
-            )
-            .build()
-        coEvery {
-            assignmentResolver.resolveFactoriesAssignments(
-                refEq(runningCampaign),
-                listOf(factory1, factory2, factory3),
-                listOf(scenario1, scenario2)
-            )
-        } returns assignments
-        coJustRun { campaignService.start(any(), any(), any(), any()) }
-        coJustRun { campaignService.startScenario(any(), any(), any(), any()) }
-        coJustRun { campaignReportStateKeeper.start(any(), any()) }
-        coJustRun { factoryService.releaseFactories(any(), any()) }
-        coJustRun { headChannel.subscribeFeedback(any()) }
-        val countDown = SuspendedCountLatch(2)
-        coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
+        coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
 
         // when
-        val result = campaignManager.replay("my-tenant", "my-campaign", "my-user")
-        // Wait for the latest directive to be sent.
-        countDown.await()
+        val result = campaignManager.replay("my-tenant", "my-user", "my-campaign")
 
         // then
-        assertThat(result).isSameAs(campaign)
-        val sentDirectives = mutableListOf<Directive>()
+        assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
+            campaignManager.replay("my-tenant", "my-user", "my-campaign")
             campaignService.retrieve("my-tenant", "my-campaign")
-            factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
-            campaignService.create("my-tenant", "my-user", refEq(campaignConfiguration))
-            factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
-            factoryService.lockFactories(refEq(runningCampaign), listOf("factory-1", "factory-2", "factory-3"))
-            assignmentResolver.resolveFactoriesAssignments(
-                refEq(runningCampaign),
-                listOf(factory1, factory2, factory3),
-                listOf(scenario1, scenario2)
-            )
-            campaignService.start("my-tenant", "my-campaign", any(), isNull())
-            campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
-            campaignReportStateKeeper.start("my-campaign", "scenario-1")
-            campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
-            campaignReportStateKeeper.start("my-campaign", "scenario-2")
-            factoryService.releaseFactories(refEq(runningCampaign), listOf("factory-2"))
-            headChannel.subscribeFeedback("feedbacks")
-            headChannel.publishDirective(capture(sentDirectives))
-            headChannel.publishDirective(capture(sentDirectives))
+            campaignManager.start("my-tenant", "my-user", campaignConfiguration)
         }
+        confirmVerified(campaignManager, campaignService)
     }
 }

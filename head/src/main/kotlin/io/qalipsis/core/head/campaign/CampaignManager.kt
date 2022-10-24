@@ -20,7 +20,6 @@
 package io.qalipsis.core.head.campaign
 
 import io.qalipsis.core.campaigns.RunningCampaign
-import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 
 
@@ -41,18 +40,18 @@ internal interface CampaignManager {
 
     /**
      * Aborts a campaign with the provided name.
-     * @param aborter is a username of the user aborting the campaign
+     * @param aborter username of the user aborting the campaign
      * @param tenant define in which tenant the abortion of the campaign should be done
-     * @param campaignKey is a name of the campaign to abort
+     * @param campaignKey name of the campaign to abort
      * @param hard force the campaign to fail when set to true, defaults to false
      */
-    suspend fun abort(aborter: String, tenant: String, campaignKey: String, hard: Boolean)
+    suspend fun abort(tenant: String, aborter: String, campaignKey: String, hard: Boolean)
 
     /**
-     * Replay a campaign with the provided name.
-     * @param configurer is a username of the user replaying the campaign
-     * @param tenant define in which tenant the abortion of the campaign should be done
-     * @param campaignKey is a name of the campaign to abort
+     * Replay a campaign with the provided key.
+     * @param configurer username of the user replaying the campaign
+     * @param tenant tenant owning the campaign to replay
+     * @param campaignKey key of a previous campaign to replay
      */
-    suspend fun replay(tenant: String, campaignKey: String, configurer: String): Campaign
+    suspend fun replay(tenant: String, configurer: String, campaignKey: String): RunningCampaign
 }
