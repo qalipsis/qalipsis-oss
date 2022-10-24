@@ -21,6 +21,7 @@ package io.qalipsis.core.head.report
 
 import io.qalipsis.api.query.Page
 import io.qalipsis.core.head.model.DataSeries
+import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesPatch
 
 /**
@@ -33,19 +34,19 @@ internal interface DataSeriesService {
     /**
      * Creates new the data series.
      */
-    suspend fun create(creator: String, tenant: String, dataSeries: DataSeries): DataSeries
+    suspend fun create(tenant: String, creator: String, dataSeries: DataSeriesCreationRequest): DataSeries
 
     /**
      * Returns data series.
      */
-    suspend fun get(username: String, tenant: String, reference: String): DataSeries
+    suspend fun get(tenant: String, username: String, reference: String): DataSeries
 
     /**
      *  Applies the different patches to [DataSeries] and persists those changes.
      */
     suspend fun update(
-        username: String,
         tenant: String,
+        username: String,
         reference: String,
         patches: Collection<DataSeriesPatch>
     ): DataSeries
@@ -53,7 +54,7 @@ internal interface DataSeriesService {
     /**
      * Delete the data series.
      */
-    suspend fun delete(username: String, tenant: String, reference: String)
+    suspend fun delete(tenant: String, username: String, reference: String)
 
     /**
      * Search data series in the specified tenant

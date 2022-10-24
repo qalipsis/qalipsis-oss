@@ -53,6 +53,7 @@ import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
+import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.core.head.model.converter.DataSeriesConverter
@@ -104,7 +105,7 @@ internal class DataSeriesServiceImplTest {
             coEvery { idGenerator.short() } returns "the-reference"
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-query"
 
-            val dataSeries = DataSeries(
+            val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
                 color = "#ff761c",
@@ -187,7 +188,7 @@ internal class DataSeriesServiceImplTest {
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-query"
-            val dataSeries = DataSeries(
+            val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
                 color = "#ff761c",
@@ -269,7 +270,7 @@ internal class DataSeriesServiceImplTest {
             coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
-            val dataSeries = DataSeries(
+            val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
                 color = "#ff761c",
@@ -313,7 +314,7 @@ internal class DataSeriesServiceImplTest {
             coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
             // when
-            val result = dataSeriesService.get(username = "my-user", tenant = "my-tenant", reference = "my-data-series")
+            val result = dataSeriesService.get(tenant = "my-tenant", username = "my-user", reference = "my-data-series")
 
             // then
             assertThat(result).all {
@@ -365,7 +366,7 @@ internal class DataSeriesServiceImplTest {
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
-        val result = dataSeriesService.get(username = "the-creator", tenant = "my-tenant", reference = "my-data-series")
+        val result = dataSeriesService.get(tenant = "my-tenant", username = "the-creator", reference = "my-data-series")
 
         // then
         assertThat(result).all {
@@ -410,7 +411,7 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            dataSeriesService.get(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesService.get(tenant = "my-tenant", username = "the-user", reference = "my-data-series")
         }
 
         // then
@@ -450,8 +451,8 @@ internal class DataSeriesServiceImplTest {
 
             // when
             val result = dataSeriesService.update(
-                username = "my-user",
                 tenant = "my-tenant",
+                username = "my-user",
                 reference = "my-data-series",
                 listOf(patch1, patch2)
             )
@@ -526,8 +527,8 @@ internal class DataSeriesServiceImplTest {
 
             // when
             val result = dataSeriesService.update(
-                username = "my-user",
                 tenant = "my-tenant",
+                username = "my-user",
                 reference = "my-data-series",
                 listOf(patch1, patch2)
             )
@@ -591,8 +592,8 @@ internal class DataSeriesServiceImplTest {
 
             // when
             val result = dataSeriesService.update(
-                username = "the-creator",
                 tenant = "my-tenant",
+                username = "the-creator",
                 reference = "my-data-series",
                 listOf(patch1, patch2)
             )
@@ -656,8 +657,8 @@ internal class DataSeriesServiceImplTest {
         // when
         val exception = assertThrows<HttpStatusException> {
             dataSeriesService.update(
-                username = "the-user",
                 tenant = "my-tenant",
+                username = "the-user",
                 reference = "my-data-series",
                 emptyList()
             )
@@ -695,8 +696,8 @@ internal class DataSeriesServiceImplTest {
         // when
         val exception = assertThrows<HttpStatusException> {
             dataSeriesService.update(
-                username = "the-user",
                 tenant = "my-tenant",
+                username = "the-user",
                 reference = "my-data-series",
                 emptyList()
             )
@@ -722,7 +723,7 @@ internal class DataSeriesServiceImplTest {
         } returns entity
 
         // when
-        dataSeriesService.delete(username = "my-user", tenant = "my-tenant", reference = "my-data-series")
+        dataSeriesService.delete(tenant = "my-tenant", username = "my-user", reference = "my-data-series")
 
         // then
         coVerifyOrder {
@@ -748,7 +749,7 @@ internal class DataSeriesServiceImplTest {
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
-        dataSeriesService.delete(username = "the-creator", tenant = "my-tenant", reference = "my-data-series")
+        dataSeriesService.delete(tenant = "my-tenant", username = "the-creator", reference = "my-data-series")
 
         // then
         coVerifyOrder {
@@ -785,7 +786,7 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            dataSeriesService.delete(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesService.delete(tenant = "my-tenant", username = "the-user", reference = "my-data-series")
         }
 
         // then
@@ -819,7 +820,7 @@ internal class DataSeriesServiceImplTest {
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            dataSeriesService.delete(username = "the-user", tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesService.delete(tenant = "my-tenant", username = "the-user", reference = "my-data-series")
         }
 
         // then

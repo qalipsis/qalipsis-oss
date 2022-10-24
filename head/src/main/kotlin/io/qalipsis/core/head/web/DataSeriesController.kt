@@ -40,6 +40,7 @@ import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.DataField
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DataSeries
+import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
@@ -94,12 +95,12 @@ internal class DataSeriesController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
-        @Body @Valid dataSeries: DataSeries
+        @Body @Valid dataSeries: DataSeriesCreationRequest
     ): HttpResponse<DataSeries> {
         return HttpResponse.ok(
             dataSeriesService.create(
-                creator = authentication.name,
                 tenant = tenant,
+                creator = authentication.name,
                 dataSeries = dataSeries
             )
         )
@@ -137,8 +138,8 @@ internal class DataSeriesController(
     ): HttpResponse<DataSeries> {
         return HttpResponse.ok(
             dataSeriesService.get(
-                username = authentication.name,
                 tenant = tenant,
+                username = authentication.name,
                 reference = reference
             )
         )
@@ -177,8 +178,8 @@ internal class DataSeriesController(
     ): HttpResponse<DataSeries> {
         return HttpResponse.ok(
             dataSeriesService.update(
-                username = authentication.name,
                 tenant = tenant,
+                username = authentication.name,
                 reference = reference,
                 patches = dataSeriesPatches
             )
@@ -214,7 +215,7 @@ internal class DataSeriesController(
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable reference: String
     ): HttpResponse<Unit> {
-        dataSeriesService.delete(username = authentication.name, tenant = tenant, reference = reference)
+        dataSeriesService.delete(tenant = tenant, username = authentication.name, reference = reference)
         return HttpResponse.status(HttpStatus.ACCEPTED)
     }
 

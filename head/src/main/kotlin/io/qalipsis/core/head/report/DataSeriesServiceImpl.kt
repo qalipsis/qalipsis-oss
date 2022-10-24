@@ -34,6 +34,7 @@ import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
+import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.core.head.model.converter.DataSeriesConverter
 import io.qalipsis.core.head.utils.SortingUtil
@@ -56,7 +57,7 @@ internal class DataSeriesServiceImpl(
     private val dataSeriesConverter: DataSeriesConverter
 ) : DataSeriesService {
 
-    override suspend fun get(username: String, tenant: String, reference: String): DataSeries {
+    override suspend fun get(tenant: String, username: String, reference: String): DataSeries {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant = tenant, reference = reference)
         val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId) ?: ""
         if (username != creatorName && dataSeriesEntity.sharingMode == SharingMode.NONE) {
@@ -65,7 +66,7 @@ internal class DataSeriesServiceImpl(
         return DataSeries(dataSeriesEntity, creatorName)
     }
 
-    override suspend fun create(creator: String, tenant: String, dataSeries: DataSeries): DataSeries {
+    override suspend fun create(tenant: String, creator: String, dataSeries: DataSeriesCreationRequest): DataSeries {
         val aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT
         require(aggregationOperation == QueryAggregationOperator.COUNT || !dataSeries.fieldName.isNullOrBlank()) {
             "The field name should be set when the aggregation is not count"
@@ -98,8 +99,8 @@ internal class DataSeriesServiceImpl(
     }
 
     override suspend fun update(
-        username: String,
         tenant: String,
+        username: String,
         reference: String,
         patches: Collection<DataSeriesPatch>
     ): DataSeries {
@@ -125,7 +126,7 @@ internal class DataSeriesServiceImpl(
         return DataSeries(updatedDataSeries, creatorName)
     }
 
-    override suspend fun delete(username: String, tenant: String, reference: String) {
+    override suspend fun delete(tenant: String, username: String, reference: String) {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant, reference)
         if (dataSeriesEntity.sharingMode != SharingMode.WRITE && username != userRepository.findUsernameById(
                 dataSeriesEntity.creatorId

@@ -41,19 +41,22 @@ import io.mockk.confirmVerified
 import io.mockk.excludeRecords
 import io.mockk.impl.annotations.MockK
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryAggregationOperator.AVERAGE
 import io.qalipsis.api.query.QueryClauseOperator
+import io.qalipsis.api.query.QueryClauseOperator.IS
 import io.qalipsis.api.report.DataField
 import io.qalipsis.api.report.DataFieldType
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.ColorDataSeriesPatch
 import io.qalipsis.core.head.model.DataSeries
+import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
 import io.qalipsis.core.head.report.DataType
+import io.qalipsis.core.head.report.DataType.EVENTS
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
@@ -92,17 +95,26 @@ internal class DataSeriesControllerIntegrationTest {
     @Test
     fun `should successfully create data series`() {
         // given
-        val dataSeries = DataSeries(
+        val dataSeries = DataSeriesCreationRequest(
             displayName = "Time to response for complex query",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             color = "#ff761c",
-            filters = setOf(DataSeriesFilter("step", QueryClauseOperator.IS, "http-post-complex-query")),
+            filters = setOf(DataSeriesFilter("step", IS, "http-post-complex-query")),
             fieldName = "duration",
-            aggregationOperation = QueryAggregationOperator.AVERAGE,
+            aggregationOperation = AVERAGE,
             timeframeUnit = Duration.ofSeconds(1),
             displayFormat = "#0.000"
         )
-        val createdDataSeries = dataSeries.copy(
+        val createdDataSeries = DataSeries(
+            displayName = "Time to response for complex query",
+            dataType = EVENTS,
+            color = "#ff761c",
+            filters = setOf(DataSeriesFilter("step", IS, "http-post-complex-query")),
+            fieldName = "duration",
+            aggregationOperation = AVERAGE,
+            timeframeUnit = Duration.ofSeconds(1),
+            displayFormat = "#0.000"
+        ).copy(
             color = "#FF761C", reference = "qoi78qwedqwiz"
         )
         coEvery { dataSeriesService.create(any(), any(), any()) } returns createdDataSeries
@@ -112,7 +124,7 @@ internal class DataSeriesControllerIntegrationTest {
 
         // then
         coVerifyOrder {
-            dataSeriesService.create(creator = Defaults.USER, tenant = Defaults.TENANT, dataSeries = dataSeries)
+            dataSeriesService.create(tenant = Defaults.TENANT, creator = Defaults.USER, dataSeries = dataSeries)
         }
 
         assertThat(response).all {
@@ -161,8 +173,8 @@ internal class DataSeriesControllerIntegrationTest {
         val updateDataSeriesRequest = HttpRequest.PATCH<List<DataSeriesPatch>>("/q7232x", listOf(dataSeriesPatch))
         coEvery {
             dataSeriesService.update(
-                username = Defaults.USER,
                 tenant = Defaults.TENANT,
+                username = Defaults.USER,
                 reference = "q7232x",
                 patches = any()
             )
@@ -174,8 +186,8 @@ internal class DataSeriesControllerIntegrationTest {
         // then
         coVerifyOnce {
             dataSeriesService.update(
-                username = Defaults.USER,
                 tenant = Defaults.TENANT,
+                username = Defaults.USER,
                 reference = "q7232x",
                 patches = any()
             )
@@ -198,7 +210,7 @@ internal class DataSeriesControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            dataSeriesService.delete(username = Defaults.USER, tenant = Defaults.TENANT, reference = "q7232x")
+            dataSeriesService.delete(tenant = Defaults.TENANT, username = Defaults.USER, reference = "q7232x")
         }
 
         assertThat(response).all {
@@ -220,8 +232,8 @@ internal class DataSeriesControllerIntegrationTest {
         val getDataSeriesRequest = HttpRequest.GET<DataSeries>("/q7232x")
         coEvery {
             dataSeriesService.get(
-                username = Defaults.USER,
                 tenant = Defaults.TENANT,
+                username = Defaults.USER,
                 reference = "q7232x"
             )
         } returns dataSeries
@@ -231,7 +243,7 @@ internal class DataSeriesControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            dataSeriesService.get(username = Defaults.USER, tenant = Defaults.TENANT, reference = "q7232x")
+            dataSeriesService.get(tenant = Defaults.TENANT, username = Defaults.USER, reference = "q7232x")
         }
 
         assertThat(response).all {
