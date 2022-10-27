@@ -180,7 +180,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     }
 
     @LogInput
-    override suspend fun abort(aborter: String, tenant: String, campaignKey: String, hard: Boolean) {
+    override suspend fun abort(tenant: String, aborter: String, campaignKey: String, hard: Boolean) {
         tryAndLog(log) {
             processingMutex.withLock {
                 val sourceCampaignState = get(tenant, campaignKey)
@@ -196,6 +196,15 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 }
             }
         }
+    }
+
+    override suspend fun replay(tenant: String, configurer: String, campaignKey: String): RunningCampaign {
+        val campaign = requireNotNull(
+            campaignService.retrieve(
+                tenant, campaignKey
+            )
+        ) { "The configuration of campaign with key $campaignKey could not be found" }
+        return start(tenant, configurer, campaign.configuration!!)
     }
 
     abstract suspend fun create(

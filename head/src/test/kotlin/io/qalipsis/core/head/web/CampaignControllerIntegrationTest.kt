@@ -374,7 +374,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.abort(Defaults.USER, Defaults.TENANT, "first_campaign", false)
+            campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", false)
         }
 
         assertThat(response).all {
@@ -392,7 +392,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.abort(Defaults.USER, Defaults.TENANT, "first_campaign", true)
+            campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", true)
         }
 
         assertThat(response).all {
@@ -472,6 +472,51 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(campaignExecutionDetails)
+        }
+    }
+
+    @Test
+    fun `should successfully replay the campaign`() {
+        // given
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = RandomStringUtils.randomAlphanumeric(10),
+            name = "This is a campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            scheduledMinions = 123,
+            end = null,
+            configurerName = Defaults.USER,
+            result = null,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            ),
+            configuration = CampaignConfiguration(
+                name = "This is a campaign",
+                scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+            )
+        )
+        val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign-new")
+        val replayRequest = HttpRequest.POST("/my-campaign/replay", null)
+        coEvery {
+            campaignManager.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+        } returns runningCampaign
+        coEvery {
+            campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
+        } returns campaign
+
+        // when
+        val response = httpClient.toBlocking().exchange(replayRequest, Campaign::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignManager.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+            campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(campaign)
         }
     }
 }

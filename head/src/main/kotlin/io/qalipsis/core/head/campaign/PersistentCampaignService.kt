@@ -73,7 +73,8 @@ internal class PersistentCampaignService(
                 scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
                 hardTimeout = campaignConfiguration.hardTimeout ?: false,
                 speedFactor = campaignConfiguration.speedFactor,
-                configurer = requireNotNull(userRepository.findIdByUsername(configurer))
+                configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
+                configuration = campaignConfiguration
             )
         )
         campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->

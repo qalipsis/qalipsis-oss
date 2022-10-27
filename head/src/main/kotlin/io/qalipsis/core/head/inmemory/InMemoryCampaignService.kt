@@ -33,9 +33,9 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import jakarta.inject.Singleton
-import java.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Instant
 
 @Singleton
 @Requirements(
@@ -75,7 +75,8 @@ internal class InMemoryCampaignService(
                         it.key,
                         it.value.minionsCount
                     )
-                }
+                },
+                configuration = campaignConfiguration
             )
             currentCampaign!!
         }

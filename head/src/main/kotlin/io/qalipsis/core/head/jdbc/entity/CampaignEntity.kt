@@ -22,9 +22,12 @@ package io.qalipsis.core.head.jdbc.entity
 import io.micronaut.data.annotation.GeneratedValue
 import io.micronaut.data.annotation.Id
 import io.micronaut.data.annotation.MappedEntity
+import io.micronaut.data.annotation.TypeDef
 import io.micronaut.data.annotation.Version
+import io.micronaut.data.model.DataType
 import io.micronaut.data.model.naming.NamingStrategies
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.head.model.CampaignConfiguration
 import java.time.Instant
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
@@ -70,7 +73,9 @@ internal data class CampaignEntity(
     val end: Instant?,
     val result: ExecutionStatus?,
     val configurer: Long,
-    val aborter: Long? = null
+    val aborter: Long? = null,
+    @field:TypeDef(type = DataType.JSON)
+    val configuration: CampaignConfiguration? = null
 ) : Entity {
 
     constructor(
@@ -85,7 +90,8 @@ internal data class CampaignEntity(
         end: Instant? = null,
         result: ExecutionStatus? = null,
         configurer: Long,
-        aborter: Long? = null
+        aborter: Long? = null,
+        configuration: CampaignConfiguration? = null
     ) : this(
         id = -1,
         version = Instant.EPOCH,
@@ -100,6 +106,7 @@ internal data class CampaignEntity(
         end = end,
         result = result,
         configurer = configurer,
-        aborter = aborter
+        aborter = aborter,
+        configuration = configuration
     )
 }

@@ -223,7 +223,7 @@ internal class CampaignController(
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean
     ): HttpResponse<Unit> {
-        campaignManager.abort(authentication.name, tenant, campaignKey, hard)
+        campaignManager.abort(tenant, authentication.name, campaignKey, hard)
         return HttpResponse.accepted()
     }
 
@@ -260,5 +260,41 @@ internal class CampaignController(
     ): HttpResponse<CampaignExecutionDetails> {
         val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
         return HttpResponse.ok(report)
+    }
+
+    /**
+     * REST endpoint to replay the campaign.
+     */
+    @Post("/{campaignKey}/replay")
+    @Operation(
+        summary = "Replay the campaign",
+        description = "Replay campaign with the provided campaign key",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Campaign replayed successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.WRITE_CAMPAIGN)
+    @Timed("campaigns-replay")
+    suspend fun replay(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "Campaign name to retrieve the campaign",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable campaignKey: String,
+        @Parameter(hidden = true) authentication: Authentication
+    ): HttpResponse<Campaign> {
+        val newCampaignKey = campaignManager.replay(tenant, authentication.name, campaignKey).key
+        return HttpResponse.ok(campaignService.retrieve(tenant, newCampaignKey))
     }
 }

@@ -72,6 +72,9 @@
         <constraints nullable="false" foreignKeyName="campaign_tenant_id_fk" referencedTableName="tenant"
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
+      <column name="configuration" type="JSONB">
+        <constraints nullable="true"/>
+      </column>
     </createTable>
   </changeSet>
 </databaseChangeLog>

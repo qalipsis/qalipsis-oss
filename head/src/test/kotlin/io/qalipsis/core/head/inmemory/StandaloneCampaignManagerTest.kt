@@ -36,12 +36,14 @@ import com.google.common.collect.ImmutableTable
 import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
 import io.mockk.spyk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
@@ -59,8 +61,10 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
@@ -74,6 +78,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
 @Timeout(5)
@@ -332,7 +337,7 @@ internal class StandaloneCampaignManagerTest {
             })
 
         // when
-        campaignManager.abort("my-user", "my-tenant", "first_campaign", true)
+        campaignManager.abort("my-tenant", "my-user", "first_campaign", true)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
@@ -385,7 +390,7 @@ internal class StandaloneCampaignManagerTest {
             })
 
         // when
-        campaignManager.abort("my-user", "my-tenant", "first_campaign", false)
+        campaignManager.abort("my-tenant", "my-user", "first_campaign", false)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
@@ -414,6 +419,51 @@ internal class StandaloneCampaignManagerTest {
                 }
             }
         }
+    }
+
+    @Test
+    internal fun `should replay a campaign `() = testDispatcherProvider.run {
+        // given
+        val campaignManager = standaloneCampaignManager(this)
+        val campaignConfiguration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioRequest(6272),
+                "scenario-2" to ScenarioRequest(12321)
+            )
+        )
+        val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
+        val campaign = Campaign(
+            version = Instant.now(),
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scheduledMinions = null,
+            start = null,
+            end = null,
+            result = ExecutionStatus.ABORTED,
+            configurerName = "my-user",
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            ),
+            configuration = campaignConfiguration
+        )
+        coEvery { campaignService.retrieve("my-tenant", "my-campaign") } returns campaign
+        coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
+
+        // when
+        val result = campaignManager.replay("my-tenant", "my-user", "my-campaign")
+
+        // then
+        assertThat(result).isSameAs(runningCampaign)
+        coVerifyOrder {
+            campaignManager.replay("my-tenant", "my-user", "my-campaign")
+            campaignService.retrieve("my-tenant", "my-campaign")
+            campaignManager.start("my-tenant", "my-user", campaignConfiguration)
+        }
+        confirmVerified(campaignManager, campaignService)
     }
 
     private fun standaloneCampaignManager(scope: CoroutineScope) =

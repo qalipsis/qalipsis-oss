@@ -81,5 +81,8 @@ internal data class Campaign(
     val configurerName: String?,
 
     @field:Schema(description = "Scenarios being part of the campaign", required = true)
-    val scenarios: Collection<Scenario>
+    val scenarios: Collection<Scenario>,
+
+    @field:Schema(description = "Complete configuration of the campaign")
+    val configuration: CampaignConfiguration? = null
 )
