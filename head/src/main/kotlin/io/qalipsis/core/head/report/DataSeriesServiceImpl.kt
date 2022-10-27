@@ -67,6 +67,9 @@ internal class DataSeriesServiceImpl(
     }
 
     override suspend fun create(tenant: String, creator: String, dataSeries: DataSeriesCreationRequest): DataSeries {
+        require(!dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, dataSeries.displayName)) {
+            "A data series named ${dataSeries.displayName} already exists in your organization"
+        }
         val aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT
         require(aggregationOperation == QueryAggregationOperator.COUNT || !dataSeries.fieldName.isNullOrBlank()) {
             "The field name should be set when the aggregation is not count"
@@ -119,6 +122,16 @@ internal class DataSeriesServiceImpl(
                     timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration
                 )
             ).takeUnless(String::isNullOrBlank)
+
+            require(
+                !dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    tenant,
+                    dataSeriesEntity.displayName,
+                    dataSeriesEntity.id
+                )
+            ) {
+                "A data series named ${dataSeriesEntity.displayName} already exists in your organization"
+            }
             dataSeriesRepository.update(dataSeriesEntity)
         } else {
             dataSeriesEntity

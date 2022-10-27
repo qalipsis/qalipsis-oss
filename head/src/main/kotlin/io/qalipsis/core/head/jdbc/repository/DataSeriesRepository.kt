@@ -40,6 +40,17 @@ import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long> {
 
     @Query(
+        """SELECT count(*) > 0
+            FROM data_series
+            WHERE id <> :id AND display_name = :displayName AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)"""
+    )
+    suspend fun existsByTenantReferenceAndDisplayNameAndIdNot(
+        tenant: String,
+        displayName: String,
+        id: Long = -1
+    ): Boolean
+
+    @Query(
         """SELECT *
             FROM data_series
             WHERE reference = :reference AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)"""

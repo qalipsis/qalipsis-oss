@@ -128,6 +128,30 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::displayFormat).isNull()
             prop(DataSeriesEntity::query).isNull()
         }
+
+        // when searching a data series with same name but other ID
+        var existsWithSameNameAndOtherId =
+            dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant.reference, "my-name", saved.id)
+
+        // then
+        assertThat(existsWithSameNameAndOtherId).isFalse()
+
+        // when searching a data series with other name and other ID
+        existsWithSameNameAndOtherId = dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+            tenant.reference,
+            "my-other-name",
+            saved.id
+        )
+
+        // then
+        assertThat(existsWithSameNameAndOtherId).isFalse()
+
+        // when searching a data series with same name and any ID
+        existsWithSameNameAndOtherId =
+            dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant.reference, "my-name")
+
+        // then
+        assertThat(existsWithSameNameAndOtherId).isTrue()
     }
 
     @Test

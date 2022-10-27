@@ -60,12 +60,12 @@ import io.qalipsis.core.head.model.converter.DataSeriesConverter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
-import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
+import java.time.Instant
 
 @WithMockk
 internal class DataSeriesServiceImplTest {
@@ -99,6 +99,13 @@ internal class DataSeriesServiceImplTest {
     internal fun `should create the data series with the default operation and no field name`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns false
             coEvery { dataSeriesRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
@@ -142,6 +149,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
             coVerify {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", -1)
                 dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
                     assertThat(it).isDataClassEqualTo(
                         QueryDescription(
@@ -183,6 +191,13 @@ internal class DataSeriesServiceImplTest {
     internal fun `should create the data series with the specified operation and field name`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns false
             coEvery { dataSeriesRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
@@ -225,6 +240,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
             }
             coVerify {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", -1)
                 dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
                     assertThat(it).isDataClassEqualTo(
                         QueryDescription(
@@ -266,10 +282,45 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not create the data series with the specified operation requires a field name, which is missing`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns false
             coEvery { dataSeriesRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
             coEvery { userRepository.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
+            val dataSeries = DataSeriesCreationRequest(
+                displayName = "the-name",
+                dataType = DataType.EVENTS,
+                color = "#ff761c",
+                filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                fieldName = null,
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
+                timeframeUnit = Duration.ofSeconds(2),
+                displayFormat = "#0.000"
+            )
+
+            // when
+            assertThrows<IllegalArgumentException> {
+                dataSeriesService.create(creator = "my-user", tenant = "my-tenant", dataSeries = dataSeries)
+            }
+        }
+
+    @Test
+    internal fun `should not create the data series with one with the same name exists in the tenant`() =
+        testDispatcherProvider.runTest {
+            // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns true
             val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
@@ -422,9 +473,18 @@ internal class DataSeriesServiceImplTest {
     internal fun `should update the data series when shared in write and save if there are changes`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns false
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the new query"
             coEvery { dataSeriesRepository.update(any()) } returnsArgument 0
             val entity = DataSeriesEntity(
+                id = 6432,
+                version = Instant.now(),
                 reference = "my-data-series",
                 tenantId = -1,
                 creatorId = 3912L,
@@ -458,19 +518,6 @@ internal class DataSeriesServiceImplTest {
             )
 
             // then
-            coVerifyOnce {
-                dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
-                    assertThat(it).isDataClassEqualTo(
-                        QueryDescription(
-                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
-                            fieldName = "the field",
-                            aggregationOperation = QueryAggregationOperator.AVERAGE,
-                            timeframeUnit = Duration.ofSeconds(2)
-                        )
-                    )
-                })
-            }
-
             assertThat(result).all {
                 prop(DataSeries::reference).isEqualTo("my-data-series")
                 prop(DataSeries::creator).isEqualTo("the-creator")
@@ -492,6 +539,17 @@ internal class DataSeriesServiceImplTest {
                 userRepository.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
+                dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
+                    assertThat(it).isDataClassEqualTo(
+                        QueryDescription(
+                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            fieldName = "the field",
+                            aggregationOperation = QueryAggregationOperator.AVERAGE,
+                            timeframeUnit = Duration.ofSeconds(2)
+                        )
+                    )
+                })
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", 6432)
                 dataSeriesRepository.update(refEq(entity))
             }
         }
@@ -501,6 +559,8 @@ internal class DataSeriesServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             val entity = DataSeriesEntity(
+                id = 6432,
+                version = Instant.now(),
                 reference = "my-data-series",
                 tenantId = -1,
                 creatorId = 3912L,
@@ -563,9 +623,18 @@ internal class DataSeriesServiceImplTest {
     internal fun `should update the data series when owned if not shared`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns false
             coEvery { dataSeriesRepository.update(any()) } returnsArgument 0
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the new query"
             val entity = DataSeriesEntity(
+                id = 6432,
+                version = Instant.now(),
                 reference = "my-data-series",
                 tenantId = -1,
                 creatorId = 3912L,
@@ -625,6 +694,7 @@ internal class DataSeriesServiceImplTest {
                 userRepository.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", 6432)
                 dataSeriesRepository.update(refEq(entity))
             }
         }
@@ -638,6 +708,8 @@ internal class DataSeriesServiceImplTest {
                 "my-data-series"
             )
         } returns DataSeriesEntity(
+            id = 6432,
+            version = Instant.now(),
             reference = "my-data-series",
             tenantId = -1,
             creatorId = 3912L,
@@ -677,6 +749,8 @@ internal class DataSeriesServiceImplTest {
                 "my-data-series"
             )
         } returns DataSeriesEntity(
+            id = 6432,
+            version = Instant.now(),
             reference = "my-data-series",
             tenantId = -1,
             creatorId = 3912L,
@@ -706,6 +780,55 @@ internal class DataSeriesServiceImplTest {
         // then
         assertThat(exception.status).isEqualTo(HttpStatus.FORBIDDEN)
     }
+
+    @Test
+    internal fun `should not update the data series when another one exists with the same name in the tenant`() =
+        testDispatcherProvider.runTest {
+            // given
+            coEvery {
+                dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns true
+            coEvery {
+                dataSeriesRepository.findByTenantAndReference(
+                    "my-tenant",
+                    "my-data-series"
+                )
+            } returns DataSeriesEntity(
+                id = 6432,
+                version = Instant.now(),
+                reference = "my-data-series",
+                tenantId = -1,
+                creatorId = 3912L,
+                displayName = "the-name",
+                dataType = DataType.EVENTS,
+                sharingMode = SharingMode.READONLY,
+                color = "#FF761C",
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                fieldName = "the field",
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
+                timeframeUnitMs = 2_000,
+                displayFormat = "#0.000",
+                query = "the query"
+            )
+            coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+
+            // when
+            val exception = assertThrows<HttpStatusException> {
+                dataSeriesService.update(
+                    tenant = "my-tenant",
+                    username = "the-user",
+                    reference = "my-data-series",
+                    emptyList()
+                )
+            }
+
+            // then
+            assertThat(exception.status).isEqualTo(HttpStatus.FORBIDDEN)
+        }
 
     @Test
     internal fun `should delete the data series when shared in write`() = testDispatcherProvider.runTest {
