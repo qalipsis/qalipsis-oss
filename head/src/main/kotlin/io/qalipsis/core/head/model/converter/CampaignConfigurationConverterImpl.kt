@@ -13,6 +13,7 @@ import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
+import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
@@ -29,7 +30,8 @@ import jakarta.inject.Singleton
  */
 @Singleton
 internal class CampaignConfigurationConverterImpl(
-    private val idGenerator: IdGenerator
+    private val idGenerator: IdGenerator,
+    private val headConfiguration: HeadConfiguration
 ) : CampaignConfigurationConverter {
 
     override suspend fun convertConfiguration(
@@ -49,7 +51,25 @@ internal class CampaignConfigurationConverterImpl(
     protected fun generateCampaignKey(tenant: String): String = idGenerator.long()
 
     private fun convertScenarioRequestsToConfigurations(scenarios: Map<ScenarioName, ScenarioRequest>): Map<ScenarioName, ScenarioConfiguration> {
-        return scenarios.mapValues { ScenarioConfiguration(it.value.minionsCount, defineExecutionProfileConfiguration(it.value)) }
+        return scenarios.mapValues {
+            ScenarioConfiguration(
+                minionsCount = it.value.minionsCount,
+                executionProfileConfiguration = defineExecutionProfileConfiguration(it.value),
+                zones = it.value.zones?.also(this::checkAndUpdateZone).orEmpty()
+            )
+        }
+    }
+
+    private fun checkAndUpdateZone(zones: Map<String, Int>){
+        //We check if all the keys provide for zones are supported
+        require(headConfiguration.zones.map { it.key }.containsAll(zones.keys)){
+            val unknownZones = zones.keys.filterNot { headConfiguration.zones.map { zone -> zone.key }.contains(it) }
+            "Some requested zones do not exist: ${unknownZones.joinToString()}"
+        }
+
+        require(zones.isEmpty() || zones.entries.sumOf { it.value } == 100){
+            "The distribution of the load across the different zones should equal to 100%"
+        }
     }
 
     private fun defineExecutionProfileConfiguration(scenario: ScenarioRequest): ExecutionProfileConfiguration {

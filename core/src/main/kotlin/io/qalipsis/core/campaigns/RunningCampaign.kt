@@ -91,7 +91,8 @@ data class RunningCampaign(
 @Serializable
 data class ScenarioConfiguration(
     val minionsCount: Int,
-    val executionProfileConfiguration: ExecutionProfileConfiguration
+    val executionProfileConfiguration: ExecutionProfileConfiguration,
+    val zones : Map<String, Int> = emptyMap()
 )
 
 @Serializable
