@@ -69,8 +69,8 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
             FROM factory LEFT JOIN factory_tag ON factory_id = factory.id WHERE
             EXISTS (SELECT * FROM scenario WHERE factory_id = factory.id AND name in (:names) AND enabled = true)
             AND EXISTS -- The factory should be healthy as latest known state within  the last 2 minutes.
-                (SELECT * FROM factory_state healthy WHERE factory_id = factory.id AND state = 'HEALTHY' and health_timestamp > (now() - interval '$HEALTH_QUERY_INTERVAL')
-                    AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'HEALTHY' and health_timestamp > healthy.health_timestamp))
+                (SELECT * FROM factory_state healthy WHERE factory_id = factory.id AND state = 'IDLE' and health_timestamp > (now() - interval '$HEALTH_QUERY_INTERVAL')
+                    AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'IDLE' and health_timestamp > healthy.health_timestamp))
             AND NOT EXISTS -- The factory should not be used in a running campaign.
                 (SELECT * FROM campaign WHERE "end" IS NULL 
                     AND EXISTS (SELECT * FROM campaign_factory WHERE factory_id = factory.id AND campaign_id = campaign.id AND discarded = false)

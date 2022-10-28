@@ -75,8 +75,8 @@ internal class HeartbeatEmitter(
                     val heartbeat = Heartbeat(
                         nodeId,
                         Instant.now(),
-                        Heartbeat.State.HEALTHY,
-                        campaignManager.runningCampaign.campaignKey
+                        Heartbeat.State.IDLE,
+                        campaignManager.runningCampaign.campaignKey.takeUnless(String::isBlank)
                     )
                     try {
                         log.trace { "Sending $heartbeat to $heartbeatChannel" }
@@ -109,7 +109,7 @@ internal class HeartbeatEmitter(
                     heartbeatChannel, Heartbeat(
                         nodeId,
                         Instant.now(),
-                        Heartbeat.State.UNREGISTERED
+                        Heartbeat.State.OFFLINE
                     )
                 )
             }

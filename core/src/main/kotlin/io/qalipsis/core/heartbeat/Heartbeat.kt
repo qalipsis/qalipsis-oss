@@ -33,15 +33,12 @@ import java.time.Instant
 data class Heartbeat(
     val nodeId: String,
     @Serializable(with = InstantKotlinSerializer::class) val timestamp: Instant,
-    val state: State = State.HEALTHY,
-    private val currentCampaignKey: CampaignKey = ""
+    val state: State = State.IDLE,
+    val campaignKey: CampaignKey? = null
 ) {
 
-    val campaignKey: CampaignKey?
-        get() = currentCampaignKey.takeIf { it.isNotBlank() }
-
     enum class State {
-        REGISTERED, UNREGISTERED, HEALTHY, UNHEALTHY
+        REGISTERED, OFFLINE, IDLE, UNHEALTHY
     }
 
 }

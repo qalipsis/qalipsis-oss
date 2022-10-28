@@ -78,8 +78,8 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
             INNER JOIN factory ON factory_id = factory.id 
             WHERE enabled = true 
             AND EXISTS -- The factory should be healthy as latest known state within the last 2 minutes.
-                (SELECT * FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'HEALTHY' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
-                AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'HEALTHY' and health_timestamp > fs.health_timestamp))
+                (SELECT * FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'IDLE' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
+                AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'IDLE' and health_timestamp > fs.health_timestamp))
             AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
             ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
             CASE :sort WHEN 'name' THEN scenario.name END, 

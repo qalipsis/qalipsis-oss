@@ -33,8 +33,10 @@ import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.report.AggregationQueryExecutionRequest
+import io.qalipsis.core.head.report.CampaignSummaryResult
 import io.qalipsis.core.head.report.DataRetrievalQueryExecutionRequest
 import io.qalipsis.core.head.report.TimeSeriesDataQueryService
+import io.qalipsis.core.head.report.WidgetService
 import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
@@ -55,7 +57,10 @@ import javax.validation.constraints.PositiveOrZero
 @Controller("/time-series")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
-internal class TimeSeriesController(private val timeSeriesDataQueryService: TimeSeriesDataQueryService) {
+internal class TimeSeriesController(
+    private val timeSeriesDataQueryService: TimeSeriesDataQueryService,
+    private val widgetService: WidgetService
+) {
 
     @Get("/aggregate")
     @Operation(
@@ -212,6 +217,60 @@ internal class TimeSeriesController(private val timeSeriesDataQueryService: Time
                     size = size
                 )
             )
+        )
+    }
+
+    @Get("/summary/campaign-status")
+    @Operation(
+        summary = "Aggregate campaign results data over time",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "aggregation results keyed by the campaign-series start references"
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.READ_CAMPAIGN])
+    suspend fun fetchCampaignSummary(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "Beginning of the aggregation window",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("from") from: Instant,
+        @Parameter(
+            description = "End of the aggregation window",
+            required = true,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("until") until: Instant?,
+        @Parameter(
+            description = "Difference between UTC and the user's time zone",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("timeOffset") timeOffset: Float,
+        @Parameter(
+            description = "Size of the time-buckets to perform the aggregations",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @PositiveDuration @QueryValue("timeframe") timeframe: Duration?
+    ): HttpResponse<List<CampaignSummaryResult>> {
+        require(until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
+        return HttpResponse.ok(
+            widgetService.aggregateCampaignResult(tenant, from, until, timeOffset, timeframe)
         )
     }
 }

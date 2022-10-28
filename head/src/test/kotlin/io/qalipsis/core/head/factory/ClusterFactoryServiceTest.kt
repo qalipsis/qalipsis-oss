@@ -1221,7 +1221,7 @@ internal class ClusterFactoryServiceTest {
         val now = getTimeMock()
         val factoryId = 1L
         val heartbeat =
-            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.UNREGISTERED, currentCampaignKey = "1")
+            Heartbeat(nodeId = "boo", timestamp = now, state = Heartbeat.State.OFFLINE, campaignKey = "1")
 
         coEvery { factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)) } returns listOf(factoryId)
 
