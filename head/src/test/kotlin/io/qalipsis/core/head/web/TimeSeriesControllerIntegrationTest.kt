@@ -46,9 +46,12 @@ import io.qalipsis.api.report.TimeSeriesRecord
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.report.AggregationQueryExecutionRequest
+import io.qalipsis.core.head.report.CampaignSummaryResult
 import io.qalipsis.core.head.report.DataRetrievalQueryExecutionRequest
 import io.qalipsis.core.head.report.TimeSeriesDataQueryService
+import io.qalipsis.core.head.report.WidgetService
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
 import org.junit.jupiter.api.BeforeEach
@@ -70,15 +73,21 @@ internal class TimeSeriesControllerIntegrationTest {
     @MockK
     private lateinit var timeSeriesDataQueryService: TimeSeriesDataQueryService
 
+    @MockK
+    private lateinit var widgetService: WidgetService
+
     @MockBean(TimeSeriesDataQueryService::class)
     fun timeSeriesDataQueryService() = timeSeriesDataQueryService
 
+    @MockBean(WidgetService::class)
+    fun widgetService() = widgetService
 
     @BeforeEach
     internal fun setUp() {
         excludeRecords {
             timeSeriesDataQueryService.toString()
             timeSeriesDataQueryService.hashCode()
+            widgetService.hashCode()
         }
     }
 
@@ -669,4 +678,145 @@ internal class TimeSeriesControllerIntegrationTest {
         }
         confirmVerified(timeSeriesDataQueryService)
     }
+
+    @Test
+    internal fun `should retrieve the campaign summary within the specified start, end and interval`() {
+        // given
+        val from = Instant.now().minus(7, ChronoUnit.HOURS)
+        val until = Instant.now().minus(3, ChronoUnit.HOURS).minus(50, ChronoUnit.MINUTES)
+        val timeOffset = 0.30F
+        val timeframe = Duration.of(1, ChronoUnit.HOURS).minusMinutes(20)
+        val calcStart = from.minus(30, ChronoUnit.MINUTES)
+        val campaignSummaryList = listOf(
+            CampaignSummaryResult(calcStart, 111, 101),
+            CampaignSummaryResult(calcStart.minus(timeframe), 411, 543),
+            CampaignSummaryResult(calcStart.minus(timeframe).minus(timeframe), 26, 2),
+        )
+        val request =
+            HttpRequest.GET<List<CampaignSummaryResult>>("/time-series/summary/campaign-status?from=$from&until=$until&timeframe=$timeframe&timeOffset=$timeOffset")
+        coEvery {
+            widgetService.aggregateCampaignResult(any(), any(), any(), any(), any())
+        } returns campaignSummaryList
+
+        // when
+        val response: HttpResponse<List<CampaignSummaryResult>> = httpClient.toBlocking().exchange(
+            request,
+            Argument.listOf(CampaignSummaryResult::class.java)
+        )
+
+        // then
+        coVerifyOnce {
+            widgetService.aggregateCampaignResult(
+                tenant = Defaults.TENANT,
+                from = from,
+                until = until,
+                timeOffset = timeOffset,
+                aggregationTimeframe = timeframe
+            )
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(campaignSummaryList)
+        }
+        confirmVerified(widgetService)
+    }
+
+    @Test
+    internal fun `should retrieve the campaign summary when start, end and timeframe is not passed in`() {
+        // given
+        val timeOffset = 0.30F
+        val startInterval = Instant.now().minus(30, ChronoUnit.MINUTES)
+        val timeframe = Duration.of(1, ChronoUnit.HOURS).minusMinutes(20)
+        val campaignSummaryList = listOf(
+            CampaignSummaryResult(startInterval, 111, 101),
+            CampaignSummaryResult(startInterval.minus(timeframe), 411, 543),
+            CampaignSummaryResult(startInterval.minus(timeframe).minus(timeframe), 26, 2),
+            CampaignSummaryResult(
+                startInterval.minus(timeframe).minus(timeframe).minus(timeframe), 523, 43
+            ),
+            CampaignSummaryResult(
+                startInterval.minus(timeframe).minus(timeframe).minus(timeframe)
+                    .minus(timeframe), 89, 101
+            ),
+            CampaignSummaryResult(
+                startInterval.minus(timeframe).minus(timeframe).minus(timeframe)
+                    .minus(timeframe).minus(timeframe), 201, 89
+            ),
+            CampaignSummaryResult(
+                startInterval.minus(timeframe).minus(timeframe).minus(timeframe)
+                    .minus(timeframe).minus(timeframe).minus(timeframe), 415, 895
+            )
+        )
+        val request =
+            HttpRequest.GET<List<CampaignSummaryResult>>("/time-series/summary/campaign-status?timeOffset=$timeOffset")
+        coEvery {
+            widgetService.aggregateCampaignResult(any(), any(), any(), any(), any())
+        } returns campaignSummaryList
+
+        // when
+        val response: HttpResponse<List<CampaignSummaryResult>> = httpClient.toBlocking().exchange(
+            request,
+            Argument.listOf(CampaignSummaryResult::class.java)
+        )
+
+        // then
+        coVerifyOnce {
+            widgetService.aggregateCampaignResult(
+                tenant = Defaults.TENANT,
+                from = null,
+                until = null,
+                timeOffset = timeOffset,
+                aggregationTimeframe = null
+            )
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(campaignSummaryList)
+        }
+        confirmVerified(widgetService)
+    }
+
+    @Test
+    fun `should throw an exception for an unauthorised tenant`() {
+        // given
+        val request =
+            HttpRequest.GET<List<CampaignSummaryResult>>("/time-series/summary/campaign-status?timeOffset=1")
+        request.header("X-Tenant", "unknown-tenant-reference")
+
+        // when
+        assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, CampaignSummaryResult::class.java)
+        }
+
+        // then
+        coVerifyNever { widgetService.getFactoryStates("unknown-tenant-reference") }
+    }
+
+    @Test
+    fun `should throw an exception when from is greater than until dates`() {
+        // given
+        val until = Instant.now().minus(7, ChronoUnit.HOURS)
+        val from = Instant.now().minus(3, ChronoUnit.HOURS).minus(50, ChronoUnit.MINUTES)
+        val timeOffset = 0.30F
+        val timeframe = Duration.of(1, ChronoUnit.HOURS).minusMinutes(20)
+        val request =
+            HttpRequest.GET<List<CampaignSummaryResult>>("/time-series/summary/campaign-status?from=$from&until=$until&timeframe=$timeframe&timeOffset=$timeOffset")
+
+        // when
+        val exception = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, CampaignSummaryResult::class.java)
+        }.response
+
+        // then
+        assertThat(exception).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.getBody(String::class.java).get()
+            }.contains("""{"errors":["The start instant of retrieval should be before the end, please check from and until arguments"]}""")
+        }
+        coVerifyNever { widgetService.getFactoryStates(Defaults.TENANT) }
+    }
+
 }
+
+

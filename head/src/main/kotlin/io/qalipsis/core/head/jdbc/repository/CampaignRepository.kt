@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.jdbc.repository
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.annotation.Introspected
 import io.micronaut.data.annotation.Query
 import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.Page
@@ -29,6 +30,7 @@ import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -156,5 +158,28 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
                     (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)"""
     )
     suspend fun findInstantsAndDuration(tenant: String, campaignKeys: Collection<String>): CampaignsInstantsAndDuration?
+
+    /**
+     * Aggregates campaign results over specified time frame.
+     */
+    @Query(
+        """WITH buckets as (SELECT CAST (start AS TIMESTAMP WITH TIME ZONE), start + :timeframe::interval
+           AS endVal FROM generate_series(:startIdentifier::timestamp, :endIdentifier::timestamp- :timeframe::interval,
+           :timeframe::interval) AS start)
+           SELECT COUNT(*) as count, buckets.start AS "seriesStart", c.result as status
+           FROM campaign c RIGHT JOIN buckets ON c.start >= buckets.start AND c.start < buckets.endVal 
+            WHERE c.end IS NOT NULL AND EXISTS
+                                        (SELECT 1
+                                         FROM tenant 
+                                         WHERE id = c.tenant_id AND reference = :tenantReference
+                                        )
+           GROUP BY "seriesStart", c.result ORDER BY "seriesStart", c.result """
+    )
+    suspend fun aggregate(
+        tenantReference: String, startIdentifier: Instant, endIdentifier: Instant, timeframe: Duration
+    ): Collection<CampaignResultCount>
+
+    @Introspected
+    data class CampaignResultCount(val seriesStart: Instant, val status: ExecutionStatus, val count: Int)
 
 }

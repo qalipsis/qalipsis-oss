@@ -38,7 +38,6 @@ import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import jakarta.inject.Inject
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -215,13 +214,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
@@ -283,13 +282,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
@@ -355,13 +354,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
@@ -428,13 +427,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
@@ -511,13 +510,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
@@ -593,13 +592,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
@@ -653,7 +652,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory1.id,
@@ -665,7 +664,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()

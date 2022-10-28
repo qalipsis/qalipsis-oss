@@ -30,10 +30,10 @@
       <column name="id" type="BIGINT" valueSequenceNext="tenant_seq">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tenant_pk"/>
       </column>
-      <column name="version" type="TIMESTAMP">
+      <column name="version" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
-      <column name="creation" type="TIMESTAMP">
+      <column name="creation" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
       <column name="reference" type="VARCHAR(50)">
@@ -66,10 +66,10 @@
       <column name="id" type="BIGINT" valueSequenceNext="user_seq">
         <constraints nullable="false" primaryKey="true" primaryKeyName="user_pk"/>
       </column>
-      <column name="version" type="TIMESTAMP">
+      <column name="version" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
-      <column name="creation" type="TIMESTAMP">
+      <column name="creation" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
       <column name="username" type="VARCHAR(150)">

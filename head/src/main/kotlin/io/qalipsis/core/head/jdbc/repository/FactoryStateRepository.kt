@@ -20,15 +20,18 @@
 package io.qalipsis.core.head.jdbc.repository
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.annotation.Introspected
+import io.micronaut.data.annotation.Query
 import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
+import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import java.time.Instant
 
 /**
- * Micronaut data async repository to operate with factory_state entity
+ * Micronaut data async repository to operate with factory_state entity.
  *
  * @author rklymenko
  */
@@ -39,4 +42,43 @@ internal interface FactoryStateRepository : CoroutineCrudRepository<FactoryState
     suspend fun findTop1ByFactoryIdOrderByVersionDesc(factoryId: Long): List<FactoryStateEntity>
 
     suspend fun deleteByFactoryIdAndHealthTimestampBefore(factoryId: Long, before: Instant): Int
+
+    /**
+     * Counts the factories in their current states.
+     */
+    @Query(
+        """
+            SELECT COUNT(*) as count, state from (
+                SELECT
+                    factory_state.factory_id,
+                    CASE
+                       WHEN factory_state.state IN ('REGISTERED', 'IDLE') AND
+                            factory_state.health_timestamp < (now() - interval '1 minute') THEN 'UNHEALTHY'
+                       ELSE factory_state.state
+                   END as state
+                FROM factory_state
+                     INNER JOIN (
+                        SELECT fs.factory_id factory_id, MAX(fs.health_timestamp) as health_timestamp
+                                FROM factory_state fs
+                                WHERE EXISTS(
+                                              SELECT 1
+                                              FROM factory
+                                              WHERE fs.factory_id = id
+                                                AND EXISTS(
+                                                      SELECT 1
+                                                      FROM tenant
+                                                      where id = factory.tenant_id and reference = :tenantReference
+                                                  )
+                                          )
+                                GROUP BY fs.factory_id) AS last_states ON factory_state.factory_id = last_states.factory_id AND
+                                                                       factory_state.health_timestamp =
+                                                                       last_states.health_timestamp
+                ) as current_states
+            GROUP BY state
+        """
+    )
+    suspend fun findLatestFactoryStates(tenantReference: String): Collection<FactoryStateCount>
+
+    @Introspected
+    data class FactoryStateCount(val state: FactoryStateValue, val count: Int)
 }

@@ -299,7 +299,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = savedTenant2.id
                 )
             )
-            val scenario1 = repository.save(scenario.copy())
+            repository.save(scenario.copy())
             val scenario2 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
             val scenario3 = repository.save(scenario.copy(factoryId = factory1.id))
             repository.save(scenario.copy(factoryId = factory2.id, enabled = false))
@@ -328,7 +328,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             )
             val scenario1 = repository.save(scenario.copy())
-            val scenario2 = repository.save(scenario.copy(name = "another-name"))
+            repository.save(scenario.copy(name = "another-name"))
             val scenario3 = repository.save(scenario.copy(factoryId = factory.id))
 
             // when + then
@@ -435,31 +435,25 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                         factoryId = factory1.id,
                         healthTimestamp = Instant.now() - Duration.ofSeconds(110),
                         latency = 654,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     ),
                     FactoryStateEntity(
                         factoryId = factory2.id,
                         healthTimestamp = Instant.now(),
                         latency = 123,
-                        state = FactoryStateValue.HEALTHY
+                        state = FactoryStateValue.IDLE
                     )
                 )
             ).count()
 
-            val scenario1 =
-                repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 3, name = "one"))
+            repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 3, name = "one"))
             val scenario2 = repository.save(scenario.copy(factoryId = factory2.id, name = "four"))
-            val scenario3 = repository.save(scenario.copy(factoryId = factory1.id, name = "three"))
-            val scenario4 =
-                repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 5, name = "two"))
+            repository.save(scenario.copy(factoryId = factory1.id, name = "three"))
+            repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 5, name = "two"))
             val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
 
             // when + then
-            val result = repository.findAllActiveWithSorting("new", "default_minions_count").map { it.id }
-//            assertThat(result).containsOnly(scenario1.id, scenario3.id, scenario4.id)
-//            assertThat(result.get(0)).isEqualTo(scenario3.id)
-//            assertThat(result.get(1)).isEqualTo(scenario1.id)
-//            assertThat(result.get(2)).isEqualTo(scenario4.id)
+            repository.findAllActiveWithSorting("new", "default_minions_count").map { it.id }
             val result2 = repository.findAllActiveWithSorting("new-qalipsis", "name").map { it.id }
             assertThat(result2).containsOnly(scenario2.id, scenario5.id)
             assertThat(result2.get(0)).isEqualTo(scenario5.id)

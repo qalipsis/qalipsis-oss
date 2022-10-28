@@ -21,6 +21,7 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
@@ -52,6 +53,7 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+
 
 internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
@@ -869,4 +871,144 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 prop(CampaignsInstantsAndDuration::maxDurationSec).isNull()
             }
         }
+
+    @Test
+    fun `should retrieve the campaign results and their states`() = testDispatcherProvider.run {
+        // given
+        val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+        val tenant3 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-3", "test-tenant-3"))
+        val start = Instant.parse("2022-02-22T00:00:00.00Z")
+        val end = Instant.parse("2022-02-26T00:00:00.00Z")
+        val interval = Duration.ofHours(24)
+        val campaign = CampaignEntity(
+            key = "campaign-1",
+            name = "campaign 1",
+            scheduledMinions = 345,
+            configurer = savedUser.id,
+            tenantId = tenant.id,
+            start = Instant.parse("2022-02-25T00:00:00.00Z"),
+            result = ExecutionStatus.SUCCESSFUL,
+            end = Instant.parse("2022-03-26T23:12:11.21Z")
+        )
+        campaignRepository.saveAll(
+            listOf(
+                campaign,
+                campaign.copy(
+                    key = "campaign-2",
+                    name = "campaign 2",
+                    start = Instant.parse("2022-02-27T00:00:00.00Z"),
+                    result = ExecutionStatus.ABORTED //SHOULD NOT RETRIEVE BECAUSE OF DATE ABOVE START
+                ),
+                campaign.copy(
+                    key = "campaign-10",
+                    name = "campaign 10",
+                    start = Instant.parse("2022-02-24T11:25:30.00Z"),
+                    result = ExecutionStatus.SCHEDULED
+                ),
+                campaign.copy(
+                    key = "campaign-3",
+                    name = "campaign 3",
+                    start = Instant.parse("2021-03-22T11:25:30.00Z"),
+                    result = ExecutionStatus.WARNING //SHOULD NOT RETRIEVE BECAUSE OF YEAR BELOW START
+                ),
+                campaign.copy(
+                    key = "campaign-9",
+                    name = "campaign 9",
+                    start = Instant.parse("2022-02-24T00:00:00.00Z"),
+                    result = ExecutionStatus.SUCCESSFUL
+                ),
+                campaign.copy(
+                    key = "campaign-4",
+                    name = "campaign 4",
+                    start = Instant.parse("2022-02-24T14:25:30.00Z"),
+                    result = ExecutionStatus.SCHEDULED
+                ),
+                campaign.copy(
+                    key = "campaign-12",
+                    name = "campaign 12",
+                    start = Instant.parse("2022-03-24T01:01:01.00Z"),
+                    result = ExecutionStatus.WARNING //SHOULD NOT RETRIEVE BECAUSE OF MONTH ABOVE START
+                ),
+                campaign.copy(
+                    key = "campaign-5",
+                    name = "campaign 5",
+                    start = Instant.parse("2022-02-22T11:25:30.00Z"),
+                    tenantId = tenant3.id,
+                    result = ExecutionStatus.IN_PROGRESS //SHOULD NOT RETRIEVE BECAUSE OF DIFFERENT TENANT
+                ),
+                campaign.copy(
+                    key = "campaign-11",
+                    name = "campaign 11",
+                    start = Instant.parse("2022-02-22T01:01:01.00Z"),
+                    result = ExecutionStatus.WARNING
+                ),
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = ExecutionStatus.SUCCESSFUL //SHOULD NOT RETRIEVE BECAUSE OF DATE BEHIND START
+                ),
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = ExecutionStatus.FAILED
+                ),
+                campaign.copy(
+                    key = "campaign-8",
+                    name = "campaign 8",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = ExecutionStatus.FAILED
+                ),
+                campaign.copy(
+                    key = "campaign-13",
+                    name = "campaign 13",
+                    start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                    result = ExecutionStatus.IN_PROGRESS,
+                    end = null //SHOULD NOT RETRIEVE BECAUSE CAMPAIGN HAS NOT ENDED YET
+                )
+            )
+        ).count()
+
+        // when
+        val fetched = campaignRepository.aggregate(
+            "my-tenant-2",
+            start,
+            end,
+            interval
+        )
+
+        // then
+        assertThat(fetched).all {
+            hasSize(5)
+            containsExactlyInAnyOrder(
+                CampaignRepository.CampaignResultCount(
+                    seriesStart = Instant.parse("2022-02-22T00:00:00.00Z"),
+                    status = ExecutionStatus.WARNING,
+                    count = 1
+                ),
+                CampaignRepository.CampaignResultCount(
+                    seriesStart = Instant.parse("2022-02-24T00:00:00.00Z"),
+                    status = ExecutionStatus.SCHEDULED,
+                    count = 2
+                ),
+                CampaignRepository.CampaignResultCount(
+                    seriesStart = Instant.parse("2022-02-24T00:00:00.00Z"),
+                    status = ExecutionStatus.SUCCESSFUL,
+                    count = 1
+                ),
+                CampaignRepository.CampaignResultCount(
+                    seriesStart = Instant.parse("2022-02-25T00:00:00.00Z"),
+                    status = ExecutionStatus.FAILED,
+                    count = 2
+                ),
+                CampaignRepository.CampaignResultCount(
+                    seriesStart = Instant.parse("2022-02-25T00:00:00.00Z"),
+                    status = ExecutionStatus.SUCCESSFUL,
+                    count = 1
+                )
+            )
+        }
+    }
 }

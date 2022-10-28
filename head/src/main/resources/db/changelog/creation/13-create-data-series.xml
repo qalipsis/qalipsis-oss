@@ -33,7 +33,7 @@
       <column name="reference" type="VARCHAR(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="version" type="TIMESTAMP">
+      <column name="version" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
       <column name="tenant_id" type="BIGINT">
