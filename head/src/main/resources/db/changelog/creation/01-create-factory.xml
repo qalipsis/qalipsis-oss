@@ -30,7 +30,7 @@
       <column name="id" type="BIGINT" valueSequenceNext="factory_seq">
         <constraints nullable="false" primaryKey="true" primaryKeyName="factory_pk"/>
       </column>
-      <column name="version" type="TIMESTAMP">
+      <column name="version" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
       <column name="tenant_id" type="BIGINT">
@@ -43,7 +43,7 @@
       <column name="registration_node_id" type="varchar(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="registration_timestamp" type="timestamp">
+      <column name="registration_timestamp" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
       <column name="unicast_channel" type="varchar(50)">
