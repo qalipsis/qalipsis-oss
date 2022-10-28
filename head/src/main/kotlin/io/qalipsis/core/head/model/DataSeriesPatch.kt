@@ -97,7 +97,7 @@ internal class DisplayNameDataSeriesPatch(
     }
 
     companion object {
-        const val TYPE = "displayName"
+        const val TYPE = "display-name"
     }
 }
 
@@ -122,7 +122,7 @@ internal class SharingModeDataSeriesPatch(
     }
 
     companion object {
-        const val TYPE = "sharingMode"
+        const val TYPE = "sharing-mode"
     }
 }
 
@@ -202,7 +202,34 @@ internal class FieldNameDataSeriesPatch(
     }
 
     companion object {
-        const val TYPE = "fieldName"
+        const val TYPE = "field-name"
+    }
+}
+
+/**
+ * Implementation of the [DataSeriesPatch] interface, that is in charge of changing fieldName property of a data series
+ */
+@Introspected
+@Schema(title = "Patch to update the name of the used meter/event")
+internal class ValueNameDataSeriesPatch(
+    @field:NotBlank
+    @field:Size(min = 3, max = 100)
+    val valueName: String
+) : DataSeriesPatch {
+
+    override val type: String = TYPE
+
+    override fun apply(dataSeries: DataSeriesEntity): Boolean {
+        return if (dataSeries.valueName != valueName.trim()) {
+            dataSeries.valueName = valueName.trim()
+            true
+        } else {
+            false
+        }
+    }
+
+    companion object {
+        const val TYPE = "value-name"
     }
 }
 
@@ -227,7 +254,7 @@ internal class AggregationOperationDataSeriesPatch(
     }
 
     companion object {
-        const val TYPE = "aggregationOperation"
+        const val TYPE = "aggregation"
     }
 }
 
@@ -253,7 +280,7 @@ internal class TimeframeUnitDataSeriesPatch(
     }
 
     companion object {
-        const val TYPE = "timeframeUnit"
+        const val TYPE = "timeframe"
     }
 }
 

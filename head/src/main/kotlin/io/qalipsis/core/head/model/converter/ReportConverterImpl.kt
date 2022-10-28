@@ -40,7 +40,6 @@ import jakarta.inject.Singleton
 internal class ReportConverterImpl(
     private val campaignRepository: CampaignRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository,
-    private val dataSeriesConverter: DataSeriesConverter,
     private val reportDataComponentRepository: ReportDataComponentRepository,
     private val userRepository: UserRepository
 ) : ReportConverter {
@@ -93,9 +92,9 @@ internal class ReportConverterImpl(
      */
     suspend fun toModel(dataComponentEntity: ReportDataComponentEntity): DataComponent {
         return if (dataComponentEntity.type == Diagram.TYPE) {
-            Diagram(datas = dataComponentEntity.dataSeries.map { dataSeriesConverter.convertToModel(it) })
+            Diagram(datas = dataComponentEntity.dataSeries.map { it.toModel("") })
         } else {
-            DataTable(datas = dataComponentEntity.dataSeries.map { dataSeriesConverter.convertToModel(it) })
+            DataTable(datas = dataComponentEntity.dataSeries.map { it.toModel("") })
         }
     }
 }

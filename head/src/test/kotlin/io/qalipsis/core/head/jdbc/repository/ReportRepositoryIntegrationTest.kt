@@ -174,7 +174,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name_${reportDataComponentEntity.type}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -342,7 +343,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name_${reportDataComponentEntity.type}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -406,14 +408,16 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name-update",
-                    dataType = DataType.EVENTS
+                    dataType = DataType.EVENTS,
+                    valueName = "my-value",
                 ),
                 DataSeriesEntity(
                     reference = "my-series-update-2",
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name-update-2",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             )
         ).toList()
@@ -528,7 +532,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name_${index - 1}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -607,7 +612,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name_${index - 1}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -1157,7 +1163,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-series-name_${reportDataComponentEntity.type}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -1208,7 +1215,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-series-name_${reportDataComponentEntity.type}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -1234,7 +1242,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "${reportDataComponentEntity.type}my-series",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -1286,7 +1295,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-series-name_${reportDataComponentEntity.type}",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()
@@ -1312,7 +1322,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "${reportDataComponentEntity.type}my-series",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             }
         ).toList()

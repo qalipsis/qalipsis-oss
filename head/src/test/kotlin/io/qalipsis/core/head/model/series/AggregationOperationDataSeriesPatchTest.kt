@@ -44,6 +44,7 @@ internal class AggregationOperationDataSeriesPatchTest {
             displayName = "the-name",
             aggregationOperation = QueryAggregationOperator.AVERAGE,
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
@@ -55,7 +56,8 @@ internal class AggregationOperationDataSeriesPatchTest {
 
         // then
         assertThat(result).isTrue()
-        assertThat(dataSeriesEntity).prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::aggregationOperation)
+            .isEqualTo(QueryAggregationOperator.COUNT)
     }
 
     @Test
@@ -68,6 +70,7 @@ internal class AggregationOperationDataSeriesPatchTest {
             displayName = "the-name",
             aggregationOperation = QueryAggregationOperator.AVERAGE,
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )

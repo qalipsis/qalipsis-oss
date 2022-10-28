@@ -39,6 +39,8 @@ interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
 
     suspend fun findIdByUsername(username: String): Long?
 
+    suspend fun findAllByIdIn(ids: Collection<Long>): Collection<UserEntity>
+
     suspend fun findUsernameById(id: Long): String?
 
 }

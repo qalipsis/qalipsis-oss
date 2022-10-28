@@ -44,6 +44,7 @@ internal class FieldNameDataSeriesPatchTest {
             color = "color",
             fieldName = "field",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
@@ -59,7 +60,7 @@ internal class FieldNameDataSeriesPatchTest {
     }
 
     @Test
-    internal fun `should not update the data series color when equal`() {
+    internal fun `should not update the data series fieldName when equal`() {
         // given
         val dataSeriesEntity = DataSeriesEntity(
             reference = "my-data-series",
@@ -69,6 +70,7 @@ internal class FieldNameDataSeriesPatchTest {
             color = "the-color",
             fieldName = "field",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )

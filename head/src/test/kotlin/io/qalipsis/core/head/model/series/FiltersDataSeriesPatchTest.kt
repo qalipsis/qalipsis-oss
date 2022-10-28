@@ -49,6 +49,7 @@ internal class FiltersDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = filters
         )
         val patch = FiltersDataSeriesPatch(newFilters)
@@ -79,6 +80,7 @@ internal class FiltersDataSeriesPatchTest {
             displayName = "the-name",
             aggregationOperation = QueryAggregationOperator.AVERAGE,
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value"))
         )
         val patch = FiltersDataSeriesPatch(filters)

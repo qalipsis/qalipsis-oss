@@ -53,6 +53,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             color = "#FF761C",
             filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
             fieldName = "the-field",
@@ -73,7 +74,8 @@ internal class DataSeriesValidationIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "the-name",
-            dataType = DataType.EVENTS
+            dataType = DataType.EVENTS,
+                    valueName = "the-value-name",
         )
 
         // when
@@ -88,7 +90,8 @@ internal class DataSeriesValidationIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "   ",
-            dataType = DataType.EVENTS
+            dataType = DataType.EVENTS,
+            valueName = "the-value-name",
         )
 
         // when
@@ -109,7 +112,8 @@ internal class DataSeriesValidationIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "aa",
-            dataType = DataType.EVENTS
+            dataType = DataType.EVENTS,
+            valueName = "the-value-name",
         )
 
         // when
@@ -130,7 +134,8 @@ internal class DataSeriesValidationIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "a".repeat(201),
-            dataType = DataType.EVENTS
+            dataType = DataType.EVENTS,
+            valueName = "the-value-name",
         )
 
         // when
@@ -152,6 +157,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             color = "12345abcdef"
         )
 
@@ -186,6 +192,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             fieldName = "a".repeat(61)
         )
 
@@ -208,6 +215,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             timeframeUnit = Duration.ofSeconds(-1)
         )
 
@@ -242,6 +250,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             displayFormat = "a".repeat(21),
         )
 
@@ -265,6 +274,7 @@ internal class DataSeriesValidationIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(DataSeriesFilter("", QueryClauseOperator.IS_IN, "A,B")),
         )
 

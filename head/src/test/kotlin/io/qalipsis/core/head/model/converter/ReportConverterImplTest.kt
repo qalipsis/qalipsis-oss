@@ -23,9 +23,9 @@ import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
@@ -51,7 +51,7 @@ import java.time.Instant
  * @author Joël Valère
  */
 @WithMockk
-// FIXME Improve the verification of the mocks: add real values on verification and use confirmedVerified instead of coVerifiyNever.
+// FIXME Improve the verification of the mocks: add real values on verification and use confirmedVerified instead of coVerifyNever.
 internal class ReportConverterImplTest {
 
     @JvmField
@@ -69,9 +69,6 @@ internal class ReportConverterImplTest {
 
     @MockK
     private lateinit var reportDataComponentRepository: ReportDataComponentRepository
-
-    @RelaxedMockK
-    private lateinit var dataSeriesConverter: DataSeriesConverter
 
     @InjectMockKs
     private lateinit var reportConverterImpl: ReportConverterImpl
@@ -119,7 +116,6 @@ internal class ReportConverterImplTest {
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             campaignScenarioRepository.findNameByCampaignKeys(any(), any())
-            dataSeriesConverter.convertToModel(any())
         }
     }
 
@@ -129,9 +125,15 @@ internal class ReportConverterImplTest {
         val dataSeries1 = relaxedMockk<DataSeries>()
         val dataSeries2 = relaxedMockk<DataSeries>()
         val dataSeries3 = relaxedMockk<DataSeries>()
-        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
-        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
-        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity>()
+        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries1
+        }
+        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries2
+        }
+        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries3
+        }
         val version = Instant.now().minusMillis(1)
         coEvery { reportDataComponentRepository.findByIdInOrderById(any()) } returns listOf(
             ReportDataComponentEntity(
@@ -148,7 +150,6 @@ internal class ReportConverterImplTest {
             )
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
-        coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2 andThen dataSeries3
         coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
             "campaign-key1",
             "campaign-key2",
@@ -215,9 +216,6 @@ internal class ReportConverterImplTest {
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(456L)
-            dataSeriesConverter.convertToModel(any())
-            dataSeriesConverter.convertToModel(any())
-            dataSeriesConverter.convertToModel(any())
         }
         coVerifyNever {
             campaignScenarioRepository.findNameByCampaignKeys(any(), any())
@@ -278,7 +276,6 @@ internal class ReportConverterImplTest {
         coVerifyNever {
             reportDataComponentRepository.findByIdInOrderById(any())
             campaignScenarioRepository.findNameByCampaignKeys(any(), any())
-            dataSeriesConverter.convertToModel(any())
         }
     }
 
@@ -288,9 +285,15 @@ internal class ReportConverterImplTest {
         val dataSeries1 = relaxedMockk<DataSeries>()
         val dataSeries2 = relaxedMockk<DataSeries>()
         val dataSeries3 = relaxedMockk<DataSeries>()
-        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
-        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
-        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity>()
+        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries1
+        }
+        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries2
+        }
+        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries3
+        }
         val version = Instant.now().minusMillis(1)
         coEvery { reportDataComponentRepository.findByIdInOrderById(any()) } returns listOf(
             ReportDataComponentEntity(
@@ -307,7 +310,6 @@ internal class ReportConverterImplTest {
             )
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
-        coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2 andThen dataSeries3
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
         } returns listOf("scenario-1", "scenario-2", "scenario-3")
@@ -364,9 +366,6 @@ internal class ReportConverterImplTest {
             reportDataComponentRepository.findByIdInOrderById(any())
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
             userRepository.findUsernameById(456L)
-            dataSeriesConverter.convertToModel(any())
-            dataSeriesConverter.convertToModel(any())
-            dataSeriesConverter.convertToModel(any())
         }
         coVerifyNever {
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
@@ -380,9 +379,15 @@ internal class ReportConverterImplTest {
         val dataSeries1 = relaxedMockk<DataSeries>()
         val dataSeries2 = relaxedMockk<DataSeries>()
         val dataSeries3 = relaxedMockk<DataSeries>()
-        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
-        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
-        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity>()
+        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries1
+        }
+        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries2
+        }
+        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries3
+        }
         val version = Instant.now().minusMillis(1)
         coEvery { reportDataComponentRepository.findByIdInOrderById(any()) } returns listOf(
             ReportDataComponentEntity(
@@ -399,7 +404,6 @@ internal class ReportConverterImplTest {
             )
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
-        coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2 andThen dataSeries3
         coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
             "campaign-key1",
             "campaign-key2",
@@ -465,9 +469,6 @@ internal class ReportConverterImplTest {
             campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
             campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             userRepository.findUsernameById(456L)
-            dataSeriesConverter.convertToModel(any())
-            dataSeriesConverter.convertToModel(any())
-            dataSeriesConverter.convertToModel(any())
         }
         coVerifyNever {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())

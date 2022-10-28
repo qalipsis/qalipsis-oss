@@ -27,16 +27,18 @@ import io.micronaut.http.exceptions.HttpStatusException
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClause
+import io.qalipsis.api.query.QueryClauseOperator.IS
 import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
+import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
+import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
-import io.qalipsis.core.head.model.converter.DataSeriesConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import io.qalipsis.api.query.Page as QalipsisPage
@@ -53,8 +55,7 @@ internal class DataSeriesServiceImpl(
     private val tenantRepository: TenantRepository,
     private val userRepository: UserRepository,
     private val idGenerator: IdGenerator,
-    private val dataProvider: DataProvider,
-    private val dataSeriesConverter: DataSeriesConverter
+    private val dataProvider: DataProvider
 ) : DataSeriesService {
 
     override suspend fun get(tenant: String, username: String, reference: String): DataSeries {
@@ -82,6 +83,7 @@ internal class DataSeriesServiceImpl(
                 displayName = dataSeries.displayName,
                 sharingMode = dataSeries.sharingMode,
                 dataType = dataSeries.dataType,
+                valueName = dataSeries.valueName,
                 color = dataSeries.color?.uppercase(),
                 filters = dataSeries.filters.map { it.toEntity() },
                 fieldName = dataSeries.fieldName,
@@ -90,7 +92,7 @@ internal class DataSeriesServiceImpl(
                 displayFormat = dataSeries.displayFormat,
                 query = dataProvider.createQuery(
                     tenant, dataSeries.dataType, QueryDescription(
-                        filters = dataSeries.filters.map { QueryClause(it.name, it.operator, it.value) },
+                        filters = convertFilters(dataSeries.filters, dataSeries.valueName),
                         fieldName = dataSeries.fieldName,
                         aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT,
                         timeframeUnit = dataSeries.timeframeUnit
@@ -99,6 +101,10 @@ internal class DataSeriesServiceImpl(
             )
         )
         return DataSeries(createdDataSeries, creator)
+    }
+
+    private fun convertFilters(filters: Collection<DataSeriesFilter>, valueName: String): Collection<QueryClause> {
+        return filters.map { QueryClause("tag.${it.name}", it.operator, it.value) } + QueryClause("name", IS, valueName)
     }
 
     override suspend fun update(
@@ -116,7 +122,7 @@ internal class DataSeriesServiceImpl(
         val updatedDataSeries = if (dataSeriesWasUpdated) {
             dataSeriesEntity.query = dataProvider.createQuery(
                 tenant, dataSeriesEntity.dataType, QueryDescription(
-                    filters = dataSeriesEntity.filters.map { QueryClause(it.name, it.operator, it.value) },
+                    filters = convertFiltersEntity(dataSeriesEntity.filters, dataSeriesEntity.valueName),
                     fieldName = dataSeriesEntity.fieldName,
                     aggregationOperation = dataSeriesEntity.aggregationOperation,
                     timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration
@@ -137,6 +143,13 @@ internal class DataSeriesServiceImpl(
             dataSeriesEntity
         }
         return DataSeries(updatedDataSeries, creatorName)
+    }
+
+    private fun convertFiltersEntity(
+        filters: Collection<DataSeriesFilterEntity>,
+        valueName: String
+    ): Collection<QueryClause> {
+        return filters.map { QueryClause("tag.${it.name}", it.operator, it.value) } + QueryClause("name", IS, valueName)
     }
 
     override suspend fun delete(tenant: String, username: String, reference: String) {
@@ -168,11 +181,17 @@ internal class DataSeriesServiceImpl(
         } else {
             dataSeriesRepository.searchDataSeries(tenant, username, pageable)
         }
+        val creatorsIds = dataSeriesEntityPage.content.map { it.creatorId }.toSet()
+        val creatorsNamesByIds = if (creatorsIds.isNotEmpty()) {
+            userRepository.findAllByIdIn(creatorsIds).associate { it.id to it.displayName }
+        } else {
+            emptyMap()
+        }
         return QalipsisPage(
             page = dataSeriesEntityPage.pageNumber,
             totalPages = dataSeriesEntityPage.totalPages,
             totalElements = dataSeriesEntityPage.totalSize,
-            elements = dataSeriesEntityPage.content.map { dataSeriesConverter.convertToModel(it) }
+            elements = dataSeriesEntityPage.content.map { it.toModel(creatorsNamesByIds[it.creatorId] ?: "") }
         )
     }
 

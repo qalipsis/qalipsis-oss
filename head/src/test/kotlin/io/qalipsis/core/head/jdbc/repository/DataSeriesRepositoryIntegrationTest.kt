@@ -78,6 +78,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             creatorId = -1,
             displayName = "my-name",
             dataType = DataType.METERS,
+            valueName = "my-value",
             color = "#FFFFFF",
             filters = setOf(DataSeriesFilterEntity("minionsCount", QueryClauseOperator.IS, "1000")),
             timeframeUnitMs = 10_000L,
@@ -105,7 +106,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = tenant.id,
                 creatorId = creator.id,
                 displayName = "my-name",
-                dataType = DataType.METERS
+                dataType = DataType.METERS,
+                valueName = "my-value",
             )
         )
 
@@ -165,7 +167,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = tenant.id,
                 creatorId = creator.id,
                 displayName = "my-name",
-                dataType = DataType.METERS
+                dataType = DataType.METERS,
+                valueName = "my-value",
             )
         )
 
@@ -177,7 +180,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "my-name",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             )
         }
@@ -197,7 +201,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = tenant.id,
                 creatorId = creator.id,
                 displayName = "my-name",
-                dataType = DataType.METERS
+                dataType = DataType.METERS,
+                valueName = "my-value",
             )
         )
 
@@ -209,7 +214,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     displayName = "other-name",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             )
         }
@@ -230,7 +236,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = tenant1.id,
                 creatorId = creator.id,
                 displayName = "my-name",
-                dataType = DataType.METERS
+                dataType = DataType.METERS,
+                valueName = "my-value",
             )
         )
 
@@ -242,7 +249,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     tenantId = tenant2.id,
                     creatorId = creator.id,
                     displayName = "my-name",
-                    dataType = DataType.METERS
+                    dataType = DataType.METERS,
+                    valueName = "my-value",
                 )
             )
         }

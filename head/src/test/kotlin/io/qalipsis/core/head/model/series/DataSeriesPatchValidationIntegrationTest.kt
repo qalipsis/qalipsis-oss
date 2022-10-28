@@ -34,6 +34,7 @@ import io.qalipsis.core.head.model.DisplayFormatDataSeriesPatch
 import io.qalipsis.core.head.model.DisplayNameDataSeriesPatch
 import io.qalipsis.core.head.model.FieldNameDataSeriesPatch
 import io.qalipsis.core.head.model.TimeframeUnitDataSeriesPatch
+import io.qalipsis.core.head.model.ValueNameDataSeriesPatch
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -214,6 +215,59 @@ internal class DataSeriesPatchValidationIntegrationTest {
             }
         }
     }
+
+    @Nested
+    inner class `Value name` {
+
+        @Test
+        internal fun `should accept valid value name patch`() {
+            // given
+            val patch = ValueNameDataSeriesPatch("the-name")
+
+            // when
+            val violations = validator.validate(patch)
+
+            // then
+            assertThat(violations).isEmpty()
+        }
+
+        @Test
+        internal fun `should deny a blank field name`() {
+            // given
+            val patch = ValueNameDataSeriesPatch("   ")
+
+            // when
+            val violations = validator.validate(patch)
+
+            // then
+            assertThat(violations).all {
+                hasSize(1)
+                transform { it.first() }.all {
+                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("valueName") }
+                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+                }
+            }
+        }
+
+        @Test
+        internal fun `should deny a long field name`() {
+            // given
+            val patch = ValueNameDataSeriesPatch("a".repeat(101))
+
+            // when
+            val violations = validator.validate(patch)
+
+            // then
+            assertThat(violations).all {
+                hasSize(1)
+                transform { it.first() }.all {
+                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("valueName") }
+                    prop(ConstraintViolation<*>::getMessage).isEqualTo("size must be between 3 and 100")
+                }
+            }
+        }
+    }
+
 
     @Nested
     inner class `Time Frame Unit` {

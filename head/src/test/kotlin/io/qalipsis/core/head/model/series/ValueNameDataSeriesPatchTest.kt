@@ -27,14 +27,15 @@ import assertk.assertions.prop
 import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
-import io.qalipsis.core.head.model.ColorDataSeriesPatch
+import io.qalipsis.core.head.model.FieldNameDataSeriesPatch
+import io.qalipsis.core.head.model.ValueNameDataSeriesPatch
 import io.qalipsis.core.head.report.DataType
 import org.junit.jupiter.api.Test
 
-internal class ColorDataSeriesPatchTest {
+internal class ValueNameDataSeriesPatchTest {
 
     @Test
-    internal fun `should update the data series color when different`() {
+    internal fun `should update the data series fieldName when different`() {
         // given
         val dataSeriesEntity = DataSeriesEntity(
             reference = "my-data-series",
@@ -42,20 +43,21 @@ internal class ColorDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             color = "color",
+            fieldName = "field",
             dataType = DataType.EVENTS,
             valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
-        val patch = ColorDataSeriesPatch("new-color")
+        val patch = ValueNameDataSeriesPatch("new-value")
 
         // when
         val result = patch.apply(dataSeriesEntity)
 
         // then
         assertThat(result).isTrue()
-        assertThat(dataSeriesEntity).prop(DataSeriesEntity::color).isEqualTo("NEW-COLOR")
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::valueName).isEqualTo("new-value")
     }
 
     @Test
@@ -66,20 +68,21 @@ internal class ColorDataSeriesPatchTest {
             tenantId = 123,
             creatorId = 432,
             displayName = "the-name",
-            color = "THE-COLOR",
+            color = "the-color",
+            fieldName = "field",
             dataType = DataType.EVENTS,
             valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
-        val patch = ColorDataSeriesPatch("the-color")
+        val patch = FieldNameDataSeriesPatch("field")
 
         // when
         val result = patch.apply(dataSeriesEntity)
 
         // then
         assertThat(result).isFalse()
-        assertThat(dataSeriesEntity).prop(DataSeriesEntity::color).isEqualTo("THE-COLOR")
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::fieldName).isEqualTo("field")
     }
 }

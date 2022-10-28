@@ -45,6 +45,7 @@ internal class TimeframeUnitDataSeriesPatchTest {
             color = "color",
             fieldName = "field",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             ),
@@ -71,6 +72,7 @@ internal class TimeframeUnitDataSeriesPatchTest {
             color = "the-color",
             fieldName = "field",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             ),

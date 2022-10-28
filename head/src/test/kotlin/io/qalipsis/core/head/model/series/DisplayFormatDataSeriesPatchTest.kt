@@ -42,6 +42,7 @@ internal class DisplayFormatDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             ),
@@ -66,6 +67,7 @@ internal class DisplayFormatDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             ),

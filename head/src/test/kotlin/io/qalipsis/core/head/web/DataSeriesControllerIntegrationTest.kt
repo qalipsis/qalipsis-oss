@@ -2,7 +2,7 @@
  * QALIPSIS
  * Copyright (C) 2022 AERIS IT Solutions GmbH
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software: you can #ff0000istribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -98,6 +98,7 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries = DataSeriesCreationRequest(
             displayName = "Time to response for complex query",
             dataType = EVENTS,
+            valueName = "my-event",
             color = "#ff761c",
             filters = setOf(DataSeriesFilter("step", IS, "http-post-complex-query")),
             fieldName = "duration",
@@ -108,6 +109,7 @@ internal class DataSeriesControllerIntegrationTest {
         val createdDataSeries = DataSeries(
             displayName = "Time to response for complex query",
             dataType = EVENTS,
+            valueName = "my-other-event",
             color = "#ff761c",
             filters = setOf(DataSeriesFilter("step", IS, "http-post-complex-query")),
             fieldName = "duration",
@@ -137,7 +139,7 @@ internal class DataSeriesControllerIntegrationTest {
     @Test
     fun `should fail when creating an invalid data series`() {
         // given
-        val dataSeries = DataSeries(displayName = "", dataType = DataType.EVENTS)
+        val dataSeries = DataSeries(displayName = "", dataType = DataType.EVENTS, valueName = "my-event")
         val createDataSeriesRequest = HttpRequest.POST("/", dataSeries)
 
         // when
@@ -164,6 +166,7 @@ internal class DataSeriesControllerIntegrationTest {
         val updatedDataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             color = "the-color",
             filters = setOf(
                 DataSeriesFilter("name", QueryClauseOperator.IS, "value")
@@ -225,6 +228,7 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             filters = setOf(
                 DataSeriesFilter("name", QueryClauseOperator.IS, "value")
             )
@@ -474,7 +478,8 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "NewData",
             dataType = DataType.EVENTS,
-            color = "Red",
+            valueName = "my-event",
+            color = "#ff0000",
             filters = emptySet(),
             fieldName = "dataSeriesFieldName",
             aggregationOperation = null,
@@ -551,7 +556,8 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "NewData",
             dataType = DataType.EVENTS,
-            color = "Red",
+            valueName = "my-event",
+            color = "#ff0000",
             filters = emptySet(),
             fieldName = "filter-2",
             aggregationOperation = null,
@@ -560,6 +566,7 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries2 = DataSeries(
             displayName = "New-Data2",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             color = "#FFF",
             filters = emptySet(),
             fieldName = "foo",
@@ -605,7 +612,8 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries = DataSeries(
             displayName = "NewData",
             dataType = DataType.EVENTS,
-            color = "Red",
+            valueName = "my-event",
+            color = "#ff0000",
             filters = emptySet(),
             fieldName = "filter-2",
             aggregationOperation = null,
@@ -614,6 +622,7 @@ internal class DataSeriesControllerIntegrationTest {
         val dataSeries2 = DataSeries(
             displayName = "New-Data2",
             dataType = DataType.EVENTS,
+            valueName = "my-other-event",
             color = "Blue",
             filters = emptySet(),
             fieldName = "foo",

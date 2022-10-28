@@ -40,7 +40,6 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.query.QueryAggregationOperator
@@ -56,7 +55,6 @@ import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
-import io.qalipsis.core.head.model.converter.DataSeriesConverter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
@@ -92,9 +90,6 @@ internal class DataSeriesServiceImplTest {
     @InjectMockKs
     private lateinit var dataSeriesService: DataSeriesServiceImpl
 
-    @RelaxedMockK
-    private lateinit var dataSeriesConverter: DataSeriesConverter
-
     @Test
     internal fun `should create the data series with the default operation and no field name`() =
         testDispatcherProvider.runTest {
@@ -115,6 +110,7 @@ internal class DataSeriesServiceImplTest {
             val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 color = "#ff761c",
                 filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = null,
@@ -133,6 +129,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayName).isEqualTo("the-name")
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+                prop(DataSeries::valueName).isEqualTo("my-event")
                 prop(DataSeries::color).isEqualTo("#FF761C")
                 prop(DataSeries::filters).isEqualTo(
                     setOf(
@@ -153,7 +150,10 @@ internal class DataSeriesServiceImplTest {
                 dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
                     assertThat(it).isDataClassEqualTo(
                         QueryDescription(
-                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            filters = listOf(
+                                QueryClause("tag.field-1", QueryClauseOperator.IS_IN, "A,B"),
+                                QueryClause("name", QueryClauseOperator.IS, "my-event")
+                            ),
                             fieldName = null,
                             aggregationOperation = QueryAggregationOperator.COUNT,
                             timeframeUnit = Duration.ofSeconds(2)
@@ -206,6 +206,7 @@ internal class DataSeriesServiceImplTest {
             val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 color = "#ff761c",
                 filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = "the field",
@@ -224,6 +225,8 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayName).isEqualTo("the-name")
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+                prop(DataSeries::valueName).isEqualTo("my-event")
+                prop(DataSeries::valueName).isEqualTo("my-event")
                 prop(DataSeries::color).isEqualTo("#FF761C")
                 prop(DataSeries::filters).isEqualTo(
                     setOf(
@@ -244,7 +247,10 @@ internal class DataSeriesServiceImplTest {
                 dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
                     assertThat(it).isDataClassEqualTo(
                         QueryDescription(
-                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            filters = listOf(
+                                QueryClause("tag.field-1", QueryClauseOperator.IS_IN, "A,B"),
+                                QueryClause("name", QueryClauseOperator.IS, "my-event")
+                            ),
                             fieldName = "the field",
                             aggregationOperation = QueryAggregationOperator.AVERAGE,
                             timeframeUnit = Duration.ofSeconds(2)
@@ -260,6 +266,7 @@ internal class DataSeriesServiceImplTest {
                         prop(DataSeriesEntity::displayName).isEqualTo("the-name")
                         prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
                         prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+                        prop(DataSeriesEntity::valueName).isEqualTo("my-event")
                         prop(DataSeriesEntity::color).isEqualTo("#FF761C")
                         prop(DataSeriesEntity::filters).containsOnly(
                             DataSeriesFilterEntity(
@@ -296,6 +303,7 @@ internal class DataSeriesServiceImplTest {
             val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 color = "#ff761c",
                 filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = null,
@@ -324,6 +332,7 @@ internal class DataSeriesServiceImplTest {
             val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 color = "#ff761c",
                 filters = setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")),
                 fieldName = null,
@@ -353,6 +362,7 @@ internal class DataSeriesServiceImplTest {
                 creatorId = 3912L,
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 sharingMode = SharingMode.READONLY,
                 color = "#FF761C",
                 filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -374,6 +384,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayName).isEqualTo("the-name")
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+                prop(DataSeries::valueName).isEqualTo("my-event")
                 prop(DataSeries::color).isEqualTo("#FF761C")
                 prop(DataSeries::filters).isEqualTo(
                     setOf(
@@ -405,6 +416,7 @@ internal class DataSeriesServiceImplTest {
             creatorId = 3912L,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
             filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -426,6 +438,7 @@ internal class DataSeriesServiceImplTest {
             prop(DataSeries::displayName).isEqualTo("the-name")
             prop(DataSeries::sharingMode).isEqualTo(SharingMode.NONE)
             prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+            prop(DataSeries::valueName).isEqualTo("my-event")
             prop(DataSeries::color).isEqualTo("#FF761C")
             prop(DataSeries::filters).isEqualTo(setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B")))
             prop(DataSeries::fieldName).isEqualTo("the field")
@@ -449,6 +462,7 @@ internal class DataSeriesServiceImplTest {
             creatorId = 3912L,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
             filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -490,6 +504,7 @@ internal class DataSeriesServiceImplTest {
                 creatorId = 3912L,
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 sharingMode = SharingMode.WRITE,
                 color = "#FF761C",
                 filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -524,6 +539,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayName).isEqualTo("the-name")
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.WRITE)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+                prop(DataSeries::valueName).isEqualTo("my-event")
                 prop(DataSeries::color).isEqualTo("#FF761C")
                 prop(DataSeries::filters).isEqualTo(
                     setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B"))
@@ -542,7 +558,10 @@ internal class DataSeriesServiceImplTest {
                 dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
                     assertThat(it).isDataClassEqualTo(
                         QueryDescription(
-                            filters = listOf(QueryClause("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                            filters = listOf(
+                                QueryClause("tag.field-1", QueryClauseOperator.IS_IN, "A,B"),
+                                QueryClause("name", QueryClauseOperator.IS, "my-event")
+                            ),
                             fieldName = "the field",
                             aggregationOperation = QueryAggregationOperator.AVERAGE,
                             timeframeUnit = Duration.ofSeconds(2)
@@ -566,6 +585,7 @@ internal class DataSeriesServiceImplTest {
                 creatorId = 3912L,
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 sharingMode = SharingMode.WRITE,
                 color = "#FF761C",
                 filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -600,6 +620,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayName).isEqualTo("the-name")
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.WRITE)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+                prop(DataSeries::valueName).isEqualTo("my-event")
                 prop(DataSeries::color).isEqualTo("#FF761C")
                 prop(DataSeries::filters).isEqualTo(
                     setOf(DataSeriesFilter("field-1", QueryClauseOperator.IS_IN, "A,B"))
@@ -640,6 +661,7 @@ internal class DataSeriesServiceImplTest {
                 creatorId = 3912L,
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 sharingMode = SharingMode.NONE,
                 color = "#FF761C",
                 filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -674,6 +696,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::displayName).isEqualTo("the-name")
                 prop(DataSeries::sharingMode).isEqualTo(SharingMode.NONE)
                 prop(DataSeries::dataType).isEqualTo(DataType.EVENTS)
+                prop(DataSeries::valueName).isEqualTo("my-event")
                 prop(DataSeries::color).isEqualTo("#FF761C")
                 prop(DataSeries::filters).isEqualTo(
                     setOf(
@@ -715,6 +738,7 @@ internal class DataSeriesServiceImplTest {
             creatorId = 3912L,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             sharingMode = SharingMode.READONLY,
             color = "#FF761C",
             filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -756,6 +780,7 @@ internal class DataSeriesServiceImplTest {
             creatorId = 3912L,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
             filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -805,6 +830,7 @@ internal class DataSeriesServiceImplTest {
                 creatorId = 3912L,
                 displayName = "the-name",
                 dataType = DataType.EVENTS,
+                valueName = "my-event",
                 sharingMode = SharingMode.READONLY,
                 color = "#FF761C",
                 filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -896,6 +922,7 @@ internal class DataSeriesServiceImplTest {
             creatorId = 3912L,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             sharingMode = SharingMode.READONLY,
             color = "#FF761C",
             filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -930,6 +957,7 @@ internal class DataSeriesServiceImplTest {
             creatorId = 3912L,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "my-event",
             sharingMode = SharingMode.NONE,
             color = "#FF761C",
             filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
@@ -956,12 +984,21 @@ internal class DataSeriesServiceImplTest {
             // given
             val dataSeries1 = relaxedMockk<DataSeries>()
             val dataSeries2 = relaxedMockk<DataSeries>()
-            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
-            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
             coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
-            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2
 
             // when
             val result = dataSeriesService.searchDataSeries("my-tenant", "user", emptyList(), null, 0, 20)
@@ -978,10 +1015,8 @@ internal class DataSeriesServiceImplTest {
             }
             coVerifyOrder {
                 dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable)
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity1))
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
             }
-            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+            confirmVerified(dataSeriesRepository)
         }
 
     @Test
@@ -990,12 +1025,21 @@ internal class DataSeriesServiceImplTest {
             // given
             val dataSeries1 = relaxedMockk<DataSeries>()
             val dataSeries2 = relaxedMockk<DataSeries>()
-            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
-            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("fieldName")))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
             coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
-            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2
 
             // when
             val result = dataSeriesService.searchDataSeries("my-tenant", "user", emptyList(), "fieldName", 0, 20)
@@ -1012,10 +1056,8 @@ internal class DataSeriesServiceImplTest {
             }
             coVerifyOrder {
                 dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable)
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity1))
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
             }
-            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+            confirmVerified(dataSeriesRepository)
         }
 
     @Test
@@ -1024,8 +1066,20 @@ internal class DataSeriesServiceImplTest {
             // given
             val filter1 = "%Un%u_%"
             val filter2 = "%u_Er%"
-            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity>()
-            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
             coEvery {
@@ -1036,9 +1090,6 @@ internal class DataSeriesServiceImplTest {
                     pageable
                 )
             } returns page
-            val dataSeries1 = relaxedMockk<DataSeries>()
-            val dataSeries2 = relaxedMockk<DataSeries>()
-            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries1 andThen dataSeries2
 
             // when
             val result =
@@ -1056,10 +1107,8 @@ internal class DataSeriesServiceImplTest {
             }
             coVerifyOrder {
                 dataSeriesRepository.searchDataSeries("my-tenant", "user", listOf(filter1, filter2), pageable)
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity1))
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
             }
-            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+            confirmVerified(dataSeriesRepository)
         }
 
     @Test
@@ -1068,10 +1117,22 @@ internal class DataSeriesServiceImplTest {
             // given
             val filter1 = "%F_oo%"
             val filter2 = "%Us_r%"
-            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity>()
-            val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity>()
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("fieldName")))
-            val page = Page.of(listOf(dataSeriesEntity2, dataSeriesEntity3), Pageable.from(0, 20), 2)
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
             coEvery {
                 dataSeriesRepository.searchDataSeries(
                     "my-tenant",
@@ -1080,9 +1141,6 @@ internal class DataSeriesServiceImplTest {
                     pageable
                 )
             } returns page
-            val dataSeries2 = relaxedMockk<DataSeries>()
-            val dataSeries3 = relaxedMockk<DataSeries>()
-            coEvery { dataSeriesConverter.convertToModel(any()) } returns dataSeries2 andThen dataSeries3
 
             // when
             val result =
@@ -1095,14 +1153,12 @@ internal class DataSeriesServiceImplTest {
                 prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
                 prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
                     hasSize(2)
-                    containsExactly(dataSeries2, dataSeries3)
+                    containsExactly(dataSeries1, dataSeries2)
                 }
             }
             coVerifyOrder {
                 dataSeriesRepository.searchDataSeries("my-tenant", "user", listOf(filter1, filter2), pageable)
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity2))
-                dataSeriesConverter.convertToModel(refEq(dataSeriesEntity3))
             }
-            confirmVerified(dataSeriesRepository, dataSeriesConverter)
+            confirmVerified(dataSeriesRepository)
         }
 }

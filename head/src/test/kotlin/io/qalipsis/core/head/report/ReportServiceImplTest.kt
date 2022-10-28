@@ -120,14 +120,16 @@ internal class ReportServiceImplTest {
             tenantId = 123L,
             creatorId = 456L,
             displayName = "series-name-1",
-            dataType = DataType.EVENTS
+            dataType = DataType.EVENTS,
+            valueName = "my-event"
         ),
         DataSeriesEntity(
             reference = "series-ref-2",
             tenantId = 123L,
             creatorId = 456L,
             displayName = "series-name-2",
-            dataType = DataType.METERS
+            dataType = DataType.METERS,
+            valueName = "my-meter"
         )
     )
 

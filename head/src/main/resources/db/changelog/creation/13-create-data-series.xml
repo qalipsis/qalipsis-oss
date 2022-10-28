@@ -54,6 +54,9 @@
       <column name="data_type" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
+      <column name="value_name" type="VARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
       <column name="color" type="VARCHAR(10)">
         <constraints nullable="true"/>
       </column>

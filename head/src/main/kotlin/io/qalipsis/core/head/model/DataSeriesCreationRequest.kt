@@ -56,6 +56,11 @@ internal data class DataSeriesCreationRequest(
     )
     val dataType: DataType,
 
+    @field:Schema(description = "Name of the event or meter to use", required = true)
+    @field:NotBlank
+    @field:Size(min = 3, max = 100)
+    val valueName: String,
+
     @field:Schema(description = "Optional color to set, as an hexadecimal value", required = false)
     @field:Pattern(regexp = "^#[0-9a-fA-F]{6}$")
     val color: String?,

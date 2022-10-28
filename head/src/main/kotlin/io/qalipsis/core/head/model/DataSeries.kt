@@ -69,6 +69,11 @@ internal data class DataSeries(
     )
     val dataType: DataType,
 
+    @field:Schema(description = "Name of the event or meter to use", required = true)
+    @field:NotBlank
+    @field:Size(min = 3, max = 100)
+    val valueName: String,
+
     @field:Schema(description = "Optional color to set, as an hexadecimal value", required = false)
     @field:Pattern(regexp = "^#[0-9a-fA-F]{6}$")
     val color: String?,
@@ -111,6 +116,7 @@ internal data class DataSeries(
         displayName: String,
         sharingMode: SharingMode = SharingMode.READONLY,
         dataType: DataType,
+        valueName: String,
         color: String? = null,
         filters: Set<DataSeriesFilter> = emptySet(),
         fieldName: String? = null,
@@ -124,6 +130,7 @@ internal data class DataSeries(
         displayName = displayName,
         sharingMode = sharingMode,
         dataType = dataType,
+        valueName = valueName,
         color = color,
         filters = filters,
         fieldName = fieldName,
@@ -139,6 +146,7 @@ internal data class DataSeries(
         displayName = dataSeriesEntity.displayName,
         sharingMode = dataSeriesEntity.sharingMode,
         dataType = dataSeriesEntity.dataType,
+        valueName = dataSeriesEntity.valueName,
         color = dataSeriesEntity.color,
         filters = dataSeriesEntity.filters.map { it.toModel() }.toSet(),
         fieldName = dataSeriesEntity.fieldName,

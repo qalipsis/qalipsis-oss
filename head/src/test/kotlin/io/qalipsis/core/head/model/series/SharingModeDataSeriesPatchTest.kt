@@ -44,6 +44,7 @@ internal class SharingModeDataSeriesPatchTest {
             displayName = "the-name",
             sharingMode = SharingMode.READONLY,
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
@@ -67,6 +68,7 @@ internal class SharingModeDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             dataType = DataType.EVENTS,
+            valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
