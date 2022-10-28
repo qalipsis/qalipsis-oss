@@ -117,7 +117,7 @@ internal class CampaignAutoStarter(
         registrationCount.await()
         notificationMutex.withLock {
             log.debug { "Heartbeat: ${heartbeat.nodeId} to ${heartbeat.state}" }
-            if (heartbeat.state == Heartbeat.State.HEALTHY && healthyFactories.add(heartbeat.nodeId)) {
+            if (heartbeat.state == Heartbeat.State.IDLE && healthyFactories.add(heartbeat.nodeId)) {
                 log.debug { "Healthy factories: $healthyFactories" }
                 if (healthyFactories.size >= autostartCampaignConfiguration.requiredFactories
                     && runningCampaign.compareAndSet(false, true)

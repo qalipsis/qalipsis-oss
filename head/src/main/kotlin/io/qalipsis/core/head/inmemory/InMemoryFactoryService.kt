@@ -81,7 +81,7 @@ internal class InMemoryFactoryService(
 
     @LogInput
     override suspend fun notify(heartbeat: Heartbeat) {
-        if (heartbeat.state == Heartbeat.State.UNREGISTERED) {
+        if (heartbeat.state == Heartbeat.State.OFFLINE) {
             factoriesByNodeId.remove(heartbeat.nodeId)?.activeScenarios?.forEach { scenarioName ->
                 factoriesByScenarios.computeIfPresent(scenarioName) { _, factories ->
                     // Delete the factory from the set of factories supporting the scenario.
@@ -112,7 +112,7 @@ internal class InMemoryFactoryService(
     private fun isAvailableAndHealthy(factory: LockableFactory): Boolean {
         return !factory.locked.get()
                 && factory.healthState.get()
-            .run { (state == Heartbeat.State.HEALTHY || state == Heartbeat.State.REGISTERED) && timestamp >= Instant.now() - HEALTH_QUERY_INTERVAL }
+            .run { (state == Heartbeat.State.IDLE || state == Heartbeat.State.REGISTERED) && timestamp >= Instant.now() - HEALTH_QUERY_INTERVAL }
     }
 
     @LogInput
