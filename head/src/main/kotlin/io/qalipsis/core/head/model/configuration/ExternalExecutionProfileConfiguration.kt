@@ -6,6 +6,7 @@ import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.executionprofile.CompletionMode
 import io.qalipsis.core.executionprofile.Stage
 import io.swagger.v3.oas.annotations.media.Schema
+import javax.validation.Valid
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 
@@ -29,7 +30,7 @@ import javax.validation.constraints.Positive
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.PROPERTY,
-    property = "execution-profile"
+    property = "profile"
 )
 @JsonSubTypes(
     JsonSubTypes.Type(value = RegularExternalExecutionProfileConfiguration::class, name = "REGULAR"),
@@ -128,8 +129,13 @@ internal class ProgressiveVolumeExternalExecutionProfileConfiguration(
 internal class StageExternalExecutionProfileConfiguration(
     @field:Schema(description = "Phase of the scenario execution", required = true)
     @field:NotEmpty
-    val stages: List<Stage>,
-    @field:Schema(description = "Indicator to determine how to end the scenario", required = true)
+    @field:Valid
+    val stages: List<@Valid Stage>,
+    @field:Schema(
+        description = "Indicator to determine how to end the scenario",
+        required = true,
+        defaultValue = "GRACEFUL"
+    )
     val completion: CompletionMode
 ) : ExternalExecutionProfileConfiguration {
 

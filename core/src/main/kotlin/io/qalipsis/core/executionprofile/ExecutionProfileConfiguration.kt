@@ -19,9 +19,11 @@
 
 package io.qalipsis.core.executionprofile
 
+import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.executionprofile.CompletionMode
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
+import javax.validation.constraints.Positive
 
 /**
  * Configuration of the execution profile to apply to a scenario in a campaign.
@@ -124,25 +126,30 @@ data class DefaultExecutionProfileConfiguration(
 }
 
 @Serializable
+@Introspected
 data class Stage(
 
     /**
      * Total number of minions to start in the stage.
      */
+    @field:Positive
     val minionsCount: Int,
 
     /**
      * Minions ramp up duration, in milliseconds.
      */
+    @field:Positive
     val rampUpDurationMs: Long,
 
     /**
      * Stage duration, in milliseconds.
      */
+    @field:Positive
     val totalDurationMs: Long,
 
     /**
      * Minimal duration between two triggering of minions start, default to 500 ms.
      */
+    @field:Positive
     val resolutionMs: Long = 500
 )

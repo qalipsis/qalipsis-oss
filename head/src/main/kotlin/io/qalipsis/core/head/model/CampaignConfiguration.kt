@@ -80,7 +80,7 @@ internal data class CampaignConfiguration(
 
     @field:Schema(
         description = "The map of the scenarios for the new campaign", required = true,
-        example = """{"my-first-scenario": {"minionsCount": 100, "executionProfile": {"type": "STAGE", "stages": [{"minionsCount": 100, "rampUpDurationMs": 10000, "totalDurationMs": 60000, "completion": "GRACEFUL"}]}}, "zones": {"FR": 40, "US": 30, "CN": 30}}""",
+        example = """{"my-first-scenario": {"minionsCount": 100, "executionProfile": {"execution-profile": "STAGE", "stages": [{"minionsCount": 100, "rampUpDurationMs": 10000, "totalDurationMs": 60000, "resolutionMs": 100}], "completion": "GRACEFUL"}, "zones": {"fr": 40, "us": 20, "cn": 30}}}""",
     )
     @field:Valid
     @field:NotEmpty
@@ -105,13 +105,12 @@ internal data class ScenarioRequest(
 
     @field:Schema(
         description = "The configuration of the execution profile to execute a scenario",
-        example = """{"type": "STAGE", "stages": [{"minionsCount": 100, "rampUpDurationMs": 10000, "totalDurationMs": 60000, "completion": "GRACEFUL"}]}}"""
+        example = """{"profile": "STAGE", "stages": [{"minionsCount": 100, "rampUpDurationMs": 10000, "totalDurationMs": 60000, "resolutionMs": 100}], "completion": "GRACEFUL"}"""
     )
     @field:Valid
     @field:NotEmpty
     val executionProfile: ExternalExecutionProfileConfiguration? = null,
 
-    @field:Schema(description = "Distribution of the execution by zone", example = """{"FR":40, "US": 30, "CN": 30}""")
-    @field:Valid
+    @field:Schema(description = "Distribution of the execution by zone", example = """{"fr": 40, "us": 20, "cn": 30}""")
     val zones: Map<@NotBlank String, @Min(1) @Max(100) Int>? = null
 )
