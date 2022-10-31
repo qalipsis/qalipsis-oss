@@ -97,7 +97,8 @@ internal class DataSeriesServiceImpl(
                         aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT,
                         timeframeUnit = dataSeries.timeframeUnit
                     )
-                ).takeUnless(String::isNullOrBlank)
+                ).takeUnless(String::isNullOrBlank),
+                colorOpacity = dataSeries.colorOpacity
             )
         )
         return DataSeries(createdDataSeries, creator)

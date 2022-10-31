@@ -59,7 +59,8 @@ internal class DataSeriesValidationIntegrationTest {
             fieldName = "the-field",
             aggregationOperation = QueryAggregationOperator.AVERAGE,
             timeframeUnit = Duration.ofSeconds(2),
-            displayFormat = "#0.000"
+            displayFormat = "#0.000",
+            colorOpacity = 10
         )
 
         // when
@@ -103,6 +104,52 @@ internal class DataSeriesValidationIntegrationTest {
             transform { it.first() }.all {
                 prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("displayName") }
                 prop(ConstraintViolation<*>::getMessage).isEqualTo("must not be blank")
+            }
+        }
+    }
+
+    @Test
+    internal fun `should deny a color opacity below 1`() {
+        // given
+        val dataSeries = DataSeries(
+            displayName = "Time series",
+            dataType = DataType.EVENTS,
+            colorOpacity = -10,
+            valueName = "name"
+        )
+
+        // when
+        val violations = validator.validate(dataSeries)
+
+        // then
+        assertThat(violations).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("colorOpacity") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 1")
+            }
+        }
+    }
+
+    @Test
+    internal fun `should deny a color opacity above 100`() {
+        // given
+        val dataSeries = DataSeries(
+            displayName = "Time series",
+            dataType = DataType.EVENTS,
+            colorOpacity = 101,
+            valueName = "name"
+        )
+
+        // when
+        val violations = validator.validate(dataSeries)
+
+        // then
+        assertThat(violations).all {
+            hasSize(1)
+            transform { it.first() }.all {
+                prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("colorOpacity") }
+                prop(ConstraintViolation<*>::getMessage).isEqualTo("must be less than or equal to 100")
             }
         }
     }

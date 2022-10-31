@@ -227,6 +227,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                             prop(DataSeriesEntity::timeframeUnitMs).isNull()
                             prop(DataSeriesEntity::displayFormat).isNull()
                             prop(DataSeriesEntity::query).isNull()
+                            prop(DataSeriesEntity::colorOpacity).isNull()
                         }
                     }
                 }
@@ -465,6 +466,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                             prop(DataSeriesEntity::timeframeUnitMs).isNull()
                             prop(DataSeriesEntity::displayFormat).isNull()
                             prop(DataSeriesEntity::query).isNull()
+                            prop(DataSeriesEntity::colorOpacity).isNull()
                         }
                     }
                 }

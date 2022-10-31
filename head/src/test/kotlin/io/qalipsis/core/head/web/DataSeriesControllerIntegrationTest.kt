@@ -104,7 +104,8 @@ internal class DataSeriesControllerIntegrationTest {
             fieldName = "duration",
             aggregationOperation = AVERAGE,
             timeframeUnit = Duration.ofSeconds(1),
-            displayFormat = "#0.000"
+            displayFormat = "#0.000",
+            colorOpacity = 50
         )
         val createdDataSeries = DataSeries(
             displayName = "Time to response for complex query",
@@ -115,7 +116,8 @@ internal class DataSeriesControllerIntegrationTest {
             fieldName = "duration",
             aggregationOperation = AVERAGE,
             timeframeUnit = Duration.ofSeconds(1),
-            displayFormat = "#0.000"
+            displayFormat = "#0.000",
+            colorOpacity = 50
         ).copy(
             color = "#FF761C", reference = "qoi78qwedqwiz"
         )
@@ -155,6 +157,74 @@ internal class DataSeriesControllerIntegrationTest {
             }.all {
                 contains("""{"property":"dataSeries.displayName","message":"must not be blank"}""")
                 contains("""{"property":"dataSeries.displayName","message":"size must be between 3 and 200"}""")
+            }
+        }
+        confirmVerified(dataSeriesService)
+    }
+
+    @Test
+    fun `should fail when creating a data series with color opacity above 100 `() {
+        // given
+        val dataSeries = DataSeriesCreationRequest(
+            displayName = "Time to response for complex query",
+            dataType = EVENTS,
+            color = "#ff761c",
+            filters = setOf(DataSeriesFilter("step", IS, "http-post-complex-query")),
+            fieldName = "duration",
+            aggregationOperation = AVERAGE,
+            timeframeUnit = Duration.ofSeconds(1),
+            displayFormat = "#0.000",
+            colorOpacity = 101,
+            valueName = "name"
+        )
+        val createDataSeriesRequest = HttpRequest.POST("/", dataSeries)
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(createDataSeriesRequest, DataSeries::class.java)
+        }
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.response.getBody(String::class.java).get()
+            }.all {
+                contains("""{"property":"dataSeries.colorOpacity","message":"must be less than or equal to 100"}""")
+            }
+        }
+        confirmVerified(dataSeriesService)
+    }
+
+    @Test
+    fun `should fail when creating a data series with negative color opacity`() {
+        // given
+        val dataSeries = DataSeriesCreationRequest(
+            displayName = "Time to response for complex query",
+            dataType = EVENTS,
+            color = "#ff761c",
+            filters = setOf(DataSeriesFilter("step", IS, "http-post-complex-query")),
+            fieldName = "duration",
+            aggregationOperation = AVERAGE,
+            timeframeUnit = Duration.ofSeconds(1),
+            displayFormat = "#0.000",
+            colorOpacity = -10,
+            valueName = "name"
+        )
+        val createDataSeriesRequest = HttpRequest.POST("/", dataSeries)
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(createDataSeriesRequest, DataSeries::class.java)
+        }
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.response.getBody(String::class.java).get()
+            }.all {
+                contains("""{"property":"dataSeries.colorOpacity","message":"must be greater than or equal to 1"}""")
             }
         }
         confirmVerified(dataSeriesService)

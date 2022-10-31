@@ -91,7 +91,7 @@ internal class DataSeriesServiceImplTest {
     private lateinit var dataSeriesService: DataSeriesServiceImpl
 
     @Test
-    internal fun `should create the data series with the default operation and no field name`() =
+    internal fun `should create the data series with the default operation, no field name and color opacity of 5`() =
         testDispatcherProvider.runTest {
             // given
             coEvery {
@@ -116,7 +116,8 @@ internal class DataSeriesServiceImplTest {
                 fieldName = null,
                 aggregationOperation = null,
                 timeframeUnit = Duration.ofSeconds(2),
-                displayFormat = "#0.000"
+                displayFormat = "#0.000",
+                colorOpacity = 5
             )
 
             // when
@@ -144,6 +145,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
+                prop(DataSeries::colorOpacity).isEqualTo(5)
             }
             coVerify {
                 dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", -1)
@@ -182,6 +184,7 @@ internal class DataSeriesServiceImplTest {
                         prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(2_000L)
                         prop(DataSeriesEntity::displayFormat).isEqualTo("#0.000")
                         prop(DataSeriesEntity::query).isEqualTo("the-query")
+                        prop(DataSeriesEntity::colorOpacity).isEqualTo(5)
                     }
                 })
             }
@@ -241,6 +244,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
+                prop(DataSeries::colorOpacity).isNull()
             }
             coVerify {
                 dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", -1)
@@ -280,6 +284,7 @@ internal class DataSeriesServiceImplTest {
                         prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(2_000L)
                         prop(DataSeriesEntity::displayFormat).isEqualTo("#0.000")
                         prop(DataSeriesEntity::query).isEqualTo("the-query")
+                        prop(DataSeriesEntity::colorOpacity).isNull()
                     }
                 })
             }
@@ -399,6 +404,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
+                prop(DataSeries::colorOpacity).isNull()
             }
         }
 
@@ -445,6 +451,7 @@ internal class DataSeriesServiceImplTest {
             prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
             prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
             prop(DataSeries::displayFormat).isEqualTo("#0.000")
+            prop(DataSeries::colorOpacity).isNull()
         }
     }
 
@@ -548,6 +555,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
+                prop(DataSeries::colorOpacity).isNull()
             }
             assertThat(entity.query).isEqualTo("the new query")
             coVerifyOrder {
@@ -629,6 +637,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
+                prop(DataSeries::colorOpacity).isNull()
             }
             coVerifyOrder {
                 dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
@@ -711,6 +720,7 @@ internal class DataSeriesServiceImplTest {
                 prop(DataSeries::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
                 prop(DataSeries::timeframeUnit).isEqualTo(Duration.ofSeconds(2))
                 prop(DataSeries::displayFormat).isEqualTo("#0.000")
+                prop(DataSeries::colorOpacity).isNull()
             }
             coVerifyOrder {
                 dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")

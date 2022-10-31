@@ -35,6 +35,7 @@ import io.qalipsis.core.head.model.DisplayNameDataSeriesPatch
 import io.qalipsis.core.head.model.FieldNameDataSeriesPatch
 import io.qalipsis.core.head.model.TimeframeUnitDataSeriesPatch
 import io.qalipsis.core.head.model.ValueNameDataSeriesPatch
+import io.qalipsis.core.head.model.ColorOpacityDataSeriesPatch
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -114,6 +115,72 @@ internal class DataSeriesPatchValidationIntegrationTest {
                     prop(ConstraintViolation<*>::getMessage).isEqualTo("size must be between 3 and 200")
                 }
             }
+        }
+    }
+
+    @Nested
+    inner class `Color opacity` {
+
+        @Test
+        internal fun `should accept valid color opacity`(){
+            //given
+            val patch = ColorOpacityDataSeriesPatch(10)
+
+            //when
+            val violations = validator.validate(patch)
+
+            //then
+            assertThat(violations).isEmpty()
+        }
+
+        @Test
+        internal fun `should accept null color opacity`(){
+            //given
+            val patch = ColorOpacityDataSeriesPatch(null)
+
+            //when
+            val violations = validator.validate(patch)
+
+            //then
+            assertThat(violations).isEmpty()
+        }
+
+        @Test
+        internal fun `should deny color opacity above 100`(){
+            //given
+            val patch = ColorOpacityDataSeriesPatch(101)
+
+            //when
+            val violations = validator.validate(patch)
+
+            // then
+            assertThat(violations).all {
+                hasSize(1)
+                transform { it.first() }.all {
+                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("colorOpacity") }
+                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must be less than or equal to 100")
+                }
+            }
+
+        }
+
+        @Test
+        internal fun `should deny color opacity below 1`(){
+            //given
+            val patch = ColorOpacityDataSeriesPatch(-10)
+
+            //when
+            val violations = validator.validate(patch)
+
+            // then
+            assertThat(violations).all {
+                hasSize(1)
+                transform { it.first() }.all {
+                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("colorOpacity") }
+                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 1")
+                }
+            }
+
         }
     }
 

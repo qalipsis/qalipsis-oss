@@ -28,8 +28,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.Pattern
 import javax.validation.constraints.Size
+import javax.validation.constraints.Pattern
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 
 /**
  * External representation of the creation of a data series.
@@ -97,5 +99,13 @@ internal data class DataSeriesCreationRequest(
         required = false
     )
     @field:Size(max = 20)
-    val displayFormat: String?
+    val displayFormat: String?,
+
+    @field:Schema(
+        description = "The opacity of the color",
+        required = false
+    )
+    @field:Min(value = 1)
+    @field:Max(value = 100)
+    val colorOpacity : Int? = null
 )
