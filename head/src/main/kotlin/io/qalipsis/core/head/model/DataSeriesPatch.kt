@@ -29,6 +29,8 @@ import io.qalipsis.core.head.report.SharingMode
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import javax.validation.Valid
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Pattern
 import javax.validation.constraints.Size
@@ -48,7 +50,8 @@ import javax.validation.constraints.Size
         value = AggregationOperationDataSeriesPatch::class,
         name = AggregationOperationDataSeriesPatch.TYPE
     ),
-    JsonSubTypes.Type(value = TimeframeUnitDataSeriesPatch::class, name = TimeframeUnitDataSeriesPatch.TYPE)
+    JsonSubTypes.Type(value = TimeframeUnitDataSeriesPatch::class, name = TimeframeUnitDataSeriesPatch.TYPE),
+    JsonSubTypes.Type(value = ColorOpacityDataSeriesPatch::class, name = ColorOpacityDataSeriesPatch.TYPE)
 )
 @Introspected
 @Schema(
@@ -61,7 +64,8 @@ import javax.validation.constraints.Size
         SharingModeDataSeriesPatch::class,
         FiltersDataSeriesPatch::class,
         AggregationOperationDataSeriesPatch::class,
-        TimeframeUnitDataSeriesPatch::class
+        TimeframeUnitDataSeriesPatch::class,
+        ColorOpacityDataSeriesPatch::class
     ]
 )
 internal interface DataSeriesPatch {
@@ -306,5 +310,31 @@ internal class DisplayFormatDataSeriesPatch(
 
     companion object {
         const val TYPE = "displayFormat"
+    }
+}
+
+/**
+ * Implementation of the [DataSeriesPatch] interface, that is in charge of changing color opacity property of a data series
+ */
+@Introspected
+internal class ColorOpacityDataSeriesPatch(
+    @field:Min(value = 1)
+    @field:Max(value = 100)
+    val colorOpacity: Int?
+) : DataSeriesPatch {
+
+    override val type: String = TYPE
+
+    override fun apply(dataSeries: DataSeriesEntity): Boolean {
+        return if (dataSeries.colorOpacity != colorOpacity) {
+            dataSeries.colorOpacity = colorOpacity
+            true
+        } else {
+            false
+        }
+    }
+
+    companion object {
+        const val TYPE = "colorOpacity"
     }
 }

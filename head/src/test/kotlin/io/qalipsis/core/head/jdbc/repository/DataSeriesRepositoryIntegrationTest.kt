@@ -85,7 +85,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             fieldName = "my-field",
             aggregationOperation = QueryAggregationOperator.AVERAGE,
             displayFormat = "#000.000",
-            query = "This is the query"
+            query = "This is the query",
+            colorOpacity = 50
         )
 
     @AfterEach
@@ -129,6 +130,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::timeframeUnitMs).isNull()
             prop(DataSeriesEntity::displayFormat).isNull()
             prop(DataSeriesEntity::query).isNull()
+            prop(DataSeriesEntity::colorOpacity).isNull()
         }
 
         // when searching a data series with same name but other ID
@@ -290,6 +292,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(10_000L)
             prop(DataSeriesEntity::displayFormat).isEqualTo("#000.000")
             prop(DataSeriesEntity::query).isEqualTo("This is the query")
+            prop(DataSeriesEntity::colorOpacity).isEqualTo(50)
         }
 
         // when
@@ -301,7 +304,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             fieldName = "my-other-field",
             aggregationOperation = QueryAggregationOperator.MAX,
             displayFormat = "##0.0",
-            query = "This is the other query"
+            query = "This is the other query",
+            colorOpacity = 75
         )
         val beforeUpdate = Instant.now()
         dataSeriesRepository.update(updated)
@@ -328,6 +332,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(240_000L)
             prop(DataSeriesEntity::displayFormat).isEqualTo("##0.0")
             prop(DataSeriesEntity::query).isEqualTo("This is the other query")
+            prop(DataSeriesEntity::colorOpacity).isEqualTo(75)
         }
     }
 

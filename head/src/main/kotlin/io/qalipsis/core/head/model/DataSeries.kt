@@ -31,6 +31,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 import java.time.Instant
 import javax.validation.Valid
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Pattern
 import javax.validation.constraints.Size
@@ -109,7 +111,15 @@ internal data class DataSeries(
         required = false
     )
     @field:Size(max = 20)
-    val displayFormat: String?
+    val displayFormat: String?,
+
+    @field:Schema(
+        description = "The opacity of the color",
+        required = false
+    )
+    @field:Min(value = 1)
+    @field:Max(value = 100)
+    val colorOpacity : Int? = null
 ) {
 
     constructor(
@@ -122,7 +132,8 @@ internal data class DataSeries(
         fieldName: String? = null,
         aggregationOperation: QueryAggregationOperator? = null,
         timeframeUnit: Duration? = null,
-        displayFormat: String? = null
+        displayFormat: String? = null,
+        colorOpacity: Int? = null
     ) : this(
         reference = "",
         version = Instant.EPOCH,
@@ -136,7 +147,8 @@ internal data class DataSeries(
         fieldName = fieldName,
         aggregationOperation = aggregationOperation,
         timeframeUnit = timeframeUnit,
-        displayFormat = displayFormat
+        displayFormat = displayFormat,
+        colorOpacity = colorOpacity
     )
 
     constructor(dataSeriesEntity: DataSeriesEntity, creatorUsername: String) : this(
@@ -152,7 +164,8 @@ internal data class DataSeries(
         fieldName = dataSeriesEntity.fieldName,
         aggregationOperation = dataSeriesEntity.aggregationOperation,
         timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration,
-        displayFormat = dataSeriesEntity.displayFormat
+        displayFormat = dataSeriesEntity.displayFormat,
+        colorOpacity = dataSeriesEntity.colorOpacity
     )
 }
 

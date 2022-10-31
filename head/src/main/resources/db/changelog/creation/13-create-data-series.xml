@@ -78,6 +78,9 @@
       <column name="query" type="TEXT">
         <constraints nullable="true"/>
       </column>
+      <column name="color_opacity" type="SMALLINT">
+        <constraints nullable="true"/>
+      </column>
     </createTable>
 
     <createIndex schemaName="qalipsis" indexName="unique_display_name_by_tenant_data_series_idx"
