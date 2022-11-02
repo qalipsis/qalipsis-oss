@@ -23,6 +23,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.lang.tryAndLog
+import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.annotations.LogInput
@@ -118,7 +119,9 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
             }
         } catch (e: Exception) {
             log.error(e) { "An error occurred while preparing the campaign ${runningCampaign.key} to start" }
-            campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED)
+            tryAndLogOrNull(log) {
+                campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED)
+            }
             throw e
         }
         return runningCampaign

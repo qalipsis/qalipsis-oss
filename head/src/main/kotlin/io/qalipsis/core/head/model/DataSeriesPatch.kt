@@ -46,6 +46,7 @@ import javax.validation.constraints.Size
     JsonSubTypes.Type(value = DisplayFormatDataSeriesPatch::class, name = DisplayFormatDataSeriesPatch.TYPE),
     JsonSubTypes.Type(value = SharingModeDataSeriesPatch::class, name = SharingModeDataSeriesPatch.TYPE),
     JsonSubTypes.Type(value = FiltersDataSeriesPatch::class, name = FiltersDataSeriesPatch.TYPE),
+    JsonSubTypes.Type(value = ValueNameDataSeriesPatch::class, name = ValueNameDataSeriesPatch.TYPE),
     JsonSubTypes.Type(
         value = AggregationOperationDataSeriesPatch::class,
         name = AggregationOperationDataSeriesPatch.TYPE
@@ -111,14 +112,14 @@ internal class DisplayNameDataSeriesPatch(
 @Introspected
 @Schema(title = "Patch to update the sharing mode of a data series")
 internal class SharingModeDataSeriesPatch(
-    private val newSharingMode: SharingMode
+    private val sharingMode: SharingMode
 ) : DataSeriesPatch {
 
     override val type: String = TYPE
 
     override fun apply(dataSeries: DataSeriesEntity): Boolean {
-        return if (dataSeries.sharingMode != newSharingMode) {
-            dataSeries.sharingMode = newSharingMode
+        return if (dataSeries.sharingMode != sharingMode) {
+            dataSeries.sharingMode = sharingMode
             true
         } else {
             false
@@ -243,14 +244,14 @@ internal class ValueNameDataSeriesPatch(
 @Introspected
 @Schema(title = "Patch to update the aggregation operation of a data series")
 internal class AggregationOperationDataSeriesPatch(
-    private val aggregationOperation: QueryAggregationOperator
+    private val operation: QueryAggregationOperator
 ) : DataSeriesPatch {
 
     override val type: String = TYPE
 
     override fun apply(dataSeries: DataSeriesEntity): Boolean {
-        return if (dataSeries.aggregationOperation != aggregationOperation) {
-            dataSeries.aggregationOperation = aggregationOperation
+        return if (dataSeries.aggregationOperation != operation) {
+            dataSeries.aggregationOperation = operation
             true
         } else {
             false
@@ -269,14 +270,14 @@ internal class AggregationOperationDataSeriesPatch(
 @Schema(title = "Patch to update the duration to aggregate the values of a data series for scaling ")
 internal class TimeframeUnitDataSeriesPatch(
     @field:PositiveDuration
-    val timeframeUnit: Duration?
+    val timeframe: Duration?
 ) : DataSeriesPatch {
 
     override val type: String = TYPE
 
     override fun apply(dataSeries: DataSeriesEntity): Boolean {
-        return if (dataSeries.timeframeUnitAsDuration != timeframeUnit) {
-            dataSeries.timeframeUnitMs = timeframeUnit?.toMillis()
+        return if (dataSeries.timeframeUnitAsDuration != timeframe) {
+            dataSeries.timeframeUnitMs = timeframe?.toMillis()
             true
         } else {
             false
@@ -309,7 +310,7 @@ internal class DisplayFormatDataSeriesPatch(
     }
 
     companion object {
-        const val TYPE = "displayFormat"
+        const val TYPE = "display-format"
     }
 }
 
