@@ -137,13 +137,13 @@ internal data class DataSeriesEntity(
         dataType: DataType,
         valueName: String,
         color: String? = null,
+        colorOpacity: Int? = null,
         filters: Collection<DataSeriesFilterEntity> = emptySet(),
         fieldName: String? = null,
         aggregationOperation: QueryAggregationOperator = QueryAggregationOperator.COUNT,
         timeframeUnitMs: Long? = null,
         displayFormat: String? = null,
-        query: String? = null,
-        colorOpacity: Int? = null
+        query: String? = null
     ) : this(
         id = -1,
         reference = reference,
@@ -155,13 +155,13 @@ internal data class DataSeriesEntity(
         dataType = dataType,
         valueName = valueName,
         color = color,
+        colorOpacity = colorOpacity,
         filters = filters,
         fieldName = fieldName,
         aggregationOperation = aggregationOperation,
         timeframeUnitMs = timeframeUnitMs,
         displayFormat = displayFormat,
-        query = query,
-        colorOpacity = colorOpacity
+        query = query
     )
 
     fun toModel(creatorName : String) = DataSeries(this, creatorName)

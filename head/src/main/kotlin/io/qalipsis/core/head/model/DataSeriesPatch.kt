@@ -51,8 +51,7 @@ import javax.validation.constraints.Size
         value = AggregationOperationDataSeriesPatch::class,
         name = AggregationOperationDataSeriesPatch.TYPE
     ),
-    JsonSubTypes.Type(value = TimeframeUnitDataSeriesPatch::class, name = TimeframeUnitDataSeriesPatch.TYPE),
-    JsonSubTypes.Type(value = ColorOpacityDataSeriesPatch::class, name = ColorOpacityDataSeriesPatch.TYPE)
+    JsonSubTypes.Type(value = TimeframeUnitDataSeriesPatch::class, name = TimeframeUnitDataSeriesPatch.TYPE)
 )
 @Introspected
 @Schema(
@@ -65,8 +64,7 @@ import javax.validation.constraints.Size
         SharingModeDataSeriesPatch::class,
         FiltersDataSeriesPatch::class,
         AggregationOperationDataSeriesPatch::class,
-        TimeframeUnitDataSeriesPatch::class,
-        ColorOpacityDataSeriesPatch::class
+        TimeframeUnitDataSeriesPatch::class
     ]
 )
 internal interface DataSeriesPatch {
@@ -138,15 +136,20 @@ internal class SharingModeDataSeriesPatch(
 @Schema(title = "Patch to update the display color of a data series")
 internal class ColorDataSeriesPatch(
     @field:Pattern(regexp = "^#[0-9a-fA-F]{6}$")
-    val color: String?
+    val color: String?,
+
+    @field:Min(value = 1)
+    @field:Max(value = 100)
+    val opacity: Int? = null
 ) : DataSeriesPatch {
 
     override val type: String = TYPE
 
     override fun apply(dataSeries: DataSeriesEntity): Boolean {
         val newColor = color?.trim()?.uppercase()
-        return if (dataSeries.color != newColor) {
+        return if (dataSeries.color != newColor || dataSeries.colorOpacity != opacity) {
             dataSeries.color = newColor
+            dataSeries.colorOpacity = opacity
             true
         } else {
             false
@@ -311,31 +314,5 @@ internal class DisplayFormatDataSeriesPatch(
 
     companion object {
         const val TYPE = "display-format"
-    }
-}
-
-/**
- * Implementation of the [DataSeriesPatch] interface, that is in charge of changing color opacity property of a data series
- */
-@Introspected
-internal class ColorOpacityDataSeriesPatch(
-    @field:Min(value = 1)
-    @field:Max(value = 100)
-    val colorOpacity: Int?
-) : DataSeriesPatch {
-
-    override val type: String = TYPE
-
-    override fun apply(dataSeries: DataSeriesEntity): Boolean {
-        return if (dataSeries.colorOpacity != colorOpacity) {
-            dataSeries.colorOpacity = colorOpacity
-            true
-        } else {
-            false
-        }
-    }
-
-    companion object {
-        const val TYPE = "colorOpacity"
     }
 }

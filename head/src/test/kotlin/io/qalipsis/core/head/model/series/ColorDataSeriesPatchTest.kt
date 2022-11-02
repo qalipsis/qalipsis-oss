@@ -42,13 +42,14 @@ internal class ColorDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             color = "color",
+            colorOpacity = 12,
             dataType = DataType.EVENTS,
             valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
-        val patch = ColorDataSeriesPatch("new-color")
+        val patch = ColorDataSeriesPatch("new-color", 12)
 
         // when
         val result = patch.apply(dataSeriesEntity)
@@ -56,6 +57,34 @@ internal class ColorDataSeriesPatchTest {
         // then
         assertThat(result).isTrue()
         assertThat(dataSeriesEntity).prop(DataSeriesEntity::color).isEqualTo("NEW-COLOR")
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::colorOpacity).isEqualTo(12)
+    }
+
+    @Test
+    internal fun `should update the data series color when the opacity is different`() {
+        // given
+        val dataSeriesEntity = DataSeriesEntity(
+            reference = "my-data-series",
+            tenantId = 123,
+            creatorId = 432,
+            displayName = "the-name",
+            color = "COLOR",
+            colorOpacity = 12,
+            dataType = DataType.EVENTS,
+            valueName = "the-value-name",
+            filters = setOf(
+                DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
+            )
+        )
+        val patch = ColorDataSeriesPatch("color", 34)
+
+        // when
+        val result = patch.apply(dataSeriesEntity)
+
+        // then
+        assertThat(result).isTrue()
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::color).isEqualTo("COLOR")
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::colorOpacity).isEqualTo(34)
     }
 
     @Test
@@ -67,13 +96,14 @@ internal class ColorDataSeriesPatchTest {
             creatorId = 432,
             displayName = "the-name",
             color = "THE-COLOR",
+            colorOpacity = 12,
             dataType = DataType.EVENTS,
             valueName = "the-value-name",
             filters = setOf(
                 DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
             )
         )
-        val patch = ColorDataSeriesPatch("the-color")
+        val patch = ColorDataSeriesPatch("the-color", 12)
 
         // when
         val result = patch.apply(dataSeriesEntity)

@@ -35,7 +35,6 @@ import io.qalipsis.core.head.model.DisplayNameDataSeriesPatch
 import io.qalipsis.core.head.model.FieldNameDataSeriesPatch
 import io.qalipsis.core.head.model.TimeframeUnitDataSeriesPatch
 import io.qalipsis.core.head.model.ValueNameDataSeriesPatch
-import io.qalipsis.core.head.model.ColorOpacityDataSeriesPatch
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -119,78 +118,12 @@ internal class DataSeriesPatchValidationIntegrationTest {
     }
 
     @Nested
-    inner class `Color opacity` {
-
-        @Test
-        internal fun `should accept valid color opacity`(){
-            //given
-            val patch = ColorOpacityDataSeriesPatch(10)
-
-            //when
-            val violations = validator.validate(patch)
-
-            //then
-            assertThat(violations).isEmpty()
-        }
-
-        @Test
-        internal fun `should accept null color opacity`(){
-            //given
-            val patch = ColorOpacityDataSeriesPatch(null)
-
-            //when
-            val violations = validator.validate(patch)
-
-            //then
-            assertThat(violations).isEmpty()
-        }
-
-        @Test
-        internal fun `should deny color opacity above 100`(){
-            //given
-            val patch = ColorOpacityDataSeriesPatch(101)
-
-            //when
-            val violations = validator.validate(patch)
-
-            // then
-            assertThat(violations).all {
-                hasSize(1)
-                transform { it.first() }.all {
-                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("colorOpacity") }
-                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must be less than or equal to 100")
-                }
-            }
-
-        }
-
-        @Test
-        internal fun `should deny color opacity below 1`(){
-            //given
-            val patch = ColorOpacityDataSeriesPatch(-10)
-
-            //when
-            val violations = validator.validate(patch)
-
-            // then
-            assertThat(violations).all {
-                hasSize(1)
-                transform { it.first() }.all {
-                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("colorOpacity") }
-                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 1")
-                }
-            }
-
-        }
-    }
-
-    @Nested
     inner class `Color` {
 
         @Test
         internal fun `should accept valid color patch`() {
             // given
-            val patch = ColorDataSeriesPatch("#FF761C")
+            val patch = ColorDataSeriesPatch("#FF761C", 100)
 
             // when
             val violations = validator.validate(patch)
@@ -225,6 +158,36 @@ internal class DataSeriesPatchValidationIntegrationTest {
                 transform { it.first() }.all {
                     prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("color") }
                     prop(ConstraintViolation<*>::getMessage).isEqualTo("must match \"^#[0-9a-fA-F]{6}\$\"")
+                }
+            }
+        }
+
+        @Test
+        internal fun `should deny an opacity between 1 and 100`() {
+            // given
+            val patch = ColorDataSeriesPatch("#FF761C", 101)
+
+            // when
+            var violations = validator.validate(patch)
+
+            // then
+            assertThat(violations).all {
+                hasSize(1)
+                transform { it.first() }.all {
+                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("opacity") }
+                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must be less than or equal to 100")
+                }
+            }
+
+            // when
+            violations = validator.validate(ColorDataSeriesPatch("#FF761C", 0))
+
+            // then
+            assertThat(violations).all {
+                hasSize(1)
+                transform { it.first() }.all {
+                    prop(ConstraintViolation<*>::getPropertyPath).any { it.name.equals("opacity") }
+                    prop(ConstraintViolation<*>::getMessage).isEqualTo("must be greater than or equal to 1")
                 }
             }
         }
@@ -415,6 +378,5 @@ internal class DataSeriesPatchValidationIntegrationTest {
             }
         }
     }
-
 
 }
