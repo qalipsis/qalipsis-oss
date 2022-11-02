@@ -54,40 +54,42 @@ data class StageExecutionProfile(
     }
 
     inner class StageExecutionProfileIterator(
-        private val totalMinionsCount: Int,
+        private var remainingMinions: Int,
         private val speedFactor: Double,
         private val stages: Collection<Stage>,
         private val completion: CompletionMode
     ) : ExecutionProfileIterator {
 
-        private var remainingMinions = totalMinionsCount
-
-        private var nextStart = 0.0
-
         private val startingLines = getStartingLines().toMutableList()
 
         private fun getStartingLines(): List<MinionsStartingLine> {
+            var stageStartOffset = 0L
+
             return stages.flatMap { stage ->
                 val linesCount = stage.rampUpDurationMs / stage.resolutionMs
-                val delayBetweenLines = stage.resolutionMs / speedFactor
-                val minionsByLine = ceil((stage.minionsCount / linesCount).toDouble()).toInt()
                 var remainingMinionsInCurrentStage = stage.minionsCount.coerceAtMost(remainingMinions)
+                val minionsByLine = ceil((stage.minionsCount / linesCount).toDouble()).toInt()
+                val maxStartingLines = ceil(remainingMinionsInCurrentStage.toDouble() / minionsByLine).toLong()
+                val delayBetweenLines = (stage.resolutionMs / speedFactor).toLong()
+                var stageStartingClockTime = 0L
 
-                val stageResult =
-                    (1..linesCount.coerceAtMost((remainingMinionsInCurrentStage / minionsByLine).toLong()))
-                        .takeWhile {
-                            remainingMinionsInCurrentStage > 0 && remainingMinions > 0
-                        }.map {
-                            nextStart += delayBetweenLines
-                            val minionsCount =
-                                minionsByLine.coerceAtMost(remainingMinionsInCurrentStage)
-                                    .coerceAtMost(remainingMinions)
-                            remainingMinionsInCurrentStage -= minionsCount
-                            remainingMinions -= minionsCount
+                val stageResult = (1..linesCount.coerceAtMost(maxStartingLines))
+                    .asSequence()
+                    .takeWhile {
+                        remainingMinionsInCurrentStage > 0 && remainingMinions > 0
+                    }.mapIndexed { index, _ ->
+                        val minionsCountToStart =
+                            minionsByLine.coerceAtMost(remainingMinionsInCurrentStage)
+                                .coerceAtMost(remainingMinions)
+                        remainingMinionsInCurrentStage -= minionsCountToStart
+                        remainingMinions -= minionsCountToStart
 
-                            MinionsStartingLine(minionsCount, nextStart.toLong())
-                        }
-                nextStart += (stage.totalDurationMs / speedFactor).toLong()
+                        val nextStart = if (index == 0) stageStartOffset else delayBetweenLines
+                        stageStartingClockTime += delayBetweenLines
+                        MinionsStartingLine(minionsCountToStart, nextStart)
+                    }.toList()
+
+                stageStartOffset = (stage.totalDurationMs / speedFactor).toLong() - stageStartingClockTime
                 stageResult
             }
         }
@@ -97,7 +99,7 @@ data class StageExecutionProfile(
         }
 
         override fun hasNext(): Boolean {
-            return startingLines.count() > 0
+            return startingLines.isNotEmpty()
         }
     }
 }

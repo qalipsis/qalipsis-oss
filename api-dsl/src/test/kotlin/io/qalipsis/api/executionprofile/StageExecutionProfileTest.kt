@@ -16,13 +16,15 @@
 
 package io.qalipsis.api.executionprofile
 
+import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import io.mockk.spyk
 import io.qalipsis.api.scenario.TestScenarioFactory
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.verifyExactly
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -70,7 +72,7 @@ internal class StageExecutionProfileTest {
                 minionsCount = 14,
                 rampUpDurationMs = 1500,
                 totalDurationMs = 2000,
-                resolutionMs = 500
+                resolutionMs = 400
             ),
         )
         val executionProfile = StageExecutionProfile(stages, CompletionMode.FORCED)
@@ -87,19 +89,18 @@ internal class StageExecutionProfileTest {
             iterator.next()
         }
 
-        Assertions.assertTrue(
-            lines.containsAll(
-                listOf(
-                    MinionsStartingLine(3, 500),
-                    MinionsStartingLine(3, 1000),
-                    MinionsStartingLine(3, 1500),
-                    MinionsStartingLine(3, 2000),
-                    MinionsStartingLine(4, 5500),
-                    MinionsStartingLine(4, 6000),
-                    MinionsStartingLine(4, 6500),
-                )
+        assertThat(lines).all {
+            hasSize(7)
+            containsExactly(
+                MinionsStartingLine(3, 0),
+                MinionsStartingLine(3, 500),
+                MinionsStartingLine(3, 500),
+                MinionsStartingLine(3, 500),
+                MinionsStartingLine(4, 1000),
+                MinionsStartingLine(4, 400),
+                MinionsStartingLine(4, 400),
             )
-        )
+        }
     }
 
     @Test
@@ -115,7 +116,7 @@ internal class StageExecutionProfileTest {
                 minionsCount = 14,
                 rampUpDurationMs = 1500,
                 totalDurationMs = 2000,
-                resolutionMs = 500
+                resolutionMs = 400
             ),
         )
         val executionProfile = StageExecutionProfile(stages, CompletionMode.FORCED)
@@ -132,19 +133,18 @@ internal class StageExecutionProfileTest {
             iterator.next()
         }
 
-        Assertions.assertTrue(
-            lines.containsAll(
-                listOf(
-                    MinionsStartingLine(3, 250),
-                    MinionsStartingLine(3, 500),
-                    MinionsStartingLine(3, 750),
-                    MinionsStartingLine(3, 1000),
-                    MinionsStartingLine(4, 2750),
-                    MinionsStartingLine(4, 3000),
-                    MinionsStartingLine(4, 3250),
-                )
+        assertThat(lines).all {
+            hasSize(7)
+            containsExactly(
+                MinionsStartingLine(3, 0),
+                MinionsStartingLine(3, 250),
+                MinionsStartingLine(3, 250),
+                MinionsStartingLine(3, 250),
+                MinionsStartingLine(4, 500),
+                MinionsStartingLine(4, 200),
+                MinionsStartingLine(4, 200),
             )
-        )
+        }
     }
 
     @Test
@@ -160,34 +160,33 @@ internal class StageExecutionProfileTest {
                 minionsCount = 14,
                 rampUpDurationMs = 1500,
                 totalDurationMs = 2000,
-                resolutionMs = 500
+                resolutionMs = 400
             ),
         )
         val executionProfile = StageExecutionProfile(stages, CompletionMode.FORCED)
 
-        val iterator = spyk(executionProfile.iterator(20, 2.0))
+        val iterator = spyk(executionProfile.iterator(19, 1.0))
 
         val lines = mutableListOf<MinionsStartingLine>()
         while (iterator.hasNext()) {
-            val next = iterator.next()
-            lines.add(next)
+            lines.add(iterator.next())
         }
 
         verifyExactly(6) {
             iterator.next()
         }
 
-        Assertions.assertTrue(
-            lines.containsAll(
-                listOf(
-                    MinionsStartingLine(3, 250),
-                    MinionsStartingLine(3, 500),
-                    MinionsStartingLine(3, 750),
-                    MinionsStartingLine(3, 1000),
-                    MinionsStartingLine(4, 2750),
-                    MinionsStartingLine(4, 3000),
-                )
+        assertThat(lines).all {
+            hasSize(6)
+            transform { it.sumOf { it.count } }.isEqualTo(19)
+            containsExactly(
+                MinionsStartingLine(3, 0),
+                MinionsStartingLine(3, 500),
+                MinionsStartingLine(3, 500),
+                MinionsStartingLine(3, 500),
+                MinionsStartingLine(4, 1000),
+                MinionsStartingLine(3, 400)
             )
-        )
+        }
     }
 }
