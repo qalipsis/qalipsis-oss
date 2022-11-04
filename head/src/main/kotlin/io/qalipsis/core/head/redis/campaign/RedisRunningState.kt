@@ -64,7 +64,7 @@ internal class RedisRunningState(
                 RedisFailureState(campaign, feedback.error ?: "", operations)
             feedback is FailedCampaignFeedback -> RedisFailureState(
                 campaign,
-                feedback.error,
+                feedback.error ?: "",
                 operations
             )
             feedback is CompleteMinionFeedback -> RedisRunningState(

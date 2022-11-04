@@ -32,7 +32,7 @@ import kotlinx.serialization.Serializable
 @SerialName("fail")
 data class FailedCampaignFeedback(
     override val campaignKey: CampaignKey,
-    override val error: String
+    private val errorMessage: String
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
@@ -40,5 +40,7 @@ data class FailedCampaignFeedback(
     override var tenant: String = ""
 
     override val status: FeedbackStatus = FeedbackStatus.FAILED
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 
 }

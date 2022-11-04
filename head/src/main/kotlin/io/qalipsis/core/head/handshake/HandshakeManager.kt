@@ -24,10 +24,10 @@ import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.communication.HandshakeRequestListener
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.lifetime.HeadStartupComponent

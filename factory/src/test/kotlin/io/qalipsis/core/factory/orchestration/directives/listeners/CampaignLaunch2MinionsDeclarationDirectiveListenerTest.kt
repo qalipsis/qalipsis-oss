@@ -43,7 +43,6 @@ import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.factory.testDag
 import io.qalipsis.core.factory.testScenario
-import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -144,8 +143,6 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
         every { scenarioRegistry.get("my-scenario") } returns scenario
         val assignmentDirectiveSlot = slot<MinionsAssignmentDirective>()
         coJustRun { factoryChannel.publishDirective(capture(assignmentDirectiveSlot)) }
-        val feedbacks = mutableListOf<DirectiveFeedback>()
-        coJustRun { factoryChannel.publishFeedback(capture(feedbacks)) }
 
         // when
         processor.notify(directive)
@@ -254,7 +251,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListenerTest {
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
-                    error = "A problem occurred"
+                    errorMessage = "A problem occurred"
                 )
             )
         }

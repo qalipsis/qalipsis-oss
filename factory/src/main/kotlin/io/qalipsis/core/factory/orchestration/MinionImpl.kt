@@ -30,6 +30,7 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Job
 import org.slf4j.MDC
 import java.util.concurrent.ConcurrentHashMap
@@ -65,7 +66,7 @@ internal open class MinionImpl(
     /**
      * Counter to assign an ID to the running jobs.
      */
-    private val jobIndex = AtomicLong(Long.MIN_VALUE)
+    private val jobIndex = AtomicLong(0)
 
     /**
      * Map of running jobs attached to a unique identifier.
@@ -75,7 +76,7 @@ internal open class MinionImpl(
     /**
      * Cancellation state of the minion.
      */
-    private var cancelled = false
+    private var stopped = false
 
     /**
      * Actions to perform when the minion normally completes.
@@ -83,20 +84,10 @@ internal open class MinionImpl(
     private val onCompleteHooks: MutableList<suspend (() -> Unit)> = mutableListOf()
 
     /**
-     * Latch suspending until all the jobs are complete then triggering all the statements of [onCompleteHooks] successively.
+     * Latch suspending until all the jobs related the minion are complete.
+     * Negative values are allowed because they might happen when stopping all the jobs then cancelling the latch.
      */
-    private val runningJobsLatch = SuspendedCountLatch {
-        completeMdcContext()
-        if (!cancelled) {
-            log.trace { "The minion is now complete, executing the hooks" }
-            onCompleteHooks.forEach {
-                tryAndLogOrNull(log) {
-                    it()
-                }
-            }
-        }
-        cleanMdcContext()
-    }
+    private val runningJobsLatch = SuspendedCountLatch(allowsNegative = true)
 
     /**
      * Computed count of active steps.
@@ -120,6 +111,7 @@ internal open class MinionImpl(
 
     private fun doStart() {
         if (!isStarted()) {
+            log.trace { "Starting the minion" }
             startLatch.cancel()
         }
     }
@@ -128,17 +120,14 @@ internal open class MinionImpl(
         return !startLatch.isLocked
     }
 
-    suspend fun reset(paused: Boolean = false) {
-        cancelled = false
+    suspend fun restart(paused: Boolean = false) {
+        log.trace { "Restarting the minion $id in ${if (paused) "paused" else "non-paused"} mode" }
+        stopped = false
         if (paused) {
             startLatch.lock()
         } else {
             startLatch.cancel()
         }
-        jobIndex.set(Long.MIN_VALUE)
-        runningJobs.clear()
-        runningJobsLatch.reset()
-        executingStepsGauge.set(0)
     }
 
     override suspend fun launch(
@@ -147,7 +136,7 @@ internal open class MinionImpl(
         countLatch: SuspendedCountLatch?,
         block: suspend CoroutineScope.() -> Unit
     ): Job? {
-        return if (cancelled) {
+        return if (stopped) {
             log.trace { "Minion was cancelled, no new job can be started" }
             null
         } else {
@@ -159,9 +148,9 @@ internal open class MinionImpl(
 
             MDC.put("job", "$jobId")
             log.trace {
-                "Adding a job to minion (active jobs: ${runningJobs.keys.toList().joinToString(", ")})"
+                "Adding a job to minion (currently active jobs excluding the new one: ${runningJobsLatch.get()})"
             }
-            scope.contextualLaunch(context) {
+            scope.contextualLaunch(context, LAZY) {
                 waitForStart()
                 try {
                     log.trace { "Executing the minion job $jobId" }
@@ -176,33 +165,42 @@ internal open class MinionImpl(
                     executingStepsGauge.decrementAndGet()
                     countLatch?.decrement()
 
-                    if (!cancelled) {
+                    if (!stopped) {
                         runningJobs.remove(jobId)
-                        runningJobsLatch.decrement()
                         log.trace {
-                            "Minion job $jobId was completed (active jobs: ${
-                                runningJobs.keys.toList().joinToString(", ")
-                            })"
+                            "Minion job $jobId was completed (active jobs including the completed one: ${runningJobsLatch.get()})"
                         }
+                        runningJobsLatch.decrement()
                     }
                 }
             }.also {
                 runningJobs[jobId] = it
+                it.start()
             }
         }
     }
 
-    override suspend fun cancel() {
+    override suspend fun stop(interrupt: Boolean) {
+        completeMdcContext()
         log.trace { "Cancelling minion $id" }
-        cancelled = true
+        stopped = true
         startLatch.cancel()
-        for (job in runningJobs.values) {
-            kotlin.runCatching {
-                job.cancel()
+        if (interrupt) {
+            for (job in runningJobs.values) {
+                kotlin.runCatching {
+                    job.cancel()
+                }
             }
         }
-        log.trace { "Cancellation of minions $id completed" }
+        log.trace { "Stopping the minion, executing the hooks" }
+        onCompleteHooks.forEach {
+            tryAndLogOrNull(log) {
+                it()
+            }
+        }
         runningJobsLatch.cancel()
+        log.trace { "The minion $id is now stopped" }
+        cleanMdcContext()
     }
 
     override suspend fun waitForStart() {

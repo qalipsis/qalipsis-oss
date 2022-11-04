@@ -117,12 +117,15 @@ internal class MinionsKeeperImpl(
                 singletonMinionsByDagId.put(scenarioName, dagId, minion)
                 dagIdsBySingletonMinionId[minionId] = scenarioName to dagId
                 minion.onComplete {
+                    log.trace { "Removing the singleton minion from the table of DAGs by minion, if present" }
                     singletonMinionsByDagId.remove(scenarioName, dagId)
+                    log.trace { "Removing the singleton minion from the map of DAGs by minion, if present" }
                     dagIdsBySingletonMinionId.remove(minionId)
                 }
             } else {
                 // Removes the minion from the registries when complete.
                 minion.onComplete {
+                    log.trace { "Removing the minion from the minion collection" }
                     minions.remove(minionId)
                 }
             }
@@ -175,10 +178,7 @@ internal class MinionsKeeperImpl(
     @LogInput
     override suspend fun restartMinion(minionId: MinionId) {
         minions[minionId]?.also { minion ->
-            runCatching {
-                minion.cancel()
-            }
-            minion.reset(true)
+            minion.restart(true) // Suspend the minion while it is being prepared.
             rootDagsOfMinions[minionId]?.let { rootDagId ->
                 coroutineScope.launch {
                     val scenarioName = minion.scenarioName
@@ -191,9 +191,9 @@ internal class MinionsKeeperImpl(
     }
 
     @LogInput
-    override suspend fun shutdownMinion(minionId: MinionId) {
+    override suspend fun shutdownMinion(minionId: MinionId, interrupt: Boolean) {
         minions.remove(minionId)?.also { minion ->
-            shutdownMinion(minion)
+            shutdownMinion(minion, interrupt)
         }
     }
 
@@ -201,7 +201,7 @@ internal class MinionsKeeperImpl(
     override suspend fun shutdownAll() {
         minions.values.forEach { minion ->
             kotlin.runCatching {
-                shutdownMinion(minion)
+                shutdownMinion(minion, true)
             }
         }
         minions.clear()
@@ -211,19 +211,24 @@ internal class MinionsKeeperImpl(
         rootDagsOfMinions.clear()
     }
 
-    private suspend fun shutdownMinion(minion: MinionImpl) {
+    private suspend fun shutdownMinion(minion: MinionImpl, interrupt: Boolean) {
         val minionId = minion.id
         val eventsTags =
-            mapOf("campaign" to minion.campaignKey, "scenario" to minion.scenarioName, "minion" to minionId)
-        eventsLogger.debug("minion.cancellation.started", tags = eventsTags)
+            mapOf(
+                "campaign" to minion.campaignKey,
+                "scenario" to minion.scenarioName,
+                "minion" to minionId,
+                "interrupt" to "$interrupt"
+            )
+        eventsLogger.debug("minion.completion.started", tags = eventsTags)
         dagIdsBySingletonMinionId.remove(minionId)
             ?.let { (scenarioName, dagId) -> singletonMinionsByDagId.remove(scenarioName, dagId) }
         rootDagsOfMinions.remove(minionId)
         try {
-            minion.cancel()
-            eventsLogger.debug("minion.cancellation.complete", tags = eventsTags)
+            minion.stop(interrupt)
+            eventsLogger.debug("minion.completion.done", tags = eventsTags)
         } catch (e: Exception) {
-            eventsLogger.debug("minion.cancellation.complete", e, tags = eventsTags)
+            eventsLogger.debug("minion.completion.failed", e, tags = eventsTags)
         }
     }
 

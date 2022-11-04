@@ -31,9 +31,9 @@ import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.directives.DispatcherChannel
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.communication.AbstractHeadChannel
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Named
 import jakarta.inject.Singleton

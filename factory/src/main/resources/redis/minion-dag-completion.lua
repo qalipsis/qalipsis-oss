@@ -33,7 +33,7 @@ end
 
 local singletonRegistry = KEYS[1]
 local counters = KEYS[2]
-local minionAssignedDag = KEYS[3]
+local minionAssignedDags = KEYS[3]
 
 local scenarioName = ARGV[1]
 local minionId = ARGV[2]
@@ -49,17 +49,17 @@ if deletedSingleton > 0 then
   -- A singleton minion is complete, it does not affect the completion of the scenario.
   completedMinion = 1
 else
-  local remainingDagsForMinion = redis.call('hincrby', minionAssignedDag, 'remaining-dags', -1 * completeDagsCount)
+  local remainingDagsForMinion = redis.call('hincrby', minionAssignedDags, 'remaining-dags', -1 * completeDagsCount)
   if remainingDagsForMinion == 0 then
+    completedMinion = 1
     if mightBeRestarted
     then
       -- The remaining dags are reset to the originally scheduled ones.
-      local scheduledDags = redis.call('hget', assignedDagsKey, 'scheduled-dags')
-      redis.call('hset', assignedDagsKey, 'remaining-dags', scheduledDags)
+      local scheduledDagsCount = redis.call('hget', minionAssignedDags, 'scheduled-dags')
+      redis.call('hset', minionAssignedDags, 'remaining-dags', scheduledDagsCount)
     else
       -- The minion is complete, let's check if other minion run in the scenario.
-      completedMinion = 1
-      redis.call('unlink', minionAssignedDag)
+      redis.call('unlink', minionAssignedDags)
       local remainingMinionsInScenario = redis.call('hincrby', counters, scenarioName, -1)
       if remainingMinionsInScenario == 0 then
         -- The scenario is complete, let's check if other scenarios run in the campaign.

@@ -34,7 +34,6 @@ import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
-import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -53,9 +52,6 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
     @JvmField
     @RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
-
-    @RelaxedMockK
-    private lateinit var scenarioRegistry: ScenarioRegistry
 
     @RelaxedMockK
     private lateinit var factoryChannel: FactoryChannel
@@ -108,15 +104,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         val executionProfileConfiguration = relaxedMockk<ExecutionProfileConfiguration>()
         val directive =
             MinionsRampUpPreparationDirective("my-campaign", "my-scenario", executionProfileConfiguration, "")
-        val scenario = relaxedMockk<Scenario> {
-            every { name } returns "my-scenario"
-        }
-        every { scenarioRegistry.get("my-scenario") } returns scenario
         val minionsStartDefinitions = (1..650).map { relaxedMockk<MinionStartDefinition>() }
         coEvery {
             factoryCampaignManager.prepareMinionsExecutionProfile(
                 "my-campaign",
-                scenario,
+                "my-scenario",
                 refEq(executionProfileConfiguration)
             )
         } returns minionsStartDefinitions
@@ -133,10 +125,9 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
-            scenarioRegistry["my-scenario"]
             factoryCampaignManager.prepareMinionsExecutionProfile(
                 "my-campaign",
-                scenario,
+                "my-scenario",
                 refEq(executionProfileConfiguration)
             )
             factoryChannel.publishDirective(
@@ -162,7 +153,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             )
         }
 
-        confirmVerified(scenarioRegistry, factoryChannel, factoryCampaignManager)
+        confirmVerified(factoryChannel, factoryCampaignManager)
     }
 
     @Test
@@ -174,11 +165,10 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         val scenario = relaxedMockk<Scenario> {
             every { name } returns "my-scenario"
         }
-        every { scenarioRegistry["my-scenario"] } returns scenario
         coEvery {
             factoryCampaignManager.prepareMinionsExecutionProfile(
                 "my-campaign",
-                scenario,
+                "my-scenario",
                 refEq(executionProfileConfiguration)
             )
         } throws RuntimeException("A problem occurred")
@@ -195,10 +185,9 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
-            scenarioRegistry["my-scenario"]
             factoryCampaignManager.prepareMinionsExecutionProfile(
                 "my-campaign",
-                scenario,
+                "my-scenario",
                 refEq(executionProfileConfiguration)
             )
             factoryChannel.publishFeedback(
@@ -206,11 +195,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
-                    error = "A problem occurred"
+                    errorMessage = "A problem occurred"
                 )
             )
         }
 
-        confirmVerified(scenarioRegistry, factoryChannel, factoryCampaignManager)
+        confirmVerified(factoryChannel, factoryCampaignManager)
     }
 }

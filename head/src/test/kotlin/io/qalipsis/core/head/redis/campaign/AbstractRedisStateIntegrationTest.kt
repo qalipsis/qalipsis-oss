@@ -29,10 +29,10 @@ import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest

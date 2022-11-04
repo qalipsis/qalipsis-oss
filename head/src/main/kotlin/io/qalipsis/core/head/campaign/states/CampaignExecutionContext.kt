@@ -20,9 +20,9 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.report.CampaignReportPublisher
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import jakarta.inject.Singleton

@@ -23,6 +23,7 @@ import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
+import java.time.Instant
 
 /**
  * Steps at the end of a DAG.
@@ -38,6 +39,7 @@ internal open class DagTransitionStep<I>(
     override suspend fun complete(completionContext: CompletionContext) {
         factoryCampaignManager.notifyCompleteMinion(
             completionContext.minionId,
+            Instant.ofEpochMilli(completionContext.minionStart),
             completionContext.campaignKey,
             completionContext.scenarioName,
             dagId

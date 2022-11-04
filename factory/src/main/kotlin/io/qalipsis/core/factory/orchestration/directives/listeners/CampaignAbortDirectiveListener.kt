@@ -71,7 +71,7 @@ internal class CampaignAbortDirectiveListener(
             factoryChannel.publishFeedback(
                 feedback.copy(
                     status = FeedbackStatus.FAILED,
-                    error = e.message
+                    errorMessage = e.message ?: ""
                 )
             )
         }

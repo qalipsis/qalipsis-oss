@@ -87,9 +87,10 @@ interface MinionsKeeper {
     /**
      * Stops and removes the specified minion.
      *
-     * @param minionId the ID of the minion to shutdown and remove.
+     * @param minionId the ID of the minion to shutdown and remove
+     * @param interrupt when set to true, all the jobs assigned to the minion are cancelled
      */
-    suspend fun shutdownMinion(minionId: MinionId)
+    suspend fun shutdownMinion(minionId: MinionId, interrupt: Boolean = false)
 
     /**
      * Stops and removes all the minions.

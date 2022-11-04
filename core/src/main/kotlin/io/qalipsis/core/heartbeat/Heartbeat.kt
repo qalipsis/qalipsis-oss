@@ -34,8 +34,11 @@ data class Heartbeat(
     val nodeId: String,
     @Serializable(with = InstantKotlinSerializer::class) val timestamp: Instant,
     val state: State = State.HEALTHY,
-    val campaignKey: CampaignKey? = null
+    private val currentCampaignKey: CampaignKey = ""
 ) {
+
+    val campaignKey: CampaignKey?
+        get() = currentCampaignKey.takeIf { it.isNotBlank() }
 
     enum class State {
         REGISTERED, UNREGISTERED, HEALTHY, UNHEALTHY

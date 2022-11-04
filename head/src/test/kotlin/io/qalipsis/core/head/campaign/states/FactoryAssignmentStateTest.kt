@@ -107,8 +107,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                             }
                         }
                     }
-                    prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("broadcast-channel")
-                    prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedback-channel")
+                    prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
                     prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
                 }
             }
@@ -125,8 +124,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                             }
                         }
                     }
-                    prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("broadcast-channel")
-                    prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedback-channel")
+                    prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
                     prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-2")
                 }
             }

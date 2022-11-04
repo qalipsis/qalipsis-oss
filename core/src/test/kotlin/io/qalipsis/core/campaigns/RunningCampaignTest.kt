@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.head.campaign
+package io.qalipsis.core.campaigns
 
 import assertk.all
 import assertk.assertThat
@@ -26,11 +26,21 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.key
-import io.qalipsis.core.campaigns.RunningCampaign
-import io.qalipsis.core.campaigns.FactoryConfiguration
-import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
+import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.Stage
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
+import io.qalipsis.core.serialization.SerializationFactory
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 import org.junit.jupiter.api.Test
 
+@ExperimentalSerializationApi
 internal class RunningCampaignTest {
 
     @Test
@@ -136,5 +146,60 @@ internal class RunningCampaignTest {
                 )
             )
         }
+    }
+
+    @Test
+    internal fun `should serialize a complete running campaign`() {
+        // given
+        val campaign = RunningCampaign(
+            tenant = "the-tenant",
+            key = "my-campaign",
+            speedFactor = 123.4,
+            startOffsetMs = 23465,
+            hardTimeout = true,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioConfiguration(123, RegularExecutionProfileConfiguration(764, 564)),
+                "scenario-2" to ScenarioConfiguration(
+                    123,
+                    AcceleratingExecutionProfileConfiguration(764, 123.5, 234, 2365)
+                ),
+                "scenario-3" to ScenarioConfiguration(
+                    123,
+                    ProgressiveVolumeExecutionProfileConfiguration(764, 123, 234.5, 2365)
+                ),
+                "scenario-4" to ScenarioConfiguration(
+                    123,
+                    StageExecutionProfileConfiguration(GRACEFUL, Stage(12, 234, 75464, 12), Stage(75, 4433, 46456, 343))
+                ),
+                "scenario-5" to ScenarioConfiguration(123, TimeFrameExecutionProfileConfiguration(764, 564)),
+                "scenario-6" to ScenarioConfiguration(123, DefaultExecutionProfileConfiguration()),
+            )
+        ).apply {
+            broadcastChannel = "broadcast-channel"
+            feedbackChannel = "feedback-channel"
+        }
+        campaign.factories += mapOf(
+            "factory-1" to FactoryConfiguration(
+                "",
+                mutableMapOf(
+                    "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2", "dag-3")),
+                    "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-a", "dag-b", "dag-c"))
+                )
+            ),
+            "factory-2" to FactoryConfiguration(
+                "",
+                mutableMapOf(
+                    "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-a", "dag-b", "dag-c"))
+                )
+            )
+        )
+
+        // when
+        val protobuf = SerializationFactory().protobuf()
+        val serialized = protobuf.encodeToByteArray(campaign)
+        val deserialized = protobuf.decodeFromByteArray<RunningCampaign>(serialized)
+
+        // then
+        assertThat(deserialized).isDataClassEqualTo(campaign)
     }
 }

@@ -185,7 +185,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
                     status = FeedbackStatus.FAILED,
-                    error = "A problem occurred"
+                    errorMessage = "A problem occurred"
                 )
             )
         }

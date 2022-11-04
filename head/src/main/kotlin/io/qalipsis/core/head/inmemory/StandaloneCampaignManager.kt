@@ -25,13 +25,13 @@ import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.EmptyState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.CampaignConfiguration

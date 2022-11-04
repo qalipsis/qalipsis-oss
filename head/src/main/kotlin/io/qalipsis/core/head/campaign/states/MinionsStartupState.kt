@@ -39,10 +39,7 @@ internal open class MinionsStartupState(
             MinionsRampUpPreparationDirective(
                 campaignKey = campaignKey,
                 scenarioName = scenarioName,
-                executionProfileConfiguration = scenarioConfiguration.executionProfileConfiguration.clone(
-                    startOffsetMs = campaign.startOffsetMs,
-                    speedFactor = campaign.speedFactor
-                ),
+                executionProfileConfiguration = scenarioConfiguration.executionProfileConfiguration.clone(),
                 channel = campaign.broadcastChannel
             )
         }

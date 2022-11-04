@@ -27,9 +27,9 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.sync.Latch
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Zone

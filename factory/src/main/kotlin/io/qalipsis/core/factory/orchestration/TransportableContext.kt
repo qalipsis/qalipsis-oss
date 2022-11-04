@@ -50,14 +50,16 @@ data class TransportableCompletionContext(
     override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     override val minionId: MinionId,
+    val minionStart: Long,
     val lastExecutedStepName: StepName,
-    val errors: List<StepError>
+    val errors: List<StepError>,
 ) : TransportableContext() {
 
     constructor(ctx: CompletionContext) : this(
         ctx.campaignKey,
         ctx.scenarioName,
         ctx.minionId,
+        ctx.minionStart,
         ctx.lastExecutedStepName,
         ctx.errors.map { StepError(it.message, it.stepName) }
     )
@@ -67,6 +69,7 @@ data class TransportableCompletionContext(
             campaignKey,
             scenarioName,
             minionId,
+            minionStart,
             lastExecutedStepName,
             errors.map { io.qalipsis.api.context.StepError(it.message, it.stepName) }
         )
@@ -80,6 +83,7 @@ data class TransportableStepContext(
     override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     override val minionId: MinionId,
+    val startedAt: Long,
     val previousStepName: StepName,
     val stepName: StepName,
     var stepType: String?,
@@ -95,6 +99,7 @@ data class TransportableStepContext(
         campaignKey = ctx.campaignKey,
         scenarioName = ctx.scenarioName,
         minionId = ctx.minionId,
+        startedAt = ctx.startedAt,
         previousStepName = ctx.previousStepName!!,
         stepName = ctx.stepName,
         stepType = ctx.stepType,
@@ -119,7 +124,8 @@ data class TransportableStepContext(
             stepFamily = stepFamily,
             stepIterationIndex = stepIterationIndex,
             isExhausted = isExhausted,
-            isTail = isTail
+            isTail = isTail,
+            startedAt = startedAt
         ).also { ctx ->
             this.errors.forEach {
                 ctx.addError(io.qalipsis.api.context.StepError(it.message, it.stepName))
@@ -141,6 +147,7 @@ data class TransportableStepContext(
         if (campaignKey != other.campaignKey) return false
         if (scenarioName != other.scenarioName) return false
         if (minionId != other.minionId) return false
+        if (startedAt != other.startedAt) return false
         if (previousStepName != other.previousStepName) return false
         if (stepName != other.stepName) return false
         if (stepType != other.stepType) return false
@@ -158,6 +165,7 @@ data class TransportableStepContext(
         result = 31 * result + campaignKey.hashCode()
         result = 31 * result + scenarioName.hashCode()
         result = 31 * result + minionId.hashCode()
+        result = 31 * result + startedAt.hashCode()
         result = 31 * result + previousStepName.hashCode()
         result = 31 * result + stepName.hashCode()
         result = 31 * result + (stepType?.hashCode() ?: 0)

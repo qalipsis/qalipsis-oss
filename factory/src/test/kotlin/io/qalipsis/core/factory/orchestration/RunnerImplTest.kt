@@ -91,11 +91,11 @@ internal class RunnerImplTest {
     @Timeout(10)
     internal fun `should execute the full dag asynchronously and update meters`() = testCoroutineDispatcher.runTest {
         // given
-        val runningStepsGauge: AtomicInteger = relaxedMockk()
-        val idleMinionsGauge: AtomicInteger = relaxedMockk()
-        val runningMinionsGauge: AtomicInteger = relaxedMockk()
-        val executedStepCounter: Counter = relaxedMockk()
-        val stepExecutionTimer: Timer = relaxedMockk()
+        val runningStepsGauge: AtomicInteger = relaxedMockk("running-steps")
+        val idleMinionsGauge: AtomicInteger = relaxedMockk("idle-minions")
+        val runningMinionsGauge: AtomicInteger = relaxedMockk("running-minions")
+        val executedStepCounter: Counter = relaxedMockk("executed-steps")
+        val stepExecutionTimer: Timer = relaxedMockk("step-execution-timer")
 
         every { meterRegistry.gauge("idle-minions", any<AtomicInteger>()) } returns idleMinionsGauge
         every { meterRegistry.gauge("running-minions", any<AtomicInteger>()) } returns runningMinionsGauge
@@ -161,7 +161,6 @@ internal class RunnerImplTest {
             idleMinionsGauge.incrementAndGet()
             idleMinionsGauge.decrementAndGet()
             runningMinionsGauge.incrementAndGet()
-            runningMinionsGauge.decrementAndGet()
         }
         coVerifyExactly(6) {
             runningStepsGauge.incrementAndGet()

@@ -76,7 +76,7 @@ internal class HeartbeatEmitter(
                         nodeId,
                         Instant.now(),
                         Heartbeat.State.HEALTHY,
-                        campaignManager.runningCampaign.campaignKey.takeUnless(String::isBlank)
+                        campaignManager.runningCampaign.campaignKey
                     )
                     try {
                         log.trace { "Sending $heartbeat to $heartbeatChannel" }

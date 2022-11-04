@@ -96,6 +96,7 @@ internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
             campaignKey = "my-campaign",
             scenarioName = "my-scenario-2",
             minionId = "my-minion-3",
+            minionStart = 1235L,
             lastExecutedStepName = "step-1",
             errors = emptyList()
         )
@@ -103,6 +104,7 @@ internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
             campaignKey = "my-campaign",
             scenarioName = "my-scenario-1",
             minionId = "my-minion-4",
+            minionStart = 91872L,
             lastExecutedStepName = "step-3",
             errors = listOf(StepError("This is an error"))
         )

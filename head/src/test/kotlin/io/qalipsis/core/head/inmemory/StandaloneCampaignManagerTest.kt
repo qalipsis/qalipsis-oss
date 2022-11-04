@@ -53,12 +53,12 @@ import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
@@ -252,8 +252,7 @@ internal class StandaloneCampaignManagerTest {
                                 }
                             }
                         }
-                        prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("directives-broadcast")
-                        prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedbacks")
+                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(runningCampaign)
                         prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
                     }
                 }
@@ -270,8 +269,7 @@ internal class StandaloneCampaignManagerTest {
                                 }
                             }
                         }
-                        prop(FactoryAssignmentDirective::broadcastChannel).isEqualTo("directives-broadcast")
-                        prop(FactoryAssignmentDirective::feedbackChannel).isEqualTo("feedbacks")
+                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(runningCampaign)
                         prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-3")
                     }
                 }

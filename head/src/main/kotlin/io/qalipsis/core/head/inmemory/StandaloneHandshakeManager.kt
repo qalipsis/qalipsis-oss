@@ -23,7 +23,7 @@ import io.micronaut.context.annotation.Replaces
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.factory.communication.HeadChannel
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.handshake.HandshakeManager

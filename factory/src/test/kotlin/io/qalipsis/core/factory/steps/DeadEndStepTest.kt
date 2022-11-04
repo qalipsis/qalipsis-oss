@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
 internal class DeadEndStepTest {
@@ -76,6 +77,7 @@ internal class DeadEndStepTest {
                 campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
                 minionId = "my-minion",
+                minionStart = 4353443L,
                 lastExecutedStepName = "step-1",
                 errors = emptyList()
             )
@@ -87,6 +89,7 @@ internal class DeadEndStepTest {
             coVerifyOnce {
                 factoryCampaignManager.notifyCompleteMinion(
                     "my-minion",
+                    Instant.ofEpochMilli(4353443L),
                     "my-campaign",
                     "my-scenario",
                     "this-is-my-dag"

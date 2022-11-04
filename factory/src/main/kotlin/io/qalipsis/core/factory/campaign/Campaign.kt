@@ -20,17 +20,25 @@
 package io.qalipsis.core.factory.campaign
 
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.directives.DispatcherChannel
+import java.time.Instant
 
 /**
  * Configuration of a scheduled or running campaign.
  *
  * @author Eric Jessé
  */
-data class Campaign(
+internal data class Campaign(
     val campaignKey: CampaignKey,
+    val speedFactor: Double = 1.0,
+    val startOffsetMs: Long = 1000,
+    val hardTimeout: Boolean = false,
+    val timeout: Instant,
     val broadcastChannel: DispatcherChannel,
     val feedbackChannel: DispatcherChannel,
+    val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap(),
     val assignments: Collection<FactoryScenarioAssignment>
 )

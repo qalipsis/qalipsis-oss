@@ -71,7 +71,7 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListener(
             }
         } catch (e: Exception) {
             log.error(e) { e.message }
-            factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.FAILED, error = e.message))
+            factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.FAILED, errorMessage = e.message ?: ""))
         }
     }
 

@@ -85,6 +85,8 @@ internal interface MinionAssignmentKeeper {
     /**
      * Marks the execution of a minion identified by [minionId] as complete for DAGs identified by [dagIds].
      *
+     * @param mightRestart indicates whether the minion is permitted to be restarted if complete
+     *
      * @return a state of the completion of the minion, scenario and campaign.
      */
     suspend fun executionComplete(
@@ -92,7 +94,7 @@ internal interface MinionAssignmentKeeper {
         scenarioName: ScenarioName,
         minionId: MinionId,
         dagIds: Collection<DirectedAcyclicGraphName>,
-        mightRestart: Boolean = false
+        mightRestart: Boolean
     ): CampaignCompletionState
 
     /**

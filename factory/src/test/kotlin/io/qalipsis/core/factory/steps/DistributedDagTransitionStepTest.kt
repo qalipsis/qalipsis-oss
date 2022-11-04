@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
 internal class DistributedDagTransitionStepTest {
@@ -141,6 +142,7 @@ internal class DistributedDagTransitionStepTest {
             campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion",
+            minionStart = 12756412L,
             lastExecutedStepName = "step-1",
             errors = emptyList()
         )
@@ -153,6 +155,7 @@ internal class DistributedDagTransitionStepTest {
         coVerifyOnce {
             factoryCampaignManager.notifyCompleteMinion(
                 "my-minion",
+                Instant.ofEpochMilli(12756412L),
                 "my-campaign",
                 "my-scenario",
                 "this-is-my-dag"
@@ -179,6 +182,7 @@ internal class DistributedDagTransitionStepTest {
                 campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
                 minionId = "my-minion",
+                minionStart = 12817612L,
                 lastExecutedStepName = "step-1",
                 errors = emptyList()
             )
@@ -191,6 +195,7 @@ internal class DistributedDagTransitionStepTest {
             coVerifyOnce {
                 factoryCampaignManager.notifyCompleteMinion(
                     "my-minion",
+                    Instant.ofEpochMilli(12817612L),
                     "my-campaign",
                     "my-scenario",
                     "this-is-my-dag"

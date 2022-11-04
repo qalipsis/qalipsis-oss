@@ -52,10 +52,13 @@ internal open class RunningState(
         when {
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 log.error { "The creation of the minions for the scenario ${feedback.scenarioName} failed: ${feedback.error}" }
+
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioName} failed: ${feedback.error}" }
+
             feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED ->
                 log.error { "The start of minions of scenario ${feedback.scenarioName} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
+
             feedback is FailedCampaignFeedback ->
                 log.error { "The campaign ${feedback.campaignKey} failed in the factory ${feedback.nodeId}: ${feedback.error}" }
         }
@@ -68,15 +71,19 @@ internal open class RunningState(
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED -> {
                 FailureState(campaign, feedback.error ?: "")
             }
+
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED -> {
                 FailureState(campaign, feedback.error ?: "")
             }
+
             feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED -> {
                 FailureState(campaign, feedback.error ?: "")
             }
+
             feedback is FailedCampaignFeedback -> {
-                FailureState(campaign, feedback.error)
+                FailureState(campaign, feedback.error ?: "")
             }
+
             feedback is CompleteMinionFeedback -> {
                 RunningState(
                     campaign, listOf(
@@ -90,6 +97,7 @@ internal open class RunningState(
                     expectedScenariosToComplete = expectedScenariosToComplete
                 )
             }
+
             feedback is EndOfCampaignScenarioFeedback -> {
                 context.campaignReportStateKeeper.complete(feedback.campaignKey, feedback.scenarioName)
                 context.campaignService.closeScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)
@@ -104,6 +112,7 @@ internal open class RunningState(
                     expectedScenariosToComplete = expectedScenariosToComplete
                 )
             }
+
             feedback is CampaignScenarioShutdownFeedback -> {
                 expectedScenariosToComplete.remove(feedback.scenarioName)
                 if (expectedScenariosToComplete.isEmpty()) {
@@ -114,6 +123,7 @@ internal open class RunningState(
                     this
                 }
             }
+
             else -> {
                 this
             }

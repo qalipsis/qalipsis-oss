@@ -58,17 +58,17 @@ internal class FactoryConfiguration {
     /**
      * This object contains the settings applied to each key and value stored in cache.
      */
-    var cache: Cache = Cache()
+    var cache: CacheConfiguration = CacheConfiguration()
 
     /**
      * Configuration of the operations of assignment of minions to the factory.
      */
-    var assignment = Assignment()
+    var assignment = AssignmentConfiguration()
 
     /**
      * This object contains the values to validate the campaign.
      */
-    var campaign = Campaign()
+    var campaign = CampaignConfiguration()
 
     /**
      * Configuration of a key of a Zone of the factory declared in the head.
@@ -110,7 +110,7 @@ internal class FactoryConfiguration {
     }
 
     @ConfigurationProperties("cache")
-    class Cache {
+    class CacheConfiguration {
 
         /**
          * Time to live used for each value in cache.
@@ -124,13 +124,13 @@ internal class FactoryConfiguration {
         var keyPrefix: String = "shared-state-registry"
 
         override fun toString(): String {
-            return "Cache(ttl=$ttl, keyPrefix='$keyPrefix')"
+            return "CacheConfiguration(ttl=$ttl, keyPrefix='$keyPrefix')"
         }
 
     }
 
     @ConfigurationProperties("assignment")
-    class Assignment {
+    class AssignmentConfiguration {
 
         /**
          * Size of the evaluation batches of minions to assign.
@@ -145,13 +145,13 @@ internal class FactoryConfiguration {
         var timeout: Duration = Duration.ofSeconds(10)
 
         override fun toString(): String {
-            return "Assignment(evaluationBatchSize=$evaluationBatchSize, timeout=$timeout)"
+            return "AssignmentConfiguration(evaluationBatchSize=$evaluationBatchSize, timeout=$timeout)"
         }
 
     }
 
     @ConfigurationProperties("campaign.configuration")
-    class Campaign {
+    class CampaignConfiguration {
 
         /**
          * The maximal number of step specifications in a step scenario.
@@ -160,7 +160,7 @@ internal class FactoryConfiguration {
         var maxScenarioStepSpecificationsCount: Int = 100
 
         override fun toString(): String {
-            return "Campaign(maxScenarioStepSpecificationsCount=$maxScenarioStepSpecificationsCount)"
+            return "CampaignConfiguration(maxScenarioStepSpecificationsCount=$maxScenarioStepSpecificationsCount)"
         }
     }
 

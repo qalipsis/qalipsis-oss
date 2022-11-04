@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.communication
+package io.qalipsis.core.head.communication
 
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DispatcherChannel

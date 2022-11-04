@@ -31,10 +31,10 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.FactoryShutdownDirective
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.campaign.catadioptre.campaign
 import io.qalipsis.core.head.campaign.catadioptre.campaignLatch
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.CampaignConfiguration

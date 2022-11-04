@@ -75,6 +75,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
     kapt(platform("io.qalipsis:dev-platform:${project.version}"))
     kapt("io.micronaut:micronaut-inject-java")
