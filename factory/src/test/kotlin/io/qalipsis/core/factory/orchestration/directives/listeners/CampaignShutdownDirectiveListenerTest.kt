@@ -137,7 +137,7 @@ internal class CampaignShutdownDirectiveListenerTest {
                     CampaignShutdownFeedback(
                         campaignKey = "my-campaign",
                         status = FeedbackStatus.FAILED,
-                        error = "A problem occurred"
+                        errorMessage = "A problem occurred"
                     )
                 )
             }

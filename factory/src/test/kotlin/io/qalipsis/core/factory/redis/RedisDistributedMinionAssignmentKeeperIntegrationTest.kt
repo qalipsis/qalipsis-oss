@@ -322,10 +322,11 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
         MINIONS_SCENARIO_1.forEach { minion ->
             assertThat(
                 minionAssignmentKeeper.executionComplete(
-                    CAMPAIGN,
-                    SCENARIO_1,
-                    minion,
-                    listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4)
+                    campaignKey = CAMPAIGN,
+                    scenarioName = SCENARIO_1,
+                    minionId = minion,
+                    dagIds = listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4),
+                    mightRestart = false
                 )
             ).all {
                 prop(CampaignCompletionState::minionComplete).isFalse()
@@ -337,10 +338,11 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
         MINIONS_SCENARIO_2.forEach { minion ->
             assertThat(
                 minionAssignmentKeeper.executionComplete(
-                    CAMPAIGN,
-                    SCENARIO_2,
-                    minion,
-                    listOf(SCENARIO_2_DAG_1, SCENARIO_2_DAG_2, SCENARIO_2_DAG_3)
+                    campaignKey = CAMPAIGN,
+                    scenarioName = SCENARIO_2,
+                    minionId = minion,
+                    dagIds = listOf(SCENARIO_2_DAG_1, SCENARIO_2_DAG_2, SCENARIO_2_DAG_3),
+                    mightRestart = false
                 )
             ).all {
                 prop(CampaignCompletionState::minionComplete).isFalse()
@@ -359,10 +361,11 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
         MINIONS_SCENARIO_1.subList(0, MINIONS_COUNT_IN_EACH_SCENARIO - 1).forEach { minion ->
             assertThat(
                 minionAssignmentKeeper.executionComplete(
-                    CAMPAIGN,
-                    SCENARIO_1,
-                    minion,
-                    listOf(SCENARIO_1_DAG_5)
+                    campaignKey = CAMPAIGN,
+                    scenarioName = SCENARIO_1,
+                    minionId = minion,
+                    dagIds = listOf(SCENARIO_1_DAG_5),
+                    mightRestart = false
                 )
             ).all {
                 prop(CampaignCompletionState::minionComplete).isTrue()
@@ -374,10 +377,11 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
         MINIONS_SCENARIO_2.subList(0, MINIONS_COUNT_IN_EACH_SCENARIO - 1).forEach { minion ->
             assertThat(
                 minionAssignmentKeeper.executionComplete(
-                    CAMPAIGN,
-                    SCENARIO_2,
-                    minion,
-                    listOf(SCENARIO_2_DAG_4)
+                    campaignKey = CAMPAIGN,
+                    scenarioName = SCENARIO_2,
+                    minionId = minion,
+                    dagIds = listOf(SCENARIO_2_DAG_4),
+                    mightRestart = false
                 )
             ).all {
                 prop(CampaignCompletionState::minionComplete).isTrue()
@@ -395,10 +399,11 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(
-                CAMPAIGN,
-                SCENARIO_1,
-                MINIONS_SINGLETON_1,
-                listOf(SCENARIO_1_DAG_SINGLETON_1)
+                campaignKey = CAMPAIGN,
+                scenarioName = SCENARIO_1,
+                minionId = MINIONS_SINGLETON_1,
+                dagIds = listOf(SCENARIO_1_DAG_SINGLETON_1),
+                mightRestart = false
             ),
             "Scenario ${SCENARIO_1} should not be complete"
         ).all {
@@ -411,15 +416,56 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
     @Test
     @Timeout(10)
     @Order(5)
+    internal fun `should not complete the scenario when the latest minion of a scenario is completed but has to restart`(
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
+    ) = testDispatcherProvider.run {
+        assertThat(
+            minionAssignmentKeeper.executionComplete(
+                campaignKey = CAMPAIGN,
+                scenarioName = SCENARIO_1,
+                minionId = MINIONS_SCENARIO_1.last(),
+                dagIds = listOf(SCENARIO_1_DAG_5),
+                mightRestart = true
+            )
+        ).all {
+            prop(CampaignCompletionState::minionComplete).isTrue()
+            prop(CampaignCompletionState::scenarioComplete).isFalse()
+            prop(CampaignCompletionState::campaignComplete).isFalse()
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    @Order(6)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`(
         minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(
-                CAMPAIGN,
-                SCENARIO_1,
-                MINIONS_SCENARIO_1.last(),
-                listOf(SCENARIO_1_DAG_5)
+                campaignKey = CAMPAIGN,
+                scenarioName = SCENARIO_1,
+                minionId = MINIONS_SCENARIO_1.last(),
+                dagIds = listOf(
+                    SCENARIO_1_DAG_1,
+                    SCENARIO_1_DAG_2,
+                    SCENARIO_1_DAG_3,
+                    SCENARIO_1_DAG_4
+                ),
+                mightRestart = true
+            )
+        ).all {
+            prop(CampaignCompletionState::minionComplete).isFalse()
+            prop(CampaignCompletionState::scenarioComplete).isFalse()
+            prop(CampaignCompletionState::campaignComplete).isFalse()
+        }
+
+        assertThat(
+            minionAssignmentKeeper.executionComplete(
+                campaignKey = CAMPAIGN,
+                scenarioName = SCENARIO_1,
+                minionId = MINIONS_SCENARIO_1.last(),
+                dagIds = listOf(SCENARIO_1_DAG_5),
+                mightRestart = false
             )
         ).all {
             prop(CampaignCompletionState::minionComplete).isTrue()
@@ -430,16 +476,17 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
 
     @Test
     @Timeout(10)
-    @Order(6)
+    @Order(7)
     internal fun `should complete the campaign when the latest minion of the latest scenario completes its latest DAG`(
         minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(
-                CAMPAIGN,
-                SCENARIO_2,
-                MINIONS_SCENARIO_2.last(),
-                listOf(SCENARIO_2_DAG_4)
+                campaignKey = CAMPAIGN,
+                scenarioName = SCENARIO_2,
+                minionId = MINIONS_SCENARIO_2.last(),
+                dagIds = listOf(SCENARIO_2_DAG_4),
+                mightRestart = false
             )
         ).all {
             prop(CampaignCompletionState::minionComplete).isTrue()

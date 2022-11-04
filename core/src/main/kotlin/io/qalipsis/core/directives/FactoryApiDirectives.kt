@@ -22,6 +22,7 @@ package io.qalipsis.core.directives
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -38,8 +39,7 @@ data class FactoryAssignmentDirective(
     override val campaignKey: CampaignKey,
     @field:NotEmpty
     val assignments: Collection<FactoryScenarioAssignment>,
-    val broadcastChannel: DispatcherChannel,
-    val feedbackChannel: DispatcherChannel,
+    val runningCampaign: RunningCampaign,
     override val channel: DispatcherChannel
 ) : DescriptiveDirective(), CampaignManagementDirective {
 

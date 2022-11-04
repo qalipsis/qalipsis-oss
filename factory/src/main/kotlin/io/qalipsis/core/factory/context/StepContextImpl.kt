@@ -55,7 +55,8 @@ internal class StepContextImpl<IN, OUT>(
     override var stepFamily: String? = null,
     override var stepIterationIndex: Long = 0,
     override var isExhausted: Boolean = false,
-    override var isTail: Boolean = true
+    override var isTail: Boolean = true,
+    override val startedAt: Long = System.currentTimeMillis()
 ) : StepContext<IN, OUT> {
 
     /**
@@ -77,6 +78,7 @@ internal class StepContextImpl<IN, OUT>(
             campaignKey = campaignKey,
             scenarioName = scenarioName,
             minionId = minionId,
+            minionStart = startedAt,
             lastExecutedStepName = stepName,
             errors = errors
         )
@@ -138,7 +140,8 @@ internal class StepContextImpl<IN, OUT>(
             previousStepName = this.stepName,
             stepName = stepName,
             isExhausted = isExhausted,
-            isTail = isTail
+            isTail = isTail,
+            startedAt = startedAt
         )
     }
 
@@ -158,7 +161,8 @@ internal class StepContextImpl<IN, OUT>(
             stepName = stepName,
             stepIterationIndex = stepIterationIndex,
             isExhausted = isExhausted,
-            isTail = isTail
+            isTail = isTail,
+            startedAt = startedAt
         ).also {
             it.internalErrors.addAll(this.internalErrors)
 

@@ -34,6 +34,7 @@ import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
+import java.time.Instant
 
 /**
  * The [CampaignLaunch1FactoryAssignmentDirectiveListener] is responsible for saving the assignment of the DAGS
@@ -63,8 +64,15 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListener(
         try {
             val campaign = Campaign(
                 campaignKey = directive.campaignKey,
-                broadcastChannel = directive.broadcastChannel,
-                feedbackChannel = directive.feedbackChannel,
+                speedFactor = directive.runningCampaign.speedFactor,
+                startOffsetMs = directive.runningCampaign.startOffsetMs,
+                hardTimeout = directive.runningCampaign.hardTimeout,
+                timeout = if (directive.runningCampaign.timeoutSinceEpoch == Long.MIN_VALUE) Instant.MAX else Instant.ofEpochSecond(
+                    directive.runningCampaign.timeoutSinceEpoch
+                ),
+                broadcastChannel = directive.runningCampaign.broadcastChannel,
+                feedbackChannel = directive.runningCampaign.feedbackChannel,
+                scenarios = directive.runningCampaign.scenarios,
                 assignments = directive.assignments
             )
             campaignLifeCycleAwares.forEach {
@@ -75,7 +83,12 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListener(
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         } catch (e: Exception) {
             log.error(e) { e.message }
-            factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.FAILED, error = e.message))
+            factoryChannel.publishFeedback(
+                feedback.copy(
+                    status = FeedbackStatus.FAILED,
+                    errorMessage = e.message ?: ""
+                )
+            )
         }
     }
 

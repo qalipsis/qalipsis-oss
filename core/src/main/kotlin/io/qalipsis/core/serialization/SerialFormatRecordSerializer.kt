@@ -34,14 +34,16 @@ import kotlin.reflect.KClass
 @ExperimentalSerializationApi
 @Suppress("UNCHECKED_CAST")
 @Singleton
-internal class SerialFormatRecordSerializer : RecordSerializer {
+internal class SerialFormatRecordSerializer(
+    serializersProvider: SerializersProvider
+) : RecordSerializer {
 
     override val order: Int = Int.MIN_VALUE
 
     /**
      * Map of all the serializers, accessible by the types they support.
      */
-    private val serializersByType = SerializersProvider.serialFormatWrappersByType
+    private val serializersByType = serializersProvider.serialFormatWrappersByType
 
     /**
      * All the qualifiers of the supported serializers.

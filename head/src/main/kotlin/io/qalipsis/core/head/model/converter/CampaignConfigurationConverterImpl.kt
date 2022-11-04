@@ -1,7 +1,6 @@
 package io.qalipsis.core.head.model.converter
 
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.executionprofile.CompletionMode
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
@@ -85,13 +84,16 @@ internal class CampaignConfigurationConverterImpl(
                 config.minPeriodMs,
                 config.minionsCountProLaunch
             )
+
             is ProgressiveVolumeExternalExecutionProfileConfiguration -> ProgressiveVolumeExecutionProfileConfiguration(
                 config.periodMs,
                 config.minionsCountProLaunchAtStart,
                 config.multiplier,
                 config.maxMinionsCountProLaunch
             )
+
             is StageExternalExecutionProfileConfiguration -> StageExecutionProfileConfiguration(
+                config.completion,
                 config.stages.map {
                     Stage(
                         minionsCount = it.minionsCount,
@@ -99,15 +101,14 @@ internal class CampaignConfigurationConverterImpl(
                         totalDurationMs = it.totalDurationMs,
                         resolutionMs = it.resolutionMs
                     )
-                }, when (config.completion) {
-                    CompletionMode.FORCED -> CompletionMode.FORCED
-                    else -> CompletionMode.GRACEFUL
                 }
             )
+
             is TimeFrameExternalExecutionProfileConfiguration -> TimeFrameExecutionProfileConfiguration(
                 config.periodInMs,
                 config.timeFrameInMs
             )
+
             else -> DefaultExecutionProfileConfiguration()
         }
     }

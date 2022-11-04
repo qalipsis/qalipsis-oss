@@ -22,13 +22,15 @@ package io.qalipsis.runtime.deployments
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.annotations.Scenario
+import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
 import io.qalipsis.api.executionprofile.regular
+import io.qalipsis.api.executionprofile.stages
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
+import io.qalipsis.api.steps.delay
 import io.qalipsis.api.steps.filterNotNull
 import io.qalipsis.api.steps.flatten
 import io.qalipsis.api.steps.innerJoin
-import io.qalipsis.api.steps.onEach
 import io.qalipsis.api.steps.pipe
 import io.qalipsis.api.steps.returns
 import io.qalipsis.api.steps.verify
@@ -55,7 +57,6 @@ object DeploymentTestScenario {
             profile { regular(1000, 2000) }
         }.start()
             .returns<Int> { counter.incrementAndGet() }
-            .onEach { println("Sending the value $it") }
             .pipe()
             .innerJoin(
                 using = { "${it.value}" },
@@ -69,5 +70,37 @@ object DeploymentTestScenario {
             .verify {
                 assertThat(it.first).isEqualTo(it.second)
             }
+    }
+
+    @Scenario("deployment-test-with-repeated-minions-in-stages")
+    fun deploymentTestWithRepeatedMinionsInStages() {
+        val minions = 5_000
+        scenario {
+            minionsCount = minions
+            profile {
+                stages(GRACEFUL) {
+                    stage(
+                        minionsCount = (minions * 0.5).toInt(),
+                        rampUpDurationMs = 1000,
+                        totalDurationMs = 2000,
+                        resolutionMs = 100
+                    )
+                    stage(
+                        minionsCount = (minions * 0.2).toInt(),
+                        rampUpDurationMs = 500,
+                        totalDurationMs = 800,
+                        resolutionMs = 50
+                    )
+                    stage(
+                        minionsCount = (minions * 0.3).toInt(),
+                        rampUpDurationMs = 1000,
+                        totalDurationMs = 2000,
+                        resolutionMs = 100
+                    )
+                }
+            }
+        }.start()
+            .returns<Unit> { }
+            .delay(300)
     }
 }

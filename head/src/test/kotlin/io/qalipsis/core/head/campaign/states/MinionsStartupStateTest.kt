@@ -32,7 +32,7 @@ import assertk.assertions.isSameAs
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
-import io.qalipsis.api.executionprofile.CompletionMode.FORCED
+import io.qalipsis.api.executionprofile.CompletionMode.HARD
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
@@ -70,7 +70,7 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
             "scenario-2" to ScenarioConfiguration(
                 minionsCount = 255,
                 StageExecutionProfileConfiguration(
-                    stages = listOf(
+                    completion = HARD, stages = listOf(
                         Stage(
                             minionsCount = 123,
                             rampUpDurationMs = 234,
@@ -83,7 +83,7 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
                             totalDurationMs = 6453454,
                             resolutionMs = 234
                         )
-                    ), completion = FORCED
+                    )
                 )
             )
         )
@@ -101,29 +101,26 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-1",
-                    DefaultExecutionProfileConfiguration(1234L, 153.42),
+                    DefaultExecutionProfileConfiguration(),
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
                     StageExecutionProfileConfiguration(
-                        stages = listOf(
-                            Stage(
-                                minionsCount = 123,
-                                rampUpDurationMs = 234,
-                                totalDurationMs = 34534,
-                                resolutionMs = 6454
-                            ),
-                            Stage(
-                                minionsCount = 463,
-                                rampUpDurationMs = 3245,
-                                totalDurationMs = 6453454,
-                                resolutionMs = 234
-                            )
+                        HARD,
+                        Stage(
+                            minionsCount = 123,
+                            rampUpDurationMs = 234,
+                            totalDurationMs = 34534,
+                            resolutionMs = 6454
                         ),
-                        completion = FORCED,
-                        startOffsetMs = 1234L, speedFactor = 153.42
+                        Stage(
+                            minionsCount = 463,
+                            rampUpDurationMs = 3245,
+                            totalDurationMs = 6453454,
+                            resolutionMs = 234
+                        )
                     ),
                     "my-broadcast-channel"
                 )

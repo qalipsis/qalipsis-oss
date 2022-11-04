@@ -94,7 +94,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
                     campaignKey = directive.campaignKey,
                     scenarioName = directive.scenarioName,
                     status = FeedbackStatus.FAILED,
-                    error = e.message
+                    errorMessage = e.message ?: ""
                 )
             )
         }

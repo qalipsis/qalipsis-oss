@@ -31,7 +31,6 @@ import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
-import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import jakarta.inject.Singleton
@@ -47,7 +46,6 @@ import org.slf4j.event.Level
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
-    private val scenarioRegistry: ScenarioRegistry,
     private val factoryChannel: FactoryChannel,
     private val factoryCampaignManager: FactoryCampaignManager
 ) : DirectiveListener<MinionsRampUpPreparationDirective> {
@@ -67,16 +65,15 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
         )
         factoryChannel.publishFeedback(feedback)
         try {
-            val scenario = scenarioRegistry[directive.scenarioName]!!
             val minionsStartDefinitions = factoryCampaignManager.prepareMinionsExecutionProfile(
-                directive.campaignKey, scenario, directive.executionProfileConfiguration
+                directive.campaignKey, directive.scenarioName, directive.executionProfileConfiguration
             )
 
             minionsStartDefinitions.windowed(400, 400, true).forEach { def ->
                 factoryChannel.publishDirective(
                     MinionsStartDirective(
                         directive.campaignKey,
-                        scenario.name,
+                        directive.scenarioName,
                         def,
                     )
                 )
@@ -89,7 +86,12 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
             )
         } catch (e: Exception) {
             log.error(e) { e.message }
-            factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.FAILED, error = e.message))
+            factoryChannel.publishFeedback(
+                feedback.copy(
+                    status = FeedbackStatus.FAILED,
+                    errorMessage = e.message ?: ""
+                )
+            )
         }
     }
 

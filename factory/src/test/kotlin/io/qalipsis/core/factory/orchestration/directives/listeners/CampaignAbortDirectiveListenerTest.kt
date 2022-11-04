@@ -151,7 +151,7 @@ internal class CampaignAbortDirectiveListenerTest {
                     campaignKey = "my-campaign",
                     status = FeedbackStatus.FAILED,
                     scenarioNames = listOf("my-scenario-1", "my-scenario-2"),
-                    error = "A problem occurred"
+                    errorMessage = "A problem occurred"
                 )
             )
         }

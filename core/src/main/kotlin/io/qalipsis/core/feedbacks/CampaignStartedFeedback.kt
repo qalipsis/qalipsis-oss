@@ -43,5 +43,9 @@ data class CampaignStartedForDagFeedback(
     /**
      * Error message.
      */
-    val error: String? = null
-) : Feedback()
+    private val errorMessage: String = ""
+) : Feedback() {
+
+    val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
+}

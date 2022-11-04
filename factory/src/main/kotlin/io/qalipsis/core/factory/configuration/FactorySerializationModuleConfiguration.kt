@@ -21,11 +21,11 @@ package io.qalipsis.core.factory.configuration
 
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.configuration.ProtobufSerializationConfigurer
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.factory.orchestration.TransportableCompletionContext
 import io.qalipsis.core.factory.orchestration.TransportableContext
 import io.qalipsis.core.factory.orchestration.TransportableStepContext
+import io.qalipsis.core.serialization.SerializationConfigurer
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.modules.SerializersModuleBuilder
@@ -39,7 +39,7 @@ import kotlinx.serialization.modules.polymorphic
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalSerializationApi
-internal class FactoryProtobufSerializationModuleConfiguration : ProtobufSerializationConfigurer {
+internal class FactorySerializationModuleConfiguration : SerializationConfigurer {
 
     override fun configure(serializersModuleBuilder: SerializersModuleBuilder) {
         serializersModuleBuilder.apply {

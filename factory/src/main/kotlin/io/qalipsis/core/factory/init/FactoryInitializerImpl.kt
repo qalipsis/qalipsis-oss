@@ -55,11 +55,16 @@ import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.factory.steps.MinionsKeeperAware
+import io.qalipsis.core.factory.steps.PipeStep
 import io.qalipsis.core.factory.steps.RunnerAware
 import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.core.lifetime.FactoryStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -67,10 +72,6 @@ import java.util.concurrent.TimeUnit
 import javax.annotation.Nullable
 import javax.annotation.PreDestroy
 import javax.validation.Valid
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 /**
  * Default implementation of [ScenariosInitializer].
@@ -257,10 +258,16 @@ internal class FactoryInitializerImpl(
         parentStep: Step<*, *>?
     ) {
         if (parentDag != null && parentStep != null && stepsSpecifications.isEmpty()) {
+            // Adds a PipeStep for security of concurrency between the executed steps and the completion of the DAG.
+            // TODO This workaround should be removed in a later version.
+            val pipeStep = PipeStep<Any?>(buildNewStepName())
+            parentDag.addStep(pipeStep)
+            parentStep.addNext(pipeStep)
+
             // Adds a DeadEndStep step at the end of a DAG to notify that there is nothing after.
             val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName(), parentDag.name)
             parentDag.addStep(deadEndStep)
-            parentStep.addNext(deadEndStep)
+            pipeStep.addNext(deadEndStep)
         }
     }
 
@@ -277,6 +284,12 @@ internal class FactoryInitializerImpl(
 
         val actualParent =
             if (parentDag != null && parentStep != null && stepSpecification.directedAcyclicGraphName != parentDag.name) {
+                // Adds a PipeStep for security of concurrency between the executed steps and the completion of the DAG.
+                // TODO This workaround should be removed in a later version.
+                val pipeStep = PipeStep<Any?>(buildNewStepName())
+                parentDag.addStep(pipeStep)
+                parentStep.addNext(pipeStep)
+
                 // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
                 val dagTransitionStep = dagTransitionStepFactory.createTransition(
                     buildNewStepName(),
@@ -284,7 +297,7 @@ internal class FactoryInitializerImpl(
                     stepSpecification.directedAcyclicGraphName
                 )
                 parentDag.addStep(dagTransitionStep)
-                parentStep.addNext(dagTransitionStep)
+                pipeStep.addNext(dagTransitionStep)
                 dagTransitionStep
             } else {
                 parentStep
@@ -358,7 +371,7 @@ internal class FactoryInitializerImpl(
         }
     }
 
-    private suspend fun convertSingleStep(@Valid context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
+    suspend fun convertSingleStep(@Valid context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         stepSpecificationConverters
             .firstOrNull {
                 try {

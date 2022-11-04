@@ -17,12 +17,15 @@
  *
  */
 
-package io.qalipsis.core.configuration
+package io.qalipsis.core.serialization
 
 import io.micronaut.context.annotation.Factory
 import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.serialization.JsonSerializers
 import io.qalipsis.api.serialization.ProtobufSerializers
+import io.qalipsis.api.serialization.SerializersProvider
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
 import io.qalipsis.core.directives.CampaignShutdownDirective
@@ -84,11 +87,17 @@ import kotlinx.serialization.protobuf.ProtoBuf
 @Factory
 @Requires(notEnv = [ExecutionEnvironments.STANDALONE])
 @ExperimentalSerializationApi
-internal class ProtobufSerializationModuleConfiguration {
+internal class SerializationFactory {
+
+    @ExperimentalSerializationApi
+    @Singleton
+    fun serializersProvider(protoBuf: ProtoBuf): SerializersProvider {
+        return SerializersProvider(listOf(JsonSerializers.json, protoBuf))
+    }
 
     @Singleton
     @Primary
-    fun protobuf(configurers: Collection<ProtobufSerializationConfigurer> = emptyList()) =
+    fun protobuf(configurers: Collection<SerializationConfigurer> = emptyList()) =
         ProtoBuf(from = ProtobufSerializers.protobuf) {
             serializersModule = SerializersModule {
                 factoryApiDirectives(this)

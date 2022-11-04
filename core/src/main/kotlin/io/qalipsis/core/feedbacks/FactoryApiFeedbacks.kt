@@ -30,7 +30,7 @@ import kotlinx.serialization.Serializable
  * @property campaignKey campaign to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  *
  * @author Eric Jessé
  */
@@ -39,12 +39,15 @@ import kotlinx.serialization.Serializable
 data class FactoryAssignmentFeedback(
     override val campaignKey: CampaignKey,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 
@@ -55,7 +58,7 @@ data class FactoryAssignmentFeedback(
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  *
  * @author Eric Jessé
  */
@@ -65,12 +68,15 @@ data class ScenarioWarmUpFeedback(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 
@@ -86,12 +92,15 @@ data class EndOfCampaignScenarioFeedback(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 
@@ -105,12 +114,15 @@ data class EndOfCampaignScenarioFeedback(
 data class EndOfCampaignFeedback(
     override val campaignKey: CampaignKey,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 /**
@@ -120,7 +132,7 @@ data class EndOfCampaignFeedback(
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  *
  * @author Eric Jessé
  */
@@ -130,12 +142,15 @@ data class CampaignScenarioShutdownFeedback(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 /**
@@ -144,7 +159,7 @@ data class CampaignScenarioShutdownFeedback(
  * @property campaignKey campaign to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  *
  * @author Eric Jessé
  */
@@ -153,12 +168,15 @@ data class CampaignScenarioShutdownFeedback(
 data class CampaignShutdownFeedback(
     override val campaignKey: CampaignKey,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 /**
@@ -167,7 +185,7 @@ data class CampaignShutdownFeedback(
  * @property campaignKey campaign to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  * @property scenarioNames list of scenario names for which the campaign has to be aborted
  *
  * @author Svetlana Paliashchuk
@@ -177,11 +195,13 @@ data class CampaignShutdownFeedback(
 data class CampaignAbortFeedback(
     override val campaignKey: CampaignKey,
     override val status: FeedbackStatus,
-    override val error: String? = null,
+    private val errorMessage: String = "",
     val scenarioNames: List<ScenarioName>
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }

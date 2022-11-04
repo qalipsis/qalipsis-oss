@@ -32,7 +32,7 @@ import kotlinx.serialization.Serializable
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  *
  * @author Eric Jessé
  */
@@ -42,12 +42,15 @@ data class MinionsDeclarationFeedback(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }
 
 /**
@@ -58,7 +61,7 @@ data class MinionsDeclarationFeedback(
  * @property scenarioName scenario to which the feedback relates
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
- * @property error error message in case of failure
+ * @property errorMessage error message in case of failure
  *
  * @author Eric Jessé
  */
@@ -68,10 +71,13 @@ data class MinionsRampUpPreparationFeedback(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
-    override val error: String? = null
+    private val errorMessage: String = ""
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""
 
     override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
 }

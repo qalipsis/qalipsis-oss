@@ -60,8 +60,6 @@ internal class StageStepScenarioIntegrationTest {
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                 "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
-                "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.core.factory.inmemory=TRACE"
             )
             .execute()
 
@@ -78,8 +76,6 @@ internal class StageStepScenarioIntegrationTest {
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                 "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
-                "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.core.factory.inmemory=TRACE"
             )
             .execute()
 
@@ -96,8 +92,6 @@ internal class StageStepScenarioIntegrationTest {
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                 "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
-                "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.core.factory.inmemory=TRACE"
             )
             .execute()
 

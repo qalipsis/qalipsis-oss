@@ -22,7 +22,6 @@ package io.qalipsis.core.head.campaign.states
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.feedbacks.DirectiveFeedback
 import io.qalipsis.core.feedbacks.Feedback
 
 /**
@@ -54,7 +53,7 @@ internal interface CampaignExecutionState<C : CampaignExecutionContext> {
     suspend fun init(): List<Directive>
 
     /**
-     * Processes the received non [DirectiveFeedback] and returns the resulting [CampaignExecutionState].
+     * Processes the received [Feedback] and returns the resulting [CampaignExecutionState].
      *
      * @return the state consecutive to the processing of the feedback on this state
      */

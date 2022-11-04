@@ -19,9 +19,12 @@
 
 package io.qalipsis.core.executionprofile
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.executionprofile.CompletionMode
 import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.validation.constraints.Positive
 
@@ -35,94 +38,107 @@ import javax.validation.constraints.Positive
  */
 @Serializable
 @Polymorphic
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "execution-profile")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = RegularExecutionProfileConfiguration::class, name = "REGULAR"),
+    JsonSubTypes.Type(value = AcceleratingExecutionProfileConfiguration::class, name = "ACCELERATING"),
+    JsonSubTypes.Type(value = ProgressiveVolumeExecutionProfileConfiguration::class, name = "PROGRESSING_VOLUME"),
+    JsonSubTypes.Type(value = StageExecutionProfileConfiguration::class, name = "STAGE"),
+    JsonSubTypes.Type(value = TimeFrameExecutionProfileConfiguration::class, name = "TIME_FRAME")
+)
 sealed interface ExecutionProfileConfiguration {
-    val startOffsetMs: Long
-    val speedFactor: Double
-
-    fun clone(
-        startOffsetMs: Long = this.startOffsetMs,
-        speedFactor: Double = this.speedFactor
-    ): ExecutionProfileConfiguration
+    fun clone(): ExecutionProfileConfiguration
 }
 
 @Serializable
+@SerialName("reg")
 data class RegularExecutionProfileConfiguration(
     val periodInMs: Long,
-    val minionsCountProLaunch: Int,
-    override val startOffsetMs: Long = 3000,
-    override val speedFactor: Double = 1.0
+    val minionsCountProLaunch: Int
 ) : ExecutionProfileConfiguration {
 
-    override fun clone(startOffsetMs: Long, speedFactor: Double): RegularExecutionProfileConfiguration {
-        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    override fun clone(): RegularExecutionProfileConfiguration {
+        return copy()
     }
 }
 
 @Serializable
+@SerialName("acc")
 data class AcceleratingExecutionProfileConfiguration(
     val startPeriodMs: Long,
     val accelerator: Double,
     val minPeriodMs: Long,
-    val minionsCountProLaunch: Int,
-    override val startOffsetMs: Long = 3000,
-    override val speedFactor: Double = 1.0
+    val minionsCountProLaunch: Int
 ) : ExecutionProfileConfiguration {
 
-    override fun clone(startOffsetMs: Long, speedFactor: Double): AcceleratingExecutionProfileConfiguration {
-        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    override fun clone(): AcceleratingExecutionProfileConfiguration {
+        return copy()
     }
 }
 
 @Serializable
+@SerialName("prog")
 data class ProgressiveVolumeExecutionProfileConfiguration(
     val periodMs: Long,
     val minionsCountProLaunchAtStart: Int,
     val multiplier: Double,
-    val maxMinionsCountProLaunch: Int,
-    override val startOffsetMs: Long = 3000,
-    override val speedFactor: Double = 1.0
+    val maxMinionsCountProLaunch: Int
 ) : ExecutionProfileConfiguration {
 
-    override fun clone(startOffsetMs: Long, speedFactor: Double): ProgressiveVolumeExecutionProfileConfiguration {
-        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    override fun clone(): ProgressiveVolumeExecutionProfileConfiguration {
+        return copy()
     }
 }
 
 @Serializable
+@SerialName("stg")
 data class StageExecutionProfileConfiguration(
-    val stages: List<Stage>,
     val completion: CompletionMode,
-    override val startOffsetMs: Long = 3000,
-    override val speedFactor: Double = 1.0
+    val stages: List<Stage>
 ) : ExecutionProfileConfiguration {
 
-    override fun clone(startOffsetMs: Long, speedFactor: Double): StageExecutionProfileConfiguration {
-        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    constructor(completion: CompletionMode, vararg stages: Stage) : this(completion, stages.toList())
+
+    override fun clone(): StageExecutionProfileConfiguration {
+        return copy()
     }
 }
 
 @Serializable
+@SerialName("timfr")
 data class TimeFrameExecutionProfileConfiguration(
     val periodInMs: Long,
-    val timeFrameInMs: Long,
-    override val startOffsetMs: Long = 3000,
-    override val speedFactor: Double = 1.0
+    val timeFrameInMs: Long
 ) : ExecutionProfileConfiguration {
 
-    override fun clone(startOffsetMs: Long, speedFactor: Double): TimeFrameExecutionProfileConfiguration {
-        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    override fun clone(): TimeFrameExecutionProfileConfiguration {
+        return copy()
     }
 }
 
+/**
+ * @property dummy required property only used to allow the serialization of the class
+ */
 @Serializable
-data class DefaultExecutionProfileConfiguration(
-    override val startOffsetMs: Long = 3000,
-    override val speedFactor: Double = 1.0
-) : ExecutionProfileConfiguration {
+@SerialName("def")
+class DefaultExecutionProfileConfiguration : ExecutionProfileConfiguration {
 
-    override fun clone(startOffsetMs: Long, speedFactor: Double): DefaultExecutionProfileConfiguration {
-        return copy(startOffsetMs = startOffsetMs, speedFactor = speedFactor)
+    override fun clone(): DefaultExecutionProfileConfiguration {
+        return this
     }
+
+    override fun toString(): String {
+        return "DefaultExecutionProfileConfiguration()"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is DefaultExecutionProfileConfiguration
+    }
+
+    override fun hashCode(): Int {
+        return 0
+    }
+
 }
 
 @Serializable

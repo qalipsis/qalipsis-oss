@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.serialization
 
+import io.qalipsis.api.logging.LoggerHelper.logger
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
@@ -49,18 +50,27 @@ internal class RecordDistributionSerializer(
     }
 
     override fun <T> serializeAsRecord(entity: T, serializationContext: SerializationContext): SerializedRecord {
-        val result = sortedSerializers.asSequence().filter { it.acceptsToSerialize(entity) }
+        return sortedSerializers.asSequence().filter { it.acceptsToSerialize(entity) }
+            .onEach { log.trace { "$it can serialize the entity of type ${entity?.let { it::class }}" } }
             .firstNotNullOfOrNull {
-                kotlin.runCatching {
+                try {
                     it.serialize(entity)
-                }.getOrNull()
-            }
-            ?: throw SerializationException("The value of type ${entity?.let { it::class }} could not be serialized")
-        return result
+                } catch (e: Exception) {
+                    log.trace(e) { "An exception occurred while serializing $entity with $it" }
+                    null
+                }
+            }?.also {
+                log.trace { "The entity of type ${entity?.let { it::class }} was serialized with the qualifier ${it.serializer}" }
+            } ?: throw SerializationException("The value of type ${entity?.let { it::class }} could not be serialized")
     }
 
     override fun <T> deserializeRecord(record: SerializedRecord): T? {
         return sortedSerializers.asSequence().filter { it.acceptsToDeserialize(record) }
+            .onEach { log.trace { "$it can deserialize the record of type ${record.type.type} and qualifier ${record.serializer}" } }
             .firstNotNullOfOrNull { kotlin.runCatching { it.deserialize(record) as T? }.getOrNull() }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

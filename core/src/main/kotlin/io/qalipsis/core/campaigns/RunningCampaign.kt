@@ -24,9 +24,9 @@ import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import kotlinx.serialization.Serializable
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotEmpty
-import kotlinx.serialization.Serializable
 
 /**
  * Configuration of a running campaign in QALIPSIS.
@@ -37,7 +37,7 @@ import kotlinx.serialization.Serializable
  * @property key unique identifier of the campaign
  * @property speedFactor acceleration factor of the ramp-up
  * @property startOffsetMs time to wait until the campaign warm-up and the start of the first minions
- * @property timeoutSinceEpoch actual instant when the timeout should occur
+ * @property timeoutSinceEpoch actual instant when the timeout should occur, in seconds since epoch
  * @property hardTimeout whether the timeout abortion should done hardly and generate a failure, or not
  * @property scenarios configuration of each scenario
  * @property factories configuration of each factory implied in the campaign
@@ -55,7 +55,7 @@ data class RunningCampaign(
     val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap()
 ) {
 
-    var timeoutSinceEpoch: Long = Long.MAX_VALUE
+    var timeoutSinceEpoch: Long = Long.MIN_VALUE
 
     val factories: MutableMap<NodeId, FactoryConfiguration> = mutableMapOf()
 

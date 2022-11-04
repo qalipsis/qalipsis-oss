@@ -30,12 +30,12 @@ import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.directives.SingleUseDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.communication.FeedbackListener
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Named
 import jakarta.inject.Singleton

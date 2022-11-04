@@ -34,7 +34,6 @@ import io.qalipsis.api.steps.innerJoin
 import io.qalipsis.api.steps.map
 import io.qalipsis.api.steps.onEach
 import io.qalipsis.api.steps.returns
-import io.qalipsis.api.steps.singletonPipe
 import io.qalipsis.runtime.test.QalipsisTestRunner
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -50,14 +49,12 @@ internal class InnerJoinStepScenarioIntegrationTest {
 
     @Test
     @Timeout(20)
-    internal fun `should call execute the inner join scenario with singleton`() {
+    internal fun `should call execute the inner join`() {
         val exitCode = QalipsisTestRunner.withScenarios("inner-join-scenario-test")
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
-                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
-                "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.api.messaging=TRACE",
-                "logging.level.io.qalipsis.api.messaging.subscriptions=TRACE"
+                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "logging.level.io.qalipsis.core.factory.steps.join=TRACE"
             )
             .execute()
         assertThat(exitCode).isEqualTo(0)
@@ -68,14 +65,12 @@ internal class InnerJoinStepScenarioIntegrationTest {
 
     @Test
     @Timeout(20)
-    internal fun `should call execute the inner join scenario with singleton when all records are discarded`() {
+    internal fun `should call execute the inner join scenario when all records are discarded`() {
         val exitCode = QalipsisTestRunner.withScenarios("inner-join-scenario-test-without-output")
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
-                "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
-                "logging.level.io.qalipsis.core.head.campaign=TRACE",
-                "logging.level.io.qalipsis.api.messaging=TRACE",
-                "logging.level.io.qalipsis.api.messaging.subscriptions=TRACE"
+                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "logging.level.io.qalipsis.core.factory.steps.join=TRACE"
             )
             .execute()
 
@@ -115,10 +110,6 @@ object InnerJoinStepScenario {
                             iterate(minionsNumber.toLong())
                             name = "right-return"
                         }
-                        // A singleton step is voluntary added in the between.
-                        .singletonPipe().configure {
-                            name = "singleton-pipe"
-                        }
                 },
                 having = {
                     it.value
@@ -154,10 +145,6 @@ object InnerJoinStepScenario {
                         .configure {
                             iterate(minionsNumber.toLong())
                             name = "right-return"
-                        }
-                        // A singleton step is voluntary added in the between.
-                        .singletonPipe().configure {
-                            name = "singleton-pipe"
                         }
                 },
                 having = {

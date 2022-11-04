@@ -33,12 +33,12 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignManagementDirective
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.FeedbackListener
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.CampaignConfiguration
@@ -173,6 +173,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         log.info { "Starting the campaign ${configuration.name} with scenarios ${scenarios.map { it.name }} on factories ${runningCampaign.factories.keys}" }
         campaignStartState.inject(campaignExecutionContext)
         processingMutex.withLock {
+            log.trace { "Initializing the campaign state for start $campaignStartState" }
             val directives = campaignStartState.init()
             set(campaignStartState)
             directives.forEach {

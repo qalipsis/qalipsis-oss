@@ -30,6 +30,7 @@ import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.DefaultScenarioReportingExecutionState
@@ -39,6 +40,7 @@ import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.toSet
+import org.slf4j.event.Level.DEBUG
 import java.time.Instant
 
 /**
@@ -55,6 +57,7 @@ internal class RedisCampaignReportStateKeeper(
     private val redisHashCommands: RedisHashCoroutinesCommands<String, String>
 ) : CampaignReportStateKeeper {
 
+    @LogInput(level = DEBUG)
     override suspend fun clear(campaignKey: CampaignKey) {
         redisKeyCommands.keys("$campaignKey-report:*").onEach {
             // Since not all the keys are on the same node of a Redis cluster (no Hash tag is used in the keys),
@@ -64,6 +67,7 @@ internal class RedisCampaignReportStateKeeper(
         }.count()
     }
 
+    @LogInput(level = DEBUG)
     override suspend fun start(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         val key = "$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX"
         redisSetCommands.sadd(key, scenarioName)
@@ -74,6 +78,7 @@ internal class RedisCampaignReportStateKeeper(
         )
     }
 
+    @LogInput(level = DEBUG)
     override suspend fun complete(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         redisHashCommands.hset(
             buildRedisReportKey(campaignKey, scenarioName),
@@ -84,6 +89,7 @@ internal class RedisCampaignReportStateKeeper(
 
     override suspend fun complete(campaignKey: CampaignKey) = Unit
 
+    @LogInput(level = DEBUG)
     override suspend fun abort(campaignKey: CampaignKey) {
         val scenarios =
             redisSetCommands.smembers("$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
@@ -97,6 +103,7 @@ internal class RedisCampaignReportStateKeeper(
         }
     }
 
+    @LogInput(level = DEBUG)
     override suspend fun generateReport(campaignKey: CampaignKey): CampaignReport {
         val scenarios =
             redisSetCommands.smembers("$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())

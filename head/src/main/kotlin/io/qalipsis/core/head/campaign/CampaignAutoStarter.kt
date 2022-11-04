@@ -34,9 +34,9 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.FactoryShutdownDirective
-import io.qalipsis.core.factory.communication.HeadChannel
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.communication.HandshakeRequestListener
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
@@ -48,12 +48,12 @@ import io.qalipsis.core.lifetime.HeadStartupComponent
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.annotation.PreDestroy
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.event.Level
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.annotation.PreDestroy
 
 /**
  * Component to automatically starts the execution of a campaign with all the scenarios as soon as
@@ -168,7 +168,7 @@ internal class CampaignAutoStarter(
             log.info { "The campaign ${directive.campaignKey} was completed successfully: ${directive.message ?: "<no detail>"}" }
         } else {
             log.error { "The campaign ${directive.campaignKey} failed: ${directive.message ?: "<no detail>"}" }
-            error = directive.message
+            error = directive.message?.takeIf { it.isNotBlank() }
         }
         campaign.factories.forEach { (_, factory) ->
             headChannel.publishDirective(FactoryShutdownDirective(factory.unicastChannel))
@@ -179,7 +179,10 @@ internal class CampaignAutoStarter(
 
     override suspend fun join() {
         campaignLatch.await()
-        error?.let { throw RuntimeException(it) }
+        error?.let {
+            log.error { "An error occurred while executing the campaign: $error" }
+            throw RuntimeException(it)
+        }
     }
 
     @PreDestroy

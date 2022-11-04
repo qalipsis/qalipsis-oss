@@ -42,8 +42,7 @@ internal open class FactoryAssignmentState(
             FactoryAssignmentDirective(
                 campaignKey = campaign.key,
                 assignments = configuration.assignment.values,
-                broadcastChannel = campaign.broadcastChannel,
-                feedbackChannel = campaign.feedbackChannel,
+                runningCampaign = campaign,
                 channel = factory.unicastChannel
             )
         }

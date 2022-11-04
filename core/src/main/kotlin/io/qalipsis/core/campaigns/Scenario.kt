@@ -22,6 +22,7 @@ package io.qalipsis.core.campaigns
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.persistence.InMemoryEntity
 import io.swagger.v3.oas.annotations.media.Schema
@@ -48,7 +49,7 @@ data class ScenarioSummary(
     @field:Schema(description = "List of directed acyclic graphs structuring the workflow of the scenario")
     val directedAcyclicGraphs: List<DirectedAcyclicGraphSummary>,
     @field:Schema(description = "Details of the execution profile to start the minions in the scenario")
-    val executionProfileConfiguration: ExecutionProfileConfiguration? = null
+    val executionProfileConfiguration: ExecutionProfileConfiguration = DefaultExecutionProfileConfiguration()
 ) : InMemoryEntity<ScenarioName>
 
 /**

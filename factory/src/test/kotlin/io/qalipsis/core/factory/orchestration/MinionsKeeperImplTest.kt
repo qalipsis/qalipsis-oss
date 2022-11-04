@@ -518,45 +518,7 @@ internal class MinionsKeeperImplTest {
 
         // then
         coVerifyOrder {
-            minion.cancel()
-            minion.reset(true)
-            minion.scenarioName
-            runner.run(refEq(minion), refEq(dag))
-            minion.start()
-        }
-        confirmVerified(minion, runner)
-    }
-
-    @Test
-    internal fun `should restart existing minion even if cancel fails`() = testCoroutineDispatcher.runTest {
-        // given
-        val minionsKeeper = MinionsKeeperImpl(
-            scenarioRegistry,
-            runner,
-            eventsLogger,
-            meterRegistry,
-            reportLiveStateRegistry,
-            this
-        )
-        val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
-        val minion = relaxedMockk<MinionImpl> {
-            every { scenarioName } returns "my-scenario"
-            coEvery { cancel() } throws RuntimeException()
-        }
-        minions["my-minion"] = minion
-        val rootDagsOfMinions =
-            minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
-        rootDagsOfMinions["my-minion"] = "my-dag"
-        val dag = relaxedMockk<DirectedAcyclicGraph>()
-        every { scenarioRegistry["my-scenario"]!!["my-dag"] } returns dag
-
-        // when
-        minionsKeeper.restartMinion("my-minion")
-
-        // then
-        coVerifyOrder {
-            minion.cancel()
-            minion.reset(true)
+            minion.restart(true)
             minion.scenarioName
             runner.run(refEq(minion), refEq(dag))
             minion.start()
@@ -608,8 +570,7 @@ internal class MinionsKeeperImplTest {
 
             // then
             coVerifyOrder {
-                minion.cancel()
-                minion.reset(true)
+                minion.restart(true)
                 minion.start()
             }
             confirmVerified(minion, runner)
@@ -652,15 +613,25 @@ internal class MinionsKeeperImplTest {
             minion.campaignKey
             minion.scenarioName
             eventsLogger.debug(
-                "minion.cancellation.started",
+                "minion.completion.started",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion",
+                    "interrupt" to "false"
+                )
             )
-            minion.cancel()
+            minion.stop(false)
             eventsLogger.debug(
-                "minion.cancellation.complete",
+                "minion.completion.done",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion",
+                    "interrupt" to "false"
+                )
             )
         }
         assertThat(rootDagsOfMinions["my-minion"]).isNull()
@@ -686,7 +657,7 @@ internal class MinionsKeeperImplTest {
             every { id } returns "my-minion"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
-            coEvery { cancel() } throws theException
+            coEvery { stop(false) } throws theException
         }
         minions["my-minion"] = minion
         val rootDagsOfMinions =
@@ -702,16 +673,26 @@ internal class MinionsKeeperImplTest {
             minion.campaignKey
             minion.scenarioName
             eventsLogger.debug(
-                "minion.cancellation.started",
+                "minion.completion.started",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion",
+                    "interrupt" to "false"
+                )
             )
-            minion.cancel()
+            minion.stop(false)
             eventsLogger.debug(
-                "minion.cancellation.complete",
+                "minion.completion.failed",
                 value = refEq(theException),
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion",
+                    "interrupt" to "false"
+                )
             )
         }
         assertThat(rootDagsOfMinions["my-minion"]).isNull()
@@ -756,7 +737,7 @@ internal class MinionsKeeperImplTest {
             every { id } returns "my-minion1"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
-            coEvery { cancel() } throws theException
+            coEvery { stop(true) } throws theException
         }
         val minion2 = relaxedMockk<MinionImpl> {
             every { id } returns "my-minion2"
@@ -790,46 +771,76 @@ internal class MinionsKeeperImplTest {
             minion1.campaignKey
             minion1.scenarioName
             eventsLogger.debug(
-                "minion.cancellation.started",
+                "minion.completion.started",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion1")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion1",
+                    "interrupt" to "true"
+                )
             )
-            minion1.cancel()
+            minion1.stop(true)
             eventsLogger.debug(
-                "minion.cancellation.complete",
+                "minion.completion.failed",
                 value = refEq(theException),
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion1")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion1",
+                    "interrupt" to "true"
+                )
             )
 
             minion2.id
             minion2.campaignKey
             minion2.scenarioName
             eventsLogger.debug(
-                "minion.cancellation.started",
+                "minion.completion.started",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion2")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion2",
+                    "interrupt" to "true"
+                )
             )
-            minion2.cancel()
+            minion2.stop(true)
             eventsLogger.debug(
-                "minion.cancellation.complete",
+                "minion.completion.done",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion2")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion2",
+                    "interrupt" to "true"
+                )
             )
 
             minion3.id
             minion3.campaignKey
             minion3.scenarioName
             eventsLogger.debug(
-                "minion.cancellation.started",
+                "minion.completion.started",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion3")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion3",
+                    "interrupt" to "true"
+                )
             )
-            minion3.cancel()
+            minion3.stop(true)
             eventsLogger.debug(
-                "minion.cancellation.complete",
+                "minion.completion.done",
                 timestamp = any(),
-                tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion3")
+                tags = mapOf(
+                    "campaign" to "my-campaign",
+                    "scenario" to "my-scenario",
+                    "minion" to "my-minion3",
+                    "interrupt" to "true"
+                )
             )
         }
         assertThat(minions).isEmpty()

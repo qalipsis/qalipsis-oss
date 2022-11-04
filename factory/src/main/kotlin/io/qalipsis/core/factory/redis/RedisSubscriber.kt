@@ -73,10 +73,15 @@ internal class RedisSubscriber(
         override fun message(channel: String, message: ByteArray) {
             log.trace { "Received a message from channel $channel" }
             when (channel) {
-                in factoryChannel.subscribedDirectiveChannels ->
-                    serializer.deserialize<Directive>(message)?.let { dispatch(it) }
+                in factoryChannel.subscribedDirectiveChannels -> {
+                    val directive = serializer.deserialize<Directive>(message)
+                    log.trace { "Dispatching the directive $directive" }
+                    directive?.let { dispatch(it) }
+                }
+
                 in factoryChannel.subscribedHandshakeResponseChannels ->
                     serializer.deserialize<HandshakeResponse>(message)?.let { dispatch(it) }
+
                 else -> log.trace { "Channel $channel is not supported" }
             }
         }

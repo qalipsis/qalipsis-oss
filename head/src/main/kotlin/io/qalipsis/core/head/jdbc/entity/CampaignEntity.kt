@@ -60,7 +60,7 @@ internal data class CampaignEntity(
     val version: Instant,
     val tenantId: Long,
     @field:NotBlank
-    @field:Size(min = 5, max = 60)
+    @field:Size(min = 5, max = 80)
     val key: String,
     @field:Size(max = 300)
     val name: String,

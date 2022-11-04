@@ -32,9 +32,9 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import java.time.Duration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import java.time.Duration
 
 @MicronautTest(
     environments = [ExecutionEnvironments.FACTORY],
@@ -59,15 +59,15 @@ internal class FactoryConfigurationIntegrationTest {
                 prop(FactoryConfiguration.HandshakeConfiguration::timeout).isEqualTo(Duration.ofSeconds(30))
             }
             prop(FactoryConfiguration::cache).all {
-                prop(FactoryConfiguration.Cache::ttl).isEqualTo(Duration.ofMinutes(1))
-                prop(FactoryConfiguration.Cache::keyPrefix).isEqualTo("shared-state-registry")
+                prop(FactoryConfiguration.CacheConfiguration::ttl).isEqualTo(Duration.ofMinutes(1))
+                prop(FactoryConfiguration.CacheConfiguration::keyPrefix).isEqualTo("shared-state-registry")
             }
             prop(FactoryConfiguration::assignment).all {
-                prop(FactoryConfiguration.Assignment::evaluationBatchSize).isEqualTo(100)
-                prop(FactoryConfiguration.Assignment::timeout).isEqualTo(Duration.ofSeconds(10))
+                prop(FactoryConfiguration.AssignmentConfiguration::evaluationBatchSize).isEqualTo(100)
+                prop(FactoryConfiguration.AssignmentConfiguration::timeout).isEqualTo(Duration.ofSeconds(10))
             }
             prop(FactoryConfiguration::campaign).all {
-                prop(FactoryConfiguration.Campaign::maxScenarioStepSpecificationsCount).isEqualTo(100)
+                prop(FactoryConfiguration.CampaignConfiguration::maxScenarioStepSpecificationsCount).isEqualTo(100)
             }
         }
     }
@@ -109,15 +109,15 @@ internal class FactoryConfigurationIntegrationTest {
                 prop(FactoryConfiguration.HandshakeConfiguration::timeout).isEqualTo(Duration.ofMillis(20))
             }
             prop(FactoryConfiguration::cache).all {
-                prop(FactoryConfiguration.Cache::ttl).isEqualTo(Duration.ofMinutes(2))
-                prop(FactoryConfiguration.Cache::keyPrefix).isEqualTo("some-other-registry")
+                prop(FactoryConfiguration.CacheConfiguration::ttl).isEqualTo(Duration.ofMinutes(2))
+                prop(FactoryConfiguration.CacheConfiguration::keyPrefix).isEqualTo("some-other-registry")
             }
             prop(FactoryConfiguration::assignment).all {
-                prop(FactoryConfiguration.Assignment::evaluationBatchSize).isEqualTo(67542)
-                prop(FactoryConfiguration.Assignment::timeout).isEqualTo(Duration.ofSeconds(143))
+                prop(FactoryConfiguration.AssignmentConfiguration::evaluationBatchSize).isEqualTo(67542)
+                prop(FactoryConfiguration.AssignmentConfiguration::timeout).isEqualTo(Duration.ofSeconds(143))
             }
             prop(FactoryConfiguration::campaign).all {
-                prop(FactoryConfiguration.Campaign::maxScenarioStepSpecificationsCount).isEqualTo(550)
+                prop(FactoryConfiguration.CampaignConfiguration::maxScenarioStepSpecificationsCount).isEqualTo(550)
             }
         }
     }

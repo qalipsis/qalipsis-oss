@@ -22,15 +22,16 @@ package io.qalipsis.core.factory.steps.topicrelatedsteps
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.messaging.Topic
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  *
@@ -39,12 +40,16 @@ import org.junit.jupiter.api.Timeout
 @WithMockk
 internal class TopicMirrorStepTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @RelaxedMockK
     lateinit var dataTransferTopic: Topic<String>
 
     @Test
     @Timeout(3)
-    fun `should forward data to channel and topic`() = runBlockingTest {
+    fun `should forward data to channel and topic`() = testCoroutineDispatcher.runTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
         val ctx = StepTestHelper.createStepContext<String, String>("This is a test").also { it.isTail = false }
@@ -61,13 +66,14 @@ internal class TopicMirrorStepTest {
     }
 
     @Test
-    internal fun `should complete the topic`() = runBlockingTest {
+    internal fun `should complete the topic`() = testCoroutineDispatcher.runTest {
         // given
         val step = TopicMirrorStep<String, String>("", dataTransferTopic)
         val ctx = DefaultCompletionContext(
             campaignKey = "my-campaign",
             scenarioName = "my-scenario",
             minionId = "my-minion",
+            minionStart = 1234232L,
             lastExecutedStepName = "step-1",
             errors = emptyList()
         )

@@ -91,6 +91,7 @@ internal class MinionImplTest {
         latch.release()
 
         val executionDuration = coMeasureTime { minion.join() }
+        minion.stop()
 
         // then
         assertLongerOrEqualTo(coroutinesExecutionTime.multipliedBy(4), executionDuration)
@@ -140,7 +141,7 @@ internal class MinionImplTest {
             latch.await()
             // Add 20ms to thread preemption and rounding issues.
             delay(coroutinesExecutionTime.toMillis() + 20)
-            minion.cancel()
+            minion.stop(true)
         }
 
         val executionDuration = coMeasureTime {
@@ -181,13 +182,13 @@ internal class MinionImplTest {
         val latch = Latch(true)
         launch {
             latch.await()
-            minion.cancel()
+            minion.stop(true)
         }
         latch.cancel()
         minion.join()
 
         assertEquals(0, executionCounter.get())
-        assertEquals(0, completionCounter.get())
+        assertEquals(1, completionCounter.get())
 
         verifyExactly(3) {
             executingStepsGauge.incrementAndGet()
@@ -277,8 +278,7 @@ internal class MinionImplTest {
             executionCounter.set(0)
             completionCounter.set(0)
             minions.forEach {
-                it.cancel()
-                it.reset(false)
+                it.restart(false)
             }
 
             `executes a lot of jobs on a lot of minions`(
@@ -323,8 +323,7 @@ internal class MinionImplTest {
             executionCounter.set(0)
             completionCounter.set(0)
             minions.forEach {
-                it.cancel()
-                it.reset(true)
+                it.restart(true)
                 it.start()
             }
 
@@ -368,7 +367,10 @@ internal class MinionImplTest {
             }
             startLatch.release()
             log.debug { "Joining all minions" }
-            minions.forEach { it.join() }
+            minions.forEach {
+                it.join()
+                it.stop()
+            }
             assertEquals(minionsCount, completionCounter.get())
             assertEquals(minionsCount * stepsCount, executionCounter.get())
         }

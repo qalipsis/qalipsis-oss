@@ -17,29 +17,36 @@
  *
  */
 
-package io.qalipsis.core.head
+package io.qalipsis.core.directives
 
 import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isNotNull
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
-import io.qalipsis.core.configuration.ProtobufSerializationModuleConfiguration
-import io.qalipsis.core.directives.CampaignAbortDirective
-import io.qalipsis.core.directives.CampaignScenarioShutdownDirective
-import io.qalipsis.core.directives.CampaignShutdownDirective
-import io.qalipsis.core.directives.CompleteCampaignDirective
-import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.directives.FactoryAssignmentDirective
-import io.qalipsis.core.directives.ScenarioWarmUpDirective
+import io.qalipsis.core.executionprofile.Stage
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
+import io.qalipsis.core.serialization.SerialFormatRecordSerializer
+import jakarta.inject.Inject
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.jupiter.api.Test
 
 @ExperimentalSerializationApi
-internal class FactoryApiDirectivesTest {
+@MicronautTest(startApplication = false)
+internal class FactoryApiDirectivesIntegrationTest {
 
-    private val protoBuf = ProtobufSerializationModuleConfiguration().protobuf()
+    @Inject
+    private lateinit var protoBuf: ProtoBuf
+
+    @Inject
+    private lateinit var serializer: SerialFormatRecordSerializer
 
     @Test
     fun `should encode and decode FactoryAssignmentDirective as directive`() {
@@ -49,14 +56,43 @@ internal class FactoryApiDirectivesTest {
                 FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                 FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
             ),
-            broadcastChannel = "broadcast-channel",
-            feedbackChannel = "feedback-channel",
+            runningCampaign = RunningCampaign(
+                tenant = "my-tenant", key = "my-campaign", scenarios = mapOf(
+                    "scenario-1" to ScenarioConfiguration(
+                        26,
+                        StageExecutionProfileConfiguration(
+                            GRACEFUL,
+                            listOf(
+                                Stage(
+                                    minionsCount = 12,
+                                    rampUpDurationMs = 2000,
+                                    totalDurationMs = 3000,
+                                    resolutionMs = 500
+                                ),
+                                Stage(
+                                    minionsCount = 14,
+                                    rampUpDurationMs = 1500,
+                                    totalDurationMs = 2000,
+                                    resolutionMs = 400
+                                )
+                            )
+                        )
+                    )
+                )
+            ).apply {
+                broadcastChannel = "broadcast-channel"
+                feedbackChannel = "feedback-channel"
+            },
             channel = "broadcast"
         )
         val serialized = protoBuf.encodeToByteArray(directive)
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
+        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
+
     }
 
     @Test
@@ -66,6 +102,9 @@ internal class FactoryApiDirectivesTest {
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
+        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
     }
 
     @Test
@@ -75,6 +114,8 @@ internal class FactoryApiDirectivesTest {
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
     }
 
     @Test
@@ -84,6 +125,8 @@ internal class FactoryApiDirectivesTest {
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
     }
 
     @Test
@@ -94,6 +137,8 @@ internal class FactoryApiDirectivesTest {
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
     }
 
     @Test
@@ -108,5 +153,7 @@ internal class FactoryApiDirectivesTest {
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
     }
 }

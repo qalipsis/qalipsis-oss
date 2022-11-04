@@ -24,6 +24,7 @@ import assertk.assertThat
 import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
@@ -75,9 +76,6 @@ import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Duration
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineDispatcher
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -85,6 +83,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Eric Jessé
@@ -362,16 +363,20 @@ internal class FactoryInitializerImplTest {
         // then
         // Only two dags were created.
         assertThat(scenario["dag-1"]).isNotNull().all {
-            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
+            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
             prop(DirectedAcyclicGraph::tags).isEmpty()
-            prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
+            prop(DirectedAcyclicGraph::rootStep)
+                .transform { it.forceGet() }.prop(Step<*, *>::next)
+                .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
                 .index(0).isSameAs(deadEndStep1)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
-            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
+            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(4)
             prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
-                .index(0).prop(Step<*, *>::next).index(0).isSameAs(deadEndStep2)
+                .index(0).prop(Step<*, *>::next)
+                .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
+                .index(0).isSameAs(deadEndStep2)
         }
         // 3 steps were created.
         coVerifyExactly(3) {
@@ -430,15 +435,17 @@ internal class FactoryInitializerImplTest {
         // then
         // Only two dags were created.
         assertThat(scenario["dag-1"]).isNotNull().all {
-            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(2)
+            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
             prop(DirectedAcyclicGraph::tags).isEmpty()
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
+                .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
                 .index(0).isSameAs(deadEndStep)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
-            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
+            prop(DirectedAcyclicGraph::stepsCount).isEqualTo(4)
             prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
+                .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
                 .index(0).prop(Step<*, *>::next).index(0).isSameAs(dagTransitionStep)
         }
         // 3 steps were created.
@@ -491,7 +498,7 @@ internal class FactoryInitializerImplTest {
         )
 
         // then
-        assertEquals(2, scenario["dag-1"]!!.stepsCount)
+        assertEquals(3, scenario["dag-1"]!!.stepsCount)
         assertEquals(0, scenario["dag-2"]!!.stepsCount)
         coVerifyExactly(2) {
             // 2 steps were tried.

@@ -143,7 +143,7 @@ internal class ScenarioImpl(
                     dagId = dag.name,
                     campaignKey = campaignKey,
                     status = FeedbackStatus.FAILED,
-                    error = "The start of the DAG ${dag.name} failed: ${e.message}"
+                    errorMessage = "The start of the DAG ${dag.name} failed: ${e.message}"
                 ).also {
                     log.trace { "Sending feedback: $it" }
                     factoryChannel.publishFeedback(it)

@@ -106,6 +106,8 @@ internal class InMemoryMinionAssignmentKeeper(
         minionIds.forEach { minionId ->
             assignments.computeIfAbsent(minionId) { concurrentSet() } += dagIds
             if (underLoad) {
+                remainingDagsCountByMinions.computeIfAbsent(scenarioName, minionId) { AtomicInteger() }
+                    .addAndGet(dagIds.size)
                 scheduledDagsCountByMinions.computeIfAbsent(scenarioName, minionId) { AtomicInteger() }
                     .addAndGet(dagIds.size)
             }
@@ -119,9 +121,8 @@ internal class InMemoryMinionAssignmentKeeper(
         }
     }
 
-    override suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName) {
-        remainingDagsCountByMinions.putAll(scheduledDagsCountByMinions)
-    }
+    override suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName) =
+        Unit
 
     override suspend fun getIdsOfMinionsUnderLoad(
         campaignKey: CampaignKey,
@@ -167,7 +168,7 @@ internal class InMemoryMinionAssignmentKeeper(
                     cleanMinionDataAndEvaluateScenarioCompletion(scenarioName, minionId, campaignKey, state)
                 }
             } else {
-                log.trace { "The minion with ID $minionId of campaign $campaignKey has still ${remainingDagsForMinion} DAGs to complete" }
+                log.trace { "The minion with ID $minionId of campaign $campaignKey has still $remainingDagsForMinion DAGs to complete" }
             }
         }
 

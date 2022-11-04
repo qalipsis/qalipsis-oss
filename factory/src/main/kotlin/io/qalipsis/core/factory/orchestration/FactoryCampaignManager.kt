@@ -23,11 +23,11 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
+import java.time.Instant
 
 internal interface FactoryCampaignManager : CampaignLifeCycleAware {
 
@@ -53,12 +53,13 @@ internal interface FactoryCampaignManager : CampaignLifeCycleAware {
      */
     suspend fun prepareMinionsExecutionProfile(
         campaignKey: CampaignKey,
-        scenario: Scenario,
+        scenarioName: ScenarioName,
         executionProfileConfiguration: ExecutionProfileConfiguration
     ): List<MinionStartDefinition>
 
     suspend fun notifyCompleteMinion(
         minionId: MinionId,
+        minionStart: Instant,
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         dagId: DirectedAcyclicGraphName

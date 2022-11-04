@@ -21,17 +21,26 @@ package io.qalipsis.core.directives
 
 import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
-import io.qalipsis.core.configuration.ProtobufSerializationModuleConfiguration
+import assertk.assertions.isNotNull
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
+import io.qalipsis.core.serialization.SerialFormatRecordSerializer
+import jakarta.inject.Inject
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.jupiter.api.Test
 
 @ExperimentalSerializationApi
-internal class MinionsHeadDelegationApiDirectivesTest {
+@MicronautTest(startApplication = false)
+internal class MinionsHeadDelegationApiDirectivesIntegrationTest {
 
-    private val protobuf = ProtobufSerializationModuleConfiguration().protobuf()
+    @Inject
+    private lateinit var protobuf: ProtoBuf
+
+    @Inject
+    private lateinit var serializer: SerialFormatRecordSerializer
 
     @Test
     fun `should be able to serialize MinionsCreationPreparationDirective reference directive as directive`() {
@@ -40,6 +49,9 @@ internal class MinionsHeadDelegationApiDirectivesTest {
         val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
+        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
     }
 
     @Test
@@ -49,6 +61,9 @@ internal class MinionsHeadDelegationApiDirectivesTest {
         val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
+        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
     }
 
     @Test
@@ -66,6 +81,9 @@ internal class MinionsHeadDelegationApiDirectivesTest {
         val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
+        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
     }
 
     @Test
@@ -75,6 +93,9 @@ internal class MinionsHeadDelegationApiDirectivesTest {
         val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+
+        // when + then
+        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
     }
 
 }

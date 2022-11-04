@@ -36,7 +36,6 @@
 package io.qalipsis.core.serialization
 
 import io.qalipsis.api.serialization.SerializableClass
-import io.qalipsis.core.configuration.ProtobufSerializationModuleConfiguration
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -48,7 +47,7 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalSerializationApi::class)
 internal class SerializedRecordSerializerTest {
 
-    private val protobuf = ProtobufSerializationModuleConfiguration().protobuf()
+    private val protobuf = SerializationFactory().protobuf()
 
     @Test
     internal fun `should serialize a record with a non empty value`() {
@@ -83,10 +82,7 @@ internal class SerializedRecordSerializerTest {
         val directive = MinionsRampUpPreparationDirective(
             campaignKey = "cl892t2d90002g9569i7n2x6i",
             scenarioName = "deployment-test",
-            executionProfileConfiguration = DefaultExecutionProfileConfiguration(
-                startOffsetMs = 1000,
-                speedFactor = 1.0
-            ),
+            executionProfileConfiguration = DefaultExecutionProfileConfiguration(),
             channel = "directives-broadcast"
         )
         val record = SerializedRecord(

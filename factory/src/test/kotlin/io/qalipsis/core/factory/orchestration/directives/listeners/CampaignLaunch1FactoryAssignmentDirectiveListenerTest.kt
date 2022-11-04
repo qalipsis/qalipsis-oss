@@ -25,8 +25,12 @@ import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
+import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.communication.FactoryChannel
@@ -35,11 +39,13 @@ import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
 internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
@@ -76,8 +82,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                 FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
             ),
-            broadcastChannel = "broadcast-channel",
-            feedbackChannel = "feedback-channel",
+            relaxedMockk(),
             channel = "broadcast"
         )
 
@@ -98,8 +103,21 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                 FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
             ),
-            broadcastChannel = "broadcast-channel",
-            feedbackChannel = "feedback-channel",
+            runningCampaign = RunningCampaign(
+                key = "",
+                speedFactor = 12.0,
+                startOffsetMs = 1212,
+                hardTimeout = true,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioConfiguration(
+                        123,
+                        RegularExecutionProfileConfiguration(123, 3534)
+                    ), "scenario-2" to ScenarioConfiguration(5432, DefaultExecutionProfileConfiguration())
+                )
+            ).apply {
+                broadcastChannel = "broadcast-channel"
+                feedbackChannel = "feedback-channel"
+            },
             channel = "broadcast"
         )
 
@@ -111,6 +129,16 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
             campaignKey = "my-campaign",
             broadcastChannel = "broadcast-channel",
             feedbackChannel = "feedback-channel",
+            speedFactor = 12.0,
+            startOffsetMs = 1212,
+            hardTimeout = true,
+            timeout = Instant.MAX,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioConfiguration(
+                    123,
+                    RegularExecutionProfileConfiguration(123, 3534)
+                ), "scenario-2" to ScenarioConfiguration(5432, DefaultExecutionProfileConfiguration())
+            ),
             assignments = listOf(
                 FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                 FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
@@ -145,8 +173,22 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                     FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                     FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4")),
                 ),
-                broadcastChannel = "broadcast-channel",
-                feedbackChannel = "feedback-channel",
+                runningCampaign = RunningCampaign(
+                    key = "",
+                    speedFactor = 12.0,
+                    startOffsetMs = 1212,
+                    hardTimeout = true,
+                    scenarios = mapOf(
+                        "scenario-1" to ScenarioConfiguration(
+                            123,
+                            RegularExecutionProfileConfiguration(123, 3534)
+                        ), "scenario-2" to ScenarioConfiguration(5432, DefaultExecutionProfileConfiguration())
+                    )
+                ).apply {
+                    broadcastChannel = "broadcast-channel"
+                    feedbackChannel = "feedback-channel"
+                    timeoutSinceEpoch = 17253L
+                },
                 channel = "broadcast"
             )
             coEvery { campaignLifeCycleAware1.init(any()) } throws RuntimeException("A problem occurred")
@@ -159,6 +201,16 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 campaignKey = "my-campaign",
                 broadcastChannel = "broadcast-channel",
                 feedbackChannel = "feedback-channel",
+                speedFactor = 12.0,
+                startOffsetMs = 1212,
+                hardTimeout = true,
+                timeout = Instant.ofEpochSecond(17253L),
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioConfiguration(
+                        123,
+                        RegularExecutionProfileConfiguration(123, 3534)
+                    ), "scenario-2" to ScenarioConfiguration(5432, DefaultExecutionProfileConfiguration())
+                ),
                 assignments = listOf(
                     FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                     FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
@@ -170,7 +222,7 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                     FactoryAssignmentFeedback(
                         campaignKey = "my-campaign",
                         status = FeedbackStatus.FAILED,
-                        error = "A problem occurred"
+                        errorMessage = "A problem occurred"
                     )
                 )
             }

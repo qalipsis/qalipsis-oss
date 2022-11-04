@@ -75,7 +75,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
                 "scenario-2" to ScenarioConfiguration(
                     minionsCount = 255,
                     StageExecutionProfileConfiguration(
-                        stages = listOf(
+                        completion = CompletionMode.HARD, stages = listOf(
                             Stage(
                                 minionsCount = 123,
                                 rampUpDurationMs = 234,
@@ -88,7 +88,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
                                 totalDurationMs = 6453454,
                                 resolutionMs = 234
                             )
-                        ), completion = CompletionMode.FORCED
+                        )
                     )
                 )
             )
@@ -112,29 +112,26 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-1",
-                    DefaultExecutionProfileConfiguration(1234L, 153.42),
+                    DefaultExecutionProfileConfiguration(),
                     "my-broadcast-channel"
                 ),
                 MinionsRampUpPreparationDirective(
                     "my-campaign",
                     "scenario-2",
                     StageExecutionProfileConfiguration(
-                        stages = listOf(
-                            Stage(
-                                minionsCount = 123,
-                                rampUpDurationMs = 234,
-                                totalDurationMs = 34534,
-                                resolutionMs = 6454
-                            ),
-                            Stage(
-                                minionsCount = 463,
-                                rampUpDurationMs = 3245,
-                                totalDurationMs = 6453454,
-                                resolutionMs = 234
-                            )
+                        CompletionMode.HARD,
+                        Stage(
+                            minionsCount = 123,
+                            rampUpDurationMs = 234,
+                            totalDurationMs = 34534,
+                            resolutionMs = 6454
                         ),
-                        completion = CompletionMode.FORCED,
-                        startOffsetMs = 1234L, speedFactor = 153.42
+                        Stage(
+                            minionsCount = 463,
+                            rampUpDurationMs = 3245,
+                            totalDurationMs = 6453454,
+                            resolutionMs = 234
+                        )
                     ),
                     "my-broadcast-channel"
                 )

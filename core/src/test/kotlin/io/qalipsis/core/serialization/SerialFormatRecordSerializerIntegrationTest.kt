@@ -25,15 +25,20 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.serialization.Serializable
 import io.qalipsis.api.serialization.SerializablePerson
+import jakarta.inject.Inject
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.junit.jupiter.api.Test
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+@ExperimentalSerializationApi
 @Serializable([SerializablePerson::class])
-internal class SerialFormatRecordSerializerTest {
+@MicronautTest(startApplication = false)
+internal class SerialFormatRecordSerializerIntegrationTest {
 
-    private val serializer = SerialFormatRecordSerializer()
+    @Inject
+    private lateinit var serializer: SerialFormatRecordSerializer
 
     @Test
     internal fun `should serialize and deserialize the record with a string`() {

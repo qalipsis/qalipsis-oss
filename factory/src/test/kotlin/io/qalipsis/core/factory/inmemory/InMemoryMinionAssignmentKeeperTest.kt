@@ -66,7 +66,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                 CAMPAIGN,
                 SCENARIO_1,
                 listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4, SCENARIO_1_DAG_5),
-                MINIONS_SCENARIO_1
+                MINIONS_SCENARIO_1,
+                true
             )
             minionAssignmentKeeper.registerMinionsToAssign(
                 CAMPAIGN,
@@ -86,7 +87,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                 CAMPAIGN,
                 SCENARIO_2,
                 listOf(SCENARIO_2_DAG_1, SCENARIO_2_DAG_2, SCENARIO_2_DAG_3, SCENARIO_2_DAG_4),
-                MINIONS_SCENARIO_2
+                MINIONS_SCENARIO_2,
+                true
             )
             minionAssignmentKeeper.completeUnassignedMinionsRegistration(CAMPAIGN, SCENARIO_1)
             minionAssignmentKeeper.completeUnassignedMinionsRegistration(CAMPAIGN, SCENARIO_2)
@@ -166,7 +168,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                         CAMPAIGN,
                         SCENARIO_1,
                         minion,
-                        listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4)
+                        listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4),
+                        false
                     ),
                     "Minion $minion for scenario $SCENARIO_1 should not be complete"
                 ).all {
@@ -182,7 +185,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                         CAMPAIGN,
                         SCENARIO_2,
                         minion,
-                        listOf(SCENARIO_2_DAG_1, SCENARIO_2_DAG_2, SCENARIO_2_DAG_3)
+                        listOf(SCENARIO_2_DAG_1, SCENARIO_2_DAG_2, SCENARIO_2_DAG_3),
+                        false
                     ),
                     "Minion $minion for scenario $SCENARIO_2 should not be complete"
                 ).all {
@@ -204,7 +208,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                         CAMPAIGN,
                         SCENARIO_1,
                         minion,
-                        listOf(SCENARIO_1_DAG_5)
+                        listOf(SCENARIO_1_DAG_5),
+                        false
                     ),
                     "Minion $minion for scenario $SCENARIO_1 should be complete"
                 ).all {
@@ -220,7 +225,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                         CAMPAIGN,
                         SCENARIO_2,
                         minion,
-                        listOf(SCENARIO_2_DAG_4)
+                        listOf(SCENARIO_2_DAG_4),
+                        false
                     ),
                     "Minion $minion for scenario $SCENARIO_2 should be complete"
                 ).all {
@@ -241,7 +247,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                     CAMPAIGN,
                     SCENARIO_1,
                     MINIONS_SINGLETON_1,
-                    listOf(SCENARIO_1_DAG_SINGLETON_1)
+                    listOf(SCENARIO_1_DAG_SINGLETON_1),
+                    false
                 ),
                 "Scenario $SCENARIO_1 should not be complete"
             ).all {
@@ -254,6 +261,27 @@ internal class InMemoryMinionAssignmentKeeperTest {
     @Test
     @Timeout(5)
     @Order(5)
+    internal fun `should not complete the scenario when the latest minion should restart`() =
+        testDispatcherProvider.run {
+            assertThat(
+                minionAssignmentKeeper.executionComplete(
+                    CAMPAIGN,
+                    SCENARIO_1,
+                    MINIONS_SCENARIO_1.last(),
+                    listOf(SCENARIO_1_DAG_5),
+                    true
+                ),
+                "Scenario $SCENARIO_1 should be complete"
+            ).all {
+                prop(CampaignCompletionState::minionComplete).isTrue()
+                prop(CampaignCompletionState::scenarioComplete).isFalse()
+                prop(CampaignCompletionState::campaignComplete).isFalse()
+            }
+        }
+
+    @Test
+    @Timeout(5)
+    @Order(6)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`() =
         testDispatcherProvider.run {
             assertThat(
@@ -261,7 +289,22 @@ internal class InMemoryMinionAssignmentKeeperTest {
                     CAMPAIGN,
                     SCENARIO_1,
                     MINIONS_SCENARIO_1.last(),
-                    listOf(SCENARIO_1_DAG_5)
+                    listOf(SCENARIO_1_DAG_1, SCENARIO_1_DAG_2, SCENARIO_1_DAG_3, SCENARIO_1_DAG_4),
+                    true
+                )
+            ).all {
+                prop(CampaignCompletionState::minionComplete).isFalse()
+                prop(CampaignCompletionState::scenarioComplete).isFalse()
+                prop(CampaignCompletionState::campaignComplete).isFalse()
+            }
+
+            assertThat(
+                minionAssignmentKeeper.executionComplete(
+                    CAMPAIGN,
+                    SCENARIO_1,
+                    MINIONS_SCENARIO_1.last(),
+                    listOf(SCENARIO_1_DAG_5),
+                    false
                 ),
                 "Scenario $SCENARIO_1 should be complete"
             ).all {
@@ -273,7 +316,7 @@ internal class InMemoryMinionAssignmentKeeperTest {
 
     @Test
     @Timeout(5)
-    @Order(6)
+    @Order(7)
     internal fun `should complete the campaign when the latest minion of the latest scenario completes its latest DAG`() =
         testDispatcherProvider.run {
             assertThat(
@@ -281,7 +324,8 @@ internal class InMemoryMinionAssignmentKeeperTest {
                     CAMPAIGN,
                     SCENARIO_2,
                     MINIONS_SCENARIO_2.last(),
-                    listOf(SCENARIO_2_DAG_4)
+                    listOf(SCENARIO_2_DAG_4),
+                    false
                 ),
                 "Campaign should be complete"
             ).all {
