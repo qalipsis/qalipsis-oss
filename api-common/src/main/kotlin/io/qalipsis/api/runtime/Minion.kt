@@ -51,11 +51,6 @@ interface Minion {
     suspend fun join()
 
     /**
-     * Cancels all running coroutines of the current minion.
-     */
-    suspend fun cancel()
-
-    /**
      * Configures the [MDC] context for the execution of the minion.
      */
     fun completeMdcContext() {
@@ -93,4 +88,11 @@ interface Minion {
      * Releases the start flag to resume the callers waiting for the minion to start.
      */
     suspend fun start()
+
+    /**
+     * Stops all the activities of the minion and executes the completion hooks.
+     *
+     * @param interrupt when set to true, all the jobs assigned to the minion are cancelled
+     */
+    suspend fun stop(interrupt: Boolean = false)
 }

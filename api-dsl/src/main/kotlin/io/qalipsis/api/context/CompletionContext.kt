@@ -22,6 +22,7 @@ package io.qalipsis.api.context
  * @property campaignKey Identifier of the test campaign owning the context
  * @property minionId Identifier of the Minion owning the context
  * @property scenarioName Identifier of the Scenario being executed
+ * @property minionStart Instant since epoch in ms, when the minions was started
  * @property lastExecutedStepName Identifier of the lately executed step
  * @property errors List of the errors, from current and previous steps
  *
@@ -32,6 +33,7 @@ interface CompletionContext : MonitoringTags {
     val campaignKey: CampaignKey
     val scenarioName: ScenarioName
     val minionId: MinionId
+    val minionStart: Long
     val lastExecutedStepName: StepName
     val errors: List<StepError>
 }

@@ -30,6 +30,10 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.typeNameOf
 import io.qalipsis.api.serialization.Serializable
+import io.qalipsis.api.serialization.Serializable.Format
+import io.qalipsis.api.serialization.Serializable.Format.AUTO
+import io.qalipsis.api.serialization.Serializable.Format.JSON
+import io.qalipsis.api.serialization.Serializable.Format.PROTOBUF
 import io.qalipsis.api.services.ServicesFiles
 import java.nio.file.Path
 import javax.annotation.processing.AbstractProcessor
@@ -91,17 +95,20 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
      */
     private val allSerializers = mutableSetOf<String>()
 
-    private var serializationStatements: SerializationStatements = JsonSerializationStatements
+    private var autoFormat: Format = JSON
+
+    private var autoModeSerializationStatements: SerializationStatements = JsonSerializationStatements
 
     override fun init(processingEnv: ProcessingEnvironment) {
         try {
             // If Protobuf is in the classpath, it has precedence to generate the wrapper.
             Class.forName("kotlinx.serialization.protobuf.ProtoBufBuilder")
-            serializationStatements = ProtobufSerializationStatements
-            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Using Protobuf as serializer")
+            autoModeSerializationStatements = ProtobufSerializationStatements
+            autoFormat = PROTOBUF
+            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Using Protobuf as default serializer wrapper")
         } catch (ex: Exception) {
             // Otherwise, the JSON serialization is used as fallback.
-            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Using JSON as serializer")
+            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Using JSON as default serializer wrapper")
         }
 
         super.init(processingEnv)
@@ -118,7 +125,7 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
         roundEnv.getElementsAnnotatedWith(kotlinx.serialization.Serializable::class.java)
             .filter { it.kind == ElementKind.CLASS }
             .map { it as TypeElement }
-            .forEach(this::createWrapper)
+            .forEach { createWrapper(it, it.getAnnotation(Serializable::class.java)?.format ?: AUTO) }
 
         // Processes the elements having the native Kotlin annotation.
         roundEnv.getElementsAnnotatedWith(Serializable::class.java).forEach(this::proceedQalipsisSerialization)
@@ -151,7 +158,7 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
                         }
                     }
             }
-            .forEach(this::createWrapper)
+            .forEach { createWrapper(it, annotation.format) }
     }
 
     /**
@@ -172,17 +179,26 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
         }?.takeIf(Collection<*>::isNotEmpty) ?: emptyList()
     }
 
-    private fun createWrapper(annotatedType: TypeElement) {
+    private fun createWrapper(annotatedType: TypeElement, format: Format) {
+        val (serializationStatements, selectedFormat) = when (format) {
+            JSON -> JsonSerializationStatements to JSON
+            PROTOBUF -> ProtobufSerializationStatements to PROTOBUF
+            AUTO -> autoModeSerializationStatements to autoFormat
+        }
         val hasNoGeneric = annotatedType.typeParameters.isEmpty()
         if (hasNoGeneric) {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.NOTE,
+                "Generating the serialization wrapper for the class $annotatedType using the format $selectedFormat"
+            )
             val packageName = elementUtils.getPackageOf(annotatedType)
             val serializationWrapperClassName = "${annotatedType.simpleName}SerializationWrapper"
-            generateKotlinWrapper(packageName, serializationWrapperClassName, annotatedType)
+            generateKotlinWrapper(packageName, serializationWrapperClassName, annotatedType, serializationStatements)
             allSerializers += "${packageName}.${serializationWrapperClassName}"
         } else {
             processingEnv.messager.printMessage(
                 Diagnostic.Kind.WARNING,
-                "Cannot generate the SerialFormatWrapper for the class $annotatedType, because it uses generics"
+                "Cannot generate the serialization wrapper for the class $annotatedType, because it uses generics"
             )
         }
     }
@@ -190,18 +206,18 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
     private fun generateKotlinWrapper(
         packageName: PackageElement,
         serializationWrapperClassName: String,
-        annotatedType: TypeElement
+        annotatedType: TypeElement,
+        serializationStatements: SerializationStatements
     ) {
-        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Generating serialization wrapper for $annotatedType")
         val serializationWrapperClassFile = FileSpec.builder("$packageName", serializationWrapperClassName)
             .also { serializationStatements.addImport(it) }
+        val serializableClassName = annotatedType.asClassName()
         serializationWrapperClassFile.addType(
             TypeSpec.classBuilder(serializationWrapperClassName)
                 .addAnnotation(ClassName.bestGuess("kotlinx.serialization.ExperimentalSerializationApi"))
-                .addSuperinterface(
-                    ClassName.bestGuess("io.qalipsis.api.serialization.SerialFormatWrapper")
-                        .plusParameter(annotatedType.asClassName())
-                )
+                .also {
+                    serializationStatements.addConstructor(it, serializableClassName)
+                }
                 .addFunction(
                     FunSpec.builder("serialize")
                         .addModifiers(KModifier.OVERRIDE)
@@ -224,10 +240,6 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
                     PropertySpec.builder("types", ARRAY.plusParameter(typeNameOf<KClass<*>>()), KModifier.OVERRIDE)
                         .initializer(CodeBlock.of("""arrayOf(${annotatedType.asClassName()}::class)""")).build()
                 )
-                .addProperty(
-                    PropertySpec.builder("qualifier", ClassName("kotlin", "String"), KModifier.OVERRIDE)
-                        .initializer(CodeBlock.of(""""${serializationStatements.identifier}"""")).build()
-                )
                 .build()
         )
         serializationWrapperClassFile.build()
@@ -235,48 +247,87 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
     }
 
     private interface SerializationStatements {
+        fun addConstructor(builder: TypeSpec.Builder, entityClassName: ClassName)
         fun addImport(builder: FileSpec.Builder): FileSpec.Builder
         fun addSerialization(builder: FunSpec.Builder): FunSpec.Builder
         fun addDeserialization(builder: FunSpec.Builder): FunSpec.Builder
-        val identifier: String
+
     }
 
     private object JsonSerializationStatements : SerializationStatements {
+        override fun addConstructor(builder: TypeSpec.Builder, entityClassName: ClassName) {
+            builder.addSuperinterface(
+                ClassName(
+                    "io.qalipsis.api.serialization",
+                    "JsonSerialFormatWrapper"
+                ).plusParameter(entityClassName)
+            )
+            builder.primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addParameter(
+                        ParameterSpec.builder(
+                            "json",
+                            ClassName("kotlinx.serialization.json", "Json")
+                        ).build()
+                    )
+                    .addStatement("this.json = json")
+                    .build()
+            ).addProperty(
+                PropertySpec.builder("json", ClassName("kotlinx.serialization.json", "Json")).build()
+            )
+        }
 
         override fun addImport(builder: FileSpec.Builder): FileSpec.Builder {
             return builder
-                .addImport("io.qalipsis.api.serialization", "JsonSerializers")
+                .addImport("kotlinx.serialization.json", "Json")
                 .addImport("kotlinx.serialization", "encodeToString", "decodeFromString")
         }
 
         override fun addSerialization(builder: FunSpec.Builder): FunSpec.Builder {
-            return builder.addStatement("return JsonSerializers.json.encodeToString(entity).encodeToByteArray()")
+            return builder.addStatement("return json.encodeToString(entity).encodeToByteArray()")
         }
 
         override fun addDeserialization(builder: FunSpec.Builder): FunSpec.Builder {
-            return builder.addStatement("return JsonSerializers.json.decodeFromString(source.decodeToString())")
+            return builder.addStatement("return json.decodeFromString(source.decodeToString())")
         }
-
-        override val identifier: String = "kjson"
     }
 
     private object ProtobufSerializationStatements : SerializationStatements {
+        override fun addConstructor(builder: TypeSpec.Builder, entityClassName: ClassName) {
+            builder.addSuperinterface(
+                ClassName(
+                    "io.qalipsis.api.serialization",
+                    "ProtobufSerialFormatWrapper"
+                ).plusParameter(entityClassName)
+            )
+            builder.primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addParameter(
+                        ParameterSpec.builder(
+                            "protobuf",
+                            ClassName("kotlinx.serialization.protobuf", "ProtoBuf")
+                        ).build()
+                    )
+                    .addStatement("this.protobuf = protobuf")
+                    .build()
+            ).addProperty(
+                PropertySpec.builder("protobuf", ClassName("kotlinx.serialization.protobuf", "ProtoBuf")).build()
+            )
+        }
 
         override fun addImport(builder: FileSpec.Builder): FileSpec.Builder {
             return builder
-                .addImport("io.qalipsis.api.serialization", "ProtobufSerializers")
+                .addImport("kotlinx.serialization.protobuf", "ProtoBuf")
                 .addImport("kotlinx.serialization", "decodeFromByteArray", "encodeToByteArray")
         }
 
         override fun addSerialization(builder: FunSpec.Builder): FunSpec.Builder {
-            return builder.addStatement("return ProtobufSerializers.protobuf.encodeToByteArray(entity)")
+            return builder.addStatement("return protobuf.encodeToByteArray(entity)")
         }
 
         override fun addDeserialization(builder: FunSpec.Builder): FunSpec.Builder {
-            return builder.addStatement("return ProtobufSerializers.protobuf.decodeFromByteArray(source)")
+            return builder.addStatement("return protobuf.decodeFromByteArray(source)")
         }
-
-        override val identifier: String = "kprotobuf"
 
     }
 }

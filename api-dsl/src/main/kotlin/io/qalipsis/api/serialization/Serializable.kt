@@ -16,6 +16,7 @@
 
 package io.qalipsis.api.serialization
 
+import io.qalipsis.api.serialization.Serializable.Format.AUTO
 import javax.validation.constraints.NotEmpty
 import kotlin.reflect.KClass
 
@@ -35,5 +36,28 @@ import kotlin.reflect.KClass
 annotation class Serializable(
 
     @get:NotEmpty
-    val types: Array<KClass<*>>
-)
+    val types: Array<KClass<*>>,
+
+    /**
+     * Default format for the class
+     */
+    val format: Format = AUTO
+
+) {
+    enum class Format {
+        /**
+         * Uses the best (from performance perspective) serializer present in the class path.
+         */
+        AUTO,
+
+        /**
+         * Uses the JSON serializer.
+         */
+        JSON,
+
+        /**
+         * Uses the protobuf serializer.
+         */
+        PROTOBUF
+    }
+}

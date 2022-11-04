@@ -20,7 +20,11 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import io.qalipsis.api.serialization.JsonSerialFormatWrapper
+import io.qalipsis.api.serialization.ProtobufSerialFormatWrapper
 import io.qalipsis.api.serialization.SerialFormatWrapper
+import io.qalipsis.api.serialization.Serializable.Format.JSON
 import io.qalipsis.api.serialization.SerializablePerson
 import io.qalipsis.api.serialization.SerializablePersonSerializationWrapper
 import io.qalipsis.api.serialization.SerializersProvider
@@ -35,16 +39,20 @@ data class SerializableTeam(
 )
 
 @ExperimentalSerializationApi
-@io.qalipsis.api.serialization.Serializable([SerializablePerson::class])
+@io.qalipsis.api.serialization.Serializable([SerializablePerson::class], format = JSON)
 internal class SerializationTest {
 
-    private val personSerializer: SerialFormatWrapper<SerializablePerson> = SerializablePersonSerializationWrapper()
+    private val serializerProvider = SerializersProvider()
 
-    private val teamSerializer: SerialFormatWrapper<SerializableTeam> = SerializableTeamSerializationWrapper()
+    private val personSerializer: SerialFormatWrapper<SerializablePerson> =
+        serializerProvider.forType(SerializablePerson::class).first()
+
+    private val teamSerializer: SerialFormatWrapper<SerializableTeam> =
+        serializerProvider.forType(SerializableTeam::class).first()
 
     @Test
     internal fun `should load all the serializers classes`() {
-        val classes = SerializersProvider.serialFormatWrappers
+        val classes = serializerProvider.serialFormatWrappers
 
         assertThat(classes.map { it::class }).containsAll(
             SerializableTeamSerializationWrapper::class,
@@ -53,7 +61,17 @@ internal class SerializationTest {
     }
 
     @Test
-    internal fun `should serialize a local type`() {
+    internal fun `default format should be protobuf when present`() {
+        assertThat(teamSerializer).isInstanceOf(ProtobufSerialFormatWrapper::class)
+    }
+
+    @Test
+    internal fun `used format should be JSON when specified`() {
+        assertThat(personSerializer).isInstanceOf(JsonSerialFormatWrapper::class)
+    }
+
+    @Test
+    internal fun `should serialize and deserialize a local type with the default format`() {
         // given
         val serializable = SerializableTeam(
             "development",
@@ -61,28 +79,11 @@ internal class SerializationTest {
         )
 
         // when
-        val result = teamSerializer.serialize(serializable)
+        val serialized = teamSerializer.serialize(serializable)
+        val deserialized = teamSerializer.deserialize(serialized)
 
         // then
-        assertThat(result.decodeToString()).isEqualTo("""{"name":"development","members":[{"name":"alice","age":38},{"name":"bob","age":37}]}""")
-    }
-
-    @Test
-    internal fun `should deserialize a local type`() {
-        // given
-        val source =
-            """{"name":"development","members":[{"name":"alice","age":38},{"name":"bob","age":37}]}""".encodeToByteArray()
-
-        // when
-        val result = teamSerializer.deserialize(source)
-
-        // then
-        assertThat(result).isEqualTo(
-            SerializableTeam(
-                "development",
-                listOf(SerializablePerson("alice", 38), SerializablePerson("bob", 37))
-            )
-        )
+        assertThat(deserialized).isDataClassEqualTo(serializable)
     }
 
     @Test

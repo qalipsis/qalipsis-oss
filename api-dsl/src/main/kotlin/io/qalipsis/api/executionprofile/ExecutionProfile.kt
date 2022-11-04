@@ -16,6 +16,8 @@
 
 package io.qalipsis.api.executionprofile
 
+import java.time.Duration
+
 /**
  *
  * [ExecutionProfile] is an accessor to a [ExecutionProfileIterator]. The [ExecutionProfile] is part of the definition of the
@@ -26,10 +28,22 @@ package io.qalipsis.api.executionprofile
 interface ExecutionProfile {
 
     /**
+     * Notifies the execution profile that the campaign is starting.
+     */
+    fun notifyStart(speedFactor: Double) = Unit
+
+    /**
      * Generates a new [ExecutionProfileIterator] to define a new sequence of starts.
      *
      * @param totalMinionsCount the total number of minions that will be started for the scenario.
      * @param speedFactor the factor to accelerate (when greater than 1) or slower (between 0 and 1) the ramp-up.
      */
     fun iterator(totalMinionsCount: Int, speedFactor: Double): ExecutionProfileIterator
+
+    /**
+     * Verifies whether the completed minion, can be restarted.
+     *
+     * @param minionExecutionDuration the total duration the minion required to execute the full scenario
+     */
+    fun canReplay(minionExecutionDuration: Duration): Boolean = false
 }

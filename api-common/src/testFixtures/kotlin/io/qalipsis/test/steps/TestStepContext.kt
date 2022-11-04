@@ -64,6 +64,8 @@ class TestStepContext<IN, OUT>(
 
     private var immutableMetersTags: Tags? = null
 
+    override val startedAt: Long = System.currentTimeMillis()
+
     override val errors: List<StepError>
         get() = internalErrors.toList()
 
@@ -77,6 +79,7 @@ class TestStepContext<IN, OUT>(
             campaignKey = campaignKey,
             scenarioName = scenarioName,
             minionId = minionId,
+            minionStart = startedAt,
             lastExecutedStepName = stepName,
             errors = errors
         )

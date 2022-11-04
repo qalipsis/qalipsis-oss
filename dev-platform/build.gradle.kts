@@ -18,11 +18,11 @@ plugins {
     `java-platform`
 }
 
-val kotlin = "1.6.21"
+val kotlin = "1.7.10"
 val kotlinCoroutines = "1.6.4"
 val kotlinSerialization = "1.4.0"
 
-val micronaut = "3.6.+"
+val micronaut = "3.7.+"
 val jackson = "2.13.2"
 val klogging = "2.1.23"
 val logback = "1.4.+"

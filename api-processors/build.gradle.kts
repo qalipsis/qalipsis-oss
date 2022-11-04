@@ -45,6 +45,7 @@ dependencies {
     kaptTest(platform(project(":dev-platform")))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.micronaut:micronaut-inject")
+    kaptTest("org.jetbrains.kotlinx:kotlinx-serialization-json")
     testAnnotationProcessor(platform(project(":dev-platform")))
     testAnnotationProcessor("io.micronaut:micronaut-inject-java")
 
@@ -54,6 +55,7 @@ dependencies {
     testImplementation(project(":api-common"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("io.micronaut:micronaut-inject")

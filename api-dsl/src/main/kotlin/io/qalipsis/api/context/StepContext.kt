@@ -24,6 +24,7 @@ import kotlinx.coroutines.channels.SendChannel
  * When the same minion repeats the same step in a raw, several contexts should be used.
  *
  * @property campaignKey Identifier of the test campaign owning the context
+ * @property startedAt Instant since epoch in ms when the minion was started
  * @property minionId Identifier of the Minion owning the context
  * @property scenarioName Identifier of the Scenario being executed
  * @property previousStepName First ancestor step
@@ -41,6 +42,7 @@ import kotlinx.coroutines.channels.SendChannel
  */
 interface StepContext<IN, OUT> : StepOutput<OUT>, MonitoringTags {
     val campaignKey: CampaignKey
+    val startedAt: Long
     val minionId: MinionId
     val scenarioName: ScenarioName
     val previousStepName: StepName?

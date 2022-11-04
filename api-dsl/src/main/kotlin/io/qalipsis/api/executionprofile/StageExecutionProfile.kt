@@ -16,8 +16,12 @@
 
 package io.qalipsis.api.executionprofile
 
+import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
+import io.qalipsis.api.executionprofile.CompletionMode.HARD
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.scenario.ExecutionProfileSpecification
 import java.time.Duration
+import java.time.Instant
 import kotlin.math.ceil
 
 /**
@@ -28,12 +32,40 @@ import kotlin.math.ceil
  * @author Svetlana Paliashchuk
  */
 data class StageExecutionProfile(
-    private val stages: List<Stage>,
-    private val completion: CompletionMode
+    private val completion: CompletionMode,
+    private val stages: List<Stage>
 ) : ExecutionProfile {
 
-    override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        StageExecutionProfileIterator(totalMinionsCount, speedFactor, stages, completion)
+    /**
+     * Theoretical end of the latest stage since epoch (in ms).
+     */
+    private var latestStageEnd: Long = Long.MIN_VALUE
+
+    override fun notifyStart(speedFactor: Double) {
+        if (latestStageEnd == Long.MIN_VALUE) {
+            // Calculates the end of the latest stage.
+            val delayUntilEnd = stages.sumOf { it.totalDurationMs } / speedFactor
+            latestStageEnd = Instant.now().plusMillis(delayUntilEnd.toLong()).toEpochMilli()
+            log.debug { "The latest stage ends at $latestStageEnd" }
+            super.notifyStart(speedFactor)
+        }
+    }
+
+    override fun iterator(totalMinionsCount: Int, speedFactor: Double): StageExecutionProfileIterator {
+        log.debug { "Stages of the profile: $stages" }
+        return StageExecutionProfileIterator(totalMinionsCount, speedFactor, stages)
+    }
+
+    override fun canReplay(minionExecutionDuration: Duration): Boolean {
+        return if (completion == HARD) {
+            // If the remaining time until the end is bigger that the time of the latest execution of the minion,
+            // it is let being restarted. The running minion will later be interrupted.
+            (latestStageEnd - System.currentTimeMillis()) > minionExecutionDuration.toMillis()
+        } else {
+            // If the completion is GRACEFUL, we start the minions as long as the end of the latest stage is not reached.
+            latestStageEnd > System.currentTimeMillis()
+        }
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -56,8 +88,7 @@ data class StageExecutionProfile(
     inner class StageExecutionProfileIterator(
         private var remainingMinions: Int,
         private val speedFactor: Double,
-        private val stages: Collection<Stage>,
-        private val completion: CompletionMode
+        private val stages: Collection<Stage>
     ) : ExecutionProfileIterator {
 
         private val startingLines = getStartingLines().toMutableList()
@@ -91,6 +122,12 @@ data class StageExecutionProfile(
 
                 stageStartOffset = (stage.totalDurationMs / speedFactor).toLong() - stageStartingClockTime
                 stageResult
+            }.also {
+                if (log.isTraceEnabled) {
+                    log.trace { "Starting lines (count: ${it.size}): $it" }
+                } else {
+                    log.debug { "${it.size} starting lines were set, ending in ${it.last().offsetMs} milliseconds" }
+                }
             }
         }
 
@@ -101,6 +138,10 @@ data class StageExecutionProfile(
         override fun hasNext(): Boolean {
             return startingLines.isNotEmpty()
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }
 
@@ -133,12 +174,13 @@ data class Stage(
 enum class CompletionMode {
 
     /**
-     * After the latest stage was totally completed, all the minions are forced to stop.
+     * No minion can be restarted if the remaining time is less
+     * than the elapsed time to execute the scenario.
      */
-    FORCED,
+    HARD,
 
     /**
-     * After the latest stage was totally completed, is it waited that all the minions are naturally completed.
+     * Restart the minions unless the end of the latest stage is reached.
      */
     GRACEFUL
 }
@@ -147,15 +189,15 @@ enum class CompletionMode {
  * Starts the minions in different linear stages, possibly split by “plateaus”.
  */
 fun ExecutionProfileSpecification.stages(
-    completion: CompletionMode = CompletionMode.FORCED,
+    completion: CompletionMode = GRACEFUL,
     stages: Stages.() -> Unit
 ) {
     val stagesBuilder = StagesBuilder()
     stagesBuilder.stages()
     strategy(
         StageExecutionProfile(
-            stages = stagesBuilder.stages,
-            completion
+            completion,
+            stages = stagesBuilder.stages
         )
     )
 }

@@ -27,6 +27,7 @@ data class DefaultCompletionContext(
     override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     override val minionId: MinionId,
+    override val minionStart: Long,
     override val lastExecutedStepName: StepName,
     override val errors: List<StepError>
 ) : CompletionContext {

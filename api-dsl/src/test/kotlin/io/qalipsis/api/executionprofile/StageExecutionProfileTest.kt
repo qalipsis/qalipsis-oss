@@ -21,6 +21,8 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import io.mockk.spyk
 import io.qalipsis.api.scenario.TestScenarioFactory
 import io.qalipsis.test.assertk.prop
@@ -51,10 +53,10 @@ internal class StageExecutionProfileTest {
 
         assertThat(scenario).prop("executionProfile").isEqualTo(
             StageExecutionProfile(
-                listOf(
+                CompletionMode.GRACEFUL, listOf(
                     Stage(minionsCount = 234, rampUpDurationMs = 12000, totalDurationMs = 12000, resolutionMs = 500),
                     Stage(minionsCount = 15, rampUpDurationMs = 500, totalDurationMs = 1500, resolutionMs = 500)
-                ), CompletionMode.FORCED
+                )
             )
         )
     }
@@ -75,7 +77,7 @@ internal class StageExecutionProfileTest {
                 resolutionMs = 400
             ),
         )
-        val executionProfile = StageExecutionProfile(stages, CompletionMode.FORCED)
+        val executionProfile = StageExecutionProfile(CompletionMode.HARD, stages)
 
         val iterator = spyk(executionProfile.iterator(31, 1.0))
 
@@ -119,7 +121,7 @@ internal class StageExecutionProfileTest {
                 resolutionMs = 400
             ),
         )
-        val executionProfile = StageExecutionProfile(stages, CompletionMode.FORCED)
+        val executionProfile = StageExecutionProfile(CompletionMode.HARD, stages)
 
         val iterator = spyk(executionProfile.iterator(31, 2.0))
 
@@ -163,7 +165,7 @@ internal class StageExecutionProfileTest {
                 resolutionMs = 400
             ),
         )
-        val executionProfile = StageExecutionProfile(stages, CompletionMode.FORCED)
+        val executionProfile = StageExecutionProfile(CompletionMode.HARD, stages)
 
         val iterator = spyk(executionProfile.iterator(19, 1.0))
 
@@ -188,5 +190,170 @@ internal class StageExecutionProfileTest {
                 MinionsStartingLine(3, 400)
             )
         }
+    }
+
+    @Test
+    internal fun `should replay when the completion is HARD and the remaining time is more than the elapsed one`() {
+        // given
+        val stages = listOf(
+            Stage(
+                minionsCount = 12,
+                rampUpDurationMs = 2000,
+                totalDurationMs = 3000,
+                resolutionMs = 500
+            ),
+            Stage(
+                minionsCount = 14,
+                rampUpDurationMs = 1500,
+                totalDurationMs = 2000,
+                resolutionMs = 400
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.HARD, stages)
+        executionProfile.notifyStart(1.0)
+
+        // when
+        val canReplay = executionProfile.canReplay(Duration.ofMillis(4600))
+
+        // then
+        assertThat(canReplay).isTrue()
+    }
+
+    @Test
+    internal fun `should not replay when the completion is HARD and the remaining time is less than the elapsed one`() {
+        // given
+        val stages = listOf(
+            Stage(
+                minionsCount = 12,
+                rampUpDurationMs = 2000,
+                totalDurationMs = 3000,
+                resolutionMs = 500
+            ),
+            Stage(
+                minionsCount = 14,
+                rampUpDurationMs = 1500,
+                totalDurationMs = 2000,
+                resolutionMs = 400
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.HARD, stages)
+        executionProfile.notifyStart(1.0)
+
+        // when
+        val canReplay = executionProfile.canReplay(Duration.ofMillis(5300))
+
+        // then
+        assertThat(canReplay).isFalse()
+    }
+
+    @Test
+    internal fun `should not replay when the completion is HARD and the speed factor greater than 1 and the remaining time is less than the elapsed one`() {
+        // given
+        val stages = listOf(
+            Stage(
+                minionsCount = 12,
+                rampUpDurationMs = 2000,
+                totalDurationMs = 3000,
+                resolutionMs = 500
+            ),
+            Stage(
+                minionsCount = 14,
+                rampUpDurationMs = 1500,
+                totalDurationMs = 2000,
+                resolutionMs = 400
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.HARD, stages)
+        executionProfile.notifyStart(1.5)
+
+        // when
+        val canReplay = executionProfile.canReplay(Duration.ofMillis(4600))
+
+        // then
+        assertThat(canReplay).isFalse()
+    }
+
+    @Test
+    internal fun `should replay when the completion is GRACEFUL and the end of the stages is not reached`() {
+        // given
+        val stages = listOf(
+            Stage(
+                minionsCount = 12,
+                rampUpDurationMs = 100,
+                totalDurationMs = 200,
+                resolutionMs = 50
+            ),
+            Stage(
+                minionsCount = 14,
+                rampUpDurationMs = 300,
+                totalDurationMs = 300,
+                resolutionMs = 40
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
+        executionProfile.notifyStart(1.0)
+
+        // when
+        Thread.sleep(400)
+        val canReplay = executionProfile.canReplay(Duration.ofMinutes(10_000))
+
+        // then
+        assertThat(canReplay).isTrue()
+    }
+
+    @Test
+    internal fun `should not replay when the completion is GRACEFUL and the end of the stages is reached`() {
+        // given
+        val stages = listOf(
+            Stage(
+                minionsCount = 12,
+                rampUpDurationMs = 100,
+                totalDurationMs = 200,
+                resolutionMs = 50
+            ),
+            Stage(
+                minionsCount = 14,
+                rampUpDurationMs = 300,
+                totalDurationMs = 300,
+                resolutionMs = 40
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
+        executionProfile.notifyStart(1.0)
+
+        // when
+        Thread.sleep(600)
+        val canReplay = executionProfile.canReplay(Duration.ofMinutes(10_000))
+
+        // then
+        assertThat(canReplay).isFalse()
+    }
+
+    @Test
+    internal fun `should not replay when the completion is GRACEFUL and the speed factor greater than 1 and the end of the stages is not reached`() {
+        // given
+        val stages = listOf(
+            Stage(
+                minionsCount = 12,
+                rampUpDurationMs = 100,
+                totalDurationMs = 200,
+                resolutionMs = 50
+            ),
+            Stage(
+                minionsCount = 14,
+                rampUpDurationMs = 300,
+                totalDurationMs = 300,
+                resolutionMs = 40
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
+        executionProfile.notifyStart(2.0)
+
+        // when
+        Thread.sleep(300)
+        val canReplay = executionProfile.canReplay(Duration.ofMinutes(10_000))
+
+        // then
+        assertThat(canReplay).isFalse()
     }
 }
