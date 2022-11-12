@@ -31,20 +31,15 @@ import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.redis.RedisUtils
 import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalLettuceCoroutinesApi
 internal class RedisCampaignReportLiveStateRegistry(
-    factoryConfiguration: FactoryConfiguration,
     private val redisCommands: RedisHashCoroutinesCommands<String, String>,
     private val idGenerator: IdGenerator
 ) : CampaignReportLiveStateRegistry {
-
-    val keysPrefix = RedisUtils.buildKeysPrefixForTenant(factoryConfiguration.tenant)
 
     @LogInput
     override suspend fun delete(
@@ -80,8 +75,7 @@ internal class RedisCampaignReportLiveStateRegistry(
      */
     private fun buildRedisReportKey(
         campaignKey: CampaignKey, scenarioName: ScenarioName
-    ) = "${keysPrefix}${campaignKey}-report:${scenarioName}"
-
+    ) = "${campaignKey}-report:${scenarioName}"
 
     @LogInput
     override suspend fun recordCompletedMinion(
