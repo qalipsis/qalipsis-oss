@@ -132,8 +132,8 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
 
     @AfterEach
     internal fun tearDown() {
-        redisHeadChannel.subscribedHandshakeRequestsChannels.clear()
-        redisHeadChannel.subscribedFeedbackChannels.clear()
+        redisSubscriber.subscribedHandshakeRequestsChannels.clear()
+        redisSubscriber.subscribedFeedbackChannels.clear()
         redisSubscriber.close()
         subscriberCommands.quit().toFuture().get()
         connection.sync().flushdb()

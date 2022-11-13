@@ -24,6 +24,5 @@ factory:
     scenario: 10s
     campaign: 30s
 
-distributed:
-  streaming:
-    platform: redis
+streaming:
+  platform: redis

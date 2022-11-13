@@ -74,5 +74,5 @@ object ExecutionEnvironments {
     /**
      * Distributed streaming platform property configuration.
      */
-    const val DISTRIBUTED_STREAMING_PLATFORM_PROPERTY = "distributed.streaming.platform"
+    const val DISTRIBUTED_STREAMING_PLATFORM_PROPERTY = "streaming.platform"
 }

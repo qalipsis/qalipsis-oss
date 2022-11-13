@@ -103,10 +103,6 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:postgresql")
 
-    testImplementation("org.bouncycastle:bcprov-jdk15on")
-    testImplementation("org.bouncycastle:bcprov-ext-jdk15on")
-    testImplementation("org.bouncycastle:bcpkix-jdk15on")
-
     kaptTest(platform("io.qalipsis:dev-platform:${project.version}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
