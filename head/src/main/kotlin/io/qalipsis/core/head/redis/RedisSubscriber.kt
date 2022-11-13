@@ -28,19 +28,15 @@ import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
-import io.qalipsis.core.feedbacks.Feedback
-import io.qalipsis.core.handshake.HandshakeRequest
+import io.qalipsis.core.head.communication.ChannelSubscriber
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
-import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.heartbeat.Heartbeat
+import io.qalipsis.core.head.communication.SubscriberChannelRegistry
 import io.qalipsis.core.lifetime.HeadStartupComponent
-import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.io.Closeable
 
 @Singleton
@@ -53,21 +49,24 @@ import java.io.Closeable
 )
 @ExperimentalLettuceCoroutinesApi
 internal class RedisSubscriber(
-    private val factoryChannel: RedisHeadChannel,
-    private val headConfiguration: HeadConfiguration,
-    private val feedbackListeners: Collection<FeedbackListener<*>>,
-    private val handshakeRequestListeners: Collection<HandshakeRequestListener>,
-    private val heartbeatListeners: Collection<HeartbeatListener>,
+    val factoryChannel: RedisHeadChannel,
+    heartbeatListeners: Collection<HeartbeatListener>,
+    feedbackListeners: Collection<FeedbackListener<*>>,
+    handshakeRequestListeners: Collection<HandshakeRequestListener>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
     @Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME) private val subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>,
-    private val serializer: DistributionSerializer
-) : HeadStartupComponent, Closeable {
+    val subscriberRegistry: SubscriberChannelRegistry
+) : HeadStartupComponent, Closeable, ChannelSubscriber(
+    subscriberRegistry.serializer, subscriberRegistry.headConfiguration,
+    heartbeatListeners, feedbackListeners,
+    handshakeRequestListeners, orchestrationCoroutineScope
+) {
 
     private val listener = Listener()
 
     override fun init() {
-        factoryChannel.subscribeHandshakeRequest(headConfiguration.handshakeRequestChannel)
-        subscriberCommands.subscribe(headConfiguration.heartbeatChannel).toFuture().get()
+        factoryChannel.subscribeHandshakeRequest(subscriberRegistry.headConfiguration.handshakeRequestChannel)
+        subscriberCommands.subscribe(subscriberRegistry.headConfiguration.heartbeatChannel).toFuture().get()
         subscriberCommands.statefulConnection.addListener(listener)
     }
 
@@ -75,14 +74,7 @@ internal class RedisSubscriber(
 
         override fun message(channel: String, message: ByteArray) {
             log.trace { "Received a message from channel $channel" }
-            when (channel) {
-                in factoryChannel.subscribedFeedbackChannels ->
-                    serializer.deserialize<Feedback>(message)?.let { dispatch(it) }
-                in factoryChannel.subscribedHandshakeRequestsChannels ->
-                    serializer.deserialize<HandshakeRequest>(message)?.let { dispatch(it) }
-                headConfiguration.heartbeatChannel -> serializer.deserialize<Heartbeat>(message)?.let { dispatch(it) }
-                else -> log.trace { "Channel $channel is not supported" }
-            }
+            deserializeAndDispatch(channel, message)
         }
 
         override fun message(pattern: String, channel: String, message: ByteArray) {
@@ -103,43 +95,6 @@ internal class RedisSubscriber(
 
         override fun punsubscribed(pattern: String, count: Long) {
             log.trace { "Unsubscribed from pattern $pattern" }
-        }
-    }
-
-    /**
-     * Dispatches the [Feedback] to the relevant [FeedbackListener] in isolated coroutines.
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun dispatch(feedback: Feedback) {
-        log.trace { "Dispatching the directive of type ${feedback::class}" }
-        val eligibleListeners = feedbackListeners.filter { it.accept(feedback) }
-        if (eligibleListeners.isNotEmpty()) {
-            eligibleListeners.forEach { listener ->
-                orchestrationCoroutineScope.launch {
-                    log.trace { "Dispatching the directive of type ${feedback::class} to the listener of type ${listener::class}" }
-                    (listener as FeedbackListener<Feedback>).notify(feedback)
-                }
-            }
-        }
-    }
-
-    /**
-     * Dispatches the [HandshakeRequest] to all the relevant [HandshakeRequestListener] in isolated coroutines.
-     */
-    private fun dispatch(request: HandshakeRequest) {
-        log.trace { "Dispatching the handshake response $request" }
-        handshakeRequestListeners.stream().forEach { listener ->
-            orchestrationCoroutineScope.launch { listener.notify(request) }
-        }
-    }
-
-    /**
-     * Dispatches the [HandshakeRequest] to all the relevant [HandshakeRequestListener] in isolated coroutines.
-     */
-    private fun dispatch(heartbeat: Heartbeat) {
-        log.trace { "Dispatching the heartbeat $heartbeat" }
-        heartbeatListeners.stream().forEach { listener ->
-            orchestrationCoroutineScope.launch { listener.notify(heartbeat) }
         }
     }
 

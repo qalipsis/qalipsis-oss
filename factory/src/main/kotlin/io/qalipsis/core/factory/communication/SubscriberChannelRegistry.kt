@@ -19,20 +19,18 @@
 
 package io.qalipsis.core.factory.communication
 
-import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DirectiveRegistry
-import io.qalipsis.core.directives.DispatcherChannel
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.serialization.DistributionSerializer
+import jakarta.inject.Singleton
 
-abstract class AbstractFactoryChannel(
-    private val directiveRegistry: DirectiveRegistry
-) : FactoryChannel {
-
-    protected lateinit var currentDirectiveBroadcastChannel: DispatcherChannel
-
-    protected lateinit var currentFeedbackChannel: DispatcherChannel
-
-    override suspend fun publishDirective(directive: Directive) {
-        val channel = directive.channel.takeIf(String::isNotBlank) ?: currentDirectiveBroadcastChannel
-        publishDirective(channel, directiveRegistry.prepareBeforeSend(channel, directive))
-    }
-}
+/** Channel subscriber model.
+ *
+ * @author Joël Valère
+ */
+@Singleton
+internal class SubscriberChannelRegistry(
+    val factoryConfiguration: FactoryConfiguration,
+    val directiveRegistry: DirectiveRegistry,
+    val serializer: DistributionSerializer
+)

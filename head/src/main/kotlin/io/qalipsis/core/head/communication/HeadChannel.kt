@@ -22,18 +22,14 @@ package io.qalipsis.core.head.communication
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.handshake.HandshakeResponse
-import io.qalipsis.core.lifetime.FactoryStartupComponent
+import io.qalipsis.core.lifetime.HeadStartupComponent
 
 /**
  * Communication component in charge of consuming incoming messages to the head and dispatching outgoing ones.
  *
  * @author Eric Jessé
  */
-interface HeadChannel : FactoryStartupComponent {
-
-    val subscribedHandshakeRequestsChannels: Collection<DispatcherChannel>
-
-    val subscribedFeedbackChannels: Collection<DispatcherChannel>
+interface HeadChannel : HeadStartupComponent {
 
     /**
      * Subscribes to the channels [channelNames] to consume the [io.qalipsis.core.handshake.HandshakeRequest]s.

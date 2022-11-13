@@ -47,13 +47,13 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import jakarta.inject.Named
-import java.time.Duration
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
@@ -124,8 +124,8 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
 
     @AfterEach
     internal fun tearDown() {
-        redisFactoryChannel.subscribedHandshakeResponseChannels.clear()
-        redisFactoryChannel.subscribedDirectiveChannels.clear()
+        redisSubscriber.subscribedHandshakeResponseChannels.clear()
+        redisSubscriber.subscribedDirectiveChannels.clear()
         redisSubscriber.close()
         subscriberCommands.quit().toFuture().get()
         connection.sync().flushdb()

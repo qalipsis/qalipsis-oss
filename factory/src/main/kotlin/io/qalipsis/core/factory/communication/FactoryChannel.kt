@@ -33,10 +33,6 @@ import io.qalipsis.core.lifetime.FactoryStartupComponent
  */
 interface FactoryChannel : FactoryStartupComponent {
 
-    val subscribedHandshakeResponseChannels: Collection<DispatcherChannel>
-
-    val subscribedDirectiveChannels: Collection<DispatcherChannel>
-
     /**
      * Subscribes to the channels [channelNames] to consume the [io.qalipsis.core.handshake.HandshakeResponse]s.
      */

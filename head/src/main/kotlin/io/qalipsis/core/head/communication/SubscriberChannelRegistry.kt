@@ -19,12 +19,16 @@
 
 package io.qalipsis.core.head.communication
 
-import io.qalipsis.core.directives.DispatcherChannel
+import io.qalipsis.core.head.configuration.HeadConfiguration
+import io.qalipsis.core.serialization.DistributionSerializer
+import jakarta.inject.Singleton
 
-abstract class AbstractHeadChannel : HeadChannel {
-
-    override val subscribedHandshakeRequestsChannels = mutableSetOf<DispatcherChannel>()
-
-    override val subscribedFeedbackChannels = mutableSetOf<DispatcherChannel>()
-
-}
+/** Channel subscriber model.
+ *
+ * @author Joël Valère
+ */
+@Singleton
+internal class SubscriberChannelRegistry(
+    val serializer: DistributionSerializer,
+    val headConfiguration: HeadConfiguration
+)

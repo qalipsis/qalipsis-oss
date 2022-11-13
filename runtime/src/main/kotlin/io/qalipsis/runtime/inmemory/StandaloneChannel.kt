@@ -50,14 +50,6 @@ internal class StandaloneChannel(
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
 ) : HeadChannel, FactoryChannel {
 
-    override val subscribedHandshakeResponseChannels = emptySet<DispatcherChannel>()
-
-    override val subscribedDirectiveChannels = emptySet<DispatcherChannel>()
-
-    override val subscribedHandshakeRequestsChannels = emptySet<DispatcherChannel>()
-
-    override val subscribedFeedbackChannels = emptySet<DispatcherChannel>()
-
     override fun subscribeHandshakeResponse(vararg channelNames: DispatcherChannel) = Unit
 
     override fun unsubscribeHandshakeResponse(vararg channelNames: DispatcherChannel) = Unit
@@ -95,6 +87,12 @@ internal class StandaloneChannel(
         listeners.get().handshakeResponseListeners.stream().forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(handshakeResponse) }
         }
+    }
+
+    override fun getStartupOrder() = Int.MIN_VALUE
+
+    override fun init() {
+        super<HeadChannel>.init()
     }
 
     @LogInput(level = Level.DEBUG)

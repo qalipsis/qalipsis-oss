@@ -28,18 +28,14 @@ import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
-import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.directives.DirectiveRegistry
+import io.qalipsis.core.factory.communication.ChannelSubscriber
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.HandshakeResponseListener
-import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.factory.communication.SubscriberChannelRegistry
 import io.qalipsis.core.lifetime.FactoryStartupComponent
-import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.io.Closeable
 
 @Singleton
@@ -52,15 +48,16 @@ import java.io.Closeable
 )
 @ExperimentalLettuceCoroutinesApi
 internal class RedisSubscriber(
-    private val factoryConfiguration: FactoryConfiguration,
-    private val factoryChannel: RedisFactoryChannel,
-    private val directiveListeners: List<DirectiveListener<*>>,
-    private val handshakeResponseListeners: List<HandshakeResponseListener>,
+    directiveListeners: List<DirectiveListener<*>>,
+    val subscriberRegistry: SubscriberChannelRegistry,
+    handshakeResponseListeners: List<HandshakeResponseListener>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
-    private val directiveRegistry: DirectiveRegistry,
-    @Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME) private val subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>,
-    private val serializer: DistributionSerializer
-) : FactoryStartupComponent, Closeable {
+    @Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME) val subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>
+) : FactoryStartupComponent, Closeable, ChannelSubscriber(
+    subscriberRegistry.serializer, subscriberRegistry.directiveRegistry,
+    subscriberRegistry.factoryConfiguration, directiveListeners,
+    handshakeResponseListeners, orchestrationCoroutineScope
+) {
 
     private val listener = Listener()
 
@@ -72,18 +69,7 @@ internal class RedisSubscriber(
 
         override fun message(channel: String, message: ByteArray) {
             log.trace { "Received a message from channel $channel" }
-            when (channel) {
-                in factoryChannel.subscribedDirectiveChannels -> {
-                    val directive = serializer.deserialize<Directive>(message)
-                    log.trace { "Dispatching the directive $directive" }
-                    directive?.let { dispatch(it) }
-                }
-
-                in factoryChannel.subscribedHandshakeResponseChannels ->
-                    serializer.deserialize<HandshakeResponse>(message)?.let { dispatch(it) }
-
-                else -> log.trace { "Channel $channel is not supported" }
-            }
+            deserializeAndDispatch(channel, message)
         }
 
         override fun message(pattern: String, channel: String, message: ByteArray) {
@@ -104,39 +90,6 @@ internal class RedisSubscriber(
 
         override fun punsubscribed(pattern: String, count: Long) {
             log.trace { "Unsubscribed from pattern $pattern" }
-        }
-    }
-
-    /**
-     * Dispatches the [Directive] to the relevant [DirectiveListener] in isolated coroutines.
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun dispatch(directive: Directive) {
-        orchestrationCoroutineScope.launch {
-            log.trace { "Dispatching the directive of type ${directive::class}" }
-            val eligibleListeners = directiveListeners.filter { it.accept(directive) }
-            if (eligibleListeners.isNotEmpty()) {
-                directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
-                    eligibleListeners.forEach { listener ->
-                        orchestrationCoroutineScope.launch {
-                            log.trace { "Dispatching the directive of type ${preparedDirective::class} to the listener of type ${listener::class}" }
-                            (listener as DirectiveListener<Directive>).notify(preparedDirective)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Dispatches the [HandshakeResponse] to all the relevant [HandshakeResponseListener] in isolated coroutines.
-     */
-    private fun dispatch(response: HandshakeResponse) {
-        if (response.handshakeNodeId == factoryConfiguration.nodeId) {
-            log.trace { "Dispatching the handshake response" }
-            handshakeResponseListeners.stream().forEach { listener ->
-                orchestrationCoroutineScope.launch { listener.notify(response) }
-            }
         }
     }
 

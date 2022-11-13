@@ -41,7 +41,6 @@ import io.qalipsis.core.directives.MinionsDeclarationDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
-import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
@@ -50,7 +49,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -75,7 +73,7 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
     private lateinit var redisHeadChannel: RedisHeadChannel
 
     @Inject
-    private lateinit var serializer: DistributionSerializer
+    private lateinit var subscriber: RedisSubscriber
 
     @Inject
     private lateinit var directiveRegistry: DirectiveRegistry
@@ -126,7 +124,7 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         val received = captured.receive()
         assertThat(received).all {
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(FACTORY_CHANNEL)
-            transform("message") { serializer.deserialize<Directive>(it.message) }.isNotNull()
+            transform("message") { subscriber.subscriberRegistry.serializer.deserialize<Directive>(it.message) }.isNotNull()
                 .isInstanceOf(TestDescriptiveDirective::class).prop(TestDescriptiveDirective::value).isEqualTo(1)
         }
     }
@@ -148,7 +146,7 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         val received = captured.receive()
         assertThat(received).all {
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(FACTORY_CHANNEL)
-            transform("message") { serializer.deserialize<Directive>(it.message) }.isNotNull()
+            transform("message") { subscriber.subscriberRegistry.serializer.deserialize<Directive>(it.message) }.isNotNull()
                 .isInstanceOf(MinionsDeclarationDirectiveReference::class)
                 // Dereferences the received directive.
                 .transform { runBlocking { directiveRegistry.get(it) } }.isNotNull()
@@ -176,7 +174,9 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         val received = captured.receive()
         assertThat(received).all {
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(HANDSHAKE_CHANNEL)
-            transform("message") { serializer.deserialize<HandshakeResponse>(it.message) }.isEqualTo(handshakeResponse)
+            transform("message") { subscriber.subscriberRegistry.serializer.deserialize<HandshakeResponse>(it.message) }.isEqualTo(
+                handshakeResponse
+            )
         }
     }
 

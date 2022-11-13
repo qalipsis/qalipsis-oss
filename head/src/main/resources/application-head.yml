@@ -4,9 +4,8 @@ head:
   heartbeat-channel: heartbeat
   zones: [ ]
 
-distributed:
-  streaming:
-    platform: redis
+streaming:
+  platform: redis
 
 report:
   export:

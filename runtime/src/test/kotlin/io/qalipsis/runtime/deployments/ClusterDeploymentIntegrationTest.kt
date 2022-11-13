@@ -55,8 +55,6 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
-            //"-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
@@ -69,6 +67,9 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
+
+        // Adds a delay to ensure that the head Redis pub/sub is consuming before the factories are pushing.
+        Thread.sleep(1000)
 
         val factory1 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
@@ -113,8 +114,6 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
-            //"-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
@@ -127,6 +126,9 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
+
+        // Adds a delay to ensure that the head Redis pub/sub is consuming before the factories are pushing.
+        Thread.sleep(1000)
 
         val factory1 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
@@ -170,7 +172,6 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
-            "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE"
         )
         val factoryConfig = arrayOf(
             "factory",
@@ -184,6 +185,9 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
+
+        // Adds a delay to ensure that the head Redis pub/sub is consuming before the factories are pushing.
+        Thread.sleep(1000)
 
         val factory1 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,

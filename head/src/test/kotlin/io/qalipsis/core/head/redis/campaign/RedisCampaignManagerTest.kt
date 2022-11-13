@@ -157,7 +157,7 @@ internal class RedisCampaignManagerTest {
                     listOf(scenario1, scenario2, scenario3)
             val factory1 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-1"; every { unicastChannel } returns "unicast-channel-1" }
-            val factory2 = relaxedMockk<Factory> { every { nodeId } returns "factory-2" };
+            val factory2 = relaxedMockk<Factory> { every { nodeId } returns "factory-2" }
             val factory3 =
                 relaxedMockk<Factory> { every { nodeId } returns "factory-3"; every { unicastChannel } returns "unicast-channel-3" }
             coEvery {
