@@ -23,8 +23,6 @@ import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.report.ExecutionStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
-import javax.validation.Valid
-import javax.validation.constraints.NotBlank
 import javax.validation.constraints.PositiveOrZero
 
 /**
@@ -37,57 +35,81 @@ import javax.validation.constraints.PositiveOrZero
     name = "Report of campaign execution",
     title = "Details of the execution of a completed or running campaign and its scenario"
 )
-data class CampaignExecutionDetails(
-    @field:Schema(description = "Unique identifier of the campaign")
-    @field:NotBlank
-    val key: String,
-
-    @field:Schema(description = "Display name of the campaign")
-    @field:NotBlank
-    val name: String,
-
-    @field:Schema(description = "Date and time when the campaign started", required = false)
-    val start: Instant?,
-
-    @field:Schema(
-        description = "Date and time when the campaign was completed, whether successfully or not",
-        required = false
-    )
-    val end: Instant?,
-
-    @field:Schema(description = "Counts of minions scheduled to be started", required = false)
-    @field:PositiveOrZero
-    val scheduledMinions: Int?,
+internal class CampaignExecutionDetails(
+    version: Instant,
+    key: String,
+    creation: Instant,
+    name: String,
+    speedFactor: Double,
+    scheduledMinions: Int?,
+    timeout: Instant? = null,
+    hardTimeout: Boolean? = null,
+    start: Instant?,
+    end: Instant?,
+    status: ExecutionStatus,
+    configurerName: String? = null,
+    aborterName: String? = null,
+    scenarios: Collection<Scenario>,
+    configuration: CampaignConfiguration? = null,
 
     @field:Schema(description = "Counts of minions when the campaign started", required = false)
-    @field:PositiveOrZero
     val startedMinions: Int?,
 
-    @field:Schema(description = "Instant when the campaign should be aborted", required = false)
-    val timeout: Instant? = null,
-
-    @field:Schema(
-        description = "Specifies whether the campaign should generate a failure (true) when the timeout is reached",
-        required = false
-    )
-    val hardTimeout: Boolean? = null,
-
     @field:Schema(description = "Counts of minions that completed the campaign", required = false)
-    @field:PositiveOrZero
     val completedMinions: Int?,
 
-    @field:Schema(description = "Counts of minions that successfully completed the campaign", required = false)
-    @field:PositiveOrZero
+    @field:Schema(description = "Counts of steps that successfully completed", required = false)
     val successfulExecutions: Int?,
 
-    @field:Schema(description = "Counts of minions that failed to execute the campaign", required = false)
+    @field:Schema(description = "Counts of steps that failed", required = false)
     @field:PositiveOrZero
     val failedExecutions: Int?,
 
-    @field:Schema(description = "Overall execution status of the campaign")
-    val status: ExecutionStatus,
-
-    @field:Schema(description = "The list of the scenario reports for the campaign")
-    @field:Valid
+    @field:Schema(description = "Individual details of the scenario executed during the campaign")
     val scenariosReports: List<ScenarioExecutionDetails> = emptyList()
-)
+) : Campaign(
+    version = version,
+    key = key,
+    creation = creation,
+    name = name,
+    speedFactor = speedFactor,
+    scheduledMinions = scheduledMinions,
+    timeout = timeout,
+    hardTimeout = hardTimeout,
+    start = start,
+    end = end,
+    status = status,
+    configurerName = configurerName,
+    aborterName = aborterName,
+    scenarios = scenarios,
+    configuration = configuration
+) {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as CampaignExecutionDetails
+
+        if (!super.equals(other)) return false
+        if (startedMinions != other.startedMinions) return false
+        if (completedMinions != other.completedMinions) return false
+        if (successfulExecutions != other.successfulExecutions) return false
+        if (failedExecutions != other.failedExecutions) return false
+        if (status != other.status) return false
+        if (scenariosReports != other.scenariosReports) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + (startedMinions ?: 0)
+        result = 31 * result + (completedMinions ?: 0)
+        result = 31 * result + (successfulExecutions ?: 0)
+        result = 31 * result + (failedExecutions ?: 0)
+        result = 31 * result + status.hashCode()
+        result = 31 * result + scenariosReports.hashCode()
+        return result
+    }
+}

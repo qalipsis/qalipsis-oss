@@ -28,8 +28,10 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.prop
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
@@ -42,8 +44,12 @@ import io.qalipsis.core.head.jdbc.repository.CampaignReportRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
+import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.Test
@@ -69,70 +75,84 @@ internal class DatabaseCampaignReportProviderTest {
     @MockK
     private lateinit var scenarioReportMessageRepository: ScenarioReportMessageRepository
 
+    @MockK
+    private lateinit var campaignConverter: CampaignConverter
+
     @InjectMockKs
     private lateinit var campaignReportProvider: DatabaseCampaignReportProvider
 
     @Test
     internal fun `should retrieve the right campaign report belonging to tenant`() = testDispatcherProvider.runTest {
-        val now = Instant.now()
-        val end = now.plusMillis(790976)
         // given
+        val now = Instant.now()
+        val creation = Instant.now().minusMillis(123)
+        val start = Instant.now().minusMillis(12)
+        val end = start.plusMillis(790976)
+        val campaignEntity = mockk<CampaignEntity> {
+            every { id } returns 342
+        }
         coEvery {
-            campaignRepository.findByTenantAndKey("my-tenant", "campaign-1")
-        } returns CampaignEntity(
-            id = 1,
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+        } returns campaignEntity
+        val scenario1 = mockk<Scenario>()
+        val scenario2 = mockk<Scenario>()
+        val configuration = mockk<CampaignConfiguration>()
+        coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns Campaign(
+            creation = creation,
             version = now,
-            tenantId = 4,
-            key = "campaign-1",
-            name = "my-campaign",
-            scheduledMinions = 1,
-            speedFactor = 1.0,
-            start = now,
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.62,
+            scheduledMinions = 123,
+            timeout = end.plusSeconds(1),
+            hardTimeout = true,
+            start = start,
             end = end,
-            result = ExecutionStatus.SUCCESSFUL,
-            configurer = 3
+            status = ExecutionStatus.SUCCESSFUL,
+            configurerName = "my-user",
+            aborterName = null,
+            scenarios = listOf(scenario1, scenario2),
+            configuration = configuration
         )
         coEvery {
-            campaignReportRepository.findByCampaignId(1)
-        } returns listOf(
-            CampaignReportEntity(
-                id = 1,
-                version = now,
-                campaignId = 1,
-                startedMinions = 5,
-                completedMinions = 3,
-                successfulExecutions = 3,
-                failedExecutions = 2,
-                status = ExecutionStatus.FAILED,
-                scenariosReports = listOf(
-                    ScenarioReportEntity(
-                        id = 2,
-                        version = now,
-                        name = "scenario-1",
-                        campaignReportId = 1,
-                        start = now,
-                        end = end,
-                        startedMinions = 22,
-                        completedMinions = 3,
-                        successfulExecutions = 14,
-                        failedExecutions = 13,
-                        status = ExecutionStatus.SUCCESSFUL,
-                        messages = emptyList()
-                    ),
-                    ScenarioReportEntity(
-                        id = 3,
-                        version = now,
-                        name = "scenario-2",
-                        campaignReportId = 1,
-                        start = now.plusSeconds(2),
-                        end = end.plusSeconds(3),
-                        startedMinions = 22,
-                        completedMinions = 13,
-                        successfulExecutions = 11,
-                        failedExecutions = 18,
-                        status = ExecutionStatus.ABORTED,
-                        messages = emptyList()
-                    )
+            campaignReportRepository.findByCampaignId(342)
+        } returns CampaignReportEntity(
+            id = 1,
+            version = now,
+            campaignId = 1,
+            startedMinions = 5,
+            completedMinions = 3,
+            successfulExecutions = 3,
+            failedExecutions = 2,
+            status = ExecutionStatus.FAILED,
+            scenariosReports = listOf(
+                ScenarioReportEntity(
+                    id = 2,
+                    version = now,
+                    name = "scenario-1",
+                    campaignReportId = 1,
+                    start = now,
+                    end = end,
+                    startedMinions = 22,
+                    completedMinions = 3,
+                    successfulExecutions = 14,
+                    failedExecutions = 13,
+                    status = ExecutionStatus.SUCCESSFUL,
+                    messages = emptyList()
+                ),
+                ScenarioReportEntity(
+                    id = 3,
+                    version = now,
+                    name = "scenario-2",
+                    campaignReportId = 1,
+                    start = now.plusSeconds(2),
+                    end = end.plusSeconds(3),
+                    startedMinions = 22,
+                    completedMinions = 13,
+                    successfulExecutions = 11,
+                    failedExecutions = 18,
+                    status = ExecutionStatus.ABORTED,
+                    messages = emptyList()
                 )
             )
         )
@@ -142,19 +162,26 @@ internal class DatabaseCampaignReportProviderTest {
         )
 
         // when
-        val result = campaignReportProvider.retrieveCampaignReport(tenant = "my-tenant", campaignKey = "campaign-1")
+        val result = campaignReportProvider.retrieveCampaignReport(tenant = "my-tenant", campaignKey = "my-campaign")
 
         // then
         assertThat(result).all {
-            prop(CampaignExecutionDetails::key).isEqualTo("campaign-1")
-            prop(CampaignExecutionDetails::name).isEqualTo("my-campaign")
-            prop(CampaignExecutionDetails::start).isEqualTo(now)
+            prop(CampaignExecutionDetails::creation).isEqualTo(creation)
+            prop(CampaignExecutionDetails::version).isEqualTo(now)
+            prop(CampaignExecutionDetails::key).isEqualTo("my-campaign")
+            prop(CampaignExecutionDetails::name).isEqualTo("This is a campaign")
+            prop(CampaignExecutionDetails::start).isEqualTo(start)
             prop(CampaignExecutionDetails::end).isEqualTo(end)
+            prop(CampaignExecutionDetails::speedFactor).isEqualTo(123.62)
+            prop(CampaignExecutionDetails::timeout).isEqualTo(end.plusSeconds(1))
+            prop(CampaignExecutionDetails::hardTimeout).isEqualTo(true)
             prop(CampaignExecutionDetails::startedMinions).isEqualTo(5)
-            prop(CampaignExecutionDetails::completedMinions).isEqualTo(3)
+            prop(CampaignExecutionDetails::configurerName).isEqualTo("my-user")
             prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(3)
             prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2)
             prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.FAILED)
+            prop(CampaignExecutionDetails::scenarios).isEqualTo(listOf(scenario1, scenario2))
+            prop(CampaignExecutionDetails::configuration).isEqualTo(configuration)
             prop(CampaignExecutionDetails::scenariosReports).all {
                 hasSize(2)
                 index(0).all {
@@ -201,29 +228,42 @@ internal class DatabaseCampaignReportProviderTest {
 
     @Test
     internal fun `should build the temporary campaign report belonging to tenant`() = testDispatcherProvider.runTest {
-        val now = Instant.now()
-        val end = now.plusMillis(790976)
         // given
+        val now = Instant.now()
+        val creation = Instant.now().minusMillis(123)
+        val start = Instant.now().minusMillis(12)
+        val end = start.plusMillis(790976)
+        val campaignEntity = mockk<CampaignEntity> {
+            every { id } returns 342
+        }
         coEvery {
-            campaignRepository.findByTenantAndKey("my-tenant", "campaign-1")
-        } returns CampaignEntity(
-            id = 1,
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+        } returns campaignEntity
+        val scenario1 = mockk<Scenario>()
+        val scenario2 = mockk<Scenario>()
+        val configuration = mockk<CampaignConfiguration>()
+        coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns Campaign(
+            creation = creation,
             version = now,
-            tenantId = 4,
-            key = "campaign-1",
-            name = "my-campaign",
-            scheduledMinions = 1,
-            speedFactor = 1.0,
-            start = now,
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.62,
+            scheduledMinions = 123,
+            timeout = end.plusSeconds(1),
+            hardTimeout = true,
+            start = start,
             end = end,
-            result = ExecutionStatus.IN_PROGRESS,
-            configurer = 3
+            status = ExecutionStatus.IN_PROGRESS,
+            configurerName = "my-user",
+            aborterName = null,
+            scenarios = listOf(scenario1, scenario2),
+            configuration = configuration
         )
-        coEvery { campaignReportRepository.findByCampaignId(any()) } returns emptyList()
-        coEvery { campaignScenarioRepository.findByCampaignId(1) } returns listOf(
+        coEvery { campaignReportRepository.findByCampaignId(342) } returns null
+        coEvery { campaignScenarioRepository.findByCampaignId(342) } returns listOf(
             CampaignScenarioEntity(1, "scenario-1", minionsCount = 1239),
             CampaignScenarioEntity(
-                1,
+                342,
                 "scenario-2",
                 start = now.plusMillis(1),
                 end = now.plusSeconds(2),
@@ -232,19 +272,26 @@ internal class DatabaseCampaignReportProviderTest {
         )
 
         // when
-        val result = campaignReportProvider.retrieveCampaignReport(tenant = "my-tenant", campaignKey = "campaign-1")
+        val result = campaignReportProvider.retrieveCampaignReport(tenant = "my-tenant", campaignKey = "my-campaign")
 
         // then
         assertThat(result).all {
-            prop(CampaignExecutionDetails::key).isEqualTo("campaign-1")
-            prop(CampaignExecutionDetails::name).isEqualTo("my-campaign")
-            prop(CampaignExecutionDetails::start).isEqualTo(now)
+            prop(CampaignExecutionDetails::creation).isEqualTo(creation)
+            prop(CampaignExecutionDetails::version).isEqualTo(now)
+            prop(CampaignExecutionDetails::key).isEqualTo("my-campaign")
+            prop(CampaignExecutionDetails::name).isEqualTo("This is a campaign")
+            prop(CampaignExecutionDetails::start).isEqualTo(start)
             prop(CampaignExecutionDetails::end).isEqualTo(end)
+            prop(CampaignExecutionDetails::speedFactor).isEqualTo(123.62)
+            prop(CampaignExecutionDetails::timeout).isEqualTo(end.plusSeconds(1))
+            prop(CampaignExecutionDetails::hardTimeout).isEqualTo(true)
             prop(CampaignExecutionDetails::startedMinions).isNull()
             prop(CampaignExecutionDetails::completedMinions).isNull()
             prop(CampaignExecutionDetails::successfulExecutions).isNull()
             prop(CampaignExecutionDetails::failedExecutions).isNull()
             prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+            prop(CampaignExecutionDetails::scenarios).isEqualTo(listOf(scenario1, scenario2))
+            prop(CampaignExecutionDetails::configuration).isEqualTo(configuration)
             prop(CampaignExecutionDetails::scenariosReports).all {
                 hasSize(2)
                 index(0).all {

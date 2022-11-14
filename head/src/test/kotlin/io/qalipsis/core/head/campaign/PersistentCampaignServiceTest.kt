@@ -24,10 +24,13 @@ import assertk.assertThat
 import assertk.assertions.any
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
-import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.isSameAs
+import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
@@ -126,17 +129,19 @@ internal class PersistentCampaignServiceTest {
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
             userRepository.findIdByUsername("my-user")
-            campaignRepository.save(
-                CampaignEntity(
-                    key = "my-campaign",
-                    name = "This is a campaign",
-                    speedFactor = 123.2,
-                    scheduledMinions = 18593,
-                    configurer = 199,
-                    tenantId = 8165L,
-                    configuration = campaign
-                )
-            )
+            campaignRepository.save(withArg {
+                assertThat(it).all {
+                    prop(CampaignEntity::key).isEqualTo("my-campaign")
+                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
+                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
+                    prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
+                    prop(CampaignEntity::hardTimeout).isNotNull().isFalse()
+                    prop(CampaignEntity::timeout).isNull()
+                    prop(CampaignEntity::configurer).isEqualTo(199L)
+                    prop(CampaignEntity::tenantId).isEqualTo(8165L)
+                    prop(CampaignEntity::configuration).isSameAs(campaign)
+                }
+            })
             campaignScenarioRepository.saveAll(
                 listOf(
                     CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
@@ -189,18 +194,19 @@ internal class PersistentCampaignServiceTest {
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
             userRepository.findIdByUsername("my-user")
-            campaignRepository.save(
-                CampaignEntity(
-                    key = "my-campaign",
-                    name = "This is a campaign",
-                    speedFactor = 123.2,
-                    scheduledMinions = 18593,
-                    hardTimeout = true,
-                    configurer = 199,
-                    tenantId = 8165L,
-                    configuration = campaign
-                )
-            )
+            campaignRepository.save(withArg {
+                assertThat(it).all {
+                    prop(CampaignEntity::key).isEqualTo("my-campaign")
+                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
+                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
+                    prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
+                    prop(CampaignEntity::hardTimeout).isNotNull().isTrue()
+                    prop(CampaignEntity::timeout).isNull()
+                    prop(CampaignEntity::configurer).isEqualTo(199L)
+                    prop(CampaignEntity::tenantId).isEqualTo(8165L)
+                    prop(CampaignEntity::configuration).isSameAs(campaign)
+                }
+            })
             campaignScenarioRepository.saveAll(
                 listOf(
                     CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
@@ -447,17 +453,14 @@ internal class PersistentCampaignServiceTest {
         assertThat(capturedEntity).all {
             hasSize(1)
             any {
-                it.isInstanceOf(CampaignEntity::class).isDataClassEqualTo(
-                    CampaignEntity(
-                        key = "my-campaign",
-                        name = "This is a campaign",
-                        scheduledMinions = 345,
-                        speedFactor = 123.2,
-                        start = now,
-                        configurer = 199,
-                        aborter = 111
-                    )
-                )
+                it.isInstanceOf(CampaignEntity::class).all {
+                    prop(CampaignEntity::key).isEqualTo("my-campaign")
+                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
+                    prop(CampaignEntity::scheduledMinions).isEqualTo(345)
+                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
+                    prop(CampaignEntity::configurer).isEqualTo(199)
+                    prop(CampaignEntity::aborter).isEqualTo(111)
+                }
             }
         }
     }

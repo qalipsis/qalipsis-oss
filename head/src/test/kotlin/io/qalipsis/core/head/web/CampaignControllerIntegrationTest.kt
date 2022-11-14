@@ -42,6 +42,8 @@ import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.FAILED
+import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
+import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ReportMessageSeverity.INFO
@@ -126,6 +128,7 @@ internal class CampaignControllerIntegrationTest {
             )
         } returns runningCampaign
         val createdCampaign = Campaign(
+            creation = Instant.now(),
             version = Instant.now(),
             key = RandomStringUtils.randomAlphanumeric(10),
             name = "This is a campaign",
@@ -134,7 +137,8 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             end = null,
             configurerName = Defaults.USER,
-            result = null,
+            aborterName = Defaults.USER,
+            status = IN_PROGRESS,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -158,7 +162,7 @@ internal class CampaignControllerIntegrationTest {
 
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.isDataClassEqualTo(createdCampaign)
+            transform("body") { it.body() }.isEqualTo(createdCampaign)
         }
     }
 
@@ -240,6 +244,7 @@ internal class CampaignControllerIntegrationTest {
     fun `should return page of campaigns`() {
         // given
         val campaign = Campaign(
+            creation = Instant.now(),
             version = Instant.now(),
             key = "campaign-1",
             name = "The campaign",
@@ -247,7 +252,7 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
-            result = ExecutionStatus.SUCCESSFUL,
+            status = ExecutionStatus.SUCCESSFUL,
             configurerName = Defaults.USER,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -282,6 +287,7 @@ internal class CampaignControllerIntegrationTest {
     fun `should return page of campaigns with filter`() {
         // given
         val campaign = Campaign(
+            creation = Instant.now(),
             version = Instant.now(),
             key = "campaign-1",
             name = "The campaign",
@@ -289,7 +295,7 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
-            result = ExecutionStatus.SUCCESSFUL,
+            status = ExecutionStatus.SUCCESSFUL,
             configurerName = Defaults.USER,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -324,6 +330,7 @@ internal class CampaignControllerIntegrationTest {
     fun `should return page of campaigns with filter and sort`() {
         // given
         val campaign = Campaign(
+            creation = Instant.now(),
             version = Instant.now(),
             key = "campaign-1",
             name = "The campaign",
@@ -331,8 +338,9 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
-            result = ExecutionStatus.SUCCESSFUL,
+            status = ExecutionStatus.SUCCESSFUL,
             configurerName = Defaults.USER,
+            aborterName = Defaults.USER,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -405,16 +413,28 @@ internal class CampaignControllerIntegrationTest {
         // given
         val campaignExecutionDetails =
             CampaignExecutionDetails(
-                key = "my-campaign",
-                name = "This is the campaign",
-                start = Instant.now().minusMillis(1111),
-                end = Instant.now(),
-                scheduledMinions = 1,
+                creation = Instant.now(),
+                version = Instant.now(),
+                key = RandomStringUtils.randomAlphanumeric(10),
+                name = "This is a campaign",
+                speedFactor = 1.0,
+                start = Instant.now(),
+                scheduledMinions = 123,
+                end = null,
+                configurerName = Defaults.USER,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenarios = listOf(
+                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+                ),
+                configuration = CampaignConfiguration(
+                    name = "This is a campaign",
+                    scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+                ),
                 startedMinions = 0,
                 completedMinions = 0,
                 successfulExecutions = 0,
                 failedExecutions = 0,
-                status = ExecutionStatus.SUCCESSFUL,
                 scenariosReports = listOf(
                     ScenarioExecutionDetails(
                         id = "my-scenario-1",
@@ -479,6 +499,7 @@ internal class CampaignControllerIntegrationTest {
     fun `should successfully replay the campaign`() {
         // given
         val campaign = Campaign(
+            creation = Instant.now(),
             version = Instant.now(),
             key = RandomStringUtils.randomAlphanumeric(10),
             name = "This is a campaign",
@@ -487,7 +508,7 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             end = null,
             configurerName = Defaults.USER,
-            result = null,
+            status = QUEUED,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -516,7 +537,7 @@ internal class CampaignControllerIntegrationTest {
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.isDataClassEqualTo(campaign)
+            transform("body") { it.body() }.isEqualTo(campaign)
         }
     }
 }

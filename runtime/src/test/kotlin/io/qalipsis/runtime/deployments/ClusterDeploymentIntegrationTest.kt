@@ -24,6 +24,7 @@ import assertk.assertions.isEqualTo
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.testcontainers.junit.jupiter.Container
@@ -40,6 +41,7 @@ import java.util.concurrent.TimeoutException
  * @author Eric Jessé
  */
 @Testcontainers
+@Disabled
 internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test
@@ -67,9 +69,6 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
-
-        // Adds a delay to ensure that the head Redis pub/sub is consuming before the factories are pushing.
-        Thread.sleep(1000)
 
         val factory1 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
@@ -127,9 +126,6 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             QalipsisBootstrap().start(headConfig)
         }
 
-        // Adds a delay to ensure that the head Redis pub/sub is consuming before the factories are pushing.
-        Thread.sleep(1000)
-
         val factory1 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
             arguments = factoryConfig,
@@ -185,9 +181,6 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
-
-        // Adds a delay to ensure that the head Redis pub/sub is consuming before the factories are pushing.
-        Thread.sleep(1000)
 
         val factory1 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,

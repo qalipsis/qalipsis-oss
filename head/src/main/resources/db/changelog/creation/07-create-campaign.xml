@@ -33,6 +33,9 @@
       <column name="version" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="false"/>
       </column>
+      <column name="creation" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
       <column name="key" type="varchar(80)">
         <constraints nullable="false" unique="true" uniqueConstraintName="unique_campaign_key_idx"/>
       </column>

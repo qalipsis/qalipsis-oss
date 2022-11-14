@@ -25,6 +25,9 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
+import io.qalipsis.api.report.ExecutionStatus.QUEUED
+import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
@@ -61,14 +64,16 @@ internal class InMemoryCampaignService(
             currentCampaign = Campaign(
                 version = Instant.now(),
                 key = runningCampaign.key,
+                creation = Instant.now(),
                 name = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
                 scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
                 hardTimeout = campaignConfiguration.hardTimeout,
                 start = null,
                 end = null,
-                result = null,
+                status = QUEUED,
                 configurerName = null,
+                aborterName = null,
                 scenarios = campaignConfiguration.scenarios.map {
                     Scenario(
                         Instant.now(),
@@ -90,7 +95,7 @@ internal class InMemoryCampaignService(
 
     override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
         updateLock.withLock {
-            currentCampaign = currentCampaign?.copy(start = Instant.now(), timeout = timeout)
+            currentCampaign = currentCampaign?.copy(start = Instant.now(), timeout = timeout, status = IN_PROGRESS)
         }
     }
 
@@ -105,7 +110,7 @@ internal class InMemoryCampaignService(
 
     override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
         return updateLock.withLock {
-            currentCampaign = currentCampaign!!.copy(end = Instant.now())
+            currentCampaign = currentCampaign!!.copy(end = Instant.now(), status = SUCCESSFUL)
             currentCampaign!!
         }
     }
@@ -118,6 +123,6 @@ internal class InMemoryCampaignService(
     }
 
     override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
-        currentCampaign = currentCampaign!!.copy(end = Instant.now(), result = ExecutionStatus.ABORTED)
+        currentCampaign = currentCampaign!!.copy(end = Instant.now(), status = ExecutionStatus.ABORTED)
     }
 }

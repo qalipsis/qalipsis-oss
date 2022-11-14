@@ -688,6 +688,7 @@ internal class RedisCampaignManagerTest {
         )
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
         val campaign = Campaign(
+            creation = Instant.now(),
             version = Instant.now(),
             key = "my-campaign",
             name = "This is a campaign",
@@ -695,8 +696,9 @@ internal class RedisCampaignManagerTest {
             scheduledMinions = null,
             start = null,
             end = null,
-            result = ExecutionStatus.ABORTED,
+            status = ExecutionStatus.ABORTED,
             configurerName = "my-user",
+            aborterName = "my-aborter",
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)

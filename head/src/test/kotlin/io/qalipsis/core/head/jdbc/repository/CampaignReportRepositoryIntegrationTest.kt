@@ -21,11 +21,10 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.hasSize
-import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.prop
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
@@ -175,11 +174,8 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
 
         // then
         assertThat(fetched).all {
-            hasSize(1)
-            transform { it.first() }.all {
-                prop(CampaignReportEntity::id).isEqualTo(saved.id)
-                prop(CampaignReportEntity::campaignId).isEqualTo(savedCampaign.id)
-            }
+            prop(CampaignReportEntity::id).isEqualTo(saved.id)
+            prop(CampaignReportEntity::campaignId).isEqualTo(savedCampaign.id)
         }
     }
 
@@ -189,6 +185,6 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val fetched = campaignReportRepository.findByCampaignId(-1)
 
         // then
-        assertThat(fetched).isEmpty()
+        assertThat(fetched).isNull()
     }
 }
