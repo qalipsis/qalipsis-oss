@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.model.converter
 
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
@@ -38,8 +39,17 @@ internal class CampaignConverterImpl(
 ) : CampaignConverter {
 
     override suspend fun convertToModel(campaignEntity: CampaignEntity): Campaign {
+        val configurerName = userRepository.findUsernameById(campaignEntity.configurer)
+        val aborterName = campaignEntity.aborter?.let {
+            if (campaignEntity.configurer == campaignEntity.aborter) {
+                configurerName
+            } else {
+                userRepository.findUsernameById(campaignEntity.aborter)
+            }
+        }
         return Campaign(
             version = campaignEntity.version,
+            creation = campaignEntity.creation,
             key = campaignEntity.key,
             name = campaignEntity.name,
             speedFactor = campaignEntity.speedFactor,
@@ -48,8 +58,13 @@ internal class CampaignConverterImpl(
             hardTimeout = campaignEntity.hardTimeout,
             start = campaignEntity.start,
             end = campaignEntity.end,
-            result = campaignEntity.result,
+            status = when {
+                campaignEntity.start == null -> ExecutionStatus.QUEUED
+                campaignEntity.end == null -> ExecutionStatus.IN_PROGRESS
+                else -> campaignEntity.result!!
+            },
             configurerName = userRepository.findUsernameById(campaignEntity.configurer),
+            aborterName = aborterName,
             scenarios = scenarioRepository.findByCampaignId(campaignEntity.id).map { scenarioEntity ->
                 Scenario(
                     scenarioEntity.version,

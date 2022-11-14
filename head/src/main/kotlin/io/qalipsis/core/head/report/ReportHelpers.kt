@@ -23,7 +23,9 @@ import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import java.time.Instant
 
 /**
  * Consolidates a collection of [ScenarioReportingExecutionState] into a [CampaignReport].
@@ -61,11 +63,14 @@ internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
 internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignExecutionDetails {
 
     return CampaignExecutionDetails(
+        creation = Instant.now(),
+        version = Instant.now(),
         key = first().campaignKey,
         name = first().campaignKey,
         start = this.asSequence().mapNotNull { it.start }.minOrNull(),
         end = this.asSequence().mapNotNull { it.end }.maxOrNull(),
         scheduledMinions = null,
+        speedFactor = 1.0,
         startedMinions = this.asSequence().mapNotNull { it.startedMinions }.sum(),
         completedMinions = this.asSequence().mapNotNull { it.completedMinions }.sum(),
         successfulExecutions = this.asSequence().mapNotNull { it.successfulExecutions }.sum(),
@@ -78,6 +83,13 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignEx
             any { it.end == null } -> ExecutionStatus.IN_PROGRESS
             else -> ExecutionStatus.SUCCESSFUL
         },
+        scenarios = this.map {
+            Scenario(
+                version = Instant.now(),
+                name = it.scenarioName,
+                minionsCount = it.startedMinions ?: 0
+            )
+        },
         scenariosReports = this.map {
             ScenarioExecutionDetails(
                 id = it.scenarioName,
@@ -89,7 +101,7 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignEx
                 successfulExecutions = it.successfulExecutions,
                 failedExecutions = it.failedExecutions,
                 status = when {
-                    it.start != null -> ExecutionStatus.QUEUED
+                    it.start == null -> ExecutionStatus.QUEUED
                     it.end == null -> ExecutionStatus.IN_PROGRESS
                     else -> it.status
                 },

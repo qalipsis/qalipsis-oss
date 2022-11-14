@@ -22,7 +22,8 @@ package io.qalipsis.core.head.report
 import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
+import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
@@ -32,6 +33,7 @@ import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.converter.CampaignConverter
 import jakarta.inject.Singleton
 
 /**
@@ -44,6 +46,7 @@ import jakarta.inject.Singleton
 @Requires(beans = [DatabaseCampaignReportPublisher::class])
 internal class DatabaseCampaignReportProvider(
     private val campaignRepository: CampaignRepository,
+    private val campaignConverter: CampaignConverter,
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val campaignReportRepository: CampaignReportRepository,
     private val scenarioReportMessageRepository: ScenarioReportMessageRepository
@@ -51,55 +54,34 @@ internal class DatabaseCampaignReportProvider(
 
     override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails {
         val campaignEntity = requireNotNull(campaignRepository.findByTenantAndKey(tenant, campaignKey))
-        campaignReportRepository.findByCampaignId(campaignEntity.id)
+        val campaign = campaignConverter.convertToModel(campaignEntity)
         // When working with the database, the report is only available once the campaign is complete.
-        return campaignReportRepository.findByCampaignId(campaignEntity.id).firstOrNull()?.let { reportEntity ->
-            CampaignExecutionDetails(
-                key = campaignKey,
-                name = campaignEntity.name,
-                start = campaignEntity.start,
-                end = campaignEntity.end,
-                scheduledMinions = campaignEntity.scheduledMinions,
-                startedMinions = reportEntity.startedMinions,
-                timeout = campaignEntity.timeout,
-                hardTimeout = campaignEntity.hardTimeout,
-                completedMinions = reportEntity.completedMinions,
-                successfulExecutions = reportEntity.successfulExecutions,
-                failedExecutions = reportEntity.failedExecutions,
-                status = reportEntity.status,
-                scenariosReports = mapScenarioReport(reportEntity.scenariosReports),
-            )
-        }
-            ?: CampaignExecutionDetails( // When the report is not yet available in the database, only the "known" current values are used.
-                key = campaignKey,
-                name = campaignEntity.name,
-                start = campaignEntity.start,
-                end = campaignEntity.end,
-                scheduledMinions = campaignEntity.scheduledMinions,
-                startedMinions = null,
-                timeout = campaignEntity.timeout,
-                hardTimeout = campaignEntity.hardTimeout,
-                completedMinions = null,
-                successfulExecutions = null,
-                failedExecutions = null,
-                status = campaignEntity.result
-                    ?: if (campaignEntity.start == null) ExecutionStatus.QUEUED else ExecutionStatus.IN_PROGRESS,
-                scenariosReports = campaignScenarioRepository.findByCampaignId(campaignEntity.id).map { scenario ->
-                    ScenarioExecutionDetails(
-                        id = scenario.name,
-                        name = scenario.name,
-                        start = scenario.start,
-                        end = null,
-                        startedMinions = null,
-                        completedMinions = null,
-                        successfulExecutions = null,
-                        failedExecutions = null,
-                        status = if (scenario.start == null) ExecutionStatus.QUEUED else ExecutionStatus.IN_PROGRESS,
-                        messages = emptyList()
-                    )
-                }
-            )
+        val reportEntity = campaignReportRepository.findByCampaignId(campaignEntity.id)
+        return CampaignExecutionDetails(
+            version = campaign.version,
+            key = campaign.key,
+            creation = campaign.creation,
+            name = campaign.name,
+            speedFactor = campaign.speedFactor,
+            scheduledMinions = campaign.scheduledMinions,
+            timeout = campaign.timeout,
+            hardTimeout = campaign.hardTimeout,
+            start = campaign.start,
+            end = campaign.end,
+            status = reportEntity?.status ?: campaign.status,
+            configurerName = campaign.configurerName,
+            aborterName = campaign.aborterName,
+            scenarios = campaign.scenarios,
+            configuration = campaign.configuration,
+            startedMinions = reportEntity?.startedMinions,
+            completedMinions = reportEntity?.completedMinions,
+            successfulExecutions = reportEntity?.successfulExecutions,
+            failedExecutions = reportEntity?.failedExecutions,
+            scenariosReports = reportEntity?.scenariosReports?.let { mapScenarioReport(it) }
+                ?: ongoingScenariosDetails(campaignEntity.id),
+        )
     }
+
 
     private suspend fun mapScenarioReport(scenarioReportEntities: List<ScenarioReportEntity>): List<ScenarioExecutionDetails> {
         val messages =
@@ -131,4 +113,23 @@ internal class DatabaseCampaignReportProvider(
             )
         }
     }
+
+    /**
+     * Provides default values for the scenarios when the campaign is ongoing.
+     */
+    private suspend fun ongoingScenariosDetails(campaignId: Long) =
+        campaignScenarioRepository.findByCampaignId(campaignId).map { scenario ->
+            ScenarioExecutionDetails(
+                id = scenario.name,
+                name = scenario.name,
+                start = scenario.start,
+                end = null,
+                startedMinions = null,
+                completedMinions = null,
+                successfulExecutions = null,
+                failedExecutions = null,
+                status = if (scenario.start == null) QUEUED else IN_PROGRESS,
+                messages = emptyList()
+            )
+        }
 }

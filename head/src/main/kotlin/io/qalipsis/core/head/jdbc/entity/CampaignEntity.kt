@@ -59,6 +59,7 @@ internal data class CampaignEntity(
     @field:Version
     val version: Instant,
     val tenantId: Long,
+    val creation: Instant = Instant.now(),
     @field:NotBlank
     @field:Size(min = 5, max = 80)
     val key: String,
@@ -80,6 +81,7 @@ internal data class CampaignEntity(
 
     constructor(
         tenantId: Long = -1,
+        creation: Instant = Instant.now(),
         key: String,
         name: String,
         speedFactor: Double = 1.0,
@@ -94,6 +96,7 @@ internal data class CampaignEntity(
         configuration: CampaignConfiguration? = null
     ) : this(
         id = -1,
+        creation = creation,
         version = Instant.EPOCH,
         tenantId = tenantId,
         key = key,

@@ -35,12 +35,15 @@ import javax.validation.constraints.PositiveOrZero
     name = "Campaign details",
     title = "Details of a running or completed campaign"
 )
-internal data class Campaign(
+internal open class Campaign(
     @field:Schema(description = "Last change of the campaign", required = true)
     val version: Instant,
 
     @field:Schema(description = "Unique identifier of the campaign", required = true)
     val key: String,
+
+    @field:Schema(description = "Creation time of the campaign", required = true)
+    val creation: Instant,
 
     @field:Schema(description = "Display name of the campaign", required = true)
     val name: String,
@@ -75,14 +78,102 @@ internal data class Campaign(
     val end: Instant?,
 
     @field:Schema(description = "Overall execution status of the campaign when completed", required = false)
-    val result: ExecutionStatus?,
+    val status: ExecutionStatus,
 
     @field:Schema(description = "Name of the user, who created the campaign", required = false, example = "John Doe")
     val configurerName: String?,
+
+    @field:Schema(description = "Name of the user, who aborted the campaign", required = false, example = "John Doe")
+    val aborterName: String? = null,
 
     @field:Schema(description = "Scenarios being part of the campaign", required = true)
     val scenarios: Collection<Scenario>,
 
     @field:Schema(description = "Complete configuration of the campaign")
     val configuration: CampaignConfiguration? = null
-)
+) {
+
+    fun copy(
+        version: Instant = this.version,
+        key: String = this.key,
+        creation: Instant = this.creation,
+        name: String = this.name,
+        speedFactor: Double = this.speedFactor,
+        scheduledMinions: Int? = this.scheduledMinions,
+        timeout: Instant? = this.timeout,
+        hardTimeout: Boolean? = this.hardTimeout,
+        start: Instant? = this.start,
+        end: Instant? = this.end,
+        status: ExecutionStatus = this.status,
+        configurerName: String? = this.configurerName,
+        aborterName: String? = this.aborterName,
+        scenarios: Collection<Scenario> = this.scenarios,
+        configuration: CampaignConfiguration? = this.configuration,
+    ) = Campaign(
+        version = version,
+        key = key,
+        creation = creation,
+        name = name,
+        speedFactor = speedFactor,
+        scheduledMinions = scheduledMinions,
+        timeout = timeout,
+        hardTimeout = hardTimeout,
+        start = start,
+        end = end,
+        status = status,
+        configurerName = configurerName,
+        aborterName = aborterName,
+        scenarios = scenarios,
+        configuration = configuration
+    )
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Campaign
+
+        if (version != other.version) return false
+        if (key != other.key) return false
+        if (creation != other.creation) return false
+        if (name != other.name) return false
+        if (speedFactor != other.speedFactor) return false
+        if (scheduledMinions != other.scheduledMinions) return false
+        if (timeout != other.timeout) return false
+        if (hardTimeout != other.hardTimeout) return false
+        if (start != other.start) return false
+        if (end != other.end) return false
+        if (status != other.status) return false
+        if (configurerName != other.configurerName) return false
+        if (aborterName != other.aborterName) return false
+        if (scenarios != other.scenarios) return false
+        if (configuration != other.configuration) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result1 = version.hashCode()
+        result1 = 31 * result1 + key.hashCode()
+        result1 = 31 * result1 + creation.hashCode()
+        result1 = 31 * result1 + name.hashCode()
+        result1 = 31 * result1 + speedFactor.hashCode()
+        result1 = 31 * result1 + (scheduledMinions ?: 0)
+        result1 = 31 * result1 + (timeout?.hashCode() ?: 0)
+        result1 = 31 * result1 + (hardTimeout?.hashCode() ?: 0)
+        result1 = 31 * result1 + (start?.hashCode() ?: 0)
+        result1 = 31 * result1 + (end?.hashCode() ?: 0)
+        result1 = 31 * result1 + status.hashCode()
+        result1 = 31 * result1 + (configurerName?.hashCode() ?: 0)
+        result1 = 31 * result1 + (aborterName?.hashCode() ?: 0)
+        result1 = 31 * result1 + scenarios.hashCode()
+        result1 = 31 * result1 + (configuration?.hashCode() ?: 0)
+        return result1
+    }
+
+    override fun toString(): String {
+        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, timeout=$timeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, scenarios=$scenarios, configuration=$configuration)"
+    }
+
+
+}
