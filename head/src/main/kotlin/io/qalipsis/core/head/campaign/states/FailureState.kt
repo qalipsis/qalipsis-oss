@@ -34,8 +34,13 @@ internal open class FailureState(
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
+    init {
+        if (error.isNotBlank()) {
+            campaign.message = error
+        }
+    }
+
     override suspend fun doInit(): List<Directive> {
-        campaign.message = error
         return listOf(
             CampaignShutdownDirective(
                 campaignKey = campaignKey,

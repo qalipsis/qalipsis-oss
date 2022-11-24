@@ -19,8 +19,8 @@
 
 package io.qalipsis.core.factory.steps.converters
 
-import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.annotations.StepConverter
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
@@ -34,7 +34,7 @@ import io.qalipsis.core.factory.steps.TimeoutStepDecorator
  */
 @StepConverter
 internal class TimeoutStepDecoratorSpecificationConverter(
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: CampaignMeterRegistry
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 
     override val order: Int = 500

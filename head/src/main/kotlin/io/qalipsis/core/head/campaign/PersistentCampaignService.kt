@@ -40,8 +40,8 @@ import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
-import java.time.Instant
 import kotlinx.coroutines.flow.count
+import java.time.Instant
 import io.qalipsis.api.query.Page as QalipsisPage
 
 

@@ -97,7 +97,11 @@ internal class RedisCampaignManager(
             )
 
             CampaignRedisState.WARMUP_STATE -> RedisWarmupState(currentState.first, redisOperations)
-            CampaignRedisState.MINIONS_STARTUP_STATE -> RedisMinionsStartupState(currentState.first, redisOperations)
+            CampaignRedisState.MINIONS_STARTUP_STATE -> RedisMinionsScheduleRampUpState(
+                currentState.first,
+                redisOperations
+            )
+
             CampaignRedisState.RUNNING_STATE -> RedisRunningState(currentState.first, redisOperations)
             CampaignRedisState.COMPLETION_STATE -> RedisCompletionState(currentState.first, redisOperations)
             CampaignRedisState.FAILURE_STATE -> RedisFailureState(currentState.first, redisOperations)

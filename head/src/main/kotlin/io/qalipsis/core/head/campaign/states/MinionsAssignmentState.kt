@@ -84,7 +84,7 @@ internal open class MinionsAssignmentState(
                         (scenarios - feedback.scenarioName).ifEmpty { null }
                     }
                     if (expectedFeedbacks.isEmpty()) {
-                        WarmupState(campaign)
+                        MinionsScheduleRampUpState(campaign)
                     } else {
                         this
                     }

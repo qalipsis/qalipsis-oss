@@ -24,6 +24,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 
 /**
@@ -72,6 +73,14 @@ internal interface MinionAssignmentKeeper {
     ): Collection<MinionId>
 
     /**
+     * Returns the count of the minions under load for the scenario.
+     */
+    suspend fun countMinionsUnderLoad(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName
+    ): Int
+
+    /**
      * Assign some still available minions for the DAGs passed as parameter to the factory reachable by the channel
      * [distributionChannelName].
      *
@@ -81,6 +90,21 @@ internal interface MinionAssignmentKeeper {
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
     ): Map<MinionId, Collection<DirectedAcyclicGraphName>>
+
+    /**
+     * Schedules all the minions for the campaign and scenario, using the provided calculated starting lines.
+     */
+    suspend fun schedule(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        startingLines: Collection<MinionsStartingLine>
+    )
+
+    /**
+     * Reads the scheduling for the current factory, and specified campaign and scenario.
+     * The key specified the offset when the minions as values have to be started.
+     */
+    suspend fun readSchedulePlan(campaignKey: CampaignKey, scenarioName: ScenarioName): Map<Long, Collection<MinionId>>
 
     /**
      * Marks the execution of a minion identified by [minionId] as complete for DAGs identified by [dagIds].

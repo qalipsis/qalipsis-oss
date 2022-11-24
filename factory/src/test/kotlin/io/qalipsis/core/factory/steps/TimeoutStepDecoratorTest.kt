@@ -20,13 +20,13 @@
 package io.qalipsis.core.factory.steps
 
 import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.test.mockk.WithMockk
@@ -52,7 +52,7 @@ import java.time.Duration
 internal class TimeoutStepDecoratorTest {
 
     @RelaxedMockK
-    lateinit var meterRegistry: MeterRegistry
+    lateinit var meterRegistry: CampaignMeterRegistry
 
     @RelaxedMockK
     lateinit var counter: Counter

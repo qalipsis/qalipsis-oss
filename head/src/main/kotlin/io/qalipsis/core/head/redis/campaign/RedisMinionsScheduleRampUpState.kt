@@ -25,33 +25,33 @@ import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
-import io.qalipsis.core.feedbacks.MinionsStartFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
-import io.qalipsis.core.head.campaign.states.MinionsStartupState
+import io.qalipsis.core.head.campaign.states.MinionsScheduleRampUpState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisMinionsStartupState(
+internal class RedisMinionsScheduleRampUpState(
     campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
-) : MinionsStartupState(campaign) {
+) : MinionsScheduleRampUpState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.MINIONS_STARTUP_STATE)
+        // Prepared the feedback expectations, ony by scenario.
+        operations.prepareScenariosForFeedbackExpectations(campaign)
         return super.doInit()
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
-        return if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
+        return if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
             RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED) {
-            RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.COMPLETED) {
-            RedisRunningState(campaign, operations)
+        } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.COMPLETED) {
+            if (operations.markFeedbackForScenario(campaign.tenant, campaignKey, feedback.scenarioName)) {
+                RedisWarmupState(campaign, operations)
+            } else {
+                this
+            }
         } else {
             this
         }

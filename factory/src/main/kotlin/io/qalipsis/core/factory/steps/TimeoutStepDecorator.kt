@@ -19,10 +19,10 @@
 
 package io.qalipsis.core.factory.steps
 
-import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
@@ -40,7 +40,7 @@ import java.time.Duration
 internal class TimeoutStepDecorator<I, O>(
     private val timeout: Duration,
     override val decorated: Step<I, O>,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: CampaignMeterRegistry
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
     override val name: StepName

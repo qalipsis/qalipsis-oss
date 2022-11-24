@@ -40,6 +40,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.configuration.CommunicationChannelConfiguration
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.redis.RedisUtils
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
@@ -52,10 +53,12 @@ import kotlinx.coroutines.withTimeout
 @Requirements(
     Requires(beans = [StatefulRedisConnection::class]),
     Requires(env = [ExecutionEnvironments.FACTORY]),
+    Requires(notEnv = [ExecutionEnvironments.SINGLE_FACTORY]),
     Requires(property = "factory.assignment.strategy", value = "distributed-minion")
 )
 internal class RedisDistributedMinionAssignmentKeeper(
     private val factoryConfiguration: FactoryConfiguration,
+    private val scenarioRegistry: ScenarioRegistry,
     communicationChannelConfiguration: CommunicationChannelConfiguration,
     private val redisScriptingCommands: RedisScriptingCoroutinesCommands<String, String>,
     redisSetCommands: RedisSetCoroutinesCommands<String, String>,
@@ -64,6 +67,7 @@ internal class RedisDistributedMinionAssignmentKeeper(
     private val localAssignmentStore: LocalAssignmentStore
 ) : RedisSingleLocationMinionAssignmentKeeper(
     factoryConfiguration,
+    scenarioRegistry,
     communicationChannelConfiguration,
     redisScriptingCommands,
     redisSetCommands,
@@ -85,7 +89,7 @@ internal class RedisDistributedMinionAssignmentKeeper(
     /**
      * SHA key of the script to assign the minions.
      */
-    private var minionAssignmentScriptSha: String = "481e8b43c4455f3264f8dd8ec9b4f682b969b8fb"
+    private var minionAssignmentScriptSha: String = "befc3c70eec49f29c5f9a9f50e617fda5945d7d6"
 
     /**
      * SHA key of the script to fetch the factories channels to forward the execution contexts.
@@ -120,10 +124,12 @@ internal class RedisDistributedMinionAssignmentKeeper(
         maximalMinionsCount: Int
     ): Map<MinionId, Collection<DirectedAcyclicGraphName>> {
         val allKeysPrefix = buildRedisKeyPrefix(campaignKey, scenarioName)
+        val rootDag = scenarioRegistry[scenarioName]!!.dags.first { it.isUnderLoad && it.isRoot }.name
         val keyForFactoryAssignment = allKeysPrefix + factoryNodeId
         val keyPrefixForUnassignedMinions = allKeysPrefix + UNASSIGNED_MINIONS
         val keyPrefixForUnassignedDags = allKeysPrefix + MINION_UNASSIGNED_DAGS_PREFIX
         val keyPrefixForAssignedDags = allKeysPrefix + MINION_ASSIGNED_DAGS_PREFIX
+        val keyForRootFactoryOwnersHash = allKeysPrefix + MINION_ROOT_FACTORY_CHANNEL_NAME
 
         var evaluatedMinionsCount: Long
         val minionsUnderLoad = getIdsOfMinionsUnderLoad(campaignKey, scenarioName).toSet()
@@ -135,9 +141,15 @@ internal class RedisDistributedMinionAssignmentKeeper(
                 val evaluationBatchSize = "${factoryConfiguration.assignment.evaluationBatchSize}"
                 do {
                     val assignedMinions = executeAssignment(
-                        keyPrefixForUnassignedMinions, keyForFactoryAssignment,
-                        factoryChannelName, evaluationBatchSize, keyPrefixForUnassignedDags, keyPrefixForAssignedDags,
-                        "${maximalMinionsCount - assignedUnderLoad}"
+                        keyPrefixForUnassignedMinions = keyPrefixForUnassignedMinions,
+                        keyForFactoryAssignment = keyForFactoryAssignment,
+                        minionRootDagMinionKey = keyForRootFactoryOwnersHash,
+                        factoryChannelName = factoryChannelName,
+                        rootDag = rootDag,
+                        evaluationBatchSize = evaluationBatchSize,
+                        keyPrefixForUnassignedDags = keyPrefixForUnassignedDags,
+                        keyPrefixForAssignedDags = keyPrefixForAssignedDags,
+                        maximalMinionsCount = "${maximalMinionsCount - assignedUnderLoad}"
                     )
                     // Number of minions that were evaluated for assignment. When it is 0, it means that all the minions
                     // were assigned.
@@ -177,7 +189,9 @@ internal class RedisDistributedMinionAssignmentKeeper(
     private suspend fun executeAssignment(
         keyPrefixForUnassignedMinions: String,
         keyForFactoryAssignment: String,
+        minionRootDagMinionKey: String,
         factoryChannelName: String,
+        rootDag: String,
         evaluationBatchSize: String,
         keyPrefixForUnassignedDags: String,
         keyPrefixForAssignedDags: String,
@@ -186,9 +200,10 @@ internal class RedisDistributedMinionAssignmentKeeper(
         return try {
             redisScriptingCommands.evalsha(
                 minionAssignmentScriptSha, ScriptOutputType.MULTI,
-                arrayOf(keyPrefixForUnassignedMinions, keyForFactoryAssignment),
+                arrayOf(keyPrefixForUnassignedMinions, keyForFactoryAssignment, minionRootDagMinionKey),
 
                 factoryChannelName,
+                rootDag,
                 evaluationBatchSize,
                 keyPrefixForUnassignedDags,
                 keyPrefixForAssignedDags,
@@ -201,7 +216,9 @@ internal class RedisDistributedMinionAssignmentKeeper(
             executeAssignment(
                 keyPrefixForUnassignedMinions,
                 keyForFactoryAssignment,
+                minionRootDagMinionKey,
                 factoryChannelName,
+                rootDag,
                 evaluationBatchSize,
                 keyPrefixForUnassignedDags,
                 keyPrefixForAssignedDags,

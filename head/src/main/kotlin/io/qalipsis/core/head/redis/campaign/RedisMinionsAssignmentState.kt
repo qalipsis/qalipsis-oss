@@ -60,7 +60,7 @@ internal class RedisMinionsAssignmentState(
                         feedback.scenarioName
                     )
                 ) {
-                    RedisWarmupState(campaign, operations)
+                    RedisMinionsScheduleRampUpState(campaign, operations)
                 } else {
                     this
                 }

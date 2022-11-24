@@ -20,7 +20,6 @@
 package io.qalipsis.core.factory.orchestration
 
 import io.aerisconsulting.catadioptre.KTestable
-import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
@@ -30,6 +29,7 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.executionprofile.AcceleratingExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfile
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.executionprofile.ProgressiveVolumeExecutionProfile
 import io.qalipsis.api.executionprofile.RegularExecutionProfile
 import io.qalipsis.api.executionprofile.Stage
@@ -41,7 +41,6 @@ import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
@@ -69,7 +68,6 @@ import java.util.Optional
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class FactoryCampaignManagerImpl(
     private val minionsKeeper: MinionsKeeper,
-    private val meterRegistry: MeterRegistry,
     private val scenarioRegistry: ScenarioRegistry,
     private val minionAssignmentKeeper: MinionAssignmentKeeper,
     private val factoryChannel: FactoryChannel,
@@ -175,9 +173,15 @@ internal class FactoryCampaignManagerImpl(
     @LogInput(Level.DEBUG)
     override suspend fun warmUpCampaignScenario(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         if (isLocallyExecuted(campaignKey, scenarioName)) {
+            log.debug { "Preloading the starting schedule plan for the campaign $campaignKey on scenario $scenarioName" }
+            minionAssignmentKeeper.readSchedulePlan(campaignKey, scenarioName)
+
             log.info { "Starting campaign $campaignKey on scenario $scenarioName" }
             scenarioRegistry[scenarioName]!!.start(campaignKey)
+
+            log.debug { "Starting the singletons for the campaign $campaignKey on scenario $scenarioName" }
             minionsKeeper.startSingletons(scenarioName)
+
             if (contextConsumer.isPresent) {
                 tryAndLogOrNull(log) {
                     contextConsumer.get().start()
@@ -191,13 +195,12 @@ internal class FactoryCampaignManagerImpl(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         executionProfileConfiguration: ExecutionProfileConfiguration
-    ): List<MinionStartDefinition> {
-        val minionsStartDefinitions = mutableListOf<MinionStartDefinition>()
-        val minionsUnderLoad =
-            minionAssignmentKeeper.getIdsOfMinionsUnderLoad(campaignKey, scenarioName).toMutableList()
+    ): List<MinionsStartingLine> {
+
+        var remainingMinionsUnderLoadCount = minionAssignmentKeeper.countMinionsUnderLoad(campaignKey, scenarioName)
         val executionProfile = assignableScenariosExecutionProfiles[scenarioName]!!
         val executionProfileIterator = executionProfile.iterator(
-            totalMinionsCount = minionsUnderLoad.size,
+            totalMinionsCount = remainingMinionsUnderLoadCount,
             speedFactor = runningCampaign.speedFactor
         )
         var start = System.currentTimeMillis() + runningCampaign.startOffsetMs
@@ -205,22 +208,21 @@ internal class FactoryCampaignManagerImpl(
         // Notifies all the execution profiles that the campaign is now effectively starting.
         assignableScenariosExecutionProfiles.values.forEach { it.notifyStart(runningCampaign.speedFactor) }
 
-        log.debug { "Creating the execution profile for ${minionsUnderLoad.size} minions on campaign $campaignKey of scenario ${scenarioName}" }
-        while (minionsUnderLoad.isNotEmpty() && executionProfileIterator.hasNext()) {
+        val result = mutableListOf<MinionsStartingLine>()
+        log.debug { "Creating the execution profile for $remainingMinionsUnderLoadCount minions on campaign $campaignKey of scenario $scenarioName" }
+        while (remainingMinionsUnderLoadCount > 0 && executionProfileIterator.hasNext()) {
             val nextStartingLine = executionProfileIterator.next()
             require(nextStartingLine.count >= 0) { "The number of minions to start at next starting line cannot be negative, but was ${nextStartingLine.count}" }
             start += nextStartingLine.offsetMs
             require(start > System.currentTimeMillis()) { "The next starting line should not be in the past, but was planned ${System.currentTimeMillis() - start} ms ago" }
 
-            for (i in 0 until nextStartingLine.count.coerceAtMost(minionsUnderLoad.size)) {
-                minionsStartDefinitions.add(MinionStartDefinition(minionsUnderLoad.removeFirst(), start))
-            }
+            result += nextStartingLine
+            remainingMinionsUnderLoadCount -= nextStartingLine.count
         }
 
-        log.debug { "Execution profile creation is complete on campaign $campaignKey of scenario ${scenarioName}" }
-        return minionsStartDefinitions
+        log.debug { "Ramp-up creation is complete on campaign $campaignKey for scenario $scenarioName" }
+        return result
     }
-
 
     @LogInput
     override suspend fun notifyCompleteMinion(
@@ -232,8 +234,8 @@ internal class FactoryCampaignManagerImpl(
     ) {
         // Checks whether the minion is eligible to be restarted if it is complete.
         val minionsExecutionElapsedTime = Duration.between(minionStart, Instant.now())
-
-        val mightRestartMinion = canReplay(minionsExecutionElapsedTime)
+        val minion = minionsKeeper[minionId]
+        val mightRestartMinion = !minion.isSingleton && canReplay(minionsExecutionElapsedTime)
                 && assignableScenariosExecutionProfiles[scenarioName]!!.canReplay(minionsExecutionElapsedTime)
 
         // Verifies the actual completion state of the minion, scenario and campaign.
@@ -251,9 +253,13 @@ internal class FactoryCampaignManagerImpl(
                 log.trace { "Restarting the minion $minionId on the scenario $scenarioName" }
                 minionsKeeper.restartMinion(minionId)
             } else {
-                log.trace { "The minion $minionId on the scenario $scenarioName is completed" }
                 minionsKeeper.shutdownMinion(minionId)
-                reportLiveStateRegistry.recordCompletedMinion(campaignKey, scenarioName)
+                if (minion.isSingleton) {
+                    log.debug { "The singleton minion $minionId on the scenario $scenarioName is completed" }
+                } else {
+                    log.trace { "The minion $minionId on the scenario $scenarioName is completed" }
+                    reportLiveStateRegistry.recordCompletedMinion(campaignKey, scenarioName)
+                }
                 // FIXME Generates CompleteMinionFeedbacks for several minions (based upon elapsed time and/or count), otherwise it makes the system overloaded.
                 /* factoryChannel.publishFeedback(
                      CompleteMinionFeedback(
@@ -326,8 +332,6 @@ internal class FactoryCampaignManagerImpl(
                 minionsKeeper.shutdownAll()
                 assignableScenariosExecutionProfiles.keys.forEach { scenarioRegistry[it]!!.stop(campaign.campaignKey) }
                 runningCampaign = EMPTY_CAMPAIGN
-                // Removes all the meters.
-                meterRegistry.clear()
                 sharedStateRegistry.clear()
                 assignableScenariosExecutionProfiles.clear()
             }

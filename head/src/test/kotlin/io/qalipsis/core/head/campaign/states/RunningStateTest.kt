@@ -85,7 +85,7 @@ internal class RunningStateTest : AbstractStateTest() {
         }
 
         // when
-        var newState = state.process(mockk<MinionsDeclarationFeedback> {
+        var newState = state.process(mockk<MinionsRampUpPreparationFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
             every { error } returns "this is the error 1"
@@ -98,7 +98,7 @@ internal class RunningStateTest : AbstractStateTest() {
         }
 
         // when
-        newState = state.process(mockk<MinionsRampUpPreparationFeedback> {
+        newState = state.process(mockk<MinionsStartFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
             every { error } returns "this is the error 2"
@@ -111,7 +111,7 @@ internal class RunningStateTest : AbstractStateTest() {
         }
 
         // when
-        newState = state.process(mockk<MinionsStartFeedback> {
+        newState = state.process(mockk<FailedCampaignFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
             every { error } returns "this is the error 3"
@@ -121,19 +121,6 @@ internal class RunningStateTest : AbstractStateTest() {
         assertThat(newState).isInstanceOf(FailureState::class).all {
             prop("campaign").isSameAs(campaign)
             prop("error").isEqualTo("this is the error 3")
-        }
-
-        // when
-        newState = state.process(mockk<FailedCampaignFeedback> {
-            every { nodeId } returns "node-1"
-            every { status } returns FeedbackStatus.FAILED
-            every { error } returns "this is the error 4"
-        })
-
-        // then
-        assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("error").isEqualTo("this is the error 4")
         }
 
         confirmVerified(factoryService, campaignReportStateKeeper)

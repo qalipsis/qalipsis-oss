@@ -23,7 +23,6 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
-import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
@@ -35,33 +34,28 @@ import io.mockk.mockk
 import io.qalipsis.api.executionprofile.CompletionMode.HARD
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
-import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
-import io.qalipsis.core.feedbacks.MinionsStartFeedback
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import org.junit.jupiter.api.Test
 
-internal class MinionsStartupStateTest : AbstractStateTest() {
+internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
     @Test
     fun `should not be a completion state`() {
-        assertThat(MinionsStartupState(campaign).isCompleted).isFalse()
+        assertThat(MinionsScheduleRampUpState(campaign).isCompleted).isFalse()
     }
 
     @Test
     fun `should return the directives for profile for each scenario`() = testDispatcherProvider.runTest {
         // given
-        val state = MinionsStartupState(campaign)
-        every { campaign.startOffsetMs } returns 1234L
-        every { campaign.speedFactor } returns 153.42
+        val state = MinionsScheduleRampUpState(campaign)
         every { campaign.scenarios } returns mapOf(
             "scenario-1" to ScenarioConfiguration(
                 minionsCount = 54,
@@ -132,14 +126,14 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
-        val state = MinionsStartupState(campaign)
+        val state = MinionsScheduleRampUpState(campaign)
         state.run {
             inject(campaignExecutionContext)
             init()
         }
 
         // when
-        var newState = state.process(mockk<MinionsDeclarationFeedback> {
+        var newState = state.process(mockk<MinionsRampUpPreparationFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
             every { error } returns "this is the error 1"
@@ -164,19 +158,6 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
             prop("error").isEqualTo("this is the error 2")
         }
 
-        // when
-        newState = state.process(mockk<MinionsStartFeedback> {
-            every { nodeId } returns "node-1"
-            every { status } returns FeedbackStatus.FAILED
-            every { error } returns "this is the error 3"
-        })
-
-        // then
-        assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("error").isEqualTo("this is the error 3")
-        }
-
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
 
@@ -184,12 +165,12 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure without error message`() =
         testDispatcherProvider.runTest {
             // given
-            val state = MinionsStartupState(campaign)
+            val state = MinionsScheduleRampUpState(campaign)
             state.run {
                 inject(campaignExecutionContext)
                 init()
             }
-            val feedback = mockk<MinionsStartFeedback> {
+            val feedback = mockk<MinionsRampUpPreparationFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
                 every { error } returns null
@@ -210,7 +191,7 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
     internal fun `should return itself in case of any unsupported feedback`() =
         testDispatcherProvider.runTest {
             // given
-            val state = MinionsStartupState(campaign)
+            val state = MinionsScheduleRampUpState(campaign)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -225,25 +206,45 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
         }
 
     @Test
-    internal fun `should return a new RunningState when a MinionsStartFeedback is received`() =
+    internal fun `should return a new WarmupState when all MinionsRampUpPreparationFeedback are received`() =
         testDispatcherProvider.runTest {
             // given
-            val state = MinionsStartupState(campaign)
+            every { campaign.scenarios } returns mapOf(
+                "scenario-1" to mockk {
+                    every { executionProfileConfiguration.clone() } returns mockk()
+                },
+                "scenario-2" to mockk {
+                    every { executionProfileConfiguration.clone() } returns mockk()
+                }
+            )
+            val state = MinionsScheduleRampUpState(campaign)
             state.run {
                 inject(campaignExecutionContext)
                 init()
             }
 
             // when
-            val newState =
-                state.process(mockk<MinionsStartFeedback> { every { status } returns FeedbackStatus.COMPLETED })
+            var newState =
+                state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { scenarioName } returns "scenario-1"
+                    every { status } returns FeedbackStatus.COMPLETED
+                })
 
             // then
-            assertThat(newState).isInstanceOf(RunningState::class).all {
+            assertThat(newState).isSameAs(state)
+
+            // when
+            newState =
+                state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { scenarioName } returns "scenario-2"
+                    every { status } returns FeedbackStatus.COMPLETED
+                })
+
+            // then
+            assertThat(newState).isInstanceOf(WarmupState::class).all {
                 isNotSameAs(state)
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
-                typedProp<Collection<Directive>>("directivesForInit").isEmpty()
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
@@ -251,7 +252,7 @@ internal class MinionsStartupStateTest : AbstractStateTest() {
     @Test
     fun `should return an AbortingState`() = testDispatcherProvider.runTest {
         // given
-        val state = MinionsStartupState(campaign)
+        val state = MinionsScheduleRampUpState(campaign)
         state.run {
             inject(campaignExecutionContext)
             init()

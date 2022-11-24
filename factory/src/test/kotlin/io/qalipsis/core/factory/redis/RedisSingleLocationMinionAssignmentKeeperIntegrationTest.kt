@@ -24,6 +24,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
@@ -31,6 +32,7 @@ import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.annotation.MockBean
@@ -39,15 +41,18 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockk
 import io.mockk.verify
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.configuration.CommunicationChannelConfiguration
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.factory.redis.catadioptre.maxMinionsCountsByScenario
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -56,11 +61,13 @@ import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
@@ -80,6 +87,9 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
     private lateinit var localAssignmentStore: LocalAssignmentStore
 
     @RelaxedMockK
+    private lateinit var scenarioRegistry: ScenarioRegistry
+
+    @RelaxedMockK
     private lateinit var communicationChannelConfiguration: CommunicationChannelConfiguration
 
     @MockBean(EventsLogger::class)
@@ -90,6 +100,27 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @MockBean(CommunicationChannelConfiguration::class)
     fun communicationChannelConfiguration() = communicationChannelConfiguration
+
+    @MockBean(ScenarioRegistry::class)
+    fun scenarioRegistry() = scenarioRegistry
+
+    @BeforeEach
+    internal fun setUp() {
+        every { scenarioRegistry.get(SCENARIO_1)!!.dags } returns listOf(
+            mockk {
+                every { name } returns SCENARIO_1_DAG_1
+                every { isRoot } returns true
+                every { isUnderLoad } returns true
+            }
+        )
+        every { scenarioRegistry.get(SCENARIO_2)!!.dags } returns listOf(
+            mockk {
+                every { name } returns SCENARIO_2_DAG_1
+                every { isRoot } returns true
+                every { isUnderLoad } returns true
+            }
+        )
+    }
 
     @AfterAll
     internal fun tearDownAll() {
@@ -319,10 +350,86 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
             assertThat(channelForAllMinions).containsOnly("the-random-channel")
         }
 
-
     @Test
     @Timeout(10)
     @Order(2)
+    internal fun `should schedule the minions underload of all factories and throw a failure if not all minions are scheduled`(
+        minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
+    ) = testDispatcherProvider.run {
+
+        val assertionError = assertThrows<AssertionError> {
+            minionAssignmentKeeper.schedule(
+                CAMPAIGN, SCENARIO_1, listOf(
+                    MinionsStartingLine(1, 123),
+                )
+            )
+        }
+
+        // then
+        assertThat(assertionError.message).isEqualTo("999 minions could not be scheduled")
+    }
+
+    @Test
+    @Timeout(10)
+    @Order(3)
+    internal fun `should schedule the minions underload of all factories`(minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper) =
+        testDispatcherProvider.run {
+            // when
+            minionAssignmentKeeper.schedule(
+                CAMPAIGN, SCENARIO_1, listOf(
+                    MinionsStartingLine(60, 123),
+                    MinionsStartingLine(50, 456),
+                    MinionsStartingLine(15, 456), // Duplicate the offset to check the consistency.
+                    MinionsStartingLine(MINIONS_COUNT_IN_EACH_SCENARIO, 789),
+                )
+            )
+            minionAssignmentKeeper.schedule(
+                CAMPAIGN, SCENARIO_2, listOf(
+                    MinionsStartingLine(50, 2123),
+                    MinionsStartingLine(90, 2456),
+                    MinionsStartingLine(25, 2456), // Duplicate the offset to check the consistency.
+                    MinionsStartingLine(MINIONS_COUNT_IN_EACH_SCENARIO, 2789),
+                )
+            )
+
+            // then
+            val scheduleForScenario1 = mutableMapOf<Long, MutableCollection<MinionId>>()
+            minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-1-channel")
+                .forEach { (offset, minions) ->
+                    scheduleForScenario1.computeIfAbsent(offset) { mutableSetOf() } += minions
+                }
+            minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-2-channel")
+                .forEach { (offset, minions) ->
+                    scheduleForScenario1.computeIfAbsent(offset) { mutableSetOf() } += minions
+                }
+            assertThat(scheduleForScenario1).all {
+                hasSize(3)
+                key(123).hasSize(60)
+                key(456).hasSize(65)
+                key(789).hasSize(MINIONS_COUNT_IN_EACH_SCENARIO - 60 - 65)
+            }
+
+
+            val scheduleForScenario2 = mutableMapOf<Long, MutableCollection<MinionId>>()
+            minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_2, "the-factory-1-channel")
+                .forEach { (offset, minions) ->
+                    scheduleForScenario2.computeIfAbsent(offset) { mutableSetOf() } += minions
+                }
+            minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_2, "the-factory-2-channel")
+                .forEach { (offset, minions) ->
+                    scheduleForScenario2.computeIfAbsent(offset) { mutableSetOf() } += minions
+                }
+            assertThat(scheduleForScenario2).all {
+                hasSize(3)
+                key(2123).hasSize(50)
+                key(2456).hasSize(115)
+                key(2789).hasSize(MINIONS_COUNT_IN_EACH_SCENARIO - 115 - 50)
+            }
+        }
+
+    @Test
+    @Timeout(10)
+    @Order(4)
     internal fun `should not mark anything complete when not all the DAGS for all the minions are complete`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -361,7 +468,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(3)
+    @Order(5)
     internal fun `should mark the minion complete when all the DAGS for all but 1 minion are complete`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -400,7 +507,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(4)
+    @Order(6)
     internal fun `should not complete the scenario when a singleton minion of a scenario is completed but a minion under load still runs`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -422,7 +529,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(5)
+    @Order(7)
     internal fun `should not complete the scenario when the latest minion of a scenario is completed but has to restart`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -443,7 +550,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(6)
+    @Order(8)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -483,7 +590,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(7)
+    @Order(9)
     internal fun `should complete the campaign when the latest minion of the latest scenario completes its latest DAG`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -512,6 +619,13 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
     internal fun `should assign until the timeout`(minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper) =
         testDispatcherProvider.run {
             // given
+            every { scenarioRegistry.get("scenario")!!.dags } returns listOf(
+                mockk {
+                    every { name } returns "dag-1"
+                    every { isRoot } returns true
+                    every { isUnderLoad } returns true
+                }
+            )
             minionAssignmentKeeper.maxMinionsCountsByScenario().apply {
                 clear()
                 this["scenario"] = 1543

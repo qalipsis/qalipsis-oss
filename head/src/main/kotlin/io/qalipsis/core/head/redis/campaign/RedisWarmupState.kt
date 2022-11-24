@@ -23,12 +23,14 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.WarmupState
+import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
 internal class RedisWarmupState(
@@ -57,7 +59,18 @@ internal class RedisWarmupState(
                         feedback.scenarioName
                     )
                 ) {
-                    RedisMinionsStartupState(campaign, operations)
+                    val start = Instant.now().plusMillis(campaign.startOffsetMs)
+                    RedisRunningState(
+                        campaign, operations,
+                        directivesForInit = campaign.scenarios.keys.map { scenarioName ->
+                            MinionsStartDirective(
+                                campaignKey,
+                                scenarioName,
+                                start,
+                                campaign.broadcastChannel
+                            )
+                        },
+                    )
                 } else {
                     this
                 }

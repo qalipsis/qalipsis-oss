@@ -77,7 +77,7 @@ internal class TimeSeriesController(
             SecurityRequirement(name = "JWT")
         ]
     )
-    @Secured(value = [Permissions.READ_DATA_SERIES])
+    @Secured(value = [Permissions.READ_TIME_SERIES])
     suspend fun aggregate(
         @Parameter(
             name = "X-Tenant",
@@ -152,7 +152,7 @@ internal class TimeSeriesController(
             SecurityRequirement(name = "JWT")
         ]
     )
-    @Secured(value = [Permissions.READ_DATA_SERIES])
+    @Secured(value = [Permissions.READ_TIME_SERIES])
     suspend fun searchRecords(
         @Parameter(
             name = "X-Tenant",

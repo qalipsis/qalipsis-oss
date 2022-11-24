@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.orchestration
 
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
@@ -30,6 +29,7 @@ import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.core.annotations.LogInput
@@ -57,7 +57,7 @@ internal class MinionsKeeperImpl(
     private val scenarioRegistry: ScenarioRegistry,
     private val runner: Runner,
     private val eventsLogger: EventsLogger,
-    private val meterRegistry: MeterRegistry,
+    private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : MinionsKeeper {
@@ -90,7 +90,7 @@ internal class MinionsKeeperImpl(
         scenarioRegistry[scenarioName]?.let { scenario ->
             // Extracts the DAG being the entry to the scenario for the minion.
             val rootDag = dagIds.asSequence().map { dagId -> scenario[dagId]!! }.firstOrNull { it.isRoot }
-            val singletonMinion = dagIds.size == 1 && scenario[dagIds.first()]!!.isSingleton
+            val singletonMinion = dagIds.size == 1 && scenario[dagIds.first()]!!.run { isSingleton || !isUnderLoad }
 
             val minion = MinionImpl(
                 id = minionId,
@@ -102,16 +102,19 @@ internal class MinionsKeeperImpl(
                 executingStepsGauge = meterRegistry.gauge(
                     "minion-running-steps",
                     listOf(
-                        Tag.of("campaign", campaignKey),
                         Tag.of("scenario", scenarioName),
                         Tag.of("minion", minionId)
                     ),
                     AtomicInteger()
-                )!!
+                )
             )
             minions[minionId] = minion
 
             if (minion.isSingleton || rootDag?.isUnderLoad == false) {
+                if (singletonMinion) {
+                    log.debug { "Created the singleton minion $minionId" }
+                }
+
                 val dagId = dagIds.first()
                 idleSingletonsMinions.computeIfAbsent(scenarioName) { concurrentSet() } += minion
                 singletonMinionsByDagId.put(scenarioName, dagId, minion)
@@ -154,23 +157,31 @@ internal class MinionsKeeperImpl(
     }
 
     @LogInput
-    override suspend fun scheduleMinionStart(minionId: MinionId, instant: Instant) {
-        minions[minionId]?.takeUnless { it.isStarted() }?.let { minion ->
-            log.trace { "Starting minion $minionId" }
-            val waitingDelay = instant.toEpochMilli() - System.currentTimeMillis()
+    override suspend fun scheduleMinionStart(startInstant: Instant, minionIds: Collection<MinionId>) {
+        val minionsToStart = minionIds.mapNotNull { minions[it]?.takeUnless { minion -> minion.isStarted() } }
+        if (minionsToStart.isNotEmpty()) {
+            log.trace { "Starting ${minionsToStart.size} minions" }
+            val waitingDelay = startInstant.toEpochMilli() - System.currentTimeMillis()
             if (waitingDelay > 0) {
-                log.trace { "Waiting for $waitingDelay ms until start of minion $minionId" }
+                log.trace { "Waiting for $waitingDelay ms until start of ${minionsToStart.size} minions" }
                 delay(waitingDelay)
             }
-            minion.start()
-            reportLiveStateRegistry.recordStartedMinion(minion.campaignKey, minion.scenarioName, 1)
-            eventsLogger.debug(
-                "minion.started",
-                tags = mapOf(
-                    "campaign" to minion.campaignKey,
-                    "scenario" to minion.scenarioName,
-                    "minion" to minion.id
+            minionsToStart.forEach {
+                it.start()
+                eventsLogger.debug(
+                    "minion.started",
+                    tags = mapOf(
+                        "campaign" to it.campaignKey,
+                        "scenario" to it.scenarioName,
+                        "minion" to it.id
+                    )
                 )
+            }
+            val refMinion = minionsToStart.first()
+            reportLiveStateRegistry.recordStartedMinion(
+                refMinion.campaignKey,
+                refMinion.scenarioName,
+                minionsToStart.size
             )
         }
     }

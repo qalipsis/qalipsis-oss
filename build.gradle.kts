@@ -17,10 +17,6 @@
  *
  */
 
-import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
-import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
-
 plugins {
     idea
     java
@@ -195,18 +191,8 @@ fun Project.configureNotPlatform() {
             }
             useJUnitPlatform()
             testLogging {
-                events(STARTED, FAILED, STANDARD_ERROR)
+                events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-
-                debug {
-                    events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
-                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-                }
-
-                info {
-                    events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
-                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-                }
             }
         }
 

@@ -32,7 +32,7 @@ local dagIds = {}
 for dagId in string.gmatch(dagIdsList, '([^,]+)') do
     table.insert(dagIds, dagId)
 end
-local stringToBoolean={['true']=true, ['false']=false}
+local stringToBoolean = { ['true'] = true, ['false'] = false }
 local underLoad = stringToBoolean[ARGV[3]]
 
 local unpackSize = 6000 -- Maximal size accepted to unpack in a Redis command.
@@ -41,35 +41,35 @@ local allMinions = {}
 -- Reads the full list of minions to process. The Set is temporary and can be immediately deleted.
 local minions = redis.call('srandmember', minionsToRegisterSet, unpackSize)
 -- Updates the set of all the unassigned minions of the scenario.
-while(#minions > 0) do
-  for _, minion in pairs(minions) do
-    table.insert(allMinions, minion)
-  end
-  redis.call('srem', minionsToRegisterSet, unpack(minions))
-  redis.call('sadd', unassignedMinions, unpack(minions))
+while (#minions > 0) do
+    for _, minion in pairs(minions) do
+        table.insert(allMinions, minion)
+    end
+    redis.call('srem', minionsToRegisterSet, unpack(minions))
+    redis.call('sadd', unassignedMinions, unpack(minions))
 
-  if underLoad then
-    redis.call('sadd', underLoadMinions, unpack(minions))
-  end
+    if underLoad then
+        redis.call('sadd', underLoadMinions, unpack(minions))
+    end
 
-  minions = redis.call('srandmember', minionsToRegisterSet, unpackSize)
+    minions = redis.call('srandmember', minionsToRegisterSet, unpackSize)
 end
 
 -- For each minion, creates the set containing the dags it has to execute.
 for _, minion in pairs(allMinions) do
-    redis.call('sadd', keyPrefixForUnassignedDags..minion, unpack(dagIds))
+    redis.call('sadd', keyPrefixForUnassignedDags .. minion, unpack(dagIds))
 end
 
 if underLoad then
-  -- Updates the counter of minions by scenarios.
-  redis.call('hincrby', counters, scenarioName, #allMinions)
+    -- Updates the counter of minions by scenarios.
+    redis.call('hincrby', counters, scenarioName, #allMinions)
 else
-  for _, minion in pairs(allMinions) do
-    -- Create the hash containing the list of teh DAGS for the singleton minions.
-    redis.call('hset', singletonMinionsHash, minion, dagIdsList)
-    -- Updates the counters of DAGS for the singleton.
-    redis.call('hset', singletonRegistry, scenarioName .. '-' .. minion, '1')
-  end
+    for _, minion in pairs(allMinions) do
+        -- Create the hash containing the list of teh DAGS for the singleton minions.
+        redis.call('hset', singletonMinionsHash, minion, dagIdsList)
+        -- Updates the counters of DAGS for the singleton.
+        redis.call('hset', singletonRegistry, scenarioName .. '-' .. minion, '1')
+    end
 end
 
-return {'1'}
+return { '1' }

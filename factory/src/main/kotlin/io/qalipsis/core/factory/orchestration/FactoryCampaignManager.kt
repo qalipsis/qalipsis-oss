@@ -23,7 +23,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.core.directives.MinionStartDefinition
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
@@ -55,7 +55,7 @@ internal interface FactoryCampaignManager : CampaignLifeCycleAware {
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         executionProfileConfiguration: ExecutionProfileConfiguration
-    ): List<MinionStartDefinition>
+    ): List<MinionsStartingLine>
 
     suspend fun notifyCompleteMinion(
         minionId: MinionId,

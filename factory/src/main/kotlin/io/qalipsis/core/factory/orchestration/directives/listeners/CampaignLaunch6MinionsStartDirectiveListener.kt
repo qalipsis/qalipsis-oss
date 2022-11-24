@@ -29,12 +29,12 @@ import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
-import java.time.Instant
 
 /**
  * Consumes the MinionsStartDirective and schedules the start of the related minions if they are under load and have
@@ -47,6 +47,7 @@ import java.time.Instant
 internal class CampaignLaunch6MinionsStartDirectiveListener(
     private val localAssignmentStore: LocalAssignmentStore,
     private val minionsKeeper: MinionsKeeper,
+    private val minionsAssignmentKeeper: MinionAssignmentKeeper,
     private val factoryChannel: FactoryChannel
 ) : DirectiveListener<MinionsStartDirective> {
 
@@ -58,24 +59,30 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsStartDirective) {
         try {
-            val relevantMinions = directive.startDefinitions.filter { definition ->
-                localAssignmentStore.hasRootUnderLoadLocally(directive.scenarioName, definition.minionId).also {
-                    if (it) {
-                        "The minion ${definition.minionId} is running the root DAG of the scenario ${directive.scenarioName} locally"
-                    } else {
-                        "The minion ${definition.minionId} is not running the root DAG of the scenario ${directive.scenarioName} locally"
+            val scheduleOfLocalRootedMinions =
+                minionsAssignmentKeeper.readSchedulePlan(directive.campaignKey, directive.scenarioName)
+                    .mapValues { (_, minionIds) ->
+                        minionIds.filter { minionId ->
+                            localAssignmentStore.hasRootUnderLoadLocally(directive.scenarioName, minionId).also {
+                                if (it) {
+                                    "The minion $minionId is running the root DAG of the scenario ${directive.scenarioName} locally"
+                                } else {
+                                    "The minion $minionId is not running the root DAG of the scenario ${directive.scenarioName} locally"
+                                }
+                            }
+                        }
                     }
-                }
-            }
-            if (relevantMinions.isNotEmpty()) {
+                    .filter { (_, minionIds) -> minionIds.isNotEmpty() }
+
+            if (scheduleOfLocalRootedMinions.isNotEmpty()) {
                 val feedback = MinionsStartFeedback(
                     campaignKey = directive.campaignKey,
                     scenarioName = directive.scenarioName,
                     status = FeedbackStatus.IN_PROGRESS
                 )
                 factoryChannel.publishFeedback(feedback)
-                relevantMinions.forEach {
-                    minionsKeeper.scheduleMinionStart(it.minionId, Instant.ofEpochMilli(it.timestamp))
+                scheduleOfLocalRootedMinions.toSortedMap().forEach { (offsetMs, minionIds) ->
+                    minionsKeeper.scheduleMinionStart(directive.startTimestamp.plusMillis(offsetMs), minionIds)
                 }
                 factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
             } else {

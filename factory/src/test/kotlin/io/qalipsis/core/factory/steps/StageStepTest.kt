@@ -128,7 +128,7 @@ internal class StageStepTest {
         step.addNext(headStep)
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
-            every { gauge(any(), any()) } returnsArgument 1
+            every { gauge(any(), any(), any<Number>()) } returnsArgument 2
         }, relaxedMockk(), this)
         step.runner = runner
         val ctx = coreStepContext<Double, String>(input = 3.0)
@@ -172,7 +172,7 @@ internal class StageStepTest {
         step.addNext(headStep)
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
-            every { gauge(any(), any()) } returnsArgument 1
+            every { gauge(any(), any(), any<Number>()) } returnsArgument 2
         }, relaxedMockk(), this)
         step.runner = runner
 
@@ -221,7 +221,7 @@ internal class StageStepTest {
             step.addNext(headStep)
 
             val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
-                every { gauge(any(), any()) } returnsArgument 1
+                every { gauge(any(), any(), any<Number>()) } returnsArgument 2
             }, relaxedMockk(), this)
             step.runner = runner
 

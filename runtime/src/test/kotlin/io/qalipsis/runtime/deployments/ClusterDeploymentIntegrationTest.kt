@@ -24,7 +24,6 @@ import assertk.assertions.isEqualTo
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.testcontainers.junit.jupiter.Container
@@ -33,7 +32,6 @@ import java.nio.file.Files
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 /**
  * Test class to validate the execution of QALIPSIS as a standalone application.
@@ -41,7 +39,7 @@ import java.util.concurrent.TimeoutException
  * @author Eric Jessé
  */
 @Testcontainers
-@Disabled
+@Timeout(60)
 internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test
@@ -57,15 +55,17 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
+            "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
+            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test",
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-            "-c", "logging.level.io.qalipsis.core.factory=INFO",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            "-c", "logging.level.io.qalipsis.core.factory.init=TRACE",
         )
+
+        log.info { "Starting the head..." }
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
@@ -76,6 +76,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             workingDirectory = Files.createTempDirectory("factory-1").toFile()
         )
 
+        log.info { "Starting the factory 2..." }
         val factory2 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
             arguments = factoryConfig,
@@ -88,13 +89,9 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
-        } catch (e: TimeoutException) {
+        } finally {
             log.error { "Factory 1 OUTPUT: ${factory1.outputLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 1 ERROR: ${factory1.errorLines.joinToString(separator = "\n\t")}" }
             log.error { "Factory 2 OUTPUT: ${factory2.outputLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 2 ERROR: ${factory2.errorLines.joinToString(separator = "\n\t")}" }
-
-            throw e
         }
         assertThat(factory1.process.exitValue()).isEqualTo(0)
         assertThat(factory2.process.exitValue()).isEqualTo(0)
@@ -113,15 +110,17 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
+            "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
+            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test-with-singleton",
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-            "-c", "logging.level.io.qalipsis.core.factory=INFO",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            "-c", "logging.level.io.qalipsis.core.factory.init=TRACE",
+            "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
         )
+        log.info { "Starting the head..." }
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
@@ -132,6 +131,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             workingDirectory = Files.createTempDirectory("factory-1").toFile()
         )
 
+        log.info { "Starting the factory 2..." }
         val factory2 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
             arguments = factoryConfig,
@@ -144,13 +144,9 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
-        } catch (e: TimeoutException) {
+        } finally {
             log.error { "Factory 1 OUTPUT: ${factory1.outputLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 1 ERROR: ${factory1.errorLines.joinToString(separator = "\n\t")}" }
             log.error { "Factory 2 OUTPUT: ${factory2.outputLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 2 ERROR: ${factory2.errorLines.joinToString(separator = "\n\t")}" }
-
-            throw e
         }
         assertThat(factory1.process.exitValue()).isEqualTo(0)
         assertThat(factory2.process.exitValue()).isEqualTo(0)
@@ -168,16 +164,16 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
+            "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
+            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test-with-repeated-minions-in-stages",
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-            "-c", "logging.level.io.qalipsis.core.factory=INFO",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            "-c", "logging.level.io.qalipsis.core.factory.init=TRACE",
-            "-c", "logging.level.io.qalipsis.core.factory.redis.RedisCampaignReportLiveStateRegistry=TRACE"
         )
+        log.info { "Starting the head..." }
         val head = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(headConfig)
         }
@@ -188,6 +184,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             workingDirectory = Files.createTempDirectory("factory-1").toFile()
         )
 
+        log.info { "Starting the factory 2..." }
         val factory2 = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
             arguments = factoryConfig,
@@ -200,16 +197,9 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
-
+        } finally {
             log.error { "Factory 1 OUTPUT: ${factory1.outputLines.joinToString(separator = "\n\t")}" }
             log.error { "Factory 2 OUTPUT: ${factory2.outputLines.joinToString(separator = "\n\t")}" }
-        } catch (e: TimeoutException) {
-            log.error { "Factory 1 OUTPUT: ${factory1.outputLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 1 ERROR: ${factory1.errorLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 2 OUTPUT: ${factory2.outputLines.joinToString(separator = "\n\t")}" }
-            log.error { "Factory 2 ERROR: ${factory2.errorLines.joinToString(separator = "\n\t")}" }
-
-            throw e
         }
         assertThat(factory1.process.exitValue()).isEqualTo(0)
         assertThat(factory2.process.exitValue()).isEqualTo(0)

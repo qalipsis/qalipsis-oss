@@ -25,15 +25,15 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.runtime.Scenario
-import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirectiveReference
-import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
+import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
-internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
+internal class CampaignLaunch4MinionsRampUpPreparationDirectiveListenerTest {
 
     @JvmField
     @RegisterExtension
@@ -59,8 +59,11 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
     @RelaxedMockK
     private lateinit var factoryCampaignManager: FactoryCampaignManager
 
+    @RelaxedMockK
+    private lateinit var minionAssignmentKeeper: MinionAssignmentKeeper
+
     @InjectMockKs
-    private lateinit var processor: CampaignLaunch5MinionsRampUpPreparationDirectiveListener
+    private lateinit var processor: CampaignLaunch4MinionsRampUpPreparationDirectiveListener
 
     @Test
     @Timeout(2)
@@ -104,14 +107,14 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
         val executionProfileConfiguration = relaxedMockk<ExecutionProfileConfiguration>()
         val directive =
             MinionsRampUpPreparationDirective("my-campaign", "my-scenario", executionProfileConfiguration, "")
-        val minionsStartDefinitions = (1..650).map { relaxedMockk<MinionStartDefinition>() }
+        val minionsStartingLines = (1..650).map { relaxedMockk<MinionsStartingLine>() }
         coEvery {
             factoryCampaignManager.prepareMinionsExecutionProfile(
                 "my-campaign",
                 "my-scenario",
                 refEq(executionProfileConfiguration)
             )
-        } returns minionsStartDefinitions
+        } returns minionsStartingLines
 
         // when
         processor.notify(directive)
@@ -130,19 +133,10 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
                 "my-scenario",
                 refEq(executionProfileConfiguration)
             )
-            factoryChannel.publishDirective(
-                MinionsStartDirective(
-                    campaignKey = "my-campaign",
-                    scenarioName = "my-scenario",
-                    minionsStartDefinitions.subList(0, 400)
-                )
-            )
-            factoryChannel.publishDirective(
-                MinionsStartDirective(
-                    campaignKey = "my-campaign",
-                    scenarioName = "my-scenario",
-                    minionsStartDefinitions.subList(400, 650)
-                )
+            minionAssignmentKeeper.schedule(
+                "my-campaign",
+                "my-scenario",
+                refEq(minionsStartingLines)
             )
             factoryChannel.publishFeedback(
                 MinionsRampUpPreparationFeedback(
@@ -153,7 +147,7 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             )
         }
 
-        confirmVerified(factoryChannel, factoryCampaignManager)
+        confirmVerified(factoryChannel, factoryCampaignManager, minionAssignmentKeeper)
     }
 
     @Test
@@ -200,6 +194,6 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListenerTest {
             )
         }
 
-        confirmVerified(factoryChannel, factoryCampaignManager)
+        confirmVerified(factoryChannel, factoryCampaignManager, minionAssignmentKeeper)
     }
 }

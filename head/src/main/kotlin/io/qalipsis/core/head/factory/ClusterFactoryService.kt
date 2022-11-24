@@ -349,7 +349,8 @@ internal class ClusterFactoryService(
      * getAllScenarios method finds all active scenarios by given ids
      */
     override suspend fun getActiveScenarios(tenant: String, ids: Collection<String>) =
-        scenarioRepository.findActiveByName(tenant, ids).map(ScenarioEntity::toModel)
+        scenarioRepository.findActiveByName(tenant, ids).filterNot { it.dags.isEmpty() }
+            .map(ScenarioEntity::toModel)
 
     override suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary> {
         sort?.let {
