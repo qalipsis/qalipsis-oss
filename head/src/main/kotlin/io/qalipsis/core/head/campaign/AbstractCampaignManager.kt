@@ -100,6 +100,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     ): RunningCampaign {
         val selectedScenarios = configuration.scenarios.keys
         val scenarios = factoryService.getActiveScenarios(tenant, selectedScenarios).distinctBy { it.name }
+        log.trace { "Found unique scenarios: $scenarios" }
         val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
         require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
 

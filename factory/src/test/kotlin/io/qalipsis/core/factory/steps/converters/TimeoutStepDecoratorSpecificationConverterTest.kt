@@ -28,6 +28,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.Step
@@ -51,7 +52,7 @@ import java.time.Duration
 internal class TimeoutStepDecoratorSpecificationConverterTest {
 
     @RelaxedMockK
-    lateinit var meterRegistry: MeterRegistry
+    lateinit var meterRegistry: CampaignMeterRegistry
 
     @RelaxedMockK
     lateinit var scenarioSpecification: StepSpecificationRegistry

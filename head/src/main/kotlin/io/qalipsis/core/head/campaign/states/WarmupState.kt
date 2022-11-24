@@ -23,12 +23,14 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 internal open class WarmupState(
@@ -77,7 +79,17 @@ internal open class WarmupState(
                         (scenarios - feedback.scenarioName).ifEmpty { null }
                     }
                     if (expectedFeedbacks.isEmpty()) {
-                        MinionsStartupState(campaign)
+                        val start = Instant.now().plusMillis(campaign.startOffsetMs)
+                        RunningState(campaign,
+                            campaign.scenarios.keys.map { scenarioName ->
+                                MinionsStartDirective(
+                                    campaignKey,
+                                    scenarioName,
+                                    start,
+                                    campaign.broadcastChannel
+                                )
+                            }
+                        )
                     } else {
                         this
                     }

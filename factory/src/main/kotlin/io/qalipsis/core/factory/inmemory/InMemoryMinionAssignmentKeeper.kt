@@ -26,6 +26,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -49,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.STANDALONE])
+@Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
 internal class InMemoryMinionAssignmentKeeper(
     private val localAssignmentStore: LocalAssignmentStoreImpl
 ) : MinionAssignmentKeeper {
@@ -58,6 +59,8 @@ internal class InMemoryMinionAssignmentKeeper(
      * Originally assigned count of DAGs to execute by scenario and minion.
      */
     private val scheduledDagsCountByMinions = concurrentTableOf<ScenarioName, MinionId, AtomicInteger>()
+
+    private val scheduledStartOffsets = concurrentTableOf<ScenarioName, Long, Collection<MinionId>>()
 
     /**
      * Currently assigned count of DAGs to execute by scenario and minion.
@@ -131,12 +134,44 @@ internal class InMemoryMinionAssignmentKeeper(
         return minionsByScenarios[scenarioName]!! - singletonMinions
     }
 
+    override suspend fun countMinionsUnderLoad(campaignKey: CampaignKey, scenarioName: ScenarioName): Int {
+        return getIdsOfMinionsUnderLoad(campaignKey, scenarioName).size
+    }
+
     @LogInputAndOutput
     override suspend fun assign(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName
     ): Map<MinionId, Collection<DirectedAcyclicGraphName>> {
         return localAssignmentStore.assignments[scenarioName] ?: emptyMap()
+    }
+
+    override suspend fun schedule(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        startingLines: Collection<MinionsStartingLine>
+    ) {
+        val minionsUnderLoad = getIdsOfMinionsUnderLoad(campaignKey, scenarioName).toMutableList()
+        val scenarioSchedule = mutableMapOf<Long, MutableCollection<MinionId>>()
+        startingLines.forEach { startingLine ->
+            repeat(startingLine.count) {
+                if (minionsUnderLoad.isNotEmpty()) {
+                    scenarioSchedule.computeIfAbsent(startingLine.offsetMs) { mutableSetOf() } += minionsUnderLoad.removeAt(
+                        0
+                    )
+                }
+            }
+        }
+
+        assert(minionsUnderLoad.isEmpty()) { "${minionsUnderLoad.size} minions could not be scheduled" }
+        scheduledStartOffsets[scenarioName] = scenarioSchedule
+    }
+
+    override suspend fun readSchedulePlan(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName
+    ): Map<Long, Collection<MinionId>> {
+        return scheduledStartOffsets[scenarioName]!!
     }
 
     @LogInputAndOutput

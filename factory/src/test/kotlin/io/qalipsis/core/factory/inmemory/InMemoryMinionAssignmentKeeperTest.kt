@@ -23,12 +23,16 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
+import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
+import assertk.assertions.key
 import assertk.assertions.prop
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.SpyK
+import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStoreImpl
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -40,6 +44,7 @@ import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
@@ -157,9 +162,78 @@ internal class InMemoryMinionAssignmentKeeperTest {
             }
         }
 
+
+    @Test
+    @Timeout(10)
+    @Order(2)
+    internal fun `should schedule the minions underload of all factories and throw a failure if not all minions are scheduled`() =
+        testDispatcherProvider.run {
+
+            val assertionError = assertThrows<AssertionError> {
+                minionAssignmentKeeper.schedule(
+                    CAMPAIGN,
+                    SCENARIO_1,
+                    listOf(
+                        MinionsStartingLine(1, 123),
+                    )
+                )
+            }
+
+            // then
+            assertThat(assertionError.message).isEqualTo("999 minions could not be scheduled")
+        }
+
+    @Test
+    @Timeout(10)
+    @Order(3)
+    internal fun `should schedule the minions underload of all factories`() =
+        testDispatcherProvider.run {
+            // when
+            minionAssignmentKeeper.schedule(
+                CAMPAIGN,
+                SCENARIO_1, listOf(
+                    MinionsStartingLine(60, 123),
+                    MinionsStartingLine(50, 456),
+                    MinionsStartingLine(15, 456), // Duplicate the offset to check the consistency.
+                    MinionsStartingLine(
+                        MINIONS_COUNT_IN_EACH_SCENARIO,
+                        789
+                    ),
+                )
+            )
+            minionAssignmentKeeper.schedule(
+                CAMPAIGN,
+                SCENARIO_2, listOf(
+                    MinionsStartingLine(50, 2123),
+                    MinionsStartingLine(90, 2456),
+                    MinionsStartingLine(25, 2456), // Duplicate the offset to check the consistency.
+                    MinionsStartingLine(
+                        MINIONS_COUNT_IN_EACH_SCENARIO,
+                        2789
+                    ),
+                )
+            )
+
+            // then
+            val scheduleForScenario1 = minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1)
+            assertThat(scheduleForScenario1).all {
+                hasSize(3)
+                key(123).hasSize(60)
+                key(456).hasSize(65)
+                key(789).hasSize(MINIONS_COUNT_IN_EACH_SCENARIO - 60 - 65)
+            }
+            val scheduleForScenario2 = minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_2)
+            assertThat(scheduleForScenario2).all {
+                hasSize(3)
+                key(2123).hasSize(50)
+                key(2456).hasSize(115)
+                key(2789).hasSize(MINIONS_COUNT_IN_EACH_SCENARIO - 115 - 50)
+            }
+        }
+
     @Test
     @Timeout(5)
-    @Order(2)
+    @Order(4)
     internal fun `should not mark anything complete when not all the DAGS for all the minions are complete`() =
         testDispatcherProvider.run {
             MINIONS_SCENARIO_1.forEach { minion ->
@@ -199,7 +273,7 @@ internal class InMemoryMinionAssignmentKeeperTest {
 
     @Test
     @Timeout(5)
-    @Order(3)
+    @Order(5)
     internal fun `should mark the minion complete when all the DAGS for all but 1 minion are complete`() =
         testDispatcherProvider.run {
             MINIONS_SCENARIO_1.subList(0, MINIONS_COUNT_IN_EACH_SCENARIO - 1).forEach { minion ->
@@ -239,7 +313,7 @@ internal class InMemoryMinionAssignmentKeeperTest {
 
     @Test
     @Timeout(5)
-    @Order(4)
+    @Order(6)
     internal fun `should not complete the scenario when a singleton minion of a scenario is completed but a minion under load still runs`() =
         testDispatcherProvider.run {
             assertThat(
@@ -260,7 +334,7 @@ internal class InMemoryMinionAssignmentKeeperTest {
 
     @Test
     @Timeout(5)
-    @Order(5)
+    @Order(7)
     internal fun `should not complete the scenario when the latest minion should restart`() =
         testDispatcherProvider.run {
             assertThat(
@@ -281,7 +355,7 @@ internal class InMemoryMinionAssignmentKeeperTest {
 
     @Test
     @Timeout(5)
-    @Order(6)
+    @Order(8)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`() =
         testDispatcherProvider.run {
             assertThat(
@@ -316,7 +390,7 @@ internal class InMemoryMinionAssignmentKeeperTest {
 
     @Test
     @Timeout(5)
-    @Order(7)
+    @Order(9)
     internal fun `should complete the campaign when the latest minion of the latest scenario completes its latest DAG`() =
         testDispatcherProvider.run {
             assertThat(

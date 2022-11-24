@@ -72,10 +72,10 @@ interface MinionsKeeper {
     /**
      * Starts a minion at the specified instant.
      *
-     * @param minionId the ID of the minion to start.
-     * @param instant the instant when the minion has to start. If the instant is already in the past, the minion starts immediately.
+     * @param minionIds the ID of the minion to start.
+     * @param startInstant the instant when the minion has to start. If the instant is already in the past, the minion starts immediately.
      */
-    suspend fun scheduleMinionStart(minionId: MinionId, instant: Instant)
+    suspend fun scheduleMinionStart(startInstant: Instant, minionIds: Collection<MinionId>)
 
     /**
      * Immediately starts a minion.

@@ -19,14 +19,17 @@
 
 package io.qalipsis.core.factory.orchestration
 
-import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.Tag
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CompletionContext
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
@@ -38,6 +41,8 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.exceptions.StepExecutionException
+import io.qalipsis.core.factory.campaign.Campaign
+import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.context.StepContextBuilder
 import io.qalipsis.core.factory.context.StepContextImpl
 import jakarta.inject.Named
@@ -65,10 +70,10 @@ import java.util.concurrent.atomic.AtomicInteger
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class RunnerImpl(
     private val eventsLogger: EventsLogger,
-    private val meterRegistry: MeterRegistry,
+    private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
-) : StepExecutor, Runner {
+) : StepExecutor, Runner, CampaignLifeCycleAware {
 
     /**
      * Map keeping the type of the steps.
@@ -76,18 +81,36 @@ internal class RunnerImpl(
     private val stepTypes = ConcurrentHashMap<String, String>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val idleMinionsGauge: AtomicInteger = meterRegistry.gauge("idle-minions", AtomicInteger())
+    private val idleMinionsGauges =
+        ConcurrentHashMap<ScenarioName, AtomicInteger>()// = meterRegistry.gauge("idle-minions", AtomicInteger())
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningMinionsGauge: AtomicInteger = meterRegistry.gauge("running-minions", AtomicInteger())
+    private val runningMinionsGauges =
+        ConcurrentHashMap<ScenarioName, AtomicInteger>()//: AtomicInteger = meterRegistry.gauge("running-minions", AtomicInteger())
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningStepsGauge: AtomicInteger = meterRegistry.gauge("running-steps", AtomicInteger())
+    private val runningStepsGauges =
+        ConcurrentHashMap<ScenarioName, AtomicInteger>()//: AtomicInteger = meterRegistry.gauge("running-steps", AtomicInteger())
 
-    private val executedStepCounter = meterRegistry.counter("executed-steps")
+    private val executedStepCounters =
+        ConcurrentHashMap<ScenarioName, Counter>()// = meterRegistry.counter("executed-steps")
+
+    override suspend fun close(campaign: Campaign) {
+        idleMinionsGauges.clear()
+        runningMinionsGauges.clear()
+        runningStepsGauges.clear()
+        executedStepCounters.clear()
+    }
 
     @LogInput
     override suspend fun run(minion: Minion, dag: DirectedAcyclicGraph) {
+        val idleMinionsGauge = idleMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
+            meterRegistry.gauge(
+                "idle-minions",
+                listOf(Tag.of("scenario", scenario)),
+                AtomicInteger()
+            )
+        }
         idleMinionsGauge.incrementAndGet()
         minion.waitForStart()
         idleMinionsGauge.decrementAndGet()
@@ -112,6 +135,13 @@ internal class RunnerImpl(
     ) {
         minion.completeMdcContext()
         minion.start()
+        val runningMinionsGauge = runningMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
+            meterRegistry.gauge(
+                "running-minions",
+                listOf(Tag.of("scenario", scenario)),
+                AtomicInteger()
+            )
+        }
         runningMinionsGauge.incrementAndGet()
         minion.onComplete { runningMinionsGauge.decrementAndGet() }
 
@@ -298,6 +328,14 @@ internal class RunnerImpl(
             log.trace { "Performing the execution of the step..." }
             stepContext.stepType = stepTypes.computeIfAbsent(step.name) { getStepType(step) }
             eventsLogger.info("step.execution.started", tagsSupplier = { stepContext.toEventTags() })
+
+            val runningStepsGauge = runningStepsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
+                meterRegistry.gauge(
+                    "running-steps",
+                    listOf(Tag.of("scenario", scenario)),
+                    AtomicInteger()
+                )
+            }
             runningStepsGauge.incrementAndGet()
             val start = System.nanoTime()
             try {
@@ -327,7 +365,9 @@ internal class RunnerImpl(
                 stepContext.isExhausted = true
             }
             runningStepsGauge.decrementAndGet()
-            executedStepCounter.increment()
+            executedStepCounters.computeIfAbsent(minion.scenarioName) { scenario ->
+                meterRegistry.counter("executed-steps", "scenario", scenario)
+            }.increment()
         } else {
             log.trace { "The step will not be executed on minion because the context is exhausted and the step cannot process it" }
         }
@@ -350,10 +390,12 @@ internal class RunnerImpl(
             stepContext.addError(StepError(t, step.name))
             t
         }
+
         t.cause != null -> {
             stepContext.addError(StepError(t.cause!!, step.name))
             t.cause!!
         }
+
         else -> stepContext.errors.lastOrNull()?.message
     }
 

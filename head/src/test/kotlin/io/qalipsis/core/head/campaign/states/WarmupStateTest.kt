@@ -21,6 +21,7 @@ package io.qalipsis.core.head.campaign.states
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
@@ -31,17 +32,25 @@ import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.qalipsis.core.configuration.AbortRunningCampaign
+import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
+import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import org.junit.jupiter.api.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
+@WithMockk
 internal class WarmupStateTest : AbstractStateTest() {
 
     @Test
@@ -250,6 +259,9 @@ internal class WarmupStateTest : AbstractStateTest() {
     internal fun `should return MinionsStartupState when all the declaration feedbacks were received`() =
         testDispatcherProvider.runTest {
             // given
+            val now = getTimeMock()
+            every { campaign.startOffsetMs } returns 76521
+            every { campaign.broadcastChannel } returns "the-broadcast-channel"
             every { campaign.factories } returns mutableMapOf(
                 "node-1" to relaxedMockk {
                     every { assignment } returns mutableMapOf(
@@ -262,6 +274,10 @@ internal class WarmupStateTest : AbstractStateTest() {
                         "scenario-2" to relaxedMockk()
                     )
                 }
+            )
+            every { campaign.scenarios } returns mutableMapOf(
+                "scenario-1" to relaxedMockk(),
+                "scenario-2" to relaxedMockk()
             )
             every { campaign.contains(any()) } returns true
             val state = WarmupState(campaign)
@@ -298,9 +314,25 @@ internal class WarmupStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isInstanceOf(MinionsStartupState::class).all {
+            assertThat(newState).isInstanceOf(RunningState::class).all {
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
+                typedProp<Collection<Directive>>("directivesForInit").all {
+                    hasSize(2)
+                    containsExactlyInAnyOrder(
+                        MinionsStartDirective(
+                            "my-campaign",
+                            "scenario-1",
+                            now.plusMillis(76521),
+                            "the-broadcast-channel"
+                        ), MinionsStartDirective(
+                            "my-campaign",
+                            "scenario-2",
+                            now.plusMillis(76521),
+                            "the-broadcast-channel"
+                        )
+                    )
+                }
             }
             verifyOnce { campaign.unassignScenarioOfFactory(any(), any()) }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -324,5 +356,13 @@ internal class WarmupStateTest : AbstractStateTest() {
             prop("error").isSameAs("The campaign was aborted")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
+    }
+
+    private fun getTimeMock(): Instant {
+        val now = Instant.now()
+        val fixedClock = Clock.fixed(now, ZoneId.systemDefault())
+        mockkStatic(Clock::class)
+        every { Clock.systemUTC() } returns fixedClock
+        return now
     }
 }

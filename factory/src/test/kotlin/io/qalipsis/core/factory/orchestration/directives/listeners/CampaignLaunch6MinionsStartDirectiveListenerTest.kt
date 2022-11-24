@@ -21,16 +21,18 @@ package io.qalipsis.core.factory.orchestration.directives.listeners
 
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verify
-import io.qalipsis.core.directives.MinionStartDefinition
 import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
@@ -52,7 +54,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
     @RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
-    @RelaxedMockK
+    @MockK
     private lateinit var localAssignmentStore: LocalAssignmentStore
 
     @RelaxedMockK
@@ -61,13 +63,16 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
     @RelaxedMockK
     private lateinit var factoryChannel: FactoryChannel
 
+    @MockK
+    private lateinit var minionsAssignmentKeeper: MinionAssignmentKeeper
+
     @InjectMockKs
     private lateinit var processor: CampaignLaunch6MinionsStartDirectiveListener
 
     @Test
     @Timeout(1)
     internal fun `should accept minions start directive`() {
-        val directive = MinionsStartDirective("my-campaign", "my-scenario", listOf())
+        val directive = MinionsStartDirective("my-campaign", "my-scenario", Instant.now(), "the-channel")
         every { localAssignmentStore.hasMinionsAssigned("my-scenario") } returns true
 
         Assertions.assertTrue(processor.accept(directive))
@@ -77,7 +82,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
     @Test
     @Timeout(1)
     internal fun `should not accept minions start directive when there is no assignment`() {
-        val directive = MinionsStartDirective("my-campaign", "my-scenario", listOf())
+        val directive = MinionsStartDirective("my-campaign", "my-scenario", Instant.now(), "the-channel")
         every { localAssignmentStore.hasMinionsAssigned("my-scenario") } returns false
 
         Assertions.assertFalse(processor.accept(directive))
@@ -94,27 +99,28 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
     @Timeout(1)
     internal fun `should start the minions executing the root DAG under load locally`() = testCoroutineDispatcher.run {
         // given
-        val directive = MinionsStartDirective(
-            "my-campaign",
-            "my-scenario",
-            listOf(
-                MinionStartDefinition("my-minion-1", 123),
-                MinionStartDefinition("my-minion-2", 456),
-                MinionStartDefinition("my-minion-3", 789)
-            )
-        )
+        val start = Instant.now().plusMillis(123)
+        val directive = MinionsStartDirective("my-campaign", "my-scenario", start, "the-channel")
         every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1") } returns true
-        every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2") } returns false
+        every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2") } returns true
         every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3") } returns true
+        every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-4") } returns false
+        coEvery { minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario") } returns mapOf(
+            6789L to listOf("my-minion-1", "my-minion-3"),
+            4567L to listOf("my-minion-4"),
+            1234L to listOf("my-minion-2")
+        )
 
         // when
         processor.notify(directive)
 
         // then
-        coVerify {
+        coVerifyOrder {
+            minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")
-            localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
+            localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-4")
+            localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2")
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
                     campaignKey = "my-campaign",
@@ -122,8 +128,8 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
-            minionsKeeper.scheduleMinionStart("my-minion-1", Instant.ofEpochMilli(123))
-            minionsKeeper.scheduleMinionStart("my-minion-3", Instant.ofEpochMilli(789))
+            minionsKeeper.scheduleMinionStart(start.plusMillis(1234L), listOf("my-minion-2"))
+            minionsKeeper.scheduleMinionStart(start.plusMillis(6789L), listOf("my-minion-1", "my-minion-3"))
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
                     campaignKey = "my-campaign",
@@ -132,7 +138,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
                 )
             )
         }
-        confirmVerified(minionsKeeper, localAssignmentStore, factoryChannel)
+        confirmVerified(minionsKeeper, localAssignmentStore, factoryChannel, minionsAssignmentKeeper)
     }
 
     @Test
@@ -140,25 +146,25 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
     internal fun `should do nothing when no minion executes the root DAG under load locally`() =
         testCoroutineDispatcher.run {
             // given
-            val directive = MinionsStartDirective(
-                "my-campaign",
-                "my-scenario",
-                listOf(
-                    MinionStartDefinition("my-minion-1", 123),
-                    MinionStartDefinition("my-minion-2", 456),
-                    MinionStartDefinition("my-minion-3", 789)
-                )
-            )
+            val start = Instant.now().plusMillis(123)
+            val directive = MinionsStartDirective("my-campaign", "my-scenario", start, "the-channel")
             every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", any()) } returns false
+            coEvery { minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario") } returns mapOf(
+                6789L to listOf("my-minion-1", "my-minion-3"),
+                4567L to listOf("my-minion-4"),
+                1234L to listOf("my-minion-2")
+            )
 
             // when
             processor.notify(directive)
 
             // then
             coVerify {
+                minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
                 localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")
-                localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2")
                 localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
+                localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-4")
+                localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2")
                 factoryChannel.publishFeedback(
                     MinionsStartFeedback(
                         campaignKey = "my-campaign",
@@ -167,7 +173,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
                     )
                 )
             }
-            confirmVerified(minionsKeeper, localAssignmentStore, factoryChannel)
+            confirmVerified(minionsKeeper, localAssignmentStore, factoryChannel, minionsAssignmentKeeper)
         }
 
 
@@ -175,21 +181,15 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
     @Timeout(1)
     internal fun `should fail to start when a problem occurs`() = testCoroutineDispatcher.run {
         // given
-        val directive = MinionsStartDirective(
-            "my-campaign",
-            "my-scenario",
-            listOf(
-                MinionStartDefinition("my-minion-1", 123),
-                MinionStartDefinition("my-minion-2", 456),
-                MinionStartDefinition("my-minion-3", 789)
-            )
-        )
+        val start = Instant.now().plusMillis(123)
+        val directive = MinionsStartDirective("my-campaign", "my-scenario", start, "the-channel")
         every { localAssignmentStore.hasRootUnderLoadLocally("my-scenario", any()) } returns true
+        coEvery { minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario") } returns mapOf(
+            6789L to listOf("my-minion-1", "my-minion-3"),
+            1234L to listOf("my-minion-2")
+        )
         coEvery {
-            minionsKeeper.scheduleMinionStart(
-                "my-minion-1",
-                Instant.ofEpochMilli(123)
-            )
+            minionsKeeper.scheduleMinionStart(any(), listOf("my-minion-1", "my-minion-3"))
         } throws RuntimeException("A problem occurred")
 
         // when
@@ -197,6 +197,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
         // then
         coVerify {
+            minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
@@ -207,7 +208,8 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
                     status = FeedbackStatus.IN_PROGRESS
                 )
             )
-            minionsKeeper.scheduleMinionStart("my-minion-1", Instant.ofEpochMilli(123))
+            minionsKeeper.scheduleMinionStart(start.plusMillis(1234L), listOf("my-minion-2"))
+            minionsKeeper.scheduleMinionStart(start.plusMillis(6789L), listOf("my-minion-1", "my-minion-3"))
             factoryChannel.publishFeedback(
                 MinionsStartFeedback(
                     campaignKey = "my-campaign",
@@ -217,6 +219,6 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
                 )
             )
         }
-        confirmVerified(minionsKeeper, localAssignmentStore, factoryChannel)
+        confirmVerified(minionsKeeper, localAssignmentStore, factoryChannel, minionsAssignmentKeeper)
     }
 }

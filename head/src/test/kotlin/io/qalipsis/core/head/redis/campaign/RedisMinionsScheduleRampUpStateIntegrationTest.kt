@@ -54,11 +54,11 @@ import io.qalipsis.test.assertk.typedProp
 import org.junit.jupiter.api.Test
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateIntegrationTest() {
+internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisStateIntegrationTest() {
 
     @Test
     fun `should not be a completion state`() {
-        assertThat(RedisMinionsStartupState(campaign, operations).isCompleted).isFalse()
+        assertThat(RedisMinionsScheduleRampUpState(campaign, operations).isCompleted).isFalse()
     }
 
     @Test
@@ -96,7 +96,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
             it.broadcastChannel = "my-broadcast-channel"
             it.feedbackChannel = "my-feedback-channel"
         }
-        val state = RedisMinionsStartupState(runningCampaign, operations)
+        val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
         operations.saveConfiguration(runningCampaign)
 
         // when
@@ -148,14 +148,14 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
         val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-        val state = RedisMinionsStartupState(runningCampaign, operations)
+        val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
         state.run {
             inject(campaignExecutionContext)
             init()
         }
 
         // when
-        var newState = state.process(mockk<MinionsDeclarationFeedback> {
+        var newState = state.process(mockk<MinionsRampUpPreparationFeedback> {
             every { nodeId } returns "node-1"
             every { status } returns FeedbackStatus.FAILED
             every { error } returns "this is the error 1"
@@ -180,19 +180,6 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
             prop("error").isEqualTo("this is the error 2")
         }
 
-        // when
-        newState = state.process(mockk<MinionsStartFeedback> {
-            every { nodeId } returns "node-1"
-            every { status } returns FeedbackStatus.FAILED
-            every { error } returns "this is the error 3"
-        })
-
-        // then
-        assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(runningCampaign)
-            prop("error").isEqualTo("this is the error 3")
-        }
-
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
 
@@ -201,12 +188,12 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
         testDispatcherProvider.run {
             // given
             val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-            val state = RedisMinionsStartupState(runningCampaign, operations)
+            val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
             }
-            val feedback = mockk<MinionsStartFeedback> {
+            val feedback = mockk<MinionsRampUpPreparationFeedback> {
                 every { nodeId } returns "node-1"
                 every { status } returns FeedbackStatus.FAILED
                 every { error } returns null
@@ -228,7 +215,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
         testDispatcherProvider.run {
             // given
             val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-            val state = RedisMinionsStartupState(runningCampaign, operations)
+            val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -243,26 +230,43 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
         }
 
     @Test
-    internal fun `should return a new RedisRunningState when a completed MinionsStartFeedback is received`() =
+    internal fun `should return a new RedisWarmupState when a completed MinionsStartFeedback is received`() =
         testDispatcherProvider.run {
             // given
-            val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
-            val state = RedisMinionsStartupState(runningCampaign, operations)
+            val runningCampaign = campaign.copy(scenarios = mapOf(
+                "scenario-1" to mockk {
+                    every { executionProfileConfiguration.clone() } returns mockk()
+                },
+                "scenario-2" to mockk {
+                    every { executionProfileConfiguration.clone() } returns mockk()
+                }
+            )).also { it.broadcastChannel = "my-broadcast-channel" }
+            val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
             }
-
-            // when
-            val newState =
-                state.process(mockk<MinionsStartFeedback> { every { status } returns FeedbackStatus.COMPLETED })
+            var newState =
+                state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { scenarioName } returns "scenario-1"
+                    every { status } returns FeedbackStatus.COMPLETED
+                })
 
             // then
-            assertThat(newState).isInstanceOf(RedisRunningState::class).all {
+            assertThat(newState).isSameAs(state)
+
+            // when
+            newState =
+                state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { scenarioName } returns "scenario-2"
+                    every { status } returns FeedbackStatus.COMPLETED
+                })
+
+            // then
+            assertThat(newState).isInstanceOf(RedisWarmupState::class).all {
                 isNotSameAs(state)
                 prop("campaign").isSameAs(runningCampaign)
                 typedProp<Boolean>("initialized").isFalse()
-                typedProp<Collection<Directive>>("directivesForInit").isEmpty()
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
@@ -270,7 +274,7 @@ internal class RedisMinionsStartupStateIntegrationTest : AbstractRedisStateInteg
     @Test
     fun `should return a new RedisAbortingState`() = testDispatcherProvider.run {
         // given
-        val state = RedisMinionsStartupState(campaign, operations)
+        val state = RedisMinionsScheduleRampUpState(campaign, operations)
         state.run {
             inject(campaignExecutionContext)
             init()

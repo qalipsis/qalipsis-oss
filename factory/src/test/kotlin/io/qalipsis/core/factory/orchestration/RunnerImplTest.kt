@@ -20,7 +20,6 @@
 package io.qalipsis.core.factory.orchestration
 
 import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Timer
 import io.mockk.coEvery
@@ -30,6 +29,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.slot
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -69,7 +69,7 @@ internal class RunnerImplTest {
     private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @RelaxedMockK
-    private lateinit var meterRegistry: MeterRegistry
+    private lateinit var meterRegistry: CampaignMeterRegistry
 
     @JvmField
     @RegisterExtension
@@ -97,10 +97,28 @@ internal class RunnerImplTest {
         val executedStepCounter: Counter = relaxedMockk("executed-steps")
         val stepExecutionTimer: Timer = relaxedMockk("step-execution-timer")
 
-        every { meterRegistry.gauge("idle-minions", any<AtomicInteger>()) } returns idleMinionsGauge
-        every { meterRegistry.gauge("running-minions", any<AtomicInteger>()) } returns runningMinionsGauge
-        every { meterRegistry.gauge("running-steps", any<AtomicInteger>()) } returns runningStepsGauge
-        every { meterRegistry.counter("executed-steps") } returns executedStepCounter
+        every {
+            meterRegistry.gauge(
+                "idle-minions",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+        } returns idleMinionsGauge
+        every {
+            meterRegistry.gauge(
+                "running-minions",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+        } returns runningMinionsGauge
+        every {
+            meterRegistry.gauge(
+                "running-steps",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+        } returns runningStepsGauge
+        every { meterRegistry.counter("executed-steps", "scenario", "my-scenario") } returns executedStepCounter
         every { meterRegistry.timer("step-execution", *anyVararg()) } returns stepExecutionTimer
 
         val dag = testDag {

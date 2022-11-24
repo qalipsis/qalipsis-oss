@@ -250,7 +250,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
         }
 
     @Test
-    internal fun `should return WarmupState when all the declaration feedbacks were received`() =
+    internal fun `should return MinionsScheduleRampUpState when all the declaration feedbacks were received`() =
         testDispatcherProvider.runTest {
             // given
             every { campaign.factories } returns mutableMapOf(
@@ -301,7 +301,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isInstanceOf(WarmupState::class).all {
+            assertThat(newState).isInstanceOf(MinionsScheduleRampUpState::class).all {
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }

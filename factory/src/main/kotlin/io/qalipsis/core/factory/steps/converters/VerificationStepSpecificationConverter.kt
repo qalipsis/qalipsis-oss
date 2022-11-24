@@ -19,9 +19,9 @@
 
 package io.qalipsis.core.factory.steps.converters
 
-import io.micrometer.core.instrument.MeterRegistry
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
@@ -37,7 +37,7 @@ import io.qalipsis.core.factory.steps.VerificationStep
 @StepConverter
 internal class VerificationStepSpecificationConverter(
     private val eventsLogger: EventsLogger,
-    private val meterRegistry: MeterRegistry,
+    private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : StepSpecificationConverter<VerificationStepSpecification<*, *>> {
 

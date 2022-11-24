@@ -27,27 +27,29 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirectiveReference
-import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
+import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
+import java.time.Duration
 
 /**
  *
- * The [CampaignLaunch5MinionsRampUpPreparationDirectiveListener] is responsible for generating the execution profile to start all
+ * The [CampaignLaunch4MinionsRampUpPreparationDirectiveListener] is responsible for generating the execution profile to start all
  * the [io.qalipsis.api.orchestration.Minion]s for the execution of a scenario.
  *
  * @author Eric Jessé
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
+internal class CampaignLaunch4MinionsRampUpPreparationDirectiveListener(
     private val factoryChannel: FactoryChannel,
-    private val factoryCampaignManager: FactoryCampaignManager
+    private val factoryCampaignManager: FactoryCampaignManager,
+    private val minionAssignmentKeeper: MinionAssignmentKeeper
 ) : DirectiveListener<MinionsRampUpPreparationDirective> {
 
     @LogInputAndOutput(level = Level.DEBUG)
@@ -69,15 +71,12 @@ internal class CampaignLaunch5MinionsRampUpPreparationDirectiveListener(
                 directive.campaignKey, directive.scenarioName, directive.executionProfileConfiguration
             )
 
-            minionsStartDefinitions.windowed(400, 400, true).forEach { def ->
-                factoryChannel.publishDirective(
-                    MinionsStartDirective(
-                        directive.campaignKey,
-                        directive.scenarioName,
-                        def,
-                    )
-                )
+            log.debug {
+                val numberOfTotalMinionsToStart = minionsStartDefinitions.sumOf { it.count }
+                val endOfCompleteRampUp = Duration.ofMillis(minionsStartDefinitions.last().offsetMs)
+                "Ramp-up: starting $numberOfTotalMinionsToStart minions in $endOfCompleteRampUp"
             }
+            minionAssignmentKeeper.schedule(directive.campaignKey, directive.scenarioName, minionsStartDefinitions)
 
             factoryChannel.publishFeedback(
                 feedback.copy(

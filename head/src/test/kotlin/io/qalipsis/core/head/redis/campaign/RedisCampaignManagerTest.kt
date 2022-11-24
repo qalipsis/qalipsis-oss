@@ -441,7 +441,7 @@ internal class RedisCampaignManagerTest {
             val state = campaignManager.get("my-tenant", "my-campaign")
 
             // then
-            assertThat(state).isInstanceOf(RedisMinionsStartupState::class).all {
+            assertThat(state).isInstanceOf(RedisMinionsScheduleRampUpState::class).all {
                 prop("campaign").isSameAs(campaign)
                 prop("operations").isSameAs(operations)
                 prop("context").isSameAs(campaignExecutionContext)

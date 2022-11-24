@@ -254,7 +254,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
         }
 
     @Test
-    internal fun `should return RedisWarmupState when all the declaration feedbacks were received`() =
+    internal fun `should return RedisMinionsScheduleRampUpState when all the declaration feedbacks were received`() =
         testDispatcherProvider.run {
             // given
             every { campaign.factories } returns mutableMapOf(
@@ -317,7 +317,7 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             })
 
             // then
-            assertThat(newState).isInstanceOf(RedisWarmupState::class).all {
+            assertThat(newState).isInstanceOf(RedisMinionsScheduleRampUpState::class).all {
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }

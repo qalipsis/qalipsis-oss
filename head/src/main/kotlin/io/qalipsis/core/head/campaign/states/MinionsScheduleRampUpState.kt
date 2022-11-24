@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -26,20 +27,20 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
-import io.qalipsis.core.feedbacks.MinionsStartFeedback
 
-internal open class MinionsStartupState(
+internal open class MinionsScheduleRampUpState(
     protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
+    private val expectedFeedbacks = concurrentSet(campaign.scenarios.keys)
+
     override suspend fun doInit(): List<Directive> {
-        return campaign.scenarios.map { (scenarioName, scenarioConfiguration) ->
+        return campaign.scenarios.map { (scenarioName, configuration) ->
             MinionsRampUpPreparationDirective(
                 campaignKey = campaignKey,
                 scenarioName = scenarioName,
-                executionProfileConfiguration = scenarioConfiguration.executionProfileConfiguration.clone(),
+                executionProfileConfiguration = configuration.executionProfileConfiguration.clone(),
                 channel = campaign.broadcastChannel
             )
         }
@@ -47,25 +48,22 @@ internal open class MinionsStartupState(
 
     override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         // The failure management is let to doProcess.
-        if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            log.error { "The creation of the minions for the scenario ${feedback.scenarioName} failed: ${feedback.error}" }
-        } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioName} failed: ${feedback.error}" }
-        } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED) {
-            log.error { "The start of minions of scenario ${feedback.scenarioName} in the factory ${feedback.nodeId} failed: ${feedback.error}" }
+        if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
+            log.error { "The calculation of the minions ramp up of scenario ${feedback.scenarioName} failed: ${feedback.error}" }
         }
         return doTransition(feedback)
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
-        return if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
+        return if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
             FailureState(campaign, feedback.error ?: "")
-        } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            FailureState(campaign, feedback.error ?: "")
-        } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED) {
-            FailureState(campaign, feedback.error ?: "")
-        } else if (feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.COMPLETED) {
-            RunningState(campaign)
+        } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.COMPLETED) {
+            expectedFeedbacks -= feedback.scenarioName
+            if (expectedFeedbacks.isEmpty()) {
+                WarmupState(campaign)
+            } else {
+                this
+            }
         } else {
             this
         }
@@ -76,7 +74,7 @@ internal open class MinionsStartupState(
     }
 
     override fun toString(): String {
-        return "MinionsStartupState(campaign=$campaign)"
+        return "MinionsScheduleRampUpState(campaign=$campaign)"
     }
 
     private companion object {

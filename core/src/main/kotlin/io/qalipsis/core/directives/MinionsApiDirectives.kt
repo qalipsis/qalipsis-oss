@@ -22,8 +22,10 @@ package io.qalipsis.core.directives
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.serialization.InstantKotlinSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Instant
 
 /**
  * Directive to trigger the assignment and creation of the minions for a scenario
@@ -45,6 +47,7 @@ data class MinionsAssignmentDirective(
 @Serializable
 data class MinionStartDefinition(val minionId: MinionId, val timestamp: Long)
 
+
 /**
  * Directive to start a set of minions at a certain point in time for a given scenario.
  *
@@ -55,14 +58,13 @@ data class MinionStartDefinition(val minionId: MinionId, val timestamp: Long)
 data class MinionsStartDirective(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
-    val startDefinitions: List<MinionStartDefinition>
+    @Serializable(InstantKotlinSerializer::class)
+    val startTimestamp: Instant,
+    override val channel: DispatcherChannel
 ) : DescriptiveDirective(), CampaignManagementDirective {
 
     override var tenant: String = ""
 
-    override fun toString(): String {
-        return "MinionsStartDirective(campaignKey='$campaignKey', scenarioName='$scenarioName', startDefinitionsCount=${startDefinitions.size})"
-    }
 }
 
 /**

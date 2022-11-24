@@ -46,7 +46,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
  * @author Eric Jessé
  */
 @WithMockk
-internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
+internal class CampaignLaunch5ScenarioWarmUpDirectiveListenerTest {
 
     @JvmField
     @RegisterExtension
@@ -62,7 +62,7 @@ internal class CampaignLaunch4ScenarioWarmUpDirectiveListenerTest {
     private lateinit var factoryChannel: FactoryChannel
 
     @InjectMockKs
-    private lateinit var processor: CampaignLaunch4ScenarioWarmUpDirectiveListener
+    private lateinit var processor: CampaignLaunch5ScenarioWarmUpDirectiveListener
 
     @Test
     @Timeout(1)

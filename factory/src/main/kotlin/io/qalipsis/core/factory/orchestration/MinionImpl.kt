@@ -54,7 +54,7 @@ internal open class MinionImpl(
     override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     pauseAtStart: Boolean = true,
-    val isSingleton: Boolean = true,
+    override val isSingleton: Boolean = false,
     private val executingStepsGauge: AtomicInteger
 ) : Minion {
 

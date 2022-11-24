@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.runtime.monitoring
+package io.qalipsis.core.meters
 
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.Measurement
@@ -48,7 +48,7 @@ import java.util.function.ToLongFunction
  */
 @Singleton
 @Requires(missingBeans = [MeterRegistry::class])
-internal class NoopMeterRegistry : MeterRegistry(Clock.SYSTEM) {
+class NoopMeterRegistry : MeterRegistry(Clock.SYSTEM) {
 
     private val gauge = NoopGauge(Meter.Id("noop", Tags.empty(), "", "", Meter.Type.GAUGE))
     private val timer = NoopTimer(Meter.Id("noop", Tags.empty(), "", "", Meter.Type.TIMER))
@@ -64,11 +64,15 @@ internal class NoopMeterRegistry : MeterRegistry(Clock.SYSTEM) {
 
     override fun newCounter(id: Meter.Id) = counter
 
-    override fun newTimer(id: Meter.Id, distributionStatisticConfig: DistributionStatisticConfig,
-                          pauseDetector: PauseDetector) = timer
+    override fun newTimer(
+        id: Meter.Id, distributionStatisticConfig: DistributionStatisticConfig,
+        pauseDetector: PauseDetector
+    ) = timer
 
-    override fun newDistributionSummary(id: Meter.Id, distributionStatisticConfig: DistributionStatisticConfig,
-                                        scale: Double) = distributionSummary
+    override fun newDistributionSummary(
+        id: Meter.Id, distributionStatisticConfig: DistributionStatisticConfig,
+        scale: Double
+    ) = distributionSummary
 
     override fun newMeter(id: Meter.Id, type: Meter.Type, measurements: MutableIterable<Measurement>): Meter {
         return when (type) {
@@ -81,12 +85,16 @@ internal class NoopMeterRegistry : MeterRegistry(Clock.SYSTEM) {
         }
     }
 
-    override fun <T : Any?> newFunctionTimer(id: Meter.Id, obj: T, countFunction: ToLongFunction<T>,
-                                             totalTimeFunction: ToDoubleFunction<T>,
-                                             totalTimeFunctionUnit: TimeUnit) = functionTimer
+    override fun <T : Any?> newFunctionTimer(
+        id: Meter.Id, obj: T, countFunction: ToLongFunction<T>,
+        totalTimeFunction: ToDoubleFunction<T>,
+        totalTimeFunctionUnit: TimeUnit
+    ) = functionTimer
 
-    override fun <T : Any?> newFunctionCounter(id: Meter.Id, obj: T,
-                                               countFunction: ToDoubleFunction<T>) = functionCounter
+    override fun <T : Any?> newFunctionCounter(
+        id: Meter.Id, obj: T,
+        countFunction: ToDoubleFunction<T>
+    ) = functionCounter
 
     override fun getBaseTimeUnit() = TimeUnit.MICROSECONDS
 

@@ -33,7 +33,6 @@ import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
 import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
 
@@ -50,9 +49,6 @@ internal open class RunningState(
     override suspend fun process(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         // The failure management is let to doProcess.
         when {
-            feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
-                log.error { "The creation of the minions for the scenario ${feedback.scenarioName} failed: ${feedback.error}" }
-
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 log.error { "The calculation of the minions ramping of scenario ${feedback.scenarioName} failed: ${feedback.error}" }
 
@@ -68,10 +64,6 @@ internal open class RunningState(
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return when {
-            feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED -> {
-                FailureState(campaign, feedback.error ?: "")
-            }
-
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED -> {
                 FailureState(campaign, feedback.error ?: "")
             }

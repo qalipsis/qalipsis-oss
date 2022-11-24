@@ -30,6 +30,7 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 @ExperimentalSerializationApi
 @MicronautTest(startApplication = false)
@@ -46,7 +47,7 @@ internal class MinionsApiDirectivesIntegrationTest {
         val directive: Directive = MinionsStartDirective(
             "my-campaign",
             "scenario-id",
-            listOf(MinionStartDefinition("1", 1))
+            Instant.now()
         )
         val serialized = protobuf.encodeToByteArray(directive)
         val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)
