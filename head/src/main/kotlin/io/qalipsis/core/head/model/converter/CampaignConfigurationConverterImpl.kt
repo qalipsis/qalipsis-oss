@@ -51,65 +51,74 @@ internal class CampaignConfigurationConverterImpl(
 
     private fun convertScenarioRequestsToConfigurations(scenarios: Map<ScenarioName, ScenarioRequest>): Map<ScenarioName, ScenarioConfiguration> {
         return scenarios.mapValues {
+            val (config, minionsCount) = defineExecutionProfileConfiguration(it.value)
             ScenarioConfiguration(
-                minionsCount = it.value.minionsCount,
-                executionProfileConfiguration = defineExecutionProfileConfiguration(it.value),
+                minionsCount = minionsCount,
+                executionProfileConfiguration = config,
                 zones = it.value.zones?.also(this::checkAndUpdateZone).orEmpty()
             )
         }
     }
 
-    private fun checkAndUpdateZone(zones: Map<String, Int>){
+    private fun checkAndUpdateZone(zones: Map<String, Int>) {
         //We check if all the keys provide for zones are supported
-        require(headConfiguration.zones.map { it.key }.containsAll(zones.keys)){
+        require(headConfiguration.zones.map { it.key }.containsAll(zones.keys)) {
             val unknownZones = zones.keys.filterNot { headConfiguration.zones.map { zone -> zone.key }.contains(it) }
             "Some requested zones do not exist: ${unknownZones.joinToString()}"
         }
 
-        require(zones.isEmpty() || zones.entries.sumOf { it.value } == 100){
+        require(zones.isEmpty() || zones.entries.sumOf { it.value } == 100) {
             "The distribution of the load across the different zones should equal to 100%"
         }
     }
 
-    private fun defineExecutionProfileConfiguration(scenario: ScenarioRequest): ExecutionProfileConfiguration {
+    /**
+     * Converts the requested execution profile to the internal format and the total minions count for the scenario.
+     */
+    private fun defineExecutionProfileConfiguration(
+        scenario: ScenarioRequest
+    ): Pair<ExecutionProfileConfiguration, Int> {
         return when (val config = scenario.executionProfile) {
             is RegularExternalExecutionProfileConfiguration -> RegularExecutionProfileConfiguration(
                 config.periodInMs,
                 config.minionsCountProLaunch
-            )
+            ) to scenario.minionsCount
 
             is AcceleratingExternalExecutionProfileConfiguration -> AcceleratingExecutionProfileConfiguration(
                 config.startPeriodMs,
                 config.accelerator,
                 config.minPeriodMs,
                 config.minionsCountProLaunch
-            )
+            ) to scenario.minionsCount
 
             is ProgressiveVolumeExternalExecutionProfileConfiguration -> ProgressiveVolumeExecutionProfileConfiguration(
                 config.periodMs,
                 config.minionsCountProLaunchAtStart,
                 config.multiplier,
                 config.maxMinionsCountProLaunch
-            )
+            ) to scenario.minionsCount
 
-            is StageExternalExecutionProfileConfiguration -> StageExecutionProfileConfiguration(
-                config.completion,
-                config.stages.map {
-                    Stage(
-                        minionsCount = it.minionsCount,
-                        rampUpDurationMs = it.rampUpDurationMs,
-                        totalDurationMs = it.totalDurationMs,
-                        resolutionMs = it.resolutionMs
-                    )
-                }
-            )
+            is StageExternalExecutionProfileConfiguration -> {
+                val totalMinionsCount = config.stages.sumOf { it.minionsCount }
+                StageExecutionProfileConfiguration(
+                    config.completion,
+                    config.stages.map {
+                        Stage(
+                            minionsCount = it.minionsCount,
+                            rampUpDurationMs = it.rampUpDurationMs,
+                            totalDurationMs = it.totalDurationMs,
+                            resolutionMs = it.resolutionMs
+                        )
+                    }
+                ) to totalMinionsCount
+            }
 
             is TimeFrameExternalExecutionProfileConfiguration -> TimeFrameExecutionProfileConfiguration(
                 config.periodInMs,
                 config.timeFrameInMs
-            )
+            ) to scenario.minionsCount
 
-            else -> DefaultExecutionProfileConfiguration()
+            else -> DefaultExecutionProfileConfiguration() to scenario.minionsCount
         }
     }
 }

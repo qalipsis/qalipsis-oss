@@ -98,7 +98,10 @@ internal data class CampaignConfiguration(
     title = "Details for the scenario configuration to start a new campaign into QALIPSIS"
 )
 internal data class ScenarioRequest(
-    @field:Schema(description = "Counts of minions that will be assigned to the scenario", example = "100")
+    @field:Schema(
+        description = "Counts of minions that will be assigned to the scenario, when not defined by the execution profile",
+        example = "100"
+    )
     @field:Positive
     @field:Max(1000000)
     val minionsCount: Int,
