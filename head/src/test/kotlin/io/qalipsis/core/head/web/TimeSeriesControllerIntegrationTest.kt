@@ -155,7 +155,7 @@ internal class TimeSeriesControllerIntegrationTest {
                     campaignsReferences = setOf("camp-1", "camp2"),
                     scenariosNames = setOf("scen-1", "scen-2"),
                     from = start,
-                    until = start.plusSeconds(15),
+                    until = end,
                     aggregationTimeframe = Duration.ofSeconds(10)
                 )
             )
