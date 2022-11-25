@@ -36,7 +36,7 @@ import io.qalipsis.api.scenario.StepSpecificationRegistry
  * @author Eric Jessé
  */
 abstract class AbstractScenarioSpecificationWrapper(scenario: ScenarioSpecification) : StepSpecificationRegistry,
-    ScenarioSpecification {
+    ScenarioSpecification by scenario {
 
     private val wrappedScenario = scenario as StepSpecificationRegistry
 

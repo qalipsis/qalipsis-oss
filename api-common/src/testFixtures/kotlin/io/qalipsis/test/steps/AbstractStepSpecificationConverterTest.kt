@@ -16,12 +16,12 @@
 
 package io.qalipsis.test.steps
 
-import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 abstract class AbstractStepSpecificationConverterTest<T : StepSpecificationConverter<*>> {
 
     @RelaxedMockK
-    lateinit var meterRegistry: MeterRegistry
+    lateinit var meterRegistry: CampaignMeterRegistry
 
     @RelaxedMockK
     lateinit var eventsLogger: EventsLogger

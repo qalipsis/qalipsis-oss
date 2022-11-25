@@ -38,6 +38,8 @@ interface Minion {
 
     val scenarioName: ScenarioName
 
+    val isSingleton: Boolean
+
     fun onComplete(block: suspend (() -> Unit))
 
     /**
