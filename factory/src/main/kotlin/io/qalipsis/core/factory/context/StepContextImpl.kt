@@ -214,7 +214,7 @@ internal class StepContextImpl<IN, OUT>(
     }
 
     override fun toString(): String {
-        return "StepContext(campaignKey='$campaignKey', minionId='$minionId', scenarioName='$scenarioName', parentStepName=$previousStepName, stepName='$stepName')"
+        return "StepContextImpl(campaignKey='$campaignKey', minionId='$minionId', scenarioName='$scenarioName', parentStepName=$previousStepName, stepName='$stepName', isTail='$isTail', iteration='$stepIterationIndex')"
     }
 
 }

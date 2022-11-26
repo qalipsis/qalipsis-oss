@@ -37,7 +37,6 @@ import io.qalipsis.api.executionprofile.StageExecutionProfile
 import io.qalipsis.api.executionprofile.TimeFrameExecutionProfile
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -73,7 +72,6 @@ internal class FactoryCampaignManagerImpl(
     private val factoryChannel: FactoryChannel,
     private val sharedStateRegistry: SharedStateRegistry,
     private val contextConsumer: Optional<ContextConsumer>,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
     @Property(name = "factory.graceful-shutdown.minion", defaultValue = "1s")
     private val minionGracefulShutdown: Duration = Duration.ofSeconds(1),
@@ -173,14 +171,11 @@ internal class FactoryCampaignManagerImpl(
     @LogInput(Level.DEBUG)
     override suspend fun warmUpCampaignScenario(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         if (isLocallyExecuted(campaignKey, scenarioName)) {
-            log.debug { "Preloading the starting schedule plan for the campaign $campaignKey on scenario $scenarioName" }
+            log.debug { "Loading the starting schedule plan for the campaign $campaignKey on scenario $scenarioName into memory" }
             minionAssignmentKeeper.readSchedulePlan(campaignKey, scenarioName)
 
             log.info { "Starting campaign $campaignKey on scenario $scenarioName" }
             scenarioRegistry[scenarioName]!!.start(campaignKey)
-
-            log.debug { "Starting the singletons for the campaign $campaignKey on scenario $scenarioName" }
-            minionsKeeper.startSingletons(scenarioName)
 
             if (contextConsumer.isPresent) {
                 tryAndLogOrNull(log) {
@@ -254,12 +249,6 @@ internal class FactoryCampaignManagerImpl(
                 minionsKeeper.restartMinion(minionId)
             } else {
                 minionsKeeper.shutdownMinion(minionId)
-                if (minion.isSingleton) {
-                    log.debug { "The singleton minion $minionId on the scenario $scenarioName is completed" }
-                } else {
-                    log.trace { "The minion $minionId on the scenario $scenarioName is completed" }
-                    reportLiveStateRegistry.recordCompletedMinion(campaignKey, scenarioName)
-                }
                 // FIXME Generates CompleteMinionFeedbacks for several minions (based upon elapsed time and/or count), otherwise it makes the system overloaded.
                 /* factoryChannel.publishFeedback(
                      CompleteMinionFeedback(

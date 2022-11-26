@@ -43,7 +43,6 @@ import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfileIterator
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.executionprofile.RegularExecutionProfile
-import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -108,9 +107,6 @@ internal class FactoryCampaignManagerImplTest {
 
     @RelaxedMockK
     private lateinit var campaign: Campaign
-
-    @RelaxedMockK
-    private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @RelaxedMockK
     private lateinit var contextConsumerOptional: Optional<ContextConsumer>
@@ -206,7 +202,6 @@ internal class FactoryCampaignManagerImplTest {
         factoryChannel,
         sharedStateRegistry,
         Optional.of(contextConsumer),
-        reportLiveStateRegistry,
         this
     )
 
@@ -262,7 +257,6 @@ internal class FactoryCampaignManagerImplTest {
             minionAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             scenarioRegistry["my-scenario"]
             scenario.start("my-campaign")
-            minionsKeeper.startSingletons("my-scenario")
             contextConsumer.start()
         }
         confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
@@ -647,8 +641,7 @@ internal class FactoryCampaignManagerImplTest {
                 factoryChannel,
                 executionProfile,
                 minionAssignmentKeeper,
-                minionsKeeper,
-                reportLiveStateRegistry
+                minionsKeeper
             )
         }
 
@@ -695,14 +688,12 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
                 minionsKeeper.shutdownMinion("my-minion")
-                reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario", 1)
             }
             confirmVerified(
                 factoryChannel,
                 executionProfile,
                 minionAssignmentKeeper,
-                minionsKeeper,
-                reportLiveStateRegistry
+                minionsKeeper
             )
         }
 
@@ -795,7 +786,6 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
                 minionsKeeper.shutdownMinion("my-minion")
-                reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario", 1)
             }
             confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
         }
@@ -843,7 +833,6 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
                 minionsKeeper.shutdownMinion("my-minion")
-                reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario", 1)
                 factoryChannel.publishFeedback(
                     EndOfCampaignScenarioFeedback(
                         "my-campaign",
@@ -856,8 +845,7 @@ internal class FactoryCampaignManagerImplTest {
                 factoryChannel,
                 executionProfile,
                 minionAssignmentKeeper,
-                minionsKeeper,
-                reportLiveStateRegistry
+                minionsKeeper
             )
         }
 
@@ -899,7 +887,6 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
                 minionsKeeper.shutdownMinion("my-minion")
-                reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario", 1)
                 factoryChannel.publishFeedback(
                     EndOfCampaignScenarioFeedback(
                         "my-campaign",
@@ -970,7 +957,6 @@ internal class FactoryCampaignManagerImplTest {
                 factoryChannel,
                 sharedStateRegistry,
                 Optional.of(contextConsumer),
-                reportLiveStateRegistry,
                 this,
                 minionGracefulShutdown = Duration.ofMillis(5)
             )
@@ -1049,7 +1035,6 @@ internal class FactoryCampaignManagerImplTest {
             factoryChannel,
             sharedStateRegistry,
             Optional.of(contextConsumer),
-            reportLiveStateRegistry,
             this,
             scenarioGracefulShutdown = Duration.ofMillis(1)
         )
@@ -1085,7 +1070,6 @@ internal class FactoryCampaignManagerImplTest {
             factoryChannel,
             sharedStateRegistry,
             Optional.of(contextConsumer),
-            reportLiveStateRegistry,
             this
         )
 

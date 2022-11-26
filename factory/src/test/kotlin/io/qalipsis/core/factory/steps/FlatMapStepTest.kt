@@ -19,23 +19,30 @@
 
 package io.qalipsis.core.factory.steps
 
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * @author Eric Jessé
  */
 internal class FlatMapStepTest {
 
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
+
     @Test
     @Timeout(1)
-    fun `should convert array with default step`() = runBlockingTest {
+    fun `should convert array with default step`() = testCoroutineDispatcher.runTest {
         val step = FlatMapStep<Array<Int>, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Array<Int>, Int>(
             input = IntArray(10) { it }.toTypedArray(), outputChannel = Channel(Channel.UNLIMITED)
@@ -53,7 +60,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun `should convert collection with default step`() = runBlockingTest {
+    fun `should convert collection with default step`() = testCoroutineDispatcher.runTest {
         val step = FlatMapStep<Collection<Int>, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Collection<Int>, Int>(
             input = IntArray(10) { it }.toList(), outputChannel = Channel(Channel.UNLIMITED)
@@ -71,7 +78,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun `should convert map with default step`() = runBlockingTest {
+    fun `should convert map with default step`() = testCoroutineDispatcher.runTest {
         val step = FlatMapStep<Map<Int, String>, Pair<Int, String>>("", null)
         val ctx = StepTestHelper.createStepContext<Map<Int, String>, Pair<Int, String>>(
             input = mapOf(1 to "1", 2 to "2", 3 to "3"), outputChannel = Channel(Channel.UNLIMITED)
@@ -89,7 +96,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun `should convert null to empty with default step`() = runBlockingTest {
+    fun `should convert null to empty with default step`() = testCoroutineDispatcher.runTest {
         val step = FlatMapStep<Collection<Int>?, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Collection<Int>?, Int>(outputChannel = Channel(Channel.UNLIMITED))
 
@@ -106,7 +113,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun `should simply forward non iterable with default step`() = runBlockingTest {
+    fun `should simply forward non iterable with default step`() = testCoroutineDispatcher.runTest {
         val step = FlatMapStep<Int, Int>("", null)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1, outputChannel = Channel(Channel.UNLIMITED))
 
@@ -123,7 +130,7 @@ internal class FlatMapStepTest {
 
     @Test
     @Timeout(1)
-    fun `should convert input to sequence`() = runBlockingTest {
+    fun `should convert input to sequence`() = testCoroutineDispatcher.runTest {
         val step = FlatMapStep<Int, Int>("", null) { IntArray(10) { it }.asFlow() }
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1, outputChannel = Channel(Channel.UNLIMITED))
 
@@ -134,5 +141,28 @@ internal class FlatMapStepTest {
         ctx.output.close()
         (ctx.output as Channel).consumeAsFlow().collect { record -> result.add(record.value) }
         Assertions.assertEquals(result, IntArray(10) { it }.toList())
+    }
+
+    @Test
+    @Timeout(1)
+    fun `only the very latest record should receive the tail flag enabled`() = testCoroutineDispatcher.runTest {
+        val step = FlatMapStep<Collection<Int>, Int>("", null)
+        val ctx = StepTestHelper.createStepContext<Collection<Int>, Int>(
+            input = IntArray(10) { it }.toList(), outputChannel = Channel(Channel.UNLIMITED)
+        ).also { it.isTail = true }
+
+        step.execute(ctx)
+        Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
+
+        val values = mutableListOf<Int?>()
+        val tailFlags = mutableListOf<Boolean>()
+        ctx.output.close()
+        (ctx.output as Channel).consumeAsFlow().collect { record ->
+            values.add(record.value)
+            tailFlags.add(record.isTail)
+        }
+
+        Assertions.assertEquals(IntArray(10) { it }.toList(), values)
+        assertThat(tailFlags).containsExactly(*((0..8).map { false }.toTypedArray() + true))
     }
 }

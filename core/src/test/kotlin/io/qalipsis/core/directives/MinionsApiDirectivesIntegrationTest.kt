@@ -47,7 +47,8 @@ internal class MinionsApiDirectivesIntegrationTest {
         val directive: Directive = MinionsStartDirective(
             "my-campaign",
             "scenario-id",
-            Instant.now()
+            Instant.now(),
+            "the-channel"
         )
         val serialized = protobuf.encodeToByteArray(directive)
         val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)

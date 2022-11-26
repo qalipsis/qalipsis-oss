@@ -35,5 +35,15 @@ annotation class LogInput(
     /**
      * Level to trace normal input messages.
      */
-    val level: Level = Level.TRACE
+    val level: Level = Level.TRACE,
+
+    /**
+     * Log the call stack.
+     */
+    val callstack: Boolean = false,
+
+    /**
+     * Level to trace the call stack.
+     */
+    val callstackLevel: Level = Level.TRACE
 )

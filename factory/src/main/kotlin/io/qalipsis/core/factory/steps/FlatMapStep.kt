@@ -21,7 +21,6 @@ package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import kotlinx.coroutines.flow.Flow
@@ -63,11 +62,21 @@ internal class FlatMapStep<I, O>(
 
     override suspend fun execute(context: StepContext<I, O>) {
         val input = context.receive()
-        block(input).collect { context.send(it) }
+        if (context.isTail) {
+            val outputValues = mutableListOf<O>()
+            block(input).collect { outputValues.add(it) }
+            if (outputValues.isNotEmpty()) {
+                // Send all the values but the latest with tail flag disabled.
+                context.isTail = false
+                outputValues.take(outputValues.size - 1).forEach {
+                    context.send(it)
+                }
+                context.isTail = true
+                context.send(outputValues.last())
+            }
+        } else {
+            block(input).collect { context.send(it) }
+        }
     }
 
-    companion object {
-        @JvmStatic
-        private val log = logger()
-    }
 }

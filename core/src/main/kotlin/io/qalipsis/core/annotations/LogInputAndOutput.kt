@@ -40,5 +40,15 @@ annotation class LogInputAndOutput(
     /**
      * Level to trace the exceptions when output has to be logged.
      */
-    val exceptionLevel: Level = Level.TRACE
+    val exceptionLevel: Level = Level.TRACE,
+
+    /**
+     * Log the call stack.
+     */
+    val callstack: Boolean = false,
+
+    /**
+     * Level to trace the call stack.
+     */
+    val callstackLevel: Level = Level.TRACE
 )

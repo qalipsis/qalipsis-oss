@@ -31,6 +31,7 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.steps.StageStep
 import java.util.concurrent.ConcurrentHashMap
 
@@ -40,7 +41,9 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 @StepConverter
-internal class StageStepSpecificationConverter : StepSpecificationConverter<StageStepSpecification<*, *>> {
+internal class StageStepSpecificationConverter(
+    private val minionsKeeper: MinionsKeeper
+) : StepSpecificationConverter<StageStepSpecification<*, *>> {
 
     private val startStepsById = ConcurrentHashMap<String, StageStep<*, *>>()
 
@@ -64,7 +67,7 @@ internal class StageStepSpecificationConverter : StepSpecificationConverter<Stag
      */
     private fun <I, O> convertGroupStartBoundary(spec: StageStepStartSpecification<I>,
                                                  retryPolicy: RetryPolicy?): StageStep<I, O> {
-        return StageStep<I, O>(spec.name, retryPolicy).also {
+        return StageStep<I, O>(spec.name, retryPolicy, minionsKeeper).also {
             startStepsById[it.name] = it
         }
     }

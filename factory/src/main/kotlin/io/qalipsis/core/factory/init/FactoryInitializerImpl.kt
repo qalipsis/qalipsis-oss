@@ -265,7 +265,7 @@ internal class FactoryInitializerImpl(
             parentStep.addNext(pipeStep)
 
             // Adds a DeadEndStep step at the end of a DAG to notify that there is nothing after.
-            val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName(), parentDag.name)
+            val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName() + "_dead-end", parentDag.name)
             parentDag.addStep(deadEndStep)
             pipeStep.addNext(deadEndStep)
         }
@@ -292,7 +292,7 @@ internal class FactoryInitializerImpl(
 
                 // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
                 val dagTransitionStep = dagTransitionStepFactory.createTransition(
-                    buildNewStepName(),
+                    buildNewStepName() + "_transition",
                     parentDag.name,
                     stepSpecification.directedAcyclicGraphName
                 )

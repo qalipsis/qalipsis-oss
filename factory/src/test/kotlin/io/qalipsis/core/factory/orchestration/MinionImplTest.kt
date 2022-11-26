@@ -246,7 +246,7 @@ internal class MinionImplTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     internal fun `should be able to execute a workflow twice without pausing before restart`() =
         testCoroutineDispatcher.runTest {
             // given

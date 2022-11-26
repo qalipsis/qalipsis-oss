@@ -32,11 +32,13 @@ import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.qalipsis.api.steps.StageStepEndSpecification
 import io.qalipsis.api.steps.StageStepSpecification
 import io.qalipsis.api.steps.StageStepStartSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.steps.StageStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
@@ -52,6 +54,9 @@ import org.junit.jupiter.api.Test
  */
 internal class StageStepStartSpecificationConverterTest :
     AbstractStepSpecificationConverterTest<StageStepSpecificationConverter>() {
+
+    @MockK
+    private lateinit var minionsKeeper: MinionsKeeper
 
     @AfterEach
     internal fun tearDown() {

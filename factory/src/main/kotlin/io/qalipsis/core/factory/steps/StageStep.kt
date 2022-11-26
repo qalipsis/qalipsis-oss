@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.factory.steps
 
+import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
@@ -29,6 +30,7 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.context.StepContextImpl
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -42,6 +44,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 internal class StageStep<I, O>(
     id: StepName,
     retryPolicy: RetryPolicy?,
+    private val minionsKeeper: MinionsKeeper
 ) : AbstractStep<I, O>(id, retryPolicy), RunnerAware {
 
     private var head: Step<I, *>? = null
@@ -119,7 +122,7 @@ internal class StageStep<I, O>(
                 }
             } else if (ctx.isExhausted) {
                 failure = true
-                log.trace { "The stage ${this.name} finished with error(s): ${ctx.errors.joinToString { it.message }}" }
+                log.trace { "The stage '${this.name}' finished with error(s): ${ctx.errors.joinToString { it.message }}" }
                 // Errors have to be forwarded.
                 ctx.errors.forEach(context::addError)
             }
@@ -135,9 +138,14 @@ internal class StageStep<I, O>(
         throw NotImplementedError()
     }
 
+    override suspend fun complete(completionContext: CompletionContext) {
+        log.trace { "Completing the stage '$name' for the minion ${completionContext.minionId}" }
+        runner.complete(minionsKeeper[completionContext.minionId], head!!, completionContext)?.join()
+        log.trace { "Stage '$name' for the minion ${completionContext.minionId} is completed" }
+    }
+
     companion object {
 
-        @JvmStatic
         private val log = logger()
     }
 }
