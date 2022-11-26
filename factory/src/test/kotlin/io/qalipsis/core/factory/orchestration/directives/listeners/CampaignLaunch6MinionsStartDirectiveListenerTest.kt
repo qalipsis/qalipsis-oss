@@ -116,6 +116,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
         // then
         coVerifyOrder {
+            minionsKeeper.startSingletons("my-scenario")
             minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
@@ -160,6 +161,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
             // then
             coVerify {
+                minionsKeeper.startSingletons("my-scenario")
                 minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
                 localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")
                 localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-3")
@@ -197,6 +199,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
         // then
         coVerify {
+            minionsKeeper.startSingletons("my-scenario")
             minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-2")

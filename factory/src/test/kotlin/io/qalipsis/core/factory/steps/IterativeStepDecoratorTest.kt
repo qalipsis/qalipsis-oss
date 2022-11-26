@@ -27,6 +27,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepContext.StepOutputRecord
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
@@ -39,6 +40,7 @@ import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.consumeEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -128,22 +130,30 @@ internal class IterativeStepDecoratorTest {
         val testEntity = TestEntity()
         val capturedContexts = mutableListOf<StepContext<*, *>>()
         val capturedInputs = mutableListOf<Any?>()
-        val decoratedStep: Step<TestEntity, Any> = relaxedMockk()
+        val decoratedStep: Step<TestEntity, Int> = relaxedMockk()
 
         val innerContextTailFlags = mutableListOf<Boolean>()
         val outerContextTailFlags = mutableListOf<Boolean>()
 
         val step = spyk(IterativeStepDecorator(10, decorated = decoratedStep))
-        val outerContext = coreStepContext<TestEntity, Any>(input = testEntity).also { it.isTail = true }
+        val outputChannel = Channel<StepOutputRecord<Int>?>(Channel.UNLIMITED)
+        val outerContext = coreStepContext(input = testEntity, outputChannel = outputChannel).also { it.isTail = true }
+        var counter = 0
         coEvery { step.executeStep(refEq(minion), refEq(decoratedStep), any()) } coAnswers {
-            val innerContext = thirdArg<StepContext<*, *>>()
+            val innerContext = thirdArg<StepContext<TestEntity, Int>>()
             innerContextTailFlags.add(innerContext.isTail)
             capturedInputs.add(innerContext.receive())
             outerContextTailFlags.add(outerContext.isTail)
+
+            // Two values are sent each for each call.
+            innerContext.send(counter++)
+            innerContext.send(counter++)
         }
 
+        // when
         step.execute(minion, outerContext)
 
+        // then
         coVerifyExactly(10) {
             step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(outerContext))
         }
@@ -153,8 +163,11 @@ internal class IterativeStepDecoratorTest {
             Assertions.assertFalse(innerContextTailFlags[it])
             Assertions.assertFalse(outerContextTailFlags[it])
         }
+        // The latest inner context has the tail flag.
         Assertions.assertTrue(innerContextTailFlags[9])
-        Assertions.assertTrue(outerContextTailFlags[9])
+        // The outer context still does not has the tail during the execution of the decorated step.
+        Assertions.assertFalse(outerContextTailFlags[9])
+        // At the end of the step, the outer context also gets the tail back.
         Assertions.assertTrue(outerContext.isTail)
 
         Assertions.assertFalse(outerContext.isExhausted)
@@ -164,10 +177,18 @@ internal class IterativeStepDecoratorTest {
             Assertions.assertSame(testEntity, it)
         }
         Assertions.assertFalse((outerContext.output as Channel).isClosedForReceive)
+
         // The same input is always reused.
         capturedContexts.forEach {
             Assertions.assertSame(testEntity, it.receive())
         }
+
+        // Close the output channel to read it all.
+        outputChannel.close()
+        // Verifies that only the very latest record is marked with "isTail".
+        val outputTails = mutableListOf<Boolean>()
+        outputChannel.consumeEach { outputTails.add(it!!.isTail) }
+        assertThat(outputTails).containsExactly(*((0..18).map { false }.toTypedArray() + true))
     }
 
     @Test

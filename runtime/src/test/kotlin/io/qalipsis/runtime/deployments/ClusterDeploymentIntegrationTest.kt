@@ -43,14 +43,13 @@ import java.util.concurrent.TimeUnit
 internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test
-    @Timeout(40)
     internal fun `should create a cluster and autostart the campaign, then shutdown the cluster`() {
         // given
         val headConfig = arrayOf(
             "head",
             "--autostart",
             "-c", "campaign.required-factories=2",
-            "-c", "campaign.start-offset=2s",
+            "-c", "campaign.start-offset=200ms",
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
@@ -85,7 +84,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         // then
         try {
-            val headCode = head.get(30, TimeUnit.SECONDS)
+            val headCode = head.get(45, TimeUnit.SECONDS)
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
@@ -98,14 +97,13 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
     }
 
     @Test
-    @Timeout(40)
     internal fun `should create a cluster and autostart the campaign with singletons and joins, then shutdown the cluster`() {
         // given
         val headConfig = arrayOf(
             "head",
             "--autostart",
             "-c", "campaign.required-factories=2",
-            "-c", "campaign.start-offset=2s",
+            "-c", "campaign.start-offset=200ms",
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
@@ -140,7 +138,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         // then
         try {
-            val headCode = head.get(30, TimeUnit.SECONDS)
+            val headCode = head.get(45, TimeUnit.SECONDS)
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
@@ -153,13 +151,13 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
     }
 
     @Test
-    @Timeout(40)
     internal fun `should create a cluster and autostart the campaign with stages and repeated minions, then shutdown the cluster`() {
         // given
         val headConfig = arrayOf(
             "head",
             "--autostart",
             "-c", "campaign.required-factories=2",
+            "-c", "campaign.start-offset=200ms",
             "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
             "-c", "report.export.console.enabled=true",
             "-c", "report.export.junit.enabled=false",
@@ -193,7 +191,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         // then
         try {
-            val headCode = head.get(30, TimeUnit.SECONDS)
+            val headCode = head.get(45, TimeUnit.SECONDS)
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)

@@ -34,6 +34,7 @@ import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.mockk
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepStartStopContext
@@ -65,7 +66,7 @@ internal class StageStepTest {
     @Test
     internal fun `should first add a head, then a next`() {
         // given
-        val stageStep = StageStep<Double, String>("", null)
+        val stageStep = StageStep<Double, String>("", null, mockk())
         val tailStep: Step<Double, String> = relaxedMockk()
         val stepAfter1: Step<String, Double> = relaxedMockk()
         val stepAfter2: Step<String, Unit> = relaxedMockk()
@@ -124,7 +125,7 @@ internal class StageStepTest {
             every { retryPolicy } returns null
         }
 
-        val step = StageStep<Double, String>("", null)
+        val step = StageStep<Double, String>("", null, mockk())
         step.addNext(headStep)
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
@@ -168,7 +169,7 @@ internal class StageStepTest {
         val headStep = PipeStep<Int>("")
         headStep.addNext(secondStep)
 
-        val step = StageStep<Int, String>("", null)
+        val step = StageStep<Int, String>("", null, mockk())
         step.addNext(headStep)
 
         val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
@@ -217,7 +218,7 @@ internal class StageStepTest {
             val headStep = PipeStep<Int>("")
             headStep.addNext(secondStep)
 
-            val step = StageStep<Int, String>("", null)
+            val step = StageStep<Int, String>("", null, mockk())
             step.addNext(headStep)
 
             val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
@@ -256,7 +257,7 @@ internal class StageStepTest {
         val head = relaxedMockk<Step<*, *>> {
             every { next } returns listOf(step2, step3)
         }
-        val stageStep = StageStep<Int, String>("", null)
+        val stageStep = StageStep<Int, String>("", null, mockk())
         stageStep.addNext(head)
 
         // when
@@ -282,7 +283,7 @@ internal class StageStepTest {
         val head = relaxedMockk<Step<*, *>> {
             every { next } returns listOf(step2, step3)
         }
-        val stageStep = StageStep<Int, String>("", null)
+        val stageStep = StageStep<Int, String>("", null, mockk())
         stageStep.addNext(head)
         val startStopContext = relaxedMockk<StepStartStopContext>()
 
@@ -309,7 +310,7 @@ internal class StageStepTest {
         val head = relaxedMockk<Step<*, *>> {
             every { next } returns listOf(step2, step3)
         }
-        val stageStep = StageStep<Int, String>("", null)
+        val stageStep = StageStep<Int, String>("", null, mockk())
         stageStep.addNext(head)
         val startStopContext = relaxedMockk<StepStartStopContext>()
 
@@ -336,7 +337,7 @@ internal class StageStepTest {
         val head = relaxedMockk<Step<*, *>> {
             every { next } returns listOf(step2, step3)
         }
-        val stageStep = StageStep<Int, String>("", null)
+        val stageStep = StageStep<Int, String>("", null, mockk())
         stageStep.addNext(head)
 
         // when

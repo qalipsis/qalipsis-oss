@@ -202,7 +202,7 @@ internal class RunnerImpl(
         stepContext: StepContext<*, *>,
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ) {
-        log.trace { "Executing step with context $stepContext" }
+        log.trace { "Executing step ${step.name} with context $stepContext" }
         var latch: Latch? = null
         if (step.next.isEmpty() && completionConsumer != null) {
             // If the step is the latest one of the chain and a completion operation is provided, the output channel
@@ -290,6 +290,7 @@ internal class RunnerImpl(
 
             // And the premature completion of execution is propagated.
             if (stepContext.isTail) {
+                log.trace { "Propagating completion for minion ${stepContext.minionId} from context $stepContext" }
                 propagatePrematureCompletion(minionScope, stepContext.equivalentCompletionContext, nextSteps, minion)
             }
         }
@@ -375,6 +376,7 @@ internal class RunnerImpl(
         // Once the execution is done - successfully or not - and the tail is received, we notify the step
         // with the completion of the minion workflow at its level.
         if (stepContext.isTail) {
+            log.trace { "Completing the step ${step.name} for minion ${stepContext.minionId} from context $stepContext" }
             step.complete(stepContext.equivalentCompletionContext)
         }
 

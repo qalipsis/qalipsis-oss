@@ -59,6 +59,9 @@ internal class CampaignLaunch6MinionsStartDirectiveListener(
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsStartDirective) {
         try {
+            log.debug { "Starting the singletons for the campaign ${directive.campaignKey} on scenario ${directive.scenarioName}" }
+            minionsKeeper.startSingletons(directive.scenarioName)
+
             val scheduleOfLocalRootedMinions =
                 minionsAssignmentKeeper.readSchedulePlan(directive.campaignKey, directive.scenarioName)
                     .mapValues { (_, minionIds) ->

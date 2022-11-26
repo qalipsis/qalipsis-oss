@@ -55,6 +55,7 @@ import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
@@ -602,6 +603,7 @@ internal class MinionsKeeperImplTest {
             every { id } returns "my-minion"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
+            every { isSingleton } returns true
         }
         minions["my-minion"] = minion
         val rootDagsOfMinions =
@@ -632,6 +634,7 @@ internal class MinionsKeeperImplTest {
                     "interrupt" to "false"
                 )
             )
+            minion.isSingleton
             minion.stop(false)
             eventsLogger.debug(
                 "minion.completion.done",
@@ -647,7 +650,7 @@ internal class MinionsKeeperImplTest {
         assertThat(rootDagsOfMinions["my-minion"]).isNull()
         assertThat(dagIdsBySingletonMinionId["my-minion"]).isNull()
         assertThat(singletonMinionsByDagId["my-minion", "my-dag"]).isNull()
-        confirmVerified(minion, runner, eventsLogger)
+        confirmVerified(minion, runner, eventsLogger, reportLiveStateRegistry)
     }
 
     @Test
@@ -667,6 +670,7 @@ internal class MinionsKeeperImplTest {
             every { id } returns "my-minion"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
+            every { isSingleton } returns false
             coEvery { stop(false) } throws theException
         }
         minions["my-minion"] = minion
@@ -692,6 +696,8 @@ internal class MinionsKeeperImplTest {
                     "interrupt" to "false"
                 )
             )
+            minion.isSingleton
+            reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario", 1)
             minion.stop(false)
             eventsLogger.debug(
                 "minion.completion.failed",
@@ -706,7 +712,7 @@ internal class MinionsKeeperImplTest {
             )
         }
         assertThat(rootDagsOfMinions["my-minion"]).isNull()
-        confirmVerified(minion, runner, eventsLogger)
+        confirmVerified(minion, runner, eventsLogger, reportLiveStateRegistry)
     }
 
     @Test
@@ -743,21 +749,24 @@ internal class MinionsKeeperImplTest {
         )
         val minions = minionsKeeper.getProperty<MutableMap<MinionId, MinionImpl>>("minions")
         val theException = RuntimeException()
-        val minion1 = relaxedMockk<MinionImpl> {
+        val minion1 = relaxedMockk<MinionImpl>("minion-1") {
             every { id } returns "my-minion1"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
+            every { isSingleton } returns false
             coEvery { stop(true) } throws theException
         }
-        val minion2 = relaxedMockk<MinionImpl> {
+        val minion2 = relaxedMockk<MinionImpl>("minion-2") {
             every { id } returns "my-minion2"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
+            every { isSingleton } returns true
         }
-        val minion3 = relaxedMockk<MinionImpl> {
+        val minion3 = relaxedMockk<MinionImpl>("minion-3") {
             every { id } returns "my-minion3"
             every { campaignKey } returns "my-campaign"
             every { scenarioName } returns "my-scenario"
+            every { isSingleton } returns false
         }
         minions["my-minion1"] = minion1
         minions["my-minion2"] = minion2
@@ -776,6 +785,9 @@ internal class MinionsKeeperImplTest {
         minionsKeeper.shutdownAll()
 
         // then
+        coVerifyExactly(2) {
+            reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario")
+        }
         coVerifyOnce {
             minion1.id
             minion1.campaignKey
@@ -790,6 +802,7 @@ internal class MinionsKeeperImplTest {
                     "interrupt" to "true"
                 )
             )
+            minion1.isSingleton
             minion1.stop(true)
             eventsLogger.debug(
                 "minion.completion.failed",
@@ -816,6 +829,7 @@ internal class MinionsKeeperImplTest {
                     "interrupt" to "true"
                 )
             )
+            minion2.isSingleton
             minion2.stop(true)
             eventsLogger.debug(
                 "minion.completion.done",
@@ -841,6 +855,7 @@ internal class MinionsKeeperImplTest {
                     "interrupt" to "true"
                 )
             )
+            minion3.isSingleton
             minion3.stop(true)
             eventsLogger.debug(
                 "minion.completion.done",

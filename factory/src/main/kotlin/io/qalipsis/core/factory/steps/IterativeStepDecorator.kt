@@ -20,6 +20,7 @@
 package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepContext.StepOutputRecord
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.retry.RetryPolicy
@@ -28,6 +29,8 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import java.time.Duration
 
@@ -63,14 +66,20 @@ internal class IterativeStepDecorator<I, O>(
 
         // Reusing the same channel for all the iterations.
         val internalInputChannel = Channel<I>(1)
+
         var remainingIterations = iterations
         var repetitionIndex = 0L
-        while (remainingIterations > 0 && !context.isExhausted) {
+        while (remainingIterations > 0) {
             log.trace { "Executing iteration $repetitionIndex for context $context" }
+
+            val internalOutputChannel = Channel<StepOutputRecord<O>>(Factory.UNLIMITED)
             val innerContext =
-                context.duplicate(inputChannel = internalInputChannel, stepIterationIndex = repetitionIndex)
+                context.duplicate(
+                    inputChannel = internalInputChannel,
+                    outputChannel = internalOutputChannel,
+                    stepIterationIndex = repetitionIndex
+                )
             innerContext.isTail = isOuterContextTail && remainingIterations == 1L
-            context.isTail = innerContext.isTail
 
             // Provides the input value again for each iteration.
             if (internalInputChannel.isEmpty) {
@@ -79,6 +88,7 @@ internal class IterativeStepDecorator<I, O>(
             try {
                 executeStep(minion, decorated, innerContext)
                 innerContext.errors.forEach(context::addError)
+                forwardOutput(context, internalOutputChannel, innerContext)
             } catch (t: Throwable) {
                 // Resets the isTail flag before leaving.
                 context.isTail = isOuterContextTail
@@ -87,6 +97,8 @@ internal class IterativeStepDecorator<I, O>(
             }
 
             if (innerContext.isExhausted) {
+                log.trace { "Stopping the iteration, because the inner step failed" }
+                remainingIterations = 0
                 // Resets the isTail flag before leaving.
                 context.isTail = isOuterContextTail
                 log.debug { "The repeated step ${decorated.name} failed." }
@@ -105,8 +117,37 @@ internal class IterativeStepDecorator<I, O>(
                 }
             }
         }
+        internalInputChannel.cancel()
         context.isTail = isOuterContextTail
         log.trace { "End of the iterations for context $context" }
+    }
+
+    private suspend fun forwardOutput(
+        outerContext: StepContext<I, O>,
+        internalOutputChannel: Channel<StepOutputRecord<O>>,
+        innerContext: StepContext<I, O>
+    ) {
+        internalOutputChannel.close() // Close for send, not for receive.
+        if (innerContext.generatedOutput) {
+            if (innerContext.isTail) {
+                // When dealing with the tails, that's an exception to handle.
+                var isTail = false
+                val values = mutableListOf<O>()
+                internalOutputChannel.consumeEach {
+                    values += it.value
+                    isTail = isTail || it.isTail
+                }
+                values.forEachIndexed { index, o ->
+                    if (isTail && index == values.size - 1) {
+                        outerContext.isTail = true
+                    }
+                    outerContext.send(o)
+                }
+            } else {
+                internalOutputChannel.consumeEach { outerContext.send(it.value) }
+            }
+        }
+        internalOutputChannel.cancel()
     }
 
     override suspend fun execute(context: StepContext<I, O>) {

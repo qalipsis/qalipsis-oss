@@ -41,7 +41,7 @@ object DeploymentTestScenario {
     @Scenario("deployment-test")
     fun deploymentTest() {
         scenario {
-            minionsCount = 3_000
+            minionsCount = 10_000
             profile { regular(1000, 1000) }
         }.start()
             .returns(Unit)

@@ -58,8 +58,8 @@ internal class CampaignConverterImpl(
             hardTimeout = campaignEntity.hardTimeout,
             start = campaignEntity.start,
             end = campaignEntity.end,
-            status = campaignEntity.result ?: when {
-                campaignEntity.start == null -> ExecutionStatus.QUEUED
+            status = campaignEntity.result ?: when (campaignEntity.start) {
+                null -> ExecutionStatus.QUEUED
                 else -> ExecutionStatus.IN_PROGRESS
             },
             configurerName = userRepository.findUsernameById(campaignEntity.configurer),

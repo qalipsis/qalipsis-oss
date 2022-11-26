@@ -22,6 +22,8 @@ package io.qalipsis.core.interceptors
 import io.micronaut.aop.InterceptorBean
 import io.micronaut.aop.MethodInterceptor
 import io.micronaut.aop.MethodInvocationContext
+import io.micronaut.context.annotation.Requires
+import io.micronaut.core.util.StringUtils
 import io.micronaut.inject.ExecutableMethod
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -31,6 +33,7 @@ import mu.KotlinLogging
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.Continuation
 
 /**
  * Interceptor for the logging annotations.
@@ -38,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 @InterceptorBean(LogInput::class, LogOutput::class, LogInputAndOutput::class)
+@Requires(property = "logging.annotations.enabled", value = StringUtils.TRUE, defaultValue = StringUtils.TRUE)
 internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
 
     private val loggers = ConcurrentHashMap<Class<*>, KLogger>()
@@ -68,12 +72,31 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
 
         contextLevels?.input?.let { logger ->
             logger.invoke {
-                context.parameters.entries
-                    .map { e -> "${e.key}=${e.value.value}" }
-                    .joinToString(
+                context.parameters.entries.asSequence()
+                    .filterNot { it.value.value is Continuation<*> }.joinToString(
                         separator = ", ",
                         prefix = "Method ${context.executableMethod.name} - INPUT: "
-                    )
+                    ) { e -> "${e.key}=${e.value.value}" }
+            }
+        }
+
+        contextLevels?.callstack?.let { logger ->
+            logger.invoke {
+                try {
+                    throw RuntimeException()
+                    ""
+                } catch (e: Exception) {
+                    e.stackTrace.asSequence()
+                        .dropWhile {
+                            it.className != "${context.executableMethod.declaringType}"
+                                    && it.methodName != context.executableMethod.name
+                        }
+                        .drop(2) // Drop the call of the Micronaut enhanced, and the one of the context argument.
+                        .joinToString(
+                            separator = "\n\t\t",
+                            prefix = "Method ${context.executableMethod.name} - CALL STACK: \n\t\t"
+                        ) { s -> "$s" }
+                }
             }
         }
 
@@ -104,9 +127,12 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
             context.getAnnotation(LogInput::class.java) ?: context.getAnnotation(LogInputAndOutput::class.java)
         val logOutput =
             context.getAnnotation(LogOutput::class.java) ?: context.getAnnotation(LogInputAndOutput::class.java)
-        val inputLevel = logInput?.enumValue("level", Level::class.java)?.orElse(null)
-        val outputLevel = logOutput?.enumValue("level", Level::class.java)?.orElse(null)
-        val exceptionLevel = logOutput?.enumValue("exceptionLevel", Level::class.java)?.orElse(null)?.let {
+        val inputLevel = logInput?.enumValue("level", Level::class.java)?.orElse(Level.TRACE)
+        val logCall = logInput?.booleanValue("callstack")?.orElse(false) ?: false
+        val logCallLevel =
+            if (logCall) logInput?.enumValue("callstackLevel", Level::class.java)?.orElse(Level.TRACE) else null
+        val outputLevel = logOutput?.enumValue("level", Level::class.java)?.orElse(Level.TRACE)
+        val exceptionLevel = logOutput?.enumValue("exceptionLevel", Level::class.java)?.orElse(Level.TRACE)?.let {
             if (it.toInt() < outputLevel!!.toInt()) {
                 outputLevel
             } else {
@@ -119,9 +145,10 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
                 KotlinLogging.logger(LoggerFactory.getLogger(type))
             }
             LoggingContext(
-                inputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
-                outputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
-                exceptionLevel?.let { level ->
+                input = inputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
+                callstack = logCallLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
+                output = outputLevel?.let { level -> { message -> loggingCalls[level]?.invoke(logger, message) } },
+                exception = exceptionLevel?.let { level ->
                     { t, message ->
                         exceptionLoggingCalls[level]?.invoke(logger, t, message)
                     }
@@ -134,8 +161,14 @@ internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
 
     private class LoggingContext(
         val input: ((() -> String) -> Unit)?,
+        val callstack: ((() -> String) -> Unit)?,
         val output: ((() -> String) -> Unit)?,
         val exception: ((Throwable, () -> String) -> Unit)?,
     )
+
+
+    private companion object {
+        val loggerClass: String = LoggingInterceptor::class.qualifiedName!!
+    }
 
 }

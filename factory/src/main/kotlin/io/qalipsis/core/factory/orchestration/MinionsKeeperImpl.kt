@@ -74,7 +74,7 @@ internal class MinionsKeeperImpl(
 
     override fun contains(minionId: MinionId) = minions.containsKey(minionId)
 
-    override fun get(minionId: MinionId) = minions[minionId]!!
+    override fun get(minionId: MinionId) = requireNotNull(minions[minionId]) { "The minion $minionId does not exist" }
 
     override fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion {
         return requireNotNull(singletonMinionsByDagId[scenarioName, dagId]) { "the DAG $dagId is not a singleton DAG in the scenario $scenarioName" }
@@ -119,18 +119,6 @@ internal class MinionsKeeperImpl(
                 idleSingletonsMinions.computeIfAbsent(scenarioName) { concurrentSet() } += minion
                 singletonMinionsByDagId.put(scenarioName, dagId, minion)
                 dagIdsBySingletonMinionId[minionId] = scenarioName to dagId
-                minion.onComplete {
-                    log.trace { "Removing the singleton minion from the table of DAGs by minion, if present" }
-                    singletonMinionsByDagId.remove(scenarioName, dagId)
-                    log.trace { "Removing the singleton minion from the map of DAGs by minion, if present" }
-                    dagIdsBySingletonMinionId.remove(minionId)
-                }
-            } else {
-                // Removes the minion from the registries when complete.
-                minion.onComplete {
-                    log.trace { "Removing the minion from the minion collection" }
-                    minions.remove(minionId)
-                }
             }
 
             if (rootDag != null) {
@@ -201,7 +189,7 @@ internal class MinionsKeeperImpl(
         }
     }
 
-    @LogInput
+    @LogInput(callstack = true)
     override suspend fun shutdownMinion(minionId: MinionId, interrupt: Boolean) {
         minions.remove(minionId)?.also { minion ->
             shutdownMinion(minion, interrupt)
@@ -224,14 +212,21 @@ internal class MinionsKeeperImpl(
 
     private suspend fun shutdownMinion(minion: MinionImpl, interrupt: Boolean) {
         val minionId = minion.id
+        val campaign = minion.campaignKey
+        val scenario = minion.scenarioName
+        log.trace { "The minion $minionId on the scenario $scenario is completed" }
         val eventsTags =
             mapOf(
-                "campaign" to minion.campaignKey,
-                "scenario" to minion.scenarioName,
+                "campaign" to campaign,
+                "scenario" to scenario,
                 "minion" to minionId,
                 "interrupt" to "$interrupt"
             )
         eventsLogger.debug("minion.completion.started", tags = eventsTags)
+        if (!minion.isSingleton) {
+            reportLiveStateRegistry.recordCompletedMinion(campaign, scenario)
+        }
+
         dagIdsBySingletonMinionId.remove(minionId)
             ?.let { (scenarioName, dagId) -> singletonMinionsByDagId.remove(scenarioName, dagId) }
         rootDagsOfMinions.remove(minionId)
