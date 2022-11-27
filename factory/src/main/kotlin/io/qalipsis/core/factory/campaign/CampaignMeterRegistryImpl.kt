@@ -55,9 +55,10 @@ internal class CampaignMeterRegistryImpl(
     override suspend fun init(campaign: Campaign) {
         if (factories.isNotEmpty()) {
             // Additional tags to force to all the created meters.
-            factoryConfiguration.zone?.let { zone ->
+            factoryConfiguration.zone?.takeIf { it.isNotBlank() }?.let { zone ->
                 additionalTags += Tag.of("zone", zone)
             }
+            additionalTags += Tag.of("tenant", factoryConfiguration.tenant)
             additionalTags += Tag.of("campaign", campaign.campaignKey)
 
             val configuration = object : MeterRegistryConfiguration {
