@@ -38,6 +38,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
@@ -59,6 +60,11 @@ import java.time.ZoneId
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
 internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTest() {
+
+    override fun tearDownAll() {
+        unmockkStatic(Clock::class)
+        super.tearDownAll()
+    }
 
     @Test
     fun `should not be a completion state`() {

@@ -39,6 +39,7 @@ import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -115,4 +116,7 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     internal fun tearDown() = testDispatcherProvider.run {
         connection.sync().flushdb()
     }
+
+    @AfterAll
+    open fun tearDownAll() = Unit
 }
