@@ -25,12 +25,12 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
@@ -79,7 +79,7 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should not save two tenants with same reference`() = testDispatcherProvider.run {
         // given
         tenantRepository.save(tenantPrototype.copy())
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             tenantRepository.save(tenantPrototype.copy())
         }
     }

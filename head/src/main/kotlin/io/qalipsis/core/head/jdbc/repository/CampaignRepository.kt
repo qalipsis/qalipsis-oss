@@ -22,10 +22,10 @@ package io.qalipsis.core.head.jdbc.repository
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.data.annotation.Query
-import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.query.builder.sql.Dialect
+import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -38,7 +38,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-@JdbcRepository(dialect = Dialect.POSTGRES)
+@R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
 
@@ -69,6 +69,15 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
             (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
     suspend fun findIdByTenantAndKey(tenant: String, campaignKey: String): Long?
+
+    /**
+     * Marks the not yet started campaign with the specified name [campaignKey] as in preparation.
+     */
+    @Query(
+        """UPDATE campaign SET version = NOW(), result = 'IN_PROGRESS' WHERE key = :campaignKey AND "start" IS NULL 
+        AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun prepare(tenant: String, campaignKey: String): Int
 
     /**
      * Marks the not yet started campaign with the specified name [campaignKey] as started.

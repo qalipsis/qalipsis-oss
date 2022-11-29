@@ -214,6 +214,7 @@ internal class StandaloneCampaignManagerTest {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
+                campaignService.prepare("my-tenant", "my-campaign")
                 factoryService.lockFactories(refEq(runningCampaign), listOf("factory-1", "factory-2", "factory-3"))
                 assignmentResolver.resolveFactoriesAssignments(
                     refEq(runningCampaign),

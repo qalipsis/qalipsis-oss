@@ -28,7 +28,6 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
@@ -37,6 +36,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
@@ -101,7 +101,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should not save factories twice with the same node ID`() = testDispatcherProvider.run {
         val savedTenant = tenantRepository.save(tenantPrototype.copy())
         factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             factoryRepository.save(factoryPrototype.copy(tenantId = savedTenant.id))
         }
     }

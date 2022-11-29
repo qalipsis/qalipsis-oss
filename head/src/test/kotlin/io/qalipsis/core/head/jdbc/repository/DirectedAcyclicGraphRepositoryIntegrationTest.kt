@@ -34,7 +34,6 @@ import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
@@ -46,6 +45,7 @@ import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.PostgresqlTemplateTest
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -151,7 +151,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
 
     @Test
     internal fun `should not save selector on a missing dag`() = testDispatcherProvider.run {
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             selectorRepository.save(DirectedAcyclicGraphTagEntity(-1, "key-1", "value-1"))
         }
     }
@@ -159,7 +159,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     @Test
     internal fun `should not save dags twice with the same name`() = testDispatcherProvider.run {
         repository.save(dag.copy())
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             repository.save(dag.copy())
         }
     }
@@ -171,7 +171,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
 
         // when
         selectorRepository.save(DirectedAcyclicGraphTagEntity(saved.id, "key-1", "value-1"))
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             selectorRepository.save(DirectedAcyclicGraphTagEntity(saved.id, "key-1", "value-1"))
         }
     }

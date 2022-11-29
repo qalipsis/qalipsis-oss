@@ -14,10 +14,15 @@ logging:
     io.qalipsis.core.factory: TRACE
     io.qalipsis.core.head.campaign: TRACE
 
-datasources:
-  default:
-    url: jdbc:postgresql://localhost:15432/qalipsis
-    username: qalipsis
-    password: qalipsis
-    maximumPoolSize: 4
-    minimumIdle: 2
+datasource:
+  host: localhost
+  port: 15432
+  database: qalipsis
+  schema: qalipsis
+  username: qalipsis
+  password: qalipsis
+
+r2dbc:
+  datasources:
+    default.options.maxSize: 20
+    default.options.initialSize: 4

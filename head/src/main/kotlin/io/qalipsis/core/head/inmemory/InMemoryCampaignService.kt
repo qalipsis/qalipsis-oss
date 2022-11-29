@@ -93,9 +93,15 @@ internal class InMemoryCampaignService(
         return currentCampaign!!
     }
 
+    override suspend fun prepare(tenant: String, campaignKey: CampaignKey) {
+        updateLock.withLock {
+            currentCampaign = currentCampaign?.copy(status = IN_PROGRESS)
+        }
+    }
+
     override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
         updateLock.withLock {
-            currentCampaign = currentCampaign?.copy(start = Instant.now(), timeout = timeout, status = IN_PROGRESS)
+            currentCampaign = currentCampaign?.copy(start = Instant.now(), timeout = timeout)
         }
     }
 

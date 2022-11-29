@@ -30,11 +30,11 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.matchesPredicate
 import assertk.assertions.size
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.map
@@ -105,7 +105,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
 
     @Test
     internal fun `should not save state on non-existing factory`() = testDispatcherProvider.run {
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             factoryStateRepository.save(state.copy(factoryId = -1))
         }
     }

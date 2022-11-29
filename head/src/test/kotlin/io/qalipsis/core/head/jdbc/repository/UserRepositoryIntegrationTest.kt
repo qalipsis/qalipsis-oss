@@ -26,9 +26,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -96,7 +96,7 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should not save two users with same username`() = testDispatcherProvider.run {
         // given
         userRepository.save(userPrototype.copy())
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             userRepository.save(userPrototype.copy())
         }
     }
@@ -105,7 +105,7 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should not save users twice with the same username`() = testDispatcherProvider.run {
         userRepository.save(userPrototype.copy())
 
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             userRepository.save(userPrototype.copy())
         }
     }

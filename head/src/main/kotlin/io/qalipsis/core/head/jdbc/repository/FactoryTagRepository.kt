@@ -20,8 +20,8 @@
 package io.qalipsis.core.head.jdbc.repository
 
 import io.micronaut.context.annotation.Requires
-import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.query.builder.sql.Dialect
+import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
@@ -31,7 +31,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
  *
  * @author rklymenko
  */
-@JdbcRepository(dialect = Dialect.POSTGRES)
+@R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface FactoryTagRepository : CoroutineCrudRepository<FactoryTagEntity, Long> {
 
