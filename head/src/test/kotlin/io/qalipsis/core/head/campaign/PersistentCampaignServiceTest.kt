@@ -104,12 +104,16 @@ internal class PersistentCampaignServiceTest {
             name = "This is a campaign",
             speedFactor = 123.2,
             scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(6272),
-                "scenario-2" to ScenarioRequest(12321)
+                "scenario-1" to ScenarioRequest(1),
+                "scenario-2" to ScenarioRequest(3)
             )
         )
         val runningCampaign = relaxedMockk<RunningCampaign> {
             every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+            )
         }
         coEvery {
             campaignConfigurationConverter.convertConfiguration(
@@ -166,16 +170,16 @@ internal class PersistentCampaignServiceTest {
             timeout = Duration.ofSeconds(715),
             hardTimeout = true,
             scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(
-                    6272
-                ),
-                "scenario-2" to ScenarioRequest(
-                    12321
-                )
+                "scenario-1" to ScenarioRequest(1),
+                "scenario-2" to ScenarioRequest(3)
             )
         )
         val runningCampaign = relaxedMockk<RunningCampaign> {
             every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+            )
         }
         coEvery {
             campaignConfigurationConverter.convertConfiguration(
