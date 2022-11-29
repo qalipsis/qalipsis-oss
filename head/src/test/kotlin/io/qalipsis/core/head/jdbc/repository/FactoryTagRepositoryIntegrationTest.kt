@@ -29,10 +29,10 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -125,7 +125,7 @@ internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Test
     internal fun `should not save tag on a missing factory`() = testDispatcherProvider.run {
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             tagRepository.save(FactoryTagEntity(-1, "key-1", "value-1"))
         }
     }
@@ -138,7 +138,7 @@ internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when
         tagRepository.save(FactoryTagEntity(saved.id, "key-1", "value-1"))
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             tagRepository.save(FactoryTagEntity(saved.id, "key-1", "value-1"))
         }
     }

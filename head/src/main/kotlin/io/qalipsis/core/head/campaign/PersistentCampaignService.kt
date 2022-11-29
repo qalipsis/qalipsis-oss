@@ -26,6 +26,9 @@ import io.micronaut.data.model.Sort
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.QUEUED
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
@@ -59,6 +62,7 @@ internal class PersistentCampaignService(
     private val campaignConverter: CampaignConverter
 ) : CampaignService {
 
+    @LogInputAndOutput
     override suspend fun create(
         tenant: String,
         configurer: String,
@@ -74,7 +78,8 @@ internal class PersistentCampaignService(
                 hardTimeout = campaignConfiguration.hardTimeout ?: false,
                 speedFactor = campaignConfiguration.speedFactor,
                 configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
-                configuration = campaignConfiguration
+                configuration = campaignConfiguration,
+                result = QUEUED
             )
         )
         campaignScenarioRepository.saveAll(campaignConfiguration.scenarios.map { (scenarioName, scenario) ->
@@ -84,15 +89,23 @@ internal class PersistentCampaignService(
         return runningCampaign
     }
 
+    @LogInputAndOutput
     override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign {
         val campaign = requireNotNull(campaignRepository.findByTenantAndKey(tenant, campaignKey))
         return campaignConverter.convertToModel(campaign)
     }
 
+    @LogInputAndOutput
+    override suspend fun prepare(tenant: String, campaignKey: CampaignKey) {
+        campaignRepository.prepare(tenant, campaignKey)
+    }
+
+    @LogInput
     override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
         campaignRepository.start(tenant, campaignKey, start, timeout)
     }
 
+    @LogInput
     override suspend fun startScenario(
         tenant: String,
         campaignKey: CampaignKey,
@@ -102,15 +115,18 @@ internal class PersistentCampaignService(
         campaignScenarioRepository.start(tenant, campaignKey, scenarioName, start)
     }
 
+    @LogInput
     override suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) {
         campaignScenarioRepository.complete(tenant, campaignKey, scenarioName)
     }
 
+    @LogInput
     override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
         campaignRepository.complete(tenant, campaignKey, result)
         return retrieve(tenant, campaignKey)
     }
 
+    @LogInput
     override suspend fun search(
         tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
     ): QalipsisPage<Campaign> {
@@ -138,6 +154,7 @@ internal class PersistentCampaignService(
         )
     }
 
+    @LogInput
     override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
         campaignRepository.findByTenantAndKey(tenant, campaignKey)?.let { campaign ->
             campaignRepository.update(campaign.copy(aborter = userRepository.findIdByUsername(aborter)))

@@ -31,7 +31,6 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.query.QueryAggregationOperator
@@ -43,6 +42,7 @@ import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -250,7 +250,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             reportRepository.save(
                 ReportEntity(
                     reference = "my-report-2",
@@ -280,7 +280,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             reportRepository.save(
                 ReportEntity(
                     reference = "report-ref",
@@ -498,7 +498,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(reportRepository.findAll().count()).isEqualTo(1)
 
         // when
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             userRepository.deleteById(creator.id)
         }
 

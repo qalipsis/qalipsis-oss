@@ -258,7 +258,6 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
         }
     }
 
-
     @Test
     internal fun `should send the heartbeat`() = testDispatcherProvider.run {
         // when

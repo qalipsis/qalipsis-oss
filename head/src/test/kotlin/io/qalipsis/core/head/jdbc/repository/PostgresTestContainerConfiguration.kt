@@ -50,12 +50,12 @@ object PostgresTestContainerConfiguration {
     private const val PASSWORD = "qalipsis-pwd"
 
     fun PostgreSQLContainer<*>.testProperties(): Map<String, String> = mapOf(
-        "datasources.default.url" to "jdbc:postgresql://localhost:${firstMappedPort}/$DB_NAME",
-        "datasources.default.username" to USERNAME,
-        "datasources.default.password" to PASSWORD,
-        "datasources.default.dialect" to "POSTGRES",
-        "datasources.default.driverClassName" to "org.postgresql.Driver",
-        "datasources.default.schema-generate" to "NONE",
+        "datasource.port" to "$firstMappedPort",
+        "datasource.database" to DB_NAME,
+        "datasource.username" to USERNAME,
+        "datasource.password" to PASSWORD,
+        "r2dbc.datasources.default.options.initialSize" to "1",
+        "r2dbc.datasources.default.options.maxSize" to "4",
         "logging.level.io.micronaut.data.query" to "TRACE"
     )
 

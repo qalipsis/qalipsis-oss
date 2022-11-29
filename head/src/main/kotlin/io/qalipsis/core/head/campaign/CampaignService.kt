@@ -47,14 +47,28 @@ internal interface CampaignService {
 
     suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign
 
+    /**
+     * Marks the campaign as in preparation.
+     */
+    suspend fun prepare(tenant: String, campaignKey: CampaignKey)
+
+    /**
+     * Marks the campaign as started.
+     */
     suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?)
 
+    /**
+     * Marks the scenario as started.
+     */
     suspend fun startScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName, start: Instant)
 
+    /**
+     * Marks the scenario as completed.
+     */
     suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName)
 
     /**
-     * Marks a campaign as complete.
+     * Marks a campaign as completed.
      */
     suspend fun close(tenant: String, campaignKey: CampaignKey, result: ExecutionStatus): Campaign
 

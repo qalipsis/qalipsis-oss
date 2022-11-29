@@ -22,6 +22,8 @@ GRANT
 ALL
 ON SCHEMA qalipsis TO qalipsis_user;
 
+/*SET search_path TO qalipsis,public;*/
+
 CREATE SCHEMA qalipsis_liquibase AUTHORIZATION qalipsis_user;
 GRANT
 ALL

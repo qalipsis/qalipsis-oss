@@ -33,7 +33,6 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.query.QueryAggregationOperator
@@ -44,6 +43,7 @@ import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
@@ -175,7 +175,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             dataSeriesRepository.save(
                 DataSeriesEntity(
                     reference = "other-series",
@@ -209,7 +209,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             dataSeriesRepository.save(
                 DataSeriesEntity(
                     reference = "my-series",
@@ -360,7 +360,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(dataSeriesRepository.findAll().count()).isEqualTo(1)
 
         // when
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             userRepository.deleteById(creator.id)
         }
 
@@ -838,8 +838,23 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         dataSeriesRepository.save(dataSeriesPrototype.copy(tenantId = tenant.id, creatorId = creator.id))
 
         //when + then
-        assertThat(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant", reference = "my-series-1")).isFalse()
-        assertThat(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant", reference = "my-series")).isTrue()
-        assertThat(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = "my-tenant-1", reference = "my-series")).isFalse()
+        assertThat(
+            dataSeriesRepository.checkExistenceByTenantAndReference(
+                tenant = "my-tenant",
+                reference = "my-series-1"
+            )
+        ).isFalse()
+        assertThat(
+            dataSeriesRepository.checkExistenceByTenantAndReference(
+                tenant = "my-tenant",
+                reference = "my-series"
+            )
+        ).isTrue()
+        assertThat(
+            dataSeriesRepository.checkExistenceByTenantAndReference(
+                tenant = "my-tenant-1",
+                reference = "my-series"
+            )
+        ).isFalse()
     }
 }

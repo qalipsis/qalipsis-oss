@@ -31,13 +31,13 @@ import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.micronaut.data.exceptions.DataAccessException
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.map
@@ -105,7 +105,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Test
     internal fun `should not save scenario on not-existing factory`() = testDispatcherProvider.run {
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             repository.save(scenario.copy(factoryId = -1))
         }
     }
@@ -165,7 +165,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should not save two scenarios with the same name on the same factory`() = testDispatcherProvider.run {
         repository.save(scenario.copy())
-        assertThrows<DataAccessException> {
+        assertThrows<R2dbcDataIntegrityViolationException> {
             repository.save(scenario.copy())
         }
     }

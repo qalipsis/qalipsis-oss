@@ -136,6 +136,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         selectedScenarios: Set<@NotBlank ScenarioName>,
         scenarios: List<ScenarioSummary>
     ) {
+        campaignService.prepare(tenant, runningCampaign.key)
         log.trace { "Factories to evaluate for campaign ${runningCampaign.key}: ${factories.map(Factory::nodeId)}" }
         // Locks all the factories from a concurrent assignment resolution.
         factoryService.lockFactories(runningCampaign, factories.map(Factory::nodeId))

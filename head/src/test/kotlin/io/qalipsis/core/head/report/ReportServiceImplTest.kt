@@ -33,6 +33,7 @@ import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -524,7 +525,7 @@ internal class ReportServiceImplTest {
                     dataSeries = listOf(dataSeries[0])
                 )
             )
-            coEvery { reportDataComponentRepository.deleteByReportId(any()) } returns 0
+            coJustRun { reportDataComponentRepository.deleteByReportId(any()) }
             coEvery { reportRepository.update(any()) } returnsArgument 0
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
@@ -787,7 +788,7 @@ internal class ReportServiceImplTest {
                 dataSeries = listOf(dataSeries[1])
             )
         )
-        coEvery { reportDataComponentRepository.deleteByReportId(any()) } returns 0
+        coJustRun { reportDataComponentRepository.deleteByReportId(any()) }
         coEvery { reportRepository.update(any()) } returnsArgument 0
 
         val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(

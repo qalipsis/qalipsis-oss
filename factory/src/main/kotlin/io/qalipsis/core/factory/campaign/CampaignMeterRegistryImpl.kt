@@ -29,6 +29,8 @@ import io.micrometer.core.instrument.MeterRegistry.More
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Timer
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micronaut.context.annotation.Value
+import io.qalipsis.api.config.MetersConfig
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.MeterRegistryConfiguration
 import io.qalipsis.api.meters.MeterRegistryFactory
@@ -45,7 +47,8 @@ import java.util.function.ToDoubleFunction
 @Singleton
 internal class CampaignMeterRegistryImpl(
     private val factories: Collection<MeterRegistryFactory>,
-    private val factoryConfiguration: FactoryConfiguration
+    private val factoryConfiguration: FactoryConfiguration,
+    @Value("\${${MetersConfig.EXPORT_CONFIGURATION}.campaign-step:PT5S}") private val step: Duration
 ) : CampaignMeterRegistry, CampaignLifeCycleAware {
 
     private var meterRegistry: MeterRegistry = NoopMeterRegistry()
@@ -62,7 +65,7 @@ internal class CampaignMeterRegistryImpl(
             additionalTags += Tag.of("campaign", campaign.campaignKey)
 
             val configuration = object : MeterRegistryConfiguration {
-                override val step: Duration = Duration.ofSeconds(10)
+                override val step: Duration = this@CampaignMeterRegistryImpl.step
             }
             val meterRegistries = factories.map { it.getRegistry(configuration) }
             meterRegistry = CompositeMeterRegistry(Clock.SYSTEM, meterRegistries)

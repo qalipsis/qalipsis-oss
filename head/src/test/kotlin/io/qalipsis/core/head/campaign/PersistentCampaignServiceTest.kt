@@ -36,6 +36,7 @@ import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -43,6 +44,7 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkStatic
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
@@ -140,6 +142,7 @@ internal class PersistentCampaignServiceTest {
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameAs(campaign)
+                    prop(CampaignEntity::result).isEqualTo(QUEUED)
                 }
             })
             campaignScenarioRepository.saveAll(
@@ -205,6 +208,7 @@ internal class PersistentCampaignServiceTest {
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameAs(campaign)
+                    prop(CampaignEntity::result).isEqualTo(QUEUED)
                 }
             })
             campaignScenarioRepository.saveAll(
@@ -215,6 +219,38 @@ internal class PersistentCampaignServiceTest {
             )
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
+    }
+
+    @Test
+    internal fun `should prepare the campaign`() = testDispatcherProvider.run {
+        // given
+        coJustRun { campaignRepository.prepare(any(), any()) }
+
+        // when
+        persistentCampaignService.prepare("my-tenant", "my-campaign")
+
+        // then
+        coVerifyOnce {
+            campaignRepository.prepare("my-tenant", "my-campaign")
+        }
+        confirmVerified(campaignRepository, campaignScenarioRepository)
+    }
+
+    @Test
+    internal fun `should start the campaign`() = testDispatcherProvider.run {
+        // given
+        coJustRun { campaignRepository.start(any(), any(), any(), any()) }
+        val start = Instant.now()
+        val timeout = Instant.now().plusSeconds(243)
+
+        // when
+        persistentCampaignService.start("my-tenant", "my-campaign", start, timeout)
+
+        // then
+        coVerifyOnce {
+            campaignRepository.start("my-tenant", "my-campaign", start, timeout)
+        }
+        confirmVerified(campaignRepository, campaignScenarioRepository)
     }
 
     @Test

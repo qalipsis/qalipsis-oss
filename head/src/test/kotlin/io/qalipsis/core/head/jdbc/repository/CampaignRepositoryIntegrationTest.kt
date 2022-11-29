@@ -35,6 +35,7 @@ import assertk.assertions.prop
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
@@ -203,6 +204,61 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // then
         assertThat(campaignScenarioRepository.findAll().count()).isEqualTo(0)
         assertThat(campaignFactoryRepository.findAll().count()).isEqualTo(0)
+    }
+
+    @Test
+    internal fun `should mark the campaign as prepared`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val alreadyClosedCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "1",
+                    start = Instant.now(),
+                    tenantId = tenant.id,
+                    end = null,
+                    result = null
+                )
+            )
+        val openCampaign = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "2",
+                start = null,
+                tenantId = tenant.id,
+                end = null,
+                result = null
+            )
+        )
+        val otherOpenCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "3",
+                    name = "other-campaign",
+                    start = null,
+                    tenantId = tenant.id,
+                    end = null,
+                    result = null
+                )
+            )
+
+        // when
+        val beforeCall = Instant.now()
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
+        campaignRepository.prepare("my-tenant", "2")
+
+        // then
+        assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
+            .isDataClassEqualTo(alreadyClosedCampaign)
+        assertThat(campaignRepository.findById(otherOpenCampaign.id)).isNotNull().isDataClassEqualTo(otherOpenCampaign)
+        assertThat(campaignRepository.findById(openCampaign.id)).isNotNull().all {
+            prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::name).isEqualTo(openCampaign.name)
+            prop(CampaignEntity::start).isNull()
+            prop(CampaignEntity::timeout).isNull()
+            prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
+            prop(CampaignEntity::end).isNull()
+            prop(CampaignEntity::result).isEqualTo(IN_PROGRESS)
+        }
     }
 
     @Test
