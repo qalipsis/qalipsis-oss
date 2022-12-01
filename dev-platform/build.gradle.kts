@@ -68,7 +68,10 @@ dependencies {
         api("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinSerialization")
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
         api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinCoroutines")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinCoroutines")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutines")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9:$kotlinCoroutines")
 
         // Misc libraries.
         api("com.google.guava:guava:$guava")
