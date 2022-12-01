@@ -62,6 +62,34 @@ internal class StageExecutionProfileTest {
     }
 
     @Test
+    internal fun `should start a unique minion`() {
+        val stages = listOf(
+            Stage(
+                minionsCount = 1,
+                rampUpDurationMs = 5000,
+                totalDurationMs = 5000,
+                resolutionMs = 500
+            ),
+        )
+        val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
+
+        val iterator = executionProfile.iterator(1, 1.0)
+
+        val lines = mutableListOf<MinionsStartingLine>()
+        while (iterator.hasNext()) {
+            val next = iterator.next()
+            lines.add(next)
+        }
+
+        assertThat(lines).all {
+            hasSize(1)
+            containsExactly(
+                MinionsStartingLine(1, 0)
+            )
+        }
+    }
+
+    @Test
     internal fun `should provide constant count for each stage`() {
         val stages = listOf(
             Stage(
@@ -98,8 +126,8 @@ internal class StageExecutionProfileTest {
                 MinionsStartingLine(3, 500),
                 MinionsStartingLine(3, 500),
                 MinionsStartingLine(3, 500),
-                MinionsStartingLine(4, 1000),
-                MinionsStartingLine(4, 400),
+                MinionsStartingLine(5, 1000),
+                MinionsStartingLine(5, 400),
                 MinionsStartingLine(4, 400),
             )
         }
@@ -142,8 +170,8 @@ internal class StageExecutionProfileTest {
                 MinionsStartingLine(3, 250),
                 MinionsStartingLine(3, 250),
                 MinionsStartingLine(3, 250),
-                MinionsStartingLine(4, 500),
-                MinionsStartingLine(4, 200),
+                MinionsStartingLine(5, 500),
+                MinionsStartingLine(5, 200),
                 MinionsStartingLine(4, 200),
             )
         }
@@ -186,8 +214,8 @@ internal class StageExecutionProfileTest {
                 MinionsStartingLine(3, 500),
                 MinionsStartingLine(3, 500),
                 MinionsStartingLine(3, 500),
-                MinionsStartingLine(4, 1000),
-                MinionsStartingLine(3, 400)
+                MinionsStartingLine(5, 1000),
+                MinionsStartingLine(2, 400)
             )
         }
     }

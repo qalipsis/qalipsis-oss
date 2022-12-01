@@ -64,6 +64,12 @@ data class StageExecutionProfile(
         } else {
             // If the completion is GRACEFUL, we start the minions as long as the end of the latest stage is not reached.
             latestStageEnd > System.currentTimeMillis()
+        }.also {
+            log.trace {
+                val choice = if (it) "" else "not"
+                val end = Instant.ofEpochMilli(latestStageEnd)
+                "A minion running for $minionExecutionDuration can$choice be replayed until $end in the completion mode $completion"
+            }
         }
     }
 
@@ -86,7 +92,7 @@ data class StageExecutionProfile(
     }
 
     inner class StageExecutionProfileIterator(
-        private var remainingMinions: Int,
+        private var remainingMinionsGlobally: Int,
         private val speedFactor: Double,
         private val stages: Collection<Stage>
     ) : ExecutionProfileIterator {
@@ -96,10 +102,12 @@ data class StageExecutionProfile(
         private fun getStartingLines(): List<MinionsStartingLine> {
             var stageStartOffset = 0L
 
-            return stages.flatMap { stage ->
+            return stages.flatMapIndexed { stageIndex, stage ->
                 val linesCount = stage.rampUpDurationMs / stage.resolutionMs
-                var remainingMinionsInCurrentStage = stage.minionsCount.coerceAtMost(remainingMinions)
-                val minionsByLine = ceil((stage.minionsCount / linesCount).toDouble()).toInt()
+                var remainingMinionsInCurrentStage = stage.minionsCount.coerceAtMost(remainingMinionsGlobally)
+                log.trace { "Stage $stageIndex: $remainingMinionsInCurrentStage remaining minions" }
+                val minionsByLine = ceil((stage.minionsCount.toDouble() / linesCount)).toInt()
+                log.trace { "Stage $stageIndex: $minionsByLine minions by starting line" }
                 val maxStartingLines = ceil(remainingMinionsInCurrentStage.toDouble() / minionsByLine).toLong()
                 val delayBetweenLines = (stage.resolutionMs / speedFactor).toLong()
                 var stageStartingClockTime = 0L
@@ -107,13 +115,15 @@ data class StageExecutionProfile(
                 val stageResult = (1..linesCount.coerceAtMost(maxStartingLines))
                     .asSequence()
                     .takeWhile {
-                        remainingMinionsInCurrentStage > 0 && remainingMinions > 0
+                        remainingMinionsInCurrentStage > 0 && remainingMinionsGlobally > 0
                     }.mapIndexed { index, _ ->
+                        log.trace { "Stage $stageIndex, starting line $index: $remainingMinionsInCurrentStage remaining minions in stage, $remainingMinionsGlobally remaining minions globally" }
                         val minionsCountToStart =
                             minionsByLine.coerceAtMost(remainingMinionsInCurrentStage)
-                                .coerceAtMost(remainingMinions)
+                                .coerceAtMost(remainingMinionsGlobally)
+                        log.trace { "Stage $stageIndex, starting line $index: $minionsCountToStart minions to start" }
                         remainingMinionsInCurrentStage -= minionsCountToStart
-                        remainingMinions -= minionsCountToStart
+                        remainingMinionsGlobally -= minionsCountToStart
 
                         val nextStart = if (index == 0) stageStartOffset else delayBetweenLines
                         stageStartingClockTime += delayBetweenLines
