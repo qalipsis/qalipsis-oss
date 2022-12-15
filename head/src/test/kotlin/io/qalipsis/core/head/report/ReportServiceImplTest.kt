@@ -33,22 +33,33 @@ import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.mockk.coEvery
+import io.mockk.coExcludeRecords
 import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.spyk
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.query.QueryAggregationOperator
+import io.qalipsis.api.query.QueryClauseOperator
+import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
+import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
+import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
+import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
+import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
+import io.qalipsis.core.head.jdbc.repository.ReportFileRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
+import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataComponentType
@@ -59,19 +70,24 @@ import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.ReportTaskStatus
 import io.qalipsis.core.head.model.converter.ReportConverter
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_CAMPAIGN_KEYS_NOT_ALLOWED
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_DATA_SERIES_NOT_ALLOWED
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_DELETE_DENY
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_FETCH_DENY
 import io.qalipsis.core.head.report.ReportServiceImpl.Companion.REPORT_UPDATE_DENY
+import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.io.File
 import java.time.Instant
 
 /**
@@ -104,13 +120,19 @@ internal class ReportServiceImplTest {
     private lateinit var reportDataComponentRepository: ReportDataComponentRepository
 
     @MockK
+    private lateinit var reportTaskRepository: ReportTaskRepository
+
+    @MockK
+    private lateinit var reportFileRepository: ReportFileRepository
+
+    @MockK
     private lateinit var idGenerator: IdGenerator
 
     @RelaxedMockK
     private lateinit var reportConverter: ReportConverter
 
-    @InjectMockKs
-    private lateinit var reportServiceImpl: ReportServiceImpl
+    @MockK
+    private lateinit var reportGenerator: ReportGenerator
 
     private val dataSeries = listOf(
         DataSeriesEntity(
@@ -129,6 +151,69 @@ internal class ReportServiceImplTest {
             dataType = DataType.METERS,
             valueName = "my-meter"
         )
+    )
+    private val reportEntity = ReportEntity(
+        tenantId = 42L,
+        displayName = "current-report",
+        reference = "qoi78wizened",
+        creatorId = 4L,
+        campaignKeys = listOf("key1", "key2"),
+        campaignNamesPatterns = emptyList(),
+        scenarioNamesPatterns = emptyList(),
+        dataComponents = listOf(
+            ReportDataComponentEntity(
+                id = 1, type = DataComponentType.DIAGRAM, -1, listOf(
+                    DataSeriesEntity(
+                        reference = "data-series-1",
+                        tenantId = -1,
+                        creatorId = -1,
+                        displayName = "data-series-1",
+                        dataType = DataType.METERS,
+                        valueName = "my-value",
+                        color = "#FF0000",
+                        filters = setOf(DataSeriesFilterEntity("minionsCount", QueryClauseOperator.IS, "1000")),
+                        timeframeUnitMs = 10_000L,
+                        fieldName = "my-field",
+                        aggregationOperation = QueryAggregationOperator.AVERAGE,
+                        displayFormat = "#000.000",
+                        query = "This is the query",
+                        colorOpacity = null
+                    )
+                )
+            ),
+            ReportDataComponentEntity(
+                id = 2, type = DataComponentType.DATA_TABLE, -1, listOf(
+                    DataSeriesEntity(
+                        reference = "data-series-2",
+                        tenantId = -1,
+                        creatorId = -1,
+                        displayName = "data-series-2",
+                        dataType = DataType.EVENTS,
+                        valueName = "my-value2",
+                        color = "#FF0000",
+                        filters = setOf(DataSeriesFilterEntity("minionsCount", QueryClauseOperator.IS, "1000")),
+                        timeframeUnitMs = 10_000L,
+                        fieldName = "my-field",
+                        aggregationOperation = QueryAggregationOperator.AVERAGE,
+                        displayFormat = "#000.000",
+                        query = "This is the query",
+                        colorOpacity = null
+                    )
+                )
+            )
+        )
+    )
+    private val now: Instant = Instant.parse("2022-02-22T00:00:00.00Z")
+    private val reportEntity2: ReportEntity = reportEntity.copy(dataComponents = emptyList(), id = 7)
+    private val reportTaskEntity = ReportTaskEntity(
+        creator = "user",
+        creationTimestamp = now,
+        id = 11,
+        reportId = reportEntity2.id,
+        reference = "report-task-1",
+        tenantReference = "my-tenant",
+        status = ReportTaskStatus.PENDING,
+        updateTimestamp = now
     )
 
     @Test
@@ -159,6 +244,7 @@ internal class ReportServiceImplTest {
                 resolvedScenarioNames = listOf(),
                 dataComponents = listOf()
             )
+            val reportServiceImpl = buildReportService()
             coEvery { reportRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
@@ -234,6 +320,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should create the report by specifying all fields`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         val reportEntity = ReportEntity(
             reference = "report-ref",
             tenantId = 123L,
@@ -428,6 +515,7 @@ internal class ReportServiceImplTest {
     internal fun `should not create the report with a list of campaign keys that do not belong to the tenant`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             coEvery {
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             } returns emptySet()
@@ -476,6 +564,7 @@ internal class ReportServiceImplTest {
     internal fun `should not create the report when reports do not belong to the tenant`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns false
             coEvery {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
@@ -533,6 +622,7 @@ internal class ReportServiceImplTest {
     internal fun `should not create the report when an existing report with the same display name exists`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             coEvery { reportRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
@@ -575,6 +665,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should get the report if shared`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         val reportEntity = relaxedMockk<ReportEntity>()
         val report = relaxedMockk<Report>()
         coEvery {
@@ -617,6 +708,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should get the report if not shared but owned`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         val reportEntity = relaxedMockk<ReportEntity>()
         val report = relaxedMockk<Report>()
         coEvery {
@@ -659,6 +751,8 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should not get the report if not shared and not owned`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
+        val creatorId = 456L
         coEvery {
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
                 tenant = refEq("my-tenant"),
@@ -700,6 +794,7 @@ internal class ReportServiceImplTest {
     internal fun `should not get the report if the user do not belongs to the tenant and OR or the report reference is not found`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             coEvery {
                 reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
                     tenant = refEq("my-tenant"),
@@ -741,6 +836,7 @@ internal class ReportServiceImplTest {
     internal fun `should update the report when shared in write mode and save if there are changes`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             val reportEntity = ReportEntity(
                 reference = "report-ref",
                 tenantId = 123L,
@@ -952,6 +1048,7 @@ internal class ReportServiceImplTest {
     internal fun `should do nothing when updating a report shared in write mode without change`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             val reportEntity = ReportEntity(
                 reference = "report-ref",
                 tenantId = 123L,
@@ -1062,6 +1159,7 @@ internal class ReportServiceImplTest {
     internal fun `should not update a report with a list of campaign keys that do not belong to the tenant`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             val reportEntity = ReportEntity(
                 reference = "report-ref",
                 tenantId = 123L,
@@ -1138,6 +1236,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should update the report when not shared and owned`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         val reportEntity = ReportEntity(
             reference = "report-ref",
             tenantId = 123L,
@@ -1342,6 +1441,7 @@ internal class ReportServiceImplTest {
     internal fun `should not update the report when not shared in write mode and not owned`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             coEvery {
                 reportRepository.getReportIfUpdatable(
                     tenant = refEq("my-tenant"),
@@ -1391,6 +1491,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should not update the report when not shared and not owned`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         coEvery {
             reportRepository.getReportIfUpdatable(
                 tenant = refEq("my-tenant"),
@@ -1440,6 +1541,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should delete the report when shared in write mode`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         val reportEntity = ReportEntity(
             reference = "report-ref",
             tenantId = -1,
@@ -1486,6 +1588,7 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should delete the report when owned if not shared`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
         val reportEntity = ReportEntity(
             reference = "report-ref",
             tenantId = -1,
@@ -1533,6 +1636,7 @@ internal class ReportServiceImplTest {
     internal fun `should not delete the report when not owned not shared in write mode`() =
         testDispatcherProvider.runTest {
             // given
+            val reportServiceImpl = buildReportService()
             coEvery {
                 reportRepository.getReportIfUpdatable(
                     tenant = refEq("my-tenant"),
@@ -1574,6 +1678,8 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should not delete the report when not owned if not shared`() = testDispatcherProvider.runTest {
         // given
+        val reportServiceImpl = buildReportService()
+        val creatorId = 456L
         coEvery {
             reportRepository.getReportIfUpdatable(
                 tenant = refEq("my-tenant"),
@@ -1615,6 +1721,7 @@ internal class ReportServiceImplTest {
     internal fun `should return the searched reports from the repository with default sorting and no filter`() =
         testDispatcherProvider.run {
             // given
+            val reportServiceImpl = buildReportService()
             val reportEntity1 = relaxedMockk<ReportEntity>()
             val reportEntity2 = relaxedMockk<ReportEntity>()
             val report1 = relaxedMockk<Report>()
@@ -1658,6 +1765,7 @@ internal class ReportServiceImplTest {
     internal fun `should return the searched reports from the repository with sorting asc`() =
         testDispatcherProvider.run {
             // given
+            val reportServiceImpl = buildReportService()
             val report1 = relaxedMockk<Report>()
             val report2 = relaxedMockk<Report>()
             val reportEntity1 = relaxedMockk<ReportEntity>()
@@ -1701,6 +1809,7 @@ internal class ReportServiceImplTest {
     internal fun `should return the searched reports from the repository with sorting desc`() =
         testDispatcherProvider.run {
             // given
+            val reportServiceImpl = buildReportService()
             val report1 = relaxedMockk<Report>()
             val report2 = relaxedMockk<Report>()
             val reportEntity1 = relaxedMockk<ReportEntity>()
@@ -1744,6 +1853,7 @@ internal class ReportServiceImplTest {
     internal fun `should return the searched reports from the repository with specified filters and default sort`() =
         testDispatcherProvider.run {
             // given
+            val reportServiceImpl = buildReportService()
             val filter1 = "%Un%u_%"
             val filter2 = "%u_Er%"
             val reportEntity1 = relaxedMockk<ReportEntity>()
@@ -1797,6 +1907,7 @@ internal class ReportServiceImplTest {
     internal fun `should return the searched reports from the repository with specified sorting and filters`() =
         testDispatcherProvider.run {
             // given
+            val reportServiceImpl = buildReportService()
             val filter1 = "%F_oo%"
             val filter2 = "%Us_r%"
             val reportEntity2 = relaxedMockk<ReportEntity>()
@@ -1845,4 +1956,308 @@ internal class ReportServiceImplTest {
                 reportConverter
             )
         }
+
+    @Test
+    internal fun `should process a render and call processTaskGeneration`() =
+        testDispatcherProvider.runTest {
+            //given
+            val spiedReportService = spyk(buildReportService(), recordPrivateCalls = true)
+            coEvery {
+                reportRepository.findByTenantAndReference(
+                    any(),
+                    any()
+                )
+            } returns reportEntity2
+            coEvery { idGenerator.short() } returns "report-task-1"
+            coEvery { reportTaskRepository.save(any<ReportTaskEntity>()) } returns reportTaskEntity
+            val latch = Latch(true)
+            coEvery {
+                reportGenerator.processTaskGeneration(
+                    any<String>(),
+                    any<String>(),
+                    any<String>(),
+                    any<ReportEntity>(),
+                    any<ReportTaskEntity>()
+                )
+            } coAnswers { latch.release() }
+            coExcludeRecords { spiedReportService.render("my-tenant", "user", "qoi78wizened") }
+
+            // when
+            spiedReportService.render("my-tenant", "user", "qoi78wizened")
+            latch.await()
+
+            // then
+            coVerifyOnce {
+                reportGenerator.processTaskGeneration(
+                    "my-tenant",
+                    "user",
+                    "qoi78wizened",
+                    refEq(reportEntity2),
+                    refEq(reportTaskEntity)
+                )
+            }
+            confirmVerified(reportGenerator)
+        }
+
+    @Test
+    fun `should return the report file given the right params`() =
+        testDispatcherProvider.run {
+            //given
+            val reportServiceImpl = buildReportService()
+            val file = File.createTempFile(reportEntity.displayName, ".pdf")
+            file.writeText(
+                """
+                    Report of ${reportEntity.displayName}
+                    Lorem ipsum dolor conot foo bar
+                """.trimIndent()
+            )
+            val reportFileBytes = file.readBytes()
+            val reportTaskEntity = ReportTaskEntity(
+                creator = "user",
+                creationTimestamp = Instant.now(),
+                id = -1,
+                reportId = -1,
+                reference = "report-1",
+                tenantReference = "my-tenant",
+                status = ReportTaskStatus.COMPLETED,
+                updateTimestamp = Instant.now()
+            )
+            val userEntity = relaxedMockk<UserEntity>()
+            val tenantEntity = relaxedMockk<TenantEntity>()
+            val reportFileEntity = ReportFileEntity(
+                "Report-File",
+                reportFileBytes,
+                Instant.now(),
+                reportTaskEntity.id
+            )
+            coEvery {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    any(),
+                    any()
+                )
+            } returns reportTaskEntity
+            coEvery {
+                reportFileRepository.retrieveReportFileByTenantAndReference(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns reportFileEntity
+
+            //when
+            val result = reportServiceImpl.read(
+                tenant = tenantEntity.reference,
+                username = userEntity.username,
+                taskReference = "${reportFileEntity.reportTaskId}"
+            )
+
+            //then
+            assertThat(result).isEqualTo(DownloadFile("Report-File", reportFileBytes))
+            coVerify {
+                reportFileRepository.retrieveReportFileByTenantAndReference(
+                    tenantEntity.reference,
+                    reportFileEntity.reportTaskId,
+                    userEntity.username
+                )
+            }
+            confirmVerified(reportFileRepository)
+        }
+
+    @Test
+    fun `should throw an exception when the report file is null and task status is created`() =
+        testDispatcherProvider.run {
+            //given
+            val reportServiceImpl = buildReportService()
+            val reportTaskEntity = ReportTaskEntity(
+                creator = "user",
+                creationTimestamp = Instant.now(),
+                id = -1,
+                reportId = -1,
+                reference = "report-1",
+                tenantReference = "my-tenant",
+                status = ReportTaskStatus.COMPLETED,
+                updateTimestamp = Instant.now()
+            )
+            val userEntity = relaxedMockk<UserEntity>()
+            val tenantEntity = relaxedMockk<TenantEntity>()
+            coEvery {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    any(),
+                    any()
+                )
+            } returns reportTaskEntity
+            coEvery {
+                reportFileRepository.retrieveReportFileByTenantAndReference(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns null
+
+            //when
+            val caught = assertThrows<IllegalArgumentException> {
+                reportServiceImpl.read(
+                    tenant = tenantEntity.reference,
+                    username = userEntity.username,
+                    taskReference = "-1"
+                )
+            }
+
+            //then
+            assertThat(caught).all {
+                prop(IllegalArgumentException::message).isEqualTo("File not found")
+            }
+            coVerify {
+                reportFileRepository.retrieveReportFileByTenantAndReference(
+                    tenantEntity.reference,
+                    -1,
+                    userEntity.username
+                )
+            }
+            confirmVerified(reportFileRepository)
+        }
+
+    @Test
+    fun `should throw an exception for unknown report task reference`() =
+        testDispatcherProvider.run {
+            //given
+            val reportServiceImpl = buildReportService()
+            coEvery {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    any(),
+                    any()
+                )
+            } returns null
+            val userEntity = relaxedMockk<UserEntity>()
+            val tenantEntity = relaxedMockk<TenantEntity>()
+
+            // when
+            val caught = assertThrows<IllegalArgumentException> {
+                reportServiceImpl.read(
+                    tenant = tenantEntity.reference,
+                    username = userEntity.username,
+                    taskReference = "unknown ref"
+                )
+            }
+
+            //then
+            assertThat(caught).all {
+                prop(IllegalArgumentException::message).isEqualTo("Requested file not found")
+            }
+            coVerify {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    tenantEntity.reference,
+                    "unknown ref",
+                )
+            }
+            confirmVerified(reportTaskRepository)
+        }
+
+    @Test
+    fun `should throw an exception when file is still processing`() =
+        testDispatcherProvider.run {
+            //given
+            val reportServiceImpl = buildReportService()
+            val userEntity = relaxedMockk<UserEntity>()
+            val reportTaskEntity = ReportTaskEntity(
+                creator = "user",
+                creationTimestamp = Instant.now(),
+                id = -1,
+                reportId = -1,
+                reference = "report-1",
+                tenantReference = "my-tenant",
+                status = ReportTaskStatus.PROCESSING,
+                updateTimestamp = Instant.now()
+            )
+            val tenantEntity = relaxedMockk<TenantEntity>()
+            coEvery {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    any(),
+                    any()
+                )
+            } returns reportTaskEntity
+
+            // when
+            val caught = assertThrows<ExitStatusException> {
+                reportServiceImpl.read(
+                    tenant = tenantEntity.reference,
+                    username = userEntity.username,
+                    taskReference = reportTaskEntity.reference
+                )
+            }
+
+            //then
+            assertThat(caught).all {
+                prop(ExitStatusException::exitStatus).isEqualTo(102)
+                prop(ExitStatusException::message).isEqualTo("java.lang.IllegalArgumentException: File still Processing")
+            }
+            coVerify {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    tenantEntity.reference,
+                    reportTaskEntity.reference,
+                )
+            }
+            confirmVerified(reportTaskRepository)
+        }
+
+    @Test
+    fun `should throw an exception when task status is failure`() =
+        testDispatcherProvider.run {
+            //given
+            val reportServiceImpl = buildReportService()
+            val userEntity = relaxedMockk<UserEntity>()
+            val reportTaskEntity = ReportTaskEntity(
+                creator = "user",
+                creationTimestamp = Instant.now(),
+                id = -1,
+                reportId = -1,
+                reference = "report-1",
+                tenantReference = "my-tenant",
+                status = ReportTaskStatus.FAILED,
+                updateTimestamp = Instant.now()
+            )
+            val tenantEntity = relaxedMockk<TenantEntity>()
+            coEvery {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    any(),
+                    any()
+                )
+            } returns reportTaskEntity
+
+            // when
+            val caught = assertThrows<ReportGenerationException> {
+                reportServiceImpl.read(
+                    tenant = tenantEntity.reference,
+                    username = userEntity.username,
+                    taskReference = reportTaskEntity.reference
+                )
+            }
+
+            //then
+            assertThat(caught).all {
+                prop(ReportGenerationException::message).isEqualTo("There was an error generating the file: null")
+            }
+            coVerify {
+                reportTaskRepository.findByTenantReferenceAndReference(
+                    tenantEntity.reference,
+                    reportTaskEntity.reference,
+                )
+            }
+            confirmVerified(reportTaskRepository)
+        }
+
+    private fun CoroutineScope.buildReportService() = ReportServiceImpl(
+        reportRepository,
+        tenantRepository,
+        userRepository,
+        campaignRepository,
+        reportDataComponentRepository,
+        dataSeriesRepository,
+        idGenerator,
+        reportConverter,
+        reportTaskRepository,
+        reportFileRepository,
+        reportGenerator,
+        this
+    )
 }

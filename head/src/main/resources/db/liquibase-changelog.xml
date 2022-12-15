@@ -40,4 +40,6 @@
   <include file="changelog/creation/14-create-report.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/15-create-data-component.xml" relativeToChangelogFile="true"/>
   <include file="changelog/creation/16-create-data-component-data-series.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/17-create-report-task.xml" relativeToChangelogFile="true"/>
+  <include file="changelog/creation/18-create-report-file.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

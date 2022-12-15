@@ -16,31 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package io.qalipsis.core.head.report
 
-import java.time.Duration
-import java.time.Instant
+package io.qalipsis.core.head.report.chart
+
+import io.micronaut.core.annotation.Introspected
 
 /**
- * Service to provide data for dashboard UI widgets.
+ * Data class to hold keys of plot series.
  *
  * @author Francisca Eze
  */
-internal interface WidgetService {
-
-    /**
-     * Fetches the latest factory states per tenant.
-     */
-    suspend fun getFactoryStates(tenant: String): FactoryState
-
-    /**
-     * Aggregates the campaign count and results within the specified window.
-     */
-    suspend fun aggregateCampaignResult(
-        tenant: String,
-        from: Instant,
-        until: Instant?,
-        timeOffset: Float,
-        aggregationTimeframe: Duration
-    ): List<CampaignSummaryResult>
+@Introspected
+internal data class PlotCompositeKey(val campaignKey: String, val dataSeriesReference: String) {
+    val compositeKey = "$campaignKey/$dataSeriesReference"
 }

@@ -30,6 +30,7 @@ import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
+import io.qalipsis.core.head.report.CampaignData
 import java.time.Duration
 import java.time.Instant
 
@@ -223,6 +224,44 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     suspend fun retrieveCampaignsStatusHistogram(
         tenantReference: String, startIdentifier: Instant, endIdentifier: Instant, timeframe: Duration
     ): Collection<CampaignResultCount>
+
+    /**
+     * Returns campaign information of all the campaigns that matches the desired
+     * campaignKeys, campaignNamePatterns or scenarioNamePatterns.
+     */
+    @Query(
+        """
+            SELECT 
+                campaign_entity_.name as name,
+                campaign_entity_.zones as zones,
+                campaign_entity_.result as result, 
+                EXTRACT(epoch FROM campaign_entity_.end::timestamp -  campaign_entity_.start::timestamp):: BIGINT as "executionTime", 
+                cr.started_minions as "startedMinions", 
+                cr.completed_minions as "completedMinions", 
+                cr.successful_executions as "successfulExecutions", 
+                cr.failed_executions as "failedExecutions", 
+                NULL as resolved_zones
+            FROM campaign campaign_entity_
+                INNER JOIN campaign_report cr 
+                    ON campaign_entity_.id = cr.campaign_id
+                LEFT JOIN campaign_scenario cs 
+                    ON campaign_entity_.id = cs.campaign_id
+            WHERE campaign_entity_.tenant_id = :tenantId 
+                AND campaign_entity_.end IS NOT NULL 
+                AND ((campaign_entity_.key IN (:campaignKeys) 
+                    OR campaign_entity_.name IN (:campaignNamePatterns))
+                OR cs.name IN (:scenarioNamePatterns))
+            ORDER BY campaign_entity_.end DESC
+            LIMIT 10
+        """,
+        nativeQuery = true
+    )
+    fun retrieveCampaignDetailByTenantIdAndKeyIn(
+        tenantId: Long,
+        campaignKeys: Collection<String>,
+        campaignNamePatterns: Collection<String>,
+        scenarioNamePatterns: Collection<String>
+    ): Collection<CampaignData>
 
     @Introspected
     data class CampaignResultCount(val seriesStart: Instant, val status: ExecutionStatus, val count: Int)
