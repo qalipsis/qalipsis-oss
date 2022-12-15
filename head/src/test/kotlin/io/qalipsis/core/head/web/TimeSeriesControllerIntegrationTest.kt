@@ -767,7 +767,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 from = Instant.parse("2022-10-29T00:00:00.00Z"),
                 until = null,
                 timeOffset = timeOffset,
-                aggregationTimeframe = null
+                aggregationTimeframe = Duration.ofHours(24)
             )
         }
         assertThat(response).all {
