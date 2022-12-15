@@ -266,7 +266,7 @@ internal class TimeSeriesController(
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @Nullable @PositiveDuration @QueryValue("timeframe") timeframe: Duration?
+        @Nullable @PositiveDuration @QueryValue("timeframe", defaultValue = "PT24H") timeframe: Duration
     ): HttpResponse<List<CampaignSummaryResult>> {
         require(until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
         return HttpResponse.ok(

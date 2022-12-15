@@ -291,7 +291,7 @@ internal class WidgetServiceImplTest {
                 timeOffset = offset,
                 from = midnight,
                 until = null,
-                aggregationTimeframe = null
+                aggregationTimeframe = Duration.ofHours(24)
             )
 
             // then

@@ -23,6 +23,6 @@ internal interface WidgetService {
         from: Instant,
         until: Instant?,
         timeOffset: Float,
-        aggregationTimeframe: Duration?
-    ): List<CampaignSummaryResult>?
+        aggregationTimeframe: Duration
+    ): List<CampaignSummaryResult>
 }

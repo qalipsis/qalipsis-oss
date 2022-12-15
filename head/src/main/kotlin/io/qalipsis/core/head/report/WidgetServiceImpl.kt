@@ -35,19 +35,19 @@ internal class WidgetServiceImpl(
         from: Instant,
         until: Instant?,
         timeOffset: Float,
-        aggregationTimeframe: Duration?
+        aggregationTimeframe: Duration
     ): List<CampaignSummaryResult> {
         // convert time offsets to minutes
         val timezoneOffset = Duration.of((timeOffset * 60).toLong(), ChronoUnit.MINUTES)
         val start = from.minus(timezoneOffset)
-        val end = until?.minus(timezoneOffset) ?: Instant.now()
+        val end = until?.minus(timezoneOffset) ?: (Instant.now() + aggregationTimeframe)
         val result = mutableListOf<CampaignSummaryResult>()
         val campaignResultList =
             campaignRepository.retrieveCampaignsStatusHistogram(
                 tenant,
                 start,
                 end,
-                aggregationTimeframe ?: Duration.ofHours(24)
+                aggregationTimeframe
             )
         campaignResultList.groupBy { it.seriesStart }.forEach { it ->
             var failureCounter = 0

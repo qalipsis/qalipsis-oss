@@ -991,7 +991,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     name = "campaign 5",
                     start = Instant.parse("2022-02-22T11:25:30.00Z"),
                     tenantId = tenant3.id,
-                    result = ExecutionStatus.IN_PROGRESS //SHOULD NOT RETRIEVE BECAUSE OF DIFFERENT TENANT
+                    result = IN_PROGRESS //SHOULD NOT RETRIEVE BECAUSE OF DIFFERENT TENANT
                 ),
                 campaign.copy(
                     key = "campaign-11",
@@ -1021,7 +1021,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     key = "campaign-13",
                     name = "campaign 13",
                     start = Instant.parse("2022-02-25T00:00:00.00Z"),
-                    result = ExecutionStatus.IN_PROGRESS,
+                    result = IN_PROGRESS,
                     end = null //SHOULD NOT RETRIEVE BECAUSE CAMPAIGN HAS NOT ENDED YET
                 )
             )
