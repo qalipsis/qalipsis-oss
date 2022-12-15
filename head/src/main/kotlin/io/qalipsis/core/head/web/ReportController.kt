@@ -25,12 +25,14 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
@@ -42,6 +44,7 @@ import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.ReportTask
 import io.qalipsis.core.head.report.ReportService
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
 import io.swagger.v3.oas.annotations.Operation
@@ -274,4 +277,82 @@ internal class ReportController(
             )
         )
     }
+
+    @Post("/{reportReference}/render")
+    @Operation(
+        summary = "Renders a report",
+        description = "Generates a pdf report and returns a reference to the report task",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Details of the report to be rendered"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "404", description = "Report not found"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.READ_REPORT])
+    suspend fun render(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Parameter(
+            description = "Reference of the report to render",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable reportReference: String
+    ): HttpResponse<ReportTask> {
+        return HttpResponse.ok(
+            reportService.render(
+                tenant,
+                authentication.name,
+                reportReference
+            )
+        )
+    }
+
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Get("/file/{taskReference}")
+    @Operation(
+        summary = "Downloads a report",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Details of the report to be rendered"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "404", description = "report not found"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(value = [Permissions.READ_REPORT])
+    suspend fun download(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Parameter(
+            description = "Reference of the task to be downloaded",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable taskReference: String
+    ): HttpResponse<ByteArray> {
+        val response = reportService.read(
+            tenant,
+            authentication.name,
+            taskReference
+        )
+        val (fileName, content) = response
+
+        return HttpResponse.ok(content).header("Content-Disposition", "attachment; filename=\"$fileName\"")
+    }
+
 }

@@ -16,31 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 package io.qalipsis.core.head.report
 
-import java.time.Duration
-import java.time.Instant
-
 /**
- * Service to provide data for dashboard UI widgets.
+ * Data class to return report details to a user.
  *
  * @author Francisca Eze
  */
-internal interface WidgetService {
+internal data class DownloadFile(val filename: String, val content: ByteArray) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
 
-    /**
-     * Fetches the latest factory states per tenant.
-     */
-    suspend fun getFactoryStates(tenant: String): FactoryState
+        other as DownloadFile
 
-    /**
-     * Aggregates the campaign count and results within the specified window.
-     */
-    suspend fun aggregateCampaignResult(
-        tenant: String,
-        from: Instant,
-        until: Instant?,
-        timeOffset: Float,
-        aggregationTimeframe: Duration
-    ): List<CampaignSummaryResult>
+        if (filename != other.filename) return false
+        return content.contentEquals(other.content)
+    }
+
+    override fun hashCode(): Int {
+        var result = filename.hashCode()
+        result = 31 * result + content.contentHashCode()
+        return result
+    }
 }

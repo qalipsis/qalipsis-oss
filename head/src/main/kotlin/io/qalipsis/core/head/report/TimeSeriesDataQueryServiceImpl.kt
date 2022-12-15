@@ -130,7 +130,7 @@ internal class TimeSeriesDataQueryServiceImpl(
     /**
      * Sanitizes the retrieval context, to ensure that the properties are not overreaching the allowed values.
      *
-     * @param queryExecutionContext original execution context to sanitize
+     * @param queryExecutionRequest original execution context to sanitize
      * @param campaignsInstantsAndDuration bound instants and durations of the campaigns to retrieve the data on
      */
     @KTestable

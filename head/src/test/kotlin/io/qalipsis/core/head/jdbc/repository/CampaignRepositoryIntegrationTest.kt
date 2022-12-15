@@ -35,19 +35,16 @@ import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
-import io.qalipsis.api.report.ExecutionStatus.ABORTED
-import io.qalipsis.api.report.ExecutionStatus.FAILED
-import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
-import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
-import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
-import io.qalipsis.api.report.ExecutionStatus.WARNING
+import io.qalipsis.api.report.ExecutionStatus.*
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
+import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.qalipsis.core.head.report.CampaignData
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
@@ -75,6 +72,9 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Inject
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
+
+    @Inject
+    private lateinit var campaignReportRepository: CampaignReportRepository
 
     @Inject
     private lateinit var tenantRepository: TenantRepository
@@ -1465,4 +1465,870 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
         assertThat(campaignRepository.findByResult(IN_PROGRESS)).isEmpty()
     }
+
+    @Test
+    fun `should retrieve valid campaign details by their tenant and matching campaign keys in`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+            val campaign6 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign8 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-8",
+                    name = "campaign 8",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign11 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-11",
+                    name = "campaign 11",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                    end = null
+                )
+            )
+
+            campaignRepository.saveAll(
+                listOf(
+                    campaign,
+                    campaign.copy(
+                        key = "campaign-17",
+                        name = "campaign 17",
+                        start = Instant.parse("2022-02-22T01:01:01.00Z"),
+                        result = WARNING
+                    ),
+                    campaign.copy(
+                        key = "campaign-5",
+                        name = "campaign 5",
+                        start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                        result = FAILED
+                    ),
+                )
+            ).count()
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign6.id,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                        SUCCESSFUL
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign8.id,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                        ABORTED
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign11.id,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                        WARNING
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign7.id,
+                        startedMinions = 455,
+                        completedMinions = 400,
+                        successfulExecutions = 400,
+                        failedExecutions = 55,
+                        QUEUED
+                    )
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                tenant.id,
+                campaignKeys = listOf("campaign-11", "campaign-8", "campaign-6", "campaign-7"),
+                campaignNamePatterns = listOf(),
+                scenarioNamePatterns = listOf()
+            )
+
+            // then
+            assertThat(fetched).all {
+                hasSize(3)
+                containsExactlyInAnyOrder(
+                    CampaignData(
+                        name = "campaign 8",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign8.start?.let {
+                            campaign8.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                    ),
+                    CampaignData(
+                        name = "campaign 6",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign6.start?.let {
+                            campaign6.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                    ),
+                    CampaignData(
+                        name = "campaign 11",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign11.start?.let {
+                            campaign11.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun `should retrieve valid campaign data details by their tenant and matching campaign name patterns in`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+
+            val campaign8 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-8",
+                    name = "campaign 8",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign11 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-11",
+                    name = "campaign 11",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                    end = null
+                )
+            )
+
+            campaignRepository.saveAll(
+                listOf(
+                    campaign.copy(
+                        key = "campaign-5",
+                        name = "campaign 5",
+                        start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                        result = FAILED
+                    ),
+                )
+            ).count()
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign8.id,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                        ABORTED
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign11.id,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                        WARNING
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign7.id,
+                        startedMinions = 455,
+                        completedMinions = 400,
+                        successfulExecutions = 400,
+                        failedExecutions = 55,
+                        QUEUED
+                    )
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                tenant.id,
+                campaignKeys = listOf(),
+                campaignNamePatterns = listOf("campaign 11", "campaign 8", "campaign-7"),
+                scenarioNamePatterns = listOf()
+            )
+
+            // then
+            assertThat(fetched).all {
+                hasSize(2)
+                containsExactlyInAnyOrder(
+                    CampaignData(
+                        name = "campaign 8",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign8.start?.let {
+                            campaign8.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                    ),
+                    CampaignData(
+                        name = "campaign 11",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign11.start?.let {
+                            campaign11.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun `should retrieve valid campaign data details by their tenant and scenario names in`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+            val campaign6 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign8 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-8",
+                    name = "campaign 8",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign11 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-11",
+                    name = "campaign 11",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                    end = null
+                )
+            )
+
+            campaignRepository.saveAll(
+                listOf(
+                    campaign,
+                    campaign.copy(
+                        key = "campaign-17",
+                        name = "campaign 17",
+                        start = Instant.parse("2022-02-22T01:01:01.00Z"),
+                        result = WARNING
+                    ),
+                    campaign.copy(
+                        key = "campaign-5",
+                        name = "campaign 5",
+                        start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                        result = FAILED
+                    ),
+                )
+            ).count()
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign6.id,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                        SUCCESSFUL
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign8.id,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                        ABORTED
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign11.id,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                        WARNING
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign7.id,
+                        startedMinions = 455,
+                        completedMinions = 400,
+                        successfulExecutions = 400,
+                        failedExecutions = 55,
+                        QUEUED
+                    )
+                )
+            ).count()
+
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(campaignId = campaign7.id, name = "scenario-1", minionsCount = 6272),
+                    CampaignScenarioEntity(campaignId = campaign11.id, name = "scenario-2", minionsCount = 12321),
+                    CampaignScenarioEntity(campaignId = campaign8.id, name = "scenario-33", minionsCount = 12321)
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                tenant.id,
+                campaignKeys = listOf(),
+                campaignNamePatterns = listOf(),
+                scenarioNamePatterns = listOf("scenario-1", "scenario-2")
+            )
+
+            // then
+            assertThat(fetched).all {
+                hasSize(1)
+                containsOnly(
+                    CampaignData(
+                        name = "campaign 11",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign11.start?.let {
+                            campaign11.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun `should not retrieve any campaign data when no campaign key, patterns or scenario names is passed in`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+            val campaign6 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                    end = null
+                )
+            )
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign6.id,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                        SUCCESSFUL
+                    )
+                )
+            ).count()
+
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(campaignId = campaign7.id, name = "scenario-1", minionsCount = 6272),
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                tenant.id,
+                campaignKeys = listOf(),
+                campaignNamePatterns = listOf(),
+                scenarioNamePatterns = listOf()
+            )
+
+            // then
+            assertThat(fetched).isEmpty()
+        }
+
+    @Test
+    fun `should not retrieve any campaign data when a different tenant is passed in`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val unknownTenant = tenantRepository.save(TenantEntity(Instant.now(), "unknown-tenant", "unknown Tenant"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+            val campaign6 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                )
+            )
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign6.id,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                        SUCCESSFUL
+                    )
+                )
+            ).count()
+
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(campaignId = campaign7.id, name = "scenario-1", minionsCount = 6272),
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                unknownTenant.id,
+                campaignKeys = listOf("campaign-6"),
+                campaignNamePatterns = listOf(),
+                scenarioNamePatterns = listOf("scenario-1")
+            )
+
+            // then
+            assertThat(fetched).isEmpty()
+        }
+
+    @Test
+    fun `should retrieve the campaign details data that match the given scenario name pattern`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+            val campaign6 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign8 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-8",
+                    name = "campaign 8",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign11 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-11",
+                    name = "campaign 11",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                    end = null
+                )
+            )
+
+            campaignRepository.saveAll(
+                listOf(
+                    campaign,
+                    campaign.copy(
+                        key = "campaign-17",
+                        name = "campaign 17",
+                        start = Instant.parse("2022-02-22T01:01:01.00Z"),
+                        result = WARNING
+                    ),
+                    campaign.copy(
+                        key = "campaign-5",
+                        name = "campaign 5",
+                        start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                        result = FAILED
+                    ),
+                )
+            ).count()
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign6.id,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                        SUCCESSFUL
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign8.id,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                        ABORTED
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign11.id,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                        WARNING
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign7.id,
+                        startedMinions = 455,
+                        completedMinions = 400,
+                        successfulExecutions = 400,
+                        failedExecutions = 55,
+                        QUEUED
+                    )
+                )
+            ).count()
+
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(campaignId = campaign7.id, name = "scenario-1", minionsCount = 6272),
+                    CampaignScenarioEntity(campaignId = campaign11.id, name = "scenario-2", minionsCount = 12321),
+                    CampaignScenarioEntity(campaignId = campaign8.id, name = "scenario-33", minionsCount = 12321)
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                tenant.id,
+                campaignKeys = listOf(),
+                campaignNamePatterns = listOf(),
+                scenarioNamePatterns = listOf("scenario-1", "scenario-2")
+            )
+
+            // then
+            assertThat(fetched).all {
+                hasSize(1)
+                containsOnly(
+                    CampaignData(
+                        name = "campaign 11",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign11.start?.let {
+                            campaign11.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun `should retrieve all campaign details data that match the given campaign keys, patterns or scenario names in`() =
+        testDispatcherProvider.run {
+            // given
+            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val campaign = CampaignEntity(
+                key = "campaign-1",
+                name = "campaign 1",
+                scheduledMinions = 345,
+                configurer = savedUser.id,
+                tenantId = tenant.id,
+                start = Instant.parse("2022-02-25T00:00:00.00Z"),
+                result = SUCCESSFUL,
+                end = Instant.parse("2022-03-26T23:12:11.21Z")
+            )
+            val campaign6 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-6",
+                    name = "campaign 6",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign8 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-8",
+                    name = "campaign 8",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign11 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-11",
+                    name = "campaign 11",
+                    start = Instant.parse("2022-02-20T11:25:30.00Z"),
+                    result = SUCCESSFUL,
+                )
+            )
+            val campaign7 = campaignRepository.save(
+                campaign.copy(
+                    key = "campaign-7",
+                    name = "campaign 7",
+                    start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                    result = FAILED,
+                    end = null
+                )
+            )
+
+            campaignRepository.saveAll(
+                listOf(
+                    campaign,
+                    campaign.copy(
+                        key = "campaign-17",
+                        name = "campaign 17",
+                        start = Instant.parse("2022-02-22T01:01:01.00Z"),
+                        result = WARNING
+                    ),
+                    campaign.copy(
+                        key = "campaign-5",
+                        name = "campaign 5",
+                        start = Instant.parse("2022-02-25T00:00:30.00Z"),
+                        result = FAILED
+                    ),
+                )
+            ).count()
+
+            campaignReportRepository.saveAll(
+                listOf(
+                    CampaignReportEntity(
+                        campaignId = campaign6.id,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                        SUCCESSFUL
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign8.id,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                        ABORTED
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign11.id,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                        WARNING
+                    ),
+                    CampaignReportEntity(
+                        campaignId = campaign7.id,
+                        startedMinions = 455,
+                        completedMinions = 400,
+                        successfulExecutions = 400,
+                        failedExecutions = 55,
+                        QUEUED
+                    )
+                )
+            ).count()
+
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(campaignId = campaign11.id, name = "scenario-2", minionsCount = 12321),
+                )
+            ).count()
+
+            // when
+            val fetched = campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
+                tenant.id,
+                campaignKeys = listOf("campaign-8", "campaign-1"),
+                campaignNamePatterns = listOf("campaign 6", "campaign 7"),
+                scenarioNamePatterns = listOf("scenario-2")
+            )
+
+            // then
+            assertThat(fetched).all {
+                hasSize(3)
+                containsExactlyInAnyOrder(
+                    CampaignData(
+                        name = "campaign 8",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign8.start?.let {
+                            campaign8.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 300,
+                        completedMinions = 110,
+                        successfulExecutions = 56,
+                        failedExecutions = 20,
+                    ),
+                    CampaignData(
+                        name = "campaign 6",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign6.start?.let {
+                            campaign6.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 1000,
+                        completedMinions = 990,
+                        successfulExecutions = 990,
+                        failedExecutions = 10,
+                    ),
+                    CampaignData(
+                        name = "campaign 11",
+                        zones = emptySet(),
+                        result = SUCCESSFUL,
+                        executionTime = campaign11.start?.let {
+                            campaign11.end?.toEpochMilli()?.minus(it.toEpochMilli())
+                                ?: 0
+                        }!! / 1000,
+                        startedMinions = 280,
+                        completedMinions = 87,
+                        successfulExecutions = 41,
+                        failedExecutions = 65,
+                    )
+                )
+            }
+        }
+
 }

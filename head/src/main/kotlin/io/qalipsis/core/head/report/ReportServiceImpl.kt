@@ -22,14 +22,20 @@ package io.qalipsis.core.head.report
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
+import io.qalipsis.api.Executors
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
+import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
+import io.qalipsis.core.head.jdbc.repository.ReportFileRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
+import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataComponentCreationAndUpdateRequest
@@ -40,12 +46,20 @@ import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.ReportTask
+import io.qalipsis.core.head.model.ReportTaskStatus
 import io.qalipsis.core.head.model.converter.ReportConverter
-import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.head.utils.SortingUtil
+import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
+import io.qalipsis.core.lifetime.ExitStatusException
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
+import java.time.Instant
 import io.qalipsis.api.query.Page as QalipsisPage
+
 
 /**
  * Default implementation of [ReportService] interface.
@@ -63,7 +77,11 @@ internal class ReportServiceImpl(
     private val reportDataComponentRepository: ReportDataComponentRepository,
     private val dataSeriesRepository: DataSeriesRepository,
     private val idGenerator: IdGenerator,
-    private val reportConverter: ReportConverter
+    private val reportConverter: ReportConverter,
+    private val reportTaskRepository: ReportTaskRepository,
+    private val reportFileRepository: ReportFileRepository,
+    private val reportGenerator: ReportGenerator,
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope
 ) : ReportService {
 
     companion object {
@@ -76,6 +94,8 @@ internal class ReportServiceImpl(
         const val REPORT_DATA_SERIES_NOT_ALLOWED =
             "Some selected data series of your data components cannot be found in your tenant. You can only add data series of your tenant in this report"
         const val REPORT_CAMPAIGN_KEYS_NOT_ALLOWED = "Not all specified campaign keys belong to the tenant"
+
+        val logger = logger()
     }
 
     override suspend fun get(tenant: String, username: String, reference: String): Report {
@@ -241,6 +261,56 @@ internal class ReportServiceImpl(
         )
     }
 
+    @LogInput
+    override suspend fun render(tenant: String, creator: String, reference: String): ReportTask {
+        val report = reportRepository.findByTenantAndReference(tenant, reference)
+        val reportTask = reportTaskRepository.save(
+            ReportTaskEntity(
+                reportId = report.id,
+                reference = idGenerator.short(),
+                tenantReference = tenant,
+                status = ReportTaskStatus.PENDING,
+                creationTimestamp = Instant.now(),
+                updateTimestamp = Instant.now(),
+                creator = creator
+            )
+        )
+        backgroundScope.async {
+            reportGenerator.processTaskGeneration(tenant, creator, reference, report, reportTask)
+        }
+
+        return reportTask.toModel()
+    }
+
+    @LogInput
+    override suspend fun read(tenant: String, username: String, taskReference: String): DownloadFile {
+        val reportTask =
+            reportTaskRepository.findByTenantReferenceAndReference(
+                tenant,
+                taskReference
+            )
+        reportTask?.let {
+            when (reportTask.status) {
+                ReportTaskStatus.COMPLETED -> {
+                    return reportFileRepository.retrieveReportFileByTenantAndReference(
+                        tenant,
+                        reportTask.id,
+                        username
+                    )?.let { DownloadFile(it.name, it.fileContent) }
+                        ?: throw IllegalArgumentException("File not found")
+                }
+
+                ReportTaskStatus.FAILED -> {
+                    throw ReportGenerationException("There was an error generating the file: ${reportTask.failureReason}")
+                }
+
+                else -> {
+                    throw ExitStatusException(IllegalArgumentException("File still Processing"), 102)
+                }
+            }
+        } ?: throw IllegalArgumentException("Requested file not found")
+    }
+
     /**
      * Converts a data component entity instance to data component creation and update model instance.
      */
@@ -314,7 +384,7 @@ internal class ReportServiceImpl(
     }
 
     /**
-     * Build a data component entity instance for a list of data series and type of component
+     * Build a data component entity instance for a list of data series and type of component.
      */
     private suspend fun toDataComponentEntity(
         reportId: Long,
@@ -325,4 +395,5 @@ internal class ReportServiceImpl(
         val dataSeriesEntities = dataSeriesRepository.findAllByTenantAndReferences(tenant, dataSeries)
         return ReportDataComponentEntity(reportId = reportId, type = type, dataSeries = dataSeriesEntities)
     }
+
 }

@@ -85,6 +85,13 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.module:jackson-module-paranamer")
     implementation("org.apache.commons:commons-lang3")
+    implementation("org.thymeleaf:thymeleaf:3.1.1.RELEASE")
+    implementation("io.micronaut.views:micronaut-views-thymeleaf")
+    implementation("org.xhtmlrenderer:flying-saucer-pdf:9.1.22")
+    implementation("org.xhtmlrenderer:flying-saucer-core")
+    implementation("org.thymeleaf.extras:thymeleaf-extras-java8time")
+    implementation("org.jfree:jfreechart:1.0.19")
+    implementation("org.jfree:org.jfree.svg:5.0.5")
 
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")

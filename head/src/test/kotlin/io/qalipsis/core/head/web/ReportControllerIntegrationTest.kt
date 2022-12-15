@@ -22,13 +22,17 @@ package io.qalipsis.core.head.web
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.containsOnly
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.prop
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.core.type.Argument
+import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -45,8 +49,12 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.ReportTask
+import io.qalipsis.core.head.model.ReportTaskStatus
+import io.qalipsis.core.head.report.DownloadFile
 import io.qalipsis.core.head.report.ReportService
 import io.qalipsis.core.head.report.SharingMode
+import io.qalipsis.core.head.web.handler.ErrorResponse
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
@@ -54,6 +62,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
+
 
 /**
  * @author Joël Valère
@@ -100,7 +109,8 @@ internal class ReportControllerIntegrationTest {
         coEvery { reportService.create(any(), any(), any()) } returns createdReport
 
         // when
-        val response = httpClient.toBlocking().exchange(HttpRequest.POST("/", reportCreationAndUpdateRequest), Report::class.java)
+        val response =
+            httpClient.toBlocking().exchange(HttpRequest.POST("/", reportCreationAndUpdateRequest), Report::class.java)
 
         // then
         coVerifyOrder {
@@ -145,7 +155,8 @@ internal class ReportControllerIntegrationTest {
         coEvery { reportService.create(any(), any(), any()) } returns createdReport
 
         // when
-        val response = httpClient.toBlocking().exchange(HttpRequest.POST("/", reportCreationAndUpdateRequest), Report::class.java)
+        val response =
+            httpClient.toBlocking().exchange(HttpRequest.POST("/", reportCreationAndUpdateRequest), Report::class.java)
 
         // then
         coVerifyOrder {
@@ -266,7 +277,8 @@ internal class ReportControllerIntegrationTest {
         coEvery { reportService.update(any(), any(), "q721wx52", any()) } returns updatedReport
 
         // when
-        val response = httpClient.toBlocking().exchange(HttpRequest.PUT("/q721wx52", reportCreationAndUpdateRequest), Report::class.java)
+        val response = httpClient.toBlocking()
+            .exchange(HttpRequest.PUT("/q721wx52", reportCreationAndUpdateRequest), Report::class.java)
 
         // then
         coVerifyOrder {
@@ -484,4 +496,208 @@ internal class ReportControllerIntegrationTest {
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 2, listOf(report, report2)))
         }
     }
+
+    @Test
+    internal fun `should render a report`() {
+        //given
+        val reportTask = ReportTask(
+            reference = "qoi78wizened",
+            status = ReportTaskStatus.PENDING,
+            failureReason = null,
+            creator = Defaults.USER
+        )
+        coEvery { reportService.render(any(), any(), any()) } returns reportTask
+
+        // when
+        val response =
+            httpClient.toBlocking().exchange(HttpRequest.POST("qoi78wizened/render", null), ReportTask::class.java)
+
+        //then
+        coVerifyOnce {
+            reportService.render(
+                tenant = Defaults.TENANT,
+                creator = Defaults.USER,
+                reference = "qoi78wizened"
+            )
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(reportTask)
+        }
+
+        confirmVerified(reportService)
+    }
+
+    @Test
+    internal fun `should throw error for unknown report reference a report`() {
+        //given
+        coEvery {
+            reportService.render(
+                any(),
+                any(),
+                any()
+            )
+        } throws IllegalArgumentException("Encountered an error while generating report file")
+
+        // when
+        val response =
+            assertThrows<HttpClientResponseException> {
+                httpClient.toBlocking().exchange(HttpRequest.POST("qoi78wizened/render", null), String::class.java)
+            }.response
+
+        //then
+        coVerifyOnce {
+            reportService.render(
+                tenant = Defaults.TENANT,
+                creator = Defaults.USER,
+                reference = "qoi78wizened"
+            )
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.body.get()
+            }.isEqualTo("""{"errors":["Encountered an error while generating report file"]}""")
+        }
+        confirmVerified(reportService)
+    }
+
+    @Test
+    fun `should return the file resource as byte array`() {
+        //given
+        val fileContent =
+            byteArrayOf(0xA1.toByte(), 0x2E.toByte(), 0x38.toByte(), 0xD4.toByte(), 0x89.toByte(), 0xC3.toByte())
+        val downloadResponse = DownloadFile("Wonderful-Report", fileContent)
+        coEvery { reportService.read(any(), any(), any()) } returns downloadResponse
+        val request = HttpRequest.GET<ByteArray>("file/task-1")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${downloadResponse.filename}\"")
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+
+        //when
+        val response = httpClient.toBlocking().exchange(request, ByteArray::class.java)
+
+        //then
+        coVerifyOnce {
+            reportService.read(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                taskReference = "task-1"
+            )
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body.get() }.isEqualTo(downloadResponse.content)
+        }
+        confirmVerified(reportService)
+    }
+
+    @Test
+    fun `should throw an exception for unknown task reference`() {
+        //given
+        coEvery {
+            reportService.read(
+                any(),
+                any(),
+                any()
+            )
+        } throws IllegalArgumentException("File not found: Unknown creator, tenant or task reference")
+        val request = HttpRequest.GET<ByteArray>("file/10")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Report.pdf\"")
+            .contentType(MediaType.APPLICATION_PDF)
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, ByteArray::class.java)
+        }
+
+        // then
+        coVerifyOnce {
+            reportService.read(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                taskReference = "10"
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") { it.response.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
+                .containsOnly("File not found: Unknown creator, tenant or task reference")
+        }
+        confirmVerified(reportService)
+    }
+
+
+    @Test
+    fun `should throw an exception for when there was a failure in task generation`() {
+        //given
+        coEvery {
+            reportService.read(
+                any(),
+                any(),
+                any()
+            )
+        } throws IllegalArgumentException("There was an error generating the file")
+        val request = HttpRequest.GET<ByteArray>("/file/20")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Report.pdf\"")
+            .contentType(MediaType.APPLICATION_PDF)
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, ByteArray::class.java)
+        }
+
+        // then
+        coVerifyOnce {
+            reportService.read(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                taskReference = "20"
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") { it.response.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
+                .containsOnly("There was an error generating the file")
+        }
+        confirmVerified(reportService)
+    }
+
+    @Test
+    fun `should throw an exception when task generation is still in progress`() {
+        //given
+        coEvery {
+            reportService.read(
+                any(),
+                any(),
+                any()
+            )
+        } throws IllegalArgumentException("File still Processing")
+        val request = HttpRequest.GET<ByteArray>("/file/20")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Report.pdf\"")
+            .contentType(MediaType.APPLICATION_PDF)
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(request, ByteArray::class.java)
+        }
+
+        // then
+        coVerifyOnce {
+            reportService.read(
+                tenant = Defaults.TENANT,
+                username = Defaults.USER,
+                taskReference = "20"
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") { it.response.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
+                .containsOnly("File still Processing")
+        }
+        confirmVerified(reportService)
+    }
+
 }

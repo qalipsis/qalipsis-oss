@@ -235,7 +235,7 @@ internal class DataSeriesControllerIntegrationTest {
         // given
         val updatedDataSeries = DataSeries(
             displayName = "the-name",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-event",
             color = "the-color",
             filters = setOf(
@@ -297,10 +297,10 @@ internal class DataSeriesControllerIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "the-name",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-event",
             filters = setOf(
-                DataSeriesFilter("name", QueryClauseOperator.IS, "value")
+                DataSeriesFilter("name", IS, "value")
             )
         )
         val getDataSeriesRequest = HttpRequest.GET<DataSeries>("/q7232x")
@@ -625,7 +625,7 @@ internal class DataSeriesControllerIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "NewData",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-event",
             color = "#ff0000",
             filters = emptySet(),
@@ -635,7 +635,7 @@ internal class DataSeriesControllerIntegrationTest {
         )
         val dataSeries2 = DataSeries(
             displayName = "New-Data2",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-event",
             color = "#FFF",
             filters = emptySet(),
@@ -681,7 +681,7 @@ internal class DataSeriesControllerIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "NewData",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-event",
             color = "#ff0000",
             filters = emptySet(),
@@ -691,7 +691,7 @@ internal class DataSeriesControllerIntegrationTest {
         )
         val dataSeries2 = DataSeries(
             displayName = "New-Data2",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-other-event",
             color = "Blue",
             filters = emptySet(),

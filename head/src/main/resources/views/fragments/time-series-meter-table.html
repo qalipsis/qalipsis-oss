@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+<table class="data-series-section" th:fragment="time-series-meter-table(singleMeterTableData)">
+  <tr class="header-table-row">
+    <th class="data-series-table-head">Timestamp</th>
+    <th class="data-series-table-head">Name of the Series</th>
+    <th class="data-series-table-head">Campaign</th>
+    <th class="data-series-table-head">Scenario Name</th>
+    <th class="data-series-table-head">Duration</th>
+    <th class="data-series-table-head">Tags</th>
+  </tr>
+  <tr th:if="${singleMeterTableData.empty}">
+    <td class="data-series-table-data empty-table" colspan="6"> No data Available</td>
+  </tr>
+  <tr th:unless="${singleMeterTableData.empty}" th:each="tableRowData : ${singleMeterTableData}">
+    <td class="data-series-table-data" data-th-attr="timestamp=${tableRowData.timestamp}"
+        th:text="${#temporals.format(tableRowData.timestamp, 'HH:mm:ss')}">
+      13:37:54
+    </td>
+    <td class="data-series-table-data" th:text="${tableRowData.name}">Requests made</td>
+    <td class="data-series-table-data" th:text="${tableRowData.campaign} ?: '--'">Campaign Seven</td>
+    <td class="data-series-table-data" th:text="${tableRowData.scenario} ?: '--'">cassandra.save.saving</td>
+    <td class="data-series-table-data" th:if="${tableRowData.duration} != null"
+        th:text="${tableRowData.duration.toSeconds()} + 'secs'">1.826ms
+    </td>
+    <td class="data-series-table-data" th:unless="${tableRowData.duration} != null" th:text="'--'">1.826ms</td>
+    <td class="data-series-table-data" th:if="${tableRowData.tags != null}">
+      <div class="td-tag">
+        <span th:each="tag: ${tableRowData.tags}" th:text="${tag.key} + '=' + ${tag.value} + ', '"
+              class="tag">ex:zone=eu*</span>
+      </div>
+    </td>
+    <td class="data-series-table-data" th:unless="${tableRowData.tags != null}" th:text="'--'">
+    </td>
+  </tr>
+</table>
+</body>
+</html>

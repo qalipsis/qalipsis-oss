@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+<div th:fragment="button (status)" class="button-wrapper" th:classappend="${status}">
+  <span th:text="${status}">Default</span>
+</div>
+</body>
+</html>

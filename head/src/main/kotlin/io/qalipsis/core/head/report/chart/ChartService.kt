@@ -16,31 +16,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package io.qalipsis.core.head.report
 
-import java.time.Duration
-import java.time.Instant
+package io.qalipsis.core.head.report.chart
+
+import io.qalipsis.api.report.TimeSeriesAggregationResult
+import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
+import java.nio.file.Path
 
 /**
- * Service to provide data for dashboard UI widgets.
+ * Service to generate graphical charts.
  *
  * @author Francisca Eze
  */
-internal interface WidgetService {
+internal interface ChartService {
 
     /**
-     * Fetches the latest factory states per tenant.
+     * Generates time series chart and returns the path of the chart image file.
+     *
+     * @param data chart data for charts
+     * @param dataSeries entities of required data series
+     * @param index current index of the chart data
+     *
      */
-    suspend fun getFactoryStates(tenant: String): FactoryState
-
-    /**
-     * Aggregates the campaign count and results within the specified window.
-     */
-    suspend fun aggregateCampaignResult(
-        tenant: String,
-        from: Instant,
-        until: Instant?,
-        timeOffset: Float,
-        aggregationTimeframe: Duration
-    ): List<CampaignSummaryResult>
+    fun buildChart(
+        data: Map<String, List<TimeSeriesAggregationResult>>,
+        dataSeries: Collection<DataSeriesEntity>,
+        index: Int,
+        reportTempDir: Path
+    ): Path
 }

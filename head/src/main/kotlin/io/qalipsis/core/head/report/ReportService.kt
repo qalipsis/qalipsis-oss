@@ -22,6 +22,7 @@ package io.qalipsis.core.head.report
 import io.qalipsis.api.query.Page
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
+import io.qalipsis.core.head.model.ReportTask
 
 /**
  * Service to proceed (get, save, update, delete, search) the storage in database of the report.
@@ -33,7 +34,11 @@ internal interface ReportService {
     /**
      * Create a new report.
      */
-    suspend fun create(tenant: String, creator: String, reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Report
+    suspend fun create(
+        tenant: String,
+        creator: String,
+        reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
+    ): Report
 
     /**
      * Return a fully described report.
@@ -43,7 +48,12 @@ internal interface ReportService {
     /**
      * Update the report.
      */
-    suspend fun update(tenant: String, username: String, reference: String, reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Report
+    suspend fun update(
+        tenant: String,
+        username: String,
+        reference: String,
+        reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
+    ): Report
 
     /**
      * Delete the report.
@@ -51,7 +61,7 @@ internal interface ReportService {
     suspend fun delete(tenant: String, username: String, reference: String)
 
     /**
-     * Search reports in the specified tenant
+     * Search reports in the specified tenant.
      *
      * @param tenant the reference of the tenant owning the report
      * @param username username of the currently authenticated user
@@ -60,5 +70,31 @@ internal interface ReportService {
      * @param size the maximum count of results in a page
      * @param page the 0-based index of the page to fetch
      */
-    suspend fun search(tenant: String, username: String, filters: Collection<String>, sort: String?, page: Int, size: Int): Page<Report>
+    suspend fun search(
+        tenant: String,
+        username: String,
+        filters: Collection<String>,
+        sort: String?,
+        page: Int,
+        size: Int
+    ): Page<Report>
+
+    /**
+     * Builds and renders a report in pdf form.
+     *
+     * @param tenant the reference of the tenant owning the report
+     * @param creator username of the currently authenticated user
+     * @param reference the unique identifier of the report
+     */
+    suspend fun render(tenant: String, creator: String, reference: String): ReportTask
+
+
+    /**
+     * Returns the report as ByteArray.
+     *
+     * @param tenant the reference of the tenant owning the report
+     * @param username the username of the currently authenticated user
+     * @param taskReference the unique identifier of the task data to be downloaded
+     */
+    suspend fun read(tenant: String, username: String, taskReference: String): DownloadFile
 }
