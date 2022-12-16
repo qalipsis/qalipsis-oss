@@ -32,6 +32,7 @@ import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.report.ExecutionStatus
@@ -416,24 +417,35 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // given
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
             val saved = campaignRepository.save(campaignPrototype.copy(key = "1", end = null, tenantId = tenant.id))
-            val saved2 =
-                campaignRepository.save(campaignPrototype.copy(key = "2", end = null, tenantId = tenant.id))
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved.id, name = "scenario 2", minionsCount = 2)
+                )
+            )
+            val saved2 = campaignRepository.save(campaignPrototype.copy(key = "2", end = null, tenantId = tenant.id))
 
             // when + then
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
                     Pageable.from(0, 1, Sort.of(Sort.Order("key")))
-                ).content
-            )
-                .containsOnly(saved)
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(2)
+                prop(Page<*>::getContent).containsOnly(saved)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
                     Pageable.from(1, 1, Sort.of(Sort.Order("key")))
-                ).content
-            )
-                .containsOnly(saved2)
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(2)
+                prop(Page<*>::getContent).containsOnly(saved2)
+            }
         }
 
     @Test
@@ -444,6 +456,12 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
             val saved2 =
                 campaignRepository.save(campaignPrototype.copy(key = "anyone-1", end = null, tenantId = tenant.id))
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved2.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2)
+                )
+            )
             val saved3 =
                 campaignRepository.save(campaignPrototype.copy(key = "anyone-2", end = null, tenantId = tenant.id))
 
@@ -454,28 +472,44 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     listOf("%NyO%", "%NoNe%"),
                     Pageable.from(0, 2, Sort.of(Sort.Order("key")))
                 )
-            ).containsOnly(saved2, saved3)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsOnly(saved2, saved3)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
                     Pageable.from(0, 2, Sort.of(Sort.Order("key", Sort.Order.Direction.DESC, true)))
                 )
-            ).containsOnly(saved3, saved2)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsOnly(saved2, saved3)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
                     Pageable.from(0, 1, Sort.of(Sort.Order("key")))
                 )
-            ).containsOnly(saved2)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(2)
+                prop(Page<*>::getContent).containsOnly(saved2)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
                     Pageable.from(1, 1, Sort.of(Sort.Order("key")))
                 )
-            ).containsOnly(saved3)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(2)
+                prop(Page<*>::getContent).containsOnly(saved3)
+            }
 
             assertThat(
                 campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
@@ -490,11 +524,21 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
             val saved2 =
                 campaignRepository.save(campaignPrototype.copy(key = "anyone", end = null, tenantId = tenant.id))
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved2.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2)
+                )
+            )
 
             // when + then
             assertThat(
                 campaignRepository.findAll("my-tenant-2", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
-            ).containsOnly(saved2)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(1)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsOnly(saved2)
+            }
             assertThat(
                 campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
             ).isEmpty()
@@ -506,15 +550,20 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // given
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
-            val saved2 =
-                campaignRepository.save(
-                    campaignPrototype.copy(
-                        key = "the-key",
-                        name = "The other name",
-                        end = null,
-                        tenantId = tenant.id
-                    )
+            val saved2 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key",
+                    name = "The other name",
+                    end = null,
+                    tenantId = tenant.id
                 )
+            )
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved2.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2)
+                )
+            )
 
             // when + then
             assertThat(
@@ -523,7 +572,11 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     listOf("%OtH%", "%NoNe%"),
                     Pageable.from(0, 1)
                 )
-            ).containsOnly(saved2)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(1)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsOnly(saved2)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "other-tenant",
@@ -540,16 +593,21 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
             val user = userRepository.save(UserEntity(username = "John Doe"))
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
-            val saved2 =
-                campaignRepository.save(
-                    campaignPrototype.copy(
-                        key = "the-key",
-                        name = "The other name",
-                        end = null,
-                        tenantId = tenant.id,
-                        configurer = user.id
-                    )
+            val saved2 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key",
+                    name = "The other name",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id
                 )
+            )
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved2.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2)
+                )
+            )
 
             // when + then
             assertThat(
@@ -558,7 +616,11 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     listOf("%HN%", "%NoNe%"),
                     Pageable.from(0, 1)
                 )
-            ).containsOnly(saved2)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(1)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsOnly(saved2)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "other-tenant",
@@ -575,16 +637,21 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
             val user = userRepository.save(UserEntity(username = "foo", displayName = "John Doe"))
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
-            val saved2 =
-                campaignRepository.save(
-                    campaignPrototype.copy(
-                        key = "the-key",
-                        name = "The other name",
-                        end = null,
-                        tenantId = tenant.id,
-                        configurer = user.id
-                    )
+            val saved2 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key",
+                    name = "The other name",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id
                 )
+            )
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved2.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2)
+                )
+            )
 
             // when + then
             assertThat(
@@ -593,7 +660,11 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     listOf("%HN%", "%NoNe%"),
                     Pageable.from(0, 1)
                 )
-            ).containsOnly(saved2)
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(1)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsOnly(saved2)
+            }
             assertThat(
                 campaignRepository.findAll(
                     "other-tenant",
