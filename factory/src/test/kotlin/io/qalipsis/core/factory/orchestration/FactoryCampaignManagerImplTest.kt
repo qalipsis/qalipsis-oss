@@ -36,6 +36,7 @@ import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
@@ -342,6 +343,7 @@ internal class FactoryCampaignManagerImplTest {
                 every { hasNext() } returns true
                 every { next() } returns MinionsStartingLine(-1, 500)
             }
+            excludeRecords { executionProfile.toString() }
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
@@ -383,6 +385,7 @@ internal class FactoryCampaignManagerImplTest {
             every { hasNext() } returns true
             every { next() } returns MinionsStartingLine(100, -1 - campaignStartOffsetMs)
         }
+        excludeRecords { executionProfile.toString() }
 
         // when
         val exception = assertThrows<IllegalArgumentException> {
@@ -427,6 +430,7 @@ internal class FactoryCampaignManagerImplTest {
             every { next() } returnsMany minionsStartingLines
         }
         every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
+        excludeRecords { executionProfile.toString() }
 
         // when
         val start = System.currentTimeMillis() + 2000
@@ -485,6 +489,7 @@ internal class FactoryCampaignManagerImplTest {
                 every { next() } returnsMany minionsStartingLines
             }
             every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
+            excludeRecords { executionProfile.toString() }
 
             // when
             val minionsStartDefinitions =
@@ -533,6 +538,7 @@ internal class FactoryCampaignManagerImplTest {
                 every { hasNext() } returns false
             }
             every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
+            excludeRecords { executionProfile.toString() }
 
             // when
             val exception = assertThrows<AssertionError> {
