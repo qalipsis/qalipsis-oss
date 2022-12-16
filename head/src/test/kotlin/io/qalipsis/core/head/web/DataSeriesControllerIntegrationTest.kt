@@ -561,7 +561,7 @@ internal class DataSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 username = Defaults.USER,
                 filters = emptyList(),
-                sort = null,
+                sort = "displayName:asc",
                 page = 0,
                 size = 20
             )
@@ -576,7 +576,7 @@ internal class DataSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 username = Defaults.USER,
                 filters = emptyList(),
-                sort = null,
+                sort = "displayName:asc",
                 page = 0,
                 size = 20
             )
@@ -649,7 +649,7 @@ internal class DataSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 username = Defaults.USER,
                 filters = listOf("foo", "filter-2"),
-                sort = null,
+                sort = "displayName:asc",
                 page = 0,
                 size = 7
             )
@@ -664,7 +664,7 @@ internal class DataSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 username = Defaults.USER,
                 filters = listOf("foo", "filter-2"),
-                sort = null,
+                sort = "displayName:asc",
                 page = 0,
                 size = 7
             )
