@@ -100,18 +100,22 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     @Query(
         value = """SELECT *
             FROM campaign as campaign_entity_
-            LEFT JOIN campaign_scenario s ON campaign_entity_.id = s.campaign_id 
-            LEFT JOIN "user" u ON campaign_entity_.configurer = u.id 
-            WHERE (campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters]) OR s.name ILIKE any (array[:filters]) OR u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters]))
-            AND EXISTS 
-            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+            WHERE EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)
+                AND (
+                    campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters])
+                    OR EXISTS (SELECT 1 from campaign_scenario s WHERE campaign_entity_.id = s.campaign_id AND s.name ILIKE any (array[:filters]))
+                    OR EXISTS (SELECT 1 from "user" u WHERE campaign_entity_.configurer = u.id AND (u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters])))
+                )""",
         countQuery = """SELECT COUNT(*)
             FROM campaign as campaign_entity_
-            LEFT JOIN campaign_scenario s ON campaign_entity_.id = s.campaign_id 
-            LEFT JOIN "user" u ON campaign_entity_.configurer = u.id 
-            WHERE (campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters]) OR s.name ILIKE any (array[:filters]) OR u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters]))
-            AND EXISTS 
-            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+            WHERE EXISTS 
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)
+                AND (
+                    campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters])
+                    OR EXISTS (SELECT 1 from campaign_scenario s WHERE campaign_entity_.id = s.campaign_id AND s.name ILIKE any (array[:filters]))
+                    OR EXISTS (SELECT 1 from "user" u WHERE campaign_entity_.configurer = u.id AND (u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters])))
+                )""",
         nativeQuery = true
     )
     suspend fun findAll(tenant: String, filters: Collection<String>, pageable: Pageable): Page<CampaignEntity>
