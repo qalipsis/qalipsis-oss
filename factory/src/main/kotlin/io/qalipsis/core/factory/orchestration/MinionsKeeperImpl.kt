@@ -72,6 +72,12 @@ internal class MinionsKeeperImpl(
 
     private val dagIdsBySingletonMinionId = ConcurrentHashMap<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>()
 
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    private val idleMinionsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
+
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    private val runningMinionsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
+
     override fun contains(minionId: MinionId) = minions.containsKey(minionId)
 
     override fun get(minionId: MinionId) = requireNotNull(minions[minionId]) { "The minion $minionId does not exist" }
@@ -98,15 +104,7 @@ internal class MinionsKeeperImpl(
                 scenarioName = scenarioName,
                 // Only minions that are singleton or not in a root DAG should be immediately started.
                 pauseAtStart = rootDag != null || singletonMinion, // Minions at the root should not be started yet.
-                isSingleton = singletonMinion,
-                executingStepsGauge = meterRegistry.gauge(
-                    "minion-running-steps",
-                    listOf(
-                        Tag.of("scenario", scenarioName),
-                        Tag.of("minion", minionId)
-                    ),
-                    AtomicInteger()
-                )
+                isSingleton = singletonMinion
             )
             minions[minionId] = minion
 
@@ -122,6 +120,14 @@ internal class MinionsKeeperImpl(
             }
 
             if (rootDag != null) {
+                idleMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
+                    meterRegistry.gauge(
+                        "idle-minions",
+                        listOf(Tag.of("scenario", scenario)),
+                        AtomicInteger()
+                    )
+                }.incrementAndGet()
+
                 rootDagsOfMinions[minionId] = rootDag.name
                 eventsLogger.debug(
                     "minion.created",
@@ -154,7 +160,9 @@ internal class MinionsKeeperImpl(
                 log.trace { "Waiting for $waitingDelay ms until start of ${minionsToStart.size} minions" }
                 delay(waitingDelay)
             }
-            minionsToStart.forEach {
+            val refMinion = minionsToStart.first()
+
+            minionsToStart.onEach {
                 it.start()
                 eventsLogger.debug(
                     "minion.started",
@@ -165,12 +173,25 @@ internal class MinionsKeeperImpl(
                     )
                 )
             }
-            val refMinion = minionsToStart.first()
             reportLiveStateRegistry.recordStartedMinion(
                 refMinion.campaignKey,
                 refMinion.scenarioName,
                 minionsToStart.size
             )
+            idleMinionsGauges.computeIfAbsent(refMinion.scenarioName) { scenario ->
+                meterRegistry.gauge(
+                    "idle-minions",
+                    listOf(Tag.of("scenario", scenario)),
+                    AtomicInteger()
+                )
+            }.addAndGet(-minionsToStart.size)
+            runningMinionsGauges.computeIfAbsent(refMinion.scenarioName) { scenario ->
+                meterRegistry.gauge(
+                    "running-minions",
+                    listOf(Tag.of("scenario", scenario)),
+                    AtomicInteger()
+                )
+            }.addAndGet(minionsToStart.size)
         }
     }
 
@@ -208,6 +229,9 @@ internal class MinionsKeeperImpl(
         singletonMinionsByDagId.clear()
         dagIdsBySingletonMinionId.clear()
         rootDagsOfMinions.clear()
+
+        idleMinionsGauges.clear()
+        runningMinionsGauges.clear()
     }
 
     private suspend fun shutdownMinion(minion: MinionImpl, interrupt: Boolean) {
@@ -222,7 +246,7 @@ internal class MinionsKeeperImpl(
                 "minion" to minionId,
                 "interrupt" to "$interrupt"
             )
-        eventsLogger.debug("minion.completion.started", tags = eventsTags)
+        eventsLogger.debug("minion.completion.in-progress", tags = eventsTags)
         if (!minion.isSingleton) {
             reportLiveStateRegistry.recordCompletedMinion(campaign, scenario)
         }

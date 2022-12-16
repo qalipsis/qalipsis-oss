@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.inmemory
 
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.DirectedAcyclicGraphName
@@ -29,6 +30,7 @@ import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.collections.concurrentTableOf
@@ -39,6 +41,7 @@ import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -58,6 +61,7 @@ internal class InMemoryMinionAssignmentKeeper(
     /**
      * Originally assigned count of DAGs to execute by scenario and minion.
      */
+    @KTestable
     private val scheduledDagsCountByMinions = concurrentTableOf<ScenarioName, MinionId, AtomicInteger>()
 
     private val scheduledStartOffsets = concurrentTableOf<ScenarioName, Long, Collection<MinionId>>()
@@ -65,6 +69,7 @@ internal class InMemoryMinionAssignmentKeeper(
     /**
      * Currently assigned count of DAGs to execute by scenario and minion.
      */
+    @KTestable
     private val remainingDagsCountByMinions = concurrentTableOf<ScenarioName, MinionId, AtomicInteger>()
 
     /**
@@ -86,6 +91,7 @@ internal class InMemoryMinionAssignmentKeeper(
     /**
      * The assignment of DAGs to a factory is not relevant when there is only one factory.
      */
+    @LogInputAndOutput(Level.DEBUG)
     override suspend fun assignFactoryDags(
         campaignKey: CampaignKey,
         assignments: Collection<FactoryScenarioAssignment>
@@ -134,11 +140,12 @@ internal class InMemoryMinionAssignmentKeeper(
         return minionsByScenarios[scenarioName]!! - singletonMinions
     }
 
+    @LogInputAndOutput(Level.DEBUG)
     override suspend fun countMinionsUnderLoad(campaignKey: CampaignKey, scenarioName: ScenarioName): Int {
         return getIdsOfMinionsUnderLoad(campaignKey, scenarioName).size
     }
 
-    @LogInputAndOutput
+    @LogInputAndOutput(Level.DEBUG)
     override suspend fun assign(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName
@@ -146,6 +153,7 @@ internal class InMemoryMinionAssignmentKeeper(
         return localAssignmentStore.assignments[scenarioName] ?: emptyMap()
     }
 
+    @LogInput
     override suspend fun schedule(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
@@ -167,6 +175,7 @@ internal class InMemoryMinionAssignmentKeeper(
         scheduledStartOffsets[scenarioName] = scenarioSchedule
     }
 
+    @LogInput(Level.DEBUG)
     override suspend fun readSchedulePlan(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName
@@ -197,7 +206,7 @@ internal class InMemoryMinionAssignmentKeeper(
                     remainingDagsCountByMinions.put(
                         scenarioName,
                         minionId,
-                        scheduledDagsCountByMinions[scenarioName, minionId]!!
+                        AtomicInteger(scheduledDagsCountByMinions[scenarioName, minionId]!!.get())
                     )
                 } else {
                     cleanMinionDataAndEvaluateScenarioCompletion(scenarioName, minionId, campaignKey, state)

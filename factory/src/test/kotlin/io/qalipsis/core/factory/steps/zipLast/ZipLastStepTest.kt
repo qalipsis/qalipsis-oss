@@ -74,6 +74,7 @@ internal class ZipLastStepTest {
         delay(100)
         topic.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromRight2))
         topic.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromRight1))
+        delay(100) // Add a delay to let the message being processed in the topic.
         step.execute(ctx)
 
         // then

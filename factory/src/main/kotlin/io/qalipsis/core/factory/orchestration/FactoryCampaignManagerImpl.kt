@@ -39,6 +39,7 @@ import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
@@ -186,6 +187,7 @@ internal class FactoryCampaignManagerImpl(
     }
 
     @LogInput(Level.DEBUG)
+    @LogOutput(Level.TRACE)
     override suspend fun prepareMinionsExecutionProfile(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
@@ -194,11 +196,12 @@ internal class FactoryCampaignManagerImpl(
 
         var remainingMinionsUnderLoadCount = minionAssignmentKeeper.countMinionsUnderLoad(campaignKey, scenarioName)
         val executionProfile = assignableScenariosExecutionProfiles[scenarioName]!!
+        log.debug { "Using the execution profile $executionProfile" }
         val executionProfileIterator = executionProfile.iterator(
             totalMinionsCount = remainingMinionsUnderLoadCount,
             speedFactor = runningCampaign.speedFactor
         )
-        var start = System.currentTimeMillis() + runningCampaign.startOffsetMs
+        var start = 0L
 
         // Notifies all the execution profiles that the campaign is now effectively starting.
         assignableScenariosExecutionProfiles.values.forEach { it.notifyStart(runningCampaign.speedFactor) }
@@ -208,13 +211,20 @@ internal class FactoryCampaignManagerImpl(
         while (remainingMinionsUnderLoadCount > 0 && executionProfileIterator.hasNext()) {
             val nextStartingLine = executionProfileIterator.next()
             require(nextStartingLine.count >= 0) { "The number of minions to start at next starting line cannot be negative, but was ${nextStartingLine.count}" }
-            start += nextStartingLine.offsetMs
-            require(start > System.currentTimeMillis()) { "The next starting line should not be in the past, but was planned ${System.currentTimeMillis() - start} ms ago" }
+            val nextStart = start + nextStartingLine.offsetMs
+            require(nextStart >= start) { "The next starting line should not be in the past, but was planned ${System.currentTimeMillis() - start} ms ago" }
 
-            result += nextStartingLine
-            remainingMinionsUnderLoadCount -= nextStartingLine.count
+            val minionsCountToStart = nextStartingLine.count.coerceAtMost(remainingMinionsUnderLoadCount)
+            result += nextStartingLine.copy(
+                offsetMs = nextStart,
+                count = minionsCountToStart
+            )
+            remainingMinionsUnderLoadCount -= minionsCountToStart
+
+            start = nextStart
         }
 
+        assert(remainingMinionsUnderLoadCount == 0) { "$remainingMinionsUnderLoadCount minions could not be scheduled" }
         log.debug { "Ramp-up creation is complete on campaign $campaignKey for scenario $scenarioName" }
         return result
     }

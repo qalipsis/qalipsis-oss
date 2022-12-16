@@ -42,7 +42,6 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.measureTime
 import kotlinx.coroutines.withTimeout
@@ -92,25 +91,9 @@ internal class RunnerImplTest {
     internal fun `should execute the full dag asynchronously and update meters`() = testCoroutineDispatcher.runTest {
         // given
         val runningStepsGauge: AtomicInteger = relaxedMockk("running-steps")
-        val idleMinionsGauge: AtomicInteger = relaxedMockk("idle-minions")
-        val runningMinionsGauge: AtomicInteger = relaxedMockk("running-minions")
         val executedStepCounter: Counter = relaxedMockk("executed-steps")
         val stepExecutionTimer: Timer = relaxedMockk("step-execution-timer")
 
-        every {
-            meterRegistry.gauge(
-                "idle-minions",
-                listOf(Tag.of("scenario", "my-scenario")),
-                any<AtomicInteger>()
-            )
-        } returns idleMinionsGauge
-        every {
-            meterRegistry.gauge(
-                "running-minions",
-                listOf(Tag.of("scenario", "my-scenario")),
-                any<AtomicInteger>()
-            )
-        } returns runningMinionsGauge
         every {
             meterRegistry.gauge(
                 "running-steps",
@@ -131,7 +114,7 @@ internal class RunnerImplTest {
             }
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
         val executionDuration = measureTime {
@@ -175,11 +158,6 @@ internal class RunnerImplTest {
             it.assertHasParent("step-4")
         }
 
-        verifyOnce {
-            idleMinionsGauge.incrementAndGet()
-            idleMinionsGauge.decrementAndGet()
-            runningMinionsGauge.incrementAndGet()
-        }
         coVerifyExactly(6) {
             runningStepsGauge.incrementAndGet()
             runningStepsGauge.decrementAndGet()
@@ -240,7 +218,7 @@ internal class RunnerImplTest {
                 .decoratedProcessError("step-5")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
         runner.run(minion, dag)
@@ -297,7 +275,7 @@ internal class RunnerImplTest {
                 .forward("step-2").recoverError("step-3", 2).forward("step-4")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
         runner.run(minion, dag)
@@ -354,7 +332,7 @@ internal class RunnerImplTest {
                 }
             }
             val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-            val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
+            val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
             // when
             runner.run(minion, dag)
@@ -408,7 +386,7 @@ internal class RunnerImplTest {
                 .forward("step-2")
         }
         val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, AtomicInteger())
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
         runner.run(minion, dag)
@@ -459,8 +437,8 @@ internal class RunnerImplTest {
                 }
             }
             val runner = RunnerImpl(eventsLogger, meterRegistry, reportLiveStateRegistry, this)
-            val minion1 = MinionImpl("my-minion-1", "my-campaign", "my-scenario", false, false, AtomicInteger())
-            val minion2 = MinionImpl("my-minion-2", "my-campaign", "my-scenario", false, false, AtomicInteger())
+            val minion1 = MinionImpl("my-minion-1", "my-campaign", "my-scenario", false, false)
+            val minion2 = MinionImpl("my-minion-2", "my-campaign", "my-scenario", false, false)
 
             // when
             runner.run(minion1, dag)

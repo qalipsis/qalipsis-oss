@@ -51,7 +51,6 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.collections.ConcurrentTable
 import io.qalipsis.core.collections.Table
 import io.qalipsis.core.factory.testDag
-import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -92,17 +91,33 @@ internal class MinionsKeeperImplTest {
     private lateinit var eventsLogger: EventsLogger
 
     @RelaxedMockK
-    private lateinit var meterRegistry: CampaignMeterRegistry
+    private lateinit var campaignMeterRegistry: CampaignMeterRegistry
 
-    @RelaxedMockK
-    private lateinit var executingStepsGauge: AtomicInteger
+    @RelaxedMockK("idleMinionsGauge")
+    private lateinit var idleMinionsGauge: AtomicInteger
+
+    @RelaxedMockK("runningMinionsGauge")
+    private lateinit var runningMinionsGauge: AtomicInteger
 
     @RelaxedMockK
     private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @BeforeEach
     internal fun setUp() {
-        every { meterRegistry.gauge("minion-running-steps", any(), any<AtomicInteger>()) } returns executingStepsGauge
+        every {
+            campaignMeterRegistry.gauge(
+                "idle-minions",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+        } returns idleMinionsGauge
+        every {
+            campaignMeterRegistry.gauge(
+                "running-minions",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+        } returns runningMinionsGauge
     }
 
     @Test
@@ -123,7 +138,7 @@ internal class MinionsKeeperImplTest {
                 scenarioRegistry,
                 runner,
                 eventsLogger,
-                meterRegistry,
+                campaignMeterRegistry,
                 reportLiveStateRegistry,
                 this
             )
@@ -134,12 +149,10 @@ internal class MinionsKeeperImplTest {
 
             // then
             coVerifyOnce {
-                meterRegistry.gauge(
-                    "minion-running-steps",
-                    listOf(
-                        Tag.of("scenario", "my-scenario"),
-                        Tag.of("minion", "my-minion")
-                    ), any<AtomicInteger>()
+                campaignMeterRegistry.gauge(
+                    "idle-minions",
+                    listOf(Tag.of("scenario", "my-scenario")),
+                    any<AtomicInteger>()
                 )
                 eventsLogger.debug(
                     "minion.created", timestamp = any(),
@@ -147,14 +160,13 @@ internal class MinionsKeeperImplTest {
                 )
                 runner.run(any(), refEq(dag2))
             }
-            confirmVerified(runner, eventsLogger, meterRegistry, reportLiveStateRegistry)
+            confirmVerified(runner, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry)
 
             assertThat(minionSlot.captured).all {
                 prop(MinionImpl::id).isEqualTo("my-minion")
                 prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
                 prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
                 prop(MinionImpl::isSingleton).isFalse()
-                prop("executingStepsGauge").isSameAs(executingStepsGauge)
                 prop(MinionImpl::isStarted).isFalse()
             }
             assertThat(minionsKeeper).all {
@@ -183,7 +195,7 @@ internal class MinionsKeeperImplTest {
                 scenarioRegistry,
                 runner,
                 eventsLogger,
-                meterRegistry,
+                campaignMeterRegistry,
                 reportLiveStateRegistry,
                 coroutineScope
             )
@@ -192,16 +204,7 @@ internal class MinionsKeeperImplTest {
             minionsKeeper.create("my-campaign", "my-scenario", listOf("my-dag-1", "my-dag-2"), "my-minion")
 
             // then
-            coVerifyOnce {
-                meterRegistry.gauge(
-                    "minion-running-steps",
-                    listOf(
-                        Tag.of("scenario", "my-scenario"),
-                        Tag.of("minion", "my-minion")
-                    ), any<AtomicInteger>()
-                )
-            }
-            confirmVerified(runner, eventsLogger, meterRegistry, reportLiveStateRegistry, coroutineScope)
+            confirmVerified(runner, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry, coroutineScope)
 
             assertThat(minionsKeeper).all {
                 typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isNotNull().all {
@@ -209,7 +212,6 @@ internal class MinionsKeeperImplTest {
                     prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
                     prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
                     prop(MinionImpl::isSingleton).isFalse()
-                    prop("executingStepsGauge").isSameAs(executingStepsGauge)
                     prop(MinionImpl::isStarted).isTrue()
                 }
                 typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").isEmpty()
@@ -237,7 +239,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -248,28 +250,22 @@ internal class MinionsKeeperImplTest {
 
         // then
         coVerifyOnce {
-            meterRegistry.gauge(
-                "minion-running-steps",
-                listOf(
-                    Tag.of("scenario", "my-scenario"),
-                    Tag.of("minion", "my-minion")
-                ), any<AtomicInteger>()
-            )
             eventsLogger.debug(
                 "minion.created", timestamp = any(),
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             runner.run(any(), refEq(dag))
+            campaignMeterRegistry.gauge("idle-minions", listOf(Tag.of("scenario", "my-scenario")), any<AtomicInteger>())
+            idleMinionsGauge.incrementAndGet()
         }
 
-        confirmVerified(runner, eventsLogger, meterRegistry, reportLiveStateRegistry)
+        confirmVerified(runner, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry)
 
         assertThat(minionSlot.captured).all {
             prop(MinionImpl::id).isEqualTo("my-minion")
             prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
             prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
             prop(MinionImpl::isSingleton).isTrue()
-            prop("executingStepsGauge").isSameAs(executingStepsGauge)
             prop(MinionImpl::isStarted).isFalse()
         }
         assertThat(minionsKeeper).all {
@@ -296,7 +292,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -305,17 +301,7 @@ internal class MinionsKeeperImplTest {
         minionsKeeper.create("my-campaign", "my-scenario", listOf("my-dag-1"), "my-minion")
 
         // then
-        coVerifyOnce {
-            meterRegistry.gauge(
-                "minion-running-steps",
-                listOf(
-                    Tag.of("scenario", "my-scenario"),
-                    Tag.of("minion", "my-minion")
-                ), any<AtomicInteger>()
-            )
-        }
-
-        confirmVerified(runner, eventsLogger, meterRegistry, reportLiveStateRegistry)
+        confirmVerified(runner, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry)
 
         val createdMinion = minionsKeeper.getProperty<Map<MinionId, MinionImpl>>("minions")["my-minion"]
         assertThat(createdMinion).isNotNull().all {
@@ -323,7 +309,6 @@ internal class MinionsKeeperImplTest {
             prop(MinionImpl::campaignKey).isEqualTo("my-campaign")
             prop(MinionImpl::scenarioName).isEqualTo("my-scenario")
             prop(MinionImpl::isSingleton).isTrue()
-            prop("executingStepsGauge").isSameAs(executingStepsGauge)
             prop(MinionImpl::isStarted).isFalse()
         }
         assertThat(minionsKeeper).all {
@@ -345,7 +330,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -369,7 +354,7 @@ internal class MinionsKeeperImplTest {
         }
         assertThat(idleSingletonsMinions).isEmpty()
 
-        confirmVerified(scenarioRegistry, eventsLogger, meterRegistry, reportLiveStateRegistry)
+        confirmVerified(scenarioRegistry, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry)
     }
 
     @Test
@@ -381,7 +366,7 @@ internal class MinionsKeeperImplTest {
                 scenarioRegistry,
                 runner,
                 eventsLogger,
-                meterRegistry,
+                campaignMeterRegistry,
                 reportLiveStateRegistry,
                 this
             )
@@ -391,7 +376,7 @@ internal class MinionsKeeperImplTest {
             }
 
             // then
-            confirmVerified(scenarioRegistry, eventsLogger, meterRegistry, reportLiveStateRegistry)
+            confirmVerified(scenarioRegistry, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry)
         }
 
     @Test
@@ -402,7 +387,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             relaxedMockk()
         )
@@ -443,9 +428,17 @@ internal class MinionsKeeperImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion-2")
             )
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 2)
+            campaignMeterRegistry.gauge("idle-minions", listOf(Tag.of("scenario", "my-scenario")), any<AtomicInteger>())
+            idleMinionsGauge.addAndGet(-2)
+            campaignMeterRegistry.gauge(
+                "running-minions",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+            runningMinionsGauge.addAndGet(2)
         }
-        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(80), duration)
-        confirmVerified(eventsLogger, meterRegistry, reportLiveStateRegistry, minionToIgnore)
+        QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(200), duration)
+        confirmVerified(eventsLogger, campaignMeterRegistry, reportLiveStateRegistry, minionToIgnore)
     }
 
     @Test
@@ -456,7 +449,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             relaxedMockk()
         )
@@ -497,9 +490,17 @@ internal class MinionsKeeperImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion-2")
             )
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 2)
+            campaignMeterRegistry.gauge("idle-minions", listOf(Tag.of("scenario", "my-scenario")), any<AtomicInteger>())
+            idleMinionsGauge.addAndGet(-2)
+            campaignMeterRegistry.gauge(
+                "running-minions",
+                listOf(Tag.of("scenario", "my-scenario")),
+                any<AtomicInteger>()
+            )
+            runningMinionsGauge.addAndGet(2)
         }
         QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(350), duration)
-        confirmVerified(eventsLogger, meterRegistry, reportLiveStateRegistry, minionToIgnore)
+        confirmVerified(eventsLogger, campaignMeterRegistry, reportLiveStateRegistry, minionToIgnore)
     }
 
     @Test
@@ -509,7 +510,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -544,7 +545,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -566,7 +567,7 @@ internal class MinionsKeeperImplTest {
                 scenarioRegistry,
                 runner,
                 eventsLogger,
-                meterRegistry,
+                campaignMeterRegistry,
                 reportLiveStateRegistry,
                 this
             )
@@ -594,7 +595,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -625,7 +626,7 @@ internal class MinionsKeeperImplTest {
             minion.campaignKey
             minion.scenarioName
             eventsLogger.debug(
-                "minion.completion.started",
+                "minion.completion.in-progress",
                 timestamp = any(),
                 tags = mapOf(
                     "campaign" to "my-campaign",
@@ -660,7 +661,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -687,7 +688,7 @@ internal class MinionsKeeperImplTest {
             minion.campaignKey
             minion.scenarioName
             eventsLogger.debug(
-                "minion.completion.started",
+                "minion.completion.in-progress",
                 timestamp = any(),
                 tags = mapOf(
                     "campaign" to "my-campaign",
@@ -722,7 +723,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -743,7 +744,7 @@ internal class MinionsKeeperImplTest {
             scenarioRegistry,
             runner,
             eventsLogger,
-            meterRegistry,
+            campaignMeterRegistry,
             reportLiveStateRegistry,
             this
         )
@@ -780,6 +781,12 @@ internal class MinionsKeeperImplTest {
         val singletonMinionsByDagId =
             minionsKeeper.getProperty<ConcurrentTable<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId")
         singletonMinionsByDagId.put("my-scenario", "my-dag", relaxedMockk())
+        val idleMinionsGauges =
+            minionsKeeper.getProperty<MutableMap<ScenarioName, AtomicInteger>>("idleMinionsGauges")
+        idleMinionsGauges["my-scenario"] = AtomicInteger(123)
+        val runningMinionsGauges =
+            minionsKeeper.getProperty<MutableMap<ScenarioName, AtomicInteger>>("runningMinionsGauges")
+        runningMinionsGauges["my-scenario"] = AtomicInteger(76543)
 
         // when
         minionsKeeper.shutdownAll()
@@ -793,7 +800,7 @@ internal class MinionsKeeperImplTest {
             minion1.campaignKey
             minion1.scenarioName
             eventsLogger.debug(
-                "minion.completion.started",
+                "minion.completion.in-progress",
                 timestamp = any(),
                 tags = mapOf(
                     "campaign" to "my-campaign",
@@ -820,7 +827,7 @@ internal class MinionsKeeperImplTest {
             minion2.campaignKey
             minion2.scenarioName
             eventsLogger.debug(
-                "minion.completion.started",
+                "minion.completion.in-progress",
                 timestamp = any(),
                 tags = mapOf(
                     "campaign" to "my-campaign",
@@ -846,7 +853,7 @@ internal class MinionsKeeperImplTest {
             minion3.campaignKey
             minion3.scenarioName
             eventsLogger.debug(
-                "minion.completion.started",
+                "minion.completion.in-progress",
                 timestamp = any(),
                 tags = mapOf(
                     "campaign" to "my-campaign",
@@ -872,6 +879,8 @@ internal class MinionsKeeperImplTest {
         assertThat(rootDagsOfMinions).isEmpty()
         assertThat(dagIdsBySingletonMinionId).isEmpty()
         assertThat(singletonMinionsByDagId.isEmpty()).isTrue()
+        assertThat(idleMinionsGauges).isEmpty()
+        assertThat(runningMinionsGauges).isEmpty()
         confirmVerified(minion1, minion2, minion3, runner, eventsLogger)
     }
 }

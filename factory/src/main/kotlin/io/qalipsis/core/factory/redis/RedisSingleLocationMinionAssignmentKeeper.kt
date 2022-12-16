@@ -42,6 +42,7 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -59,6 +60,7 @@ import jakarta.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
 
 @ExperimentalLettuceCoroutinesApi
@@ -154,7 +156,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         localAssignmentStore.reset()
     }
 
-    @LogInputAndOutput
+    @LogInput(Level.DEBUG)
     override suspend fun assignFactoryDags(
         campaignKey: CampaignKey,
         assignments: Collection<FactoryScenarioAssignment>
@@ -193,7 +195,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         campaignKey: CampaignKey
     ) = "{$campaignKey}-assignment:"
 
-    @LogInputAndOutput
+    @LogInput
     override suspend fun registerMinionsToAssign(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
@@ -278,6 +280,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         }
     }
 
+    @LogInput(Level.DEBUG)
     override suspend fun getIdsOfMinionsUnderLoad(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName
@@ -294,11 +297,13 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         return minionsIds
     }
 
+    @LogInputAndOutput(Level.DEBUG)
     override suspend fun countMinionsUnderLoad(campaignKey: CampaignKey, scenarioName: ScenarioName): Int {
         val minionsUnderloadKey = buildRedisKeyPrefix(campaignKey, scenarioName) + UNDERLOAD_MINIONS
         return redisSetCommands.scard(minionsUnderloadKey)?.toInt() ?: 0
     }
 
+    @LogInput(Level.DEBUG)
     override suspend fun completeUnassignedMinionsRegistration(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         // Updates the number active scenarios in the campaign.
         val countersHashKey = buildRedisKeyPrefix(campaignKey) + CAMPAIGN_COUNTERS
@@ -443,6 +448,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         }
     }
 
+    @LogInput
     override suspend fun schedule(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
@@ -487,6 +493,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         }
     }
 
+    @LogInput
     override suspend fun readSchedulePlan(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName
@@ -499,6 +506,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         }
     }
 
+    @LogInput
     suspend fun readSchedulePlan(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
@@ -559,6 +567,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         return state
     }
 
+    @LogInputAndOutput
     override suspend fun getFactoriesChannels(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,

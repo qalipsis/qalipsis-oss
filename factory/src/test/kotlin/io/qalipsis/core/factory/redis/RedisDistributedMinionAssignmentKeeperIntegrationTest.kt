@@ -60,6 +60,8 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.MethodOrderer
@@ -546,13 +548,15 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
     @Timeout(10)
     @Order(7)
     internal fun `should not complete the scenario when the latest minion of a scenario is completed but has to restart`(
-        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper,
+        hashCoroutinesCommands: RedisHashCoroutinesCommands<String, String>
     ) = testDispatcherProvider.run {
+        val minionId = MINIONS_SCENARIO_1.last()
         assertThat(
             minionAssignmentKeeper.executionComplete(
                 campaignKey = CAMPAIGN,
                 scenarioName = SCENARIO_1,
-                minionId = MINIONS_SCENARIO_1.last(),
+                minionId = minionId,
                 dagIds = listOf(SCENARIO_1_DAG_5),
                 mightRestart = true
             )
@@ -561,13 +565,23 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
             prop(CampaignCompletionState::scenarioComplete).isFalse()
             prop(CampaignCompletionState::campaignComplete).isFalse()
         }
+
+        // Checks that the number of remaining DAGs is properly reset without affecting the originally scheduled count of DAGs.
+        val dagsForMinion =
+            hashCoroutinesCommands.hgetall("{$CAMPAIGN}-assignment:$SCENARIO_1:minion:assigned-dags:${minionId}")
+                .map { it.key to it.value }.toList().toMap()
+        assertThat(dagsForMinion["remaining-dags"]).isNotNull().all {
+            prop(String::toIntOrNull).isNotNull().isEqualTo(5)
+            isEqualTo(dagsForMinion["scheduled-dags"])
+        }
     }
 
     @Test
     @Timeout(10)
     @Order(8)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`(
-        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper,
+        hashCoroutinesCommands: RedisHashCoroutinesCommands<String, String>
     ) = testDispatcherProvider.run {
         assertThat(
             minionAssignmentKeeper.executionComplete(

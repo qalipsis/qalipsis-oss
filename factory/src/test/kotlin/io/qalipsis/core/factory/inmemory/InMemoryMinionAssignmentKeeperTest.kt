@@ -27,12 +27,15 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
+import assertk.assertions.isNotSameAs
 import assertk.assertions.isTrue
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.SpyK
 import io.qalipsis.api.executionprofile.MinionsStartingLine
+import io.qalipsis.core.factory.inmemory.catadioptre.remainingDagsCountByMinions
+import io.qalipsis.core.factory.inmemory.catadioptre.scheduledDagsCountByMinions
 import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStoreImpl
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -46,6 +49,7 @@ import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.util.concurrent.atomic.AtomicInteger
 
 @WithMockk
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
@@ -351,6 +355,15 @@ internal class InMemoryMinionAssignmentKeeperTest {
                 prop(CampaignCompletionState::scenarioComplete).isFalse()
                 prop(CampaignCompletionState::campaignComplete).isFalse()
             }
+
+            // Checks that the number of remaining DAGs is properly reset without affecting the originally scheduled count of DAGs.
+            assertThat(minionAssignmentKeeper.scheduledDagsCountByMinions()[SCENARIO_1, MINIONS_SCENARIO_1.last()]).isNotNull()
+                .prop(AtomicInteger::get).isEqualTo(5)
+            assertThat(minionAssignmentKeeper.remainingDagsCountByMinions()[SCENARIO_1, MINIONS_SCENARIO_1.last()]).isNotNull()
+                .all {
+                    isNotSameAs(minionAssignmentKeeper.scheduledDagsCountByMinions()[SCENARIO_1, MINIONS_SCENARIO_1.last()])
+                    prop(AtomicInteger::get).isEqualTo(5)
+                }
         }
 
     @Test

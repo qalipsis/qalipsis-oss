@@ -98,7 +98,7 @@ internal class StageStepTest {
     @Test
     @Timeout(10)
     internal fun `should execute all steps and forward the output`() = testCoroutineDispatcher.runTest {
-        val minion = MinionImpl("", "", "", false, false, relaxedMockk())
+        val minion = MinionImpl("", "", "", false, false)
         val tailStep: Step<Int, String> = relaxedMockk {
             every { name } returns "<tail>"
             coEvery { execute(refEq(minion), any()) } coAnswers {
@@ -152,7 +152,7 @@ internal class StageStepTest {
     @Test
     @Timeout(3)
     internal fun `should throw an exception when a wrapped step is in error`() = testCoroutineDispatcher.run {
-        val minion = MinionImpl("", "", "", false, false, relaxedMockk())
+        val minion = MinionImpl("", "", "", false, false)
         val secondStep: Step<Int, String> = relaxedMockk {
             coEvery { execute(refEq(minion), any()) } coAnswers {
                 val ctx = secondArg<StepContext<Int, String>>()
@@ -201,7 +201,7 @@ internal class StageStepTest {
     @Timeout(3)
     internal fun `should throw an exception when a wrapped step context is exhausted`() =
         testCoroutineDispatcher.runTest {
-            val minion = MinionImpl("", "", "", false, false, relaxedMockk())
+            val minion = MinionImpl("", "", "", false, false)
             val secondStep: Step<Int, String> = relaxedMockk {
                 coEvery { execute(refEq(minion), any()) } coAnswers {
                     val ctx = secondArg<StepContext<Int, String>>()
