@@ -196,7 +196,9 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                 val directives = campaignState.init()
                 campaignService.abort(tenant, aborter, campaignKey)
                 set(campaignState)
-                campaignReportStateKeeper.abort(campaignKey)
+                if (hard) {
+                    campaignReportStateKeeper.abort(campaignKey)
+                }
                 directives.forEach {
                     headChannel.publishDirective(it)
                 }

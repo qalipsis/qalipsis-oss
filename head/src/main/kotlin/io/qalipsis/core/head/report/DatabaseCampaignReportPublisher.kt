@@ -27,6 +27,7 @@ import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
@@ -37,6 +38,7 @@ import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.toList
+import org.slf4j.event.Level
 
 /**
  * Service in charge of persisting a report of a campaign into the database.
@@ -57,6 +59,7 @@ internal class DatabaseCampaignReportPublisher(
     private val scenarioReportMessageRepository: ScenarioReportMessageRepository
 ) : CampaignReportPublisher {
 
+    @LogInput(Level.DEBUG)
     override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
         val campaignReportEntity = saveCampaignReport(report)
         val scenarioReportEntitiesToSave = report.scenariosReports.map {
@@ -79,9 +82,17 @@ internal class DatabaseCampaignReportPublisher(
     }
 
     private suspend fun saveCampaignReport(campaignReport: CampaignReport): CampaignReportEntity {
+        val campaignEntity = campaignRepository.findByKey(campaignReport.campaignKey)
+        // Synchronize the campaign details with the ones from the report.
+        campaignRepository.update(
+            campaignEntity.copy(
+                result = campaignReport.status,
+                end = campaignReport.end
+            )
+        )
         return campaignReportRepository.save(
             CampaignReportEntity(
-                campaignId = campaignRepository.findIdByKey(campaignReport.campaignKey),
+                campaignId = campaignEntity.id,
                 startedMinions = campaignReport.startedMinions!!,
                 completedMinions = campaignReport.completedMinions!!,
                 successfulExecutions = campaignReport.successfulExecutions!!,
