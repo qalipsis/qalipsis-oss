@@ -21,14 +21,11 @@ package io.qalipsis.core.factory.orchestration
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
-import io.mockk.confirmVerified
-import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.time.QalipsisTimeAssertions.assertLongerOrEqualTo
 import io.qalipsis.test.time.coMeasureTime
 import kotlinx.coroutines.TimeoutCancellationException
@@ -56,9 +53,6 @@ internal class MinionImplTest {
     @RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
-    @RelaxedMockK
-    lateinit var executingStepsGauge: AtomicInteger
-
     private val coroutinesExecutionTime = Duration.ofMillis(500)
 
     @BeforeAll
@@ -74,7 +68,7 @@ internal class MinionImplTest {
     internal fun `attach and join`(): Unit = testCoroutineDispatcher.run {
         // given
         val completionCounter = AtomicInteger()
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, executingStepsGauge)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
         minion.onComplete { completionCounter.incrementAndGet() }
         val executionCounter = AtomicInteger()
 
@@ -97,18 +91,13 @@ internal class MinionImplTest {
         assertLongerOrEqualTo(coroutinesExecutionTime.multipliedBy(4), executionDuration)
         assertEquals(5, executionCounter.get())
         assertEquals(1, completionCounter.get())
-
-        verifyExactly(5) { executingStepsGauge.incrementAndGet() }
-        verifyExactly(5) { executingStepsGauge.decrementAndGet() }
-
-        confirmVerified(executingStepsGauge, executingStepsGauge)
     }
 
     @Test
     @Timeout(3)
     internal fun `should suspend caller until the minion starts`(): Unit = testCoroutineDispatcher.run {
         // given
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", true, false, executingStepsGauge)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", true, false)
         val latch = Latch(true)
 
         // when
@@ -125,15 +114,13 @@ internal class MinionImplTest {
 
         // then
         assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
-
-        confirmVerified(executingStepsGauge, executingStepsGauge)
     }
 
     @Test
     @Timeout(3)
     internal fun `wait for start and cancel`() = testCoroutineDispatcher.run {
         // given
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", true, false, executingStepsGauge)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", true, false)
         val latch = Latch(true)
 
         // when
@@ -152,8 +139,6 @@ internal class MinionImplTest {
 
         // then
         assertLongerOrEqualTo(coroutinesExecutionTime, executionDuration)
-
-        confirmVerified(executingStepsGauge, executingStepsGauge)
     }
 
     @Test
@@ -161,7 +146,7 @@ internal class MinionImplTest {
     internal fun `join and cancel`() = testCoroutineDispatcher.runTest {
         // given
         val completionCounter = AtomicInteger()
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, executingStepsGauge)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
         minion.onComplete {
             completionCounter.incrementAndGet()
         }
@@ -189,11 +174,6 @@ internal class MinionImplTest {
 
         assertEquals(0, executionCounter.get())
         assertEquals(1, completionCounter.get())
-
-        verifyExactly(3) {
-            executingStepsGauge.incrementAndGet()
-            executingStepsGauge.decrementAndGet()
-        }
     }
 
     @Test
@@ -201,7 +181,7 @@ internal class MinionImplTest {
     internal fun `should suspend join call when no job start`() = testCoroutineDispatcher.runTest {
         // given
         val completionCounter = AtomicInteger()
-        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false, executingStepsGauge)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
         minion.onComplete { completionCounter.incrementAndGet() }
 
         // then
@@ -211,8 +191,6 @@ internal class MinionImplTest {
             }
         }
         assertEquals(0, completionCounter.get())
-
-        confirmVerified(executingStepsGauge)
     }
 
     @Test
@@ -231,7 +209,7 @@ internal class MinionImplTest {
 
         val minions = mutableListOf<MinionImpl>()
         for (i in 0 until minionsCount) {
-            val minion = MinionImpl("$i", "my-campaign", "my-scenario", false, false, AtomicInteger())
+            val minion = MinionImpl("$i", "my-campaign", "my-scenario", false, false)
             minion.onComplete { completionCounter.incrementAndGet() }
             minions.add(minion)
         }
@@ -262,7 +240,7 @@ internal class MinionImplTest {
 
             val minions = mutableListOf<MinionImpl>()
             for (i in 0 until minionsCount) {
-                val minion = MinionImpl("$i", "my-campaign", "my-scenario", false, false, AtomicInteger())
+                val minion = MinionImpl("$i", "my-campaign", "my-scenario", false, false)
                 minion.onComplete { completionCounter.incrementAndGet() }
                 minions.add(minion)
             }
@@ -307,7 +285,7 @@ internal class MinionImplTest {
 
             val minions = mutableListOf<MinionImpl>()
             for (i in 0 until minionsCount) {
-                val minion = MinionImpl("$i", "my-campaign", "my-scenario", false, false, AtomicInteger())
+                val minion = MinionImpl("$i", "my-campaign", "my-scenario", false, false)
                 minion.onComplete { completionCounter.incrementAndGet() }
                 minions.add(minion)
             }

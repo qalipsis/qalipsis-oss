@@ -440,7 +440,11 @@ internal class FactoryCampaignManagerImplTest {
         // then
         assertThat(minionsStartDefinitions).all {
             hasSize(3)
-            containsExactly(*minionsStartingLines.toTypedArray())
+            containsExactly(
+                MinionsStartingLine(count = 12, offsetMs = 500),
+                MinionsStartingLine(count = 10, offsetMs = 1300),
+                MinionsStartingLine(count = 6, offsetMs = 2500)
+            )
         }
 
         coVerifyOrder {
@@ -459,7 +463,7 @@ internal class FactoryCampaignManagerImplTest {
 
     @Test
     @Timeout(1)
-    internal fun `should create the start definition of all the minions even when the execution profile schedules to many starts`() =
+    internal fun `should create the start definition of all the minions even when the execution profile schedules too many starts`() =
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
@@ -483,7 +487,6 @@ internal class FactoryCampaignManagerImplTest {
             every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
 
             // when
-            val start = System.currentTimeMillis() + campaignStartOffsetMs
             val minionsStartDefinitions =
                 factoryCampaignManager.prepareMinionsExecutionProfile(
                     campaignKey = "my-campaign",
@@ -494,7 +497,10 @@ internal class FactoryCampaignManagerImplTest {
             // then
             assertThat(minionsStartDefinitions).all {
                 hasSize(2)
-                containsExactly(*minionsStartingLines.toTypedArray())
+                containsExactly(
+                    MinionsStartingLine(count = 12, offsetMs = 500),
+                    MinionsStartingLine(count = 16, offsetMs = 1300)
+                )
             }
 
             coVerifyOrder {
@@ -529,17 +535,16 @@ internal class FactoryCampaignManagerImplTest {
             every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
 
             // when
-            val minionsStartDefinitions =
+            val exception = assertThrows<AssertionError> {
                 factoryCampaignManager.prepareMinionsExecutionProfile(
                     "my-campaign",
                     "my-scenario",
                     executionProfileConfiguration
                 )
+            }
 
             // then
-            assertThat(minionsStartDefinitions).all {
-                hasSize(0)
-            }
+            assertThat(exception.message).isNotNull().isEqualTo("28 minions could not be scheduled")
 
             coVerifyOrder {
                 minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario")

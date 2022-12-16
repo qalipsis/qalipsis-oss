@@ -81,39 +81,18 @@ internal class RunnerImpl(
     private val stepTypes = ConcurrentHashMap<String, String>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val idleMinionsGauges =
-        ConcurrentHashMap<ScenarioName, AtomicInteger>()// = meterRegistry.gauge("idle-minions", AtomicInteger())
+    private val runningStepsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
 
-    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningMinionsGauges =
-        ConcurrentHashMap<ScenarioName, AtomicInteger>()//: AtomicInteger = meterRegistry.gauge("running-minions", AtomicInteger())
-
-    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningStepsGauges =
-        ConcurrentHashMap<ScenarioName, AtomicInteger>()//: AtomicInteger = meterRegistry.gauge("running-steps", AtomicInteger())
-
-    private val executedStepCounters =
-        ConcurrentHashMap<ScenarioName, Counter>()// = meterRegistry.counter("executed-steps")
+    private val executedStepCounters = ConcurrentHashMap<ScenarioName, Counter>()
 
     override suspend fun close(campaign: Campaign) {
-        idleMinionsGauges.clear()
-        runningMinionsGauges.clear()
         runningStepsGauges.clear()
         executedStepCounters.clear()
     }
 
     @LogInput
     override suspend fun run(minion: Minion, dag: DirectedAcyclicGraph) {
-        val idleMinionsGauge = idleMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
-            meterRegistry.gauge(
-                "idle-minions",
-                listOf(Tag.of("scenario", scenario)),
-                AtomicInteger()
-            )
-        }
-        idleMinionsGauge.incrementAndGet()
         minion.waitForStart()
-        idleMinionsGauge.decrementAndGet()
 
         val step = dag.rootStep.get()
         val stepContext = StepContextImpl<Unit, Any>(
@@ -135,15 +114,6 @@ internal class RunnerImpl(
     ) {
         minion.completeMdcContext()
         minion.start()
-        val runningMinionsGauge = runningMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
-            meterRegistry.gauge(
-                "running-minions",
-                listOf(Tag.of("scenario", scenario)),
-                AtomicInteger()
-            )
-        }
-        runningMinionsGauge.incrementAndGet()
-        minion.onComplete { runningMinionsGauge.decrementAndGet() }
 
         log.trace { "Running minion" }
         try {

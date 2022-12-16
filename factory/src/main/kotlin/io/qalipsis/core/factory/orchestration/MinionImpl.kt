@@ -54,8 +54,7 @@ internal open class MinionImpl(
     override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,
     pauseAtStart: Boolean = true,
-    override val isSingleton: Boolean = false,
-    private val executingStepsGauge: AtomicInteger
+    override val isSingleton: Boolean = false
 ) : Minion {
 
     /**
@@ -89,11 +88,13 @@ internal open class MinionImpl(
      */
     private val runningJobsLatch = SuspendedCountLatch(allowsNegative = true)
 
+    private val executingSteps = AtomicInteger()
+
     /**
      * Computed count of active steps.
      */
     val stepsCount: Int
-        get() = executingStepsGauge.get()
+        get() = executingSteps.get()
 
     init {
         if (!pauseAtStart) {
@@ -142,7 +143,7 @@ internal open class MinionImpl(
         } else {
             val jobId = jobIndex.getAndIncrement()
 
-            executingStepsGauge.incrementAndGet()
+            executingSteps.incrementAndGet()
             runningJobsLatch.increment()
             countLatch?.increment()
 
@@ -162,7 +163,7 @@ internal open class MinionImpl(
                     log.warn(e) { "An error occurred while executing the minion job $jobId: ${e.message}" }
                     throw e
                 } finally {
-                    executingStepsGauge.decrementAndGet()
+                    executingSteps.decrementAndGet()
                     countLatch?.decrement()
 
                     if (!stopped) {

@@ -20,8 +20,10 @@
 package io.qalipsis.core.factory.communication
 
 import io.qalipsis.api.Executors.ORCHESTRATION_EXECUTOR_NAME
+import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.directives.CampaignManagementDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.directives.DispatcherChannel
@@ -31,6 +33,7 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.slf4j.MDC
 
 /**
  * Abstract class to subscribe to channel.
@@ -69,17 +72,25 @@ internal abstract class ChannelSubscriber(
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(directive: Directive) {
         orchestrationCoroutineScope.launch {
-            log.trace { "Dispatching the directive of type ${directive::class}" }
-            val eligibleListeners = directiveListeners.filter { it.accept(directive) }
-            if (eligibleListeners.isNotEmpty()) {
-                directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
-                    eligibleListeners.forEach { listener ->
-                        log.trace { "Providing the directive of type ${directive::class} to ${listener::class}" }
-                        orchestrationCoroutineScope.launch {
-                            (listener as DirectiveListener<Directive>).notify(preparedDirective)
+            (directive as? CampaignManagementDirective)?.let {
+                MDC.put("tenant", it.tenant)
+                MDC.put("campaign", it.campaignKey)
+            }
+            try {
+                log.trace { "Dispatching the directive of type ${directive::class}" }
+                val eligibleListeners = directiveListeners.filter { it.accept(directive) }
+                if (eligibleListeners.isNotEmpty()) {
+                    directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
+                        eligibleListeners.forEach { listener ->
+                            log.trace { "Providing the directive of type ${directive::class} to ${listener::class}" }
+                            orchestrationCoroutineScope.contextualLaunch {
+                                (listener as DirectiveListener<Directive>).notify(preparedDirective)
+                            }
                         }
                     }
                 }
+            } finally {
+                MDC.clear()
             }
         }
     }
