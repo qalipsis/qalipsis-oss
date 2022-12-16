@@ -32,6 +32,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
@@ -72,10 +73,18 @@ internal class DatabaseCampaignReportPublisherTest {
     private lateinit var databaseCampaignReportPublisher: DatabaseCampaignReportPublisher
 
     @Test
-    internal fun `should save the new campaign`() = testDispatcherProvider.run {
+    internal fun `should save the new campaign report`() = testDispatcherProvider.run {
         // given
         val now = getTimeMock()
-        coEvery { campaignRepository.findIdByKey("my-campaign") } returns 8
+        val campaignEntity = CampaignEntity(
+            key = "my-campaign",
+            name = "The campaign",
+            creation = now.minusSeconds(12),
+            configurer = 123L,
+            scheduledMinions = 123
+        ).copy(id = 8)
+        coEvery { campaignRepository.findByKey("my-campaign") } returns campaignEntity
+        coEvery { campaignRepository.update(any()) } returnsArgument 0
         val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
             every { id } returns 10L
             every { name } returns "my-scenario"
@@ -124,7 +133,7 @@ internal class DatabaseCampaignReportPublisherTest {
             completedMinions = 990,
             successfulExecutions = 990,
             failedExecutions = 10,
-            status = ExecutionStatus.SUCCESSFUL,
+            status = ExecutionStatus.FAILED,
             scenariosReports = mutableListOf(scenarioReport)
         )
 
@@ -133,6 +142,18 @@ internal class DatabaseCampaignReportPublisherTest {
 
         // then
         coVerifyOrder {
+            campaignRepository.findByKey("my-campaign")
+            campaignRepository.update(
+                CampaignEntity(
+                    key = "my-campaign",
+                    name = "The campaign",
+                    creation = now.minusSeconds(12),
+                    configurer = 123L,
+                    scheduledMinions = 123,
+                    end = now.minusSeconds(500),
+                    result = ExecutionStatus.FAILED
+                ).copy(id = 8)
+            )
             campaignReportRepository.save(
                 CampaignReportEntity(
                     campaignId = 8,
@@ -140,7 +161,7 @@ internal class DatabaseCampaignReportPublisherTest {
                     completedMinions = 990,
                     successfulExecutions = 990,
                     failedExecutions = 10,
-                    status = ExecutionStatus.SUCCESSFUL
+                    status = ExecutionStatus.FAILED
                 )
             )
             scenarioReportRepository.saveAll(
@@ -177,7 +198,12 @@ internal class DatabaseCampaignReportPublisherTest {
                 )
             )
         }
-        confirmVerified(campaignReportRepository, scenarioReportRepository, scenarioReportMessageRepository)
+        confirmVerified(
+            campaignRepository,
+            campaignReportRepository,
+            scenarioReportRepository,
+            scenarioReportMessageRepository
+        )
     }
 
     private fun getTimeMock(): Instant {

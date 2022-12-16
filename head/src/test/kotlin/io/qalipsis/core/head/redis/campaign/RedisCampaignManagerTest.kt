@@ -576,8 +576,10 @@ internal class RedisCampaignManagerTest {
             operations.getState("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
+            campaignReportStateKeeper.abort("first_campaign")
             headChannel.publishDirective(capture(sentDirectives))
         }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
         assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
             prop("context").isSameAs(campaignExecutionContext)
             prop("operations").isSameAs(operations)
@@ -633,6 +635,7 @@ internal class RedisCampaignManagerTest {
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
         assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
             prop("context").isSameAs(campaignExecutionContext)
             prop("operations").isSameAs(operations)

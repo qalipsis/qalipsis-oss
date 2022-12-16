@@ -35,6 +35,7 @@ import assertk.assertions.prop
 import com.google.common.collect.ImmutableTable
 import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
+import io.mockk.coExcludeRecords
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -341,12 +342,18 @@ internal class StandaloneCampaignManagerTest {
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+        coExcludeRecords {
+            campaignManager.abort(any(), any(), any(), any())
+        }
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
+            campaignReportStateKeeper.abort("first_campaign")
             headChannel.publishDirective(capture(sentDirectives))
         }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+
         assertThat(newState.captured).isInstanceOf(CampaignExecutionState::class)
         assertThat(sentDirectives).all {
             hasSize(1)
@@ -394,12 +401,17 @@ internal class StandaloneCampaignManagerTest {
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+        coExcludeRecords {
+            campaignManager.abort(any(), any(), any(), any())
+        }
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+
         assertThat(newState.captured).isInstanceOf(CampaignExecutionState::class)
         assertThat(sentDirectives).all {
             hasSize(1)
