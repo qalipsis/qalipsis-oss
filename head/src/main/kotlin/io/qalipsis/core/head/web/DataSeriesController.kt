@@ -345,7 +345,7 @@ internal class DataSeriesController(
             required = false,
             `in` = ParameterIn.QUERY
         )
-        @QueryValue("sort", defaultValue = "") sort: String,
+        @QueryValue("sort", defaultValue = "displayName:asc") sort: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
             description = "Comma-separated list of values to apply as wildcard filters on the data series fields",
