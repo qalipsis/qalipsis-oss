@@ -241,7 +241,7 @@ internal class CampaignControllerIntegrationTest {
     }
 
     @Test
-    fun `should return page of campaigns`() {
+    fun `should return page of campaigns with default sorting`() {
         // given
         val campaign = Campaign(
             creation = Instant.now(),
@@ -265,7 +265,7 @@ internal class CampaignControllerIntegrationTest {
             campaignService.search(
                 Defaults.TENANT,
                 emptyList(),
-                null,
+                "creation:desc",
                 0,
                 20
             )
@@ -284,7 +284,7 @@ internal class CampaignControllerIntegrationTest {
     }
 
     @Test
-    fun `should return page of campaigns with filter`() {
+    fun `should return page of campaigns with filter and default sorting`() {
         // given
         val campaign = Campaign(
             creation = Instant.now(),
@@ -308,7 +308,7 @@ internal class CampaignControllerIntegrationTest {
             campaignService.search(
                 Defaults.TENANT,
                 listOf("an*", "other"),
-                null,
+                "creation:desc",
                 0,
                 20
             )
