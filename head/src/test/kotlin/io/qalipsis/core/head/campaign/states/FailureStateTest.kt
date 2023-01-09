@@ -106,7 +106,7 @@ internal class FailureStateTest : AbstractStateTest() {
                 typedProp<Boolean>("initialized").isFalse()
             }
             coVerifyOnce {
-                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "this error")
             }
             confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
         }

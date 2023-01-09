@@ -83,6 +83,11 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignEx
             any { it.end == null } -> ExecutionStatus.IN_PROGRESS
             else -> ExecutionStatus.SUCCESSFUL
         },
+        failureReason = when {
+            any { it.status == ExecutionStatus.ABORTED } -> "The campaign was aborted"
+            any { it.status == ExecutionStatus.FAILED } -> "At least one scenario failed"
+            else -> ""
+        },
         scenarios = this.map {
             Scenario(
                 version = Instant.now(),

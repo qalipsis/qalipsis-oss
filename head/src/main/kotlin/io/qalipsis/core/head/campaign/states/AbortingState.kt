@@ -53,7 +53,12 @@ internal open class AbortingState(
             expectedFeedbacks -= feedback.nodeId
             if (expectedFeedbacks.isEmpty()) {
                 if (abortConfiguration.hard) {
-                    context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.ABORTED)
+                    context.campaignService.close(
+                        campaign.tenant,
+                        campaignKey,
+                        ExecutionStatus.ABORTED,
+                        "The campaign was aborted"
+                    )
                     FailureState(campaign, "The campaign was aborted")
                 } else {
                     CompletionState(campaign)

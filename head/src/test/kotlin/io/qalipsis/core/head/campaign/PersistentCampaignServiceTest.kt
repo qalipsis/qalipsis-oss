@@ -42,7 +42,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.mockkStatic
+import io.mockk.mockk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -50,6 +50,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
@@ -62,11 +63,10 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneId
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -92,6 +92,9 @@ internal class PersistentCampaignServiceTest {
 
     @RelaxedMockK
     private lateinit var campaignConverter: CampaignConverter
+
+    @RelaxedMockK
+    private lateinit var factoryRepository: FactoryRepository
 
     @InjectMockKs
     private lateinit var persistentCampaignService: PersistentCampaignService
@@ -266,26 +269,18 @@ internal class PersistentCampaignServiceTest {
         coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns convertedCampaign
 
         // when
-        val result = persistentCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)
+        val result =
+            persistentCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "This is the failure")
 
         // then
         assertThat(result).isSameAs(convertedCampaign)
         coVerifyOnce {
-            campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED)
+            campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED, "This is the failure")
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             campaignConverter.convertToModel(refEq(campaignEntity))
         }
         confirmVerified(campaignRepository, campaignScenarioRepository)
     }
-
-    private fun getTimeMock(): Instant {
-        val now = Instant.now()
-        val fixedClock = Clock.fixed(now, ZoneId.systemDefault())
-        mockkStatic(Clock::class)
-        every { Clock.systemUTC() } returns fixedClock
-        return now
-    }
-
 
     @Test
     internal fun `should returns the searched campaigns from the repository with default sorting`() =
@@ -504,4 +499,172 @@ internal class PersistentCampaignServiceTest {
             }
         }
     }
+
+    @Test
+    internal fun `should enrich the campaign without failure message`() = testDispatcherProvider.run {
+        // given
+        val now = Instant.now()
+        val campaign = CampaignEntity(
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scheduledMinions = 345,
+            start = now,
+            configurer = 199
+        )
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
+        coEvery { campaignRepository.update(any()) } returnsArgument 0
+        coEvery {
+            factoryRepository.findByNodeIdIn(
+                "my-tenant",
+                setOf("factory-1", "factory-2", "factory-3")
+            )
+        } returns listOf(
+            mockk { every { zone } returns "zone-1" },
+            mockk { every { zone } returns null },
+            mockk { every { zone } returns "zone-3" }
+        )
+
+        // when
+        persistentCampaignService.enrich(mockk {
+            every { tenant } returns "my-tenant"
+            every { key } returns "my-campaign"
+            every { message } returns " "
+            every { factories.keys } returns mutableSetOf("factory-1", "factory-2", "factory-3")
+        })
+
+        // then
+        coVerifyOnce {
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+            factoryRepository.findByNodeIdIn("my-tenant", setOf("factory-1", "factory-2", "factory-3"))
+            campaignRepository.update(
+                eq(
+                    CampaignEntity(
+                        key = "my-campaign",
+                        name = "This is a campaign",
+                        speedFactor = 123.2,
+                        scheduledMinions = 345,
+                        start = now,
+                        configurer = 199,
+                        failureReason = null,
+                        zones = setOf("zone-1", "zone-3")
+                    ).copy(
+                        creation = campaign.creation,
+                        version = campaign.version
+                    )
+                )
+            )
+        }
+        confirmVerified(campaignRepository, factoryRepository)
+    }
+
+
+    @Test
+    internal fun `should enrich the campaign with failure message`() = testDispatcherProvider.run {
+        // given
+        val now = Instant.now()
+        val campaign = CampaignEntity(
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scheduledMinions = 345,
+            start = now,
+            configurer = 199
+        )
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
+        coEvery { campaignRepository.update(any()) } returnsArgument 0
+        coEvery {
+            factoryRepository.findByNodeIdIn(
+                "my-tenant",
+                setOf("factory-1", "factory-2", "factory-3")
+            )
+        } returns listOf(
+            mockk { every { zone } returns "zone-1" },
+            mockk { every { zone } returns null },
+            mockk { every { zone } returns "zone-3" }
+        )
+
+        // when
+        persistentCampaignService.enrich(mockk {
+            every { tenant } returns "my-tenant"
+            every { key } returns "my-campaign"
+            every { message } returns "The failure"
+            every { factories.keys } returns mutableSetOf("factory-1", "factory-2", "factory-3")
+        })
+
+        // then
+        coVerifyOnce {
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+            factoryRepository.findByNodeIdIn("my-tenant", setOf("factory-1", "factory-2", "factory-3"))
+            campaignRepository.update(
+                eq(
+                    CampaignEntity(
+                        key = "my-campaign",
+                        name = "This is a campaign",
+                        speedFactor = 123.2,
+                        scheduledMinions = 345,
+                        start = now,
+                        configurer = 199,
+                        failureReason = "The failure",
+                        zones = setOf("zone-1", "zone-3")
+                    ).copy(
+                        creation = campaign.creation,
+                        version = campaign.version
+                    )
+                )
+            )
+        }
+        confirmVerified(campaignRepository, factoryRepository)
+    }
+
+    @Test
+    internal fun `should retrieve the configuration when it exists`() = testDispatcherProvider.run {
+        // given
+        val campaignConfiguration = mockk<CampaignConfiguration>()
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns mockk {
+            every { configuration } returns campaignConfiguration
+        }
+
+        // when
+        val retrievedConfiguration = persistentCampaignService.retrieveConfiguration("my-tenant", "my-campaign")
+
+        // then
+        assertThat(retrievedConfiguration).isSameAs(campaignConfiguration)
+        coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
+        confirmVerified(campaignRepository, campaignConfigurationConverter)
+    }
+
+    @Test
+    internal fun `should generate a failure when retrieving the configuration of a non-existing campaign`() =
+        testDispatcherProvider.run {
+            // given
+            coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns null
+
+            // when
+            assertThrows<IllegalArgumentException> {
+                persistentCampaignService.retrieveConfiguration("my-tenant", "my-campaign")
+            }
+
+            // then
+            coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
+        }
+
+    @Test
+    internal fun `should generate a failure when retrieving the missing configuration of an existing campaign`() =
+        testDispatcherProvider.run {
+            // given
+            coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns mockk {
+                every { configuration } returns null
+            }
+
+            // when
+            assertThrows<IllegalArgumentException> {
+                persistentCampaignService.retrieveConfiguration("my-tenant", "my-campaign")
+            }
+
+            // then
+            coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
+            confirmVerified(campaignRepository, campaignConfigurationConverter)
+        }
 }

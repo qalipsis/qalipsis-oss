@@ -114,14 +114,14 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
                     prepareAndExecute(runningCampaign, factories, configuration, tenant, selectedScenarios, scenarios)
                 } catch (e: Exception) {
                     log.error(e) { "An error occurred while preparing the campaign ${runningCampaign.key} to start" }
-                    campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED)
+                    campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED, e.message)
                     throw e
                 }
             }
         } catch (e: Exception) {
             log.error(e) { "An error occurred while preparing the campaign ${runningCampaign.key} to start" }
             tryAndLogOrNull(log) {
-                campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED)
+                campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED, e.message)
             }
             throw e
         }
@@ -207,12 +207,8 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     }
 
     override suspend fun replay(tenant: String, configurer: String, campaignKey: String): RunningCampaign {
-        val campaign = requireNotNull(
-            campaignService.retrieve(
-                tenant, campaignKey
-            )
-        ) { "The configuration of campaign with key $campaignKey could not be found" }
-        return start(tenant, configurer, campaign.configuration!!)
+        val campaign = campaignService.retrieveConfiguration(tenant, campaignKey)
+        return start(tenant, configurer, campaign)
     }
 
     abstract suspend fun create(

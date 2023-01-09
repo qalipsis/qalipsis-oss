@@ -35,6 +35,7 @@ import assertk.assertions.prop
 import com.google.common.collect.ImmutableTable
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.coEvery
+import io.mockk.coExcludeRecords
 import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -63,10 +64,8 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
@@ -80,7 +79,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
@@ -325,7 +323,7 @@ internal class RedisCampaignManagerTest {
                 factoryService.getActiveScenarios("my-tenant", setOf("scenario-1"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
-                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED)
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
             }
             confirmVerified(assignmentResolver, factoryService, headChannel, campaignService)
         }
@@ -663,6 +661,35 @@ internal class RedisCampaignManagerTest {
         }
     }
 
+    @Test
+    internal fun `should replay a campaign`() = testDispatcherProvider.runTest {
+        // given
+        val campaignManager = redisCampaignManager(this)
+        val campaignConfiguration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioRequest(6272),
+                "scenario-2" to ScenarioRequest(12321)
+            )
+        )
+        val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
+        coEvery { campaignService.retrieveConfiguration("my-tenant", "my-campaign") } returns campaignConfiguration
+        coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
+
+        // when
+        val result = campaignManager.replay("my-tenant", "my-user", "my-campaign")
+
+        // then
+        assertThat(result).isSameAs(runningCampaign)
+        coExcludeRecords { campaignManager.replay("my-tenant", "my-user", "my-campaign") }
+        coVerifyOrder {
+            campaignService.retrieveConfiguration("my-tenant", "my-campaign")
+            campaignManager.start("my-tenant", "my-user", campaignConfiguration)
+        }
+        confirmVerified(campaignManager, campaignService)
+    }
+
     private fun redisCampaignManager(scope: CoroutineScope) =
         spyk(
             RedisCampaignManager(
@@ -677,51 +704,4 @@ internal class RedisCampaignManagerTest {
                 operations
             ), recordPrivateCalls = true
         )
-
-    @Test
-    internal fun `should replay a campaign`() = testDispatcherProvider.runTest {
-        // given
-        val campaignManager = redisCampaignManager(this)
-        val campaignConfiguration = CampaignConfiguration(
-            name = "This is a campaign",
-            speedFactor = 123.2,
-            scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(6272),
-                "scenario-2" to ScenarioRequest(12321)
-            )
-        )
-        val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
-        val campaign = Campaign(
-            creation = Instant.now(),
-            version = Instant.now(),
-            key = "my-campaign",
-            name = "This is a campaign",
-            speedFactor = 123.2,
-            scheduledMinions = null,
-            start = null,
-            end = null,
-            status = ExecutionStatus.ABORTED,
-            configurerName = "my-user",
-            aborterName = "my-aborter",
-            scenarios = listOf(
-                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-            ),
-            configuration = campaignConfiguration
-        )
-        coEvery { campaignService.retrieve("my-tenant", "my-campaign") } returns campaign
-        coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
-
-        // when
-        val result = campaignManager.replay("my-tenant", "my-user", "my-campaign")
-
-        // then
-        assertThat(result).isSameAs(runningCampaign)
-        coVerifyOrder {
-            campaignManager.replay("my-tenant", "my-user", "my-campaign")
-            campaignService.retrieve("my-tenant", "my-campaign")
-            campaignManager.start("my-tenant", "my-user", campaignConfiguration)
-        }
-        confirmVerified(campaignManager, campaignService)
-    }
 }

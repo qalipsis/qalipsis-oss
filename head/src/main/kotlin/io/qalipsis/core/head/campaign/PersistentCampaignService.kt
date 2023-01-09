@@ -35,6 +35,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
+import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
@@ -59,7 +60,8 @@ internal class PersistentCampaignService(
     private val tenantRepository: TenantRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val campaignConfigurationConverter: CampaignConfigurationConverter,
-    private val campaignConverter: CampaignConverter
+    private val campaignConverter: CampaignConverter,
+    private val factoryRepository: FactoryRepository
 ) : CampaignService {
 
     @LogInputAndOutput
@@ -91,8 +93,23 @@ internal class PersistentCampaignService(
 
     @LogInputAndOutput
     override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign {
-        val campaign = requireNotNull(campaignRepository.findByTenantAndKey(tenant, campaignKey))
+        val campaign = requireNotNull(
+            campaignRepository.findByTenantAndKey(
+                tenant,
+                campaignKey
+            )
+        ) { "The requested campaign could not be found" }
         return campaignConverter.convertToModel(campaign)
+    }
+
+    override suspend fun retrieveConfiguration(tenant: String, campaignKey: CampaignKey): CampaignConfiguration {
+        val campaign = requireNotNull(
+            campaignRepository.findByTenantAndKey(
+                tenant,
+                campaignKey
+            )
+        ) { "The requested campaign could not be found" }
+        return requireNotNull(campaign.configuration) { "No configuration could be found for the expected campaign" }
     }
 
     @LogInputAndOutput
@@ -121,8 +138,13 @@ internal class PersistentCampaignService(
     }
 
     @LogInput
-    override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
-        campaignRepository.complete(tenant, campaignKey, result)
+    override suspend fun close(
+        tenant: String,
+        campaignKey: CampaignKey,
+        result: ExecutionStatus,
+        failureReason: String?
+    ): Campaign {
+        campaignRepository.complete(tenant, campaignKey, result, failureReason)
         return retrieve(tenant, campaignKey)
     }
 
@@ -161,4 +183,15 @@ internal class PersistentCampaignService(
         }
     }
 
+    override suspend fun enrich(runningCampaign: RunningCampaign) {
+        campaignRepository.findByTenantAndKey(runningCampaign.tenant, runningCampaign.key)?.let { campaign ->
+            val factories = factoryRepository.findByNodeIdIn(runningCampaign.tenant, runningCampaign.factories.keys)
+            campaignRepository.update(
+                campaign.copy(
+                    zones = factories.mapNotNull { it.zone }.toSet(),
+                    failureReason = runningCampaign.message.takeIf(String::isNotBlank)
+                )
+            )
+        }
+    }
 }

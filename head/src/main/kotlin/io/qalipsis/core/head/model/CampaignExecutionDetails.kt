@@ -47,10 +47,11 @@ internal class CampaignExecutionDetails(
     start: Instant?,
     end: Instant?,
     status: ExecutionStatus,
+    failureReason: String? = null,
     configurerName: String? = null,
     aborterName: String? = null,
     scenarios: Collection<Scenario>,
-    configuration: CampaignConfiguration? = null,
+    zones: Set<String> = emptySet(),
 
     @field:Schema(description = "Counts of minions when the campaign started", required = false)
     val startedMinions: Int?,
@@ -79,10 +80,11 @@ internal class CampaignExecutionDetails(
     start = start,
     end = end,
     status = status,
+    failureReason = failureReason,
     configurerName = configurerName,
     aborterName = aborterName,
     scenarios = scenarios,
-    configuration = configuration
+    zones = zones
 ) {
 
     override fun equals(other: Any?): Boolean {

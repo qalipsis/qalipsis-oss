@@ -68,6 +68,7 @@ internal class DisabledStateTest : AbstractStateTest() {
                 )
             }
             coVerifyOrder {
+                campaignService.enrich(refEq(campaign))
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
@@ -104,6 +105,7 @@ internal class DisabledStateTest : AbstractStateTest() {
                 )
             }
             coVerifyOrder {
+                campaignService.enrich(refEq(campaign))
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")

@@ -92,10 +92,16 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
      * Marks the open campaign with the specified name [campaignKey] as complete with the provided [result].
      */
     @Query(
-        """UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result WHERE key = :campaignKey AND "end" IS NULL 
+        """UPDATE campaign SET version = NOW(), "end" = NOW(), result = :result, failure_reason = COALESCE(failure_reason, :failureReason)
+            WHERE key = :campaignKey AND "end" IS NULL 
         AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun complete(tenant: String, campaignKey: String, result: ExecutionStatus): Int
+    suspend fun complete(
+        tenant: String,
+        campaignKey: String,
+        result: ExecutionStatus,
+        failureReason: String?
+    ): Int
 
     @Query(
         value = """SELECT *

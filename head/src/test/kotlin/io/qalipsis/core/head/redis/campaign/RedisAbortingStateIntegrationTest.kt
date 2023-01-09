@@ -116,7 +116,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
                 typedProp<Boolean>("initialized").isFalse()
             }
             coVerifyOnce {
-                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.ABORTED)
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.ABORTED, "The campaign was aborted")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }

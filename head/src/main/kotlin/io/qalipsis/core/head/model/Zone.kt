@@ -21,6 +21,7 @@ package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
+import java.net.URL
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
 
@@ -50,5 +51,8 @@ internal data class Zone(
     @field:Schema(description = "A more detailed definition of the zone, generally the region, datacenter and the localization details")
     @field:NotBlank
     @field:Size(min = 3, max = 50)
-    val description: String
+    val description: String? = null,
+
+    @field:Schema(description = "Image URL to display for the zone")
+    val image: URL? = null
 )

@@ -64,7 +64,12 @@ internal class RedisAbortingState(
         return if (feedback is CampaignAbortFeedback && feedback.status.isDone) {
             if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
                 if (abortConfiguration.hard) {
-                    context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.ABORTED)
+                    context.campaignService.close(
+                        campaign.tenant,
+                        campaignKey,
+                        ExecutionStatus.ABORTED,
+                        "The campaign was aborted"
+                    )
                     RedisFailureState(campaign, "The campaign was aborted", operations)
                 } else {
                     RedisCompletionState(campaign, operations)

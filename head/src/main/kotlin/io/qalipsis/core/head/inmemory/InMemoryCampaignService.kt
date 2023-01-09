@@ -27,7 +27,6 @@ import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
-import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
@@ -51,6 +50,8 @@ internal class InMemoryCampaignService(
 
     private var currentCampaign: Campaign? = null
 
+    private var currentCampaignConfiguration: CampaignConfiguration? = null
+
     private val updateLock = Mutex(false)
 
     override suspend fun create(
@@ -61,6 +62,7 @@ internal class InMemoryCampaignService(
         val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, campaignConfiguration)
 
         updateLock.withLock {
+            currentCampaignConfiguration = campaignConfiguration
             currentCampaign = Campaign(
                 version = Instant.now(),
                 key = runningCampaign.key,
@@ -80,8 +82,7 @@ internal class InMemoryCampaignService(
                         it.key,
                         it.value.minionsCount
                     )
-                },
-                configuration = campaignConfiguration
+                }
             )
             currentCampaign!!
         }
@@ -91,6 +92,10 @@ internal class InMemoryCampaignService(
 
     override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign {
         return currentCampaign!!
+    }
+
+    override suspend fun retrieveConfiguration(tenant: String, campaignKey: CampaignKey): CampaignConfiguration {
+        return currentCampaignConfiguration!!
     }
 
     override suspend fun prepare(tenant: String, campaignKey: CampaignKey) {
@@ -114,9 +119,19 @@ internal class InMemoryCampaignService(
 
     override suspend fun closeScenario(tenant: String, campaignKey: CampaignKey, scenarioName: ScenarioName) = Unit
 
-    override suspend fun close(tenant: String, campaignKey: String, result: ExecutionStatus): Campaign {
+    override suspend fun close(
+        tenant: String,
+        campaignKey: CampaignKey,
+        result: ExecutionStatus,
+        failureReason: String?
+    ): Campaign {
         return updateLock.withLock {
-            currentCampaign = currentCampaign!!.copy(end = Instant.now(), status = SUCCESSFUL)
+            val currentFailureReason = currentCampaign?.failureReason
+            currentCampaign = currentCampaign!!.copy(
+                end = Instant.now(),
+                status = result,
+                failureReason = currentFailureReason ?: failureReason
+            )
             currentCampaign!!
         }
     }
@@ -130,5 +145,9 @@ internal class InMemoryCampaignService(
 
     override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
         currentCampaign = currentCampaign!!.copy(end = Instant.now(), status = ExecutionStatus.ABORTED)
+    }
+
+    override suspend fun enrich(runningCampaign: RunningCampaign) {
+        currentCampaign = currentCampaign!!.copy(failureReason = runningCampaign.message)
     }
 }

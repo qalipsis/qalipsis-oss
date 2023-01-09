@@ -53,7 +53,7 @@ internal open class FailureState(
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             expectedFeedbacks -= feedback.nodeId
             if (expectedFeedbacks.isEmpty()) {
-                context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED)
+                context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
                 DisabledState(campaign, false)
             } else {
                 this
