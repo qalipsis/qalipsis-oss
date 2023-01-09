@@ -21,6 +21,7 @@ package io.qalipsis.core.head.report
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEmpty
@@ -96,7 +97,6 @@ internal class DatabaseCampaignReportProviderTest {
         } returns campaignEntity
         val scenario1 = mockk<Scenario>()
         val scenario2 = mockk<Scenario>()
-        val configuration = mockk<CampaignConfiguration>()
         coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns Campaign(
             creation = creation,
             version = now,
@@ -109,10 +109,11 @@ internal class DatabaseCampaignReportProviderTest {
             start = start,
             end = end,
             status = ExecutionStatus.SUCCESSFUL,
+            failureReason = "The failure",
             configurerName = "my-user",
             aborterName = null,
             scenarios = listOf(scenario1, scenario2),
-            configuration = configuration
+            zones = setOf("zone-1", "zone-2")
         )
         coEvery {
             campaignReportRepository.findByCampaignId(342)
@@ -180,8 +181,9 @@ internal class DatabaseCampaignReportProviderTest {
             prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(3)
             prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2)
             prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.FAILED)
+            prop(CampaignExecutionDetails::failureReason).isEqualTo("The failure")
             prop(CampaignExecutionDetails::scenarios).isEqualTo(listOf(scenario1, scenario2))
-            prop(CampaignExecutionDetails::configuration).isEqualTo(configuration)
+            prop(CampaignExecutionDetails::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(CampaignExecutionDetails::scenariosReports).all {
                 hasSize(2)
                 index(0).all {
@@ -257,7 +259,6 @@ internal class DatabaseCampaignReportProviderTest {
             configurerName = "my-user",
             aborterName = null,
             scenarios = listOf(scenario1, scenario2),
-            configuration = configuration
         )
         coEvery { campaignReportRepository.findByCampaignId(342) } returns null
         coEvery { campaignScenarioRepository.findByCampaignId(342) } returns listOf(
@@ -290,8 +291,9 @@ internal class DatabaseCampaignReportProviderTest {
             prop(CampaignExecutionDetails::successfulExecutions).isNull()
             prop(CampaignExecutionDetails::failedExecutions).isNull()
             prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+            prop(CampaignExecutionDetails::failureReason).isNull()
             prop(CampaignExecutionDetails::scenarios).isEqualTo(listOf(scenario1, scenario2))
-            prop(CampaignExecutionDetails::configuration).isEqualTo(configuration)
+            prop(CampaignExecutionDetails::zones).isEmpty()
             prop(CampaignExecutionDetails::scenariosReports).all {
                 hasSize(2)
                 index(0).all {

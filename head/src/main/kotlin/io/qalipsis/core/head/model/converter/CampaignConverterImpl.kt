@@ -62,6 +62,8 @@ internal class CampaignConverterImpl(
                 null -> ExecutionStatus.QUEUED
                 else -> ExecutionStatus.IN_PROGRESS
             },
+            failureReason = campaignEntity.failureReason,
+            zones = campaignEntity.zones,
             configurerName = userRepository.findUsernameById(campaignEntity.configurer),
             aborterName = aborterName,
             scenarios = scenarioRepository.findByCampaignId(campaignEntity.id).map { scenarioEntity ->
@@ -70,8 +72,7 @@ internal class CampaignConverterImpl(
                     scenarioEntity.name,
                     scenarioEntity.minionsCount
                 )
-            },
-            configuration = campaignEntity.configuration
+            }
         )
     }
 }

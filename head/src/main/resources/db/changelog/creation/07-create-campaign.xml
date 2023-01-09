@@ -63,6 +63,9 @@
       <column name="result" type="varchar(20)">
         <constraints nullable="true"/>
       </column>
+      <column name="failure_reason" type="text">
+        <constraints nullable="true"/>
+      </column>
       <column name="configurer" type="BIGINT">
         <constraints nullable="false" foreignKeyName="campaign_configurer_id_fk" referencedTableName="user"
           referencedColumnNames="id" deleteCascade="false"/>
@@ -76,6 +79,9 @@
           referencedColumnNames="id" deleteCascade="true"/>
       </column>
       <column name="configuration" type="JSONB">
+        <constraints nullable="true"/>
+      </column>
+      <column name="zones" type="JSONB">
         <constraints nullable="true"/>
       </column>
     </createTable>

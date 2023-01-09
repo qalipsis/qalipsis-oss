@@ -44,7 +44,6 @@ import io.mockk.slot
 import io.mockk.spyk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
@@ -62,10 +61,8 @@ import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
-import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
@@ -79,7 +76,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Instant
 
 @WithMockk
 @Timeout(5)
@@ -445,25 +441,7 @@ internal class StandaloneCampaignManagerTest {
             )
         )
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
-        val campaign = Campaign(
-            creation = Instant.now(),
-            version = Instant.now(),
-            key = "my-campaign",
-            name = "This is a campaign",
-            speedFactor = 123.2,
-            scheduledMinions = null,
-            start = null,
-            end = null,
-            status = ExecutionStatus.ABORTED,
-            configurerName = "my-user",
-            aborterName = "my-aborter",
-            scenarios = listOf(
-                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-            ),
-            configuration = campaignConfiguration
-        )
-        coEvery { campaignService.retrieve("my-tenant", "my-campaign") } returns campaign
+        coEvery { campaignService.retrieveConfiguration("my-tenant", "my-campaign") } returns campaignConfiguration
         coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
 
         // when
@@ -471,9 +449,9 @@ internal class StandaloneCampaignManagerTest {
 
         // then
         assertThat(result).isSameAs(runningCampaign)
+        coExcludeRecords { campaignManager.replay("my-tenant", "my-user", "my-campaign") }
         coVerifyOrder {
-            campaignManager.replay("my-tenant", "my-user", "my-campaign")
-            campaignService.retrieve("my-tenant", "my-campaign")
+            campaignService.retrieveConfiguration("my-tenant", "my-campaign")
             campaignManager.start("my-tenant", "my-user", campaignConfiguration)
         }
         confirmVerified(campaignManager, campaignService)

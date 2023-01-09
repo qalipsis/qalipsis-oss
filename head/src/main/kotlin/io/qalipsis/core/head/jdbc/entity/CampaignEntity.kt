@@ -48,6 +48,8 @@ import javax.validation.constraints.Size
  * @property end when the campaign was completed, successfully or not
  * @property result overall execution status of the campaign
  * @property configurer internal database ID of the user that started the campaign
+ * @property configuration the actual configuration of the campaign as original received at creation time
+ * @property zones the zones of the factories where the campaign actually ran
  *
  * @author Eric Jessé
  */
@@ -73,10 +75,13 @@ internal data class CampaignEntity(
     val start: Instant?,
     val end: Instant?,
     val result: ExecutionStatus?,
+    val failureReason: String? = null,
     val configurer: Long,
     val aborter: Long? = null,
     @field:TypeDef(type = DataType.JSON)
-    val configuration: CampaignConfiguration? = null
+    val configuration: CampaignConfiguration? = null,
+    @field:TypeDef(type = DataType.JSON)
+    val zones: Set<String> = emptySet()
 ) : Entity {
 
     constructor(
@@ -91,9 +96,11 @@ internal data class CampaignEntity(
         start: Instant? = null,
         end: Instant? = null,
         result: ExecutionStatus? = null,
+        failureReason: String? = null,
         configurer: Long,
         aborter: Long? = null,
-        configuration: CampaignConfiguration? = null
+        configuration: CampaignConfiguration? = null,
+        zones: Set<String> = emptySet()
     ) : this(
         id = -1,
         creation = creation,
@@ -108,8 +115,10 @@ internal data class CampaignEntity(
         start = start,
         end = end,
         result = result,
+        failureReason = failureReason,
         configurer = configurer,
         aborter = aborter,
-        configuration = configuration
+        configuration = configuration,
+        zones = zones
     )
 }

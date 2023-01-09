@@ -87,7 +87,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             scheduledMinions = 123,
             hardTimeout = true,
             result = ExecutionStatus.SUCCESSFUL,
-            configurer = 1L // Default user.
+            configurer = 1L, // Default user.
+
         )
 
     private val tenantPrototype = TenantEntity(Instant.now(), "my-tenant", "test-tenant")
@@ -109,7 +110,13 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     internal fun `should save then get`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-        val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
+        val saved = campaignRepository.save(
+            campaignPrototype.copy(
+                tenantId = tenant.id,
+                failureReason = "This is the failure",
+                zones = setOf("fr", "at")
+            )
+        )
 
         // when
         val fetched = campaignRepository.findById(saved.id)
@@ -376,7 +383,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    internal fun `should complete the open campaign`() = testDispatcherProvider.run {
+    internal fun `should complete the open campaign with a message`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val alreadyClosedCampaign =
@@ -395,7 +402,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val beforeCall = Instant.now()
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.complete("my-tenant", "2", ExecutionStatus.FAILED)
+        campaignRepository.complete("my-tenant", "2", ExecutionStatus.FAILED, "The campaign fails")
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -408,6 +415,50 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNotNull().isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::result).isEqualTo(ExecutionStatus.FAILED)
+            prop(CampaignEntity::failureReason).isEqualTo("The campaign fails")
+        }
+    }
+
+
+    @Test
+    internal fun `should complete the open campaign without message`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val alreadyClosedCampaign =
+            campaignRepository.save(campaignPrototype.copy(key = "1", end = Instant.now(), tenantId = tenant.id))
+        val openCampaign = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "2", end = null, tenantId = tenant.id,
+                failureReason = "The initial reason"
+            )
+        )
+        val otherOpenCampaign =
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "3",
+                    name = "other-campaign",
+                    end = null,
+                    tenantId = tenant.id
+                )
+            )
+
+        // when
+        val beforeCall = Instant.now()
+        delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
+        campaignRepository.complete("my-tenant", "2", ExecutionStatus.SUCCESSFUL, null)
+
+        // then
+        assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
+            .isDataClassEqualTo(alreadyClosedCampaign)
+        assertThat(campaignRepository.findById(otherOpenCampaign.id)).isNotNull().isDataClassEqualTo(otherOpenCampaign)
+        assertThat(campaignRepository.findById(openCampaign.id)).isNotNull().all {
+            prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::name).isEqualTo(openCampaign.name)
+            prop(CampaignEntity::start).isEqualTo(openCampaign.start)
+            prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
+            prop(CampaignEntity::end).isNotNull().isGreaterThanOrEqualTo(beforeCall)
+            prop(CampaignEntity::result).isEqualTo(ExecutionStatus.SUCCESSFUL)
+            prop(CampaignEntity::failureReason).isEqualTo("The initial reason")
         }
     }
 

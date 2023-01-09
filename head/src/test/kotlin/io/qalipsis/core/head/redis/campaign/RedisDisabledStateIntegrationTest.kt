@@ -75,6 +75,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             }
             assertThat(connection.sync().keys("*").count()).isEqualTo(0)
             coVerifyOrder {
+                campaignService.enrich(refEq(campaign))
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
@@ -114,6 +115,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                 )
             }
             coVerifyOrder {
+                campaignService.enrich(refEq(campaign))
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")

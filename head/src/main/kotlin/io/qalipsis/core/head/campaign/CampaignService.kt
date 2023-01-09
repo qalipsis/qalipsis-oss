@@ -47,6 +47,8 @@ internal interface CampaignService {
 
     suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign
 
+    suspend fun retrieveConfiguration(tenant: String, campaignKey: CampaignKey): CampaignConfiguration
+
     /**
      * Marks the campaign as in preparation.
      */
@@ -70,7 +72,12 @@ internal interface CampaignService {
     /**
      * Marks a campaign as completed.
      */
-    suspend fun close(tenant: String, campaignKey: CampaignKey, result: ExecutionStatus): Campaign
+    suspend fun close(
+        tenant: String,
+        campaignKey: CampaignKey,
+        result: ExecutionStatus,
+        failureReason: String? = null
+    ): Campaign
 
     /**
      * Returns list of all campaigns. Filter is a comma-separated list of values to apply
@@ -83,4 +90,9 @@ internal interface CampaignService {
      * Sets the user who aborted the campaign.
      */
     suspend fun abort(tenant: String, aborter: String, campaignKey: CampaignKey)
+
+    /**
+     * Enrich the details of the campaign, based upon the content of [runningCampaign].
+     */
+    suspend fun enrich(runningCampaign: RunningCampaign)
 }

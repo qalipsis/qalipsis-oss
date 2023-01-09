@@ -21,7 +21,7 @@ package io.qalipsis.core.head.web
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.containsAll
 import assertk.assertions.isEqualTo
 import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpRequest
@@ -38,6 +38,7 @@ import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
+import java.net.URL
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
@@ -56,20 +57,33 @@ class ZoneControllerIntegrationTest {
     @Test
     fun `should list all the zones`() {
         // given
-        val zone = Zone("en", "England", "description")
-        coEvery { headConfiguration.zones } returns setOf(zone)
-        val listRequest = HttpRequest.GET<List<Zone>>("/")
+        val zones = setOf(
+            Zone(
+                key = "fr",
+                title = "France",
+                description = "Western Europe country",
+                image = URL("http://images-from-france.fr/logo"),
+            ),
+            Zone(
+                key = "at",
+                title = "Austria",
+                description = "Central Europe country",
+                image = URL("http://images-from-austria.fr/logo"),
+            )
+        )
+        coEvery { headConfiguration.zones } returns zones
+        val listRequest = HttpRequest.GET<Set<Zone>>("/")
 
         // when
         val response = httpClient.toBlocking().exchange(
             listRequest,
-            Argument.listOf(Zone::class.java)
+            Argument.setOf(Zone::class.java)
         )
 
         // then
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body().get(0) }.isDataClassEqualTo(zone)
+            transform("body") { it.body()!! }.containsAll(*zones.toTypedArray())
         }
     }
 }

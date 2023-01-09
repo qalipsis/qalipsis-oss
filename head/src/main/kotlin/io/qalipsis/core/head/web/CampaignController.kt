@@ -213,7 +213,7 @@ internal class CampaignController(
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Campaign name of the campaign to abort",
+            description = "Key of the campaign to abort",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
@@ -253,13 +253,47 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Campaign name of the campaign to retrieve the report",
+            description = "Key of the campaign to retrieve",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
     ): HttpResponse<CampaignExecutionDetails> {
         val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
         return HttpResponse.ok(report)
+    }
+
+    /**
+     * REST endpoint to get the complete execution report of a completed campaign.
+     */
+    @Get("/{campaignKey}/configuration")
+    @Operation(
+        summary = "Retrieve the initial configuration of a campaign",
+        description = "Returns the configuration received from the client when creating a new campaign",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaign report"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.READ_CAMPAIGN)
+    @Timed("campaigns-configuration-retrieve")
+    suspend fun retrieveConfiguration(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "Key of the campaign to retrieve",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable campaignKey: String,
+    ): HttpResponse<CampaignConfiguration> {
+        return HttpResponse.ok(campaignService.retrieveConfiguration(tenant, campaignKey))
     }
 
     /**
@@ -288,7 +322,7 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Campaign name to retrieve the campaign",
+            description = "Key of the campaign to replay",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,

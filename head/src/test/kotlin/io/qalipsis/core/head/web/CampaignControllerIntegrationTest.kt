@@ -22,8 +22,10 @@ package io.qalipsis.core.head.web
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.containsOnly
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.prop
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.core.type.Argument
@@ -36,7 +38,9 @@ import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.CampaignReport
@@ -62,11 +66,13 @@ import io.qalipsis.core.head.model.ScenarioExecutionDetails
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.CampaignReportProvider
+import io.qalipsis.core.head.web.handler.ErrorResponse
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import org.apache.commons.lang3.RandomStringUtils
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
@@ -109,6 +115,14 @@ internal class CampaignControllerIntegrationTest {
 
     @MockBean(CampaignManager::class)
     fun campaignManager() = campaignManager
+
+    @BeforeEach
+    internal fun setUp() {
+        excludeRecords {
+            campaignManager.hashCode()
+            campaignService.hashCode()
+        }
+    }
 
     @Test
     fun `should successfully start valid campaign`() {
@@ -164,6 +178,7 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(createdCampaign)
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -190,6 +205,7 @@ internal class CampaignControllerIntegrationTest {
                 it.response.getBody(String::class.java).get()
             }.isEqualTo("""{"errors":[{"property":"campaign.name","message":"size must be between 3 and 300"}]}""")
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -212,6 +228,7 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.NO_CONTENT)
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -238,6 +255,7 @@ internal class CampaignControllerIntegrationTest {
                 it.response.getBody(String::class.java).get()
             }.contains("Scenarios with names Scenario1 are unknown or currently disabled")
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -277,10 +295,12 @@ internal class CampaignControllerIntegrationTest {
         )
 
         //then
+        coVerifyOnce { campaignService.search(Defaults.TENANT, emptyList(), "creation:desc", 0, 20) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -320,10 +340,12 @@ internal class CampaignControllerIntegrationTest {
         )
 
         //then
+        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("an*", "other"), "creation:desc", 0, 20) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -366,10 +388,12 @@ internal class CampaignControllerIntegrationTest {
         )
 
         // then
+        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("campaign"), "name", 0, 20) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -388,6 +412,7 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -402,10 +427,10 @@ internal class CampaignControllerIntegrationTest {
         coVerifyOnce {
             campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", true)
         }
-
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -426,10 +451,6 @@ internal class CampaignControllerIntegrationTest {
                 scenarios = listOf(
                     Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                     Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-                ),
-                configuration = CampaignConfiguration(
-                    name = "This is a campaign",
-                    scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
                 ),
                 startedMinions = 0,
                 completedMinions = 0,
@@ -493,6 +514,7 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(campaignExecutionDetails)
         }
+        confirmVerified(campaignService, campaignManager)
     }
 
     @Test
@@ -512,10 +534,6 @@ internal class CampaignControllerIntegrationTest {
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-            ),
-            configuration = CampaignConfiguration(
-                name = "This is a campaign",
-                scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
             )
         )
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign-new")
@@ -539,5 +557,57 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(campaign)
         }
+        confirmVerified(campaignService, campaignManager)
+    }
+
+    @Test
+    fun `should successfully retrieve the configuration when it exists`() {
+        // given
+        val campaignConfiguration = CampaignConfiguration(
+            name = "This is a campaign",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+        val retrieveConfigurationRequest = HttpRequest.GET<CampaignConfiguration>("/my-campaign/configuration")
+        coEvery {
+            campaignService.retrieveConfiguration(Defaults.TENANT, "my-campaign")
+        } returns campaignConfiguration
+
+        // when
+        val response = httpClient.toBlocking().exchange(retrieveConfigurationRequest, CampaignConfiguration::class.java)
+
+        // then
+        coVerifyOnce {
+            campaignService.retrieveConfiguration(Defaults.TENANT, "my-campaign")
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(campaignConfiguration)
+        }
+        confirmVerified(campaignService, campaignManager)
+    }
+
+    @Test
+    fun `should fail to retrieve the configuration when it does not exist`() {
+        // given
+        coEvery {
+            campaignService.retrieveConfiguration(Defaults.TENANT, "my-campaign")
+        } throws IllegalArgumentException("The configuration does not exists")
+        val retrieveConfigurationRequest = HttpRequest.GET<CampaignConfiguration>("/my-campaign/configuration")
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(retrieveConfigurationRequest, CampaignConfiguration::class.java)
+        }.response
+
+        // then
+        coVerifyOnce {
+            campaignService.retrieveConfiguration(Defaults.TENANT, "my-campaign")
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") { it.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
+                .containsOnly("The configuration does not exists")
+        }
+        confirmVerified(campaignService, campaignManager)
     }
 }

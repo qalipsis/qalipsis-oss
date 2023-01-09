@@ -80,6 +80,9 @@ internal open class Campaign(
     @field:Schema(description = "Overall execution status of the campaign when completed", required = false)
     val status: ExecutionStatus,
 
+    @field:Schema(description = "The root cause of the campaign failure", required = false)
+    val failureReason: String? = null,
+
     @field:Schema(description = "Name of the user, who created the campaign", required = false, example = "John Doe")
     val configurerName: String?,
 
@@ -89,8 +92,8 @@ internal open class Campaign(
     @field:Schema(description = "Scenarios being part of the campaign", required = true)
     val scenarios: Collection<Scenario>,
 
-    @field:Schema(description = "Complete configuration of the campaign")
-    val configuration: CampaignConfiguration? = null
+    @field:Schema(description = "Keys of the zones where the campaign was executed", required = false)
+    val zones: Set<String> = emptySet()
 ) {
 
     fun copy(
@@ -105,10 +108,10 @@ internal open class Campaign(
         start: Instant? = this.start,
         end: Instant? = this.end,
         status: ExecutionStatus = this.status,
+        failureReason: String? = null,
         configurerName: String? = this.configurerName,
         aborterName: String? = this.aborterName,
-        scenarios: Collection<Scenario> = this.scenarios,
-        configuration: CampaignConfiguration? = this.configuration,
+        scenarios: Collection<Scenario> = this.scenarios
     ) = Campaign(
         version = version,
         key = key,
@@ -121,10 +124,10 @@ internal open class Campaign(
         start = start,
         end = end,
         status = status,
+        failureReason = failureReason,
         configurerName = configurerName,
         aborterName = aborterName,
-        scenarios = scenarios,
-        configuration = configuration
+        scenarios = scenarios
     )
 
     override fun equals(other: Any?): Boolean {
@@ -144,35 +147,36 @@ internal open class Campaign(
         if (start != other.start) return false
         if (end != other.end) return false
         if (status != other.status) return false
+        if (failureReason != other.failureReason) return false
         if (configurerName != other.configurerName) return false
         if (aborterName != other.aborterName) return false
         if (scenarios != other.scenarios) return false
-        if (configuration != other.configuration) return false
+        if (zones != other.zones) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result1 = version.hashCode()
-        result1 = 31 * result1 + key.hashCode()
-        result1 = 31 * result1 + creation.hashCode()
-        result1 = 31 * result1 + name.hashCode()
-        result1 = 31 * result1 + speedFactor.hashCode()
-        result1 = 31 * result1 + (scheduledMinions ?: 0)
-        result1 = 31 * result1 + (timeout?.hashCode() ?: 0)
-        result1 = 31 * result1 + (hardTimeout?.hashCode() ?: 0)
-        result1 = 31 * result1 + (start?.hashCode() ?: 0)
-        result1 = 31 * result1 + (end?.hashCode() ?: 0)
-        result1 = 31 * result1 + status.hashCode()
-        result1 = 31 * result1 + (configurerName?.hashCode() ?: 0)
-        result1 = 31 * result1 + (aborterName?.hashCode() ?: 0)
-        result1 = 31 * result1 + scenarios.hashCode()
-        result1 = 31 * result1 + (configuration?.hashCode() ?: 0)
-        return result1
+        var result = version.hashCode()
+        result = 31 * result + key.hashCode()
+        result = 31 * result + creation.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + speedFactor.hashCode()
+        result = 31 * result + (scheduledMinions ?: 0)
+        result = 31 * result + (timeout?.hashCode() ?: 0)
+        result = 31 * result + (hardTimeout?.hashCode() ?: 0)
+        result = 31 * result + (start?.hashCode() ?: 0)
+        result = 31 * result + (end?.hashCode() ?: 0)
+        result = 31 * result + status.hashCode()
+        result = 31 * result + (configurerName?.hashCode() ?: 0)
+        result = 31 * result + (aborterName?.hashCode() ?: 0)
+        result = 31 * result + scenarios.hashCode()
+        result = 31 * result + zones.hashCode()
+        return result
     }
 
     override fun toString(): String {
-        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, timeout=$timeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, scenarios=$scenarios, configuration=$configuration)"
+        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, timeout=$timeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, scenarios=$scenarios, zones=$zones)"
     }
 
 
