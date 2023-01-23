@@ -60,6 +60,10 @@ internal class RedisConfiguration {
             RedisStringCoroutinesCommands::class]
     )
     @Requires(beans = [StatefulRedisConnection::class])
+    @Requirements(
+        Requires(beans = [StatefulRedisConnection::class]),
+        Requires(missingBeans = [StatefulRedisClusterConnection::class])
+    )
     fun coroutineRedisCommands(connection: StatefulRedisConnection<String, String>): RedisCoroutinesCommands<String, String> {
         return connection.coroutines()
     }
