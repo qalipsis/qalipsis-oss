@@ -49,10 +49,7 @@ class RedisPubSubConfiguration {
     internal fun subscriptionConnection(redisClient: AbstractRedisClient): StatefulRedisPubSubConnection<String, ByteArray> {
         return when (redisClient) {
             is RedisClusterClient -> redisClient.connectPubSub(
-                ComposedRedisCodec(
-                    StringCodec.UTF8,
-                    ByteArrayCodec.INSTANCE
-                )
+                ComposedRedisCodec(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
             )
             is RedisClient -> redisClient.connectPubSub(ComposedRedisCodec(StringCodec.UTF8, ByteArrayCodec.INSTANCE))
             else -> throw IllegalArgumentException("Redis client of type ${redisClient::class} is not supported")
@@ -72,10 +69,7 @@ class RedisPubSubConfiguration {
     internal fun publicationConnection(redisClient: AbstractRedisClient): StatefulRedisPubSubConnection<String, ByteArray> {
         return when (redisClient) {
             is RedisClusterClient -> redisClient.connectPubSub(
-                ComposedRedisCodec(
-                    StringCodec.UTF8,
-                    ByteArrayCodec.INSTANCE
-                )
+                ComposedRedisCodec(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
             )
             is RedisClient -> redisClient.connectPubSub(ComposedRedisCodec(StringCodec.UTF8, ByteArrayCodec.INSTANCE))
             else -> throw IllegalArgumentException("Redis client of type ${redisClient::class} is not supported")
