@@ -68,10 +68,10 @@ class ZoneControllerIntegrationTest {
                 key = "at",
                 title = "Austria",
                 description = "Central Europe country",
-                image = URL("http://images-from-austria.fr/logo"),
+                image = URL("http://images-from-austria.at/logo"),
             )
         )
-        coEvery { headConfiguration.zones } returns zones
+        coEvery { headConfiguration.cluster.zones } returns zones
         val listRequest = HttpRequest.GET<Set<Zone>>("/")
 
         // when

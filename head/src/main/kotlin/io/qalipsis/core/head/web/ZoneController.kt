@@ -62,7 +62,7 @@ internal class ZoneController(val headConfiguration: HeadConfiguration) {
     )
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("zones-list")
-    suspend fun listZones(): HttpResponse<List<Zone>> {
-        return HttpResponse.ok(headConfiguration.zones.toList())
+    suspend fun listZones(): HttpResponse<Collection<Zone>> {
+        return HttpResponse.ok(headConfiguration.cluster.zones)
     }
 }

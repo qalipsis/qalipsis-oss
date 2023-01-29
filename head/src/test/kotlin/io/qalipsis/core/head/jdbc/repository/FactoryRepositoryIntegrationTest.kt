@@ -26,8 +26,10 @@ import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
@@ -95,6 +97,13 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val retrieved = factoryRepository.findById(saved.id)
 
         assertThat(retrieved).isNotNull().isDataClassEqualTo(saved)
+
+        // when
+        val tenant = factoryRepository.findTenantByNodeId("the-node-id")
+        assertThat(tenant).isEqualTo("my-tenant")
+
+        // when
+        assertThat(factoryRepository.findTenantByNodeId("the-other-node-id")).isNull()
     }
 
     @Test

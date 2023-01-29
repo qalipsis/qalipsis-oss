@@ -26,6 +26,7 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -74,6 +75,11 @@ internal class RedisCampaignManager(
     coroutineScope,
     campaignExecutionContext
 ) {
+
+    @LogInputAndOutput
+    override suspend fun findAwaitingCampaign(nodeId: NodeId): CampaignKey? {
+        return redisOperations.getCampaignAwaitingNode(nodeId)
+    }
 
     @LogInputAndOutput
     override suspend fun create(campaign: RunningCampaign): CampaignExecutionState<CampaignExecutionContext> =

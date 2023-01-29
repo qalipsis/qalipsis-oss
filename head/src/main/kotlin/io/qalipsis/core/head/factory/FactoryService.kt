@@ -41,9 +41,17 @@ internal interface FactoryService : HeartbeatListener {
     suspend fun register(actualNodeId: NodeId, handshakeRequest: HandshakeRequest, handshakeResponse: HandshakeResponse)
 
     /**
+     * Returns the tenant of the factory identified by the provided [nodeId].
+     */
+    suspend fun getFactoryTenant(nodeId: NodeId): String
+
+    /**
      * Returns all factories supporting the scenarios with the given identifiers.
      */
-    suspend fun getAvailableFactoriesForScenarios(tenant: String, scenarioNames: Collection<ScenarioName>): Collection<Factory>
+    suspend fun getAvailableFactoriesForScenarios(
+        tenant: String,
+        scenarioNames: Collection<ScenarioName>
+    ): Collection<Factory>
 
     /**
      * Marks all the specified factories as busy and lock them for future use.

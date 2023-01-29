@@ -66,6 +66,7 @@ internal class InMemoryFactoryService(
     ) {
         factoriesByNodeId[actualNodeId] = LockableFactory(
             nodeId = actualNodeId,
+            tenant = handshakeRequest.tenant,
             registrationTimestamp = Instant.now(),
             unicastChannel = handshakeResponse.unicastChannel,
             version = Instant.now(),
@@ -77,6 +78,10 @@ internal class InMemoryFactoryService(
             factoriesByScenarios.computeIfAbsent(scenario.name) { concurrentSet() } += actualNodeId
         }
         scenarioSummaryRepository.saveAll(handshakeRequest.scenarios)
+    }
+
+    override suspend fun getFactoryTenant(nodeId: NodeId): String {
+        return factoriesByNodeId[nodeId]!!.tenant
     }
 
     @LogInput
@@ -155,6 +160,7 @@ internal class InMemoryFactoryService(
      */
     private class LockableFactory(
         nodeId: NodeId,
+        val tenant: String,
         registrationTimestamp: Instant,
         unicastChannel: String,
         version: Instant,

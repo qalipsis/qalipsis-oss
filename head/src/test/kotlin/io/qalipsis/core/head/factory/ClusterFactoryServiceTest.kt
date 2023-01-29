@@ -949,6 +949,19 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
+    internal fun `should return the tenant of the factory`() = testDispatcherProvider.run {
+        // given
+        coEvery { factoryRepository.findTenantByNodeId("the-real-node-id") } returns "my-tenant"
+
+        // when
+        val tenant = clusterFactoryService.getFactoryTenant("the-real-node-id")
+
+        // then
+        coVerifyOnce { factoryRepository.findTenantByNodeId("the-real-node-id") }
+        assertThat(tenant).isEqualTo("my-tenant")
+    }
+
+    @Test
     fun `should return all active scenarios`() = testDispatcherProvider.run {
         //given
         val now = getTimeMock()

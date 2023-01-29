@@ -23,6 +23,7 @@ import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
@@ -40,6 +41,7 @@ import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignment
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Component to manage a new Campaign for all the known scenarios.
@@ -68,8 +70,21 @@ internal class StandaloneCampaignManager(
     campaignExecutionContext
 ) {
 
+    /**
+     * Current state of the uniquely running campaign.
+     */
     @KTestable
     private var currentCampaignState: CampaignExecutionState<CampaignExecutionContext> = EmptyState
+
+    /**
+     * Map of the campaigns waiting for the healthy factories, keyed by their nodes.
+     */
+    @KTestable
+    private val awaitingCampaign = ConcurrentHashMap<NodeId, CampaignKey>()
+
+    override suspend fun findAwaitingCampaign(nodeId: NodeId): CampaignKey? {
+        return awaitingCampaign.remove(nodeId)
+    }
 
     override suspend fun start(
         tenant: String,

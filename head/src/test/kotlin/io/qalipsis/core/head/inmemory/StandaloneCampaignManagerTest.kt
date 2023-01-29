@@ -28,6 +28,7 @@ import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
 import assertk.assertions.key
@@ -36,10 +37,12 @@ import com.google.common.collect.ImmutableTable
 import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coExcludeRecords
+import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.qalipsis.api.context.NodeId
@@ -54,6 +57,8 @@ import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
+import io.qalipsis.core.feedbacks.FeedbackStatus.COMPLETED
+import io.qalipsis.core.feedbacks.ReadyForCampaignFeedback
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
@@ -61,15 +66,21 @@ import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.inmemory.catadioptre.awaitingCampaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
+import io.qalipsis.core.heartbeat.Heartbeat
+import io.qalipsis.core.heartbeat.Heartbeat.State.IDLE
+import io.qalipsis.core.heartbeat.Heartbeat.State.OFFLINE
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
@@ -105,6 +116,117 @@ internal class StandaloneCampaignManagerTest {
 
     @RelaxedMockK
     private lateinit var campaignExecutionContext: CampaignExecutionContext
+
+    @Test
+    internal fun `should send a ReadyForCampaignFeedback when the healthy factory is expected and the configuration is set for short running factories`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(relaxedMockk())
+            every { headConfiguration.cluster.onDemandFactories } returns true
+            campaignManager.awaitingCampaign()["the-factory-id"] = "my-campaign"
+            coEvery { factoryService.getFactoryTenant("the-factory-id") } returns "my-tenant"
+            coJustRun { campaignManager.notify(any<ReadyForCampaignFeedback>()) }
+
+            // when
+            campaignManager.notify(mockk<Heartbeat> {
+                every { nodeId } returns "the-factory-id"
+                every { state } returns IDLE
+            })
+
+            // then
+            coVerifyOnce {
+                campaignManager.notify(withArg<ReadyForCampaignFeedback> {
+                    assertThat(it).all {
+                        prop(ReadyForCampaignFeedback::campaignKey).isEqualTo("my-campaign")
+                        prop(ReadyForCampaignFeedback::nodeId).isEqualTo("the-factory-id")
+                        prop(ReadyForCampaignFeedback::tenant).isEqualTo("my-tenant")
+                        prop(ReadyForCampaignFeedback::status).isEqualTo(COMPLETED)
+                    }
+                })
+            }
+        }
+
+    @Test
+    internal fun `should not send a ReadyForCampaignFeedback when the healthy factory is not expected but the configuration is set for short running factories`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(relaxedMockk())
+            every { headConfiguration.cluster.onDemandFactories } returns true
+            coEvery { factoryService.getFactoryTenant("the-factory-id") } returns "my-tenant"
+
+            // when
+            campaignManager.notify(mockk<Heartbeat> {
+                every { nodeId } returns "the-factory-id"
+                every { state } returns IDLE
+            })
+
+            // then
+            coVerifyNever { campaignManager.notify(any<ReadyForCampaignFeedback>()) }
+        }
+
+    @Test
+    internal fun `should not send a ReadyForCampaignFeedback when the healthy factory is expected but the configuration is not set for short running factories`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(relaxedMockk())
+            every { headConfiguration.cluster.onDemandFactories } returns false
+            campaignManager.awaitingCampaign()["the-factory-id"] = "my-campaign"
+            coEvery { factoryService.getFactoryTenant("the-factory-id") } returns "my-tenant"
+
+            // when
+            campaignManager.notify(mockk<Heartbeat> {
+                every { nodeId } returns "the-factory-id"
+                every { state } returns IDLE
+            })
+
+            // then
+            coVerifyNever { campaignManager.notify(any<ReadyForCampaignFeedback>()) }
+        }
+
+    @Test
+    internal fun `should not send a ReadyForCampaignFeedback when the factory is expected but not healthy and the configuration is set for short running factories`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(relaxedMockk())
+            every { headConfiguration.cluster.onDemandFactories } returns true
+            campaignManager.awaitingCampaign()["the-factory-id"] = "my-campaign"
+            coEvery { factoryService.getFactoryTenant("the-factory-id") } returns "my-tenant"
+
+            // when
+            campaignManager.notify(mockk<Heartbeat> {
+                every { nodeId } returns "the-factory-id"
+                every { state } returns OFFLINE
+            })
+
+            // then
+            coVerifyNever { campaignManager.notify(any<ReadyForCampaignFeedback>()) }
+        }
+
+    @Test
+    internal fun `should find the awaiting campaign`() = testDispatcherProvider.runTest {
+        // given
+        val campaignManager = standaloneCampaignManager(relaxedMockk())
+        campaignManager.awaitingCampaign()["the-node"] = "my-campaign"
+
+        // when
+        val tenant = campaignManager.findAwaitingCampaign("the-node")
+
+        // then
+        assertThat(tenant).isEqualTo("my-campaign")
+    }
+
+    @Test
+    internal fun `should find no awaiting campaign when the node is not awaited`() = testDispatcherProvider.runTest {
+        // given
+        val campaignManager = standaloneCampaignManager(relaxedMockk())
+        campaignManager.awaitingCampaign()["the-node"] = "my-campaign"
+
+        // when
+        val tenant = campaignManager.findAwaitingCampaign("the-other-node")
+
+        // then
+        assertThat(tenant).isNull()
+    }
 
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {

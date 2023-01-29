@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.campaign
 
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.lang.tryAndLog
@@ -35,16 +36,20 @@ import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignManagementDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
+import io.qalipsis.core.feedbacks.ReadyForCampaignFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HeadChannel
+import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
+import io.qalipsis.core.heartbeat.Heartbeat
+import io.qalipsis.core.heartbeat.Heartbeat.State.IDLE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -65,9 +70,30 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     private val headConfiguration: HeadConfiguration,
     private val coroutineScope: CoroutineScope,
     private val campaignExecutionContext: C,
-) : CampaignManager, FeedbackListener<Feedback> {
+) : CampaignManager, FeedbackListener<Feedback>, HeartbeatListener {
 
     private val processingMutex = Mutex()
+
+    override suspend fun notify(heartbeat: Heartbeat) {
+        // When the factories are running only for a unique campaign, the healthy heartbeat are filtered
+        // and if the factory node ID matches a pending campaign, a ready for campaign feedback is propagated internally.
+        if (headConfiguration.cluster.onDemandFactories && heartbeat.state == IDLE) {
+            findAwaitingCampaign(heartbeat.nodeId)?.let { campaignKey ->
+                notify(
+                    ReadyForCampaignFeedback(
+                        campaignKey = campaignKey,
+                        tenant = factoryService.getFactoryTenant(heartbeat.nodeId),
+                        nodeId = heartbeat.nodeId
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Performs an action when a heartbeat with a healthy factory is received.
+     */
+    abstract suspend fun findAwaitingCampaign(nodeId: NodeId): CampaignKey?
 
     override fun accept(feedback: Feedback): Boolean {
         return feedback is CampaignManagementFeedback

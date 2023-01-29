@@ -44,7 +44,13 @@ internal class CampaignConfigurationConverterImplTest {
 
     @BeforeEach
     internal fun setup() {
-        every { headConfiguration.zones } returns setOf(Zone(key = "FR", title = "France", description = "description"), Zone(key = "EN", title = "England", description = "description"))
+        every { headConfiguration.cluster.zones } returns setOf(
+            Zone(
+                key = "FR",
+                title = "France",
+                description = "description"
+            ), Zone(key = "EN", title = "England", description = "description")
+        )
     }
 
     @Test

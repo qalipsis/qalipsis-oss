@@ -62,8 +62,9 @@ internal class CampaignConfigurationConverterImpl(
 
     private fun checkAndUpdateZone(zones: Map<String, Int>) {
         //We check if all the keys provide for zones are supported
-        require(headConfiguration.zones.map { it.key }.containsAll(zones.keys)) {
-            val unknownZones = zones.keys.filterNot { headConfiguration.zones.map { zone -> zone.key }.contains(it) }
+        require(headConfiguration.cluster.zones.map { it.key }.containsAll(zones.keys)) {
+            val unknownZones =
+                zones.keys.filterNot { headConfiguration.cluster.zones.map { zone -> zone.key }.contains(it) }
             "Some requested zones do not exist: ${unknownZones.joinToString()}"
         }
 

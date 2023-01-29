@@ -66,6 +66,7 @@ import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsShutdownFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
+import io.qalipsis.core.feedbacks.ReadyForCampaignFeedback
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -200,6 +201,7 @@ internal class SerializationFactory {
                 subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
                 subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
                 subclass(CampaignAbortFeedback::class, CampaignAbortFeedback.serializer())
+                subclass(ReadyForCampaignFeedback::class, ReadyForCampaignFeedback.serializer())
             }
         }
     }

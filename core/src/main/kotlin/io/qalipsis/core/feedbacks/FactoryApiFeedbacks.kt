@@ -205,3 +205,23 @@ data class CampaignAbortFeedback(
     override val error: String?
         get() = errorMessage.takeIf { it.isNotBlank() }
 }
+
+/**
+ * Notification sent from the factory to the head, to inform that it is ready to accept
+ * directives for the given campaign.
+ *
+ * @author Eric Jessé
+ */
+@Serializable
+@SerialName("ready")
+data class ReadyForCampaignFeedback(
+    override val campaignKey: CampaignKey,
+    override var tenant: String,
+    override var nodeId: String
+) : Feedback(), CampaignManagementFeedback {
+
+    override val status: FeedbackStatus = FeedbackStatus.COMPLETED
+
+    override val error: String = ""
+
+}

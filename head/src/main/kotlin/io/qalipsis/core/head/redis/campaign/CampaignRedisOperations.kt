@@ -43,6 +43,15 @@ internal class CampaignRedisOperations(
     private val protoBuf: ProtoBuf
 ) {
 
+    /**
+     * Returns the key of the campaign waiting for the factory [nodeId] to be ready.
+     */
+    suspend fun getCampaignAwaitingNode(nodeId: NodeId): CampaignKey? {
+        return redisHashCommands.hget("campaign-management:waited-nodes", nodeId)?.also {
+            redisHashCommands.hdel("campaign-management:waited-nodes", nodeId)
+        }
+    }
+
     suspend fun saveConfiguration(campaign: RunningCampaign) {
         redisHashCommands.hset(
             "campaign-management:{${campaign.tenant}:${campaign.key}}",
@@ -157,15 +166,17 @@ internal class CampaignRedisOperations(
      * Cleans all the data used for the campaign.
      */
     suspend fun clean(campaign: RunningCampaign) {
-        redisKeyCommands.unlink("campaign-management:{${campaign.tenant}:${campaign.key}}")
-        redisKeyCommands.unlink(buildExpectedFeedbackKey(campaign.tenant, campaign.key))
-        campaign.factories.keys.forEach { factory ->
-            redisKeyCommands.unlink(buildFactoryAssignmentFeedbackKey(campaign.tenant, campaign.key, factory))
-        }
+        val allCampaignKeys = campaign.factories.keys.map { nodeId ->
+            buildFactoryAssignmentFeedbackKey(campaign.tenant, campaign.key, nodeId)
+        } + setOf(
+            "campaign-management:{${campaign.tenant}:${campaign.key}}",
+            buildExpectedFeedbackKey(campaign.tenant, campaign.key)
+        )
+        redisKeyCommands.unlink(*allCampaignKeys.toTypedArray())
     }
 
     private fun buildExpectedFeedbackKey(tenant: String, campaignKey: CampaignKey) =
-        "{campaign-management:{${tenant}:$campaignKey}:feedback"
+        "campaign-management:{${tenant}:$campaignKey}:feedback"
 
     private fun buildFactoryAssignmentFeedbackKey(tenant: String, campaignKey: CampaignKey, factory: NodeId) =
         "campaign-management:{$tenant:$campaignKey}:factory:feedback:$factory"

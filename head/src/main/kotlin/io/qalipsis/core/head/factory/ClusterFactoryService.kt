@@ -96,6 +96,10 @@ internal class ClusterFactoryService(
         saveScenariosAndDependencies(handshakeRequest.tenant, handshakeRequest.scenarios, existingFactory)
     }
 
+    override suspend fun getFactoryTenant(nodeId: NodeId): String {
+        return factoryRepository.findTenantByNodeId(nodeId)!!
+    }
+
     /**
      * Updates or saves factory and factory_selector entities using handshakeRequest
      */
@@ -168,7 +172,7 @@ internal class ClusterFactoryService(
         if (handshakeRequest.tags.isNotEmpty()) {
             factoryTagRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
                 FactoryTagEntity(factoryEntity.id, key, value)
-            })
+            }).count()
         }
         return factoryEntity
     }

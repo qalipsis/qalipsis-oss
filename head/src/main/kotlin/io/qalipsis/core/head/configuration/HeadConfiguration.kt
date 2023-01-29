@@ -59,9 +59,26 @@ internal interface HeadConfiguration {
     val heartbeatDelay: Duration
 
     /**
-     * Set of zones to use to execute the scenarios.
+     * Duration of the heartbeat to emit from the factories.
      */
-    @get:NotNull
-    @get:Bindable(defaultValue = "")
-    val zones: Set<Zone>
+    val cluster: ClusterConfiguration
+
+    @ConfigurationProperties("cluster")
+    interface ClusterConfiguration {
+
+        /**
+         * Set of zones to use to execute the scenarios.
+         */
+        @get:NotNull
+        @get:Bindable(defaultValue = "")
+        val zones: Set<Zone>
+
+        /**
+         * When the flag is set to true, the factories are started for a unique campaign and stopped
+         * once it completes. The head should provide the convenient feedbacks to orchestrate them.
+         */
+        @get:Bindable(defaultValue = "false")
+        val onDemandFactories: Boolean
+
+    }
 }
