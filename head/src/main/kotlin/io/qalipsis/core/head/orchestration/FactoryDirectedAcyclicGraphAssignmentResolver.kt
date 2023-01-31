@@ -19,10 +19,6 @@
 
 package io.qalipsis.core.head.orchestration
 
-import com.google.common.collect.Table
-import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.head.model.Factory
@@ -41,10 +37,10 @@ internal interface FactoryDirectedAcyclicGraphAssignmentResolver {
      * @param factories collection of [Factory] available to execute the campaign
      * @param scenarios collection of [ScenarioSummary] to execute in the campaign
      */
-    fun resolveFactoriesAssignments(
+    suspend fun assignFactories(
         runningCampaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: Collection<ScenarioSummary>
-    ): Table<NodeId, ScenarioName, FactoryScenarioAssignment>
+    )
 
 }

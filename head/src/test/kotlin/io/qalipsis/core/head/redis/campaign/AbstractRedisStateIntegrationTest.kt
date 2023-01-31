@@ -35,6 +35,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -74,6 +75,9 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     protected lateinit var campaignExecutionContext: CampaignExecutionContext
 
     @RelaxedMockK
+    protected lateinit var assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver
+
+    @RelaxedMockK
     protected lateinit var reportPublisher1: CampaignReportPublisher
 
     @RelaxedMockK
@@ -100,15 +104,19 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     @MockBean(CampaignExecutionContext::class)
     fun campaignExecutionContext(): CampaignExecutionContext = campaignExecutionContext
 
+    @MockBean(FactoryDirectedAcyclicGraphAssignmentResolver::class)
+    fun assignmentResolver(): FactoryDirectedAcyclicGraphAssignmentResolver = assignmentResolver
+
     @BeforeEach
     internal fun setUp() {
-        campaign = spyk(RunningCampaign(
-            tenant = "my-tenant", key = "my-campaign"
-        ).also {
-            it.broadcastChannel = "my-broadcast-channel"
-            it.feedbackChannel = "my-feedback-channel"
-            it.factories["node-1"] = FactoryConfiguration("node-1-channel")
-            it.factories["node-2"] = FactoryConfiguration("node-2-channel")
+        campaign = spyk(
+            RunningCampaign(
+                tenant = "my-tenant", key = "my-campaign"
+            ).also {
+                it.broadcastChannel = "my-broadcast-channel"
+                it.feedbackChannel = "my-feedback-channel"
+                it.factories["node-1"] = FactoryConfiguration("node-1-channel")
+                it.factories["node-2"] = FactoryConfiguration("node-2-channel")
         })
     }
 

@@ -40,6 +40,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.configuration.CommunicationChannelConfiguration
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
+import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.redis.RedisUtils
 import jakarta.annotation.PostConstruct
@@ -48,6 +49,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
+/**
+ * [MinionAssignmentKeeper] for cluster-distributed minions, where some minions might split their own execution workflow
+ * across several factories.
+ *
+ * @author Eric Jessé
+ */
 @ExperimentalLettuceCoroutinesApi
 @Singleton
 @Requirements(

@@ -51,7 +51,9 @@ internal class RedisRunningState(
             operations.setState(campaign.tenant, campaignKey, CampaignRedisState.RUNNING_STATE)
             operations.prepareScenariosForFeedbackExpectations(campaign)
         }
-        return super.doInit()
+        return super.doInit().also {
+            operations.saveConfiguration(campaign)
+        }
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {

@@ -63,6 +63,12 @@ import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * [MinionAssignmentKeeper] for cluster-distributed minions, where each minion completely executes in a unique
+ * factory.
+ *
+ * @author Eric Jessé
+ */
 @ExperimentalLettuceCoroutinesApi
 @Singleton
 @Requirements(
@@ -195,7 +201,7 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         campaignKey: CampaignKey
     ) = "{$campaignKey}-assignment:"
 
-    @LogInput
+    @LogInputAndOutput
     override suspend fun registerMinionsToAssign(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
@@ -248,7 +254,8 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
         underLoad: Boolean
     ): Boolean {
         return try {
-            redisScriptingCommands.evalsha(
+            log.trace { "Executing the Redis script for the minions registration" }
+            redisScriptingCommands.evalsha<Boolean>(
                 minionRegistrationScriptSha, ScriptOutputType.BOOLEAN,
                 arrayOf(
                     minionsSetKey,
@@ -277,6 +284,8 @@ internal class RedisSingleLocationMinionAssignmentKeeper(
                 dagIds,
                 underLoad
             )
+        } finally {
+            log.trace { "Redis script for the minions registration was completed" }
         }
     }
 

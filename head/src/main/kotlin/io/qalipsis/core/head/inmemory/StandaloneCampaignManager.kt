@@ -24,6 +24,7 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -35,8 +36,8 @@ import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -51,7 +52,6 @@ import kotlinx.coroutines.CoroutineScope
 internal class StandaloneCampaignManager(
     headChannel: HeadChannel,
     factoryService: FactoryService,
-    assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver,
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
@@ -60,7 +60,6 @@ internal class StandaloneCampaignManager(
 ) : AbstractCampaignManager<CampaignExecutionContext>(
     headChannel,
     factoryService,
-    assignmentResolver,
     campaignService,
     campaignReportStateKeeper,
     headConfiguration,
@@ -81,9 +80,11 @@ internal class StandaloneCampaignManager(
     }
 
     override suspend fun create(
-        campaign: RunningCampaign
+        campaign: RunningCampaign,
+        factories: Collection<Factory>,
+        scenarios: List<ScenarioSummary>
     ): CampaignExecutionState<CampaignExecutionContext> {
-        return FactoryAssignmentState(campaign)
+        return FactoryAssignmentState(campaign, factories, scenarios)
     }
 
     override suspend fun get(

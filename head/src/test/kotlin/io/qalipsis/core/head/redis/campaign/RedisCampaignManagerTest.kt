@@ -30,27 +30,22 @@ import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
-import assertk.assertions.key
 import assertk.assertions.prop
-import com.google.common.collect.ImmutableTable
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.coEvery
 import io.mockk.coExcludeRecords
-import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.justRun
+import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
-import io.qalipsis.api.context.NodeId
-import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
-import io.qalipsis.core.campaigns.FactoryConfiguration
-import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.directives.CampaignAbortDirective
@@ -68,7 +63,6 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -94,9 +88,6 @@ internal class RedisCampaignManagerTest {
 
     @MockK
     private lateinit var factoryService: FactoryService
-
-    @MockK
-    private lateinit var assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver
 
     @RelaxedMockK
     private lateinit var campaignService: CampaignService
@@ -142,11 +133,7 @@ internal class RedisCampaignManagerTest {
             )
             val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
             coEvery {
-                campaignService.create(
-                    "my-tenant",
-                    "my-user",
-                    refEq(campaign)
-                )
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
             } returns runningCampaign
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
@@ -161,29 +148,14 @@ internal class RedisCampaignManagerTest {
             coEvery {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
             } returns listOf(factory1, factory2, factory3)
-            coJustRun { factoryService.lockFactories(any(), any()) }
+            val directive1 = relaxedMockk<FactoryAssignmentDirective>()
+            val directive2 = relaxedMockk<FactoryAssignmentDirective>()
+            val initialState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+                coEvery { init() } returns listOf(directive1, directive2)
+                justRun { inject(any()) }
+            }
+            coEvery { campaignManager.create(refEq(runningCampaign), any(), any()) } returns initialState
 
-            val assignments = ImmutableTable.builder<NodeId, ScenarioName, FactoryScenarioAssignment>()
-                .put("factory-1", "scenario-1", FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")))
-                .put("factory-1", "scenario-2", FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762))
-                .put(
-                    "factory-3",
-                    "scenario-2",
-                    FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
-                )
-                .build()
-            coEvery {
-                assignmentResolver.resolveFactoriesAssignments(
-                    refEq(runningCampaign),
-                    listOf(factory1, factory2, factory3),
-                    listOf(scenario1, scenario2)
-                )
-            } returns assignments
-            coJustRun { campaignService.start(any(), any(), any(), any()) }
-            coJustRun { campaignService.startScenario(any(), any(), any(), any()) }
-            coJustRun { campaignReportStateKeeper.start(any(), any()) }
-            coJustRun { factoryService.releaseFactories(any(), any()) }
-            coJustRun { headChannel.subscribeFeedback(any()) }
             val countDown = SuspendedCountLatch(2)
             coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
 
@@ -194,98 +166,55 @@ internal class RedisCampaignManagerTest {
 
             // then
             assertThat(result).isSameAs(runningCampaign)
-            assertThat(runningCampaign.factories).all {
-                hasSize(2)
-                key("factory-1").all {
-                    prop(FactoryConfiguration::unicastChannel).isEqualTo("unicast-channel-1")
-                    prop(FactoryConfiguration::assignment).isEqualTo(
-                        linkedMapOf(
-                            "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")),
-                            "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762)
-                        )
-                    )
-                }
-                key("factory-3").all {
-                    prop(FactoryConfiguration::unicastChannel).isEqualTo("unicast-channel-3")
-                    prop(FactoryConfiguration::assignment).isEqualTo(
-                        linkedMapOf(
-                            "scenario-2" to FactoryScenarioAssignment(
-                                "scenario-2",
-                                listOf("dag-A", "dag-B", "dag-C"),
-                                254
-                            )
-                        )
-                    )
-                }
-            }
-
-            val sentDirectives = mutableListOf<Directive>()
             coVerifyOrder {
                 factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.prepare("my-tenant", "my-campaign")
-                factoryService.lockFactories(refEq(runningCampaign), listOf("factory-1", "factory-2", "factory-3"))
-                assignmentResolver.resolveFactoriesAssignments(
-                    refEq(runningCampaign),
-                    listOf(factory1, factory2, factory3),
-                    listOf(scenario1, scenario2)
-                )
+                headChannel.subscribeFeedback("feedbacks")
                 campaignService.start("my-tenant", "my-campaign", any(), isNull())
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
-                factoryService.releaseFactories(refEq(runningCampaign), listOf("factory-2"))
-                headChannel.subscribeFeedback("feedbacks")
-                headChannel.publishDirective(capture(sentDirectives))
-                headChannel.publishDirective(capture(sentDirectives))
+                campaignManager.create(
+                    runningCampaign,
+                    listOf(factory1, factory2, factory3),
+                    listOf(scenario1, scenario2)
+                )
+                initialState.inject(campaignExecutionContext)
+                initialState.init()
+                headChannel.publishDirective(refEq(directive1))
+                headChannel.publishDirective(refEq(directive2))
             }
-            assertThat(sentDirectives).all {
-                hasSize(2)
-                any {
-                    it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                        prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
-                        prop(FactoryAssignmentDirective::assignments).all {
-                            hasSize(2)
-                            any {
-                                it.all {
-                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-1")
-                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-1", "dag-2")
-                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(Int.MAX_VALUE)
-                                }
-                            }
-                            any {
-                                it.all {
-                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
-                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B")
-                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(1762)
-                                }
-                            }
-                        }
-                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(runningCampaign)
-                        prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
-                    }
-                }
-                any {
-                    it.isInstanceOf(FactoryAssignmentDirective::class).all {
-                        prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
-                        prop(FactoryAssignmentDirective::assignments).all {
-                            hasSize(1)
-                            any {
-                                it.all {
-                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
-                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B", "dag-C")
-                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(254)
-                                }
-                            }
-                        }
-                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(runningCampaign)
-                        prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-3")
-                    }
-                }
-            }
+
         }
+
+    @Test
+    internal fun `should create a factory assignment state as initial state`() = testDispatcherProvider.run {
+        // given
+        val campaignManager = redisCampaignManager(this)
+        val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
+        val scenario1 = mockk<ScenarioSummary>()
+        val scenario2 = mockk<ScenarioSummary>()
+        val factory1 = mockk<Factory>()
+        val factory2 = mockk<Factory>()
+        val factory3 = mockk<Factory>()
+
+        // when
+        val initialState = campaignManager.create(
+            runningCampaign,
+            listOf(factory1, factory2, factory3),
+            listOf(scenario1, scenario2)
+        )
+
+        // then
+        assertThat(initialState).isInstanceOf(RedisFactoryAssignmentState::class).all {
+            prop("campaign").isSameAs(runningCampaign)
+            typedProp<Collection<Factory>>("factories").containsOnly(factory1, factory2, factory3)
+            typedProp<Collection<ScenarioSummary>>("scenarios").containsOnly(scenario1, scenario2)
+        }
+    }
 
     @Test
     internal fun `should close the campaign after creation when an exception occurs`() =
@@ -325,7 +254,7 @@ internal class RedisCampaignManagerTest {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
             }
-            confirmVerified(assignmentResolver, factoryService, headChannel, campaignService)
+            confirmVerified(factoryService, headChannel, campaignService)
         }
 
     @Test
@@ -695,7 +624,6 @@ internal class RedisCampaignManagerTest {
             RedisCampaignManager(
                 headChannel,
                 factoryService,
-                assignmentResolver,
                 campaignService,
                 campaignReportStateKeeper,
                 headConfiguration,

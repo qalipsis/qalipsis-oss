@@ -28,7 +28,6 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
-import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -44,7 +43,6 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -59,7 +57,6 @@ import javax.validation.constraints.NotBlank
 internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     private val headChannel: HeadChannel,
     private val factoryService: FactoryService,
-    private val assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver,
     private val campaignService: CampaignService,
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
     private val headConfiguration: HeadConfiguration,
@@ -137,10 +134,9 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         scenarios: List<ScenarioSummary>
     ) {
         campaignService.prepare(tenant, runningCampaign.key)
-        log.trace { "Factories to evaluate for campaign ${runningCampaign.key}: ${factories.map(Factory::nodeId)}" }
-        // Locks all the factories from a concurrent assignment resolution.
-        factoryService.lockFactories(runningCampaign, factories.map(Factory::nodeId))
-        val assignments = assignmentResolver.resolveFactoriesAssignments(runningCampaign, factories, scenarios)
+        runningCampaign.broadcastChannel = getBroadcastChannelName(runningCampaign)
+        runningCampaign.feedbackChannel = getFeedbackChannelName(runningCampaign)
+        headChannel.subscribeFeedback(runningCampaign.feedbackChannel)
 
         val start = Instant.now()
         val timeout = configuration.timeout?.let { timeoutDuration -> start + timeoutDuration }
@@ -151,28 +147,8 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
             campaignService.startScenario(tenant, runningCampaign.key, it, start)
             campaignReportStateKeeper.start(runningCampaign.key, it)
         }
-        log.trace { "Factory assignment for campaign ${runningCampaign.key}: $assignments" }
-
-        // Releases the unassigned factories to make them available for other campaigns.
-        factoryService.releaseFactories(
-            runningCampaign,
-            (factories.map(Factory::nodeId) - assignments.rowKeySet())
-        )
-
-        runningCampaign.broadcastChannel = getBroadcastChannelName(runningCampaign)
-        runningCampaign.feedbackChannel = getFeedbackChannelName(runningCampaign)
-
-        val factoriesByNodeId = factories.associateBy(Factory::nodeId)
-        assignments.rowMap().forEach { (factoryNodeId, assignments) ->
-            runningCampaign.factories[factoryNodeId] = FactoryConfiguration(
-                unicastChannel = factoriesByNodeId[factoryNodeId]!!.unicastChannel,
-                assignment = assignments
-            )
-        }
-
-        headChannel.subscribeFeedback(runningCampaign.feedbackChannel)
-        val campaignStartState = create(runningCampaign)
-        log.info { "Starting the campaign ${configuration.name} with scenarios ${scenarios.map { it.name }} on factories ${runningCampaign.factories.keys}" }
+        val campaignStartState = create(runningCampaign, factories, scenarios)
+        log.info { "Starting the campaign ${configuration.name} with scenarios ${scenarios.map { it.name }} on factories ${factories.map { it.nodeId }}" }
         campaignStartState.inject(campaignExecutionContext)
         processingMutex.withLock {
             log.trace { "Initializing the campaign state for start $campaignStartState" }
@@ -212,7 +188,9 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     }
 
     abstract suspend fun create(
-        campaign: RunningCampaign
+        campaign: RunningCampaign,
+        factories: Collection<Factory>,
+        scenarios: List<ScenarioSummary>
     ): CampaignExecutionState<C>
 
     @LogInputAndOutput

@@ -40,7 +40,9 @@ internal class RedisMinionsScheduleRampUpState(
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.MINIONS_STARTUP_STATE)
         // Prepared the feedback expectations, ony by scenario.
         operations.prepareScenariosForFeedbackExpectations(campaign)
-        return super.doInit()
+        return super.doInit().also {
+            operations.saveConfiguration(campaign)
+        }
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {

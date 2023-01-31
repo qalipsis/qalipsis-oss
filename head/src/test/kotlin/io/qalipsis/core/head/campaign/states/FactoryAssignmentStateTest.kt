@@ -29,16 +29,19 @@ import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
+import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.head.model.Factory
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -51,7 +54,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should not be a completion state`() {
         assertThat(
-            FactoryAssignmentState(campaign).isCompleted
+            FactoryAssignmentState(campaign, mockk(), mockk()).isCompleted
         ).isFalse()
     }
 
@@ -60,23 +63,30 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         // given
         every { campaign.broadcastChannel } returns "broadcast-channel"
         every { campaign.feedbackChannel } returns "feedback-channel"
-        every { campaign.factories } returns linkedMapOf(
-            "node-1" to relaxedMockk {
-                every { unicastChannel } returns "unicast-channel-1"
-                every { assignment } returns linkedMapOf(
-                    "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")),
-                    "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762)
-                )
-            },
-            "node-2" to relaxedMockk {
-                every { unicastChannel } returns "unicast-channel-2"
-                every { assignment } returns linkedMapOf(
-                    "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
-                )
-            }
-        )
-        val state = FactoryAssignmentState(campaign)
-        assertThat(state).typedProp<Collection<NodeId>>("expectedFeedbacks").containsOnly("node-1", "node-2")
+        every { campaign.factories } returns mutableMapOf()
+        val factories = mockk<Collection<Factory>>()
+        val scenarios = mockk<List<ScenarioSummary>>()
+        val state = FactoryAssignmentState(campaign, factories, scenarios)
+        coEvery {
+            assignmentResolver.assignFactories(refEq(campaign), refEq(factories), refEq(scenarios))
+        } answers {
+            // The call to the factory assignment make the campaign return the following factories assignment.
+            every { campaign.factories } returns linkedMapOf(
+                "node-1" to relaxedMockk {
+                    every { unicastChannel } returns "unicast-channel-1"
+                    every { assignment } returns linkedMapOf(
+                        "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")),
+                        "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762)
+                    )
+                },
+                "node-2" to relaxedMockk {
+                    every { unicastChannel } returns "unicast-channel-2"
+                    every { assignment } returns linkedMapOf(
+                        "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
+                    )
+                }
+            )
+        }
 
         // when
         val directives = state.run {
@@ -85,6 +95,8 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         }
 
         // then
+        coVerifyOnce { assignmentResolver.assignFactories(refEq(campaign), refEq(factories), refEq(scenarios)) }
+        assertThat(state).typedProp<Collection<NodeId>>("expectedFeedbacks").containsOnly("node-1", "node-2")
         assertThat(directives).all {
             hasSize(2)
             any {
@@ -135,7 +147,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign)
+        val state = FactoryAssignmentState(campaign, mockk(), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -161,7 +173,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure without error message`() =
         testDispatcherProvider.runTest {
             // given
-            val state = FactoryAssignmentState(campaign)
+            val state = FactoryAssignmentState(campaign, mockk(), mockk())
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -187,7 +199,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     internal fun `should return itself in case of any unsupported feedback`() =
         testDispatcherProvider.runTest {
             // given
-            val state = FactoryAssignmentState(campaign)
+            val state = FactoryAssignmentState(campaign, mockk(), mockk())
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -209,7 +221,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                 "node-1" to relaxedMockk(),
                 "node-2" to relaxedMockk()
             )
-            val state = FactoryAssignmentState(campaign)
+            val state = FactoryAssignmentState(campaign, mockk(), mockk())
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -249,7 +261,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should return an AbortingState`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign)
+        val state = FactoryAssignmentState(campaign, mockk(), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()

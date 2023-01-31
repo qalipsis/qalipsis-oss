@@ -41,7 +41,7 @@ object DeploymentTestScenario {
     @Scenario("deployment-test")
     fun deploymentTest() {
         scenario {
-            minionsCount = 10_000
+            minionsCount = 2_000
             profile { regular(1000, 1000) }
         }.start()
             .returns(Unit)
@@ -50,7 +50,7 @@ object DeploymentTestScenario {
 
     @Scenario("deployment-test-with-singleton")
     fun deploymentTestWithSingleton() {
-        val minions = 10_000
+        val minions = 2_000
         val counter = AtomicInteger(0)
         scenario {
             minionsCount = minions

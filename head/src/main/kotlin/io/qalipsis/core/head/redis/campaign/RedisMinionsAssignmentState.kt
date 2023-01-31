@@ -40,7 +40,9 @@ internal class RedisMinionsAssignmentState(
     override suspend fun doInit(): List<Directive> {
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
-        return super.doInit()
+        return super.doInit().also {
+            operations.saveConfiguration(campaign)
+        }
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {

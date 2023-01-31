@@ -29,6 +29,7 @@ import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.BeforeEach
@@ -65,6 +66,9 @@ internal abstract class AbstractStateTest {
 
     @RelaxedMockK
     protected lateinit var reportPublisher2: CampaignReportPublisher
+
+    @RelaxedMockK
+    protected lateinit var assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver
 
     protected val reportPublishers: Collection<CampaignReportPublisher> by lazy {
         listOf(reportPublisher1, reportPublisher2)

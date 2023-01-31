@@ -25,6 +25,7 @@ import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import jakarta.inject.Singleton
 import javax.annotation.Nullable
 
@@ -39,6 +40,7 @@ internal class CampaignExecutionContext(
     val factoryService: FactoryService,
     val campaignReportStateKeeper: CampaignReportStateKeeper,
     val headChannel: HeadChannel,
+    val assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver,
     val reportPublishers: Collection<CampaignReportPublisher>,
     @Nullable val campaignAutoStarter: CampaignAutoStarter?
 )

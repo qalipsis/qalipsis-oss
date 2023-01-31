@@ -19,23 +19,35 @@
 
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.head.model.Factory
 
 internal open class FactoryAssignmentState(
-    protected val campaign: RunningCampaign
+    protected val campaign: RunningCampaign,
+    private val factories: Collection<Factory>,
+    private val scenarios: Collection<ScenarioSummary>
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
-    private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
+    private val expectedFeedbacks = concurrentSet<NodeId>()
 
     override suspend fun doInit(): List<Directive> {
+        // Locks all the factories from a concurrent assignment resolution.
+        if (campaign.factories.isEmpty()) {
+            context.assignmentResolver.assignFactories(campaign, factories, scenarios)
+        }
+
+        expectedFeedbacks.addAll(campaign.factories.keys)
+
         // Creates one directive by factory to notify its assignments.
         return campaign.factories.map { (factoryId, configuration) ->
             val factory = campaign.factories[factoryId]!!

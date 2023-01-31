@@ -29,6 +29,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
@@ -37,8 +38,8 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -57,7 +58,6 @@ import kotlinx.coroutines.CoroutineScope
 internal class RedisCampaignManager(
     headChannel: HeadChannel,
     factoryService: FactoryService,
-    assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver,
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
@@ -67,7 +67,6 @@ internal class RedisCampaignManager(
 ) : AbstractCampaignManager<CampaignExecutionContext>(
     headChannel,
     factoryService,
-    assignmentResolver,
     campaignService,
     campaignReportStateKeeper,
     headConfiguration,
@@ -76,8 +75,12 @@ internal class RedisCampaignManager(
 ) {
 
     @LogInputAndOutput
-    override suspend fun create(campaign: RunningCampaign): CampaignExecutionState<CampaignExecutionContext> =
-        RedisFactoryAssignmentState(campaign, redisOperations)
+    override suspend fun create(
+        campaign: RunningCampaign,
+        factories: Collection<Factory>,
+        scenarios: List<ScenarioSummary>
+    ): CampaignExecutionState<CampaignExecutionContext> =
+        RedisFactoryAssignmentState(campaign, factories, scenarios, redisOperations)
 
     @LogInput
     override suspend fun get(
@@ -88,7 +91,7 @@ internal class RedisCampaignManager(
         val executionState = when (currentState?.second) {
             CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE -> RedisFactoryAssignmentState(
                 currentState.first,
-                redisOperations
+                operations = redisOperations
             )
 
             CampaignRedisState.MINIONS_ASSIGNMENT_STATE -> RedisMinionsAssignmentState(
