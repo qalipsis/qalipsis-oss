@@ -30,6 +30,7 @@ import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Factory
 import jakarta.inject.Singleton
 import kotlin.math.ceil
@@ -45,9 +46,11 @@ import kotlin.math.ceil
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(missingBeans = [FactoryDirectedAcyclicGraphAssignmentResolver::class])
 )
-internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolver : FactoryDirectedAcyclicGraphAssignmentResolver {
+internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolver(
+    factoryService: FactoryService
+) : AbstractFactoryDirectedAcyclicGraphAssignmentResolver(factoryService) {
 
-    override fun resolveFactoriesAssignments(
+    override fun doResolveFactoriesAssignments(
         runningCampaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: Collection<ScenarioSummary>

@@ -21,7 +21,6 @@ package io.qalipsis.runtime.deployments
 
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import kotlin.math.pow
 
@@ -33,18 +32,12 @@ object RedisTestConfiguration {
     /**
      * Default image name and tag.
      */
-    const val DEFAULT_DOCKER_IMAGE = "redis"
+    const val DEFAULT_DOCKER_IMAGE = "redis:alpine"
 
     /**
      * Default exposed port.
      */
     const val DEFAULT_PORT = 6379
-
-    /**
-     * Default [DockerImageName].
-     */
-    @JvmStatic
-    val DEFAULT_DOCKER_IMAGE_NAME = DockerImageName.parse(DEFAULT_DOCKER_IMAGE)
 
     @JvmStatic
     fun createContainer(redisImageNameAndTag: String = DEFAULT_DOCKER_IMAGE): GenericContainer<Nothing> {

@@ -24,7 +24,6 @@ import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
-import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
@@ -40,15 +39,12 @@ import io.qalipsis.api.executionprofile.CompletionMode
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
-import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
-import io.qalipsis.core.feedbacks.MinionsStartFeedback
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import org.junit.jupiter.api.Test
@@ -147,7 +143,10 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
-        val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+        val runningCampaign = campaign.copy().also {
+            it.feedbackChannel = "my-feedback-channel"
+            it.broadcastChannel = "my-broadcast-channel"
+        }
         val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
         state.run {
             inject(campaignExecutionContext)
@@ -187,7 +186,10 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
     internal fun `should return a failure state when the feedback is failure without error message`() =
         testDispatcherProvider.run {
             // given
-            val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+            val runningCampaign = campaign.copy().also {
+                it.feedbackChannel = "my-feedback-channel"
+                it.broadcastChannel = "my-broadcast-channel"
+            }
             val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
@@ -214,7 +216,10 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
     internal fun `should return itself in case of any unsupported feedback`() =
         testDispatcherProvider.run {
             // given
-            val runningCampaign = campaign.copy().also { it.broadcastChannel = "my-broadcast-channel" }
+            val runningCampaign = campaign.copy().also {
+                it.feedbackChannel = "my-feedback-channel"
+                it.broadcastChannel = "my-broadcast-channel"
+            }
             val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)
@@ -233,14 +238,15 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
     internal fun `should return a new RedisWarmupState when a completed MinionsStartFeedback is received`() =
         testDispatcherProvider.run {
             // given
-            val runningCampaign = campaign.copy(scenarios = mapOf(
-                "scenario-1" to mockk {
-                    every { executionProfileConfiguration.clone() } returns mockk()
-                },
-                "scenario-2" to mockk {
-                    every { executionProfileConfiguration.clone() } returns mockk()
-                }
-            )).also { it.broadcastChannel = "my-broadcast-channel" }
+            val runningCampaign = campaign.copy(
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioConfiguration(123, DefaultExecutionProfileConfiguration()),
+                    "scenario-2" to ScenarioConfiguration(123, DefaultExecutionProfileConfiguration())
+                )
+            ).also {
+                it.feedbackChannel = "my-feedback-channel"
+                it.broadcastChannel = "my-broadcast-channel"
+            }
             val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
                 inject(campaignExecutionContext)

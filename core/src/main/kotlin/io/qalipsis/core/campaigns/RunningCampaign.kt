@@ -91,7 +91,6 @@ data class RunningCampaign(
         return "RunningCampaign(tenant='$tenant', key='$key', speedFactor=$speedFactor, startOffsetMs=$startOffsetMs, hardTimeout=$hardTimeout, scenarios=$scenarios, timeoutSinceEpoch=$timeoutSinceEpoch, factories=$factories, broadcastChannel='$broadcastChannel', feedbackChannel='$feedbackChannel', message='$message')"
     }
 
-
 }
 
 @Serializable

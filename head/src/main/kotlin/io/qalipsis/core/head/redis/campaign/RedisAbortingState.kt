@@ -54,10 +54,11 @@ internal class RedisAbortingState(
     override suspend fun doInit(): List<Directive> {
         campaign.message = "Aborting campaign"
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.ABORTING_STATE)
-        operations.saveConfiguration(campaign)
         // Prepared the feedback expectations.
         operations.prepareFactoriesForFeedbackExpectations(campaign)
-        return super.doInit()
+        return super.doInit().also {
+            operations.saveConfiguration(campaign)
+        }
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {

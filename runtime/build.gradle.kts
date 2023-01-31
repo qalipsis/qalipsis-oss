@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
     kotlin("jvm")
@@ -83,6 +84,10 @@ dependencies {
     kaptTest(platform("io.qalipsis:dev-platform:${project.version}"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:api-processors:${project.version}")
+
+    if (Os.isFamily(Os.FAMILY_MAC)) {
+        testRuntimeOnly(group = "io.netty", name = "netty-resolver-dns-native-macos", classifier = "osx-aarch_64")
+    }
 }
 
 task<JavaExec>("runQalipsis") {

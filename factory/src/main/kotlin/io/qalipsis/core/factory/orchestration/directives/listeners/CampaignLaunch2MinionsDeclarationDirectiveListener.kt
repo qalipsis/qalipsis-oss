@@ -78,7 +78,12 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
             factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
         } catch (e: Exception) {
             log.error(e) { e.message }
-            factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.FAILED, errorMessage = e.message ?: ""))
+            factoryChannel.publishFeedback(
+                feedback.copy(
+                    status = FeedbackStatus.FAILED,
+                    errorMessage = e.message ?: ""
+                )
+            )
         }
     }
 
@@ -93,6 +98,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
             minionsUnderLoad.add(generateMinionId(scenario.name))
         }
         val dagsUnderLoad = mutableListOf<DirectedAcyclicGraphName>()
+        log.trace { "Registering the singleton minions to assign" }
         scenario.dags.forEach { dag ->
             val minions = mutableListOf<MinionId>()
             if (dag.isSingleton || !dag.isUnderLoad) {
@@ -111,6 +117,7 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
                 minions += minionsUnderLoad
             }
         }
+        log.trace { "Registering the minions under load to assign" }
         // Registers all the non-singleton minions at once.
         minionAssignmentKeeper.registerMinionsToAssign(
             directive.campaignKey,
@@ -118,8 +125,10 @@ internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
             dagsUnderLoad,
             minionsUnderLoad
         )
+        log.trace { "Completing the registration of the minions to assign" }
         minionAssignmentKeeper.completeUnassignedMinionsRegistration(directive.campaignKey, directive.scenarioName)
 
+        log.trace { "Sending the directive to proceed with the minions assignment" }
         val minionsAssignmentDirective = MinionsAssignmentDirective(
             directive.campaignKey,
             scenario.name
