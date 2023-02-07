@@ -112,7 +112,6 @@ internal class ValidationCampaignHookTest {
             key = "my-campaign",
             speedFactor = 1.43,
             startOffsetMs = 123,
-            hardTimeout = false,
             scenarios = mapOf(
                 "Scenario1" to ScenarioConfiguration(1, DefaultExecutionProfileConfiguration()),
             )
@@ -137,7 +136,6 @@ internal class ValidationCampaignHookTest {
             key = "my-campaign",
             speedFactor = 1.43,
             startOffsetMs = 123,
-            hardTimeout = false,
             scenarios = mapOf(
                 "Scenario1" to ScenarioConfiguration(1, stageExecutionPrototype, zones = mapOf("FR" to 50, "EN" to 50)),
                 "Scenario2" to ScenarioConfiguration(11, stageExecutionPrototype, zones = mapOf("FR" to 100))
@@ -163,7 +161,6 @@ internal class ValidationCampaignHookTest {
             key = "my-campaign",
             speedFactor = 1.43,
             startOffsetMs = 123,
-            hardTimeout = false,
             scenarios = mapOf(
                 "Scenario1" to ScenarioConfiguration(10001, DefaultExecutionProfileConfiguration()),
             )
@@ -193,7 +190,6 @@ internal class ValidationCampaignHookTest {
             key = "my-campaign",
             speedFactor = 1.43,
             startOffsetMs = 123,
-            hardTimeout = false,
             scenarios = mapOf(
                 "Scenario1" to ScenarioConfiguration(10, DefaultExecutionProfileConfiguration()),
             )
@@ -224,7 +220,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -264,7 +259,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -305,7 +299,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -344,7 +337,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -383,7 +375,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -423,7 +414,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -463,7 +453,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -503,7 +492,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype.copy(
@@ -543,7 +531,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype, zones = mapOf("CM" to 50, "NG" to 50)
@@ -577,7 +564,6 @@ internal class ValidationCampaignHookTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1, stageExecutionPrototype, zones = mapOf("FR" to 50, "EN" to 60)
@@ -614,7 +600,6 @@ internal class ValidationCampaignHookTest {
             key = "my-campaign",
             speedFactor = 1.43,
             startOffsetMs = 123,
-            hardTimeout = false,
             scenarios = mapOf(
                 "Scenario1" to ScenarioConfiguration(
                     10001, stageExecutionPrototype.copy(

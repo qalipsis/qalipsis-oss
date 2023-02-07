@@ -45,7 +45,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Instant
 
 @WithMockk
 internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
@@ -107,7 +106,6 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 key = "",
                 speedFactor = 12.0,
                 startOffsetMs = 1212,
-                hardTimeout = true,
                 scenarios = mapOf(
                     "scenario-1" to ScenarioConfiguration(
                         123,
@@ -131,14 +129,14 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
             feedbackChannel = "feedback-channel",
             speedFactor = 12.0,
             startOffsetMs = 1212,
-            hardTimeout = true,
-            timeout = Instant.MAX,
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(
                     123,
                     RegularExecutionProfileConfiguration(123, 3534)
                 ), "scenario-2" to ScenarioConfiguration(5432, DefaultExecutionProfileConfiguration())
             ),
+            hardTimeout = null,
+            softTimeout = null,
             assignments = listOf(
                 FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                 FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
@@ -177,7 +175,6 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                     key = "",
                     speedFactor = 12.0,
                     startOffsetMs = 1212,
-                    hardTimeout = true,
                     scenarios = mapOf(
                         "scenario-1" to ScenarioConfiguration(
                             123,
@@ -187,7 +184,6 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 ).apply {
                     broadcastChannel = "broadcast-channel"
                     feedbackChannel = "feedback-channel"
-                    timeoutSinceEpoch = 17253L
                 },
                 channel = "broadcast"
             )
@@ -203,8 +199,8 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
                 feedbackChannel = "feedback-channel",
                 speedFactor = 12.0,
                 startOffsetMs = 1212,
-                hardTimeout = true,
-                timeout = Instant.ofEpochSecond(17253L),
+                hardTimeout = null,
+                softTimeout = null,
                 scenarios = mapOf(
                     "scenario-1" to ScenarioConfiguration(
                         123,
@@ -228,4 +224,5 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
             }
             confirmVerified(factoryChannel, minionAssignmentKeeper, campaignLifeCycleAware1, campaignLifeCycleAware2)
         }
+
 }

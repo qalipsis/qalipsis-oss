@@ -33,6 +33,7 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignManagementDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
+import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
@@ -62,6 +63,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     private val headConfiguration: HeadConfiguration,
     private val coroutineScope: CoroutineScope,
     private val campaignExecutionContext: C,
+    private val campaignConstraintsProvider: CampaignConstraintsProvider
 ) : CampaignManager, FeedbackListener<Feedback> {
 
     private val processingMutex = Mutex()
@@ -77,15 +79,20 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
             processingMutex.withLock {
                 val sourceCampaignState = get(feedback.tenant, feedback.campaignKey)
                 log.trace { "Processing $feedback on $sourceCampaignState" }
-                val campaignState = sourceCampaignState.process(feedback)
-                log.trace { "New campaign state $campaignState" }
-                campaignState.inject(campaignExecutionContext)
-                val directives = campaignState.init()
-                set(campaignState)
-                directives.forEach {
-                    (it as? CampaignManagementDirective)?.tenant = feedback.tenant
-                    headChannel.publishDirective(it)
+                if (feedback is CampaignTimeoutFeedback) {
+                    timeoutAbort(feedback.tenant, campaignKey = feedback.campaignKey, hard = feedback.hard)
+                } else {
+                    val campaignState = sourceCampaignState.process(feedback)
+                    log.trace { "New campaign state $campaignState" }
+                    campaignState.inject(campaignExecutionContext)
+                    val directives = campaignState.init()
+                    set(campaignState)
+                    directives.forEach {
+                        (it as? CampaignManagementDirective)?.tenant = feedback.tenant
+                        headChannel.publishDirective(it)
+                    }
                 }
+
             }
         }
     }
@@ -139,10 +146,17 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         headChannel.subscribeFeedback(runningCampaign.feedbackChannel)
 
         val start = Instant.now()
-        val timeout = configuration.timeout?.let { timeoutDuration -> start + timeoutDuration }
-            ?.also { timeout -> runningCampaign.timeoutSinceEpoch = timeout.epochSecond }
+        val defaultCampaignConfiguration = campaignConstraintsProvider.supply(tenant)
 
-        campaignService.start(tenant, runningCampaign.key, start, timeout)
+        val (softTimeout, hardTimeout) = if (configuration.hardTimeout == true) {
+            null to (start + configuration.timeout?.coerceAtMost(defaultCampaignConfiguration.validation.maxExecutionDuration))
+        } else {
+            configuration.timeout?.let { start + it } to (start + defaultCampaignConfiguration.validation.maxExecutionDuration)
+        }
+        runningCampaign.hardTimeout = hardTimeout.epochSecond
+        runningCampaign.softTimeout = softTimeout?.takeIf { it < hardTimeout }?.epochSecond ?: Long.MIN_VALUE
+        campaignService.start(tenant, runningCampaign.key, start, softTimeout, hardTimeout)
+
         selectedScenarios.forEach {
             campaignService.startScenario(tenant, runningCampaign.key, it, start)
             campaignReportStateKeeper.start(runningCampaign.key, it)
@@ -206,6 +220,33 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     @LogInput
     protected open suspend fun getFeedbackChannelName(campaign: RunningCampaign): String =
         FEEDBACK_CONTEXTS_CHANNEL
+
+    /**
+     * Custom abort function to abort a campaign softly or hardly when a
+     * [CampaignTimeoutFeedback] is published.
+     *
+     * @param tenant reference of the tenant owing the campaign
+     * @param campaignKey reference of the running campaign
+     * @param hard specifies if the abort is a soft or hard one
+     */
+    private suspend fun timeoutAbort(tenant: String, campaignKey: String, hard: Boolean) {
+        tryAndLog(log) {
+            val sourceCampaignState = get(tenant, campaignKey)
+            val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
+            log.trace { "Campaign state $campaignState" }
+            campaignState.inject(campaignExecutionContext)
+            val directives = campaignState.init()
+            campaignService.abort(tenant, null, campaignKey)
+            set(campaignState)
+            if (hard) {
+                campaignReportStateKeeper.abort(campaignKey)
+            }
+            directives.forEach {
+                headChannel.publishDirective(it)
+            }
+        }
+    }
+
 
     companion object {
 

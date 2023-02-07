@@ -55,6 +55,7 @@ import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
+import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
 import io.qalipsis.core.feedbacks.CompleteMinionFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignScenarioFeedback
@@ -200,6 +201,7 @@ internal class SerializationFactory {
                 subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
                 subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
                 subclass(CampaignAbortFeedback::class, CampaignAbortFeedback.serializer())
+                subclass(CampaignTimeoutFeedback::class, CampaignTimeoutFeedback.serializer())
             }
         }
     }

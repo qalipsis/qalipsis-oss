@@ -54,7 +54,7 @@ internal class CampaignConverterImpl(
             name = campaignEntity.name,
             speedFactor = campaignEntity.speedFactor,
             scheduledMinions = campaignEntity.scheduledMinions,
-            timeout = campaignEntity.timeout,
+            softTimeout = campaignEntity.softTimeout,
             hardTimeout = campaignEntity.hardTimeout,
             start = campaignEntity.start,
             end = campaignEntity.end,

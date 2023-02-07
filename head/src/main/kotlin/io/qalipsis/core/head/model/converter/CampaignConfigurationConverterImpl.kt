@@ -61,7 +61,6 @@ internal class CampaignConfigurationConverterImpl(
             key = generateCampaignKey(tenant),
             speedFactor = campaign.speedFactor,
             startOffsetMs = campaign.startOffsetMs,
-            hardTimeout = campaign.hardTimeout ?: false,
             scenarios = convertScenarioRequestsToConfigurations(campaign.scenarios)
         )
         hooks.forEach { hook -> hook.preCreate(campaign, runningCampaign) }

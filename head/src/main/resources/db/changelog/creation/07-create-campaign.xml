@@ -48,10 +48,10 @@
       <column name="scheduled_minions" type="INT">
         <constraints nullable="false"/>
       </column>
-      <column name="timeout" type="TIMESTAMP WITH TIME ZONE">
+      <column name="soft_timeout" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="true"/>
       </column>
-      <column name="hard_timeout" type="boolean">
+      <column name="hard_timeout" type="TIMESTAMP WITH TIME ZONE">
         <constraints nullable="true"/>
       </column>
       <column name="start" type="TIMESTAMP WITH TIME ZONE">

@@ -57,7 +57,13 @@ internal interface CampaignService {
     /**
      * Marks the campaign as started.
      */
-    suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?)
+    suspend fun start(
+        tenant: String,
+        campaignKey: CampaignKey,
+        start: Instant,
+        softTimeout: Instant?,
+        hardTimeout: Instant?
+    )
 
     /**
      * Marks the scenario as started.
@@ -89,7 +95,7 @@ internal interface CampaignService {
     /**
      * Sets the user who aborted the campaign.
      */
-    suspend fun abort(tenant: String, aborter: String, campaignKey: CampaignKey)
+    suspend fun abort(tenant: String, aborter: String?, campaignKey: CampaignKey)
 
     /**
      * Enrich the details of the campaign, based upon the content of [runningCampaign].

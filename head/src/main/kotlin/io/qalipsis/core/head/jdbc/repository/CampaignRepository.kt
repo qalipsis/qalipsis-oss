@@ -83,10 +83,17 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
      * Marks the not yet started campaign with the specified name [campaignKey] as started.
      */
     @Query(
-        """UPDATE campaign SET version = NOW(), "start" = :start, timeout = :timeout WHERE key = :campaignKey AND "start" IS NULL 
+        """UPDATE campaign SET version = NOW(), "start" = :start, soft_timeout = :softTimeout, hard_timeout = :hardTimeout 
+            WHERE key = :campaignKey AND "start" IS NULL 
         AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
     )
-    suspend fun start(tenant: String, campaignKey: String, start: Instant, timeout: Instant?): Int
+    suspend fun start(
+        tenant: String,
+        campaignKey: String,
+        start: Instant,
+        softTimeout: Instant?,
+        hardTimeout: Instant?
+    ): Int
 
     /**
      * Marks the open campaign with the specified name [campaignKey] as complete with the provided [result].

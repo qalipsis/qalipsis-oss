@@ -37,8 +37,8 @@ import javax.validation.constraints.NotEmpty
  * @property key unique identifier of the campaign
  * @property speedFactor acceleration factor of the ramp-up
  * @property startOffsetMs time to wait until the campaign warm-up and the start of the first minions
- * @property timeoutSinceEpoch actual instant when the timeout should occur, in seconds since epoch
- * @property hardTimeout whether the timeout abortion should done hardly and generate a failure, or not
+ * @property hardTimeout seconds after which a running campaign is aborted hardly and generating a failure
+ * @property softTimeout seconds after which a running campaign is aborted softly while keeping the execution state
  * @property scenarios configuration of each scenario
  * @property factories configuration of each factory implied in the campaign
  * @property broadcastChannel channel to use to send a message to all the factories involved in the campaign
@@ -51,11 +51,12 @@ data class RunningCampaign(
     val key: CampaignKey,
     val speedFactor: Double = 1.0,
     val startOffsetMs: Long = 1000,
-    val hardTimeout: Boolean = false,
     val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap()
 ) {
 
-    var timeoutSinceEpoch: Long = Long.MIN_VALUE
+    var hardTimeout: Long = Long.MIN_VALUE
+
+    var softTimeout: Long = Long.MIN_VALUE
 
     val factories: MutableMap<NodeId, FactoryConfiguration> = mutableMapOf()
 
@@ -88,7 +89,7 @@ data class RunningCampaign(
     }
 
     override fun toString(): String {
-        return "RunningCampaign(tenant='$tenant', key='$key', speedFactor=$speedFactor, startOffsetMs=$startOffsetMs, hardTimeout=$hardTimeout, scenarios=$scenarios, timeoutSinceEpoch=$timeoutSinceEpoch, factories=$factories, message='$message')"
+        return "RunningCampaign(tenant='$tenant', key='$key', speedFactor=$speedFactor, startOffsetMs=$startOffsetMs, hardTimeout=$hardTimeout, softTimeout=$softTimeout, scenarios=$scenarios, factories=$factories, message='$message')"
     }
 
 }

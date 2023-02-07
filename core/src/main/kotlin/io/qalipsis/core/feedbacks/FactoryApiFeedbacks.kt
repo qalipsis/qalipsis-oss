@@ -205,3 +205,31 @@ data class CampaignAbortFeedback(
     override val error: String?
         get() = errorMessage.takeIf { it.isNotBlank() }
 }
+
+/**
+ * Feedback to a [io.qalipsis.core.directives.FactoryAssignmentDirective].
+ *
+ * @property campaignKey campaign to which the feedback relates
+ * @property nodeId ID of the factory node that emitted the feedback
+ * @property status status of the execution of the directive
+ * @property errorMessage error message in case of failure
+ * @property hard if the running campaign should be aborted hardly (generating a failure) or not.
+ *
+ * @author Francisca Eze
+ */
+@Serializable
+@SerialName("ctf")
+data class CampaignTimeoutFeedback(
+    override val campaignKey: CampaignKey,
+    override val status: FeedbackStatus,
+    private val errorMessage: String = "",
+    val hard: Boolean
+) : Feedback(), CampaignManagementFeedback {
+
+    override var nodeId: String = ""
+
+    override var tenant: String = ""
+
+    override val error: String?
+        get() = errorMessage.takeIf { it.isNotBlank() }
+}

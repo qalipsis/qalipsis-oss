@@ -94,7 +94,6 @@ internal class CampaignConfigurationConverterImplTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = false,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(1, DefaultExecutionProfileConfiguration()),
                     "Scenario2" to ScenarioConfiguration(11, DefaultExecutionProfileConfiguration())
@@ -148,7 +147,6 @@ internal class CampaignConfigurationConverterImplTest {
                 key = "my-campaign",
                 speedFactor = 1.43,
                 startOffsetMs = 123,
-                hardTimeout = true,
                 scenarios = mapOf(
                     "Scenario1" to ScenarioConfiguration(
                         1,
@@ -201,7 +199,6 @@ internal class CampaignConfigurationConverterImplTest {
                     key = "my-campaign",
                     speedFactor = 1.43,
                     startOffsetMs = 123,
-                    hardTimeout = false,
                     scenarios = mapOf(
                         "Scenario1" to ScenarioConfiguration(
                             1,

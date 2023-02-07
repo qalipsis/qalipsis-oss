@@ -28,6 +28,7 @@ import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
@@ -281,7 +282,7 @@ internal class RunnerImpl(
             minion.completeMdcContext()
             MDC.put("step", step.name)
             minion.launch(minionScope) {
-                kotlin.runCatching {
+                tryAndLogOrNull(log) {
                     step.complete(completionContext)
                 }
                 minion.cleanMdcContext()

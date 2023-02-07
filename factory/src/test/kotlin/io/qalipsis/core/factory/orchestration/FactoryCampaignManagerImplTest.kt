@@ -566,7 +566,7 @@ internal class FactoryCampaignManagerImplTest {
     internal fun `should mark the dag complete for the minion but not restart`() = testCoroutineDispatcher.runTest {
         val factoryCampaignManager = buildCampaignManager()
         factoryCampaignManager.runningCampaign(relaxedMockk {
-            every { timeout } returns Instant.MAX
+            every { softTimeout } returns Instant.MAX
         })
         coEvery {
             minionAssignmentKeeper.executionComplete(
@@ -611,7 +611,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
             factoryCampaignManager.runningCampaign(relaxedMockk {
-                every { timeout } returns Instant.MAX
+                every { softTimeout } returns Instant.MAX
             })
             every { minionsKeeper[any()].isSingleton } returns true
             coEvery {
@@ -662,7 +662,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
             factoryCampaignManager.runningCampaign(relaxedMockk {
-                every { timeout } returns Instant.MAX
+                every { softTimeout } returns Instant.MAX
             })
             every { minionsKeeper[any()].isSingleton } returns false
             coEvery {
@@ -714,7 +714,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
             factoryCampaignManager.runningCampaign(relaxedMockk {
-                every { timeout } returns Instant.now().plusSeconds(13)
+                every { softTimeout } returns Instant.now().plusSeconds(13)
             })
             coEvery {
                 minionAssignmentKeeper.executionComplete(
@@ -761,7 +761,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
             factoryCampaignManager.runningCampaign(relaxedMockk {
-                every { timeout } returns Instant.now().plusSeconds(11)
+                every { softTimeout } returns Instant.now().plusSeconds(11)
             })
             every { minionsKeeper[any()].isSingleton } returns false
             coEvery {
@@ -807,7 +807,7 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
             factoryCampaignManager.runningCampaign(relaxedMockk {
-                every { timeout } returns Instant.MAX
+                every { softTimeout } returns Instant.MAX
             })
             every { minionsKeeper[any()].isSingleton } returns false
             coEvery {
@@ -1050,7 +1050,7 @@ internal class FactoryCampaignManagerImplTest {
             scenarioGracefulShutdown = Duration.ofMillis(1)
         )
         factoryCampaignManager.runningCampaign(relaxedMockk {
-            every { timeout } returns Instant.MAX
+            every { softTimeout } returns Instant.MAX
         })
 
         // when
