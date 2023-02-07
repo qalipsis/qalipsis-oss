@@ -287,7 +287,9 @@ internal class FactoryCampaignManagerImpl(
      * Verifies whether the minion has enough time to be replayed until the campaign timeout.
      */
     private fun canReplay(minionExecutionDuration: Duration): Boolean {
-        return Duration.between(Instant.now(), runningCampaign.timeout) > minionExecutionDuration
+        return runningCampaign.softTimeout?.let {
+            Duration.between(Instant.now(), it) > minionExecutionDuration
+        } ?: true
     }
 
     override suspend fun shutdownMinions(campaignKey: CampaignKey, minionIds: Collection<MinionId>) {
@@ -353,7 +355,7 @@ internal class FactoryCampaignManagerImpl(
 
     private companion object {
 
-        val EMPTY_CAMPAIGN = Campaign("", 1.0, 0, false, Instant.MIN, "", "", emptyMap(), emptyList())
+        val EMPTY_CAMPAIGN = Campaign("", 1.0, 0, Instant.MIN, Instant.MIN, "", "", emptyMap(), emptyList())
 
         val log = logger()
     }

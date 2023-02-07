@@ -64,7 +64,7 @@ internal class DatabaseCampaignReportProvider(
             name = campaign.name,
             speedFactor = campaign.speedFactor,
             scheduledMinions = campaign.scheduledMinions,
-            timeout = campaign.timeout,
+            softTimeout = campaign.softTimeout,
             hardTimeout = campaign.hardTimeout,
             start = campaign.start,
             end = campaign.end,

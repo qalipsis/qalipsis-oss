@@ -104,8 +104,7 @@ internal class DatabaseCampaignReportProviderTest {
             name = "This is a campaign",
             speedFactor = 123.62,
             scheduledMinions = 123,
-            timeout = end.plusSeconds(1),
-            hardTimeout = true,
+            hardTimeout = end.plusSeconds(1),
             start = start,
             end = end,
             status = ExecutionStatus.SUCCESSFUL,
@@ -174,8 +173,7 @@ internal class DatabaseCampaignReportProviderTest {
             prop(CampaignExecutionDetails::start).isEqualTo(start)
             prop(CampaignExecutionDetails::end).isEqualTo(end)
             prop(CampaignExecutionDetails::speedFactor).isEqualTo(123.62)
-            prop(CampaignExecutionDetails::timeout).isEqualTo(end.plusSeconds(1))
-            prop(CampaignExecutionDetails::hardTimeout).isEqualTo(true)
+            prop(CampaignExecutionDetails::hardTimeout).isEqualTo(end.plusSeconds(1))
             prop(CampaignExecutionDetails::startedMinions).isEqualTo(5)
             prop(CampaignExecutionDetails::configurerName).isEqualTo("my-user")
             prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(3)
@@ -251,8 +249,7 @@ internal class DatabaseCampaignReportProviderTest {
             name = "This is a campaign",
             speedFactor = 123.62,
             scheduledMinions = 123,
-            timeout = end.plusSeconds(1),
-            hardTimeout = true,
+            hardTimeout = end.plusSeconds(1),
             start = start,
             end = end,
             status = ExecutionStatus.IN_PROGRESS,
@@ -284,8 +281,7 @@ internal class DatabaseCampaignReportProviderTest {
             prop(CampaignExecutionDetails::start).isEqualTo(start)
             prop(CampaignExecutionDetails::end).isEqualTo(end)
             prop(CampaignExecutionDetails::speedFactor).isEqualTo(123.62)
-            prop(CampaignExecutionDetails::timeout).isEqualTo(end.plusSeconds(1))
-            prop(CampaignExecutionDetails::hardTimeout).isEqualTo(true)
+            prop(CampaignExecutionDetails::hardTimeout).isEqualTo(end.plusSeconds(1))
             prop(CampaignExecutionDetails::startedMinions).isNull()
             prop(CampaignExecutionDetails::completedMinions).isNull()
             prop(CampaignExecutionDetails::successfulExecutions).isNull()

@@ -32,6 +32,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
+import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.AbstractCampaignExecutionState
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
@@ -62,6 +63,7 @@ internal class RedisCampaignManager(
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
+    campaignConstraintsProvider: CampaignConstraintsProvider,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     private val campaignExecutionContext: CampaignExecutionContext,
     private val redisOperations: CampaignRedisOperations,
@@ -72,7 +74,8 @@ internal class RedisCampaignManager(
     campaignReportStateKeeper,
     headConfiguration,
     coroutineScope,
-    campaignExecutionContext
+    campaignExecutionContext,
+    campaignConstraintsProvider
 ) {
 
     @LogInputAndOutput

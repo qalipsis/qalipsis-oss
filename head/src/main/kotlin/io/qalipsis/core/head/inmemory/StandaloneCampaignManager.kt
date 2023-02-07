@@ -27,6 +27,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
+import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
@@ -55,6 +56,7 @@ internal class StandaloneCampaignManager(
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
+    campaignConstraintsProvider: CampaignConstraintsProvider,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     campaignExecutionContext: CampaignExecutionContext,
 ) : AbstractCampaignManager<CampaignExecutionContext>(
@@ -64,7 +66,8 @@ internal class StandaloneCampaignManager(
     campaignReportStateKeeper,
     headConfiguration,
     coroutineScope,
-    campaignExecutionContext
+    campaignExecutionContext,
+    campaignConstraintsProvider
 ) {
 
     @KTestable

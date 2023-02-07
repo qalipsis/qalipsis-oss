@@ -156,7 +156,6 @@ internal class RunningCampaignTest {
             key = "my-campaign",
             speedFactor = 123.4,
             startOffsetMs = 23465,
-            hardTimeout = true,
             scenarios = mapOf(
                 "scenario-1" to ScenarioConfiguration(123, RegularExecutionProfileConfiguration(764, 564)),
                 "scenario-2" to ScenarioConfiguration(

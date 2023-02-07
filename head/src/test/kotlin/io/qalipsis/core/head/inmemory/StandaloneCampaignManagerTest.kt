@@ -37,6 +37,7 @@ import io.mockk.coExcludeRecords
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.justRun
 import io.mockk.mockk
@@ -50,11 +51,15 @@ import io.qalipsis.core.directives.CampaignAbortDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
+import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
+import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.communication.HeadChannel
+import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
@@ -72,6 +77,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 @WithMockk
 @Timeout(5)
@@ -99,6 +105,15 @@ internal class StandaloneCampaignManagerTest {
     @RelaxedMockK
     private lateinit var campaignExecutionContext: CampaignExecutionContext
 
+    @RelaxedMockK
+    private lateinit var campaignConstraintsProvider: CampaignConstraintsProvider
+
+    @MockK
+    private lateinit var defaultCampaignConfiguration: DefaultCampaignConfiguration
+
+    @RelaxedMockK
+    private lateinit var validation: DefaultCampaignConfiguration.Validation
+
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
         val campaignManager = standaloneCampaignManager(relaxedMockk())
@@ -124,12 +139,20 @@ internal class StandaloneCampaignManagerTest {
                 scenarios = mapOf(
                     "scenario-1" to ScenarioRequest(6272),
                     "scenario-2" to ScenarioRequest(12321)
-                )
+                ),
+                timeout = Duration.ofMinutes(1),
+                hardTimeout = false
             )
             val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
             coEvery {
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
             } returns runningCampaign
+            validation = mockk {
+                every { maxExecutionDuration } returns Duration.ofMinutes(7)
+                every { maxMinionsCount } returns 9000
+            }
+            every { defaultCampaignConfiguration.validation } returns validation
+            coEvery { campaignConstraintsProvider.supply(any()) } returns defaultCampaignConfiguration
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
             val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
             val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
@@ -163,12 +186,13 @@ internal class StandaloneCampaignManagerTest {
             assertThat(result).isSameAs(runningCampaign)
             assertThat(campaignManager.currentCampaignState()).isSameAs(initialState)
             coVerifyOrder {
+                campaignManager.start("my-tenant", "my-user", refEq(campaign))
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.prepare("my-tenant", "my-campaign")
                 headChannel.subscribeFeedback("feedbacks")
-                campaignService.start("my-tenant", "my-campaign", any(), isNull())
+                campaignService.start("my-tenant", "my-campaign", any(), any(), any())
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
@@ -180,6 +204,7 @@ internal class StandaloneCampaignManagerTest {
                 )
                 initialState.inject(campaignExecutionContext)
                 initialState.init()
+                campaignManager.set(campaignManager.currentCampaignState())
                 headChannel.publishDirective(refEq(directive1))
                 headChannel.publishDirective(refEq(directive2))
             }
@@ -393,6 +418,176 @@ internal class StandaloneCampaignManagerTest {
         confirmVerified(campaignManager, campaignService)
     }
 
+    @Test
+    internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignManager = standaloneCampaignManager(this)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                ),
+                timeout = Duration.ofMinutes(5),
+                hardTimeout = false
+            )
+            val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "first_campaign")
+            coEvery {
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
+            } returns runningCampaign
+            campaignManager.setProperty(
+                "currentCampaignState",
+                relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isCompleted } returns false
+                })
+            coEvery {
+                campaignManager.currentCampaignState().abort(any())
+            } returns relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isCompleted } returns false
+                coEvery { init() } returns listOf(
+                    CampaignAbortDirective(
+                        "first_campaign",
+                        "channel",
+                        listOf("scenario-1", "scenario-2"),
+                        AbortRunningCampaign(false)
+                    )
+                )
+            }
+            val timeoutFeedback = CampaignTimeoutFeedback(
+                campaignKey = "first_campaign",
+                hard = false,
+                status = FeedbackStatus.FAILED,
+                errorMessage = "Running campaign timed out",
+            ).apply {
+                tenant = "my-tenant"
+            }
+
+            // when
+            campaignManager.notify(timeoutFeedback)
+
+            // then
+            val sentDirectives = mutableListOf<Directive>()
+            val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+            coExcludeRecords {
+                campaignManager.abort(any(), any(), any(), any())
+            }
+
+            coVerifyOrder {
+                campaignManager.notify(timeoutFeedback)
+                campaignManager.get("my-tenant", "first_campaign")
+                campaignService.abort("my-tenant", null, "first_campaign")
+                campaignManager.set(capture(newState))
+                headChannel.publishDirective(capture(sentDirectives))
+            }
+            confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+            assertThat(newState.captured).isInstanceOf(CampaignExecutionState::class)
+            assertThat(sentDirectives).all {
+                hasSize(1)
+                any {
+                    it.isInstanceOf(CampaignAbortDirective::class).all {
+                        prop(CampaignAbortDirective::campaignKey).isEqualTo("first_campaign")
+                        prop(CampaignAbortDirective::channel).isEqualTo("channel")
+                        prop(CampaignAbortDirective::abortRunningCampaign).all {
+                            typedProp<Boolean>("hard").isEqualTo(false)
+                        }
+                        prop(CampaignAbortDirective::scenarioNames).all {
+                            hasSize(2)
+                            index(0).isEqualTo("scenario-1")
+                            index(1).isEqualTo("scenario-2")
+                        }
+                    }
+                }
+            }
+        }
+
+    @Test
+    internal fun `should abort the campaign hardly when a CampaignTimeoutFeedback with hard equals true is received`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignManager = standaloneCampaignManager(this)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                ),
+                timeout = Duration.ofMinutes(5),
+                hardTimeout = true
+            )
+            val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "first_campaign")
+            coEvery {
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
+            } returns runningCampaign
+            campaignManager.setProperty(
+                "currentCampaignState",
+                relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isCompleted } returns false
+                })
+            coEvery {
+                campaignManager.currentCampaignState().abort(any())
+            } returns relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isCompleted } returns false
+                coEvery { init() } returns listOf(
+                    CampaignAbortDirective(
+                        "first_campaign",
+                        "channel",
+                        listOf("scenario-1", "scenario-2"),
+                        AbortRunningCampaign(true)
+                    )
+                )
+            }
+            val timeoutFeedback = CampaignTimeoutFeedback(
+                campaignKey = "first_campaign",
+                hard = true,
+                status = FeedbackStatus.FAILED,
+                errorMessage = "Running campaign timed out",
+            ).apply {
+                tenant = "my-tenant"
+            }
+
+            // when
+            campaignManager.notify(timeoutFeedback)
+
+            // then
+            val sentDirectives = mutableListOf<Directive>()
+            val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+            coExcludeRecords {
+                campaignManager.abort(any(), any(), any(), any())
+            }
+
+            coVerifyOrder {
+                campaignManager.notify(timeoutFeedback)
+                campaignManager.get("my-tenant", "first_campaign")
+                campaignService.abort("my-tenant", null, "first_campaign")
+                campaignManager.set(capture(newState))
+                campaignReportStateKeeper.abort("first_campaign")
+                headChannel.publishDirective(capture(sentDirectives))
+            }
+            confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+            assertThat(newState.captured).isInstanceOf(CampaignExecutionState::class)
+            assertThat(sentDirectives).all {
+                hasSize(1)
+                any {
+                    it.isInstanceOf(CampaignAbortDirective::class).all {
+                        prop(CampaignAbortDirective::campaignKey).isEqualTo("first_campaign")
+                        prop(CampaignAbortDirective::channel).isEqualTo("channel")
+                        prop(CampaignAbortDirective::abortRunningCampaign).all {
+                            typedProp<Boolean>("hard").isEqualTo(true)
+                        }
+                        prop(CampaignAbortDirective::scenarioNames).all {
+                            hasSize(2)
+                            index(0).isEqualTo("scenario-1")
+                            index(1).isEqualTo("scenario-2")
+                        }
+                    }
+                }
+            }
+        }
+
+
     private fun standaloneCampaignManager(scope: CoroutineScope) =
         spyk(
             StandaloneCampaignManager(
@@ -401,6 +596,7 @@ internal class StandaloneCampaignManagerTest {
                 campaignService,
                 campaignReportStateKeeper,
                 headConfiguration,
+                campaignConstraintsProvider,
                 scope,
                 campaignExecutionContext
             ), recordPrivateCalls = true

@@ -70,7 +70,8 @@ internal class InMemoryCampaignService(
                 name = campaignConfiguration.name,
                 speedFactor = campaignConfiguration.speedFactor,
                 scheduledMinions = campaignConfiguration.scenarios.values.sumOf { it.minionsCount },
-                hardTimeout = campaignConfiguration.hardTimeout,
+                hardTimeout = if (campaignConfiguration.hardTimeout == true) (Instant.now() + campaignConfiguration.timeout) else Instant.MIN,
+                softTimeout = if (campaignConfiguration.hardTimeout == false) (Instant.now() + campaignConfiguration.timeout) else Instant.MIN,
                 start = null,
                 end = null,
                 status = QUEUED,
@@ -104,9 +105,16 @@ internal class InMemoryCampaignService(
         }
     }
 
-    override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
+    override suspend fun start(
+        tenant: String,
+        campaignKey: CampaignKey,
+        start: Instant,
+        softTimeout: Instant?,
+        hardTimeout: Instant?
+    ) {
         updateLock.withLock {
-            currentCampaign = currentCampaign?.copy(start = Instant.now(), timeout = timeout)
+            currentCampaign =
+                currentCampaign?.copy(start = Instant.now(), softTimeout = softTimeout, hardTimeout = hardTimeout)
         }
     }
 
@@ -143,7 +151,7 @@ internal class InMemoryCampaignService(
         return Page(0, 0, 0, emptyList())
     }
 
-    override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
+    override suspend fun abort(tenant: String, aborter: String?, campaignKey: String) {
         currentCampaign = currentCampaign!!.copy(end = Instant.now(), status = ExecutionStatus.ABORTED)
     }
 

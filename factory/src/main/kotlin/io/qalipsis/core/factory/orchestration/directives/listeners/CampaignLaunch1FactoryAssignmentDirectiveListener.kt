@@ -20,6 +20,7 @@
 package io.qalipsis.core.factory.orchestration.directives.listeners
 
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -35,6 +36,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Instant
+
 
 /**
  * The [CampaignLaunch1FactoryAssignmentDirectiveListener] is responsible for saving the assignment of the DAGS
@@ -61,15 +63,14 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListener(
             campaignKey = directive.campaignKey,
             status = FeedbackStatus.IN_PROGRESS
         )
+
         try {
             val campaign = Campaign(
                 campaignKey = directive.campaignKey,
                 speedFactor = directive.runningCampaign.speedFactor,
                 startOffsetMs = directive.runningCampaign.startOffsetMs,
-                hardTimeout = directive.runningCampaign.hardTimeout,
-                timeout = if (directive.runningCampaign.timeoutSinceEpoch == Long.MIN_VALUE) Instant.MAX else Instant.ofEpochSecond(
-                    directive.runningCampaign.timeoutSinceEpoch
-                ),
+                softTimeout = supplyIf(directive.runningCampaign.softTimeout > 0) { Instant.ofEpochSecond(directive.runningCampaign.softTimeout) },
+                hardTimeout = supplyIf(directive.runningCampaign.hardTimeout > 0) { Instant.ofEpochSecond(directive.runningCampaign.hardTimeout) },
                 broadcastChannel = directive.runningCampaign.broadcastChannel,
                 feedbackChannel = directive.runningCampaign.feedbackChannel,
                 scenarios = directive.runningCampaign.scenarios,
@@ -97,4 +98,5 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListener(
         @JvmStatic
         private val log = logger()
     }
+
 }

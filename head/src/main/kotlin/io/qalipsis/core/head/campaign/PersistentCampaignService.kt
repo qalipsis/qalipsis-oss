@@ -77,13 +77,15 @@ internal class PersistentCampaignService(
                 key = runningCampaign.key,
                 name = campaignConfiguration.name,
                 scheduledMinions = runningCampaign.scenarios.values.sumOf { it.minionsCount },
-                hardTimeout = campaignConfiguration.hardTimeout ?: false,
+                hardTimeout = if (campaignConfiguration.hardTimeout == true) (Instant.now() + campaignConfiguration.timeout) else Instant.MIN,
+                softTimeout = if (campaignConfiguration.hardTimeout == false) (Instant.now() + campaignConfiguration.timeout) else Instant.MIN,
                 speedFactor = campaignConfiguration.speedFactor,
                 configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
                 configuration = campaignConfiguration,
                 result = QUEUED
             )
         )
+
         campaignScenarioRepository.saveAll(runningCampaign.scenarios.map { (scenarioName, scenario) ->
             CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
         }).count()
@@ -118,8 +120,14 @@ internal class PersistentCampaignService(
     }
 
     @LogInput
-    override suspend fun start(tenant: String, campaignKey: CampaignKey, start: Instant, timeout: Instant?) {
-        campaignRepository.start(tenant, campaignKey, start, timeout)
+    override suspend fun start(
+        tenant: String,
+        campaignKey: CampaignKey,
+        start: Instant,
+        softTimeout: Instant?,
+        hardTimeout: Instant?
+    ) {
+        campaignRepository.start(tenant, campaignKey, start, softTimeout, hardTimeout)
     }
 
     @LogInput
@@ -177,9 +185,9 @@ internal class PersistentCampaignService(
     }
 
     @LogInput
-    override suspend fun abort(tenant: String, aborter: String, campaignKey: String) {
+    override suspend fun abort(tenant: String, aborter: String?, campaignKey: String) {
         campaignRepository.findByTenantAndKey(tenant, campaignKey)?.let { campaign ->
-            campaignRepository.update(campaign.copy(aborter = userRepository.findIdByUsername(aborter)))
+            campaignRepository.update(campaign.copy(aborter = aborter?.let { userRepository.findIdByUsername(it) }))
         }
     }
 

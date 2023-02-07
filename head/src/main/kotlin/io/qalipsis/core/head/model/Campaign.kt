@@ -59,14 +59,17 @@ internal open class Campaign(
     @field:PositiveOrZero
     val scheduledMinions: Int?,
 
-    @field:Schema(description = "Instant when the campaign should be aborted", required = false)
-    val timeout: Instant? = null,
-
     @field:Schema(
-        description = "Specifies whether the campaign should generate a failure (true) when the timeout is reached",
+        description = "Instant when the campaign should be aborted without generating a failure",
         required = false
     )
-    val hardTimeout: Boolean? = null,
+    val softTimeout: Instant? = null,
+
+    @field:Schema(
+        description = "Instant when the campaign should be aborted as well as generating a failure",
+        required = false
+    )
+    val hardTimeout: Instant? = null,
 
     @field:Schema(description = "Date and time when the campaign started", required = true)
     val start: Instant?,
@@ -103,8 +106,8 @@ internal open class Campaign(
         name: String = this.name,
         speedFactor: Double = this.speedFactor,
         scheduledMinions: Int? = this.scheduledMinions,
-        timeout: Instant? = this.timeout,
-        hardTimeout: Boolean? = this.hardTimeout,
+        softTimeout: Instant? = this.softTimeout,
+        hardTimeout: Instant? = this.hardTimeout,
         start: Instant? = this.start,
         end: Instant? = this.end,
         status: ExecutionStatus = this.status,
@@ -119,7 +122,7 @@ internal open class Campaign(
         name = name,
         speedFactor = speedFactor,
         scheduledMinions = scheduledMinions,
-        timeout = timeout,
+        softTimeout = softTimeout,
         hardTimeout = hardTimeout,
         start = start,
         end = end,
@@ -142,7 +145,7 @@ internal open class Campaign(
         if (name != other.name) return false
         if (speedFactor != other.speedFactor) return false
         if (scheduledMinions != other.scheduledMinions) return false
-        if (timeout != other.timeout) return false
+        if (softTimeout != other.softTimeout) return false
         if (hardTimeout != other.hardTimeout) return false
         if (start != other.start) return false
         if (end != other.end) return false
@@ -163,7 +166,7 @@ internal open class Campaign(
         result = 31 * result + name.hashCode()
         result = 31 * result + speedFactor.hashCode()
         result = 31 * result + (scheduledMinions ?: 0)
-        result = 31 * result + (timeout?.hashCode() ?: 0)
+        result = 31 * result + (softTimeout?.hashCode() ?: 0)
         result = 31 * result + (hardTimeout?.hashCode() ?: 0)
         result = 31 * result + (start?.hashCode() ?: 0)
         result = 31 * result + (end?.hashCode() ?: 0)
@@ -176,7 +179,7 @@ internal open class Campaign(
     }
 
     override fun toString(): String {
-        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, timeout=$timeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, scenarios=$scenarios, zones=$zones)"
+        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, softTimeout=$softTimeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, scenarios=$scenarios, zones=$zones)"
     }
 
 

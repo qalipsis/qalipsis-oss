@@ -85,7 +85,6 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
             scheduledMinions = 123,
-            hardTimeout = true,
             result = ExecutionStatus.SUCCESSFUL,
             configurer = 1L, // Default user.
 
@@ -262,7 +261,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::name).isEqualTo(openCampaign.name)
             prop(CampaignEntity::start).isNull()
-            prop(CampaignEntity::timeout).isNull()
+            prop(CampaignEntity::softTimeout).isNull()
+            prop(CampaignEntity::hardTimeout).isNull()
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isEqualTo(IN_PROGRESS)
@@ -308,7 +308,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val beforeCall = Instant.now()
         val start = Instant.now().plusSeconds(12)
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.start("my-tenant", "2", start, start.plusSeconds(123))
+        campaignRepository.start("my-tenant", "2", start, start.plusSeconds(123), null)
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -318,7 +318,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::name).isEqualTo(openCampaign.name)
             prop(CampaignEntity::start).isEqualTo(start)
-            prop(CampaignEntity::timeout).isEqualTo(start.plusSeconds(123))
+            prop(CampaignEntity::softTimeout).isEqualTo(start.plusSeconds(123))
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isNull()
@@ -365,7 +365,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val beforeCall = Instant.now()
         val start = Instant.now().plusSeconds(12)
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.start("my-tenant", "2", start, null)
+        campaignRepository.start("my-tenant", "2", start, null, null)
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -375,7 +375,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::version).isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::name).isEqualTo(openCampaign.name)
             prop(CampaignEntity::start).isEqualTo(start)
-            prop(CampaignEntity::timeout).isNull()
+            prop(CampaignEntity::softTimeout).isNull()
+            prop(CampaignEntity::hardTimeout).isNull()
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isNull()

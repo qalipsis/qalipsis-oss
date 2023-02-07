@@ -24,13 +24,11 @@ import assertk.assertThat
 import assertk.assertions.any
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
+import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
-import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isNull
 import assertk.assertions.isSameAs
-import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
@@ -144,8 +142,8 @@ internal class PersistentCampaignServiceTest {
                     prop(CampaignEntity::name).isEqualTo("This is a campaign")
                     prop(CampaignEntity::speedFactor).isEqualTo(123.2)
                     prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
-                    prop(CampaignEntity::hardTimeout).isNotNull().isFalse()
-                    prop(CampaignEntity::timeout).isNull()
+                    prop(CampaignEntity::hardTimeout).isNotNull().isEqualTo(Instant.MIN)
+                    prop(CampaignEntity::softTimeout).isNotNull().isEqualTo(Instant.MIN)
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameAs(campaign)
@@ -171,7 +169,7 @@ internal class PersistentCampaignServiceTest {
             name = "This is a campaign",
             speedFactor = 123.2,
             timeout = Duration.ofSeconds(715),
-            hardTimeout = true,
+            hardTimeout = false,
             scenarios = mapOf(
                 "scenario-1" to ScenarioRequest(1),
                 "scenario-2" to ScenarioRequest(3)
@@ -210,8 +208,11 @@ internal class PersistentCampaignServiceTest {
                     prop(CampaignEntity::name).isEqualTo("This is a campaign")
                     prop(CampaignEntity::speedFactor).isEqualTo(123.2)
                     prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
-                    prop(CampaignEntity::hardTimeout).isNotNull().isTrue()
-                    prop(CampaignEntity::timeout).isNull()
+                    prop(CampaignEntity::hardTimeout).isNotNull()
+                    prop(CampaignEntity::softTimeout).isNotNull().isBetween(
+                        (Instant.now() + (campaign.timeout?.minus(Duration.ofSeconds(1)))),
+                        (Instant.now() + campaign.timeout)
+                    )
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameAs(campaign)
@@ -246,16 +247,16 @@ internal class PersistentCampaignServiceTest {
     @Test
     internal fun `should start the campaign`() = testDispatcherProvider.run {
         // given
-        coJustRun { campaignRepository.start(any(), any(), any(), any()) }
+        coJustRun { campaignRepository.start(any(), any(), any(), any(), any()) }
         val start = Instant.now()
         val timeout = Instant.now().plusSeconds(243)
 
         // when
-        persistentCampaignService.start("my-tenant", "my-campaign", start, timeout)
+        persistentCampaignService.start("my-tenant", "my-campaign", start, timeout, null)
 
         // then
         coVerifyOnce {
-            campaignRepository.start("my-tenant", "my-campaign", start, timeout)
+            campaignRepository.start("my-tenant", "my-campaign", start, timeout, null)
         }
         confirmVerified(campaignRepository, campaignScenarioRepository)
     }
