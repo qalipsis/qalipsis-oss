@@ -1,0 +1,151 @@
+{
+  "allowedLicenses": [
+    {
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleLicense": "CDDL/GPLv2+CE"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1"
+    },
+    {
+      "moduleLicense": "Creative Commons Legal Code"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 1.0"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception"
+    },
+    {
+      "moduleLicense": "GNU Lesser General Public License"
+    },
+    {
+      "moduleLicense": "MIT License"
+    },
+    {
+      "moduleLicense": "MIT-0"
+    },
+    {
+      "moduleLicense": "PUBLIC DOMAIN"
+    },
+    {
+      "moduleLicense": "The 2-Clause BSD License"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.amazonaws:aws-java-sdk-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.azure:azure-sdk-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.fasterxml.jackson:jackson-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.oracle.coherence.ce:coherence-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.willowtreeapps.opentest4k:opentest4k"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.willowtreeapps.assertk:assertk"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.ktor:ktor-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.micrometer:micrometer-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.micronaut.*"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-agent"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-agent-api"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-core"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-dsl"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.netty:netty-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.opentelemetry:opentelemetry-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.opentelemetry:opentelemetry-bom-alpha"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.rest-assured:rest-assured-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.codehaus.groovy:groovy-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.jdbi:jdbi3-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.jetbrains.*"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.junit:junit-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.spockframework:spock-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.springframework:spring-framework-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.testcontainers:testcontainers-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "software.amazon.awssdk:bom"
+    }
+  ]
+}

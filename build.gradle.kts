@@ -33,7 +33,19 @@ plugins {
     id("nebula.maven-scm") version "17.3.3"
     id("nebula.maven-manifest") version "17.3.3"
     id("nebula.maven-apache-license") version "17.3.3"
+    id ("com.github.jk1.dependency-license-report") version "1.17"
     signing
+}
+
+licenseReport {
+    renderers = arrayOf<com.github.jk1.license.render.ReportRenderer>(
+        com.github.jk1.license.render.InventoryHtmlReportRenderer(
+            "report.html",
+            "QALIPSIS API"
+        )
+    )
+    allowedLicensesFile = File("$projectDir/build-config/allowed-licenses.json")
+    filters = arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
 }
 
 description = "Qalipsis API"

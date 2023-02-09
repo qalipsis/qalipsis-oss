@@ -40,6 +40,10 @@ jobs:
           key: ${{ runner.os }}-qalipsis-gradle-wrapper-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
 
+      - name: Check licenses
+        run: ./gradlew checkLicense
+        if: always()
+
       - name: Tests
         run: ./gradlew clean check --continue --refresh-dependencies
 
