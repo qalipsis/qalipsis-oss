@@ -36,7 +36,7 @@ import jakarta.inject.Singleton
 import kotlin.math.ceil
 
 /**
- * Default implementation of [FactoryDirectedAcyclicGraphAssignmentResolver] that simply associates all the DAGs of all the minions
+ * Default implementation of [FactoryWorkflowAssignmentResolver] that simply associates all the DAGs of all the minions
  * to all the factories.
  *
  * @author Eric Jessé
@@ -44,15 +44,15 @@ import kotlin.math.ceil
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(missingBeans = [FactoryDirectedAcyclicGraphAssignmentResolver::class])
+    Requires(missingBeans = [FactoryWorkflowAssignmentResolver::class])
 )
-internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolver(
+internal class BalancedScenarioFactoryWorkflowAssignmentResolver(
     factoryService: FactoryService
-) : AbstractFactoryDirectedAcyclicGraphAssignmentResolver(factoryService) {
+) : AbstractFactoryWorkflowAssignmentResolver(factoryService) {
 
     override fun doResolveFactoriesAssignments(
         runningCampaign: RunningCampaign,
-        factories: Collection<Factory>,
+        factories: MutableCollection<Factory>,
         scenarios: Collection<ScenarioSummary>
     ): Table<NodeId, ScenarioName, FactoryScenarioAssignment> {
         val scenariosConfiguration = scenarios

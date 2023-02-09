@@ -61,9 +61,6 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
             "scenario-1" to relaxedMockk { every { minionsCount } returns 54 },
             "scenario-2" to relaxedMockk { every { minionsCount } returns 43 }
         )
-        operations.saveConfiguration(campaign)
-        operations.setState(campaign.tenant, campaign.key, CampaignRedisState.ABORTING_STATE)
-        operations.prepareAssignmentsForFeedbackExpectations(campaign)
 
         // when
         val directives = RedisAbortingState(campaign, AbortRunningCampaign(), "Aborting campaign", operations).run {

@@ -26,7 +26,6 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.key
 import assertk.assertions.prop
-import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -40,12 +39,13 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
-internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolverTest {
+internal class BalancedFactoryWorkflowAssignmentResolverTest {
 
     @JvmField
     @RegisterExtension
@@ -55,7 +55,7 @@ internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolverTest {
     private lateinit var factoryService: FactoryService
 
     @InjectMockKs
-    private lateinit var resolver: BalancedFactoryDirectedAcyclicGraphAssignmentResolver
+    private lateinit var resolver: BalancedScenarioFactoryWorkflowAssignmentResolver
 
     @Test
     internal fun `should assign all the scenarios to all the factories`() = testCoroutineDispatcher.runTest {
@@ -63,7 +63,10 @@ internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolverTest {
         val campaign = RunningCampaign(
             key = "my-campaign",
             scenarios = emptyMap()
-        )
+        ).apply {
+            broadcastChannel = ""
+            feedbackChannel = ""
+        }
         val scenarios = listOf(
             ScenarioSummary(
                 name = "scenario-1",
@@ -99,9 +102,8 @@ internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolverTest {
         resolver.assignFactories(campaign, factories, scenarios)
 
         // then
-        coVerifyOrder {
+        coVerifyOnce {
             factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2"))
-            factoryService.releaseFactories(refEq(campaign), emptyList())
         }
         val expectedAssignmentScenario1 = FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2", "dag-3"), 27)
         val expectedAssignmentScenario2 =
@@ -144,7 +146,10 @@ internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolverTest {
                         DefaultExecutionProfileConfiguration()
                     )
                 )
-            )
+            ).apply {
+                broadcastChannel = ""
+                feedbackChannel = ""
+            }
             val scenarios = listOf(
                 ScenarioSummary(
                     name = "scenario-1",
@@ -180,9 +185,8 @@ internal class BalancedFactoryDirectedAcyclicGraphAssignmentResolverTest {
             resolver.assignFactories(campaign, factories, scenarios)
 
             // then
-            coVerifyOrder {
+            coVerifyOnce {
                 factoryService.lockFactories(refEq(campaign), listOf("factory-1", "factory-2"))
-                factoryService.releaseFactories(refEq(campaign), emptyList())
             }
             val expectedAssignmentScenario1 =
                 FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2", "dag-3"), 34)

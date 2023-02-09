@@ -93,7 +93,6 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             it.feedbackChannel = "my-feedback-channel"
         }
         val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
-        operations.saveConfiguration(runningCampaign)
 
         // when
         val directives = state.run {

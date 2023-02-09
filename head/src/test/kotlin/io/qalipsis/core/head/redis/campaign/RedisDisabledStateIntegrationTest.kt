@@ -47,9 +47,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
     internal fun `should return CompleteCampaignDirective with success on init and publish with all publishers despite error`() =
         testDispatcherProvider.run {
             // given
-            operations.saveConfiguration(campaign)
             operations.setState(campaign.tenant, campaign.key, CampaignRedisState.COMPLETION_STATE)
-            operations.prepareAssignmentsForFeedbackExpectations(campaign)
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
             coEvery { reportPublisher1.publish(any(), any()) } throws RuntimeException()

@@ -75,8 +75,6 @@ internal class RedisCompletionStateIntegrationTest : AbstractRedisStateIntegrati
                 mutableMapOf("scenario-2" to FactoryScenarioAssignment("scenario-2", emptyList()))
             )
         )
-        operations.saveConfiguration(campaign)
-        operations.prepareAssignmentsForFeedbackExpectations(campaign)
 
         // when
         val directives = RedisCompletionState(campaign, operations).run {

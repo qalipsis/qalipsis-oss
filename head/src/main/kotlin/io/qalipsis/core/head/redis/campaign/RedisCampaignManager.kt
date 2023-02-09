@@ -33,6 +33,7 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignManager
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.states.AbstractCampaignExecutionState
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
@@ -88,6 +89,20 @@ internal class RedisCampaignManager(
         campaignKey: CampaignKey
     ): CampaignExecutionState<CampaignExecutionContext> {
         val currentState = redisOperations.getState(tenant, campaignKey)
+        val executionState = resolveState(currentState, campaignKey, tenant)
+        executionState.inject(campaignExecutionContext)
+
+        // Since the state is rebuilt, it is marked as already initialized.
+        executionState.initialized = true
+
+        return executionState
+    }
+
+    protected fun resolveState(
+        currentState: Pair<RunningCampaign, CampaignRedisState>?,
+        campaignKey: CampaignKey,
+        tenant: String
+    ): AbstractCampaignExecutionState<CampaignExecutionContext> {
         val executionState = when (currentState?.second) {
             CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE -> RedisFactoryAssignmentState(
                 currentState.first,
@@ -111,10 +126,6 @@ internal class RedisCampaignManager(
             CampaignRedisState.ABORTING_STATE -> RedisAbortingState(currentState.first, redisOperations)
             else -> throw IllegalStateException("The state of the campaign $campaignKey of tenant $tenant is unidentified: $currentState")
         }
-        executionState.inject(campaignExecutionContext)
-
-        // Since the state is rebuilt, it is marked as already initialized.
-        executionState.initialized = true
 
         return executionState
     }

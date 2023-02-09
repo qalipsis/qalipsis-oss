@@ -86,6 +86,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                     )
                 }
             )
+            factories
         }
 
         // when

@@ -69,7 +69,6 @@ internal class RedisRunningStateIntegrationTest : AbstractRedisStateIntegrationT
         // given
         val initDirectives = listOf<Directive>(relaxedMockk(), relaxedMockk())
         val state = RedisRunningState(campaign, operations, false, initDirectives)
-        operations.saveConfiguration(campaign)
 
         // when
         val directives = state.run {

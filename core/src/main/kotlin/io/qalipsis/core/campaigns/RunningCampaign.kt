@@ -88,7 +88,7 @@ data class RunningCampaign(
     }
 
     override fun toString(): String {
-        return "RunningCampaign(tenant='$tenant', key='$key', speedFactor=$speedFactor, startOffsetMs=$startOffsetMs, hardTimeout=$hardTimeout, scenarios=$scenarios, timeoutSinceEpoch=$timeoutSinceEpoch, factories=$factories, broadcastChannel='$broadcastChannel', feedbackChannel='$feedbackChannel', message='$message')"
+        return "RunningCampaign(tenant='$tenant', key='$key', speedFactor=$speedFactor, startOffsetMs=$startOffsetMs, hardTimeout=$hardTimeout, scenarios=$scenarios, timeoutSinceEpoch=$timeoutSinceEpoch, factories=$factories, message='$message')"
     }
 
 }

@@ -30,41 +30,51 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Factory
 
 /**
- * Abstract implementation of [FactoryDirectedAcyclicGraphAssignmentResolver] to cover the common logic of assigning
+ * Abstract implementation of [FactoryWorkflowAssignmentResolver] to cover the common logic of assigning
  * and releasing the unused factories.
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractFactoryDirectedAcyclicGraphAssignmentResolver(
+internal abstract class AbstractFactoryWorkflowAssignmentResolver(
     private val factoryService: FactoryService
-) : FactoryDirectedAcyclicGraphAssignmentResolver {
+) : FactoryWorkflowAssignmentResolver {
 
     override suspend fun assignFactories(
         runningCampaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: Collection<ScenarioSummary>
-    ) {
-        factoryService.lockFactories(runningCampaign, factories.map(Factory::nodeId))
-        val assignments = doResolveFactoriesAssignments(runningCampaign, factories, scenarios)
+    ): Collection<Factory> {
+        if (factories.isNotEmpty()) {
+            factoryService.lockFactories(runningCampaign, factories.map(Factory::nodeId))
+        }
+        val mutableFactories = factories.toMutableList()
+        val assignments = doResolveFactoriesAssignments(runningCampaign, mutableFactories, scenarios)
+        // Locks the additional factories.
+        val newFactories = mutableFactories.map(Factory::nodeId) - factories.map(Factory::nodeId).toSet()
+        if (newFactories.isNotEmpty()) {
+            factoryService.lockFactories(runningCampaign, newFactories)
+        }
         // Releases the unassigned factories to make them available for other campaigns.
-        factoryService.releaseFactories(
-            runningCampaign,
-            (factories.map(Factory::nodeId) - assignments.rowKeySet())
-        )
+        val discardedFactories = factories.map(Factory::nodeId) - assignments.rowKeySet()
+        if (discardedFactories.isNotEmpty()) {
+            factoryService.releaseFactories(runningCampaign, discardedFactories)
+        }
 
         // Save the assignments into the campaign.
-        val factoriesByNodeId = factories.associateBy(Factory::nodeId)
+        val factoriesByNodeId = mutableFactories.associateBy(Factory::nodeId)
         assignments.rowMap().forEach { (factoryNodeId, assignments) ->
             runningCampaign.factories[factoryNodeId] = FactoryConfiguration(
                 unicastChannel = factoriesByNodeId[factoryNodeId]!!.unicastChannel,
                 assignment = assignments
             )
         }
+
+        return mutableFactories
     }
 
     protected abstract fun doResolveFactoriesAssignments(
         runningCampaign: RunningCampaign,
-        factories: Collection<Factory>,
+        factories: MutableCollection<Factory>,
         scenarios: Collection<ScenarioSummary>
     ): Table<NodeId, ScenarioName, FactoryScenarioAssignment>
 }

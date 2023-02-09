@@ -28,7 +28,7 @@ import io.qalipsis.core.head.model.Factory
  *
  * @author Eric Jessé
  */
-internal interface FactoryDirectedAcyclicGraphAssignmentResolver {
+internal interface FactoryWorkflowAssignmentResolver {
 
     /**
      * Calculates the DAGs to assign to each factory for the campaign.
@@ -41,6 +41,6 @@ internal interface FactoryDirectedAcyclicGraphAssignmentResolver {
         runningCampaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: Collection<ScenarioSummary>
-    )
+    ): Collection<Factory>
 
 }

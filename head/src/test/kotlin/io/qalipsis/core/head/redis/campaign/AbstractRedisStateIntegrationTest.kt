@@ -35,7 +35,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import io.qalipsis.core.head.orchestration.FactoryDirectedAcyclicGraphAssignmentResolver
+import io.qalipsis.core.head.orchestration.FactoryWorkflowAssignmentResolver
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -75,7 +75,7 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     protected lateinit var campaignExecutionContext: CampaignExecutionContext
 
     @RelaxedMockK
-    protected lateinit var assignmentResolver: FactoryDirectedAcyclicGraphAssignmentResolver
+    protected lateinit var assignmentResolver: FactoryWorkflowAssignmentResolver
 
     @RelaxedMockK
     protected lateinit var reportPublisher1: CampaignReportPublisher
@@ -104,8 +104,8 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     @MockBean(CampaignExecutionContext::class)
     fun campaignExecutionContext(): CampaignExecutionContext = campaignExecutionContext
 
-    @MockBean(FactoryDirectedAcyclicGraphAssignmentResolver::class)
-    fun assignmentResolver(): FactoryDirectedAcyclicGraphAssignmentResolver = assignmentResolver
+    @MockBean(FactoryWorkflowAssignmentResolver::class)
+    fun assignmentResolver(): FactoryWorkflowAssignmentResolver = assignmentResolver
 
     @BeforeEach
     internal fun setUp() {

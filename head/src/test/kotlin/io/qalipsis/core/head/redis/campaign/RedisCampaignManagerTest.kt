@@ -77,29 +77,29 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
 @Timeout(4)
-internal class RedisCampaignManagerTest {
+internal open class RedisCampaignManagerTest {
 
     @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var headChannel: HeadChannel
+    lateinit var headChannel: HeadChannel
 
     @MockK
-    private lateinit var factoryService: FactoryService
+    lateinit var factoryService: FactoryService
 
     @RelaxedMockK
-    private lateinit var campaignService: CampaignService
+    lateinit var campaignService: CampaignService
 
     @RelaxedMockK
-    private lateinit var operations: CampaignRedisOperations
+    lateinit var operations: CampaignRedisOperations
 
     @RelaxedMockK
-    private lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
+    lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
 
     @MockK
-    private lateinit var headConfiguration: HeadConfiguration
+    lateinit var headConfiguration: HeadConfiguration
 
     @MockK
     private lateinit var campaignExecutionContext: CampaignExecutionContext
@@ -191,7 +191,7 @@ internal class RedisCampaignManagerTest {
         }
 
     @Test
-    internal fun `should create a factory assignment state as initial state`() = testDispatcherProvider.run {
+    internal open fun `should create a redis state as initial state`() = testDispatcherProvider.run {
         // given
         val campaignManager = redisCampaignManager(this)
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
@@ -619,7 +619,7 @@ internal class RedisCampaignManagerTest {
         confirmVerified(campaignManager, campaignService)
     }
 
-    private fun redisCampaignManager(scope: CoroutineScope) =
+    protected open fun redisCampaignManager(scope: CoroutineScope) =
         spyk(
             RedisCampaignManager(
                 headChannel,

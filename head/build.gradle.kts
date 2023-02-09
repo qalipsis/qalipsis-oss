@@ -68,6 +68,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut.cache:micronaut-cache-caffeine")

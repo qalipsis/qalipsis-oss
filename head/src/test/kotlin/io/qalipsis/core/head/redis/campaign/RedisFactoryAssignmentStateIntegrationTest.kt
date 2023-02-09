@@ -88,8 +88,8 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                     )
                 }
             )
+            factories
         }
-        operations.saveConfiguration(campaign)
         val state = RedisFactoryAssignmentState(campaign, factories, scenarios, operations)
 
         // when
@@ -152,6 +152,90 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
+
+    @Test
+    fun `should return assignment directives on init but do no assignment when already set on the campaign`() =
+        testDispatcherProvider.run {
+            // given
+            every { campaign.broadcastChannel } returns "broadcast-channel"
+            every { campaign.feedbackChannel } returns "feedback-channel"
+            every { campaign.factories } returns linkedMapOf(
+                "node-1" to relaxedMockk {
+                    every { unicastChannel } returns "unicast-channel-1"
+                    every { assignment } returns linkedMapOf(
+                        "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1", "dag-2")),
+                        "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B"), 1762)
+                    )
+                },
+                "node-2" to relaxedMockk {
+                    every { unicastChannel } returns "unicast-channel-2"
+                    every { assignment } returns linkedMapOf(
+                        "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-A", "dag-B", "dag-C"), 254)
+                    )
+                }
+            )
+            val factories = mockk<Collection<Factory>>()
+            val scenarios = mockk<List<ScenarioSummary>>()
+            operations.saveConfiguration(campaign)
+            val state = RedisFactoryAssignmentState(campaign, factories, scenarios, operations)
+
+            // when
+            val directives = state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
+
+            // then
+            assertThat(directives).all {
+                hasSize(2)
+                any {
+                    it.isInstanceOf(FactoryAssignmentDirective::class).all {
+                        prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
+                        prop(FactoryAssignmentDirective::assignments).all {
+                            hasSize(2)
+                            any {
+                                it.all {
+                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-1")
+                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-1", "dag-2")
+                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(Int.MAX_VALUE)
+                                }
+                            }
+                            any {
+                                it.all {
+                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
+                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B")
+                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(1762)
+                                }
+                            }
+                        }
+                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
+                        prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
+                    }
+                }
+                any {
+                    it.isInstanceOf(FactoryAssignmentDirective::class).all {
+                        prop(FactoryAssignmentDirective::campaignKey).isEqualTo("my-campaign")
+                        prop(FactoryAssignmentDirective::assignments).all {
+                            hasSize(1)
+                            any {
+                                it.all {
+                                    prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
+                                    prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B", "dag-C")
+                                    prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(254)
+                                }
+                            }
+                        }
+                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
+                        prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-2")
+                    }
+                }
+            }
+            assertThat(operations.getState(campaign.tenant, campaign.key)).isNotNull().all {
+                prop(Pair<RunningCampaign, CampaignRedisState>::first).isDataClassEqualTo(campaign)
+                prop(Pair<RunningCampaign, CampaignRedisState>::second).isEqualTo(CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
+            }
+            confirmVerified(factoryService, campaignReportStateKeeper, assignmentResolver)
+        }
 
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {

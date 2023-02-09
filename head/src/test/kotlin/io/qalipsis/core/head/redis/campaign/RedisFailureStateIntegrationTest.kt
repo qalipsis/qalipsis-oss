@@ -75,9 +75,6 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
                 )
             )
         )
-        operations.saveConfiguration(campaign)
-        operations.setState(campaign.tenant, campaign.key, CampaignRedisState.WARMUP_STATE)
-        operations.prepareAssignmentsForFeedbackExpectations(campaign)
 
         // when
         val directives = RedisFailureState(campaign, "this error", operations).run {

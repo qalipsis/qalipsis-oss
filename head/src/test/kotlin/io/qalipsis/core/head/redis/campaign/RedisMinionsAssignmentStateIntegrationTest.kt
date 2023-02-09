@@ -75,7 +75,6 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
                 every { assignment } returns mutableMapOf("scenario-2" to relaxedMockk())
             }
         )
-        operations.saveConfiguration(campaign)
         val state = RedisMinionsAssignmentState(campaign, operations)
 
         // when

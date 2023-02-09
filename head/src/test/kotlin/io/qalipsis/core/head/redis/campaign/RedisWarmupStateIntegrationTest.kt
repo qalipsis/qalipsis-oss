@@ -88,7 +88,6 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             }
         )
         val state = RedisWarmupState(campaign, operations)
-        operations.saveConfiguration(campaign)
 
         // when
         val directives = state.run {
