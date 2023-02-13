@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.head.model.hook
+package io.qalipsis.core.head.hook
 
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration

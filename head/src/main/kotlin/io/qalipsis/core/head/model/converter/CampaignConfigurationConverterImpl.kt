@@ -38,7 +38,7 @@ import io.qalipsis.core.head.model.configuration.ProgressiveVolumeExternalExecut
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.StageExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.TimeFrameExternalExecutionProfileConfiguration
-import io.qalipsis.core.head.model.hook.CampaignHook
+import io.qalipsis.core.head.hook.CampaignHook
 import jakarta.inject.Singleton
 
 /**

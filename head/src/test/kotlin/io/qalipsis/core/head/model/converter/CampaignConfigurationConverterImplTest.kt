@@ -40,7 +40,7 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
-import io.qalipsis.core.head.model.hook.CampaignHook
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
