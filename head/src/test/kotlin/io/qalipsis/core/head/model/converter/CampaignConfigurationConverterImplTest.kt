@@ -1,7 +1,32 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.model.converter
 
+import assertk.all
 import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isEqualTo
+import io.mockk.coEvery
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -11,19 +36,20 @@ import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
-import io.qalipsis.core.head.model.Zone
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
+import io.qalipsis.core.head.model.hook.CampaignHook
+import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import org.junit.jupiter.api.BeforeEach
+import io.qalipsis.test.mockk.coVerifyNever
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.assertThrows
 
 @WithMockk
 internal class CampaignConfigurationConverterImplTest {
@@ -38,13 +64,19 @@ internal class CampaignConfigurationConverterImplTest {
     @InjectMockKs
     private lateinit var converter: CampaignConfigurationConverterImpl
 
+    @RelaxedMockK
+    private lateinit var hooks: List<CampaignHook>
 
     @RelaxedMockK
-    private lateinit var headConfiguration: HeadConfiguration
+    private lateinit var hook1: CampaignHook
 
-    @BeforeEach
-    internal fun setup() {
-        every { headConfiguration.zones } returns setOf(Zone(key = "FR", title = "France", description = "description"), Zone(key = "EN", title = "England", description = "description"))
+    @RelaxedMockK
+    private lateinit var hook2: CampaignHook
+
+    @BeforeAll
+    internal fun setUp() {
+        hooks = listOf(hook1, hook2)
+        converter = CampaignConfigurationConverterImpl(idGenerator = idGenerator, hooks = hooks)
     }
 
     @Test
@@ -75,6 +107,11 @@ internal class CampaignConfigurationConverterImplTest {
                 )
             )
         )
+
+        coVerifyOrder {
+            hook1.preCreate(refEq(request), refEq(result))
+            hook2.preCreate(refEq(request), refEq(result))
+        }
     }
 
     @Test
@@ -138,10 +175,15 @@ internal class CampaignConfigurationConverterImplTest {
                 )
             )
         )
+
+        coVerifyOrder {
+            hook1.preCreate(refEq(request), refEq(result))
+            hook2.preCreate(refEq(request), refEq(result))
+        }
     }
 
     @Test
-    internal fun `should not convert the minimal request with some zones are unknown`() =
+    internal fun `should successfully convert the minimal request with defined zones`() =
         testDispatcherProvider.runTest {
             // given
             every { idGenerator.long() } returns "my-campaign"
@@ -150,70 +192,141 @@ internal class CampaignConfigurationConverterImplTest {
                 speedFactor = 1.43,
                 startOffsetMs = 123,
                 scenarios = mapOf(
-                    "Scenario2" to ScenarioRequest(11, zones = mapOf("CM" to 50, "NG" to 50))
+                    "Scenario1" to ScenarioRequest(1, zones = mapOf("FR" to 100)),
+                    "Scenario2" to ScenarioRequest(11, zones = mapOf("EN" to 10, "FR" to 90))
                 )
             )
 
-            assertThrows<IllegalArgumentException>("Some requested zones do not exist: CM, NG") {
-                converter.convertConfiguration("my-tenant", request)
+            // when
+            val result = converter.convertConfiguration("my-tenant", request)
+
+            // then
+            assertThat(result).isDataClassEqualTo(
+                RunningCampaign(
+                    tenant = "my-tenant",
+                    key = "my-campaign",
+                    speedFactor = 1.43,
+                    startOffsetMs = 123,
+                    hardTimeout = false,
+                    scenarios = mapOf(
+                        "Scenario1" to ScenarioConfiguration(
+                            1,
+                            DefaultExecutionProfileConfiguration(),
+                            zones = mapOf("FR" to 100)
+                        ),
+                        "Scenario2" to ScenarioConfiguration(
+                            11,
+                            DefaultExecutionProfileConfiguration(),
+                            zones = mapOf("EN" to 10, "FR" to 90)
+                        )
+                    )
+                )
+            )
+
+            coVerifyOrder {
+                hook1.preCreate(refEq(request), refEq(result))
+                hook2.preCreate(refEq(request), refEq(result))
             }
         }
 
     @Test
-    internal fun `should not convert the minimal request when the distribution is not 100%`() =
-        testDispatcherProvider.runTest {
-            // given
-            every { idGenerator.long() } returns "my-campaign"
-            val request = CampaignConfiguration(
-                name = "Anything",
-                speedFactor = 1.43,
-                startOffsetMs = 123,
-                scenarios = mapOf(
-                    "Scenario1" to ScenarioRequest(
-                        1,
-                        zones = mapOf("FR" to 125)
-                    ),
-                    "Scenario2" to ScenarioRequest(11, zones = mapOf("EN" to 10, "FR" to 100))
-                )
-            )
-
-            assertThrows<IllegalArgumentException>("The distribution of the load across the different zones should equal to 100%") {
-                converter.convertConfiguration("my-tenant", request)
-            }
-        }
-
-
-    @Test
-    internal fun `should successfully convert the minimal request with defined zones`() = testDispatcherProvider.runTest {
+    internal fun `should correctly handle the first hook exceptions`() = testDispatcherProvider.runTest {
         // given
         every { idGenerator.long() } returns "my-campaign"
         val request = CampaignConfiguration(
             name = "Anything",
             speedFactor = 1.43,
             startOffsetMs = 123,
-            scenarios = mapOf(
-                "Scenario1" to ScenarioRequest(1, zones = mapOf("FR" to 100)),
-                "Scenario2" to ScenarioRequest(11, zones = mapOf("EN" to 10, "FR" to 90))
-            )
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
+        coEvery {
+            hook1.preCreate(request, any())
+        } throws BulkIllegalArgumentException(listOf("Constraints errors one", "Constraints errors two"))
 
         // when
-        val result = converter.convertConfiguration("my-tenant", request)
-
+        val exception = assertThrows<BulkIllegalArgumentException> {
+            converter.convertConfiguration("my-tenant", request)
+        }
         // then
-        assertThat(result).isDataClassEqualTo(
-            RunningCampaign(
-                tenant = "my-tenant",
-                key = "my-campaign",
-                speedFactor = 1.43,
-                startOffsetMs = 123,
-                hardTimeout = false,
-                scenarios = mapOf(
-                    "Scenario1" to ScenarioConfiguration(1, DefaultExecutionProfileConfiguration(), zones = mapOf("FR" to 100)),
-                    "Scenario2" to ScenarioConfiguration(11, DefaultExecutionProfileConfiguration(), zones = mapOf("EN" to 10, "FR" to 90))
-                )
-            )
+        assertThat(exception.messages.toList()).all {
+            hasSize(2)
+            index(0).isEqualTo("Constraints errors one")
+            index(1).isEqualTo("Constraints errors two")
+        }
+
+        coVerifyOrder {
+            hook1.preCreate(refEq(request), any())
+        }
+        coVerifyNever {
+            hook2.preCreate(refEq(request), any())
+        }
+    }
+
+    @Test
+    internal fun `should stop immediately if first hook raises exception`() = testDispatcherProvider.runTest {
+        // given
+        every { idGenerator.long() } returns "my-campaign"
+        val request = CampaignConfiguration(
+            name = "Anything",
+            speedFactor = 1.43,
+            startOffsetMs = 123,
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
         )
+        coEvery {
+            hook1.preCreate(request, any())
+        } throws BulkIllegalArgumentException(listOf("Constraints errors one", "Constraints errors two"))
+        coEvery {
+            hook2.preCreate(request, any())
+        } throws BulkIllegalArgumentException(listOf("Constraints errors three", "Constraints errors four"))
+
+        // when
+        val exception = assertThrows<BulkIllegalArgumentException> {
+            converter.convertConfiguration("my-tenant", request)
+        }
+        // then
+        assertThat(exception.messages.toList()).all {
+            hasSize(2)
+            index(0).isEqualTo("Constraints errors one")
+            index(1).isEqualTo("Constraints errors two")
+        }
+
+        coVerifyOrder {
+            hook1.preCreate(refEq(request), any())
+        }
+        coVerifyNever {
+            hook2.preCreate(refEq(request), any())
+        }
+    }
+
+    @Test
+    internal fun `should correctly handle any hook exception in provided order`() = testDispatcherProvider.runTest {
+        // given
+        every { idGenerator.long() } returns "my-campaign"
+        val request = CampaignConfiguration(
+            name = "Anything",
+            speedFactor = 1.43,
+            startOffsetMs = 123,
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+        coEvery {
+            hook2.preCreate(request, any())
+        } throws BulkIllegalArgumentException(listOf("Constraints errors three", "Constraints errors four"))
+
+        // when
+        val exception = assertThrows<BulkIllegalArgumentException> {
+            converter.convertConfiguration("my-tenant", request)
+        }
+        // then
+        assertThat(exception.messages.toList()).all {
+            hasSize(2)
+            index(0).isEqualTo("Constraints errors three")
+            index(1).isEqualTo("Constraints errors four")
+        }
+
+        coVerifyOrder {
+            hook1.preCreate(refEq(request), any())
+            hook2.preCreate(refEq(request), any())
+        }
     }
 
 }

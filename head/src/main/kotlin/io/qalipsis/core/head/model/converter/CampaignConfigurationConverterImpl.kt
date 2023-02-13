@@ -1,3 +1,22 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2022 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.head.model.converter
 
 import io.qalipsis.api.context.ScenarioName
@@ -12,7 +31,6 @@ import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
@@ -20,6 +38,7 @@ import io.qalipsis.core.head.model.configuration.ProgressiveVolumeExternalExecut
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.StageExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.TimeFrameExternalExecutionProfileConfiguration
+import io.qalipsis.core.head.model.hook.CampaignHook
 import jakarta.inject.Singleton
 
 /**
@@ -30,14 +49,14 @@ import jakarta.inject.Singleton
 @Singleton
 internal class CampaignConfigurationConverterImpl(
     private val idGenerator: IdGenerator,
-    private val headConfiguration: HeadConfiguration
+    private val hooks: List<CampaignHook>
 ) : CampaignConfigurationConverter {
 
     override suspend fun convertConfiguration(
         tenant: String,
         campaign: CampaignConfiguration
     ): RunningCampaign {
-        return RunningCampaign(
+        val runningCampaign = RunningCampaign(
             tenant = tenant,
             key = generateCampaignKey(tenant),
             speedFactor = campaign.speedFactor,
@@ -45,6 +64,8 @@ internal class CampaignConfigurationConverterImpl(
             hardTimeout = campaign.hardTimeout ?: false,
             scenarios = convertScenarioRequestsToConfigurations(campaign.scenarios)
         )
+        hooks.forEach { hook -> hook.preCreate(campaign, runningCampaign) }
+        return runningCampaign
     }
 
     protected fun generateCampaignKey(tenant: String): String = idGenerator.long()
@@ -55,20 +76,8 @@ internal class CampaignConfigurationConverterImpl(
             ScenarioConfiguration(
                 minionsCount = minionsCount,
                 executionProfileConfiguration = config,
-                zones = it.value.zones?.also(this::checkAndUpdateZone).orEmpty()
+                zones = it.value.zones.orEmpty()
             )
-        }
-    }
-
-    private fun checkAndUpdateZone(zones: Map<String, Int>) {
-        //We check if all the keys provide for zones are supported
-        require(headConfiguration.zones.map { it.key }.containsAll(zones.keys)) {
-            val unknownZones = zones.keys.filterNot { headConfiguration.zones.map { zone -> zone.key }.contains(it) }
-            "Some requested zones do not exist: ${unknownZones.joinToString()}"
-        }
-
-        require(zones.isEmpty() || zones.entries.sumOf { it.value } == 100) {
-            "The distribution of the load across the different zones should equal to 100%"
         }
     }
 

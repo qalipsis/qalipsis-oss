@@ -40,7 +40,7 @@ import javax.validation.Path
  */
 @Produces
 @Singleton
-@Requires(classes = [IllegalArgumentException::class, ExceptionHandler::class])
+@Requires(classes = [ConstraintViolationException::class, ExceptionHandler::class])
 @Replaces(ConstraintExceptionHandler::class)
 internal class ConstraintViolationExceptionHandler :
     ExceptionHandler<ConstraintViolationException, HttpResponse<*>> {
