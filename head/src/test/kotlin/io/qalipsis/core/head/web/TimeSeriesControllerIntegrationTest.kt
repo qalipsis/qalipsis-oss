@@ -152,6 +152,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 dataSeriesReferences = setOf("ser-1", "ser-2"),
                 queryExecutionRequest = AggregationQueryExecutionRequest(
+                    tenant = "_qalipsis_ten_",
                     campaignsReferences = setOf("camp-1", "camp2"),
                     scenariosNames = setOf("scen-1", "scen-2"),
                     from = start,
@@ -222,7 +223,10 @@ internal class TimeSeriesControllerIntegrationTest {
             timeSeriesDataQueryService.render(
                 tenant = Defaults.TENANT,
                 dataSeriesReferences = setOf("ser-1", "ser-2"),
-                queryExecutionRequest = AggregationQueryExecutionRequest(campaignsReferences = setOf("camp-1", "camp2"))
+                queryExecutionRequest = AggregationQueryExecutionRequest(
+                    tenant = "_qalipsis_ten_",
+                    campaignsReferences = setOf("camp-1", "camp2")
+                )
             )
         }
         confirmVerified(timeSeriesDataQueryService)
@@ -388,6 +392,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 dataSeriesReferences = setOf("ser-1", "ser-2"),
                 queryExecutionRequest = DataRetrievalQueryExecutionRequest(
+                    tenant = "_qalipsis_ten_",
                     campaignsReferences = setOf("camp-1", "camp2"),
                     scenariosNames = setOf("scen-1", "scen-2"),
                     from = start,
@@ -452,6 +457,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 tenant = Defaults.TENANT,
                 dataSeriesReferences = setOf("ser-1", "ser-2"),
                 queryExecutionRequest = DataRetrievalQueryExecutionRequest(
+                    tenant = "_qalipsis_ten_",
                     campaignsReferences = setOf("camp-1", "camp2"),
                     from = start,
                     until = start.plusSeconds(15),

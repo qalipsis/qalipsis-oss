@@ -58,9 +58,34 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
     suspend fun findByTenantAndReference(tenant: String, reference: String): DataSeriesEntity
 
     @Query(
-        """SELECT *
-            FROM data_series
-            WHERE reference in (:references) AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)"""
+        """SELECT 
+            data_series.id, 
+            data_series.reference, 
+            data_series.version, 
+            data_series.tenant_id, 
+            data_series.display_name, 
+            data_series.data_type,
+            data_series.value_name,
+            data_series.color, 
+            data_series.filters, 
+            data_series.field_name, 
+            data_series.aggregation_operation, 
+            data_series.timeframe_unit_ms, 
+            data_series.display_format,
+            data_series.query, 
+            data_series.color_opacity,
+                CASE 
+                    WHEN t.reference <> :tenant THEN 'READONLY'
+                    ELSE sharing_mode
+                END AS sharing_mode,
+                CASE 
+                    WHEN t.reference <> :tenant THEN -1
+                    ELSE creator_id
+                END AS creator_id
+                FROM data_series data_series
+                    LEFT JOIN tenant t ON data_series.tenant_id = t.id
+                WHERE data_series.reference in (:references) AND (t.reference = :tenant OR t.reference = '_qalipsis_ten_')
+            """
     )
     suspend fun findAllByTenantAndReferences(
         tenant: String,
@@ -68,20 +93,43 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
     ): List<DataSeriesEntity>
 
     @Query(
-        value = """SELECT * 
-            FROM data_series AS data_series_entity_
-            LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
-            WHERE 
-            (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
-            AND (
-             data_series_entity_.field_name ILIKE any (array[:filters]) 
-             OR data_series_entity_.data_type ILIKE any (array[:filters])
-             OR data_series_entity_.display_name ILIKE any (array[:filters])
-             OR u.username ILIKE any (array[:filters]) 
-             OR u.display_name ILIKE any (array[:filters])
-            )
-            AND EXISTS
-            (SELECT * FROM tenant WHERE id = data_series_entity_.tenant_id AND reference = :tenant)
+        value = """SELECT 
+                    data_series_entity_.id, 
+                    data_series_entity_.reference, 
+                    data_series_entity_.version, 
+                    data_series_entity_.tenant_id, 
+                    data_series_entity_.display_name, 
+                    data_series_entity_.data_type,
+                    data_series_entity_.value_name,
+                    data_series_entity_.color, 
+                    data_series_entity_.filters, 
+                    data_series_entity_.field_name, 
+                    data_series_entity_.aggregation_operation, 
+                    data_series_entity_.timeframe_unit_ms, 
+                    data_series_entity_.display_format,
+                    data_series_entity_.query, 
+                    data_series_entity_.color_opacity,
+                        CASE 
+                            WHEN t.reference = '_qalipsis_ten_' THEN 'READONLY'
+                            ELSE sharing_mode
+                        END AS sharing_mode,
+                        CASE 
+                            WHEN t.reference = '_qalipsis_ten_' THEN -1
+                            ELSE creator_id
+                        END AS creator_id 
+                        FROM data_series AS data_series_entity_
+                            LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+                            LEFT JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                        WHERE 
+                        (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
+                        AND (
+                         data_series_entity_.field_name ILIKE any (array[:filters]) 
+                         OR data_series_entity_.data_type ILIKE any (array[:filters])
+                         OR data_series_entity_.display_name ILIKE any (array[:filters])
+                         OR u.username ILIKE any (array[:filters]) 
+                         OR u.display_name ILIKE any (array[:filters])
+                        )
+                        AND (t.reference = :tenant OR t.reference = '_qalipsis_ten_')
         """,
         countQuery = """
             SELECT COUNT(*)
@@ -97,7 +145,8 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
              OR u.display_name ILIKE any (array[:filters])
             )
             AND EXISTS
-            (SELECT * FROM tenant WHERE id = data_series_entity_.tenant_id AND reference = :tenant)""",
+            (SELECT * FROM tenant tenant_entity_ WHERE tenant_entity_.id = data_series_entity_.tenant_id 
+            AND (tenant_entity_.reference = :tenant OR tenant_entity_.reference = '_qalipsis_ten_'))""",
         nativeQuery = true
     )
     suspend fun searchDataSeries(
@@ -109,14 +158,36 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
 
     @Query(
         value =
-        """SELECT * 
-            FROM data_series AS data_series_entity_
-            LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
-            WHERE 
-            (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
-            AND EXISTS
-            (SELECT * FROM tenant WHERE id = data_series_entity_.tenant_id AND reference = :tenant)
-        """,
+        """SELECT 
+            data_series_entity_.id, 
+            data_series_entity_.reference, 
+            data_series_entity_.version, 
+            data_series_entity_.tenant_id, 
+            data_series_entity_.display_name, 
+            data_series_entity_.data_type,
+            data_series_entity_.value_name,
+            data_series_entity_.color, 
+            data_series_entity_.filters, 
+            data_series_entity_.field_name, 
+            data_series_entity_.aggregation_operation, 
+            data_series_entity_.timeframe_unit_ms, 
+            data_series_entity_.display_format,
+            data_series_entity_.query, 
+            data_series_entity_.color_opacity,
+                CASE 
+                    WHEN t.reference = '_qalipsis_ten_' THEN 'READONLY'
+                    ELSE sharing_mode
+                END AS sharing_mode,
+                CASE 
+                    WHEN t.reference = '_qalipsis_ten_' THEN -1
+                    ELSE creator_id
+                END AS creator_id 
+                FROM data_series AS data_series_entity_
+                    LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+                    LEFT JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                WHERE 
+                (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
+                AND (t.reference = :tenant OR t.reference = '_qalipsis_ten_')""",
         countQuery = """
             SELECT COUNT(*) 
             FROM data_series AS data_series_entity_
@@ -124,8 +195,8 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
             WHERE 
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
             AND EXISTS
-            (SELECT * FROM tenant WHERE id = data_series_entity_.tenant_id AND reference = :tenant)
-        """,
+            (SELECT * FROM tenant tenant_entity_ WHERE tenant_entity_.id = data_series_entity_.tenant_id 
+            AND (tenant_entity_.reference = :tenant OR tenant_entity_.reference = '_qalipsis_ten_'))""",
         nativeQuery = true
     )
     suspend fun searchDataSeries(tenant: String, username: String, pageable: Pageable): Page<DataSeriesEntity>

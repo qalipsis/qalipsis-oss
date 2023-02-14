@@ -89,6 +89,7 @@ internal class TimeSeriesDataQueryServiceImpl(
         val minAggregationTimeframe =
             calculateMinimumAggregationTimeframe(campaignsInstantsAndDuration.maxDuration!!)
         return AggregationQueryExecutionContext(
+            tenant = queryExecutionRequest.tenant,
             campaignsReferences = queryExecutionRequest.campaignsReferences,
             scenariosNames = queryExecutionRequest.scenariosNames,
             from = queryExecutionRequest.from?.coerceAtLeast(campaignsInstantsAndDuration.minStart!!)
@@ -140,6 +141,7 @@ internal class TimeSeriesDataQueryServiceImpl(
         val minAggregationTimeframe =
             calculateMinimumAggregationTimeframe(campaignsInstantsAndDuration.maxDuration!!)
         return DataRetrievalQueryExecutionContext(
+            tenant = queryExecutionRequest.tenant,
             campaignsReferences = queryExecutionRequest.campaignsReferences,
             scenariosNames = queryExecutionRequest.scenariosNames,
             from = queryExecutionRequest.from.coerceAtLeast(campaignsInstantsAndDuration.minStart!!),

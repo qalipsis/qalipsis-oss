@@ -39,6 +39,7 @@ import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.report.DataType
@@ -47,6 +48,7 @@ import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
@@ -63,6 +65,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @Inject
     private lateinit var userRepository: UserRepository
+
+    private lateinit var defaultTenant: TenantEntity
 
     private val tenantPrototype = TenantEntity(
         reference = "my-tenant",
@@ -89,10 +93,20 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             colorOpacity = 50
         )
 
+    @BeforeEach
+    fun setup() = testDispatcherProvider.run {
+        tenantRepository.deleteAll()
+        defaultTenant = tenantRepository.save(
+            tenantPrototype.copy(
+                reference = Defaults.TENANT,
+                displayName = Defaults.TENANT
+            )
+        )
+    }
+
     @AfterEach
     fun tearDown() = testDispatcherProvider.run {
         dataSeriesRepository.deleteAll()
-        tenantRepository.deleteAll()
         userRepository.deleteAll()
     }
 
@@ -369,7 +383,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    fun `should fetch all data series with the default params`() = testDispatcherProvider.run {
+    fun `should fetch all data series with the default search params`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val creator = userRepository.save(userPrototype.copy())
@@ -857,4 +871,323 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             )
         ).isFalse()
     }
+
+    @Test
+    fun `should fetch the requested dataSeries including the default`() = testDispatcherProvider.run {
+        //given
+        val tenant = tenantRepository.save(tenantPrototype)
+        val creator = userRepository.save(userPrototype)
+        val defaultCreator = userRepository.save(
+            userPrototype.copy(
+                username = "default-user",
+                displayName = "Default test user for test"
+            )
+        )
+        val randomCreator = userRepository.save(
+            userPrototype.copy(
+                username = "random-user",
+                displayName = "random test user for test"
+            )
+        )
+        val randomTenant =
+            tenantRepository.save(tenantPrototype.copy(reference = "random_tenant", displayName = "random_tenant"))
+        val redDataSeries = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "red",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val defaultDataSeries = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = defaultTenant.id,
+                creatorId = defaultCreator.id,
+                color = "purple",
+                displayName = "my-default-name",
+                reference = "my-series-2",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val series3 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "green",
+                displayName = "my-green-name",
+                reference = "my-series-3",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = randomTenant.id,
+                creatorId = randomCreator.id,
+                color = "blue",
+                displayName = "my-blue-name",
+                reference = "my-series-4",
+                sharingMode = SharingMode.READONLY
+            )
+        )
+        dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "brown",
+                displayName = "my-brown-name",
+                reference = "my-series-5",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val series6 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "yellow",
+                displayName = "my-yellow-name",
+                reference = "my-series-6",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+
+        //when
+        val found = dataSeriesRepository.findAllByTenantAndReferences(
+            tenant.reference,
+            listOf("my-series", "my-series-2", "my-series-3", "my-series-4", "my-series-6")
+        ).sortedBy { it.id }
+
+        //then
+        assertThat(found).all {
+            hasSize(4)
+            index(0).prop(DataSeriesEntity::id).isEqualTo(redDataSeries.id)
+            index(0).prop(DataSeriesEntity::creatorId).isEqualTo(redDataSeries.creatorId)
+            index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(redDataSeries.sharingMode)
+            index(1).prop(DataSeriesEntity::id).isEqualTo(defaultDataSeries.id)
+            index(1).prop(DataSeriesEntity::reference).isEqualTo(defaultDataSeries.reference)
+            index(1).prop(DataSeriesEntity::creatorId).isEqualTo(-1)
+            index(1).prop(DataSeriesEntity::tenantId).isEqualTo(defaultTenant.id)
+            index(1).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+            index(2).prop(DataSeriesEntity::id).isEqualTo(series3.id)
+            index(2).prop(DataSeriesEntity::creatorId).isEqualTo(series3.creatorId)
+            index(2).prop(DataSeriesEntity::sharingMode).isEqualTo(series3.sharingMode)
+            index(3).prop(DataSeriesEntity::id).isEqualTo(series6.id)
+            index(3).prop(DataSeriesEntity::creatorId).isEqualTo(series6.creatorId)
+            index(3).prop(DataSeriesEntity::sharingMode).isEqualTo(series6.sharingMode)
+        }
+    }
+
+    @Test
+    fun `should retrieve all the data series including the default ones if it matches the given search criteria`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator =
+                userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique"))
+            val defaultCreator = userRepository.save(
+                userPrototype.copy(
+                    username = "default-user",
+                    displayName = "Default test user for test"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                )
+            )
+            val dataSeriesWithIdealUser = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-2",
+                    fieldName = "field-7",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-display-name"
+                )
+            )
+            val dataSeriesWithIdealField = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "ds-with-user",
+                    reference = "my-series-3",
+                    fieldName = "foo"
+                )
+            )
+            val defaultDataSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = defaultCreator.id,
+                    color = "purple",
+                    displayName = "default-purple",
+                    reference = "my-series-5",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
+                tenant.reference,
+                creator.username,
+                listOf("%foo%", "%uNIQ%", "%DEfAu%"),
+                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+            ).content
+            assertThat(dataSeriesEntities.size).isEqualTo(3)
+            assertThat(dataSeriesEntities.contains(defaultDataSeries))
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(defaultDataSeries.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(defaultTenant.id)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(-1)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithIdealField.id)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeriesWithIdealField.creatorId)
+                index(1).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeriesWithIdealField.sharingMode)
+                index(2).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithIdealUser.id)
+                index(2).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeriesWithIdealUser.creatorId)
+                index(2).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeriesWithIdealUser.sharingMode)
+            }
+        }
+
+    @Test
+    fun `should retrieve all the data series including the default one when no search filter is passed in`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator =
+                userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique"))
+            val defaultCreator = userRepository.save(
+                userPrototype.copy(
+                    username = "default-user",
+                    displayName = "Default test user for test"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                )
+            )
+            val dataSeriesWithIdealUser = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-2",
+                    fieldName = "field-7",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-display-name"
+                )
+            )
+            val dataSeriesWithIdealField = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "ds-with-user",
+                    reference = "my-series-3",
+                    fieldName = "foo"
+                )
+            )
+            val defaultDataSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = defaultCreator.id,
+                    color = "purple",
+                    displayName = "default-purple",
+                    reference = "my-series-5",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
+                tenant.reference,
+                creator.username,
+                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+            ).content
+            assertThat(dataSeriesEntities.size).isEqualTo(3)
+            assertThat(dataSeriesEntities.contains(defaultDataSeries))
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(defaultDataSeries.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(defaultTenant.id)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(-1)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithIdealField.id)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeriesWithIdealField.creatorId)
+                index(1).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeriesWithIdealField.sharingMode)
+                index(2).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithIdealUser.id)
+                index(2).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeriesWithIdealUser.creatorId)
+                index(2).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeriesWithIdealUser.sharingMode)
+            }
+        }
+
+    @Test
+    fun `should not retrieve the default data series if it doesn't match the given search criteria`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator =
+                userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique"))
+            val defaultCreator = userRepository.save(
+                userPrototype.copy(
+                    username = "series-2-user",
+                    displayName = "Test for user"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-2",
+                    fieldName = "field-7",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-display-name"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "ds-with-user",
+                    reference = "my-series-3",
+                    fieldName = "foo"
+                )
+            )
+            val defaultDataSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = defaultCreator.id,
+                    color = "purple",
+                    displayName = "purple-series",
+                    reference = "my-series-5",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
+                tenant.reference,
+                creator.username,
+                listOf("%foo%", "%uNIQ%", "%DEfAu%"),
+                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+            ).content
+            assertThat(dataSeriesEntities.size).isEqualTo(2)
+            assertThat(dataSeriesEntities).doesNotContain(defaultDataSeries)
+        }
+
 }
