@@ -37,6 +37,7 @@ import java.time.Instant
  */
 @Introspected
 data class AggregationQueryExecutionRequest(
+    val tenant: String,
     val campaignsReferences: Set<String>,
     val scenariosNames: Set<String> = emptySet(),
     val from: Instant? = null,

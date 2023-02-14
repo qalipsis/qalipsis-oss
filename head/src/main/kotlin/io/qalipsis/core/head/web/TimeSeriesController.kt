@@ -126,6 +126,7 @@ internal class TimeSeriesController(
         return HttpResponse.ok(
             timeSeriesDataQueryService.render(
                 tenant, dataSeriesReferences, AggregationQueryExecutionRequest(
+                    tenant = tenant,
                     campaignsReferences = campaigns,
                     scenariosNames = scenarios.orEmpty(),
                     from = from,
@@ -208,6 +209,7 @@ internal class TimeSeriesController(
         return HttpResponse.ok(
             timeSeriesDataQueryService.search(
                 tenant, dataSeriesReferences, DataRetrievalQueryExecutionRequest(
+                    tenant = tenant,
                     campaignsReferences = campaigns,
                     scenariosNames = scenarios.orEmpty(),
                     from = from,

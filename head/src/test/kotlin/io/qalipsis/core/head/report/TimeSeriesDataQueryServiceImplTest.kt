@@ -197,6 +197,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofSeconds(1)
         val request = AggregationQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -212,6 +213,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start.plusMillis(1))
@@ -227,6 +229,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofSeconds(1)
         val request = AggregationQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -242,6 +245,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
@@ -257,6 +261,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofMillis(1)
         val request = AggregationQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -272,6 +277,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
@@ -286,6 +292,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val start = Instant.now() - Duration.ofMinutes(2)
         val end = Instant.now()
         val request = AggregationQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = null,
@@ -301,6 +308,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
@@ -316,6 +324,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofSeconds(1)
         val request = AggregationQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -331,6 +340,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
@@ -461,6 +471,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofSeconds(1)
         val request = DataRetrievalQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -478,6 +489,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start.plusMillis(1))
@@ -495,6 +507,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofSeconds(1)
         val request = DataRetrievalQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -512,6 +525,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
@@ -529,6 +543,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofMillis(1)
         val request = DataRetrievalQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -546,6 +561,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
@@ -562,6 +578,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val start = Instant.now() - Duration.ofMinutes(2)
         val end = Instant.now()
         val request = DataRetrievalQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -579,6 +596,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
@@ -596,6 +614,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
         val end = Instant.now()
         val timeFrame = Duration.ofSeconds(1)
         val request = DataRetrievalQueryExecutionRequest(
+            tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
             from = start,
@@ -613,6 +632,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
         // then
         assertThat(result).all {
+            prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
             prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
             prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)

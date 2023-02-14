@@ -96,10 +96,8 @@
       <column name="tenant_id"/>
       <column name="reference"/>
     </createIndex>
-
     <sql>
       CREATE INDEX data_series_filters_name_idx ON data_series USING GIN ((filters -> 'name'));
     </sql>
-
   </changeSet>
 </databaseChangeLog>

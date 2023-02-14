@@ -125,6 +125,21 @@ internal class DefaultDataProviderTest {
     }
 
     @Test
+    internal fun `should return query for events when default tenant is passed in`() = testDispatcherProvider.runTest {
+        // given
+        val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val queryDescription = mockk<QueryDescription>()
+        val query = "the query"
+        coEvery { eventProvider.createQuery(any(), any()) } returns query
+
+        // then
+        assertThat(dataProvider.createQuery("_qalipsis_ten_", DataType.EVENTS, queryDescription)).isEqualTo(query)
+        coVerifyOnce { eventProvider.createQuery(null, refEq(queryDescription)) }
+
+        confirmVerified(eventProvider, meterProvider)
+    }
+
+    @Test
     internal fun `should return empty lists and maps when no meter provider is set`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, null)
@@ -198,4 +213,20 @@ internal class DefaultDataProviderTest {
 
         confirmVerified(eventProvider, meterProvider)
     }
+
+    @Test
+    internal fun `should return query for meter when default tenant is passed in`() = testDispatcherProvider.runTest {
+        // given
+        val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val queryDescription = mockk<QueryDescription>()
+        val query = "the query"
+        coEvery { meterProvider.createQuery(any(), any()) } returns query
+
+        // then
+        assertThat(dataProvider.createQuery("_qalipsis_ten_", DataType.METERS, queryDescription)).isEqualTo(query)
+        coVerifyOnce { meterProvider.createQuery(null, refEq(queryDescription)) }
+
+        confirmVerified(eventProvider, meterProvider)
+    }
+
 }
