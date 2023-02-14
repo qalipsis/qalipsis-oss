@@ -28,7 +28,6 @@ import assertk.assertions.isEqualTo
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -36,20 +35,20 @@ import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
-import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.assertThrows
 
 @WithMockk
 internal class CampaignConfigurationConverterImplTest {
@@ -61,11 +60,7 @@ internal class CampaignConfigurationConverterImplTest {
     @RelaxedMockK
     private lateinit var idGenerator: IdGenerator
 
-    @InjectMockKs
     private lateinit var converter: CampaignConfigurationConverterImpl
-
-    @RelaxedMockK
-    private lateinit var hooks: List<CampaignHook>
 
     @RelaxedMockK
     private lateinit var hook1: CampaignHook
@@ -75,8 +70,7 @@ internal class CampaignConfigurationConverterImplTest {
 
     @BeforeAll
     internal fun setUp() {
-        hooks = listOf(hook1, hook2)
-        converter = CampaignConfigurationConverterImpl(idGenerator = idGenerator, hooks = hooks)
+        converter = CampaignConfigurationConverterImpl(idGenerator = idGenerator, hooks = listOf(hook1, hook2))
     }
 
     @Test
