@@ -34,11 +34,11 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.configuration.DefaultValuesCampaignConfiguration
-import io.qalipsis.core.head.configuration.Stage
-import io.qalipsis.core.head.configuration.Validation
+import io.qalipsis.core.head.model.DefaultValuesCampaignConfiguration
 import io.qalipsis.core.head.model.DisabledSecurityConfiguration
 import io.qalipsis.core.head.model.SecurityConfiguration
+import io.qalipsis.core.head.model.Stage
+import io.qalipsis.core.head.model.Validation
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

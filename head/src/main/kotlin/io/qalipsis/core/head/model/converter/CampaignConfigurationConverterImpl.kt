@@ -31,6 +31,7 @@ import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
@@ -38,7 +39,6 @@ import io.qalipsis.core.head.model.configuration.ProgressiveVolumeExternalExecut
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.StageExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.TimeFrameExternalExecutionProfileConfiguration
-import io.qalipsis.core.head.hook.CampaignHook
 import jakarta.inject.Singleton
 
 /**
