@@ -38,13 +38,15 @@ allOpen {
     )
 }
 
+val apiVersion: String by project
+
 dependencies {
-    implementation(platform("io.qalipsis:dev-platform:${project.version}"))
+    implementation(platform("io.qalipsis:dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
 
-    api("io.qalipsis:api-common:${project.version}")
-    api("io.qalipsis:api-dsl:${project.version}")
-    api("io.qalipsis:api-processors:${project.version}")
+    api("io.qalipsis:api-common:$apiVersion")
+    api("io.qalipsis:api-dsl:$apiVersion")
+    api("io.qalipsis:api-processors:$apiVersion")
     api(project(":core"))
     compileOnly(project(":factory"))
     compileOnly(project(":head"))
@@ -61,29 +63,29 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
-    kapt(platform("io.qalipsis:dev-platform:${project.version}"))
+    kapt(platform("io.qalipsis:dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    testFixturesImplementation(platform("io.qalipsis:dev-platform:${project.version}"))
+    testFixturesImplementation(platform("io.qalipsis:dev-platform:$apiVersion"))
     testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin")
 
-    testImplementation(platform("io.qalipsis:dev-platform:${project.version}"))
+    testImplementation(platform("io.qalipsis:dev-platform:$apiVersion"))
     testImplementation(project(":head"))
     testImplementation(project(":factory"))
     testImplementation(testFixtures(project(":core")))
     testImplementation("io.mockk:mockk")
-    testImplementation("io.qalipsis:test:${project.version}")
+    testImplementation("io.qalipsis:test:$apiVersion")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.awaitility:awaitility-kotlin")
 
-    kaptTest(platform("io.qalipsis:dev-platform:${project.version}"))
+    kaptTest(platform("io.qalipsis:dev-platform:$apiVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest("io.qalipsis:api-processors:${project.version}")
+    kaptTest("io.qalipsis:api-processors:$apiVersion")
 
     if (Os.isFamily(Os.FAMILY_MAC)) {
         testRuntimeOnly(group = "io.netty", name = "netty-resolver-dns-native-macos", classifier = "osx-aarch_64")

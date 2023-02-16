@@ -25,19 +25,21 @@ javaPlatform {
     allowDependencies()
 }
 
+val apiVersion: String by project
+
 dependencies {
     // Platform modules.
-    api(platform("io.qalipsis:dev-platform:${project.version}"))
+    api(platform("io.qalipsis:dev-platform:$apiVersion"))
 
     // API modules.
-    api("io.qalipsis:api-dsl:${project.version}")
-    api("io.qalipsis:api-common:${project.version}")
+    api("io.qalipsis:api-dsl:$apiVersion")
+    api("io.qalipsis:api-common:$apiVersion")
 
     constraints {
         // API modules.
-        api("io.qalipsis:api-dev:${project.version}")
-        api("io.qalipsis:api-processors:${project.version}")
-        api("io.qalipsis:test:${project.version}")
+        api("io.qalipsis:api-dev:$apiVersion")
+        api("io.qalipsis:api-processors:$apiVersion")
+        api("io.qalipsis:test:$apiVersion")
 
         // Core modules.
         api(project(":runtime"))

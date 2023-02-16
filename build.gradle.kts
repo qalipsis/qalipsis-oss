@@ -27,7 +27,7 @@ plugins {
     kotlin("plugin.noarg") version "1.6.21"
     `maven-publish`
     signing
-    id ("com.github.jk1.dependency-license-report") version "1.17"
+    id("com.github.jk1.dependency-license-report") version "1.17"
 }
 
 licenseReport {
@@ -38,7 +38,8 @@ licenseReport {
         )
     )
     allowedLicensesFile = File("$projectDir/build-config/allowed-licenses.json")
-    filters = arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
+    filters =
+        arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
 }
 
 description = "Qalipsis OSS"
