@@ -154,7 +154,7 @@ fun Project.configureNotPlatform() {
 
     tasks {
         withType<Jar> {
-            archiveBaseName.set("com-qalipsis-${project.name}")
+            archiveBaseName.set("io-qalipsis-${project.name}")
         }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
