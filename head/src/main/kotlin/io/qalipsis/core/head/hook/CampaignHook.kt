@@ -33,5 +33,5 @@ internal interface CampaignHook : Ordered {
     /**
      * Hook to process the campaign details before it is created.
      */
-    fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign)
+    suspend fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign)
 }

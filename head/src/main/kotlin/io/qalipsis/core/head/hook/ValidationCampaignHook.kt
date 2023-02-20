@@ -38,7 +38,7 @@ internal class ValidationCampaignHook(
     private val headConfiguration: HeadConfiguration,
 ) : CampaignHook {
 
-    override fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign) {
+    override suspend fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign) {
         val constraintsViolations = mutableListOf<String>()
         validateCampaign(campaignConfiguration, runningCampaign, constraintsViolations)
         runningCampaign.scenarios.values.forEach { validateZones(it.zones, constraintsViolations) }
