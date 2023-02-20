@@ -39,6 +39,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
@@ -228,7 +229,7 @@ internal class CampaignTimeoutKeeperTest {
 
             //then
             countLatch.await()
-            coVerifyOrder {
+            coVerifyOnce {
                 factoryChannel.publishFeedback(
                     CampaignTimeoutFeedback(
                         campaignKey = "my-campaign",
