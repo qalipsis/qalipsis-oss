@@ -24,6 +24,7 @@ import java.time.Instant
  * Description of the context and additional clauses for the execution of prepared aggregation queries
  * for time-series data.
  *
+ * @property tenant the reference of the tenant owning the data
  * @property campaignsReferences references of all the campaigns that generated the data
  * @property scenariosNames names of all the scenarios that generated the data, defaults to empty for all the scenarios of the selected campaigns
  * @property from start of the data to aggregate, defaults to null for all the data of the selected campaigns until [until]
@@ -34,6 +35,7 @@ import java.time.Instant
  */
 @Introspected
 data class AggregationQueryExecutionContext(
+    val tenant: String,
     val campaignsReferences: Set<String>,
     val scenariosNames: Set<String> = emptySet(),
     val from: Instant,

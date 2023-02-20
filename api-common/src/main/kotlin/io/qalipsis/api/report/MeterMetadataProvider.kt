@@ -68,6 +68,6 @@ interface MeterMetadataProvider {
     /**
      * Prepares the query on meters and returns it wrapped into a JSON object containing potential additional metadata.
      */
-    suspend fun createQuery(tenant: String, query: QueryDescription): String
+    suspend fun createQuery(tenant: String?, query: QueryDescription): String
 
 }

@@ -68,6 +68,6 @@ interface EventMetadataProvider {
     /**
      * Prepares the query on events and returns it wrapped into a JSON object containing potential additional metadata.
      */
-    suspend fun createQuery(tenant: String, query: QueryDescription): String
+    suspend fun createQuery(tenant: String?, query: QueryDescription): String
 
 }
