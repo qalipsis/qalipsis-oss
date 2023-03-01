@@ -63,4 +63,11 @@ interface TimeSeriesDataProvider {
         preparedQueries: Map<String, String>,
         context: DataRetrievalQueryExecutionContext
     ): Map<String, Page<TimeSeriesRecord>>
+
+    /**
+     * Retrieve the disk space used in a tenant, in bytes.
+     *
+     * @param tenant the reference of the tenant.
+     */
+    suspend fun retrieveUsedStorage(tenant: String): Long
 }
