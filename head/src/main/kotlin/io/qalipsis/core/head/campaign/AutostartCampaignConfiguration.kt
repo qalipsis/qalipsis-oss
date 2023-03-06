@@ -22,6 +22,7 @@ package io.qalipsis.core.head.campaign
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.annotation.Bindable
+import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import java.time.Duration
@@ -53,7 +54,8 @@ internal class AutostartCampaignConfiguration {
     @get:Positive
     var requiredFactories: Int = 1
 
-    @get:Positive
+    @get:PositiveDuration
+    @get:Bindable(defaultValue = "PT500MS")
     var triggerOffset: Duration = Duration.ofMillis(500)
 
     @get:PositiveOrZero
@@ -65,7 +67,7 @@ internal class AutostartCampaignConfiguration {
     @get:Positive
     var speedFactor: Double = 1.0
 
-    @get:Positive
+    @get:PositiveDuration
     @get:Bindable(defaultValue = "1s")
     var startOffset: Duration = Duration.ofMillis(1_000)
 

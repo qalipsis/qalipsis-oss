@@ -70,7 +70,7 @@ micronaut:
   security:
     enabled: false
   metrics:
-    enabled: ${meters.enabled}
+    enabled: false
     binders:
       jvm:
         enabled: ${monitoring.enabled}

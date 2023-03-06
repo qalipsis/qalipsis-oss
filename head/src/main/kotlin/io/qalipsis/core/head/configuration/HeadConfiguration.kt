@@ -22,12 +22,12 @@ package io.qalipsis.core.head.configuration
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.annotation.Bindable
+import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Zone
 import java.time.Duration
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
-import javax.validation.constraints.Positive
 
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("head")
@@ -54,7 +54,7 @@ internal interface HeadConfiguration {
     /**
      * Duration of the heartbeat to emit from the factories.
      */
-    @get:Positive
+    @get:PositiveDuration
     @get:Bindable(defaultValue = "PT30s")
     val heartbeatDelay: Duration
 

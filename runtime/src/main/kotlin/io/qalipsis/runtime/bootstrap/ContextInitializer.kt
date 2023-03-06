@@ -25,8 +25,8 @@ import io.micronaut.context.env.Environment
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.services.ServicesFiles
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.lifetime.FactoryStartupComponent
-import io.qalipsis.core.lifetime.HeadStartupComponent
+import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.runtime.MicronautBootstrap
 import io.qalipsis.runtime.bootstrap.DeploymentRole.FACTORY
 import io.qalipsis.runtime.bootstrap.DeploymentRole.HEAD
@@ -88,8 +88,8 @@ internal class ContextInitializer(
      * Verifies that the required dependencies are in the classpath and detect the role when in AUTO mode.
      */
     private fun validateAndDetectRole() {
-        val hasFactoryClasses = kotlin.runCatching { FactoryStartupComponent::class }.getOrNull() != null
-        val hasHeadClasses = kotlin.runCatching { HeadStartupComponent::class }.getOrNull() != null
+        val hasFactoryClasses = kotlin.runCatching { FactoryChannel::class }.getOrNull() != null
+        val hasHeadClasses = kotlin.runCatching { HeadChannel::class }.getOrNull() != null
 
         require(hasFactoryClasses || hasHeadClasses) { "Neither head nor factory libraries found in the classpath!" }
 
@@ -98,6 +98,7 @@ internal class ContextInitializer(
                 require(hasHeadClasses) { "The head library is missing in the classpath!" }
                 require(hasFactoryClasses) { "The factory library is missing in the classpath!" }
             }
+
             HEAD -> require(hasHeadClasses) { "The head library is missing in the classpath!" }
             FACTORY -> require(hasFactoryClasses) { "The factory library is missing in the classpath!" }
             else -> role = when {

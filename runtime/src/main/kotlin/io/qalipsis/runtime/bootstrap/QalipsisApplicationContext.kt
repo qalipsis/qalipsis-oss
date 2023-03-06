@@ -69,7 +69,11 @@ internal class QalipsisApplicationContext(
         try {
             doExecute(processBlockers, processExitCodeSuppliers)
         } catch (e: Exception) {
-            log.error { "QALIPSIS could not start: ${e.message}" }
+            if (log.isDebugEnabled) {
+                log.error(e) { "QALIPSIS could not start: ${e.message}" }
+            } else {
+                log.error { "QALIPSIS could not start: ${e.message}" }
+            }
             exitCode = (e as? ExitStatusException)?.exitStatus ?: exitCode.takeIf { it != 0 } ?: 2
             log.error(e) { e.message }
             log.warn { "Cancelling all the process blockers" }

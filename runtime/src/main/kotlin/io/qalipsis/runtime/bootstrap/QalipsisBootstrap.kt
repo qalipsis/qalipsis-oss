@@ -20,6 +20,7 @@
 package io.qalipsis.runtime.bootstrap
 
 import io.micronaut.context.ApplicationContext
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.bootstrap.DeploymentRole.AUTO
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -120,13 +121,21 @@ internal class QalipsisBootstrap : Callable<Unit> {
             // Refer to Micronaut.start() for reference.
             // We use the direct builder of the application context here in order to better manage the
             // components to start (server or not) and when/how the application should exit.
-
             applicationContext = applicationContextBuilder.start()
+            log.trace { "QALIPSIS context started" }
             applicationContext.use {
+                log.trace { "Executing QALIPSIS" }
                 appContext.execute(it)
             }
+        } catch (e: Exception) {
+            log.error(e) { "An execution error occurred during the execution" }
+            throw e
         } finally {
             appContext.shutdown()
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

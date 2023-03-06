@@ -22,6 +22,7 @@ package io.qalipsis.core.head.configuration
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.core.annotation.Nullable
 import io.micronaut.core.bind.annotation.Bindable
+import io.qalipsis.api.constraints.PositiveDuration
 import java.time.Duration
 import javax.validation.constraints.Positive
 
@@ -43,7 +44,7 @@ internal interface DefaultCampaignConfiguration {
         @get:Bindable(defaultValue = "10000")
         val maxMinionsCount: Int
 
-        @get:Positive
+        @get:PositiveDuration
         @get:Bindable(defaultValue = "PT1H")
         val maxExecutionDuration: Duration
 
@@ -63,25 +64,28 @@ internal interface DefaultCampaignConfiguration {
             @get:Nullable
             val maxMinionsCount: Int?
 
-            @get:Positive
+            @get:PositiveDuration
             @get:Bindable(defaultValue = "PT0.5S")
             val minResolution: Duration
 
-            @get:Positive
+            @get:PositiveDuration
             @get:Bindable(defaultValue = "PT5M")
             val maxResolution: Duration
 
-            @get:Positive
+            @get:PositiveDuration
             @get:Bindable(defaultValue = "PT5S")
             val minDuration: Duration
 
             @get:Nullable
+            @get:PositiveDuration
             val maxDuration: Duration?
 
             @get:Nullable
+            @get:PositiveDuration
             val minStartDuration: Duration?
 
             @get:Nullable
+            @get:PositiveDuration
             val maxStartDuration: Duration?
         }
     }
