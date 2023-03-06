@@ -17,6 +17,8 @@
 package io.qalipsis.api.constraints
 
 import javax.validation.Constraint
+import javax.validation.Payload
+import kotlin.reflect.KClass
 
 /**
  * Constraint to validate that a [java.time.Duration] is positive or zero.
@@ -27,10 +29,23 @@ import javax.validation.Constraint
     AnnotationTarget.FIELD,
     AnnotationTarget.TYPE,
     AnnotationTarget.TYPE_PARAMETER,
-    AnnotationTarget.VALUE_PARAMETER
+    AnnotationTarget.VALUE_PARAMETER,
+    AnnotationTarget.PROPERTY_GETTER
 )
 @Retention(AnnotationRetention.RUNTIME)
 @Constraint(validatedBy = [PositiveOrZeroDurationValidator::class])
 annotation class PositiveOrZeroDuration(
-    val message: String = "duration should be positive or zero but was {validatedValue}"
+
+    val message: String = "duration should be positive or zero but was {validatedValue}",
+
+    /**
+     * Groups to control the order in which constraints are evaluated,
+     * or to perform validation of the partial state of a JavaBean.
+     */
+    val groups: Array<KClass<*>> = [],
+
+    /**
+     * Payloads used by validation clients to associate some metadata information with a given constraint declaration
+     */
+    val payload: Array<KClass<out Payload>> = []
 )
