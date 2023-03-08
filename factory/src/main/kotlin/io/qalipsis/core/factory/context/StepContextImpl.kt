@@ -181,6 +181,7 @@ internal class StepContextImpl<IN, OUT>(
                 "campaign" to campaignKey,
                 "minion" to minionId,
                 "scenario" to scenarioName,
+                "step" to stepName,
                 "iteration" to "$stepIterationIndex"
             )
             previousStepName?.let { tags["previous-step"] = it }
