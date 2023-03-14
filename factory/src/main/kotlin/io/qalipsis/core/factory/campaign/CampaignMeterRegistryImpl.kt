@@ -79,6 +79,7 @@ internal class CampaignMeterRegistryImpl(
     override suspend fun init(campaign: Campaign) {
         campaignMeters.clear()
         scenarioMetersByCampaign.clear()
+        campaignGaugeNumbers.clear()
 
         if (factories.isNotEmpty()) {
             // Additional tags to force to all the created meters.
@@ -108,6 +109,7 @@ internal class CampaignMeterRegistryImpl(
         meterRegistry.clear()
         campaignMeters.clear()
         scenarioMetersByCampaign.clear()
+        campaignGaugeNumbers.clear()
     }
 
     override fun counter(name: String, vararg tags: String): Counter {
