@@ -50,7 +50,7 @@ import kotlinx.coroutines.flow.toList
 import io.qalipsis.api.query.Page as QalipsisPage
 
 /**
- * Default implementation of [ReportService] interface
+ * Default implementation of [ReportService] interface.
  *
  * @author Joël Valère
  */
@@ -294,14 +294,16 @@ internal class ReportServiceImpl(
             Diagram(datas = dataComponentEntity.dataSeries.map {
                 DataSeries(
                     it,
-                    userRepository.findUsernameById(it.creatorId) ?: ""
+                    userRepository.findUsernameById(it.creatorId)
+                        ?: ""
                 )
             })
         } else {
             DataTable(datas = dataComponentEntity.dataSeries.map {
                 DataSeries(
                     it,
-                    userRepository.findUsernameById(it.creatorId) ?: ""
+                    userRepository.findUsernameById(it.creatorId)
+                        ?: ""
                 )
             })
         }
