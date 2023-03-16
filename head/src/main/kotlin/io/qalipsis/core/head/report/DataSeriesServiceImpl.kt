@@ -39,6 +39,7 @@ import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import io.qalipsis.api.query.Page as QalipsisPage
@@ -177,8 +178,7 @@ internal class DataSeriesServiceImpl(
         val pageable = Pageable.from(page, size, sorting)
 
         val dataSeriesEntityPage = if (filters.isNotEmpty()) {
-            val sanitizedFilters = filters.map { it.replace('*', '%').replace('?', '_') }.map { "%${it.trim()}%" }
-            dataSeriesRepository.searchDataSeries(tenant, username, sanitizedFilters, pageable)
+            dataSeriesRepository.searchDataSeries(tenant, username, filters.formatsFilters(), pageable)
         } else {
             dataSeriesRepository.searchDataSeries(tenant, username, pageable)
         }

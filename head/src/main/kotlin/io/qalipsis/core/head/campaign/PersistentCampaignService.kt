@@ -42,6 +42,7 @@ import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.count
@@ -161,17 +162,13 @@ internal class PersistentCampaignService(
         tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
     ): QalipsisPage<Campaign> {
         // Default sorting for the campaign is done with the start time in reverse order, because it is always not null.
-        val sorting = sort?.let { SortingUtil.sort(CampaignEntity::class, it) } ?: Sort.of(
-            Sort.Order.desc(
-                CampaignEntity::start.name
-            )
-        )
+        val sorting = sort?.let { SortingUtil.sort(CampaignEntity::class, it) }
+            ?: Sort.of(Sort.Order.desc(CampaignEntity::start.name))
 
         val pageable = Pageable.from(page, size, sorting)
 
         val entitiesPage = if (filters.isNotEmpty()) {
-            val sanitizedFilters = filters.map { it.replace('*', '%') }.map { "%${it.trim()}%" }
-            campaignRepository.findAll(tenant, sanitizedFilters, pageable)
+            campaignRepository.findAll(tenant, filters.formatsFilters(), pageable)
         } else {
             campaignRepository.findAll(tenant, pageable)
         }

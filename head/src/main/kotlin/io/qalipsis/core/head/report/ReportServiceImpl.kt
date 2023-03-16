@@ -44,6 +44,7 @@ import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.model.converter.ReportConverter
+import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.head.utils.SortingUtil
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.toList
@@ -227,8 +228,7 @@ internal class ReportServiceImpl(
         val pageable = Pageable.from(page, size, sorting)
 
         val reportEntityPage = if (filters.isNotEmpty()) {
-            val sanitizedFilters = filters.map { it.replace('*', '%').replace('?', '_') }.map { "%${it.trim()}%" }
-            reportRepository.searchReports(tenant, username, sanitizedFilters, pageable)
+            reportRepository.searchReports(tenant, username, filters.formatsFilters(), pageable)
         } else {
             reportRepository.searchReports(tenant, username, pageable)
         }
