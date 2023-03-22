@@ -241,7 +241,7 @@ internal class ReportServiceImpl(
     }
 
     /**
-     * Converts a report entity instance to report model instance.
+     * Convert a report entity instance to report model instance.
      */
     private suspend fun toModel(reportEntity: ReportEntity, creator: String): Report {
         val resolvedCampaignKeys =

@@ -132,7 +132,7 @@ internal class ReportConverterImplTest {
             every { toModel(any()) } returns dataSeries3
         }
         val version = Instant.now().minusMillis(1)
-        coEvery { reportDataComponentRepository.findByIdInOrderById(any()) } returns listOf(
+        coEvery { reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L)) } returns listOf(
             ReportDataComponentEntity(
                 id = 1L,
                 type = DataComponentType.DIAGRAM,

@@ -31,22 +31,22 @@ import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 internal interface ReportService {
 
     /**
-     * Creates a new report.
+     * Create a new report.
      */
     suspend fun create(tenant: String, creator: String, reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Report
 
     /**
-     * Returns a fully described report.
+     * Return a fully described report.
      */
     suspend fun get(tenant: String, username: String, reference: String): Report
 
     /**
-     * Updates the report.
+     * Update the report.
      */
     suspend fun update(tenant: String, username: String, reference: String, reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Report
 
     /**
-     * Deletes the report.
+     * Delete the report.
      */
     suspend fun delete(tenant: String, username: String, reference: String)
 

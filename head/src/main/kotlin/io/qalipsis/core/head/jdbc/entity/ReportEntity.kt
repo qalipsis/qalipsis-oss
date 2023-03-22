@@ -40,7 +40,7 @@ import javax.validation.constraints.Size
  * @property reference unique public key
  * @property version version of the entity
  * @property tenantId internal database ID of the tenant in which the entity was created
- * @property creatorId internal database ID of the user who create the series entity
+ * @property creatorId internal database ID of the user who created the report entity
  * @property displayName display name of the time series, should be unique into a tenant
  * @property sharingMode sharing mode with the other members of the tenant
  * @property campaignKeys a list of campaign keys to be included in the report

@@ -83,7 +83,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
 
     /**
      * Find a report in a tenant by its reference.
-     * The report is returns only if the creator is the referred or if the report is shared (different from NONE)
+     * The report is returned only if the creator is the referred or if the report is shared (different from NONE)
      */
     @Query(
         """SELECT 
@@ -114,7 +114,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
 
     /**
      * Find a report in a tenant by its reference.
-     * The report is returns only if the creator is the referred or if the report is shared in WRITE
+     * The report is returned only if the creator is the referred or if the report is shared in WRITE
      */
     @Query(
         """SELECT 
