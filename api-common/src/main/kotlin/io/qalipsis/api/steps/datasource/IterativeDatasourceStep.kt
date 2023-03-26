@@ -42,7 +42,7 @@ class IterativeDatasourceStep<R, T, O>(
     private val reader: DatasourceIterativeReader<R>,
     private val processor: DatasourceObjectProcessor<R, T>,
     private val converter: DatasourceObjectConverter<T, O>
-) : AbstractStep<Unit, O>(name, null) {
+) : AbstractStep<Any?, O>(name, null) {
 
     override suspend fun start(context: StepStartStopContext) {
         log.trace { "Starting datasource reader for step $name" }
@@ -65,7 +65,7 @@ class IterativeDatasourceStep<R, T, O>(
         log.trace { "Datasource reader stopped for step $name" }
     }
 
-    override suspend fun execute(context: StepContext<Unit, O>) {
+    override suspend fun execute(context: StepContext<Any?, O>) {
         context.isTail = false
         log.trace { "Iterating datasource reader for step $name" }
         val rowIndex = AtomicLong()
