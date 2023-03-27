@@ -38,7 +38,7 @@ internal class AbstractStepSpecificationTest {
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
-            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
+            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
             prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
@@ -48,21 +48,21 @@ internal class AbstractStepSpecificationTest {
     }
 
     @Test
-    internal fun `should enable the report`() {
+    internal fun `should disable the report`() {
         // given
         val specification = TestAbstractStepSpecification()
 
         // when
         specification.configure {
             report {
-                reportErrors = true
+                reportErrors = false
             }
         }
 
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
-            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
+            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
             prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
@@ -80,7 +80,7 @@ internal class AbstractStepSpecificationTest {
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
-            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
+            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
             prop(TestAbstractStepSpecification::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
@@ -98,7 +98,7 @@ internal class AbstractStepSpecificationTest {
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
-            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
+            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
             prop(TestAbstractStepSpecification::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)
@@ -116,7 +116,7 @@ internal class AbstractStepSpecificationTest {
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
-            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
+            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
             prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(123L)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ofSeconds(2))
@@ -134,7 +134,7 @@ internal class AbstractStepSpecificationTest {
         // then
         assertThat(specification).all {
             prop(TestAbstractStepSpecification::retryPolicy).isNull()
-            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isFalse()
+            prop(TestAbstractStepSpecification::reporting).prop(StepReportingSpecification::reportErrors).isTrue()
             prop(TestAbstractStepSpecification::tags).isEmpty()
             prop(TestAbstractStepSpecification::iterations).isEqualTo(1)
             prop(TestAbstractStepSpecification::iterationPeriods).isEqualTo(Duration.ZERO)

@@ -24,5 +24,5 @@ package io.qalipsis.api.steps
  * @author Eric Jessé
  */
 data class StepReportingSpecification(
-    var reportErrors: Boolean = false
+    var reportErrors: Boolean = true
 )
