@@ -129,7 +129,7 @@ fun Project.configureNotPlatform() {
                 from(components["java"])
                 pom {
 
-                    name.set(this@configureNotPlatform.name)
+                    name.set("qalipsis-${this@configureNotPlatform.name}")
                     description.set(this@configureNotPlatform.description)
                     url.set("https://qalipsis.io")
                     licenses {

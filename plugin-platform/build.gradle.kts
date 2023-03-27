@@ -29,17 +29,17 @@ val apiVersion: String by project
 
 dependencies {
     // Platform modules.
-    api(platform("io.qalipsis:dev-platform:$apiVersion"))
+    api(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
 
     // API modules.
-    api("io.qalipsis:api-dsl:$apiVersion")
-    api("io.qalipsis:api-common:$apiVersion")
+    api("io.qalipsis:qalipsis-api-dsl:$apiVersion")
+    api("io.qalipsis:qalipsis-api-common:$apiVersion")
 
     constraints {
         // API modules.
-        api("io.qalipsis:api-dev:$apiVersion")
-        api("io.qalipsis:api-processors:$apiVersion")
-        api("io.qalipsis:test:$apiVersion")
+        api("io.qalipsis:qalipsis-api-dev:$apiVersion")
+        api("io.qalipsis:qalipsis-api-processors:$apiVersion")
+        api("io.qalipsis:qalipsis-test:$apiVersion")
 
         // Core modules.
         api(project(":runtime"))
