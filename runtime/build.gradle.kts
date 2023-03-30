@@ -41,15 +41,15 @@ allOpen {
 val apiVersion: String by project
 
 dependencies {
-    implementation(platform("io.qalipsis:dev-platform:$apiVersion"))
+    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
 
-    api("io.qalipsis:api-common:$apiVersion")
-    api("io.qalipsis:api-dsl:$apiVersion")
-    api("io.qalipsis:api-processors:$apiVersion")
-    api(project(":core"))
-    compileOnly(project(":factory"))
-    compileOnly(project(":head"))
+    api("io.qalipsis:qalipsis-api-common:$apiVersion")
+    api("io.qalipsis:qalipsis-api-dsl:$apiVersion")
+    api("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    api(project(":qalipsis-core"))
+    compileOnly(project(":qalipsis-factory"))
+    compileOnly(project(":qalipsis-head"))
 
     api("ch.qos.logback:logback-classic")
     api("info.picocli:picocli")
@@ -63,29 +63,29 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
-    kapt(platform("io.qalipsis:dev-platform:$apiVersion"))
+    kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    testFixturesImplementation(platform("io.qalipsis:dev-platform:$apiVersion"))
+    testFixturesImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin")
 
-    testImplementation(platform("io.qalipsis:dev-platform:$apiVersion"))
-    testImplementation(project(":head"))
-    testImplementation(project(":factory"))
-    testImplementation(testFixtures(project(":core")))
+    testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    testImplementation(project(":qalipsis-head"))
+    testImplementation(project(":qalipsis-factory"))
+    testImplementation(testFixtures(project(":qalipsis-core")))
     testImplementation("io.mockk:mockk")
-    testImplementation("io.qalipsis:test:$apiVersion")
+    testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.awaitility:awaitility-kotlin")
 
-    kaptTest(platform("io.qalipsis:dev-platform:$apiVersion"))
+    kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest("io.qalipsis:api-processors:$apiVersion")
+    kaptTest("io.qalipsis:qalipsis-api-processors:$apiVersion")
 
     if (Os.isFamily(Os.FAMILY_MAC)) {
         testRuntimeOnly(group = "io.netty", name = "netty-resolver-dns-native-macos", classifier = "osx-aarch_64")
@@ -104,8 +104,8 @@ task<JavaExec>("runQalipsis") {
     classpath =
         sourceSets["main"].runtimeClasspath +
                 files("build/classes/kotlin/test", "build/classes/java/test", "build/tmp/kapt3/classes/test") +
-                project(":head").sourceSets["main"].runtimeClasspath +
-                project(":factory").sourceSets["main"].runtimeClasspath
+                project(":qalipsis-head").sourceSets["main"].runtimeClasspath +
+                project(":qalipsis-factory").sourceSets["main"].runtimeClasspath
     workingDir = File(projectDir, "workdir")
 
     dependsOn("testClasses")

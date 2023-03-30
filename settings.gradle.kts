@@ -20,9 +20,15 @@
 rootProject.name = "qalipsis-oss"
 
 include(
-    "core",
-    "head",
-    "factory",
-    "runtime",
-    "plugin-platform"
+    ":qalipsis-core",
+    ":qalipsis-head",
+    ":qalipsis-factory",
+    ":qalipsis-runtime",
+    ":qalipsis-plugin-platform"
 )
+
+project(":qalipsis-core").projectDir = File(rootDir, "core")
+project(":qalipsis-head").projectDir = File(rootDir, "head")
+project(":qalipsis-factory").projectDir = File(rootDir, "factory")
+project(":qalipsis-runtime").projectDir = File(rootDir, "runtime")
+project(":qalipsis-plugin-platform").projectDir = File(rootDir, "plugin-platform")
