@@ -40,7 +40,7 @@ kotlin.sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/sou
 kapt.useBuildCache = false
 
 dependencies {
-    implementation(platform(project(":dev-platform")))
+    implementation(platform(project(":qalipsis-dev-platform")))
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -49,8 +49,8 @@ dependencies {
     compileOnly("io.micronaut:micronaut-runtime")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
 
-    testImplementation(project(":test"))
+    testImplementation(project(":qalipsis-test"))
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
-    kapt(platform(project(":dev-platform")))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.aeris-consulting:catadioptre-annotations")
 }

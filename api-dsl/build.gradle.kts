@@ -38,11 +38,11 @@ kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catad
 kapt.useBuildCache = false
 
 dependencies {
-    implementation(platform(project(":dev-platform")))
+    implementation(platform(project(":qalipsis-dev-platform")))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 
-    implementation(project(":api-dev"))
+    implementation(project(":qalipsis-api-dev"))
     implementation("cool.graph:cuid-java")
     implementation("javax.annotation:javax.annotation-api")
     implementation("io.micronaut:micronaut-inject-java")
@@ -52,16 +52,16 @@ dependencies {
     // Required to make the scenario projects build.
     api("io.micronaut:micronaut-runtime")
 
-    kapt(platform(project(":dev-platform")))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
     kapt("io.aeris-consulting:catadioptre-annotations")
 
-    testImplementation(project(":test"))
-    testImplementation(testFixtures(project(":api-common")))
+    testImplementation(project(":qalipsis-test"))
+    testImplementation(testFixtures(project(":qalipsis-api-common")))
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
 
-    testFixturesApi(platform(project(":dev-platform")))
-    testFixturesImplementation(testFixtures(project(":api-common")))
+    testFixturesApi(platform(project(":qalipsis-dev-platform")))
+    testFixturesImplementation(testFixtures(project(":qalipsis-api-common")))
 }

@@ -22,11 +22,11 @@ plugins {
 description = "Qalipsis Test Utils"
 
 dependencies {
-    api(platform(project(":dev-platform")))
+    api(platform(project(":qalipsis-dev-platform")))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-    implementation(project(":api-common"))
+    implementation(project(":qalipsis-api-common"))
     api("io.micronaut.test:micronaut-test-junit5")
     api(platform("io.micronaut:micronaut-bom"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-test")

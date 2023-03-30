@@ -27,9 +27,9 @@ kapt {
 }
 
 dependencies {
-    implementation(platform(project(":dev-platform")))
+    implementation(platform(project(":qalipsis-dev-platform")))
     implementation(kotlin("reflect"))
-    implementation(project(":api-dsl"))
+    implementation(project(":qalipsis-api-dsl"))
 
     implementation("com.squareup:javapoet:1.13.0")
     implementation("com.squareup:kotlinpoet:1.12.0")
@@ -42,22 +42,22 @@ dependencies {
     api("io.micronaut:micronaut-inject")
     api("io.micronaut:micronaut-graal")
 
-    kaptTest(platform(project(":dev-platform")))
+    kaptTest(platform(project(":qalipsis-dev-platform")))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.micronaut:micronaut-inject")
     kaptTest("org.jetbrains.kotlinx:kotlinx-serialization-json")
-    testAnnotationProcessor(platform(project(":dev-platform")))
+    testAnnotationProcessor(platform(project(":qalipsis-dev-platform")))
     testAnnotationProcessor("io.micronaut:micronaut-inject-java")
 
-    testImplementation(platform(project(":dev-platform")))
-    testImplementation(project(":test"))
-    testImplementation(project(":api-dsl"))
-    testImplementation(project(":api-common"))
+    testImplementation(platform(project(":qalipsis-dev-platform")))
+    testImplementation(project(":qalipsis-test"))
+    testImplementation(project(":qalipsis-api-dsl"))
+    testImplementation(project(":qalipsis-api-common"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     testImplementation("javax.annotation:javax.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("io.micronaut:micronaut-inject")
-    testImplementation(testFixtures(project(":api-common")))
+    testImplementation(testFixtures(project(":qalipsis-api-common")))
 }

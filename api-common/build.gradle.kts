@@ -34,7 +34,7 @@ kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catad
 kapt.useBuildCache = false
 
 dependencies {
-    implementation(platform(project(":dev-platform")))
+    implementation(platform(project(":qalipsis-dev-platform")))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
@@ -43,15 +43,15 @@ dependencies {
     compileOnly("io.aeris-consulting:catadioptre-kotlin")
 
     implementation("cool.graph:cuid-java")
-    api(project(":api-dev"))
-    api(project(":api-dsl"))
+    api(project(":qalipsis-api-dev"))
+    api(project(":qalipsis-api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     api("io.micronaut:micronaut-inject-java")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("javax.annotation:javax.annotation-api")
     api("io.micronaut:micronaut-validation")
 
-    kapt(platform(project(":dev-platform")))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
@@ -62,11 +62,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
 
-    testImplementation(project(":test"))
+    testImplementation(project(":qalipsis-test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
-    testFixturesImplementation(platform(project(":dev-platform")))
+    testFixturesImplementation(platform(project(":qalipsis-dev-platform")))
     testFixturesCompileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
     testFixturesImplementation("org.apache.commons:commons-lang3")
-    testFixturesImplementation(project(":test"))
+    testFixturesImplementation(project(":qalipsis-test"))
 }
