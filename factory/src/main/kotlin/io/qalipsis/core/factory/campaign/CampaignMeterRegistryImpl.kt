@@ -25,6 +25,7 @@ import io.micrometer.core.instrument.DistributionSummary
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.Meter.Id
+import io.micrometer.core.instrument.Meter.Type
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.MeterRegistry.More
 import io.micrometer.core.instrument.Tag
@@ -64,17 +65,17 @@ internal class CampaignMeterRegistryImpl(
     /**
      * Campaign-global meters accessible by their IDs.
      */
-    private val campaignMeters = ConcurrentHashMap<Id, Meter>()
+    private val campaignMeters = ConcurrentHashMap<CustomizeMeterId, Meter>()
 
     /**
      * Gauge numbers accessible by their gauge IDs.
      */
-    private val campaignGaugeNumbers = ConcurrentHashMap<Id, CompositeNumber>()
+    private val campaignGaugeNumbers = ConcurrentHashMap<CustomizeMeterId, CompositeNumber>()
 
     /**
      * Count of scenario-based meters accessible by the campaign global meter ID.
      */
-    private val scenarioMetersByCampaign = ConcurrentHashMap<Id, MutableSet<Id>>()
+    private val scenarioMetersByCampaign = ConcurrentHashMap<CustomizeMeterId, MutableSet<CustomizeMeterId>>()
 
     override suspend fun init(campaign: Campaign) {
         campaignMeters.clear()
@@ -149,11 +150,12 @@ internal class CampaignMeterRegistryImpl(
     override fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T {
         val gauge = Gauge.builder(name, number, Number::toDouble).tags(tags).register(meterRegistry)
         if (tags.any { it.key == "scenario" }) {
-            val campaignMeterId = buildCampaignGlobalId(gauge.id)
-            scenarioMetersByCampaign.computeIfAbsent(campaignMeterId) { concurrentSet() }.add(gauge.id)
+            val campaignCustomizeMeterId = CustomizeMeterId(buildCampaignGlobalId(gauge.id))
+            scenarioMetersByCampaign.computeIfAbsent(campaignCustomizeMeterId) { concurrentSet() }
+                .add(CustomizeMeterId(gauge.id))
 
             // Embed the campaign-level meter (create or use the existing one) in the returned value.
-            campaignGaugeNumbers.computeIfAbsent(campaignMeterId) {
+            campaignGaugeNumbers.computeIfAbsent(campaignCustomizeMeterId) {
                 meterRegistry.gauge(
                     name,
                     additionalTags + tags.filterNot { it.key == "scenario" },
@@ -236,15 +238,19 @@ internal class CampaignMeterRegistryImpl(
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Meter> associateWithCampaignLevelMeter(meter: T, compositeCreator: (campaignMeter: T) -> T): T {
-        val campaignMeterId = buildCampaignGlobalId(meter.id)
-        scenarioMetersByCampaign.computeIfAbsent(campaignMeterId) { concurrentSet() }.add(meter.id)
+        val campaignCustomizeMeterId = CustomizeMeterId(buildCampaignGlobalId(meter.id))
+        scenarioMetersByCampaign.computeIfAbsent(campaignCustomizeMeterId) { concurrentSet() }
+            .add(CustomizeMeterId(meter.id))
 
         // Embed the campaign-level meter (create or use the existing one) in the returned value.
-        val campaignMeter = campaignMeters.computeIfAbsent(campaignMeterId) {
+        val campaignMeter = campaignMeters.computeIfAbsent(campaignCustomizeMeterId) {
             when (meter) {
-                is Counter -> meterRegistry.counter(campaignMeterId.name, campaignMeterId.tags)
-                is Timer -> meterRegistry.timer(campaignMeterId.name, campaignMeterId.tags)
-                is DistributionSummary -> meterRegistry.summary(campaignMeterId.name, campaignMeterId.tags)
+                is Counter -> meterRegistry.counter(campaignCustomizeMeterId.name, campaignCustomizeMeterId.tags)
+                is Timer -> meterRegistry.timer(campaignCustomizeMeterId.name, campaignCustomizeMeterId.tags)
+                is DistributionSummary -> meterRegistry.summary(
+                    campaignCustomizeMeterId.name,
+                    campaignCustomizeMeterId.tags
+                )
                 else -> throw IllegalArgumentException("Unknown meter type")
             }
         }
@@ -308,18 +314,47 @@ internal class CampaignMeterRegistryImpl(
     private fun removeCampaignMeterIfRequired(mappedId: Id) {
         if (mappedId.tags.any { it.key == "scenario" }) {
             val campaignMeterId = buildCampaignGlobalId(mappedId)
+            val customizeMeterId = CustomizeMeterId(campaignMeterId)
             // Remove the scenario gauge from the campaign-level.
-            campaignGaugeNumbers[campaignMeterId]?.remove(mappedId)
+            campaignGaugeNumbers[customizeMeterId]?.remove(mappedId)
 
             // Remove the campaign meter only if there is no scenario-level meter left.
-            if (scenarioMetersByCampaign[campaignMeterId]
-                    ?.let { it.remove(mappedId) && it.size == 0 } == true
+            if (scenarioMetersByCampaign[customizeMeterId]
+                    ?.let { it.remove(CustomizeMeterId(mappedId)) && it.size == 0 } == true
             ) {
-                scenarioMetersByCampaign.remove(campaignMeterId)
-                campaignMeters.remove(campaignMeterId)
+                scenarioMetersByCampaign.remove(customizeMeterId)
+                campaignMeters.remove(customizeMeterId)
                 meterRegistry.remove(campaignMeterId)
             }
 
+        }
+    }
+
+    private data class CustomizeMeterId(
+        val name: String,
+        val tags: Tags,
+        val type: Type
+    ) {
+        constructor(id: Id) : this(id.name, Tags.of(id.tags), id.type)
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as CustomizeMeterId
+
+            if (name != other.name) return false
+            if (tags != other.tags) return false
+            if (type != other.type) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = name.hashCode()
+            result = 31 * result + tags.hashCode()
+            result = 31 * result + type.hashCode()
+            return result
         }
     }
 }
