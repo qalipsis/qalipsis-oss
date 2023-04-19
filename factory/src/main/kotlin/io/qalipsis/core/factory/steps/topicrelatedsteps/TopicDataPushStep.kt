@@ -23,6 +23,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.messaging.CancelledSubscriptionException
 import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.subscriptions.TopicSubscription
 import io.qalipsis.api.steps.AbstractStep
@@ -95,6 +96,8 @@ internal class TopicDataPushStep<I>(
                     }
                 }
             } catch (e: CancellationException) {
+                // Ignore.
+            } catch (e: CancelledSubscriptionException) {
                 // Ignore.
             } catch (e: Exception) {
                 log.warn(e) { e.message }

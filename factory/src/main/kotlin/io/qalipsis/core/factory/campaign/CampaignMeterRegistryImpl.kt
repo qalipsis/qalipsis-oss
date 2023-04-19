@@ -114,7 +114,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun counter(name: String, vararg tags: String): Counter {
         val counter = meterRegistry.counter(name, additionalTags + tagsAsList(tags))
-        return if (tags.any { it == "scenario" }) {
+        return if (meterRegistry !is NoopMeterRegistry && tags.any { it == "scenario" }) {
             associateWithCampaignLevelMeter(counter) {
                 CompositeCounter(scenarioLevelCounter = counter, campaignLevelCounter = it as Counter)
             }
@@ -125,7 +125,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun counter(name: String, tags: Iterable<Tag>): Counter {
         val counter = meterRegistry.counter(name, additionalTags + tags.toList())
-        return if (tags.any { it.key == "scenario" }) {
+        return if (meterRegistry !is NoopMeterRegistry && tags.any { it.key == "scenario" }) {
             associateWithCampaignLevelMeter(counter) {
                 CompositeCounter(scenarioLevelCounter = counter, campaignLevelCounter = it as Counter)
             }
@@ -148,7 +148,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T {
         val gauge = Gauge.builder(name, number, Number::toDouble).tags(tags).register(meterRegistry)
-        if (tags.any { it.key == "scenario" }) {
+        if (meterRegistry !is NoopMeterRegistry && tags.any { it.key == "scenario" }) {
             val campaignMeterId = buildCampaignGlobalId(gauge.id)
             scenarioMetersByCampaign.computeIfAbsent(campaignMeterId) { concurrentSet() }.add(gauge.id)
 
@@ -178,7 +178,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun summary(name: String, vararg tags: String): DistributionSummary {
         val summary = meterRegistry.summary(name, additionalTags + tagsAsList(tags))
-        return if (tags.any { it == "scenario" }) {
+        return if (meterRegistry !is NoopMeterRegistry && tags.any { it == "scenario" }) {
             associateWithCampaignLevelMeter(summary) {
                 CompositeDistributionSummary(
                     scenarioLevelSummary = summary,
@@ -192,7 +192,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun summary(name: String, tags: Iterable<Tag>): DistributionSummary {
         val summary = meterRegistry.summary(name, additionalTags + tags)
-        return if (tags.any { it.key == "scenario" }) {
+        return if (meterRegistry !is NoopMeterRegistry && tags.any { it.key == "scenario" }) {
             associateWithCampaignLevelMeter(summary) {
                 CompositeDistributionSummary(
                     scenarioLevelSummary = summary,
@@ -206,7 +206,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun timer(name: String, vararg tags: String): Timer {
         val timer = meterRegistry.timer(name, additionalTags + tagsAsList(tags))
-        return if (tags.any { it == "scenario" }) {
+        return if (meterRegistry !is NoopMeterRegistry && tags.any { it == "scenario" }) {
             associateWithCampaignLevelMeter(timer) {
                 CompositeTimer(
                     clock = clock,
@@ -221,7 +221,7 @@ internal class CampaignMeterRegistryImpl(
 
     override fun timer(name: String, tags: Iterable<Tag>): Timer {
         val timer = meterRegistry.timer(name, additionalTags + tags)
-        return if (tags.any { it.key == "scenario" }) {
+        return if (meterRegistry !is NoopMeterRegistry && tags.any { it.key == "scenario" }) {
             associateWithCampaignLevelMeter(timer) {
                 CompositeTimer(
                     clock = clock,
