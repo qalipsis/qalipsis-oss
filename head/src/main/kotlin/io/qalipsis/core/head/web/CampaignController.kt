@@ -331,4 +331,36 @@ internal class CampaignController(
         val newCampaignKey = campaignManager.replay(tenant, authentication.name, campaignKey).key
         return HttpResponse.ok(campaignService.retrieve(tenant, newCampaignKey))
     }
+
+    /**
+     * REST endpoint to schedule a campaign test.
+     */
+    @Post("schedule")
+    @Operation(
+        summary = "Schedule a campaign test",
+        description = "Schedule a campaign with the provided details of campaign configuration and attach it to the contextual tenant",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Campaign test has been scheduled successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.WRITE_CAMPAIGN)
+    @Timed("campaigns-schedule")
+    suspend fun schedule(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @Body @Valid configuration: CampaignConfiguration
+    ): HttpResponse<Campaign> {
+        val campaignKey = campaignManager.schedule(tenant, authentication.name, configuration).key
+        return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
+    }
 }

@@ -31,6 +31,7 @@ import io.lettuce.core.pubsub.api.reactive.ChannelMessage
 import io.lettuce.core.pubsub.api.reactive.RedisPubSubReactiveCommands
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
@@ -40,9 +41,11 @@ import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.directives.MinionsDeclarationDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import jakarta.inject.Named
 import kotlinx.coroutines.channels.Channel
@@ -83,6 +86,9 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
     lateinit var subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>
 
     private lateinit var captured: Channel<ChannelMessage<String, ByteArray>>
+
+    @MockBean(CampaignService::class)
+    fun campaignService() = relaxedMockk<CampaignService>()
 
 
     private val listener = object : RedisPubSubListener<String, ByteArray> {

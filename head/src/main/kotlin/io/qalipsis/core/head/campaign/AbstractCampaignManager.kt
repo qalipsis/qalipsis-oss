@@ -132,6 +132,24 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
         return runningCampaign
     }
 
+    override suspend fun schedule(
+        tenant: String,
+        configurer: String,
+        configuration: CampaignConfiguration
+    ): RunningCampaign {
+
+        require(configuration.scheduledAt?.isAfter(Instant.now()) == true) {
+            "The schedule time should be in the future"
+        }
+        val selectedScenarios = configuration.scenarios.keys
+        val scenarios = factoryService.getActiveScenarios(tenant, selectedScenarios).distinctBy { it.name }
+        log.trace { "Found unique scenarios: $scenarios" }
+        val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
+        require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
+
+        return campaignService.schedule(tenant, configurer, configuration)
+    }
+
     private suspend fun prepareAndExecute(
         runningCampaign: RunningCampaign,
         factories: Collection<Factory>,

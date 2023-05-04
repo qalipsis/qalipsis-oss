@@ -21,9 +21,11 @@ package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.head.campaign.scheduler.Scheduling
 import io.qalipsis.core.head.model.configuration.ExternalExecutionProfileConfiguration
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
+import java.time.Instant
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -84,7 +86,13 @@ internal data class CampaignConfiguration(
     )
     @field:Valid
     @field:NotEmpty
-    val scenarios: Map<@NotBlank ScenarioName, @Valid ScenarioRequest>
+    val scenarios: Map<@NotBlank ScenarioName, @Valid ScenarioRequest>,
+
+    @field:Schema(description = "The instant of the next execution", required = true)
+    val scheduledAt: Instant? = null,
+
+    @field:Schema(description = "The service that handle de scheduling", required = true)
+    val scheduling: Scheduling? = null
 )
 
 /**

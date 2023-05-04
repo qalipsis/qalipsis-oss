@@ -78,6 +78,7 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
+import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
@@ -130,6 +131,17 @@ internal open class RedisCampaignManagerTest {
             )
         ).isTrue()
         assertThat(campaignManager.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
+
+        confirmVerified(
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext,
+            operations
+        )
     }
 
     @Test
@@ -194,6 +206,7 @@ internal open class RedisCampaignManagerTest {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.prepare("my-tenant", "my-campaign")
                 headChannel.subscribeFeedback("feedbacks")
+                campaignConstraintsProvider.supply(any())
                 campaignService.start("my-tenant", "my-campaign", any(), any(), any())
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
@@ -209,6 +222,17 @@ internal open class RedisCampaignManagerTest {
                 headChannel.publishDirective(refEq(directive1))
                 headChannel.publishDirective(refEq(directive2))
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
 
         }
 
@@ -236,6 +260,17 @@ internal open class RedisCampaignManagerTest {
             typedProp<Collection<Factory>>("factories").containsOnly(factory1, factory2, factory3)
             typedProp<Collection<ScenarioSummary>>("scenarios").containsOnly(scenario1, scenario2)
         }
+
+        confirmVerified(
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext,
+            operations
+        )
     }
 
     @Test
@@ -276,7 +311,17 @@ internal open class RedisCampaignManagerTest {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
             }
-            confirmVerified(factoryService, headChannel, campaignService)
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -297,6 +342,20 @@ internal open class RedisCampaignManagerTest {
             assertThrows<IllegalArgumentException> {
                 campaignManager.start("my-tenant", "my-user", campaign)
             }
+            coVerifyOrder {
+                factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -322,6 +381,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -347,6 +420,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -372,6 +459,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -397,6 +498,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -422,6 +537,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -447,6 +576,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -472,6 +615,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -497,6 +654,20 @@ internal open class RedisCampaignManagerTest {
                 prop("context").isSameAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
+            coVerifyOrder {
+                operations.getState("my-tenant", "my-campaign")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -523,12 +694,14 @@ internal open class RedisCampaignManagerTest {
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
             operations.getState("my-tenant", "first_campaign")
+            operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
+            operations.prepareFactoriesForFeedbackExpectations(campaign)
+            operations.saveConfiguration(campaign)
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
             campaignReportStateKeeper.abort("first_campaign")
             headChannel.publishDirective(capture(sentDirectives))
         }
-        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
         assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
             prop("context").isSameAs(campaignExecutionContext)
             prop("operations").isSameAs(operations)
@@ -554,6 +727,17 @@ internal open class RedisCampaignManagerTest {
                 }
             }
         }
+
+        confirmVerified(
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext,
+            operations
+        )
     }
 
     @Test
@@ -580,11 +764,13 @@ internal open class RedisCampaignManagerTest {
         coVerifyOrder {
             campaignManager.get("my-tenant", "first_campaign")
             operations.getState("my-tenant", "first_campaign")
+            operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
+            operations.prepareFactoriesForFeedbackExpectations(campaign)
+            operations.saveConfiguration(campaign)
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignManager.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
-        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
         assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
             prop("context").isSameAs(campaignExecutionContext)
             prop("operations").isSameAs(operations)
@@ -610,6 +796,17 @@ internal open class RedisCampaignManagerTest {
                 }
             }
         }
+
+        confirmVerified(
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext,
+            operations
+        )
     }
 
     @Test
@@ -638,7 +835,18 @@ internal open class RedisCampaignManagerTest {
             campaignService.retrieveConfiguration("my-tenant", "my-campaign")
             campaignManager.start("my-tenant", "my-user", campaignConfiguration)
         }
-        confirmVerified(campaignManager, campaignService)
+
+        confirmVerified(
+            campaignManager,
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext,
+            operations
+        )
     }
 
     @Test
@@ -678,11 +886,14 @@ internal open class RedisCampaignManagerTest {
                 campaignManager.notify(timeoutFeedback)
                 campaignManager.get("my-tenant", "first_campaign")
                 operations.getState("my-tenant", "first_campaign")
+                operations.getState("my-tenant", "first_campaign")
+                operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
+                operations.prepareFactoriesForFeedbackExpectations(campaign)
+                operations.saveConfiguration(campaign)
                 campaignService.abort("my-tenant", null, "first_campaign")
                 campaignManager.set(capture(newState))
                 headChannel.publishDirective(capture(sentDirectives))
             }
-            confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
             assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
                 prop("context").isSameAs(campaignExecutionContext)
                 prop("operations").isSameAs(operations)
@@ -708,6 +919,17 @@ internal open class RedisCampaignManagerTest {
                     }
                 }
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     @Test
@@ -745,12 +967,16 @@ internal open class RedisCampaignManagerTest {
                 campaignManager.notify(timeoutFeedback)
                 campaignManager.get("my-tenant", "first_campaign")
                 operations.getState("my-tenant", "first_campaign")
+                campaignManager.get("my-tenant", "first_campaign")
+                operations.getState("my-tenant", "first_campaign")
+                operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
+                operations.prepareFactoriesForFeedbackExpectations(campaign)
+                operations.saveConfiguration(campaign)
                 campaignService.abort("my-tenant", null, "first_campaign")
                 campaignManager.set(capture(newState))
                 campaignReportStateKeeper.abort("first_campaign")
                 headChannel.publishDirective(capture(sentDirectives))
             }
-            confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
             assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
                 prop("context").isSameAs(campaignExecutionContext)
                 prop("operations").isSameAs(operations)
@@ -776,6 +1002,182 @@ internal open class RedisCampaignManagerTest {
                     }
                 }
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
+        }
+
+    @Test
+    internal fun `should schedule a campaign when all the scenarios are currently supported and release the unused factories`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = redisCampaignManager(this)
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                ),
+                timeout = Duration.ofMinutes(1),
+                hardTimeout = false,
+                scheduledAt = scheduleAt
+            )
+            val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+            val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
+            val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+
+            coEvery {
+                campaignService.schedule("my-tenant", "my-user", refEq(campaign))
+            } returns runningCampaign
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns listOf(
+                scenario1,
+                scenario2,
+                scenario3
+            )
+
+            // when
+            val result = campaignManager.schedule("my-tenant", "my-user", campaign)
+
+            // then
+            assertThat(result).isSameAs(runningCampaign)
+            coVerifyOrder {
+                factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
+                campaignService.schedule("my-tenant", "my-user", campaign)
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
+
+        }
+
+    @Test
+    internal fun `should not schedule a campaign when some scenarios are currently not supported`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = redisCampaignManager(this)
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                ),
+                timeout = Duration.ofMinutes(1),
+                hardTimeout = false,
+                scheduledAt = scheduleAt
+            )
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns listOf(
+                scenario1
+            )
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                campaignManager.schedule("my-tenant", "my-user", campaign)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The scenarios scenario-2 were not found or are not currently supported by healthy factories")
+
+            coVerifyOrder {
+                factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
+
+        }
+
+    @Test
+    internal fun `should not schedule a campaign when scheduleAt is null`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = redisCampaignManager(this)
+            val campaign = CampaignConfiguration(
+                name = "my-campaign",
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
+                scheduledAt = Instant.now()
+            )
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                campaignManager.schedule("my-tenant", "my-user", campaign)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The schedule time should be in the future")
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
+        }
+
+    @Test
+    internal fun `should not schedule a campaign when scheduleAt is not in the future`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = redisCampaignManager(this)
+            val campaign = CampaignConfiguration(
+                name = "my-campaign",
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
+            )
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                campaignManager.schedule("my-tenant", "my-user", campaign)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The schedule time should be in the future")
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext,
+                operations
+            )
         }
 
     protected open fun redisCampaignManager(scope: CoroutineScope) =

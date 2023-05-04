@@ -30,6 +30,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
+import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
@@ -38,12 +39,15 @@ import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
+import io.mockk.spyk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
+import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
+import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -65,6 +69,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
+import org.junit.jupiter.api.BeforeAll
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -94,82 +99,34 @@ internal class PersistentCampaignServiceTest {
     @RelaxedMockK
     private lateinit var factoryRepository: FactoryRepository
 
-    @InjectMockKs
+    @RelaxedMockK
+    private lateinit var campaignScheduler: CampaignScheduler
+
     private lateinit var persistentCampaignService: PersistentCampaignService
 
-    @Test
-    internal fun `should create the new campaign without timeout`() = testDispatcherProvider.run {
-        // given
-        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
-        val campaign = CampaignConfiguration(
-            name = "This is a campaign",
-            speedFactor = 123.2,
-            scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(1),
-                "scenario-2" to ScenarioRequest(3)
-            )
+    @BeforeAll
+    internal fun setUp() {
+        persistentCampaignService = spyk(
+            PersistentCampaignService(
+                campaignRepository,
+                userRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            ),
+            recordPrivateCalls = true
         )
-        val runningCampaign = relaxedMockk<RunningCampaign> {
-            every { key } returns "my-campaign"
-            every { scenarios } returns mapOf(
-                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
-                "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
-            )
-        }
-        coEvery {
-            campaignConfigurationConverter.convertConfiguration(
-                "my-tenant",
-                refEq(campaign)
-            )
-        } returns runningCampaign
-        val savedEntity = relaxedMockk<CampaignEntity> {
-            every { id } returns 8126
-        }
-        coEvery { campaignRepository.save(any()) } returns savedEntity
-        coEvery { userRepository.findIdByUsername("my-user") } returns 199
-
-        // when
-        val result = persistentCampaignService.create("my-tenant", "my-user", campaign)
-
-        // then
-        assertThat(result).isSameAs(runningCampaign)
-        coVerifyOrder {
-            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
-            userRepository.findIdByUsername("my-user")
-            campaignRepository.save(withArg {
-                assertThat(it).all {
-                    prop(CampaignEntity::key).isEqualTo("my-campaign")
-                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
-                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
-                    prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
-                    prop(CampaignEntity::hardTimeout).isNotNull().isEqualTo(Instant.MIN)
-                    prop(CampaignEntity::softTimeout).isNotNull().isEqualTo(Instant.MIN)
-                    prop(CampaignEntity::configurer).isEqualTo(199L)
-                    prop(CampaignEntity::tenantId).isEqualTo(8165L)
-                    prop(CampaignEntity::configuration).isSameAs(campaign)
-                    prop(CampaignEntity::result).isEqualTo(QUEUED)
-                }
-            })
-            campaignScenarioRepository.saveAll(
-                listOf(
-                    CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
-                    CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
-                )
-            )
-        }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
     }
 
-
     @Test
-    internal fun `should create the new campaign with timeout`() = testDispatcherProvider.run {
+    internal fun `should create the new campaign`() = testDispatcherProvider.run {
         // given
-        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
         val campaign = CampaignConfiguration(
             name = "This is a campaign",
             speedFactor = 123.2,
-            timeout = Duration.ofSeconds(715),
-            hardTimeout = false,
             scenarios = mapOf(
                 "scenario-1" to ScenarioRequest(1),
                 "scenario-2" to ScenarioRequest(3)
@@ -183,16 +140,13 @@ internal class PersistentCampaignServiceTest {
             )
         }
         coEvery {
-            campaignConfigurationConverter.convertConfiguration(
-                "my-tenant",
-                refEq(campaign)
+            persistentCampaignService["convertAndSaveCampaign"](
+                refEq("my-tenant"),
+                refEq("my-user"),
+                refEq(campaign),
+                refEq(false)
             )
         } returns runningCampaign
-        val savedEntity = relaxedMockk<CampaignEntity> {
-            every { id } returns 8126
-        }
-        coEvery { campaignRepository.save(any()) } returns savedEntity
-        coEvery { userRepository.findIdByUsername("my-user") } returns 199
 
         // when
         val result = persistentCampaignService.create("my-tenant", "my-user", campaign)
@@ -200,33 +154,24 @@ internal class PersistentCampaignServiceTest {
         // then
         assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
-            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
-            userRepository.findIdByUsername("my-user")
-            campaignRepository.save(withArg {
-                assertThat(it).all {
-                    prop(CampaignEntity::key).isEqualTo("my-campaign")
-                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
-                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
-                    prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
-                    prop(CampaignEntity::hardTimeout).isNotNull()
-                    prop(CampaignEntity::softTimeout).isNotNull().isBetween(
-                        (Instant.now() + (campaign.timeout?.minus(Duration.ofSeconds(1)))),
-                        (Instant.now() + campaign.timeout)
-                    )
-                    prop(CampaignEntity::configurer).isEqualTo(199L)
-                    prop(CampaignEntity::tenantId).isEqualTo(8165L)
-                    prop(CampaignEntity::configuration).isSameAs(campaign)
-                    prop(CampaignEntity::result).isEqualTo(QUEUED)
-                }
-            })
-            campaignScenarioRepository.saveAll(
-                listOf(
-                    CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
-                    CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
-                )
+            persistentCampaignService["convertAndSaveCampaign"](
+                refEq("my-tenant"),
+                refEq("my-user"),
+                refEq(campaign),
+                refEq(false)
             )
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
@@ -241,15 +186,25 @@ internal class PersistentCampaignServiceTest {
         coVerifyOnce {
             campaignRepository.prepare("my-tenant", "my-campaign")
         }
-        confirmVerified(campaignRepository, campaignScenarioRepository)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
     internal fun `should start the campaign`() = testDispatcherProvider.run {
         // given
-        coJustRun { campaignRepository.start(any(), any(), any(), any(), any()) }
         val start = Instant.now()
         val timeout = Instant.now().plusSeconds(243)
+        coJustRun { campaignRepository.start("my-tenant", "my-campaign", start, timeout, null) }
 
         // when
         persistentCampaignService.start("my-tenant", "my-campaign", start, timeout, null)
@@ -258,16 +213,26 @@ internal class PersistentCampaignServiceTest {
         coVerifyOnce {
             campaignRepository.start("my-tenant", "my-campaign", start, timeout, null)
         }
-        confirmVerified(campaignRepository, campaignScenarioRepository)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
     internal fun `should close the running campaign`() = testDispatcherProvider.run {
         // given
         val campaignEntity = relaxedMockk<CampaignEntity>()
-        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaignEntity
         val convertedCampaign = relaxedMockk<Campaign>()
         coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns convertedCampaign
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaignEntity
 
         // when
         val result =
@@ -280,7 +245,17 @@ internal class PersistentCampaignServiceTest {
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             campaignConverter.convertToModel(refEq(campaignEntity))
         }
-        confirmVerified(campaignRepository, campaignScenarioRepository)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
@@ -291,10 +266,10 @@ internal class PersistentCampaignServiceTest {
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("start")))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), pageable, 2)
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
@@ -315,7 +290,17 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            )
         }
 
     @Test
@@ -326,10 +311,10 @@ internal class PersistentCampaignServiceTest {
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
@@ -350,7 +335,17 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            )
         }
 
     @Test
@@ -361,10 +356,10 @@ internal class PersistentCampaignServiceTest {
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("name")))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
@@ -385,7 +380,17 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            )
         }
 
     @Test
@@ -396,10 +401,10 @@ internal class PersistentCampaignServiceTest {
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
@@ -420,7 +425,17 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            )
         }
 
     @Test
@@ -485,7 +500,6 @@ internal class PersistentCampaignServiceTest {
             userRepository.findIdByUsername("my-aborter")
             campaignRepository.update(capture(capturedEntity))
         }
-        confirmVerified(campaignRepository, userRepository, campaignScenarioRepository)
         assertThat(capturedEntity).all {
             hasSize(1)
             any {
@@ -499,6 +513,17 @@ internal class PersistentCampaignServiceTest {
                 }
             }
         }
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
@@ -556,7 +581,17 @@ internal class PersistentCampaignServiceTest {
                 )
             )
         }
-        confirmVerified(campaignRepository, factoryRepository)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
 
@@ -615,7 +650,17 @@ internal class PersistentCampaignServiceTest {
                 )
             )
         }
-        confirmVerified(campaignRepository, factoryRepository)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
@@ -632,7 +677,17 @@ internal class PersistentCampaignServiceTest {
         // then
         assertThat(retrievedConfiguration).isSameAs(campaignConfiguration)
         coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
-        confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
     }
 
     @Test
@@ -648,7 +703,17 @@ internal class PersistentCampaignServiceTest {
 
             // then
             coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            )
         }
 
     @Test
@@ -666,6 +731,294 @@ internal class PersistentCampaignServiceTest {
 
             // then
             coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler
+            )
         }
+
+    @Test
+    internal fun `should schedule a campaign`() = testDispatcherProvider.run {
+        // given
+        val scheduleAt = Instant.now().plusSeconds(60)
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioRequest(1),
+                "scenario-2" to ScenarioRequest(3)
+            ),
+            scheduledAt = scheduleAt
+        )
+
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+            )
+        }
+
+        val latch = Latch(true)
+        coEvery {
+            persistentCampaignService["convertAndSaveCampaign"](
+                refEq("my-tenant"),
+                refEq("my-user"),
+                refEq(configuration),
+                refEq(true)
+            )
+        } returns runningCampaign
+        coEvery { campaignScheduler.schedule(refEq("my-campaign"), refEq(scheduleAt)) } coAnswers { latch.release() }
+
+        // when
+        val result = persistentCampaignService.schedule("my-tenant", "my-user", configuration)
+        latch.await()
+
+        // then
+        assertThat(result).isSameAs(runningCampaign)
+        coVerifyOrder {
+            persistentCampaignService["convertAndSaveCampaign"](
+                refEq("my-tenant"),
+                refEq("my-user"),
+                refEq(configuration),
+                refEq(true)
+            )
+            campaignScheduler.schedule(refEq("my-campaign"), refEq(scheduleAt))
+        }
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    internal fun `should not schedule a campaign when scheduleAt is null`() = testDispatcherProvider.run {
+        // given
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scenarios = mapOf()
+        )
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            persistentCampaignService.schedule("my-tenant", "my-user", configuration)
+        }
+
+        // then
+        assertThat(exception.message)
+            .isEqualTo("The schedule time should be in the future")
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    internal fun `should not schedule a campaign when scheduleAt is not in the future`() = testDispatcherProvider.run {
+        // given
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scenarios = mapOf(),
+            scheduledAt = Instant.now()
+        )
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            persistentCampaignService.schedule("my-tenant", "my-user", configuration)
+        }
+
+        // then
+        assertThat(exception.message)
+            .isEqualTo("The schedule time should be in the future")
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    internal fun `should save a campaign during creation without timeout`() = testDispatcherProvider.run {
+        // given
+        val campaign = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioRequest(1),
+                "scenario-2" to ScenarioRequest(3)
+            )
+        )
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+            )
+        }
+        val savedEntity = relaxedMockk<CampaignEntity> {
+            every { id } returns 8126
+        }
+        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration(
+                "my-tenant",
+                refEq(campaign)
+            )
+        } returns runningCampaign
+        coEvery { campaignRepository.save(any()) } returns savedEntity
+        coEvery { userRepository.findIdByUsername("my-user") } returns 199
+
+        // when
+        val result = persistentCampaignService.coInvokeInvisible<RunningCampaign>("convertAndSaveCampaign", "my-tenant", "my-user", campaign, false)
+
+        // then
+        assertThat(result).isSameAs(runningCampaign)
+        coVerifyOrder {
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+            tenantRepository.findIdByReference("my-tenant")
+            userRepository.findIdByUsername("my-user")
+            campaignRepository.save(withArg {
+                assertThat(it).all {
+                    prop(CampaignEntity::key).isEqualTo("my-campaign")
+                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
+                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
+                    prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
+                    prop(CampaignEntity::hardTimeout).isNotNull().isEqualTo(Instant.MIN)
+                    prop(CampaignEntity::softTimeout).isNotNull().isEqualTo(Instant.MIN)
+                    prop(CampaignEntity::configurer).isEqualTo(199L)
+                    prop(CampaignEntity::tenantId).isEqualTo(8165L)
+                    prop(CampaignEntity::configuration).isSameAs(campaign)
+                    prop(CampaignEntity::result).isEqualTo(QUEUED)
+                }
+            })
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
+                    CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
+                )
+            )
+        }
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    internal fun `should save a campaign during scheduling with timeout`() = testDispatcherProvider.run {
+        // given
+        val scheduleAt = Instant.now().plusSeconds(60)
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            timeout = Duration.ofSeconds(715),
+            hardTimeout = false,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioRequest(1),
+                "scenario-2" to ScenarioRequest(3)
+            ),
+            scheduledAt = scheduleAt
+        )
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+            )
+        }
+        val savedEntity = relaxedMockk<CampaignEntity> {
+            every { id } returns 8126
+        }
+
+        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration(
+                "my-tenant",
+                refEq(configuration)
+            )
+        } returns runningCampaign
+        coEvery { campaignRepository.save(any()) } returns savedEntity
+        coEvery { userRepository.findIdByUsername("my-user") } returns 199
+        // when
+        val result = persistentCampaignService.coInvokeInvisible<RunningCampaign>("convertAndSaveCampaign", "my-tenant", "my-user", configuration, true)
+
+        // then
+        assertThat(result).isSameAs(runningCampaign)
+        coVerifyOrder {
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
+            tenantRepository.findIdByReference("my-tenant")
+            userRepository.findIdByUsername("my-user")
+            campaignRepository.save(withArg {
+                assertThat(it).all {
+                    prop(CampaignEntity::key).isEqualTo("my-campaign")
+                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
+                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
+                    prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
+                    prop(CampaignEntity::hardTimeout).isNotNull().isEqualTo(Instant.MIN)
+                    prop(CampaignEntity::softTimeout).isNotNull().isBetween(
+                        (Instant.now() + (configuration.timeout?.minus(Duration.ofSeconds(1)))),
+                        (Instant.now() + configuration.timeout)
+                    )
+                    prop(CampaignEntity::configurer).isEqualTo(199L)
+                    prop(CampaignEntity::tenantId).isEqualTo(8165L)
+                    prop(CampaignEntity::configuration).isSameAs(configuration)
+                    prop(CampaignEntity::result).isEqualTo(SCHEDULED)
+                }
+            })
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(8126, "scenario-1", minionsCount = 6272),
+                    CampaignScenarioEntity(8126, "scenario-2", minionsCount = 12321)
+                )
+            )
+        }
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            tenantRepository,
+            campaignScenarioRepository,
+            campaignConfigurationConverter,
+            campaignConverter,
+            factoryRepository,
+            campaignScheduler
+        )
+    }
+
 }

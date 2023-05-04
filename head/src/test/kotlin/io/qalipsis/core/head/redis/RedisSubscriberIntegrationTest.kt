@@ -24,6 +24,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.pubsub.api.reactive.RedisPubSubReactiveCommands
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.confirmVerified
@@ -36,6 +37,7 @@ import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.handshake.HandshakeRequest
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
@@ -45,6 +47,7 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
 import jakarta.inject.Named
 import org.junit.jupiter.api.AfterEach
@@ -108,6 +111,9 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
     private lateinit var serializer: DistributionSerializer
 
     private var initialized = false
+
+    @MockBean(CampaignService::class)
+    fun campaignService() = relaxedMockk<CampaignService>()
 
     @BeforeEach
     internal fun setUp() {

@@ -158,4 +158,10 @@ internal class InMemoryCampaignService(
     override suspend fun enrich(runningCampaign: RunningCampaign) {
         currentCampaign = currentCampaign!!.copy(failureReason = runningCampaign.message)
     }
+
+    override suspend fun schedule(
+        tenant: String,
+        configurer: String,
+        configuration: CampaignConfiguration
+    ): RunningCampaign = throw IllegalArgumentException("In-memory campaign manager does not support scheduling")
 }

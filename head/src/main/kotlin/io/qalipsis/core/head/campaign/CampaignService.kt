@@ -37,7 +37,7 @@ internal interface CampaignService {
 
     /**
      * Saves a new campaign for the first time.
-     * @param configurer consider the user's name  who configure the campaign
+     * @param configurer consider the user's name who configure the campaign
      */
     suspend fun create(
         tenant: String,
@@ -101,4 +101,17 @@ internal interface CampaignService {
      * Enrich the details of the campaign, based upon the content of [runningCampaign].
      */
     suspend fun enrich(runningCampaign: RunningCampaign)
+
+    /**
+     * Schedule a campaign test to execute frequently.
+     *
+     * @param tenant tenant owning the campaign to schedule
+     * @param configurer consider the user's name who configure the campaign
+     * @param configuration configuration of the campaign to schedule
+     */
+    suspend fun schedule(
+        tenant: String,
+        configurer: String,
+        configuration: CampaignConfiguration
+    ): RunningCampaign
 }

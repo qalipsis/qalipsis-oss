@@ -54,4 +54,13 @@ internal interface CampaignManager {
      * @param campaignKey key of a previous campaign to replay
      */
     suspend fun replay(tenant: String, configurer: String, campaignKey: String): RunningCampaign
+
+    /**
+     * Schedule a campaign test with the provided configuration.
+     *
+     * @param tenant tenant owning the campaign to schedule
+     * @param configurer username of the user who configured the campaign
+     * @param configuration configuration of the campaign to schedule
+     */
+    suspend fun schedule(tenant: String, configurer: String, configuration: CampaignConfiguration): RunningCampaign
 }

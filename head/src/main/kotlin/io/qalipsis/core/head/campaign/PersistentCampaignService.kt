@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.campaign
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.model.Pageable
@@ -27,10 +28,12 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
+import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -42,10 +45,9 @@ import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import io.qalipsis.core.head.model.converter.CampaignConverter
-import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.head.utils.SortingUtil
+import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import jakarta.inject.Singleton
-import kotlinx.coroutines.flow.count
 import java.time.Instant
 import io.qalipsis.api.query.Page as QalipsisPage
 
@@ -62,7 +64,8 @@ internal class PersistentCampaignService(
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val campaignConfigurationConverter: CampaignConfigurationConverter,
     private val campaignConverter: CampaignConverter,
-    private val factoryRepository: FactoryRepository
+    private val factoryRepository: FactoryRepository,
+    private val campaignScheduler: CampaignScheduler
 ) : CampaignService {
 
     @LogInputAndOutput
@@ -70,29 +73,7 @@ internal class PersistentCampaignService(
         tenant: String,
         configurer: String,
         campaignConfiguration: CampaignConfiguration
-    ): RunningCampaign {
-        val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, campaignConfiguration)
-        val campaign = campaignRepository.save(
-            CampaignEntity(
-                tenantId = tenantRepository.findIdByReference(tenant),
-                key = runningCampaign.key,
-                name = campaignConfiguration.name,
-                scheduledMinions = runningCampaign.scenarios.values.sumOf { it.minionsCount },
-                hardTimeout = if (campaignConfiguration.hardTimeout == true) (Instant.now() + campaignConfiguration.timeout) else Instant.MIN,
-                softTimeout = if (campaignConfiguration.hardTimeout == false) (Instant.now() + campaignConfiguration.timeout) else Instant.MIN,
-                speedFactor = campaignConfiguration.speedFactor,
-                configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
-                configuration = campaignConfiguration,
-                result = QUEUED
-            )
-        )
-
-        campaignScenarioRepository.saveAll(runningCampaign.scenarios.map { (scenarioName, scenario) ->
-            CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
-        }).count()
-
-        return runningCampaign
-    }
+    ): RunningCampaign = convertAndSaveCampaign(tenant, configurer, campaignConfiguration)
 
     @LogInputAndOutput
     override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): Campaign {
@@ -198,5 +179,51 @@ internal class PersistentCampaignService(
                 )
             )
         }
+    }
+
+    @LogInput
+    override suspend fun schedule(
+        tenant: String,
+        configurer: String,
+        configuration: CampaignConfiguration
+    ): RunningCampaign {
+
+        require(configuration.scheduledAt?.isAfter(Instant.now()) == true) {
+            "The schedule time should be in the future"
+        }
+        val runningCampaign = convertAndSaveCampaign(tenant, configurer, configuration, true)
+        configuration.scheduledAt?.let { campaignScheduler.schedule(runningCampaign.key, it) }
+
+        return runningCampaign
+    }
+
+    @KTestable
+    private suspend fun convertAndSaveCampaign(
+        tenant: String,
+        configurer: String,
+        configuration: CampaignConfiguration,
+        isScheduled: Boolean = false
+    ): RunningCampaign {
+        val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, configuration)
+        val campaign = campaignRepository.save(
+            CampaignEntity(
+                tenantId = tenantRepository.findIdByReference(tenant),
+                key = runningCampaign.key,
+                name = configuration.name,
+                scheduledMinions = runningCampaign.scenarios.values.sumOf { it.minionsCount },
+                hardTimeout = if (configuration.hardTimeout == true) (Instant.now() + configuration.timeout) else Instant.MIN,
+                softTimeout = if (configuration.hardTimeout == false) (Instant.now() + configuration.timeout) else Instant.MIN,
+                speedFactor = configuration.speedFactor,
+                configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
+                configuration = configuration,
+                result = if (isScheduled) SCHEDULED else QUEUED,
+                start = if (isScheduled) configuration.scheduledAt else null
+            )
+        )
+
+        campaignScenarioRepository.saveAll(runningCampaign.scenarios.map { (scenarioName, scenario) ->
+            CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
+        })
+        return runningCampaign
     }
 }

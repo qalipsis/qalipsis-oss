@@ -78,6 +78,7 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
+import java.time.Instant
 
 @WithMockk
 @Timeout(5)
@@ -126,6 +127,16 @@ internal class StandaloneCampaignManagerTest {
             )
         ).isTrue()
         assertThat(campaignManager.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
+
+        confirmVerified(
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext
+        )
     }
 
     @Test
@@ -192,6 +203,7 @@ internal class StandaloneCampaignManagerTest {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.prepare("my-tenant", "my-campaign")
                 headChannel.subscribeFeedback("feedbacks")
+                campaignConstraintsProvider.supply(any())
                 campaignService.start("my-tenant", "my-campaign", any(), any(), any())
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
@@ -208,6 +220,16 @@ internal class StandaloneCampaignManagerTest {
                 headChannel.publishDirective(refEq(directive1))
                 headChannel.publishDirective(refEq(directive2))
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
         }
 
     @Test
@@ -234,6 +256,16 @@ internal class StandaloneCampaignManagerTest {
             typedProp<Collection<Factory>>("factories").containsOnly(factory1, factory2, factory3)
             typedProp<Collection<ScenarioSummary>>("scenarios").containsOnly(scenario1, scenario2)
         }
+
+        confirmVerified(
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext
+        )
     }
 
     @Test
@@ -254,6 +286,19 @@ internal class StandaloneCampaignManagerTest {
             assertThrows<IllegalArgumentException> {
                 campaignManager.start("my-tenant", "my-user", campaign)
             }
+            coVerifyOrder {
+                factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
         }
 
     @Test
@@ -270,6 +315,16 @@ internal class StandaloneCampaignManagerTest {
             assertThrows<IllegalArgumentException> {
                 campaignManager.start("my-tenant", "my-user", relaxedMockk())
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
         }
 
     @Test
@@ -387,6 +442,17 @@ internal class StandaloneCampaignManagerTest {
                 }
             }
         }
+
+        confirmVerified(
+            campaignManager,
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext
+        )
     }
 
     @Test
@@ -415,7 +481,17 @@ internal class StandaloneCampaignManagerTest {
             campaignService.retrieveConfiguration("my-tenant", "my-campaign")
             campaignManager.start("my-tenant", "my-user", campaignConfiguration)
         }
-        confirmVerified(campaignManager, campaignService)
+
+        confirmVerified(
+            campaignManager,
+            headChannel,
+            factoryService,
+            campaignService,
+            campaignReportStateKeeper,
+            headConfiguration,
+            campaignConstraintsProvider,
+            campaignExecutionContext
+        )
     }
 
     @Test
@@ -500,6 +576,16 @@ internal class StandaloneCampaignManagerTest {
                     }
                 }
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
         }
 
     @Test
@@ -585,6 +671,178 @@ internal class StandaloneCampaignManagerTest {
                     }
                 }
             }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
+        }
+
+    @Test
+    internal fun `should schedule a campaign when all the scenarios are currently supported and release the unused factories`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(this)
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                ),
+                timeout = Duration.ofMinutes(1),
+                hardTimeout = false,
+                scheduledAt = scheduleAt
+            )
+            val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+            val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
+            val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+
+            coEvery {
+                campaignService.schedule("my-tenant", "my-user", refEq(campaign))
+            } returns runningCampaign
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns listOf(
+                scenario1,
+                scenario2,
+                scenario3
+            )
+
+            // when
+            val result = campaignManager.schedule("my-tenant", "my-user", campaign)
+
+            // then
+            assertThat(result).isSameAs(runningCampaign)
+            coVerifyOrder {
+                factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
+                campaignService.schedule("my-tenant", "my-user", campaign)
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
+
+        }
+
+    @Test
+    internal fun `should not schedule a campaign when some scenarios are currently not supported`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(this)
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(6272),
+                    "scenario-2" to ScenarioRequest(12321)
+                ),
+                timeout = Duration.ofMinutes(1),
+                hardTimeout = false,
+                scheduledAt = scheduleAt
+            )
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2")) } returns listOf(
+                scenario1
+            )
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                campaignManager.schedule("my-tenant", "my-user", campaign)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The scenarios scenario-2 were not found or are not currently supported by healthy factories")
+
+            coVerifyOrder {
+                factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
+
+        }
+
+    @Test
+    internal fun `should not schedule a campaign when scheduleAt is null`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(this)
+            val campaign = CampaignConfiguration(
+                name = "my-campaign",
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
+                scheduledAt = Instant.now()
+            )
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                campaignManager.schedule("my-tenant", "my-user", campaign)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The schedule time should be in the future")
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
+        }
+
+    @Test
+    internal fun `should not schedule a campaign when scheduleAt is not in the future`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignManager = standaloneCampaignManager(this)
+            val campaign = CampaignConfiguration(
+                name = "my-campaign",
+                scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
+            )
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                campaignManager.schedule("my-tenant", "my-user", campaign)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The schedule time should be in the future")
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
         }
 
 

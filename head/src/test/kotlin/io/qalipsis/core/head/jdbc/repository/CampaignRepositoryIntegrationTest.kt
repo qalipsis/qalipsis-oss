@@ -35,8 +35,12 @@ import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
-import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ExecutionStatus.ABORTED
+import io.qalipsis.api.report.ExecutionStatus.FAILED
 import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
+import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
+import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
+import io.qalipsis.api.report.ExecutionStatus.WARNING
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
@@ -85,7 +89,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             start = Instant.now() - Duration.ofSeconds(173),
             end = Instant.now(),
             scheduledMinions = 123,
-            result = ExecutionStatus.SUCCESSFUL,
+            result = SUCCESSFUL,
             configurer = 1L, // Default user.
 
         )
@@ -403,7 +407,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val beforeCall = Instant.now()
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.complete("my-tenant", "2", ExecutionStatus.FAILED, "The campaign fails")
+        campaignRepository.complete("my-tenant", "2", FAILED, "The campaign fails")
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -415,7 +419,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::start).isEqualTo(openCampaign.start)
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNotNull().isGreaterThanOrEqualTo(beforeCall)
-            prop(CampaignEntity::result).isEqualTo(ExecutionStatus.FAILED)
+            prop(CampaignEntity::result).isEqualTo(FAILED)
             prop(CampaignEntity::failureReason).isEqualTo("The campaign fails")
         }
     }
@@ -446,7 +450,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when
         val beforeCall = Instant.now()
         delay(50) // Adds a delay because it happens that the time in the DB container is slightly in the past.
-        campaignRepository.complete("my-tenant", "2", ExecutionStatus.SUCCESSFUL, null)
+        campaignRepository.complete("my-tenant", "2", SUCCESSFUL, null)
 
         // then
         assertThat(campaignRepository.findById(alreadyClosedCampaign.id)).isNotNull()
@@ -458,7 +462,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(CampaignEntity::start).isEqualTo(openCampaign.start)
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNotNull().isGreaterThanOrEqualTo(beforeCall)
-            prop(CampaignEntity::result).isEqualTo(ExecutionStatus.SUCCESSFUL)
+            prop(CampaignEntity::result).isEqualTo(SUCCESSFUL)
             prop(CampaignEntity::failureReason).isEqualTo("The initial reason")
         }
     }
@@ -1067,7 +1071,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             configurer = savedUser.id,
             tenantId = tenant.id,
             start = Instant.parse("2022-02-25T00:00:00.00Z"),
-            result = ExecutionStatus.SUCCESSFUL,
+            result = SUCCESSFUL,
             end = Instant.parse("2022-03-26T23:12:11.21Z")
         )
         campaignRepository.saveAll(
@@ -1077,37 +1081,37 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     key = "campaign-2",
                     name = "campaign 2",
                     start = Instant.parse("2022-02-27T00:00:00.00Z"),
-                    result = ExecutionStatus.ABORTED //SHOULD NOT RETRIEVE BECAUSE OF DATE ABOVE START
+                    result = ABORTED //SHOULD NOT RETRIEVE BECAUSE OF DATE ABOVE START
                 ),
                 campaign.copy(
                     key = "campaign-10",
                     name = "campaign 10",
                     start = Instant.parse("2022-02-24T11:25:30.00Z"),
-                    result = ExecutionStatus.SCHEDULED
+                    result = SCHEDULED
                 ),
                 campaign.copy(
                     key = "campaign-3",
                     name = "campaign 3",
                     start = Instant.parse("2021-03-22T11:25:30.00Z"),
-                    result = ExecutionStatus.WARNING //SHOULD NOT RETRIEVE BECAUSE OF YEAR BELOW START
+                    result = WARNING //SHOULD NOT RETRIEVE BECAUSE OF YEAR BELOW START
                 ),
                 campaign.copy(
                     key = "campaign-9",
                     name = "campaign 9",
                     start = Instant.parse("2022-02-24T00:00:00.00Z"),
-                    result = ExecutionStatus.SUCCESSFUL
+                    result = SUCCESSFUL
                 ),
                 campaign.copy(
                     key = "campaign-4",
                     name = "campaign 4",
                     start = Instant.parse("2022-02-24T14:25:30.00Z"),
-                    result = ExecutionStatus.SCHEDULED
+                    result = SCHEDULED
                 ),
                 campaign.copy(
                     key = "campaign-12",
                     name = "campaign 12",
                     start = Instant.parse("2022-03-24T01:01:01.00Z"),
-                    result = ExecutionStatus.WARNING //SHOULD NOT RETRIEVE BECAUSE OF MONTH ABOVE START
+                    result = WARNING //SHOULD NOT RETRIEVE BECAUSE OF MONTH ABOVE START
                 ),
                 campaign.copy(
                     key = "campaign-5",
@@ -1120,25 +1124,25 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     key = "campaign-11",
                     name = "campaign 11",
                     start = Instant.parse("2022-02-22T01:01:01.00Z"),
-                    result = ExecutionStatus.WARNING
+                    result = WARNING
                 ),
                 campaign.copy(
                     key = "campaign-6",
                     name = "campaign 6",
                     start = Instant.parse("2022-02-20T11:25:30.00Z"),
-                    result = ExecutionStatus.SUCCESSFUL //SHOULD NOT RETRIEVE BECAUSE OF DATE BEHIND START
+                    result = SUCCESSFUL //SHOULD NOT RETRIEVE BECAUSE OF DATE BEHIND START
                 ),
                 campaign.copy(
                     key = "campaign-7",
                     name = "campaign 7",
                     start = Instant.parse("2022-02-25T00:00:30.00Z"),
-                    result = ExecutionStatus.FAILED
+                    result = FAILED
                 ),
                 campaign.copy(
                     key = "campaign-8",
                     name = "campaign 8",
                     start = Instant.parse("2022-02-25T00:00:30.00Z"),
-                    result = ExecutionStatus.FAILED
+                    result = FAILED
                 ),
                 campaign.copy(
                     key = "campaign-13",
@@ -1164,30 +1168,82 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             containsExactlyInAnyOrder(
                 CampaignRepository.CampaignResultCount(
                     seriesStart = Instant.parse("2022-02-22T00:00:00.00Z"),
-                    status = ExecutionStatus.WARNING,
+                    status = WARNING,
                     count = 1
                 ),
                 CampaignRepository.CampaignResultCount(
                     seriesStart = Instant.parse("2022-02-24T00:00:00.00Z"),
-                    status = ExecutionStatus.SCHEDULED,
+                    status = SCHEDULED,
                     count = 2
                 ),
                 CampaignRepository.CampaignResultCount(
                     seriesStart = Instant.parse("2022-02-24T00:00:00.00Z"),
-                    status = ExecutionStatus.SUCCESSFUL,
+                    status = SUCCESSFUL,
                     count = 1
                 ),
                 CampaignRepository.CampaignResultCount(
                     seriesStart = Instant.parse("2022-02-25T00:00:00.00Z"),
-                    status = ExecutionStatus.FAILED,
+                    status = FAILED,
                     count = 2
                 ),
                 CampaignRepository.CampaignResultCount(
                     seriesStart = Instant.parse("2022-02-25T00:00:00.00Z"),
-                    status = ExecutionStatus.SUCCESSFUL,
+                    status = SUCCESSFUL,
                     count = 1
                 )
             )
         }
+    }
+
+    @Test
+    internal fun `should return campaigns by their execution status`() = testDispatcherProvider.run {
+        //given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        val campaign1 = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-1",
+                name = "campaign-1",
+                end = null,
+                tenantId = tenant.id,
+                result = ABORTED
+            )
+        )
+        val campaign2 = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-2",
+                name = "campaign-2",
+                end = null,
+                tenantId = tenant2.id,
+                result = SCHEDULED
+            )
+        )
+        val campaign3 = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-3",
+                name = "campaign-3",
+                end = null,
+                tenantId = tenant.id,
+                result = SCHEDULED
+            )
+        )
+        val campaign4 = campaignRepository.save(campaignPrototype.copy(tenantId = tenant2.id))
+
+        assertThat(campaignRepository.findAll().count()).isEqualTo(4)
+
+        // when + then
+        assertThat(campaignRepository.findByResult(SCHEDULED)).all {
+            hasSize(2)
+            containsOnly(campaign2, campaign3)
+        }
+        assertThat(campaignRepository.findByResult(SUCCESSFUL)).all {
+            hasSize(1)
+            containsOnly(campaign4)
+        }
+        assertThat(campaignRepository.findByResult(ABORTED)).all {
+            hasSize(1)
+            containsOnly(campaign1)
+        }
+        assertThat(campaignRepository.findByResult(IN_PROGRESS)).isEmpty()
     }
 }

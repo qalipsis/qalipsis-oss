@@ -49,7 +49,6 @@ import io.qalipsis.api.report.ExecutionStatus.FAILED
 import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.api.report.ReportMessage
-import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ReportMessageSeverity.INFO
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -121,6 +120,8 @@ internal class CampaignControllerIntegrationTest {
         excludeRecords {
             campaignManager.hashCode()
             campaignService.hashCode()
+            clusterFactoryService.hashCode()
+            campaignReportProvider.hashCode()
         }
     }
 
@@ -178,7 +179,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(createdCampaign)
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -205,7 +212,13 @@ internal class CampaignControllerIntegrationTest {
                 it.response.getBody(String::class.java).get()
             }.isEqualTo("""{"errors":[{"property":"campaign.name","message":"size must be between 3 and 300"}]}""")
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -228,7 +241,16 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.NO_CONTENT)
         }
-        confirmVerified(campaignService, campaignManager)
+        coVerifyOrder {
+            clusterFactoryService.getActiveScenarios(Defaults.TENANT, any())
+        }
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -255,7 +277,16 @@ internal class CampaignControllerIntegrationTest {
                 it.response.getBody(String::class.java).get()
             }.contains("Scenarios with names Scenario1 are unknown or currently disabled")
         }
-        confirmVerified(campaignService, campaignManager)
+        coVerifyOrder {
+            clusterFactoryService.getActiveScenarios(Defaults.TENANT, any())
+        }
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -300,7 +331,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -345,7 +382,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -393,7 +436,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -412,7 +461,13 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -430,7 +485,13 @@ internal class CampaignControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -490,7 +551,7 @@ internal class CampaignControllerIntegrationTest {
                             ReportMessage(
                                 stepName = "my-step-2",
                                 messageId = "message-id-2",
-                                severity = ReportMessageSeverity.INFO,
+                                severity = INFO,
                                 message = "Hello from test 2"
                             )
                         )
@@ -514,7 +575,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(campaignExecutionDetails)
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -557,7 +624,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isEqualTo(campaign)
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -583,7 +656,13 @@ internal class CampaignControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(campaignConfiguration)
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 
     @Test
@@ -608,6 +687,108 @@ internal class CampaignControllerIntegrationTest {
             transform("body") { it.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
                 .containsOnly("The configuration does not exists")
         }
-        confirmVerified(campaignService, campaignManager)
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
+    }
+
+    @Test
+    fun `should successfully schedule valid campaign`() {
+        // given
+        val campaignConfiguration = CampaignConfiguration(
+            name = "This is a campaign",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+        }
+        coEvery {
+            campaignManager.schedule(
+                Defaults.TENANT,
+                Defaults.USER,
+                eq(campaignConfiguration)
+            )
+        } returns runningCampaign
+        val createdCampaign = Campaign(
+            creation = Instant.now(),
+            version = Instant.now(),
+            key = RandomStringUtils.randomAlphanumeric(10),
+            name = "This is a campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            scheduledMinions = 123,
+            end = null,
+            configurerName = Defaults.USER,
+            aborterName = Defaults.USER,
+            status = IN_PROGRESS,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+        coEvery { campaignService.retrieve(Defaults.TENANT, "my-campaign") } returns createdCampaign
+
+        // when
+        val executeRequest = HttpRequest.POST("/schedule", campaignConfiguration)
+        val response = httpClient.toBlocking().exchange(
+            executeRequest,
+            Campaign::class.java
+        )
+
+        // then
+        coVerifyOrder {
+            // Called with the default user.
+            campaignManager.schedule(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignService.retrieve(Defaults.TENANT, "my-campaign")
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(createdCampaign)
+        }
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
+    }
+
+    @Test
+    fun `should fail when scheduling campaign with invalid configuration`() {
+        // given
+        val campaignConfiguration = CampaignConfiguration(
+            name = "ju",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(5))
+        )
+        val executeRequest = HttpRequest.POST("/schedule", campaignConfiguration)
+
+        // when
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                executeRequest,
+                CampaignConfiguration::class.java
+            )
+        }
+
+        // then
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") {
+                it.response.getBody(String::class.java).get()
+            }.isEqualTo("""{"errors":[{"property":"configuration.name","message":"size must be between 3 and 300"}]}""")
+        }
+        confirmVerified(
+            campaignService,
+            campaignManager,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService
+        )
     }
 }

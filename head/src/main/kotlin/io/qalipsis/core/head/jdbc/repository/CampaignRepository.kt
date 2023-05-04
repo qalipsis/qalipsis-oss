@@ -208,4 +208,11 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     @Introspected
     data class CampaignResultCount(val seriesStart: Instant, val status: ExecutionStatus, val count: Int)
 
+    /**
+     * Fetches all campaigns with the specified result value.
+     *
+     * @param result campaign execution status
+     */
+    suspend fun findByResult(result: ExecutionStatus): Collection<CampaignEntity>
+
 }
