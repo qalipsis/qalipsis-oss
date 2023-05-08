@@ -65,10 +65,10 @@ import java.time.Instant
 internal class CampaignAutoStarterTest {
 
     @RelaxedMockK
-    private lateinit var campaignManager: CampaignManager
+    private lateinit var campaignExecutor: CampaignExecutor
 
     @RelaxedMockK
-    private lateinit var campaignManagerProvider: Provider<CampaignManager>
+    private lateinit var campaignExecutorProvider: Provider<CampaignExecutor>
 
     @RelaxedMockK
     private lateinit var factoryService: FactoryService
@@ -95,7 +95,7 @@ internal class CampaignAutoStarterTest {
 
     @BeforeEach
     internal fun setUp() {
-        every { campaignManagerProvider.get() } returns campaignManager
+        every { campaignExecutorProvider.get() } returns campaignExecutor
     }
 
     @Test
@@ -103,10 +103,10 @@ internal class CampaignAutoStarterTest {
     internal fun `should not start a campaign with the specified name when not enough factories are registered`() =
         testCoroutineDispatcher.run {
             // given
-            every { campaignManagerProvider.get() } returns campaignManager
+            every { campaignExecutorProvider.get() } returns campaignExecutor
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
-                campaignManagerProvider,
+                campaignExecutorProvider,
                 campaignReportStateKeeper,
                 AutostartCampaignConfiguration().apply {
                     name = "my-campaign"
@@ -147,7 +147,7 @@ internal class CampaignAutoStarterTest {
             campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
 
             // then
-            coVerifyNever { campaignManager.start(any(), any(), any()) }
+            coVerifyNever { campaignExecutor.start(any(), any(), any()) }
 
             // when
             val elapsed = coMeasureTime {
@@ -157,7 +157,7 @@ internal class CampaignAutoStarterTest {
             // then
             assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(420)) // Should have waited triggerOffset.
             coVerifyOnce {
-                campaignManager.start(
+                campaignExecutor.start(
                     Defaults.TENANT,
                     Defaults.USER,
                     CampaignConfiguration(
@@ -178,10 +178,10 @@ internal class CampaignAutoStarterTest {
     internal fun `should release the starter when there is no scenario to execute`() =
         testCoroutineDispatcher.run {
             // given
-            every { campaignManagerProvider.get() } returns campaignManager
+            every { campaignExecutorProvider.get() } returns campaignExecutor
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
-                campaignManagerProvider,
+                campaignExecutorProvider,
                 campaignReportStateKeeper,
                 autostartConfiguration,
                 headChannel
@@ -208,10 +208,10 @@ internal class CampaignAutoStarterTest {
     internal fun `should not start when no handshake request was notified`() =
         testCoroutineDispatcher.run {
             // given
-            every { campaignManagerProvider.get() } returns campaignManager
+            every { campaignExecutorProvider.get() } returns campaignExecutor
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
-                campaignManagerProvider,
+                campaignExecutorProvider,
                 campaignReportStateKeeper,
                 autostartConfiguration,
                 headChannel
@@ -230,12 +230,12 @@ internal class CampaignAutoStarterTest {
     internal fun `should release the latch when the campaign is complete with success`() =
         testCoroutineDispatcher.run {
             // given
-            every { campaignManagerProvider.get() } returns campaignManager
+            every { campaignExecutorProvider.get() } returns campaignExecutor
             val runningCampaign = relaxedMockk<RunningCampaign>()
-            coEvery { campaignManager.start(any(), any(), any()) } returns runningCampaign
+            coEvery { campaignExecutor.start(any(), any(), any()) } returns runningCampaign
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
-                campaignManagerProvider,
+                campaignExecutorProvider,
                 campaignReportStateKeeper,
                 autostartConfiguration,
                 headChannel
@@ -292,12 +292,12 @@ internal class CampaignAutoStarterTest {
     internal fun `should release the latch when the campaign is complete with failure`() =
         testCoroutineDispatcher.run {
             // given
-            every { campaignManagerProvider.get() } returns campaignManager
+            every { campaignExecutorProvider.get() } returns campaignExecutor
             val runningCampaign = relaxedMockk<RunningCampaign>()
-            coEvery { campaignManager.start(any(), any(), any()) } returns runningCampaign
+            coEvery { campaignExecutor.start(any(), any(), any()) } returns runningCampaign
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
-                campaignManagerProvider,
+                campaignExecutorProvider,
                 campaignReportStateKeeper,
                 autostartConfiguration,
                 headChannel
@@ -354,10 +354,10 @@ internal class CampaignAutoStarterTest {
     internal fun `should not release the latch until the campaign is complete`() =
         testCoroutineDispatcher.run {
             // given
-            every { campaignManagerProvider.get() } returns campaignManager
+            every { campaignExecutorProvider.get() } returns campaignExecutor
             val campaignAutoStarter = CampaignAutoStarter(
                 factoryService,
-                campaignManagerProvider,
+                campaignExecutorProvider,
                 campaignReportStateKeeper,
                 autostartConfiguration,
                 headChannel

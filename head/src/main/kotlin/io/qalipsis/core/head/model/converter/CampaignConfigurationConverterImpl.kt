@@ -31,7 +31,6 @@ import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
-import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
@@ -48,23 +47,20 @@ import jakarta.inject.Singleton
  */
 @Singleton
 internal class CampaignConfigurationConverterImpl(
-    private val idGenerator: IdGenerator,
-    private val hooks: List<CampaignHook>
+    private val idGenerator: IdGenerator
 ) : CampaignConfigurationConverter {
 
     override suspend fun convertConfiguration(
         tenant: String,
         campaign: CampaignConfiguration
     ): RunningCampaign {
-        val runningCampaign = RunningCampaign(
+        return RunningCampaign(
             tenant = tenant,
             key = generateCampaignKey(tenant),
             speedFactor = campaign.speedFactor,
             startOffsetMs = campaign.startOffsetMs,
             scenarios = convertScenarioRequestsToConfigurations(campaign.scenarios)
         )
-        hooks.forEach { hook -> hook.preCreate(campaign, runningCampaign) }
-        return runningCampaign
     }
 
     protected fun generateCampaignKey(tenant: String): String = idGenerator.long()

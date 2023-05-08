@@ -34,7 +34,7 @@ import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.api.query.Page
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
@@ -66,7 +66,7 @@ import javax.validation.constraints.PositiveOrZero
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 internal class CampaignController(
-    private val campaignManager: CampaignManager,
+    private val campaignExecutor: CampaignExecutor,
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
     private val campaignReportProvider: CampaignReportProvider,
@@ -100,7 +100,7 @@ internal class CampaignController(
         @Parameter(hidden = true) authentication: Authentication,
         @Body @Valid campaign: CampaignConfiguration
     ): HttpResponse<Campaign> {
-        val campaignKey = campaignManager.start(tenant, authentication.name, campaign).key
+        val campaignKey = campaignExecutor.start(tenant, authentication.name, campaign).key
         return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
     }
 
@@ -223,7 +223,7 @@ internal class CampaignController(
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean
     ): HttpResponse<Unit> {
-        campaignManager.abort(tenant, authentication.name, campaignKey, hard)
+        campaignExecutor.abort(tenant, authentication.name, campaignKey, hard)
         return HttpResponse.accepted()
     }
 
@@ -328,7 +328,7 @@ internal class CampaignController(
         ) @NotBlank @PathVariable campaignKey: String,
         @Parameter(hidden = true) authentication: Authentication
     ): HttpResponse<Campaign> {
-        val newCampaignKey = campaignManager.replay(tenant, authentication.name, campaignKey).key
+        val newCampaignKey = campaignExecutor.replay(tenant, authentication.name, campaignKey).key
         return HttpResponse.ok(campaignService.retrieve(tenant, newCampaignKey))
     }
 
@@ -360,7 +360,7 @@ internal class CampaignController(
         @Parameter(hidden = true) authentication: Authentication,
         @Body @Valid configuration: CampaignConfiguration
     ): HttpResponse<Campaign> {
-        val campaignKey = campaignManager.schedule(tenant, authentication.name, configuration).key
+        val campaignKey = campaignService.schedule(tenant, authentication.name, configuration).key
         return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
     }
 }

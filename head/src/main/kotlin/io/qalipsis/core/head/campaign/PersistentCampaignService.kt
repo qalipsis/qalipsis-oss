@@ -26,6 +26,7 @@ import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
@@ -34,6 +35,8 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
+import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -65,7 +68,9 @@ internal class PersistentCampaignService(
     private val campaignConfigurationConverter: CampaignConfigurationConverter,
     private val campaignConverter: CampaignConverter,
     private val factoryRepository: FactoryRepository,
-    private val campaignScheduler: CampaignScheduler
+    private val campaignScheduler: CampaignScheduler,
+    private val factoryService: FactoryService,
+    private val hooks: List<CampaignHook>
 ) : CampaignService {
 
     @LogInputAndOutput
@@ -191,6 +196,12 @@ internal class PersistentCampaignService(
         require(configuration.scheduledAt?.isAfter(Instant.now()) == true) {
             "The schedule time should be in the future"
         }
+        val selectedScenarios = configuration.scenarios.keys
+        val scenarios = factoryService.getActiveScenarios(tenant, selectedScenarios).distinctBy { it.name }
+        log.trace { "Found unique scenarios: $scenarios" }
+        val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
+        require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
+
         val runningCampaign = convertAndSaveCampaign(tenant, configurer, configuration, true)
         configuration.scheduledAt?.let { campaignScheduler.schedule(runningCampaign.key, it) }
 
@@ -205,6 +216,11 @@ internal class PersistentCampaignService(
         isScheduled: Boolean = false
     ): RunningCampaign {
         val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, configuration)
+        if (isScheduled) {
+            hooks.forEach { hook -> hook.preSchedule(configuration, runningCampaign) }
+        } else {
+            hooks.forEach { hook -> hook.preCreate(configuration, runningCampaign) }
+        }
         val campaign = campaignRepository.save(
             CampaignEntity(
                 tenantId = tenantRepository.findIdByReference(tenant),
@@ -225,5 +241,10 @@ internal class PersistentCampaignService(
             CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
         })
         return runningCampaign
+    }
+
+    companion object {
+
+        private val log = logger()
     }
 }

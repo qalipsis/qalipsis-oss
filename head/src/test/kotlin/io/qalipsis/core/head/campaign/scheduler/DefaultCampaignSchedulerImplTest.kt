@@ -21,7 +21,7 @@ import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
@@ -55,7 +55,7 @@ internal class DefaultCampaignSchedulerImplTest {
     private lateinit var userRepository: UserRepository
 
     @RelaxedMockK
-    private lateinit var campaignManager: CampaignManager
+    private lateinit var campaignExecutor: CampaignExecutor
 
     @RelaxedMockK
     private lateinit var tenantRepository: TenantRepository
@@ -70,7 +70,7 @@ internal class DefaultCampaignSchedulerImplTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
                 userRepository = userRepository,
-                campaignManager = campaignManager,
+                campaignExecutor = campaignExecutor,
                 tenantRepository = tenantRepository,
                 campaignRepository = campaignRepository,
                 coroutineScope = this
@@ -115,7 +115,7 @@ internal class DefaultCampaignSchedulerImplTest {
             defaultCampaignSchedulerImpl.schedule(refEq("key-3"), currentTime.plusMillis(10))
             defaultCampaignSchedulerImpl.schedule(refEq("key-4"), currentTime.plusMillis(10))
         }
-        confirmVerified(userRepository, campaignManager, tenantRepository, campaignRepository)
+        confirmVerified(userRepository, campaignExecutor, tenantRepository, campaignRepository)
     }
 
     @Test
@@ -123,7 +123,7 @@ internal class DefaultCampaignSchedulerImplTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
                 userRepository = userRepository,
-                campaignManager = campaignManager,
+                campaignExecutor = campaignExecutor,
                 tenantRepository = tenantRepository,
                 campaignRepository = campaignRepository,
                 coroutineScope = this
@@ -145,7 +145,7 @@ internal class DefaultCampaignSchedulerImplTest {
         coVerifyOrder {
             defaultCampaignSchedulerImpl["schedulingExecution"](refEq("campaign-key"), refEq(instant))
         }
-        confirmVerified(userRepository, campaignManager, tenantRepository, campaignRepository)
+        confirmVerified(userRepository, campaignExecutor, tenantRepository, campaignRepository)
 
     }
 
@@ -154,7 +154,7 @@ internal class DefaultCampaignSchedulerImplTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
                 userRepository = userRepository,
-                campaignManager = campaignManager,
+                campaignExecutor = campaignExecutor,
                 tenantRepository = tenantRepository,
                 campaignRepository = campaignRepository,
                 coroutineScope = this
@@ -210,7 +210,7 @@ internal class DefaultCampaignSchedulerImplTest {
             campaignRepository.findByKey(refEq("campaign-key"))
             userRepository.findUsernameById(1L)
             tenantRepository.findReferenceById(123)
-            campaignManager.start(
+            campaignExecutor.start(
                 refEq("my-tenant"),
                 refEq("The configurer"),
                 configuration.copy(name = "My new campaign ($currentTime)")
@@ -232,7 +232,7 @@ internal class DefaultCampaignSchedulerImplTest {
             })
             defaultCampaignSchedulerImpl.schedule(refEq("campaign-key"), refEq(nextSchedule))
         }
-        confirmVerified(userRepository, campaignManager, tenantRepository, campaignRepository)
+        confirmVerified(userRepository, campaignExecutor, tenantRepository, campaignRepository)
 
     }
 
@@ -241,7 +241,7 @@ internal class DefaultCampaignSchedulerImplTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
                 userRepository = userRepository,
-                campaignManager = campaignManager,
+                campaignExecutor = campaignExecutor,
                 tenantRepository = tenantRepository,
                 campaignRepository = campaignRepository,
                 coroutineScope = this
@@ -275,7 +275,7 @@ internal class DefaultCampaignSchedulerImplTest {
         coVerifyOrder {
             campaignRepository.findByKey(refEq("campaign-key"))
         }
-        confirmVerified(userRepository, campaignManager, tenantRepository, campaignRepository)
+        confirmVerified(userRepository, campaignExecutor, tenantRepository, campaignRepository)
 
     }
 
@@ -284,7 +284,7 @@ internal class DefaultCampaignSchedulerImplTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
                 userRepository = userRepository,
-                campaignManager = campaignManager,
+                campaignExecutor = campaignExecutor,
                 tenantRepository = tenantRepository,
                 campaignRepository = campaignRepository,
                 coroutineScope = this
@@ -333,7 +333,7 @@ internal class DefaultCampaignSchedulerImplTest {
             campaignRepository.findByKey(refEq("campaign-key"))
             userRepository.findUsernameById(1L)
         }
-        confirmVerified(userRepository, campaignManager, tenantRepository, campaignRepository)
+        confirmVerified(userRepository, campaignExecutor, tenantRepository, campaignRepository)
 
     }
 

@@ -68,7 +68,7 @@ import javax.annotation.PreDestroy
 )
 internal class CampaignAutoStarter(
     private val factoryService: FactoryService,
-    private val campaignManager: Provider<CampaignManager>,
+    private val campaignExecutor: Provider<CampaignExecutor>,
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
     private val autostartCampaignConfiguration: AutostartCampaignConfiguration,
     private val headChannel: HeadChannel
@@ -135,7 +135,7 @@ internal class CampaignAutoStarter(
                             ).associate { scenario ->
                                 scenario.name to ScenarioRequest(calculateMinionsCount(scenario))
                             }
-                        campaign = campaignManager.get().start(
+                        campaign = campaignExecutor.get().start(
                             tenant = Defaults.TENANT,
                             configurer = Defaults.USER,
                             configuration = CampaignConfiguration(

@@ -55,7 +55,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
             //"-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+            //"-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
             //"-c", "logging.level.io.qalipsis.core.head.redis.RedisHeadChannel=TRACE",
         )
         val factoryConfig = arrayOf(
@@ -112,7 +112,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
@@ -166,7 +166,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+            "-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",

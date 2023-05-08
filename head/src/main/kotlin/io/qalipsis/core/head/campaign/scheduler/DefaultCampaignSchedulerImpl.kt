@@ -8,7 +8,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
 import io.qalipsis.api.Executors.ORCHESTRATION_EXECUTOR_NAME
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
@@ -33,7 +33,7 @@ import java.time.Instant
 )
 internal class DefaultCampaignSchedulerImpl(
     private val userRepository: UserRepository,
-    private val campaignManager: CampaignManager,
+    private val campaignExecutor: CampaignExecutor,
     private val tenantRepository: TenantRepository,
     private val campaignRepository: CampaignRepository,
     @Named(ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
@@ -74,7 +74,7 @@ internal class DefaultCampaignSchedulerImpl(
         }
         val tenant = tenantRepository.findReferenceById(campaignEntity.tenantId)
         try {
-            campaignManager.start(
+            campaignExecutor.start(
                 tenant = tenant,
                 configurer = configurer,
                 configuration = configuration.copy(name = "${campaignEntity.name} (${Instant.now()})")

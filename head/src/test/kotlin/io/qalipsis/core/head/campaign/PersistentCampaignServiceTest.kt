@@ -24,6 +24,7 @@ import assertk.assertThat
 import assertk.assertions.any
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
@@ -39,6 +40,7 @@ import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
@@ -47,7 +49,10 @@ import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
+import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -60,6 +65,7 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -102,20 +108,31 @@ internal class PersistentCampaignServiceTest {
     @RelaxedMockK
     private lateinit var campaignScheduler: CampaignScheduler
 
+    @RelaxedMockK
+    private lateinit var hook1: CampaignHook
+
+    @RelaxedMockK
+    private lateinit var hook2: CampaignHook
+
+    @MockK
+    lateinit var factoryService: FactoryService
+
     private lateinit var persistentCampaignService: PersistentCampaignService
 
     @BeforeAll
     internal fun setUp() {
         persistentCampaignService = spyk(
             PersistentCampaignService(
-                campaignRepository,
-                userRepository,
-                tenantRepository,
-                campaignScenarioRepository,
-                campaignConfigurationConverter,
-                campaignConverter,
-                factoryRepository,
-                campaignScheduler
+                campaignRepository = campaignRepository,
+                userRepository = userRepository,
+                tenantRepository = tenantRepository,
+                campaignScenarioRepository = campaignScenarioRepository,
+                campaignConfigurationConverter = campaignConfigurationConverter,
+                campaignConverter = campaignConverter,
+                factoryRepository = factoryRepository,
+                campaignScheduler = campaignScheduler,
+                factoryService = factoryService,
+                hooks = listOf(hook1, hook2)
             ),
             recordPrivateCalls = true
         )
@@ -170,7 +187,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -195,7 +215,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -222,7 +245,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -254,7 +280,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -299,7 +328,10 @@ internal class PersistentCampaignServiceTest {
                 campaignConfigurationConverter,
                 campaignConverter,
                 factoryRepository,
-                campaignScheduler
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
             )
         }
 
@@ -344,7 +376,10 @@ internal class PersistentCampaignServiceTest {
                 campaignConfigurationConverter,
                 campaignConverter,
                 factoryRepository,
-                campaignScheduler
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
             )
         }
 
@@ -389,7 +424,10 @@ internal class PersistentCampaignServiceTest {
                 campaignConfigurationConverter,
                 campaignConverter,
                 factoryRepository,
-                campaignScheduler
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
             )
         }
 
@@ -434,7 +472,10 @@ internal class PersistentCampaignServiceTest {
                 campaignConfigurationConverter,
                 campaignConverter,
                 factoryRepository,
-                campaignScheduler
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
             )
         }
 
@@ -472,7 +513,20 @@ internal class PersistentCampaignServiceTest {
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
-            confirmVerified(campaignRepository, campaignConfigurationConverter)
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
         }
 
     @Test
@@ -522,7 +576,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -590,7 +647,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -659,7 +719,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -686,7 +749,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -712,7 +778,10 @@ internal class PersistentCampaignServiceTest {
                 campaignConfigurationConverter,
                 campaignConverter,
                 factoryRepository,
-                campaignScheduler
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
             )
         }
 
@@ -740,7 +809,9 @@ internal class PersistentCampaignServiceTest {
                 campaignConfigurationConverter,
                 campaignConverter,
                 factoryRepository,
-                campaignScheduler
+                campaignScheduler,
+                hook1,
+                hook2
             )
         }
 
@@ -767,6 +838,11 @@ internal class PersistentCampaignServiceTest {
         }
 
         val latch = Latch(true)
+        val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+        val scenario2 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-2" }
+        val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+        coEvery { factoryService.getActiveScenarios(refEq("my-tenant"), setOf("scenario-1", "scenario-2")) } returns
+                listOf(scenario1, scenario2, scenario3)
         coEvery {
             persistentCampaignService["convertAndSaveCampaign"](
                 refEq("my-tenant"),
@@ -784,6 +860,7 @@ internal class PersistentCampaignServiceTest {
         // then
         assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
+            factoryService.getActiveScenarios(refEq("my-tenant"), setOf("scenario-1", "scenario-2"))
             persistentCampaignService["convertAndSaveCampaign"](
                 refEq("my-tenant"),
                 refEq("my-user"),
@@ -801,7 +878,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -831,7 +911,10 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
 
@@ -862,9 +945,64 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
+
+    @Test
+    internal fun `should not schedule a campaign when some scenarios are currently not supported`() =
+        testDispatcherProvider.runTest {
+            // given
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val configuration = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                ),
+                scheduledAt = scheduleAt
+            )
+            val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+            val scenario3 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
+
+            coEvery {
+                factoryService.getActiveScenarios(
+                    refEq("my-tenant"),
+                    setOf("scenario-1", "scenario-2")
+                )
+            } returns listOf(scenario1, scenario3)
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                persistentCampaignService.schedule("my-tenant", "my-user", configuration)
+            }
+
+            // then
+            assertThat(exception.message)
+                .isEqualTo("The scenarios scenario-2 were not found or are not currently supported by healthy factories")
+            coVerifyOrder {
+                factoryService.getActiveScenarios(refEq("my-tenant"), setOf("scenario-1", "scenario-2"))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
+
+        }
 
     @Test
     internal fun `should save a campaign during creation without timeout`() = testDispatcherProvider.run {
@@ -898,12 +1036,20 @@ internal class PersistentCampaignServiceTest {
         coEvery { userRepository.findIdByUsername("my-user") } returns 199
 
         // when
-        val result = persistentCampaignService.coInvokeInvisible<RunningCampaign>("convertAndSaveCampaign", "my-tenant", "my-user", campaign, false)
+        val result = persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+            "convertAndSaveCampaign",
+            "my-tenant",
+            "my-user",
+            campaign,
+            false
+        )
 
         // then
         assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+            hook1.preCreate(refEq(campaign), refEq(runningCampaign))
+            hook2.preCreate(refEq(campaign), refEq(runningCampaign))
             tenantRepository.findIdByReference("my-tenant")
             userRepository.findIdByUsername("my-user")
             campaignRepository.save(withArg {
@@ -936,9 +1082,214 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
+
+    @Test
+    internal fun `should correctly handle the first hook exceptions when saving a campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                )
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "my-campaign"
+                every { scenarios } returns mapOf(
+                    "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                    "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+                )
+            }
+            coEvery {
+                campaignConfigurationConverter.convertConfiguration(
+                    "my-tenant",
+                    refEq(campaign)
+                )
+            } returns runningCampaign
+            coEvery {
+                hook1.preCreate(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors one", "Constraints errors two"))
+
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+                    "convertAndSaveCampaign",
+                    "my-tenant",
+                    "my-user",
+                    campaign,
+                    false
+                )
+            }
+
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(2)
+                index(0).isEqualTo("Constraints errors one")
+                index(1).isEqualTo("Constraints errors two")
+            }
+            coVerifyOrder {
+                campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+                hook1.preCreate(refEq(campaign), refEq(runningCampaign))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
+        }
+
+    @Test
+    internal fun `should stop immediately if the first hook raises exceptions when saving a campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                )
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "my-campaign"
+                every { scenarios } returns mapOf(
+                    "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                    "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+                )
+            }
+            coEvery {
+                campaignConfigurationConverter.convertConfiguration(
+                    "my-tenant",
+                    refEq(campaign)
+                )
+            } returns runningCampaign
+            coEvery {
+                hook1.preCreate(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors one", "Constraints errors two"))
+            coEvery {
+                hook2.preCreate(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors three", "Constraints errors four"))
+
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+                    "convertAndSaveCampaign",
+                    "my-tenant",
+                    "my-user",
+                    campaign,
+                    false
+                )
+            }
+
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(2)
+                index(0).isEqualTo("Constraints errors one")
+                index(1).isEqualTo("Constraints errors two")
+            }
+            coVerifyOrder {
+                campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+                hook1.preCreate(refEq(campaign), refEq(runningCampaign))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
+        }
+
+    @Test
+    internal fun `should correctly handle any hook exception in provided order when saving a campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                )
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "my-campaign"
+                every { scenarios } returns mapOf(
+                    "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                    "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+                )
+            }
+            coEvery {
+                campaignConfigurationConverter.convertConfiguration(
+                    "my-tenant",
+                    refEq(campaign)
+                )
+            } returns runningCampaign
+            coEvery {
+                hook2.preCreate(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors three", "Constraints errors four"))
+
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+                    "convertAndSaveCampaign",
+                    "my-tenant",
+                    "my-user",
+                    campaign,
+                    false
+                )
+            }
+
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(2)
+                index(0).isEqualTo("Constraints errors three")
+                index(1).isEqualTo("Constraints errors four")
+            }
+            coVerifyOrder {
+                campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+                hook1.preCreate(refEq(campaign), refEq(runningCampaign))
+                hook2.preCreate(refEq(campaign), refEq(runningCampaign))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
+        }
 
     @Test
     internal fun `should save a campaign during scheduling with timeout`() = testDispatcherProvider.run {
@@ -976,12 +1327,20 @@ internal class PersistentCampaignServiceTest {
         coEvery { campaignRepository.save(any()) } returns savedEntity
         coEvery { userRepository.findIdByUsername("my-user") } returns 199
         // when
-        val result = persistentCampaignService.coInvokeInvisible<RunningCampaign>("convertAndSaveCampaign", "my-tenant", "my-user", configuration, true)
+        val result = persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+            "convertAndSaveCampaign",
+            "my-tenant",
+            "my-user",
+            configuration,
+            true
+        )
 
         // then
         assertThat(result).isSameAs(runningCampaign)
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
+            hook1.preSchedule(refEq(configuration), refEq(runningCampaign))
+            hook2.preSchedule(refEq(configuration), refEq(runningCampaign))
             tenantRepository.findIdByReference("my-tenant")
             userRepository.findIdByUsername("my-user")
             campaignRepository.save(withArg {
@@ -1017,8 +1376,212 @@ internal class PersistentCampaignServiceTest {
             campaignConfigurationConverter,
             campaignConverter,
             factoryRepository,
-            campaignScheduler
+            campaignScheduler,
+            factoryService,
+            hook1,
+            hook2
         )
     }
+
+    @Test
+    internal fun `should correctly handle the first hook exceptions when scheduling a campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                )
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "my-campaign"
+                every { scenarios } returns mapOf(
+                    "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                    "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+                )
+            }
+            coEvery {
+                campaignConfigurationConverter.convertConfiguration(
+                    "my-tenant",
+                    refEq(campaign)
+                )
+            } returns runningCampaign
+            coEvery {
+                hook1.preSchedule(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors one", "Constraints errors two"))
+
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+                    "convertAndSaveCampaign",
+                    "my-tenant",
+                    "my-user",
+                    campaign,
+                    true
+                )
+            }
+
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(2)
+                index(0).isEqualTo("Constraints errors one")
+                index(1).isEqualTo("Constraints errors two")
+            }
+            coVerifyOrder {
+                campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+                hook1.preSchedule(refEq(campaign), refEq(runningCampaign))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
+        }
+
+    @Test
+    internal fun `should stop immediately if the first hook raises exceptions when scheduling a campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                )
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "my-campaign"
+                every { scenarios } returns mapOf(
+                    "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                    "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+                )
+            }
+            coEvery {
+                campaignConfigurationConverter.convertConfiguration(
+                    "my-tenant",
+                    refEq(campaign)
+                )
+            } returns runningCampaign
+            coEvery {
+                hook1.preSchedule(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors one", "Constraints errors two"))
+            coEvery {
+                hook2.preSchedule(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors three", "Constraints errors four"))
+
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+                    "convertAndSaveCampaign",
+                    "my-tenant",
+                    "my-user",
+                    campaign,
+                    true
+                )
+            }
+
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(2)
+                index(0).isEqualTo("Constraints errors one")
+                index(1).isEqualTo("Constraints errors two")
+            }
+            coVerifyOrder {
+                campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+                hook1.preSchedule(refEq(campaign), refEq(runningCampaign))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                hook1,
+                hook2
+            )
+        }
+
+    @Test
+    internal fun `should correctly handle any hook exception in provided order when scheduling a campaign`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-1" to ScenarioRequest(1),
+                    "scenario-2" to ScenarioRequest(3)
+                )
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "my-campaign"
+                every { scenarios } returns mapOf(
+                    "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 },
+                    "scenario-2" to relaxedMockk { every { minionsCount } returns 12321 }
+                )
+            }
+            coEvery {
+                campaignConfigurationConverter.convertConfiguration(
+                    "my-tenant",
+                    refEq(campaign)
+                )
+            } returns runningCampaign
+            coEvery {
+                hook2.preSchedule(refEq(campaign), refEq(runningCampaign))
+            } throws BulkIllegalArgumentException(listOf("Constraints errors three", "Constraints errors four"))
+
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                persistentCampaignService.coInvokeInvisible<RunningCampaign>(
+                    "convertAndSaveCampaign",
+                    "my-tenant",
+                    "my-user",
+                    campaign,
+                    true
+                )
+            }
+
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(2)
+                index(0).isEqualTo("Constraints errors three")
+                index(1).isEqualTo("Constraints errors four")
+            }
+            coVerifyOrder {
+                campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
+                hook1.preSchedule(refEq(campaign), refEq(runningCampaign))
+                hook2.preSchedule(refEq(campaign), refEq(runningCampaign))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                tenantRepository,
+                campaignScenarioRepository,
+                campaignConfigurationConverter,
+                campaignConverter,
+                factoryRepository,
+                campaignScheduler,
+                factoryService,
+                hook1,
+                hook2
+            )
+        }
 
 }

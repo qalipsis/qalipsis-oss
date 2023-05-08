@@ -30,6 +30,7 @@ import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
@@ -45,7 +46,8 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
 internal class InMemoryCampaignService(
-    private val campaignConfigurationConverter: CampaignConfigurationConverter
+    private val campaignConfigurationConverter: CampaignConfigurationConverter,
+    private val hooks: List<CampaignHook>
 ) : CampaignService {
 
     private var currentCampaign: Campaign? = null
@@ -60,6 +62,8 @@ internal class InMemoryCampaignService(
         campaignConfiguration: CampaignConfiguration
     ): RunningCampaign {
         val runningCampaign = campaignConfigurationConverter.convertConfiguration(tenant, campaignConfiguration)
+
+        hooks.forEach { hook -> hook.preCreate(campaignConfiguration, runningCampaign) }
 
         updateLock.withLock {
             currentCampaignConfiguration = campaignConfiguration

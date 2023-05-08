@@ -52,7 +52,7 @@ import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity.INFO
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.CampaignManager
+import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
@@ -86,7 +86,7 @@ internal class CampaignControllerIntegrationTest {
     lateinit var httpClient: HttpClient
 
     @RelaxedMockK
-    private lateinit var campaignManager: CampaignManager
+    private lateinit var campaignExecutor: CampaignExecutor
 
     @RelaxedMockK
     private lateinit var campaignService: CampaignService
@@ -112,13 +112,13 @@ internal class CampaignControllerIntegrationTest {
     @MockBean(CampaignReportProvider::class)
     fun campaignReportProvider() = campaignReportProvider
 
-    @MockBean(CampaignManager::class)
-    fun campaignManager() = campaignManager
+    @MockBean(CampaignExecutor::class)
+    fun campaignManager() = campaignExecutor
 
     @BeforeEach
     internal fun setUp() {
         excludeRecords {
-            campaignManager.hashCode()
+            campaignExecutor.hashCode()
             campaignService.hashCode()
             clusterFactoryService.hashCode()
             campaignReportProvider.hashCode()
@@ -136,7 +136,7 @@ internal class CampaignControllerIntegrationTest {
             every { key } returns "my-campaign"
         }
         coEvery {
-            campaignManager.start(
+            campaignExecutor.start(
                 Defaults.TENANT,
                 Defaults.USER,
                 eq(campaignConfiguration)
@@ -171,7 +171,7 @@ internal class CampaignControllerIntegrationTest {
         // then
         coVerifyOrder {
             // Called with the default user.
-            campaignManager.start(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignExecutor.start(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
             campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
@@ -181,7 +181,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -214,7 +214,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -246,7 +246,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -282,7 +282,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -333,7 +333,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -384,7 +384,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -438,7 +438,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -455,7 +455,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", false)
+            campaignExecutor.abort(Defaults.TENANT, Defaults.USER, "first_campaign", false)
         }
 
         assertThat(response).all {
@@ -463,7 +463,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -480,14 +480,14 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.abort(Defaults.TENANT, Defaults.USER, "first_campaign", true)
+            campaignExecutor.abort(Defaults.TENANT, Defaults.USER, "first_campaign", true)
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -577,7 +577,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -606,7 +606,7 @@ internal class CampaignControllerIntegrationTest {
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign-new")
         val replayRequest = HttpRequest.POST("/my-campaign/replay", null)
         coEvery {
-            campaignManager.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+            campaignExecutor.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
         } returns runningCampaign
         coEvery {
             campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
@@ -617,7 +617,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignManager.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+            campaignExecutor.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
             campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
         }
         assertThat(response).all {
@@ -626,7 +626,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -658,7 +658,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -689,7 +689,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -707,7 +707,7 @@ internal class CampaignControllerIntegrationTest {
             every { key } returns "my-campaign"
         }
         coEvery {
-            campaignManager.schedule(
+            campaignService.schedule(
                 Defaults.TENANT,
                 Defaults.USER,
                 eq(campaignConfiguration)
@@ -742,7 +742,7 @@ internal class CampaignControllerIntegrationTest {
         // then
         coVerifyOrder {
             // Called with the default user.
-            campaignManager.schedule(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignService.schedule(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
             campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
@@ -752,7 +752,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService
@@ -785,7 +785,7 @@ internal class CampaignControllerIntegrationTest {
         }
         confirmVerified(
             campaignService,
-            campaignManager,
+            campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
             clusterFactoryService

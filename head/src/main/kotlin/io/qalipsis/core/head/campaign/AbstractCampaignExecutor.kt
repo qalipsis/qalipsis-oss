@@ -55,7 +55,7 @@ import javax.validation.constraints.NotBlank
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
+internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val headChannel: HeadChannel,
     private val factoryService: FactoryService,
     private val campaignService: CampaignService,
@@ -64,7 +64,7 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
     private val coroutineScope: CoroutineScope,
     private val campaignExecutionContext: C,
     private val campaignConstraintsProvider: CampaignConstraintsProvider
-) : CampaignManager, FeedbackListener<Feedback> {
+) : CampaignExecutor, FeedbackListener<Feedback> {
 
     private val processingMutex = Mutex()
 
@@ -130,24 +130,6 @@ internal abstract class AbstractCampaignManager<C : CampaignExecutionContext>(
             throw e
         }
         return runningCampaign
-    }
-
-    override suspend fun schedule(
-        tenant: String,
-        configurer: String,
-        configuration: CampaignConfiguration
-    ): RunningCampaign {
-
-        require(configuration.scheduledAt?.isAfter(Instant.now()) == true) {
-            "The schedule time should be in the future"
-        }
-        val selectedScenarios = configuration.scenarios.keys
-        val scenarios = factoryService.getActiveScenarios(tenant, selectedScenarios).distinctBy { it.name }
-        log.trace { "Found unique scenarios: $scenarios" }
-        val missingScenarios = selectedScenarios - scenarios.map { it.name }.toSet()
-        require(missingScenarios.isEmpty()) { "The scenarios ${missingScenarios.joinToString()} were not found or are not currently supported by healthy factories" }
-
-        return campaignService.schedule(tenant, configurer, configuration)
     }
 
     private suspend fun prepareAndExecute(

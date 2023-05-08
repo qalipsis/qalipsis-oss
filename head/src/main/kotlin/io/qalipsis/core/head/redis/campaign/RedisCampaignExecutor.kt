@@ -31,7 +31,7 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.AbstractCampaignManager
+import io.qalipsis.core.head.campaign.AbstractCampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.AbstractCampaignExecutionState
@@ -57,7 +57,7 @@ import kotlinx.coroutines.CoroutineScope
     Requires(env = [ExecutionEnvironments.HEAD]),
     Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
 )
-internal class RedisCampaignManager(
+internal class RedisCampaignExecutor(
     headChannel: HeadChannel,
     factoryService: FactoryService,
     campaignService: CampaignService,
@@ -67,7 +67,7 @@ internal class RedisCampaignManager(
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     private val campaignExecutionContext: CampaignExecutionContext,
     private val redisOperations: CampaignRedisOperations,
-) : AbstractCampaignManager<CampaignExecutionContext>(
+) : AbstractCampaignExecutor<CampaignExecutionContext>(
     headChannel,
     factoryService,
     campaignService,

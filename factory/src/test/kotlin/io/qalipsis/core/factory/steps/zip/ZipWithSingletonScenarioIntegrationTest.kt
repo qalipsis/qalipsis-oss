@@ -52,7 +52,7 @@ internal class ZipStepScenarioIntegrationTest {
         val exitCode = QalipsisTestRunner.withScenarios("zip-scenario-test")
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
-                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
                 "logging.level.io.qalipsis.core.factory.steps.zip=TRACE"
             )
             .execute()
@@ -68,7 +68,7 @@ internal class ZipStepScenarioIntegrationTest {
         val exitCode = QalipsisTestRunner.withScenarios("zip-scenario-test-without-output")
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
-                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
                 "logging.level.io.qalipsis.core.factory.steps.zip=TRACE"
             )
             .execute()

@@ -433,7 +433,6 @@ internal class FactoryCampaignManagerImplTest {
         excludeRecords { executionProfile.toString() }
 
         // when
-        val start = System.currentTimeMillis() + 2000
         val minionsStartDefinitions =
             factoryCampaignManager.prepareMinionsExecutionProfile(
                 "my-campaign",

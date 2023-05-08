@@ -53,7 +53,7 @@ internal class InnerJoinStepScenarioIntegrationTest {
         val exitCode = QalipsisTestRunner.withScenarios("inner-join-scenario-test")
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
-                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
                 "logging.level.io.qalipsis.core.factory.steps.join=TRACE"
             )
             .execute()
@@ -69,7 +69,7 @@ internal class InnerJoinStepScenarioIntegrationTest {
         val exitCode = QalipsisTestRunner.withScenarios("inner-join-scenario-test-without-output")
             .withConfiguration(
                 "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
-                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignManager=TRACE",
+                "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
                 "logging.level.io.qalipsis.core.factory.steps.join=TRACE"
             )
             .execute()

@@ -26,7 +26,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.AbstractCampaignManager
+import io.qalipsis.core.head.campaign.AbstractCampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
@@ -50,7 +50,7 @@ import kotlinx.coroutines.CoroutineScope
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_HEAD])
-internal class StandaloneCampaignManager(
+internal class StandaloneCampaignExecutor(
     headChannel: HeadChannel,
     factoryService: FactoryService,
     campaignService: CampaignService,
@@ -59,7 +59,7 @@ internal class StandaloneCampaignManager(
     campaignConstraintsProvider: CampaignConstraintsProvider,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     campaignExecutionContext: CampaignExecutionContext,
-) : AbstractCampaignManager<CampaignExecutionContext>(
+) : AbstractCampaignExecutor<CampaignExecutionContext>(
     headChannel,
     factoryService,
     campaignService,
