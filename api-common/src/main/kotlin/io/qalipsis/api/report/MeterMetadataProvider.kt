@@ -49,18 +49,21 @@ interface MeterMetadataProvider {
      * List all the fields that can be used for aggregation of data on meters.
      *
      * @param tenant the reference of the tenant owning the data
+     * @param meterName the name of the meter for which the fields are to be listed, if known
      */
-    suspend fun listFields(tenant: String): Collection<DataField>
+    suspend fun listFields(tenant: String, meterName: String? = null): Collection<DataField>
 
     /**
      * Searches tags matching the potential filters and provide also values.
      *
      * @param tenant the reference of the tenant owning the data
+     * @param meterName the name of the meter for which the tags and values are to be listed, if known
      * @param filters the different filters (potentially with wildcard *) the tags names should match
      * @param size the maximum count of results of tags names and values for each name
      */
     suspend fun searchTagsAndValues(
         tenant: String,
+        meterName: String? = null,
         filters: Collection<String>,
         @Positive @Max(100) size: Int
     ): Map<String, Collection<String>>
