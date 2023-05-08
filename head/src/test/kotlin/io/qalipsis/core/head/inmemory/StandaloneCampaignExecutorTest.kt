@@ -116,16 +116,16 @@ internal class StandaloneCampaignExecutorTest {
 
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
-        val campaignManager = standaloneCampaignManager(relaxedMockk())
+        val campaignExecutor = standaloneCampaignExecutor(relaxedMockk())
         assertThat(
-            campaignManager.accept(
+            campaignExecutor.accept(
                 relaxedMockk(
                     "campaign-feedback",
                     CampaignManagementFeedback::class
                 )
             )
         ).isTrue()
-        assertThat(campaignManager.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
+        assertThat(campaignExecutor.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
 
         confirmVerified(
             headChannel,
@@ -142,7 +142,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should start a new campaign when all the scenarios are currently supported`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = standaloneCampaignManager(this)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -182,21 +182,21 @@ internal class StandaloneCampaignExecutorTest {
                 coEvery { init() } returns listOf(directive1, directive2)
                 justRun { inject(any()) }
             }
-            coEvery { campaignManager.create(refEq(runningCampaign), any(), any()) } returns initialState
+            coEvery { campaignExecutor.create(refEq(runningCampaign), any(), any()) } returns initialState
 
             val countDown = SuspendedCountLatch(2)
             coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
 
             // when
-            val result = campaignManager.start("my-tenant", "my-user", campaign)
+            val result = campaignExecutor.start("my-tenant", "my-user", campaign)
             // Wait for the latest directive to be sent.
             countDown.await()
 
             // then
             assertThat(result).isSameAs(runningCampaign)
-            assertThat(campaignManager.currentCampaignState()).isSameAs(initialState)
+            assertThat(campaignExecutor.currentCampaignState()).isSameAs(initialState)
             coVerifyOrder {
-                campaignManager.start("my-tenant", "my-user", refEq(campaign))
+                campaignExecutor.start("my-tenant", "my-user", refEq(campaign))
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
@@ -208,14 +208,14 @@ internal class StandaloneCampaignExecutorTest {
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
-                campaignManager.create(
+                campaignExecutor.create(
                     runningCampaign,
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
                 )
                 initialState.inject(campaignExecutionContext)
                 initialState.init()
-                campaignManager.set(campaignManager.currentCampaignState())
+                campaignExecutor.set(campaignExecutor.currentCampaignState())
                 headChannel.publishDirective(refEq(directive1))
                 headChannel.publishDirective(refEq(directive2))
             }
@@ -234,7 +234,7 @@ internal class StandaloneCampaignExecutorTest {
     @Test
     internal fun `should create a factory assignment state as initial state`() = testDispatcherProvider.run {
         // given
-        val campaignManager = standaloneCampaignManager(this)
+        val campaignExecutor = standaloneCampaignExecutor(this)
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
         val scenario1 = mockk<ScenarioSummary>()
         val scenario2 = mockk<ScenarioSummary>()
@@ -243,7 +243,7 @@ internal class StandaloneCampaignExecutorTest {
         val factory3 = mockk<Factory>()
 
         // when
-        val initialState = campaignManager.create(
+        val initialState = campaignExecutor.create(
             runningCampaign,
             listOf(factory1, factory2, factory3),
             listOf(scenario1, scenario2)
@@ -271,7 +271,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should not start a new campaign when some scenarios are currently not supported`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = standaloneCampaignManager(this)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
@@ -283,7 +283,7 @@ internal class StandaloneCampaignExecutorTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start("my-tenant", "my-user", campaign)
+                campaignExecutor.start("my-tenant", "my-user", campaign)
             }
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
@@ -304,15 +304,15 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should not start a new campaign when one is already running`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = standaloneCampaignManager(this)
-            campaignManager.setProperty("currentCampaignState",
+            val campaignExecutor = standaloneCampaignExecutor(this)
+            campaignExecutor.setProperty("currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                     every { isCompleted } returns false
                 })
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start("my-tenant", "my-user", relaxedMockk())
+                campaignExecutor.start("my-tenant", "my-user", relaxedMockk())
             }
 
             confirmVerified(
@@ -329,8 +329,8 @@ internal class StandaloneCampaignExecutorTest {
     @Test
     internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
         //given
-        val campaignManager = standaloneCampaignManager(this)
-        campaignManager.setProperty(
+        val campaignExecutor = standaloneCampaignExecutor(this)
+        campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                 every { isCompleted } returns false
@@ -348,18 +348,18 @@ internal class StandaloneCampaignExecutorTest {
             })
 
         // when
-        campaignManager.abort("my-tenant", "my-user", "first_campaign", true)
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coExcludeRecords {
-            campaignManager.abort(any(), any(), any(), any())
+            campaignExecutor.abort(any(), any(), any(), any())
         }
         coVerifyOrder {
-            campaignManager.get("my-tenant", "first_campaign")
+            campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
-            campaignManager.set(capture(newState))
+            campaignExecutor.set(capture(newState))
             campaignReportStateKeeper.abort("first_campaign")
             headChannel.publishDirective(capture(sentDirectives))
         }
@@ -388,8 +388,8 @@ internal class StandaloneCampaignExecutorTest {
     @Test
     internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
         //given
-        val campaignManager = standaloneCampaignManager(this)
-        campaignManager.setProperty(
+        val campaignExecutor = standaloneCampaignExecutor(this)
+        campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                 every { isCompleted } returns false
@@ -407,18 +407,18 @@ internal class StandaloneCampaignExecutorTest {
             })
 
         // when
-        campaignManager.abort("my-tenant", "my-user", "first_campaign", false)
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", false)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coExcludeRecords {
-            campaignManager.abort(any(), any(), any(), any())
+            campaignExecutor.abort(any(), any(), any(), any())
         }
         coVerifyOrder {
-            campaignManager.get("my-tenant", "first_campaign")
+            campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
-            campaignManager.set(capture(newState))
+            campaignExecutor.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
         confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
@@ -443,7 +443,7 @@ internal class StandaloneCampaignExecutorTest {
         }
 
         confirmVerified(
-            campaignManager,
+            campaignExecutor,
             headChannel,
             factoryService,
             campaignService,
@@ -457,7 +457,7 @@ internal class StandaloneCampaignExecutorTest {
     @Test
     internal fun `should replay a campaign `() = testDispatcherProvider.run {
         // given
-        val campaignManager = standaloneCampaignManager(this)
+        val campaignExecutor = standaloneCampaignExecutor(this)
         val campaignConfiguration = CampaignConfiguration(
             name = "This is a campaign",
             speedFactor = 123.2,
@@ -468,21 +468,21 @@ internal class StandaloneCampaignExecutorTest {
         )
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
         coEvery { campaignService.retrieveConfiguration("my-tenant", "my-campaign") } returns campaignConfiguration
-        coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
+        coEvery { campaignExecutor.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
 
         // when
-        val result = campaignManager.replay("my-tenant", "my-user", "my-campaign")
+        val result = campaignExecutor.replay("my-tenant", "my-user", "my-campaign")
 
         // then
         assertThat(result).isSameAs(runningCampaign)
-        coExcludeRecords { campaignManager.replay("my-tenant", "my-user", "my-campaign") }
+        coExcludeRecords { campaignExecutor.replay("my-tenant", "my-user", "my-campaign") }
         coVerifyOrder {
             campaignService.retrieveConfiguration("my-tenant", "my-campaign")
-            campaignManager.start("my-tenant", "my-user", campaignConfiguration)
+            campaignExecutor.start("my-tenant", "my-user", campaignConfiguration)
         }
 
         confirmVerified(
-            campaignManager,
+            campaignExecutor,
             headChannel,
             factoryService,
             campaignService,
@@ -497,7 +497,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = standaloneCampaignManager(this)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -512,13 +512,13 @@ internal class StandaloneCampaignExecutorTest {
             coEvery {
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
             } returns runningCampaign
-            campaignManager.setProperty(
+            campaignExecutor.setProperty(
                 "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                     every { isCompleted } returns false
                 })
             coEvery {
-                campaignManager.currentCampaignState().abort(any())
+                campaignExecutor.currentCampaignState().abort(any())
             } returns relaxedMockk {
                 every { isCompleted } returns false
                 coEvery { init() } returns listOf(
@@ -540,20 +540,20 @@ internal class StandaloneCampaignExecutorTest {
             }
 
             // when
-            campaignManager.notify(timeoutFeedback)
+            campaignExecutor.notify(timeoutFeedback)
 
             // then
             val sentDirectives = mutableListOf<Directive>()
             val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
             coExcludeRecords {
-                campaignManager.abort(any(), any(), any(), any())
+                campaignExecutor.abort(any(), any(), any(), any())
             }
 
             coVerifyOrder {
-                campaignManager.notify(timeoutFeedback)
-                campaignManager.get("my-tenant", "first_campaign")
+                campaignExecutor.notify(timeoutFeedback)
+                campaignExecutor.get("my-tenant", "first_campaign")
                 campaignService.abort("my-tenant", null, "first_campaign")
-                campaignManager.set(capture(newState))
+                campaignExecutor.set(capture(newState))
                 headChannel.publishDirective(capture(sentDirectives))
             }
             confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
@@ -591,7 +591,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should abort the campaign hardly when a CampaignTimeoutFeedback with hard equals true is received`() =
         testDispatcherProvider.run {
             // given
-            val campaignManager = standaloneCampaignManager(this)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -606,13 +606,13 @@ internal class StandaloneCampaignExecutorTest {
             coEvery {
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
             } returns runningCampaign
-            campaignManager.setProperty(
+            campaignExecutor.setProperty(
                 "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                     every { isCompleted } returns false
                 })
             coEvery {
-                campaignManager.currentCampaignState().abort(any())
+                campaignExecutor.currentCampaignState().abort(any())
             } returns relaxedMockk {
                 every { isCompleted } returns false
                 coEvery { init() } returns listOf(
@@ -634,20 +634,20 @@ internal class StandaloneCampaignExecutorTest {
             }
 
             // when
-            campaignManager.notify(timeoutFeedback)
+            campaignExecutor.notify(timeoutFeedback)
 
             // then
             val sentDirectives = mutableListOf<Directive>()
             val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
             coExcludeRecords {
-                campaignManager.abort(any(), any(), any(), any())
+                campaignExecutor.abort(any(), any(), any(), any())
             }
 
             coVerifyOrder {
-                campaignManager.notify(timeoutFeedback)
-                campaignManager.get("my-tenant", "first_campaign")
+                campaignExecutor.notify(timeoutFeedback)
+                campaignExecutor.get("my-tenant", "first_campaign")
                 campaignService.abort("my-tenant", null, "first_campaign")
-                campaignManager.set(capture(newState))
+                campaignExecutor.set(capture(newState))
                 campaignReportStateKeeper.abort("first_campaign")
                 headChannel.publishDirective(capture(sentDirectives))
             }
@@ -683,7 +683,7 @@ internal class StandaloneCampaignExecutorTest {
         }
 
 
-    private fun standaloneCampaignManager(scope: CoroutineScope) =
+    private fun standaloneCampaignExecutor(scope: CoroutineScope) =
         spyk(
             StandaloneCampaignExecutor(
                 headChannel,

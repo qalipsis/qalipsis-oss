@@ -113,7 +113,7 @@ internal class CampaignControllerIntegrationTest {
     fun campaignReportProvider() = campaignReportProvider
 
     @MockBean(CampaignExecutor::class)
-    fun campaignManager() = campaignExecutor
+    fun campaignExecutor() = campaignExecutor
 
     @BeforeEach
     internal fun setUp() {

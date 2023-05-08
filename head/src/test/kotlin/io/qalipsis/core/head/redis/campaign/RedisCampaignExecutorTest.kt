@@ -120,16 +120,16 @@ internal open class RedisCampaignExecutorTest {
 
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
-        val campaignManager = redisCampaignManager(relaxedMockk())
+        val campaignExecutor = redisCampaignExecutor(relaxedMockk())
         assertThat(
-            campaignManager.accept(
+            campaignExecutor.accept(
                 relaxedMockk(
                     "campaign-feedback",
                     CampaignManagementFeedback::class
                 )
             )
         ).isTrue()
-        assertThat(campaignManager.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
+        assertThat(campaignExecutor.accept(relaxedMockk("non-campaign-feedback"))).isFalse()
 
         confirmVerified(
             headChannel,
@@ -147,7 +147,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should start a new campaign when all the scenarios are currently supported and release the unused factories`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -187,13 +187,13 @@ internal open class RedisCampaignExecutorTest {
                 coEvery { init() } returns listOf(directive1, directive2)
                 justRun { inject(any()) }
             }
-            coEvery { campaignManager.create(refEq(runningCampaign), any(), any()) } returns initialState
+            coEvery { campaignExecutor.create(refEq(runningCampaign), any(), any()) } returns initialState
 
             val countDown = SuspendedCountLatch(2)
             coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
 
             // when
-            val result = campaignManager.start("my-tenant", "my-user", campaign)
+            val result = campaignExecutor.start("my-tenant", "my-user", campaign)
             // Wait for the latest directive to be sent.
             countDown.await()
 
@@ -211,7 +211,7 @@ internal open class RedisCampaignExecutorTest {
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
-                campaignManager.create(
+                campaignExecutor.create(
                     runningCampaign,
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
@@ -238,7 +238,7 @@ internal open class RedisCampaignExecutorTest {
     @Test
     internal open fun `should create a redis state as initial state`() = testDispatcherProvider.run {
         // given
-        val campaignManager = redisCampaignManager(this)
+        val campaignExecutor = redisCampaignExecutor(this)
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
         val scenario1 = mockk<ScenarioSummary>()
         val scenario2 = mockk<ScenarioSummary>()
@@ -247,7 +247,7 @@ internal open class RedisCampaignExecutorTest {
         val factory3 = mockk<Factory>()
 
         // when
-        val initialState = campaignManager.create(
+        val initialState = campaignExecutor.create(
             runningCampaign,
             listOf(factory1, factory2, factory3),
             listOf(scenario1, scenario2)
@@ -276,7 +276,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should close the campaign after creation when an exception occurs`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -299,7 +299,7 @@ internal open class RedisCampaignExecutorTest {
 
             // when
             val exception = assertThrows<RuntimeException> {
-                campaignManager.start("my-tenant", "my-user", campaign)
+                campaignExecutor.start("my-tenant", "my-user", campaign)
             }
 
             // then
@@ -327,7 +327,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should not start a new campaign when some scenarios are currently not supported`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "my-campaign",
                 scenarios = mapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk()),
@@ -339,7 +339,7 @@ internal open class RedisCampaignExecutorTest {
 
             // when + then
             assertThrows<IllegalArgumentException> {
-                campaignManager.start("my-tenant", "my-user", campaign)
+                campaignExecutor.start("my-tenant", "my-user", campaign)
             }
             coVerifyOrder {
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
@@ -361,7 +361,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisFactoryAssignmentState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -371,7 +371,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisFactoryAssignmentState::class).all {
@@ -400,7 +400,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisMinionsAssignmentState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -410,7 +410,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.MINIONS_ASSIGNMENT_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisMinionsAssignmentState::class).all {
@@ -439,7 +439,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisWarmupState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -449,7 +449,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.WARMUP_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisWarmupState::class).all {
@@ -478,7 +478,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisMinionsStartupState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -488,7 +488,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.MINIONS_STARTUP_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisMinionsScheduleRampUpState::class).all {
@@ -517,7 +517,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisRunningState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -527,7 +527,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.RUNNING_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisRunningState::class).all {
@@ -556,7 +556,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisCompletionState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -566,7 +566,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.COMPLETION_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisCompletionState::class).all {
@@ -595,7 +595,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisFailureState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -605,7 +605,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.FAILURE_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisFailureState::class).all {
@@ -634,7 +634,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should return RedisAbortingState`() =
         testDispatcherProvider.runTest {
             // given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = relaxedMockk<RunningCampaign>()
             coEvery {
                 operations.getState(
@@ -644,7 +644,7 @@ internal open class RedisCampaignExecutorTest {
             } returns (campaign to CampaignRedisState.ABORTING_STATE)
 
             // when
-            val state = campaignManager.get("my-tenant", "my-campaign")
+            val state = campaignExecutor.get("my-tenant", "my-campaign")
 
             // then
             assertThat(state).isInstanceOf(RedisAbortingState::class).all {
@@ -672,7 +672,7 @@ internal open class RedisCampaignExecutorTest {
     @Test
     internal fun `should abort hard a campaign`() = testDispatcherProvider.runTest {
         //given
-        val campaignManager = redisCampaignManager(this)
+        val campaignExecutor = redisCampaignExecutor(this)
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -685,19 +685,19 @@ internal open class RedisCampaignExecutorTest {
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
 
         // when
-        campaignManager.abort("my-tenant", "my-user", "first_campaign", true)
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coVerifyOrder {
-            campaignManager.get("my-tenant", "first_campaign")
+            campaignExecutor.get("my-tenant", "first_campaign")
             operations.getState("my-tenant", "first_campaign")
             operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
             operations.prepareFactoriesForFeedbackExpectations(campaign)
             operations.saveConfiguration(campaign)
             campaignService.abort("my-tenant", "my-user", "first_campaign")
-            campaignManager.set(capture(newState))
+            campaignExecutor.set(capture(newState))
             campaignReportStateKeeper.abort("first_campaign")
             headChannel.publishDirective(capture(sentDirectives))
         }
@@ -742,7 +742,7 @@ internal open class RedisCampaignExecutorTest {
     @Test
     internal fun `should abort soft a campaign`() = testDispatcherProvider.runTest {
         //given
-        val campaignManager = redisCampaignManager(this)
+        val campaignExecutor = redisCampaignExecutor(this)
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -755,19 +755,19 @@ internal open class RedisCampaignExecutorTest {
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
 
         // when
-        campaignManager.abort("my-tenant", "my-user", "first_campaign", false)
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", false)
 
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coVerifyOrder {
-            campaignManager.get("my-tenant", "first_campaign")
+            campaignExecutor.get("my-tenant", "first_campaign")
             operations.getState("my-tenant", "first_campaign")
             operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
             operations.prepareFactoriesForFeedbackExpectations(campaign)
             operations.saveConfiguration(campaign)
             campaignService.abort("my-tenant", "my-user", "first_campaign")
-            campaignManager.set(capture(newState))
+            campaignExecutor.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
         assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
@@ -811,7 +811,7 @@ internal open class RedisCampaignExecutorTest {
     @Test
     internal fun `should replay a campaign`() = testDispatcherProvider.runTest {
         // given
-        val campaignManager = redisCampaignManager(this)
+        val campaignExecutor = redisCampaignExecutor(this)
         val campaignConfiguration = CampaignConfiguration(
             name = "This is a campaign",
             speedFactor = 123.2,
@@ -822,21 +822,21 @@ internal open class RedisCampaignExecutorTest {
         )
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
         coEvery { campaignService.retrieveConfiguration("my-tenant", "my-campaign") } returns campaignConfiguration
-        coEvery { campaignManager.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
+        coEvery { campaignExecutor.start("my-tenant", "my-user", campaignConfiguration) } returns runningCampaign
 
         // when
-        val result = campaignManager.replay("my-tenant", "my-user", "my-campaign")
+        val result = campaignExecutor.replay("my-tenant", "my-user", "my-campaign")
 
         // then
         assertThat(result).isSameAs(runningCampaign)
-        coExcludeRecords { campaignManager.replay("my-tenant", "my-user", "my-campaign") }
+        coExcludeRecords { campaignExecutor.replay("my-tenant", "my-user", "my-campaign") }
         coVerifyOrder {
             campaignService.retrieveConfiguration("my-tenant", "my-campaign")
-            campaignManager.start("my-tenant", "my-user", campaignConfiguration)
+            campaignExecutor.start("my-tenant", "my-user", campaignConfiguration)
         }
 
         confirmVerified(
-            campaignManager,
+            campaignExecutor,
             headChannel,
             factoryService,
             campaignService,
@@ -852,7 +852,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
         testDispatcherProvider.runTest {
             //given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = RunningCampaign(
                 tenant = "my-tenant",
                 key = "first_campaign",
@@ -876,21 +876,21 @@ internal open class RedisCampaignExecutorTest {
             }
 
             // when
-            campaignManager.notify(timeoutFeedback)
+            campaignExecutor.notify(timeoutFeedback)
 
             // then
             val sentDirectives = mutableListOf<Directive>()
             val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
             coVerifyOrder {
-                campaignManager.notify(timeoutFeedback)
-                campaignManager.get("my-tenant", "first_campaign")
+                campaignExecutor.notify(timeoutFeedback)
+                campaignExecutor.get("my-tenant", "first_campaign")
                 operations.getState("my-tenant", "first_campaign")
                 operations.getState("my-tenant", "first_campaign")
                 operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
                 operations.prepareFactoriesForFeedbackExpectations(campaign)
                 operations.saveConfiguration(campaign)
                 campaignService.abort("my-tenant", null, "first_campaign")
-                campaignManager.set(capture(newState))
+                campaignExecutor.set(capture(newState))
                 headChannel.publishDirective(capture(sentDirectives))
             }
             assertThat(newState.captured).isInstanceOf(AbortingState::class).all {
@@ -935,7 +935,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should abort the campaign hardly when a CampaignTimeoutFeedback with hard equals true is received`() =
         testDispatcherProvider.runTest {
             //given
-            val campaignManager = redisCampaignManager(this)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = RunningCampaign(
                 tenant = "my-tenant",
                 key = "first_campaign",
@@ -957,22 +957,22 @@ internal open class RedisCampaignExecutorTest {
             }
 
             // when
-            campaignManager.notify(timeoutFeedback)
+            campaignExecutor.notify(timeoutFeedback)
 
             // then
             val sentDirectives = mutableListOf<Directive>()
             val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
             coVerifyOrder {
-                campaignManager.notify(timeoutFeedback)
-                campaignManager.get("my-tenant", "first_campaign")
+                campaignExecutor.notify(timeoutFeedback)
+                campaignExecutor.get("my-tenant", "first_campaign")
                 operations.getState("my-tenant", "first_campaign")
-                campaignManager.get("my-tenant", "first_campaign")
+                campaignExecutor.get("my-tenant", "first_campaign")
                 operations.getState("my-tenant", "first_campaign")
                 operations.setState("my-tenant", "first_campaign", CampaignRedisState.ABORTING_STATE)
                 operations.prepareFactoriesForFeedbackExpectations(campaign)
                 operations.saveConfiguration(campaign)
                 campaignService.abort("my-tenant", null, "first_campaign")
-                campaignManager.set(capture(newState))
+                campaignExecutor.set(capture(newState))
                 campaignReportStateKeeper.abort("first_campaign")
                 headChannel.publishDirective(capture(sentDirectives))
             }
@@ -1013,7 +1013,7 @@ internal open class RedisCampaignExecutorTest {
             )
         }
 
-    protected open fun redisCampaignManager(scope: CoroutineScope) =
+    protected open fun redisCampaignExecutor(scope: CoroutineScope) =
         spyk(
             RedisCampaignExecutor(
                 headChannel,
