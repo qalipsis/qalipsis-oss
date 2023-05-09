@@ -36,6 +36,7 @@ import io.qalipsis.api.query.Page
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
@@ -70,6 +71,7 @@ internal class CampaignController(
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
     private val campaignReportProvider: CampaignReportProvider,
+    private val campaignScheduler: CampaignScheduler
 ) {
 
     /**
@@ -360,7 +362,7 @@ internal class CampaignController(
         @Parameter(hidden = true) authentication: Authentication,
         @Body @Valid configuration: CampaignConfiguration
     ): HttpResponse<Campaign> {
-        val campaignKey = campaignService.schedule(tenant, authentication.name, configuration).key
+        val campaignKey = campaignScheduler.schedule(tenant, authentication.name, configuration).key
         return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
     }
 }

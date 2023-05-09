@@ -99,12 +99,12 @@ internal class DefaultDataProviderTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
         val tagsAndValues = mapOf("1" to listOf("val-1", "val-2"), "2" to listOf("val-3", "val-4"))
-        coEvery { eventProvider.searchTagsAndValues(any(), any(), any()) } returns tagsAndValues
+        coEvery { eventProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tagsAndValues
         val filters = listOf("filter-1", "filter-2")
 
         // then
         assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.EVENTS, filters, 10)).isEqualTo(tagsAndValues)
-        coVerifyOnce { eventProvider.searchTagsAndValues("my-tenant", refEq(filters), 10) }
+        coVerifyOnce { eventProvider.searchTagsAndValues("my-tenant", any(), refEq(filters), 10) }
 
         confirmVerified(eventProvider, meterProvider)
     }
@@ -189,12 +189,12 @@ internal class DefaultDataProviderTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
         val tagsAndValues = mapOf("1" to listOf("val-1", "val-2"), "2" to listOf("val-3", "val-4"))
-        coEvery { meterProvider.searchTagsAndValues(any(), any(), any()) } returns tagsAndValues
+        coEvery { meterProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tagsAndValues
         val filters = listOf("filter-1", "filter-2")
 
         // then
         assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.METERS, filters, 10)).isEqualTo(tagsAndValues)
-        coVerifyOnce { meterProvider.searchTagsAndValues("my-tenant", refEq(filters), 10) }
+        coVerifyOnce { meterProvider.searchTagsAndValues("my-tenant", any(), refEq(filters), 10) }
 
         confirmVerified(eventProvider, meterProvider)
     }

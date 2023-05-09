@@ -54,9 +54,9 @@ data class RunningCampaign(
     val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap()
 ) {
 
-    var hardTimeout: Long = Long.MIN_VALUE
+    var hardTimeout: Long = -1
 
-    var softTimeout: Long = Long.MIN_VALUE
+    var softTimeout: Long = -1
 
     val factories: MutableMap<NodeId, FactoryConfiguration> = mutableMapOf()
 

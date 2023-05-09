@@ -154,7 +154,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
             configuration.timeout?.let { start + it } to (start + defaultCampaignConfiguration.validation.maxExecutionDuration)
         }
         runningCampaign.hardTimeout = hardTimeout.epochSecond
-        runningCampaign.softTimeout = softTimeout?.takeIf { it < hardTimeout }?.epochSecond ?: Long.MIN_VALUE
+        runningCampaign.softTimeout = softTimeout?.takeIf { it < hardTimeout }?.epochSecond ?: -1
         campaignService.start(tenant, runningCampaign.key, start, softTimeout, hardTimeout)
 
         selectedScenarios.forEach {

@@ -52,6 +52,7 @@ internal class DefaultDataProvider(
 
     override suspend fun listFields(tenant: String, dataType: DataType): Collection<DataField> {
         return when (dataType) {
+            // TODO Add the event/meter name in the query.
             DataType.EVENTS -> eventProvider?.listFields(tenant)
             DataType.METERS -> meterProvider?.listFields(tenant)
         }.orEmpty()
@@ -64,8 +65,9 @@ internal class DefaultDataProvider(
         size: Int
     ): Map<String, Collection<String>> {
         return when (dataType) {
-            DataType.EVENTS -> eventProvider?.searchTagsAndValues(tenant, filters, size)
-            DataType.METERS -> meterProvider?.searchTagsAndValues(tenant, filters, size)
+            // TODO Add the event/meter name in the query.
+            DataType.EVENTS -> eventProvider?.searchTagsAndValues(tenant, null, filters, size)
+            DataType.METERS -> meterProvider?.searchTagsAndValues(tenant, null, filters, size)
         }.orEmpty()
     }
 
