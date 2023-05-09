@@ -42,7 +42,7 @@ import java.util.concurrent.TimeoutException
  *
  * @author Eric Jessé
  */
-@Testcontainers
+@Testcontainers(parallel = true)
 internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test

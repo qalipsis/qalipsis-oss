@@ -37,25 +37,24 @@ object PostgresTestContainerConfiguration {
     /**
      * Default db name.
      */
-    private const val DB_NAME = "qalipsis_db"
+    const val DB_NAME = "qalipsis_db"
 
     /**
      * Default username.
      */
-    private const val USERNAME = "qalipsis_user"
+    const val USERNAME = "qalipsis_user"
 
     /**
      * Default password.
      */
-    private const val PASSWORD = "qalipsis-pwd"
+    const val PASSWORD = "qalipsis-pwd"
 
     fun PostgreSQLContainer<*>.testProperties(): Map<String, String> = mapOf(
-        "datasources.default.url" to "jdbc:postgresql://localhost:${firstMappedPort}/$DB_NAME",
-        "datasources.default.username" to USERNAME,
-        "datasources.default.password" to PASSWORD,
-        "datasources.default.dialect" to "POSTGRES",
-        "datasources.default.driverClassName" to "org.postgresql.Driver",
-        "datasources.default.schema-generate" to "NONE",
+        "datasource.host" to "localhost",
+        "datasource.port" to "$firstMappedPort",
+        "datasource.database" to DB_NAME,
+        "datasource.username" to USERNAME,
+        "datasource.password" to PASSWORD,
         "logging.level.io.micronaut.data.query" to "TRACE"
     )
 

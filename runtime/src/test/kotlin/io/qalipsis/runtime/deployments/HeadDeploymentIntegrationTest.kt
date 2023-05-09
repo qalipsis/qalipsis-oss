@@ -33,6 +33,7 @@ import io.micronaut.http.HttpHeaders
 import io.micronaut.http.MediaType
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
+import io.qalipsis.runtime.deployments.PostgresTestContainerConfiguration.testProperties
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -52,7 +53,7 @@ import java.util.concurrent.TimeoutException
  *
  * @author Eric Jessé
  */
-@Testcontainers
+@Testcontainers(parallel = true)
 internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test
@@ -72,6 +73,57 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
                 )
+            )
+        }
+        Thread.sleep(3000)
+
+        // when
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:$httpPort"))
+            .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
+            .build()
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+        // then
+        val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
+            .getProperty<Any>("singletonScope")
+            .getProperty<Map<Any, BeanRegistration<*>>>("singletonByBeanDefinition")
+            .values.mapNotNull { it.bean::class.qualifiedName }
+            .filter { it.startsWith("io.qalipsis.core") }
+
+        assertThat(qalipsisCoreSingletonObjectsPackages).all {
+            any { it.startsWith("io.qalipsis.core.head") }
+            none { it.startsWith("io.qalipsis.core.report") }
+            none { it.startsWith("io.qalipsis.core.factory") }
+        }
+
+        assertThat(response.body()).isEqualTo("Welcome to Qalipsis")
+        assertThrows<TimeoutException> {
+            exitCodeFuture.get(2, TimeUnit.SECONDS)
+        }
+    }
+
+
+    @Test
+    @Timeout(20)
+    internal fun `should start head in persistence mode with the web interface and remain active`() {
+        // given
+        val httpPort = SocketUtils.findAvailableTcpPort()
+        val qalipsisBootstrap = QalipsisBootstrap()
+        val exitCodeFuture = CompletableFuture.supplyAsync {
+            qalipsisBootstrap.start(
+                arrayOf(
+                    "head",
+                    "--persistent",
+                    "-c", "micronaut.server.port=$httpPort",
+                    "-c",
+                    "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+                    "-c", "report.export.console.enabled=true",
+                    "-c", "report.export.junit.enabled=true",
+                    "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
+                ) + PGSQL_CONTAINER.testProperties().flatMap { (key, value) ->
+                    listOf("-c", "$key=$value")
+                }.toTypedArray()
             )
         }
         Thread.sleep(3000)
@@ -145,7 +197,6 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         }
     }
 
-
     @Test
     @Timeout(20)
     internal fun `should start head with the autostart and remain active because there is no factory to auto execute`() {
@@ -187,11 +238,14 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         }
     }
 
-
     companion object {
 
         @JvmStatic
         @Container
         val REDIS_CONTAINER = RedisTestConfiguration.createContainer()
+
+        @JvmStatic
+        @Container
+        val PGSQL_CONTAINER = PostgresTestContainerConfiguration.createContainer()
     }
 }

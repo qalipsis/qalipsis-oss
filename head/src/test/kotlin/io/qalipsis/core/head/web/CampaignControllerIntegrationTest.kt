@@ -54,6 +54,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
@@ -100,6 +101,9 @@ internal class CampaignControllerIntegrationTest {
     @RelaxedMockK
     private lateinit var campaignReportProvider: CampaignReportProvider
 
+    @RelaxedMockK
+    private lateinit var campaignScheduler: CampaignScheduler
+
     @MockBean(FactoryService::class)
     fun clusterFactoryService() = clusterFactoryService
 
@@ -115,11 +119,15 @@ internal class CampaignControllerIntegrationTest {
     @MockBean(CampaignExecutor::class)
     fun campaignExecutor() = campaignExecutor
 
+    @MockBean(CampaignScheduler::class)
+    fun campaignScheduler() = campaignScheduler
+
     @BeforeEach
     internal fun setUp() {
         excludeRecords {
             campaignExecutor.hashCode()
             campaignService.hashCode()
+            campaignScheduler.hashCode()
             clusterFactoryService.hashCode()
             campaignReportProvider.hashCode()
         }
@@ -184,7 +192,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -217,7 +226,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -249,7 +259,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -285,7 +296,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -336,7 +348,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -387,7 +400,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -441,7 +455,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -466,7 +481,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -490,7 +506,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -580,7 +597,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -629,7 +647,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -661,7 +680,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -692,7 +712,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -707,7 +728,7 @@ internal class CampaignControllerIntegrationTest {
             every { key } returns "my-campaign"
         }
         coEvery {
-            campaignService.schedule(
+            campaignScheduler.schedule(
                 Defaults.TENANT,
                 Defaults.USER,
                 eq(campaignConfiguration)
@@ -742,7 +763,7 @@ internal class CampaignControllerIntegrationTest {
         // then
         coVerifyOrder {
             // Called with the default user.
-            campaignService.schedule(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignScheduler.schedule(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
             campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
@@ -755,7 +776,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 
@@ -788,7 +810,8 @@ internal class CampaignControllerIntegrationTest {
             campaignExecutor,
             campaignReportProvider,
             campaignReportStateKeeper,
-            clusterFactoryService
+            clusterFactoryService,
+            campaignScheduler
         )
     }
 }

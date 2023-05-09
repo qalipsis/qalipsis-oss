@@ -289,33 +289,4 @@ internal class InMemoryCampaignServiceTest {
                 hook2
             )
         }
-
-    @Test
-    internal fun `should not schedule a campaign`() = testDispatcherProvider.run {
-        // given
-        val configuration = CampaignConfiguration(
-            name = "This is a campaign",
-            speedFactor = 123.2,
-            scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(1),
-                "scenario-2" to ScenarioRequest(3)
-            )
-        )
-
-        // when
-        val exception = assertThrows<IllegalArgumentException> {
-            inMemoryCampaignService.schedule("my-tenant", "my-user", configuration)
-        }
-
-        // then
-        assertThat(exception.message)
-            .isEqualTo("In-memory campaign manager does not support scheduling")
-
-        confirmVerified(
-            campaignConfigurationConverter,
-            hook1,
-            hook2
-        )
-    }
-
 }
