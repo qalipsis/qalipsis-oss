@@ -15,7 +15,7 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import jakarta.inject.Singleton
-import java.time.Instant
+import kotlinx.coroutines.flow.count
 
 /**
  * Service in charge of preparing campaigns.
@@ -57,13 +57,12 @@ internal class CampaignPreparator(
             hooks.forEach { hook -> hook.preCreate(configuration, runningCampaign) }
         }
         val campaign = campaignRepository.save(
+            // The timeouts are not set yet, they will be updated when the campaign will start.
             CampaignEntity(
                 tenantId = tenantRepository.findIdByReference(tenant),
                 key = runningCampaign.key,
                 name = configuration.name,
                 scheduledMinions = runningCampaign.scenarios.values.sumOf { it.minionsCount },
-                hardTimeout = if (configuration.hardTimeout == true) (Instant.now() + configuration.timeout) else Instant.MIN,
-                softTimeout = if (configuration.hardTimeout == false) (Instant.now() + configuration.timeout) else Instant.MIN,
                 speedFactor = configuration.speedFactor,
                 configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
                 configuration = configuration,
@@ -74,7 +73,7 @@ internal class CampaignPreparator(
 
         campaignScenarioRepository.saveAll(runningCampaign.scenarios.map { (scenarioName, scenario) ->
             CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
-        })
+        }).count()
         return runningCampaign
     }
 }

@@ -23,9 +23,8 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.index
-import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.mockk.coEvery
@@ -156,8 +155,8 @@ internal class CampaignPreparatorTest {
                     prop(CampaignEntity::name).isEqualTo("This is a campaign")
                     prop(CampaignEntity::speedFactor).isEqualTo(123.2)
                     prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
-                    prop(CampaignEntity::hardTimeout).isNotNull().isEqualTo(Instant.MIN)
-                    prop(CampaignEntity::softTimeout).isNotNull().isEqualTo(Instant.MIN)
+                    prop(CampaignEntity::hardTimeout).isNull()
+                    prop(CampaignEntity::softTimeout).isNull()
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameAs(campaign)
@@ -427,11 +426,8 @@ internal class CampaignPreparatorTest {
                     prop(CampaignEntity::name).isEqualTo("This is a campaign")
                     prop(CampaignEntity::speedFactor).isEqualTo(123.2)
                     prop(CampaignEntity::scheduledMinions).isEqualTo(18593)
-                    prop(CampaignEntity::hardTimeout).isNotNull().isEqualTo(Instant.MIN)
-                    prop(CampaignEntity::softTimeout).isNotNull().isBetween(
-                        (Instant.now() + (configuration.timeout?.minus(Duration.ofSeconds(1)))),
-                        (Instant.now() + configuration.timeout)
-                    )
+                    prop(CampaignEntity::hardTimeout).isNull()
+                    prop(CampaignEntity::softTimeout).isNull()
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameAs(configuration)
