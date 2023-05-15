@@ -244,15 +244,16 @@ internal class ReportServiceImpl(
      * Convert a report entity instance to report model instance.
      */
     private suspend fun toModel(reportEntity: ReportEntity, creator: String): Report {
-        val resolvedCampaignKeys =
+        val resolvedCampaignKeysAndNames =
             if (reportEntity.campaignNamesPatterns.isNotEmpty()) {
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     reportEntity.tenantId,
                     reportEntity.campaignNamesPatterns.map {
                         it.replace("*", "%").replace("?", "_")
                     }
                 )
             } else emptyList()
+        val resolvedCampaignKeys = resolvedCampaignKeysAndNames.map { it.key }
         val campaignKeysUnion = reportEntity.campaignKeys.plus(resolvedCampaignKeys).distinct()
         val resolvedScenarioNames =
             if (campaignKeysUnion.isNotEmpty()) {
@@ -276,7 +277,7 @@ internal class ReportServiceImpl(
             sharingMode = reportEntity.sharingMode,
             campaignKeys = reportEntity.campaignKeys.toList(),
             campaignNamesPatterns = reportEntity.campaignNamesPatterns.toList(),
-            resolvedCampaignKeys = resolvedCampaignKeys.toList(),
+            resolvedCampaigns = resolvedCampaignKeysAndNames.toList(),
             scenarioNamesPatterns = reportEntity.scenarioNamesPatterns.toList(),
             resolvedScenarioNames = resolvedScenarioNames,
             dataComponents = if (reportEntity.dataComponents.isNotEmpty())

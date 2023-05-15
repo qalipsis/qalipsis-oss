@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
+import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import io.qalipsis.core.head.report.SharingMode
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
@@ -69,10 +70,10 @@ internal data class Report(
     val campaignNamesPatterns: List<String> = emptyList(),
 
     @field:Schema(
-        description = "List of campaign keys to be included in the report and obtained based on campaign name pattern",
+        description = "List of objects holding the key and the name of the resolved campaigns to included in the report and obtained based on campaign name pattern",
         required = false
     )
-    val resolvedCampaignKeys: List<String> = emptyList(),
+    val resolvedCampaigns: List<CampaignKeyAndName> = emptyList(),
 
     @field:Schema(
         description = "List of scenario names patterns to be included in the report",

@@ -49,14 +49,15 @@ internal class ReportConverterImpl(
             reportDataComponentRepository.findByIdInOrderById(reportEntity.dataComponents.map { it.id }).toList()
         } else emptyList()
 
-        val resolvedCampaignKeys = if (reportEntity.campaignNamesPatterns.isNotEmpty())
-            campaignRepository.findKeysByTenantIdAndNamePatterns(
+        val resolvedCampaignKeysAndNames = if (reportEntity.campaignNamesPatterns.isNotEmpty())
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                 reportEntity.tenantId,
                 reportEntity.campaignNamesPatterns.map {
                     it.replace("*", "%").replace("?", "_")
                 }
             )
         else emptyList()
+        val resolvedCampaignKeys = resolvedCampaignKeysAndNames.map { it.key }
         val campaignKeysUnion = reportEntity.campaignKeys.plus(resolvedCampaignKeys).distinct()
         val resolvedScenarioNames =
             if (campaignKeysUnion.isNotEmpty())
@@ -79,7 +80,7 @@ internal class ReportConverterImpl(
             sharingMode = reportEntity.sharingMode,
             campaignKeys = reportEntity.campaignKeys.toList(),
             campaignNamesPatterns = reportEntity.campaignNamesPatterns.toList(),
-            resolvedCampaignKeys = resolvedCampaignKeys.toList(),
+            resolvedCampaigns = resolvedCampaignKeysAndNames.toList(),
             scenarioNamesPatterns = reportEntity.scenarioNamesPatterns.toList(),
             resolvedScenarioNames = resolvedScenarioNames,
             dataComponents = if (dataComponentEntities.isNotEmpty())

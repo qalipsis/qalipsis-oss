@@ -165,12 +165,15 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     suspend fun findKeysByTenantAndNamePatterns(tenant: String, namePatterns: Collection<String>): Collection<String>
 
     @Query(
-        """SELECT distinct campaign_entity_.key 
+        """SELECT distinct campaign_entity_.key, campaign_entity_.name 
             FROM campaign as campaign_entity_ 
             WHERE campaign_entity_.tenant_id = :tenantId
             AND campaign_entity_.name ILIKE any (array[:namePatterns])"""
     )
-    suspend fun findKeysByTenantIdAndNamePatterns(tenantId: Long, namePatterns: Collection<String>): Collection<String>
+    suspend fun findKeysAndNamesByTenantIdAndNamePatterns(tenantId: Long, namePatterns: Collection<String>): Collection<CampaignKeyAndName>
+
+    @Introspected
+    data class CampaignKeyAndName(val key: String, val name: String)
 
     @Query(
         value =

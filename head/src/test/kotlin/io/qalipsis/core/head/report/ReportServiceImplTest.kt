@@ -45,6 +45,7 @@ import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
+import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
@@ -159,7 +160,7 @@ internal class ReportServiceImplTest {
                 prop(Report::sharingMode).isEqualTo(SharingMode.READONLY)
                 prop(Report::campaignKeys).isEmpty()
                 prop(Report::campaignNamesPatterns).isEmpty()
-                prop(Report::resolvedCampaignKeys).isEmpty()
+                prop(Report::resolvedCampaigns).isEmpty()
                 prop(Report::scenarioNamesPatterns).isEmpty()
                 prop(Report::resolvedScenarioNames).isEmpty()
                 prop(Report::dataComponents).isEmpty()
@@ -210,10 +211,10 @@ internal class ReportServiceImplTest {
         coEvery {
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
         } returns setOf("campaign-key1", "campaign-key2")
-        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, listOf("%", "\\w")) } returns listOf(
-            "campaign-key1",
-            "campaign-key2",
-            "campaign-key3"
+        coEvery { campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w")) } returns listOf(
+            CampaignKeyAndName("campaign-key1", "campaign-name1"),
+            CampaignKeyAndName("campaign-key2", "campaign-name2"),
+            CampaignKeyAndName("campaign-key3", "campaign-name3")
         )
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
@@ -284,7 +285,7 @@ internal class ReportServiceImplTest {
             prop(Report::sharingMode).isEqualTo(SharingMode.NONE)
             prop(Report::campaignKeys).hasSize(2)
             prop(Report::campaignNamesPatterns).hasSize(2)
-            prop(Report::resolvedCampaignKeys).hasSize(3)
+            prop(Report::resolvedCampaigns).hasSize(3)
             prop(Report::scenarioNamesPatterns).hasSize(1)
             prop(Report::resolvedScenarioNames).hasSize(3)
             prop(Report::dataComponents).hasSize(2)
@@ -338,7 +339,7 @@ internal class ReportServiceImplTest {
                 references = listOf("series-ref-2")
             )
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123,
                 listOf("\\w"),
@@ -647,8 +648,12 @@ internal class ReportServiceImplTest {
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             } returns setOf("campaign-key1")
             coEvery {
-                campaignRepository.findKeysByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
-            } returns listOf("campaign-key1", "campaign-key2", "campaign-key3")
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+            } returns listOf(
+                CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                CampaignKeyAndName("campaign-key3", "campaign-name3")
+            )
             coEvery {
                 campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                     123,
@@ -703,9 +708,13 @@ internal class ReportServiceImplTest {
                     hasSize(2)
                     containsOnly("*", "\\w")
                 }
-                prop(Report::resolvedCampaignKeys).all {
+                prop(Report::resolvedCampaigns).all {
                     hasSize(3)
-                    containsOnly("campaign-key1", "campaign-key2", "campaign-key3")
+                    containsOnly(
+                        CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                        CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                        CampaignKeyAndName("campaign-key3", "campaign-name3")
+                    )
                 }
                 prop(Report::scenarioNamesPatterns).all {
                     hasSize(1)
@@ -762,7 +771,7 @@ internal class ReportServiceImplTest {
                     references = listOf("series-ref-1")
                 )
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-                campaignRepository.findKeysByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
                 campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                     123,
                     listOf("\\w"),
@@ -809,11 +818,13 @@ internal class ReportServiceImplTest {
                 "campaign-key1"
             )
             coEvery {
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     123L,
                     any()
                 )
-            } returns listOf("campaign-key1")
+            } returns listOf(
+                CampaignKeyAndName("campaign-key1", "campaign-name1")
+            )
             coEvery { campaignScenarioRepository.findNameByCampaignKeys(any(), any()) } returns listOf(
                 "scenario-1",
                 "scenario-2"
@@ -844,7 +855,7 @@ internal class ReportServiceImplTest {
                 prop(Report::sharingMode).isEqualTo(SharingMode.WRITE)
                 prop(Report::campaignKeys).hasSize(1)
                 prop(Report::campaignNamesPatterns).hasSize(1)
-                prop(Report::resolvedCampaignKeys).hasSize(1)
+                prop(Report::resolvedCampaigns).hasSize(1)
                 prop(Report::scenarioNamesPatterns).hasSize(0)
                 prop(Report::resolvedScenarioNames).hasSize(2)
                 prop(Report::dataComponents).hasSize(0)
@@ -854,7 +865,7 @@ internal class ReportServiceImplTest {
                 reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 456L)
                 userRepository.findUsernameById(456L)
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-                campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any())
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, any())
                 campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             }
             confirmVerified(
@@ -962,10 +973,10 @@ internal class ReportServiceImplTest {
                 listOf("campaign-key1")
             )
         } returns setOf("campaign-key1")
-        coEvery { campaignRepository.findKeysByTenantIdAndNamePatterns(123L, any()) } returns listOf(
-            "campaign-key1",
-            "campaign-key2",
-            "campaign-key3"
+        coEvery { campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, any()) } returns listOf(
+            CampaignKeyAndName("campaign-key1", "campaign-name1"),
+            CampaignKeyAndName("campaign-key2", "campaign-name2"),
+            CampaignKeyAndName("campaign-key3", "campaign-name3")
         )
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
@@ -1019,9 +1030,13 @@ internal class ReportServiceImplTest {
                 hasSize(2)
                 containsOnly("*", "\\w")
             }
-            prop(Report::resolvedCampaignKeys).all {
+            prop(Report::resolvedCampaigns).all {
                 hasSize(3)
-                containsOnly("campaign-key1", "campaign-key2", "campaign-key3")
+                containsOnly(
+                    CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                    CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                    CampaignKeyAndName("campaign-key3", "campaign-name3")
+                )
             }
             prop(Report::scenarioNamesPatterns).all {
                 hasSize(1)
@@ -1078,7 +1093,7 @@ internal class ReportServiceImplTest {
                 references = listOf("series-ref-2")
             )
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123,
                 listOf("\\w"),

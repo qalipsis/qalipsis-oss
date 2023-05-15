@@ -72,7 +72,7 @@ internal class ReportControllerIntegrationTest {
     private lateinit var reportService: ReportService
 
     @MockBean(ReportService::class)
-    fun reportSeriesService() = reportService
+    fun reportService() = reportService
 
     @BeforeEach
     internal fun setUp() {
@@ -92,7 +92,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report defined only with name",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -137,7 +137,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report-name",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -216,7 +216,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report defined only with name",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -258,7 +258,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "updated-report",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -295,7 +295,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "the-report",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -375,7 +375,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report-name-1",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -387,7 +387,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report-name-2",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -435,7 +435,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report-name-1",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()
@@ -447,7 +447,7 @@ internal class ReportControllerIntegrationTest {
             displayName = "report-name-2",
             campaignKeys = emptyList(),
             campaignNamesPatterns = emptyList(),
-            resolvedCampaignKeys = emptyList(),
+            resolvedCampaigns = emptyList(),
             scenarioNamesPatterns = emptyList(),
             resolvedScenarioNames = emptyList(),
             dataComponents = emptyList()

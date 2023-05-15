@@ -48,6 +48,7 @@ import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.count
@@ -915,55 +916,51 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             )
 
             // when
-            val campaignKeys = campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
+            val campaignKeys = campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
             // then
             assertThat(campaignKeys).all {
                 hasSize(3)
-                containsOnly("key-1", "key-3", "key-4")
+                containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-3", "camp-3"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
             }
 
             //when + then
             assertThat(
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     tenant.id,
                     listOf("camp-_")
                 )
-            ).containsOnly("key-3")
+            ).containsOnly(CampaignKeyAndName("key-3", "camp-3"))
             assertThat(
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     tenant.id,
                     listOf("%IG%")
                 )
-            ).containsOnly("key-1", "key-4")
+            ).containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
             assertThat(
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     tenant.id,
                     listOf("%IG%", "ca_", "x")
                 )
-            ).containsOnly("key-1", "key-4")
+            ).containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
             assertThat(
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     tenant.id,
                     listOf("%IG%", "ca%")
                 )
-            ).containsOnly(
-                "key-1",
-                "key-3",
-                "key-4"
-            )
+            ).containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-3", "camp-3"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
             assertThat(
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     tenant.id,
                     listOf("%4")
                 )
-            ).containsOnly("key-4")
-            assertThat(campaignRepository.findKeysByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
+            ).containsOnly(CampaignKeyAndName("key-4", "CAMPAIGN-4"))
+            assertThat(campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
             assertThat(
-                campaignRepository.findKeysByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
                     tenant.id,
                     listOf("GN%", "%4")
                 )
-            ).containsOnly("key-4")
+            ).containsOnly(CampaignKeyAndName("key-4", "CAMPAIGN-4"))
         }
 
 
