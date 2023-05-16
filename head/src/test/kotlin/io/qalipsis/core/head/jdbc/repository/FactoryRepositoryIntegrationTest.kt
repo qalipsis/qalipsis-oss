@@ -21,21 +21,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.any
-import assertk.assertions.containsOnly
-import assertk.assertions.hasSize
-import assertk.assertions.isDataClassEqualTo
-import assertk.assertions.isEmpty
-import assertk.assertions.isGreaterThan
-import assertk.assertions.isNotNull
-import io.qalipsis.core.head.jdbc.entity.CampaignEntity
-import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
-import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
-import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
-import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import assertk.assertions.*
+import io.qalipsis.core.head.jdbc.entity.*
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -178,6 +165,26 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 factory2.copy()
             )
         }
+
+    @Test
+    fun `should find the factories by tenant`() = testDispatcherProvider.run {
+        // given
+        val savedTenant = tenantRepository.save(tenantPrototype.copy())
+        val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-2"))
+        val factory = factoryRepository.save(factoryPrototype.copy(nodeId = "node-1", tenantId = savedTenant.id))
+        val factory2 = factoryRepository.save(factoryPrototype.copy(nodeId = "node-2", tenantId = savedTenant2.id))
+        val factory3 = factoryRepository.save(factoryPrototype.copy(nodeId = "node-3", tenantId = savedTenant.id))
+
+        // when + then
+        assertThat(factoryRepository.findByTenant("my-tenant")).all {
+            hasSize(2)
+            containsExactlyInAnyOrder(factory, factory3)
+        }
+        assertThat(factoryRepository.findByTenant("qalipsis-2")).all {
+            hasSize(1)
+            containsExactlyInAnyOrder(factory2)
+        }
+    }
 
     @Test
     fun `should find the healthy unused factories that supports the enabled scenarios with factory tags`() =
