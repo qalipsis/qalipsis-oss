@@ -173,7 +173,7 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
         val fetched = campaignReportRepository.findByCampaignId(saved.campaignId)
 
         // then
-        assertThat(fetched).all {
+        assertThat(fetched).isNotNull().all {
             prop(CampaignReportEntity::id).isEqualTo(saved.id)
             prop(CampaignReportEntity::campaignId).isEqualTo(savedCampaign.id)
         }

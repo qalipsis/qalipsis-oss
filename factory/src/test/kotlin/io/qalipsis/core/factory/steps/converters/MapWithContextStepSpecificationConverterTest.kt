@@ -35,8 +35,10 @@ import io.qalipsis.core.factory.steps.MapWithContextStep
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
+import junit.framework.Assert.assertTrue
 import kotlinx.coroutines.test.runBlockingTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertFalse
+
 import org.junit.jupiter.api.Test
 
 @Suppress("UNCHECKED_CAST")

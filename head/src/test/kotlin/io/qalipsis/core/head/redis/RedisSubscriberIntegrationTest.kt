@@ -227,7 +227,11 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
         coEvery { heartbeatRequestListener2.notify(any()) } coAnswers { countLatch.decrement() }
 
         // when
-        val heartbeat = Heartbeat(nodeId = "the-node-id", timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS))
+        val heartbeat = Heartbeat(
+            nodeId = "the-node-id",
+            tenant = "the-tenant",
+            timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+        )
         publisherCommands.publish(HEARTBEAT_CHANNEL, serializer.serialize(heartbeat)).subscribe()
         countLatch.await()
 

@@ -46,7 +46,6 @@ import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.model.Campaign
-import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
@@ -241,7 +240,6 @@ internal class DatabaseCampaignReportProviderTest {
         } returns campaignEntity
         val scenario1 = mockk<Scenario>()
         val scenario2 = mockk<Scenario>()
-        val configuration = mockk<CampaignConfiguration>()
         coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns Campaign(
             creation = creation,
             version = now,

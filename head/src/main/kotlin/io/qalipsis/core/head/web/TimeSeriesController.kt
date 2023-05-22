@@ -31,14 +31,15 @@ import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.cluster.security.Permissions
+import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.report.AggregationQueryExecutionRequest
 import io.qalipsis.core.head.report.CampaignSummaryResult
 import io.qalipsis.core.head.report.DataRetrievalQueryExecutionRequest
 import io.qalipsis.core.head.report.TimeSeriesDataQueryService
 import io.qalipsis.core.head.report.WidgetService
-import io.qalipsis.core.head.security.Permissions
-import io.qalipsis.core.head.web.annotation.Tenant
+
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -52,6 +53,7 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
+
 
 @Validated
 @Controller("/time-series")

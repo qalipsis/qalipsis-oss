@@ -25,6 +25,8 @@ javaPlatform {
     allowDependencies()
 }
 
+description = "QALIPSIS Plugin development platform"
+
 val apiVersion: String by project
 
 dependencies {

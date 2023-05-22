@@ -21,7 +21,13 @@ package io.qalipsis.core.factory.steps.converters
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
+import assertk.assertions.isSameAs
+import assertk.assertions.prop
+
 import io.mockk.every
 import io.qalipsis.api.steps.CollectionStepSpecification
 import io.qalipsis.api.steps.StepCreationContext

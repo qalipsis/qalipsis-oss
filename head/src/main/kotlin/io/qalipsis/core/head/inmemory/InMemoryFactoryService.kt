@@ -33,6 +33,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
@@ -48,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReference
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(env = [ExecutionEnvironments.TRANSIENT]) // FIXME Requires only STANDALONE.
+    Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
 internal class InMemoryFactoryService(
     private val scenarioSummaryRepository: ScenarioSummaryRepository
@@ -162,7 +163,12 @@ internal class InMemoryFactoryService(
         activeScenarios: Collection<String> = emptySet(),
         val locked: AtomicBoolean = AtomicBoolean(false),
         val healthState: AtomicReference<Heartbeat> = AtomicReference(
-            Heartbeat(nodeId, Instant.now(), Heartbeat.State.REGISTERED)
+            Heartbeat(
+                nodeId = nodeId,
+                tenant = Defaults.TENANT,
+                timestamp = Instant.now(),
+                state = Heartbeat.State.REGISTERED
+            )
         ),
         zone: String?
     ) : Factory(nodeId, registrationTimestamp, unicastChannel, version, tags, activeScenarios, zone)

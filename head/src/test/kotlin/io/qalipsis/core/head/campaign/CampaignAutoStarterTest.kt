@@ -144,14 +144,14 @@ internal class CampaignAutoStarterTest {
                     relaxedMockk { every { name } returns "scenario-2" },
                     relaxedMockk { every { name } returns "scenario-3" })
             })
-            campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
+            campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
 
             // then
             coVerifyNever { campaignExecutor.start(any(), any(), any()) }
 
             // when
             val elapsed = coMeasureTime {
-                campaignAutoStarter.notify(Heartbeat("node-2", Instant.now()))
+                campaignAutoStarter.notify(Heartbeat("node-2", "my-tenant", Instant.now()))
             }
 
             // then
@@ -189,7 +189,7 @@ internal class CampaignAutoStarterTest {
 
             // when
             campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> { every { scenarios } returns emptyList() })
-            campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
+            campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
 
             // then
             assertThat(campaignAutoStarter.campaignLatch().isLocked).isFalse()
@@ -220,7 +220,7 @@ internal class CampaignAutoStarterTest {
             // when
             assertThrows<TimeoutCancellationException> {
                 withTimeout(500) {
-                    campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
+                    campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
                 }
             }
         }
@@ -258,7 +258,7 @@ internal class CampaignAutoStarterTest {
                     relaxedMockk { every { name } returns "scenario-2" }
                 )
             })
-            campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
+            campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
             campaignAutoStarter.campaign(relaxedMockk {
                 every { broadcastChannel } returns "the-broadcast-channel"
                 every { factories } returns mutableMapOf(
@@ -318,7 +318,7 @@ internal class CampaignAutoStarterTest {
                     relaxedMockk { every { name } returns "scenario-2" }
                 )
             })
-            campaignAutoStarter.notify(Heartbeat("node-1", Instant.now()))
+            campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
             campaignAutoStarter.campaign(relaxedMockk {
                 every { broadcastChannel } returns "the-broadcast-channel"
                 every { factories } returns mutableMapOf(

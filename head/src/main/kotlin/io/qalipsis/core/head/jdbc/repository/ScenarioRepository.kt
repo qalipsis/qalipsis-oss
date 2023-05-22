@@ -78,9 +78,9 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
             INNER JOIN factory ON factory_id = factory.id 
             WHERE enabled = true 
             AND EXISTS -- The factory should be healthy as latest known state within the last 2 minutes.
-                (SELECT * FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'IDLE' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
-                AND NOT EXISTS (SELECT * FROM factory_state WHERE factory_id = factory.id AND state <> 'IDLE' and health_timestamp > fs.health_timestamp))
-            AND EXISTS (SELECT * FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
+                (SELECT 1 FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'IDLE' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
+                AND NOT EXISTS (SELECT 1 FROM factory_state WHERE factory_id = factory.id AND state <> 'IDLE' and health_timestamp > fs.health_timestamp))
+            AND EXISTS (SELECT 1 FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
             ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
             CASE :sort WHEN 'name' THEN scenario.name END, 
             CASE :sort WHEN 'id' THEN scenario.id END 
@@ -88,6 +88,23 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
     )
     @Join(value = "dags", alias = "dag_")
     suspend fun findAllActiveWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
+
+    @Query(
+        """SELECT *, 
+            dag.id as dag_id, dag.version as dag_version, dag.scenario_id as dag_scenario_id, dag.name as dag_name,
+            dag.root as dag_root, dag.singleton as dag_singleton, dag.under_load as dag_under_load, dag.number_of_steps as dag_number_of_steps
+            FROM scenario 
+            LEFT JOIN directed_acyclic_graph as dag ON scenario.id = dag.scenario_id
+            WHERE enabled = true 
+            AND EXISTS (SELECT 1 FROM factory WHERE scenario.factory_id = factory.id  
+                AND EXISTS (SELECT 1 FROM tenant WHERE reference = :tenant AND id = factory.tenant_id))
+            ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
+            CASE :sort WHEN 'name' THEN scenario.name END, 
+            CASE :sort WHEN 'id' THEN scenario.id END 
+            """
+    )
+    @Join(value = "dags", alias = "dag_")
+    suspend fun findByTenantWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
 
     private companion object {
 

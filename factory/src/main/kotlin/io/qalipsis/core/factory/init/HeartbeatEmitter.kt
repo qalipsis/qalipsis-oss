@@ -28,6 +28,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.communication.HandshakeResponseListener
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.heartbeat.Heartbeat
@@ -40,6 +41,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+
 import java.time.Instant
 import javax.annotation.PreDestroy
 
@@ -53,6 +55,7 @@ import javax.annotation.PreDestroy
 internal class HeartbeatEmitter(
     private val factoryChannel: FactoryChannel,
     private val campaignManager: FactoryCampaignManager,
+    private val factoryConfiguration: FactoryConfiguration,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : HandshakeResponseListener {
 
@@ -74,6 +77,7 @@ internal class HeartbeatEmitter(
                 while (running) {
                     val heartbeat = Heartbeat(
                         nodeId,
+                        factoryConfiguration.tenant,
                         Instant.now(),
                         Heartbeat.State.IDLE,
                         campaignManager.runningCampaign.campaignKey.takeUnless(String::isBlank)
@@ -89,7 +93,6 @@ internal class HeartbeatEmitter(
                         }
                     }
 
-
                     delay(response.heartbeatPeriod.toMillis())
                 }
             } catch (e: CancellationException) {
@@ -103,11 +106,14 @@ internal class HeartbeatEmitter(
         // If the heartbeat job was started, it is stopped and an unregistration state is sent.
         heartbeatJob?.let {
             runBlocking(coroutineScope.coroutineContext) {
-                it.cancelAndJoin()
+                kotlin.runCatching {
+                    it.cancelAndJoin()
+                }
 
                 factoryChannel.publishHeartbeat(
                     heartbeatChannel, Heartbeat(
                         nodeId,
+                        factoryConfiguration.tenant,
                         Instant.now(),
                         Heartbeat.State.OFFLINE
                     )

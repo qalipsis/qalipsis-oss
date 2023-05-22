@@ -24,7 +24,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-description = "Qalipsis Factory components"
+description = "QALIPSIS Factory microservice"
 
 allOpen {
     annotations(
@@ -54,7 +54,7 @@ dependencies {
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations:")
 
-    implementation(project(":qalipsis-core"))
+    implementation(project(":qalipsis-shared"))
     implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
@@ -78,7 +78,7 @@ dependencies {
     kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
     testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
-    testImplementation(project(":qalipsis-core"))
+    testImplementation(project(":qalipsis-shared"))
     testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("javax.annotation:javax.annotation-api")
@@ -87,7 +87,7 @@ dependencies {
     testImplementation(testFixtures("io.qalipsis:qalipsis-api-dsl:$apiVersion"))
     testImplementation(testFixtures("io.qalipsis:qalipsis-api-common:$apiVersion"))
     testImplementation(testFixtures(project(":qalipsis-runtime")))
-    testImplementation(testFixtures(project(":qalipsis-core")))
+    testImplementation(testFixtures(project(":qalipsis-shared")))
     testImplementation(project(":qalipsis-head"))
 
     kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))

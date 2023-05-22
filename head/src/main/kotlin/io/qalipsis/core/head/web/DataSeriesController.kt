@@ -33,11 +33,14 @@ import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.QueryValue
+
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.DataField
+import io.qalipsis.cluster.security.Permissions
+import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
@@ -45,9 +48,7 @@ import io.qalipsis.core.head.model.DataSeriesPatch
 import io.qalipsis.core.head.report.DataProvider
 import io.qalipsis.core.head.report.DataSeriesService
 import io.qalipsis.core.head.report.DataType
-import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
-import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -59,6 +60,7 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
+
 
 @Validated
 @Controller("/data-series")
