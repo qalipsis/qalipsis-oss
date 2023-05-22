@@ -25,9 +25,12 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.exceptions.NotInitializedStepException
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.launch
 
 
 /**

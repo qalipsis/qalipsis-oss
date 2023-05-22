@@ -34,11 +34,10 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.qalipsis.cluster.security.RoleName
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.security.RoleName
 import io.qalipsis.core.head.web.AuthenticatedController.CallResult
-import io.qalipsis.core.head.web.annotation.Tenant
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test

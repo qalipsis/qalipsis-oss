@@ -28,13 +28,13 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
+import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.qalipsis.core.head.model.DefaultValuesCampaignConfiguration
 import io.qalipsis.core.head.model.SecurityConfiguration
 import io.qalipsis.core.head.model.Stage
 import io.qalipsis.core.head.model.Validation
-import io.qalipsis.core.head.security.Permissions
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement

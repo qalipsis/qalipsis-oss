@@ -27,7 +27,9 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.exceptions.NotInitializedStepException
 import io.qalipsis.core.factory.steps.zip.RightSource
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 
 /**

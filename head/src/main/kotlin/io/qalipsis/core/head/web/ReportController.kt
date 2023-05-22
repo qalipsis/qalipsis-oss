@@ -33,17 +33,18 @@ import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
+
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.api.query.Page
+import io.qalipsis.cluster.security.Permissions
+import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.report.ReportService
-import io.qalipsis.core.head.security.Permissions
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
-import io.qalipsis.core.head.web.annotation.Tenant
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn

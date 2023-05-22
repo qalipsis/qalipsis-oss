@@ -50,6 +50,8 @@ import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
+
+
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
@@ -168,7 +170,7 @@ internal class ClusterFactoryService(
         if (handshakeRequest.tags.isNotEmpty()) {
             factoryTagRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
                 FactoryTagEntity(factoryEntity.id, key, value)
-            })
+            }).count()
         }
         return factoryEntity
     }
@@ -353,16 +355,15 @@ internal class ClusterFactoryService(
             .map(ScenarioEntity::toModel)
 
     override suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary> {
-        sort?.let {
-            val sortProperty = sort.trim().split(":").get(0)
+        return sort?.let {
+            val sortProperty = sort.trim().split(":").first()
             val sortOrder = sort.trim().split(":").last()
-            return if ("desc" == sortOrder) {
+            if ("desc" == sortOrder) {
                 scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
                     .reversed()
             } else {
                 scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
             }
-        }
-        return scenarioRepository.findAllActiveWithSorting(tenant, null).map(ScenarioEntity::toModel)
+        } ?: scenarioRepository.findAllActiveWithSorting(tenant, ScenarioEntity::name.name).map(ScenarioEntity::toModel)
     }
 }

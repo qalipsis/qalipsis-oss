@@ -25,9 +25,11 @@ import io.micronaut.core.bind.ArgumentBinder
 import io.micronaut.core.convert.ArgumentConversionContext
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.bind.binders.AnnotatedRequestArgumentBinder
+import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import java.util.Optional
+import java.util.*
+
 
 /**
  * Binder to inject the default tenant reference when no security is active.

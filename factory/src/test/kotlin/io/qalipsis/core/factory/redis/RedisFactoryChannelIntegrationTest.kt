@@ -262,7 +262,10 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
     internal fun `should send the heartbeat`() = testDispatcherProvider.run {
         // when
         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-        redisFactoryChannel.publishHeartbeat(HEARTBEAT_CHANNEL, Heartbeat("the node", now, Heartbeat.State.UNHEALTHY))
+        redisFactoryChannel.publishHeartbeat(
+            HEARTBEAT_CHANNEL,
+            Heartbeat("the node", "the tenant", now, Heartbeat.State.UNHEALTHY)
+        )
 
         // then
         val received = captured.receive()
@@ -271,6 +274,7 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
             transform("message") { subscriber.subscriberRegistry.serializer.deserialize<Heartbeat>(it.message) }.isNotNull()
                 .all {
                     prop(Heartbeat::nodeId).isEqualTo("the node")
+                    prop(Heartbeat::tenant).isEqualTo("the tenant")
                     prop(Heartbeat::timestamp).isEqualTo(now)
                     prop(Heartbeat::state).isEqualTo(Heartbeat.State.UNHEALTHY)
                 }

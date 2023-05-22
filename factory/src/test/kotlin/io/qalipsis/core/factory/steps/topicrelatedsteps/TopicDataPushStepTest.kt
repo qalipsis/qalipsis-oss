@@ -21,7 +21,12 @@ package io.qalipsis.core.factory.steps.topicrelatedsteps
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.containsExactly
+import assertk.assertions.index
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.prop
+
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK

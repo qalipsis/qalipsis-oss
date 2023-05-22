@@ -25,7 +25,7 @@ plugins {
     kotlin("plugin.noarg")
 }
 
-description = "Qalipsis Head components"
+description = "QALIPSIS Head microservice"
 
 allOpen {
     annotations(
@@ -49,7 +49,8 @@ dependencies {
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
 
-    implementation(project(":qalipsis-core"))
+    implementation(project(":qalipsis-shared"))
+    implementation(project(":qalipsis-cluster"))
     implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
@@ -104,7 +105,7 @@ dependencies {
     testImplementation(testFixtures("io.qalipsis:qalipsis-api-dsl:$apiVersion"))
     testImplementation(testFixtures("io.qalipsis:qalipsis-api-common:$apiVersion"))
     testImplementation(testFixtures(project(":qalipsis-runtime")))
-    testImplementation(testFixtures(project(":qalipsis-core")))
+    testImplementation(testFixtures(project(":qalipsis-shared")))
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:postgresql")
 

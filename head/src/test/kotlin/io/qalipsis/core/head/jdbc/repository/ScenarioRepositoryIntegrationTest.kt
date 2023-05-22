@@ -21,6 +21,7 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.index
@@ -37,6 +38,8 @@ import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+
+
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -403,7 +406,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
 
     @Test
-    internal fun `should list the enabled scenarios with tenant reference`(
+    internal fun `should list the enabled scenarios on active factories with tenant reference`(
         factoryRepository: FactoryRepository,
         factoryStateRepository: FactoryStateRepository
     ) =
@@ -453,10 +456,53 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
 
             // when + then
-            repository.findAllActiveWithSorting("new", "default_minions_count").map { it.id }
             val result2 = repository.findAllActiveWithSorting("new-qalipsis", "name").map { it.id }
             assertThat(result2).containsOnly(scenario2.id, scenario5.id)
             assertThat(result2.get(0)).isEqualTo(scenario5.id)
             assertThat(result2.get(1)).isEqualTo(scenario2.id)
+        }
+
+
+    @Test
+    internal fun `should list the enabled scenarios on factories with tenant reference`(
+        factoryRepository: FactoryRepository,
+        factoryStateRepository: FactoryStateRepository
+    ) =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy(reference = "new"))
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "new-qalipsis"))
+            val factory1 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "test",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant1.id
+                )
+            )
+            val factory2 = factoryRepository.save(
+                FactoryEntity(
+                    nodeId = "the-other-node" + Math.random(),
+                    registrationTimestamp = Instant.now(),
+                    registrationNodeId = "any",
+                    unicastChannel = "unicast-channel",
+                    tenantId = savedTenant2.id
+                )
+            )
+
+            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id, name = "four"))
+            val scenario4 =
+                repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 5, name = "two"))
+            val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
+            val scenario3 = repository.save(scenario.copy(factoryId = factory1.id, name = "three"))
+            val scenario1 =
+                repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 3, name = "one"))
+
+            // when + then
+            assertThat(repository.findByTenantWithSorting("new", "name")).all {
+                hasSize(3)
+                containsExactly(scenario1, scenario3, scenario4)
+            }
         }
 }

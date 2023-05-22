@@ -25,7 +25,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Qalipsis Runtime"
+description = "QALIPSIS Runtime"
 
 allOpen {
     annotations(
@@ -47,7 +47,7 @@ dependencies {
     api("io.qalipsis:qalipsis-api-common:$apiVersion")
     api("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     api("io.qalipsis:qalipsis-api-processors:$apiVersion")
-    api(project(":qalipsis-core"))
+    api(project(":qalipsis-shared"))
     compileOnly(project(":qalipsis-factory"))
     compileOnly(project(":qalipsis-head"))
 
@@ -74,7 +74,7 @@ dependencies {
     testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     testImplementation(project(":qalipsis-head"))
     testImplementation(project(":qalipsis-factory"))
-    testImplementation(testFixtures(project(":qalipsis-core")))
+    testImplementation(testFixtures(project(":qalipsis-shared")))
     testImplementation("io.mockk:mockk")
     testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
