@@ -20,4 +20,4 @@
 #
 
 cd ..
-./gradlew displayVersion clean :runtime:classes :runtime:runQalipsis --rerun-tasks --no-build-cache $*
+./gradlew displayVersion clean :qalipsis-runtime:classes :qalipsis-runtime:runQalipsis --rerun-tasks --no-build-cache $*

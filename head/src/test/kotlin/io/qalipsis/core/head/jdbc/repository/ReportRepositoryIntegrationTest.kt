@@ -27,9 +27,11 @@ import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
@@ -147,6 +149,30 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(ReportEntity::scenarioNamesPatterns).isEmpty()
             prop(ReportEntity::dataComponents).isEmpty()
         }
+
+        // when searching a report with same name but other ID
+        var existsWithSameNameAndOtherId =
+            reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant.reference, "my-report-name", saved.id)
+
+        // then
+        assertThat(existsWithSameNameAndOtherId).isFalse()
+
+        // when searching a report with other name and other ID
+        existsWithSameNameAndOtherId = reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+            tenant.reference,
+            "my-other-report-name",
+            saved.id
+        )
+
+        // then
+        assertThat(existsWithSameNameAndOtherId).isFalse()
+
+        // when searching a report with same name and any ID
+        existsWithSameNameAndOtherId =
+            reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant.reference, "my-report-name")
+
+        // then
+        assertThat(existsWithSameNameAndOtherId).isTrue()
     }
 
     @Test

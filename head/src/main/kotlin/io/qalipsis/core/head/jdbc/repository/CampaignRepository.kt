@@ -164,13 +164,29 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     )
     suspend fun findKeysByTenantAndNamePatterns(tenant: String, namePatterns: Collection<String>): Collection<String>
 
+    /**
+     * Find campaign keys and campaign names of the [size] campaigns that ended most recently in a tenant. The research
+     * is done either by a list of campaign name patterns or by a list of campaign keys.
+     *
+     * @param tenantId the ID of the tenant owning the campaign
+     * @param namePatterns list of campaign name patterns
+     * @param keys list of campaign keys
+     * @param size maximum number of campaigns to return
+     */
     @Query(
-        """SELECT distinct campaign_entity_.key, campaign_entity_.name 
+        """SELECT distinct campaign_entity_.key, campaign_entity_.name, campaign_entity_.end 
             FROM campaign as campaign_entity_ 
             WHERE campaign_entity_.tenant_id = :tenantId
-            AND campaign_entity_.name ILIKE any (array[:namePatterns])"""
+                AND (campaign_entity_.key IN (:keys) OR campaign_entity_.name ILIKE any (array[:namePatterns]))
+            ORDER BY campaign_entity_.end DESC
+            LIMIT :size"""
     )
-    suspend fun findKeysAndNamesByTenantIdAndNamePatterns(tenantId: Long, namePatterns: Collection<String>): Collection<CampaignKeyAndName>
+    suspend fun findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+        tenantId: Long,
+        namePatterns: Collection<String>,
+        keys: Collection<String>,
+        size: Int = 10
+    ): Collection<CampaignKeyAndName>
 
     @Introspected
     data class CampaignKeyAndName(val key: String, val name: String)

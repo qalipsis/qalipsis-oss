@@ -101,6 +101,9 @@ internal class ReportServiceImpl(
         creator: String,
         reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
     ): Report {
+        require(!reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, reportCreationAndUpdateRequest.displayName)) {
+            "A report named ${reportCreationAndUpdateRequest.displayName} already exists in your organization"
+        }
         if (reportCreationAndUpdateRequest.campaignKeys.isNotEmpty()) {
             val existingCampaignKeys =
                 campaignRepository.findKeyByTenantAndKeyIn(tenant, reportCreationAndUpdateRequest.campaignKeys)
@@ -156,6 +159,9 @@ internal class ReportServiceImpl(
             REPORT_UPDATE_DENY
         }
         val creatorName = userRepository.findUsernameById(reportEntity.creatorId) ?: ""
+        require(!reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, reportCreationAndUpdateRequest.displayName, reportEntity.id)) {
+            "A report named ${reportCreationAndUpdateRequest.displayName} already exists in your organization"
+        }
 
         if (reportCreationAndUpdateRequest.campaignKeys.isNotEmpty()) {
             val existingCampaignKeys =
@@ -246,11 +252,12 @@ internal class ReportServiceImpl(
     private suspend fun toModel(reportEntity: ReportEntity, creator: String): Report {
         val resolvedCampaignKeysAndNames =
             if (reportEntity.campaignNamesPatterns.isNotEmpty()) {
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     reportEntity.tenantId,
                     reportEntity.campaignNamesPatterns.map {
                         it.replace("*", "%").replace("?", "_")
-                    }
+                    },
+                    reportEntity.campaignKeys
                 )
             } else emptyList()
         val resolvedCampaignKeys = resolvedCampaignKeysAndNames.map { it.key }

@@ -48,19 +48,19 @@ internal data class ReportCreationAndUpdateRequest(
         description = "List of keys that represent campaigns to include in the report",
         required = false
     )
-    val campaignKeys: List<String> = emptyList(),
+    val campaignKeys: Collection<String> = emptyList(),
 
     @field:Schema(
         description = "List of keys that represent campaigns to include in the report",
         required = false
     )
-    val campaignNamesPatterns: List<String> = emptyList(),
+    val campaignNamesPatterns: Collection<String> = emptyList(),
 
     @field:Schema(
         description = "List of scenarios to include in the report",
         required = false
     )
-    val scenarioNamesPatterns: List<String> = emptyList(),
+    val scenarioNamesPatterns: Collection<String> = emptyList(),
 
     @field:Schema(
         description = "List of data component to include in the report",

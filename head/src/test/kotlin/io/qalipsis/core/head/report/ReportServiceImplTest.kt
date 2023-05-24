@@ -142,6 +142,12 @@ internal class ReportServiceImplTest {
             coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name")
+                )
+            } returns false
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(displayName = "report-name")
 
@@ -184,6 +190,7 @@ internal class ReportServiceImplTest {
                 )
             }
             coVerifyOrder {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
                 idGenerator.short()
                 tenantRepository.findIdByReference(refEq("my-tenant"))
                 userRepository.findIdByUsername(refEq("the-user"))
@@ -205,13 +212,25 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should create the report by specifying all fields`() = testDispatcherProvider.runTest {
         // given
+        coEvery {
+            reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                refEq("my-tenant"),
+                refEq("report-name")
+            )
+        } returns false
         coEvery { reportRepository.save(any()) } returnsArgument 0
         coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
         coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
         coEvery {
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
         } returns setOf("campaign-key1", "campaign-key2")
-        coEvery { campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w")) } returns listOf(
+        coEvery {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("%", "\\w"),
+                listOf("campaign-key1", "campaign-key2")
+            )
+        } returns listOf(
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
             CampaignKeyAndName("campaign-key3", "campaign-name3")
@@ -317,6 +336,7 @@ internal class ReportServiceImplTest {
             )
         }
         coVerifyOrder {
+            reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
             dataSeriesRepository.checkExistenceByTenantAndReference(
                 tenant = refEq("my-tenant"),
@@ -339,7 +359,11 @@ internal class ReportServiceImplTest {
                 references = listOf("series-ref-2")
             )
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("%", "\\w"),
+                listOf("campaign-key1", "campaign-key2")
+            )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123,
                 listOf("\\w"),
@@ -368,6 +392,12 @@ internal class ReportServiceImplTest {
             coEvery {
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             } returns emptySet()
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name")
+                )
+            } returns false
 
             val reportCreationAndUpdateRequest =
                 ReportCreationAndUpdateRequest(displayName = "report-name", campaignKeys = listOf("campaign-key1"))
@@ -384,6 +414,11 @@ internal class ReportServiceImplTest {
             // then
             assertThat(exception.message).isEqualTo(REPORT_CAMPAIGN_KEYS_NOT_ALLOWED)
             coVerifyOrder {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name"),
+                    -1
+                )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             }
             confirmVerified(
@@ -404,6 +439,12 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns false
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name")
+                )
+            } returns false
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
                 displayName = "report-name",
@@ -428,10 +469,59 @@ internal class ReportServiceImplTest {
             // then
             assertThat(exception.message).isEqualTo(REPORT_DATA_SERIES_NOT_ALLOWED)
             coVerifyOrder {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name"),
+                    -1
+                )
                 dataSeriesRepository.checkExistenceByTenantAndReference(
                     tenant = refEq("my-tenant"),
                     reference = refEq("series-ref-1")
                 )
+            }
+            confirmVerified(
+                reportRepository,
+                tenantRepository,
+                userRepository,
+                campaignRepository,
+                campaignScenarioRepository,
+                reportDataComponentRepository,
+                dataSeriesRepository,
+                idGenerator,
+                reportConverter
+            )
+        }
+
+    @Test
+    internal fun `should not create the report when an existing report with the same display name exists`() =
+        testDispatcherProvider.runTest {
+            // given
+            coEvery { reportRepository.save(any()) } returnsArgument 0
+            coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
+            coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
+            coEvery { idGenerator.short() } returns "the-reference"
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name")
+                )
+            } returns true
+
+            val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(displayName = "report-name")
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                reportServiceImpl.create(
+                    tenant = "my-tenant",
+                    creator = "the-user",
+                    reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
+                )
+            }
+
+            // then
+            assertThat(exception.message).isEqualTo("A report named report-name already exists in your organization")
+            coVerifyOrder {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
             }
             confirmVerified(
                 reportRepository,
@@ -643,12 +733,23 @@ internal class ReportServiceImplTest {
                 )
             } returns reportEntity
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("new-report-name"),
+                    -1
+                )
+            } returns false
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
             coEvery {
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             } returns setOf("campaign-key1")
             coEvery {
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    123L,
+                    listOf("%", "\\w"),
+                    listOf("campaign-key1")
+                )
             } returns listOf(
                 CampaignKeyAndName("campaign-key1", "campaign-name1"),
                 CampaignKeyAndName("campaign-key2", "campaign-name2"),
@@ -661,7 +762,12 @@ internal class ReportServiceImplTest {
                     listOf("campaign-key1", "campaign-key2", "campaign-key3")
                 )
             } returns listOf("scenario-1", "scenario-2", "scenario-3")
-            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), refEq("series-ref-1")) } returns true
+            coEvery {
+                dataSeriesRepository.checkExistenceByTenantAndReference(
+                    refEq("my-tenant"),
+                    refEq("series-ref-1")
+                )
+            } returns true
 
             coEvery {
                 dataSeriesRepository.findAllByTenantAndReferences(refEq("my-tenant"), listOf("series-ref-1"))
@@ -759,6 +865,11 @@ internal class ReportServiceImplTest {
                     creatorId = 456L
                 )
                 userRepository.findUsernameById(456L)
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("new-report-name"),
+                    -1
+                )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
                 dataSeriesRepository.checkExistenceByTenantAndReference(
                     tenant = refEq("my-tenant"),
@@ -771,7 +882,11 @@ internal class ReportServiceImplTest {
                     references = listOf("series-ref-1")
                 )
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    123L,
+                    listOf("%", "\\w"),
+                    listOf("campaign-key1")
+                )
                 campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                     123,
                     listOf("\\w"),
@@ -813,14 +928,27 @@ internal class ReportServiceImplTest {
                 )
             } returns reportEntity
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name"),
+                    -1
+                )
+            } returns false
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
-            coEvery { campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1")) } returns setOf(
+            coEvery {
+                campaignRepository.findKeyByTenantAndKeyIn(
+                    refEq("my-tenant"),
+                    listOf("campaign-key1")
+                )
+            } returns setOf(
                 "campaign-key1"
             )
             coEvery {
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     123L,
-                    any()
+                    listOf("%"),
+                    listOf("campaign-key1")
                 )
             } returns listOf(
                 CampaignKeyAndName("campaign-key1", "campaign-name1")
@@ -862,10 +990,23 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 userRepository.findIdByUsername(refEq("the-user"))
-                reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 456L)
+                reportRepository.getReportIfUpdatable(
+                    tenant = refEq("my-tenant"),
+                    reference = refEq("report-ref"),
+                    creatorId = 456L
+                )
                 userRepository.findUsernameById(456L)
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name"),
+                    -1
+                )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, any())
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    123L,
+                    listOf("%"),
+                    listOf("campaign-key1")
+                )
                 campaignScenarioRepository.findNameByCampaignKeys(any(), any())
             }
             confirmVerified(
@@ -899,6 +1040,13 @@ internal class ReportServiceImplTest {
                 )
             } returns reportEntity
             coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+            coEvery {
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name"),
+                    -1
+                )
+            } returns false
             coEvery { userRepository.findIdByUsername("the-user") } returns 456L
             coEvery {
                 campaignRepository.findKeyByTenantAndKeyIn(
@@ -927,8 +1075,17 @@ internal class ReportServiceImplTest {
 
             coVerifyOrder {
                 userRepository.findIdByUsername(refEq("the-user"))
-                reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 456L)
+                reportRepository.getReportIfUpdatable(
+                    tenant = refEq("my-tenant"),
+                    reference = refEq("report-ref"),
+                    creatorId = 456L
+                )
                 userRepository.findUsernameById(456L)
+                reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                    refEq("my-tenant"),
+                    refEq("report-name"),
+                    -1
+                )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             }
             confirmVerified(
@@ -966,6 +1123,13 @@ internal class ReportServiceImplTest {
             )
         } returns reportEntity
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery {
+            reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                refEq("my-tenant"),
+                refEq("new-report-name"),
+                -1
+            )
+        } returns false
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
         coEvery {
             campaignRepository.findKeyByTenantAndKeyIn(
@@ -973,7 +1137,13 @@ internal class ReportServiceImplTest {
                 listOf("campaign-key1")
             )
         } returns setOf("campaign-key1")
-        coEvery { campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, any()) } returns listOf(
+        coEvery {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("%", "\\w"),
+                listOf("campaign-key1")
+            )
+        } returns listOf(
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
             CampaignKeyAndName("campaign-key3", "campaign-name3")
@@ -1081,6 +1251,11 @@ internal class ReportServiceImplTest {
                 creatorId = 456L
             )
             userRepository.findUsernameById(456L)
+            reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                refEq("my-tenant"),
+                refEq("new-report-name"),
+                -1
+            )
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             dataSeriesRepository.checkExistenceByTenantAndReference(
                 tenant = refEq("my-tenant"),
@@ -1093,7 +1268,11 @@ internal class ReportServiceImplTest {
                 references = listOf("series-ref-2")
             )
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("%", "\\w"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("%", "\\w"),
+                listOf("campaign-key1")
+            )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123,
                 listOf("\\w"),
@@ -1242,7 +1421,11 @@ internal class ReportServiceImplTest {
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 123L)
+            reportRepository.getReportIfUpdatable(
+                tenant = refEq("my-tenant"),
+                reference = refEq("report-ref"),
+                creatorId = 123L
+            )
             reportRepository.delete(reportEntity)
         }
         confirmVerified(
@@ -1285,7 +1468,11 @@ internal class ReportServiceImplTest {
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
-            reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 456L)
+            reportRepository.getReportIfUpdatable(
+                tenant = refEq("my-tenant"),
+                reference = refEq("report-ref"),
+                creatorId = 456L
+            )
             reportRepository.delete(reportEntity)
         }
         confirmVerified(
@@ -1325,7 +1512,11 @@ internal class ReportServiceImplTest {
 
             coVerifyOrder {
                 userRepository.findIdByUsername("other-user")
-                reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 123L)
+                reportRepository.getReportIfUpdatable(
+                    tenant = refEq("my-tenant"),
+                    reference = refEq("report-ref"),
+                    creatorId = 123L
+                )
             }
             confirmVerified(
                 reportRepository,
@@ -1362,7 +1553,11 @@ internal class ReportServiceImplTest {
 
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getReportIfUpdatable(tenant = refEq("my-tenant"), reference = refEq("report-ref"), creatorId = 456L)
+            reportRepository.getReportIfUpdatable(
+                tenant = refEq("my-tenant"),
+                reference = refEq("report-ref"),
+                creatorId = 456L
+            )
         }
         confirmVerified(
             reportRepository,

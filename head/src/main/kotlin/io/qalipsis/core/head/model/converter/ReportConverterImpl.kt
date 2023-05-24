@@ -50,11 +50,12 @@ internal class ReportConverterImpl(
         } else emptyList()
 
         val resolvedCampaignKeysAndNames = if (reportEntity.campaignNamesPatterns.isNotEmpty())
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 reportEntity.tenantId,
                 reportEntity.campaignNamesPatterns.map {
                     it.replace("*", "%").replace("?", "_")
-                }
+                },
+                reportEntity.campaignKeys
             )
         else emptyList()
         val resolvedCampaignKeys = resolvedCampaignKeysAndNames.map { it.key }

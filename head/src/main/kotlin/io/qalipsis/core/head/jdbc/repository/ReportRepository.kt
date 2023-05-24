@@ -72,6 +72,17 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
     @Join(value = "dataComponents", type = Join.Type.LEFT_FETCH)
     suspend fun findByTenantAndReference(tenant: String, reference: String): ReportEntity
 
+    @Query(
+        """SELECT count(*) > 0
+            FROM report
+            WHERE id <> :id AND display_name = :displayName AND EXISTS (SELECT 1 FROM tenant WHERE report.tenant_id = tenant.id AND tenant.reference = :tenant)"""
+    )
+    suspend fun existsByTenantReferenceAndDisplayNameAndIdNot(
+        tenant: String,
+        displayName: String,
+        id: Long = -1
+    ): Boolean
+
     /**
      * Find a report by its internal ID.
      *

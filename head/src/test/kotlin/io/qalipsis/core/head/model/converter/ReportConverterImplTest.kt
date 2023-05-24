@@ -149,7 +149,11 @@ internal class ReportConverterImplTest {
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery {
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("camp-1%", "%camp-2"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp-1%", "%camp-2"),
+                listOf("camp-1", "camp-2")
+            )
         } returns listOf(
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
@@ -223,7 +227,11 @@ internal class ReportConverterImplTest {
         )
         coVerifyOrder {
             reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("camp-1%", "%camp-2"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp-1%", "%camp-2"),
+                listOf("camp-1", "camp-2")
+            )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
                 listOf("scen-1%", "%scen-2"),
@@ -246,7 +254,11 @@ internal class ReportConverterImplTest {
         val version = Instant.now().minusMillis(1)
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery {
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("camp-1%", "%camp-2"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp-1%", "%camp-2"),
+                listOf("camp-1", "camp-2")
+            )
         } returns listOf(
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
@@ -303,7 +315,11 @@ internal class ReportConverterImplTest {
             )
         )
         coVerifyOrder {
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("camp-1%", "%camp-2"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp-1%", "%camp-2"),
+                listOf("camp-1", "camp-2")
+            )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
                 listOf("scen-1%", "%scen-2"),
@@ -457,7 +473,11 @@ internal class ReportConverterImplTest {
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery {
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("camp-1%", "%camp-2"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp-1%", "%camp-2"),
+                listOf("camp-1", "camp-2")
+            )
         } returns listOf(
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
@@ -535,7 +555,11 @@ internal class ReportConverterImplTest {
         )
         coVerifyOrder {
             reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(123L, listOf("camp-1%", "%camp-2"))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp-1%", "%camp-2"),
+                listOf("camp-1", "camp-2")
+            )
             campaignScenarioRepository.findNameByCampaignKeys(
                 123L,
                 refEq(

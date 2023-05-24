@@ -877,16 +877,17 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
 
     @Test
-    internal fun `should return only campaign keys by tenant id and campaign names patterns`() =
+    internal fun `should return campaign keys and names by tenant id and campaign names patterns and campaign keys`() =
         testDispatcherProvider.run {
             //given
             val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
             val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+            val instant = Instant.now()
             campaignRepository.save(
                 campaignPrototype.copy(
                     key = "key-1",
                     name = "campaign-1",
-                    end = null,
+                    end = instant.plusMillis(1),
                     tenantId = tenant.id
                 )
             )
@@ -894,15 +895,23 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignPrototype.copy(
                     key = "key-2",
                     name = "CAMPAIGN-2",
-                    end = null,
+                    end = instant.plusMillis(2),
                     tenantId = tenant2.id
+                )
+            )
+            campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "key-0",
+                    name = "campaign-2",
+                    end = instant.plusMillis(2),
+                    tenantId = tenant.id
                 )
             )
             campaignRepository.save(
                 campaignPrototype.copy(
                     key = "key-3",
                     name = "camp-3",
-                    end = null,
+                    end = instant.plusMillis(3),
                     tenantId = tenant.id
                 )
             )
@@ -910,57 +919,261 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignPrototype.copy(
                     key = "key-4",
                     name = "CAMPAIGN-4",
-                    end = null,
+                    end = instant.plusMillis(4),
                     tenantId = tenant.id
                 )
             )
-
-            // when
-            val campaignKeys = campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(tenant.id, listOf("camp%"))
-            // then
-            assertThat(campaignKeys).all {
-                hasSize(3)
-                containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-3", "camp-3"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
+            (5..9).map {
+                campaignRepository.save(
+                    campaignPrototype.copy(
+                        key = "key-$it",
+                        name = "campaign-name-$it",
+                        end = instant.plusMillis(it.toLong()),
+                        tenantId = tenant.id
+                    )
+                )
+            }
+            (5..9).map {
+                campaignRepository.save(
+                    campaignPrototype.copy(
+                        key = "$it-key-$it",
+                        name = "$it-campaign-name-$it",
+                        end = instant.plusMillis((it * it).toLong()),
+                        tenantId = tenant.id
+                    )
+                )
             }
 
-            //when + then
+            assertThat(campaignRepository.findAll().count()).isEqualTo(15)
+
+            // when finding by the tenant: my-tenant
             assertThat(
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     tenant.id,
-                    listOf("camp-_")
+                    listOf("%gn-2"),
+                    listOf()
                 )
-            ).containsOnly(CampaignKeyAndName("key-3", "camp-3"))
+            ).all {
+                hasSize(1)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("key-0", "campaign-2")
+                    )
+                )
+            }
+
+            // when finding by the tenant: my-tenant2
             assertThat(
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
-                    tenant.id,
-                    listOf("%IG%")
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant2.id,
+                    listOf("%gn-2"),
+                    listOf()
                 )
-            ).containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
+            ).all {
+                hasSize(1)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("key-2", "CAMPAIGN-2")
+                    )
+                )
+            }
+
+            // when finding only by campaign name patterns
             assertThat(
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     tenant.id,
-                    listOf("%IG%", "ca_", "x")
+                    listOf("camp%"),
+                    listOf()
                 )
-            ).containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
+            ).all {
+                hasSize(9)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("key-9", "campaign-name-9"),
+                        CampaignKeyAndName("key-8", "campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5"),
+                        CampaignKeyAndName("key-4", "CAMPAIGN-4"),
+                        CampaignKeyAndName("key-3", "camp-3"),
+                        CampaignKeyAndName("key-0", "campaign-2"),
+                        CampaignKeyAndName("key-1", "campaign-1")
+                    )
+                )
+            }
+
+            // when finding only by campaign name patterns and case-sensitive
             assertThat(
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     tenant.id,
-                    listOf("%IG%", "ca%")
+                    listOf("%IGN%"),
+                    listOf()
                 )
-            ).containsOnly(CampaignKeyAndName("key-1", "campaign-1"), CampaignKeyAndName("key-3", "camp-3"), CampaignKeyAndName("key-4", "CAMPAIGN-4"))
+            ).all {
+                hasSize(10)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("9-key-9", "9-campaign-name-9"),
+                        CampaignKeyAndName("8-key-8", "8-campaign-name-8"),
+                        CampaignKeyAndName("7-key-7", "7-campaign-name-7"),
+                        CampaignKeyAndName("6-key-6", "6-campaign-name-6"),
+                        CampaignKeyAndName("5-key-5", "5-campaign-name-5"),
+                        CampaignKeyAndName("key-9", "campaign-name-9"),
+                        CampaignKeyAndName("key-8", "campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5")
+                    )
+                )
+            }
+
+            // when finding only by campaign keys
             assertThat(
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     tenant.id,
-                    listOf("%4")
+                    listOf(),
+                    listOf("9-key-9", "8-key-8", "key-7", "key-6", "key-5")
                 )
-            ).containsOnly(CampaignKeyAndName("key-4", "CAMPAIGN-4"))
-            assertThat(campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(tenant.id, listOf("GN%"))).isEmpty()
+            ).all {
+                hasSize(5)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("9-key-9", "9-campaign-name-9"),
+                        CampaignKeyAndName("8-key-8", "8-campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5")
+                    )
+                )
+            }
+
+            // when finding both by campaign keys and campaign name patterns (exclusive)
             assertThat(
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatterns(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                     tenant.id,
-                    listOf("GN%", "%4")
+                    listOf("campa%"),
+                    listOf("9-key-9")
                 )
-            ).containsOnly(CampaignKeyAndName("key-4", "CAMPAIGN-4"))
+            ).all {
+                hasSize(9)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("9-key-9", "9-campaign-name-9"),
+                        CampaignKeyAndName("key-9", "campaign-name-9"),
+                        CampaignKeyAndName("key-8", "campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5"),
+                        CampaignKeyAndName("key-4", "CAMPAIGN-4"),
+                        CampaignKeyAndName("key-0", "campaign-2"),
+                        CampaignKeyAndName("key-1", "campaign-1")
+                    )
+                )
+            }
+
+            // when finding only by campaign keys and campaign name patterns (inclusive)
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf("camp%"),
+                    listOf("key-5", "key-8", "key-7", "key-9")
+                )
+            ).all {
+                hasSize(9)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("key-9", "campaign-name-9"),
+                        CampaignKeyAndName("key-8", "campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5"),
+                        CampaignKeyAndName("key-4", "CAMPAIGN-4"),
+                        CampaignKeyAndName("key-3", "camp-3"),
+                        CampaignKeyAndName("key-0", "campaign-2"),
+                        CampaignKeyAndName("key-1", "campaign-1")
+                    )
+                )
+            }
+
+            // when finding returns only top 10 by campaign.end DESC
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf("camp%"),
+                    listOf("9-key-9", "6-key-6", "8-key-8", "7-key-7")
+                )
+            ).all {
+                hasSize(10)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("9-key-9", "9-campaign-name-9"),
+                        CampaignKeyAndName("8-key-8", "8-campaign-name-8"),
+                        CampaignKeyAndName("7-key-7", "7-campaign-name-7"),
+                        CampaignKeyAndName("6-key-6", "6-campaign-name-6"),
+                        CampaignKeyAndName("key-9", "campaign-name-9"),
+                        CampaignKeyAndName("key-8", "campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5"),
+                        CampaignKeyAndName("key-4", "CAMPAIGN-4")
+                    )
+                )
+            }
+
+            // when + then
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf("camp-_"),
+                    listOf()
+                )
+            ).all {
+                hasSize(1)
+                isEqualTo(
+                    listOf(CampaignKeyAndName("key-3", "camp-3"))
+                )
+            }
+
+            // when finding from multiple campaign name patterns
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf("c%IG%", "ca_", "x"),
+                    listOf()
+                )
+            ).all {
+                hasSize(8)
+                isEqualTo(
+                    listOf(
+                        CampaignKeyAndName("key-9", "campaign-name-9"),
+                        CampaignKeyAndName("key-8", "campaign-name-8"),
+                        CampaignKeyAndName("key-7", "campaign-name-7"),
+                        CampaignKeyAndName("key-6", "campaign-name-6"),
+                        CampaignKeyAndName("key-5", "campaign-name-5"),
+                        CampaignKeyAndName("key-4", "CAMPAIGN-4"),
+                        CampaignKeyAndName("key-0", "campaign-2"),
+                        CampaignKeyAndName("key-1", "campaign-1")
+                    )
+                )
+            }
+
+            // when campaign name patterns do not match
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf("GN%"),
+                    listOf()
+                )
+            ).isEmpty()
+
+            // when campaign keys do not match
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf(),
+                    listOf("key", "keys-1")
+                )
+            ).isEmpty()
         }
 
 
