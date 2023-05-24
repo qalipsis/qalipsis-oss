@@ -27,7 +27,6 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
-
 import io.mockk.every
 import io.qalipsis.api.steps.CollectionStepSpecification
 import io.qalipsis.api.steps.StepCreationContext

@@ -38,8 +38,6 @@ import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
-
-
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -491,10 +489,10 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             )
 
-            val scenario2 = repository.save(scenario.copy(factoryId = factory2.id, name = "four"))
+            repository.save(scenario.copy(factoryId = factory2.id, name = "four"))
             val scenario4 =
                 repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 5, name = "two"))
-            val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
+            repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
             val scenario3 = repository.save(scenario.copy(factoryId = factory1.id, name = "three"))
             val scenario1 =
                 repository.save(scenario.copy(factoryId = factory1.id, defaultMinionsCount = 3, name = "one"))

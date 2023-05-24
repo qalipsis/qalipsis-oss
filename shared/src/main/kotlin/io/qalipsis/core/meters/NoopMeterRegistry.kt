@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.meters
 
-
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.Measurement
 import io.micrometer.core.instrument.Meter

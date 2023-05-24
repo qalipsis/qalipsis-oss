@@ -50,8 +50,6 @@ import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
-
-
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton

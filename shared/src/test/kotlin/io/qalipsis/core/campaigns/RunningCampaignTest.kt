@@ -26,7 +26,6 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.key
-
 import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
@@ -35,7 +34,6 @@ import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
-
 import io.qalipsis.core.serialization.SerializationFactory
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray

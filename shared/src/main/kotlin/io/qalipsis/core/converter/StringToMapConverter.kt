@@ -26,7 +26,7 @@ import io.micronaut.core.convert.TypeConverterRegistrar
 import io.qalipsis.api.logging.LoggerHelper.logger
 import jakarta.inject.Singleton
 import java.time.Instant
-import java.util.*
+import java.util.Optional
 
 
 /**

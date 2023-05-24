@@ -27,7 +27,6 @@ import assertk.assertions.index
 import assertk.assertions.isBetween
 import assertk.assertions.isEmpty
 import assertk.assertions.prop
-
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.coroutines.TestDispatcherProvider

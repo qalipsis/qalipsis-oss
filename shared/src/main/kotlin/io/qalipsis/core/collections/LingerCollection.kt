@@ -28,7 +28,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
-
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -113,7 +112,7 @@ class LingerCollection<T> private constructor(
         }
     }
 
-    suspend fun stop() {
+    fun stop() {
         active = false
         publicationJob.cancel()
     }

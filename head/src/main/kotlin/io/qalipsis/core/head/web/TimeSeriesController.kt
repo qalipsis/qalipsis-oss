@@ -39,7 +39,6 @@ import io.qalipsis.core.head.report.CampaignSummaryResult
 import io.qalipsis.core.head.report.DataRetrievalQueryExecutionRequest
 import io.qalipsis.core.head.report.TimeSeriesDataQueryService
 import io.qalipsis.core.head.report.WidgetService
-
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn

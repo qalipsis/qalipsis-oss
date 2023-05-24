@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.feedbacks
 
-
 import io.qalipsis.core.feedbacks.FeedbackStatus.COMPLETED
 import io.qalipsis.core.feedbacks.FeedbackStatus.FAILED
 import io.qalipsis.core.feedbacks.FeedbackStatus.IGNORED

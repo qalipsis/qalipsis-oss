@@ -23,7 +23,6 @@ import ch.qos.logback.classic.Level
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.env.Environment
 import io.micronaut.core.naming.conventions.StringConvention
-
 import javax.annotation.PostConstruct
 
 @ConfigurationProperties("logging")

@@ -32,7 +32,7 @@ import io.micronaut.security.authentication.ServerAuthentication
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import java.util.*
+import java.util.Optional
 
 /**
  * Binder to inject the default user when no security is active.
