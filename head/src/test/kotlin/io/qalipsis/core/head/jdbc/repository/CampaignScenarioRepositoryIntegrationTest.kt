@@ -137,7 +137,6 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
         )
 
         // when
-        val beforeCall = Instant.now()
         val start = Instant.now().plusSeconds(12)
         campaignScenarioRepository.start("my-tenant", "1", "the-scenario", start)
 
@@ -290,6 +289,13 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
                     listOf("key-3", "key-2", "key-1")
                 )
             ).containsOnly("scenario-3", "SCENARIO-2")
+            assertThat(
+                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                    tenant.id,
+                    listOf("%rio-_"),
+                    listOf()
+                )
+            ).containsOnly()
             assertThat(
                 campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                     tenant.id,

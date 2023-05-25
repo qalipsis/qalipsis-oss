@@ -27,16 +27,13 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
-import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
 import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
-import io.qalipsis.core.head.model.DataComponent
 import io.qalipsis.core.head.model.DataComponentCreationAndUpdateRequest
 import io.qalipsis.core.head.model.DataComponentType
-import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataTable
 import io.qalipsis.core.head.model.DataTableCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Diagram
@@ -63,7 +60,6 @@ internal class ReportServiceImpl(
     private val tenantRepository: TenantRepository,
     private val userRepository: UserRepository,
     private val campaignRepository: CampaignRepository,
-    private val campaignScenarioRepository: CampaignScenarioRepository,
     private val reportDataComponentRepository: ReportDataComponentRepository,
     private val dataSeriesRepository: DataSeriesRepository,
     private val idGenerator: IdGenerator,
@@ -139,7 +135,7 @@ internal class ReportServiceImpl(
                 )
             }
         }
-        return toModel(createdReport, creator)
+        return reportConverter.convertToModel(createdReport)
     }
 
     override suspend fun update(
@@ -158,7 +154,6 @@ internal class ReportServiceImpl(
         ) {
             REPORT_UPDATE_DENY
         }
-        val creatorName = userRepository.findUsernameById(reportEntity.creatorId) ?: ""
         require(!reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, reportCreationAndUpdateRequest.displayName, reportEntity.id)) {
             "A report named ${reportCreationAndUpdateRequest.displayName} already exists in your organization"
         }
@@ -201,9 +196,9 @@ internal class ReportServiceImpl(
                     )
                 }
             }
-            toModel(updatedReport, creatorName)
+            reportConverter.convertToModel(updatedReport)
         } else {
-            toModel(reportEntity, creatorName)
+            reportConverter.convertToModel(reportEntity)
         }
     }
 
@@ -244,77 +239,6 @@ internal class ReportServiceImpl(
             totalElements = reportEntityPage.totalSize,
             elements = reportEntityPage.content.map { reportConverter.convertToModel(it) }
         )
-    }
-
-    /**
-     * Convert a report entity instance to report model instance.
-     */
-    private suspend fun toModel(reportEntity: ReportEntity, creator: String): Report {
-        val resolvedCampaignKeysAndNames =
-            if (reportEntity.campaignNamesPatterns.isNotEmpty()) {
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                    reportEntity.tenantId,
-                    reportEntity.campaignNamesPatterns.map {
-                        it.replace("*", "%").replace("?", "_")
-                    },
-                    reportEntity.campaignKeys
-                )
-            } else emptyList()
-        val resolvedCampaignKeys = resolvedCampaignKeysAndNames.map { it.key }
-        val campaignKeysUnion = reportEntity.campaignKeys.plus(resolvedCampaignKeys).distinct()
-        val resolvedScenarioNames =
-            if (campaignKeysUnion.isNotEmpty()) {
-                if (reportEntity.scenarioNamesPatterns.isEmpty())
-                    campaignScenarioRepository.findNameByCampaignKeys(reportEntity.tenantId, campaignKeysUnion)
-                else {
-                    campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                        reportEntity.tenantId,
-                        reportEntity.scenarioNamesPatterns.map {
-                            it.replace("*", "%").replace("?", "_")
-                        },
-                        campaignKeysUnion
-                    )
-                }
-            } else emptyList()
-        return Report(
-            reference = reportEntity.reference,
-            version = reportEntity.version,
-            creator = creator,
-            displayName = reportEntity.displayName,
-            sharingMode = reportEntity.sharingMode,
-            campaignKeys = reportEntity.campaignKeys.toList(),
-            campaignNamesPatterns = reportEntity.campaignNamesPatterns.toList(),
-            resolvedCampaigns = resolvedCampaignKeysAndNames.toList(),
-            scenarioNamesPatterns = reportEntity.scenarioNamesPatterns.toList(),
-            resolvedScenarioNames = resolvedScenarioNames,
-            dataComponents = if (reportEntity.dataComponents.isNotEmpty())
-                reportEntity.dataComponents.map { toModel(it) } else emptyList()
-
-        )
-    }
-
-
-    /**
-     * Converts a data component entity instance to data component model instance.
-     */
-    private suspend fun toModel(dataComponentEntity: ReportDataComponentEntity): DataComponent {
-        return if (dataComponentEntity.type == Diagram.TYPE) {
-            Diagram(datas = dataComponentEntity.dataSeries.map {
-                DataSeries(
-                    it,
-                    userRepository.findUsernameById(it.creatorId)
-                        ?: ""
-                )
-            })
-        } else {
-            DataTable(datas = dataComponentEntity.dataSeries.map {
-                DataSeries(
-                    it,
-                    userRepository.findUsernameById(it.creatorId)
-                        ?: ""
-                )
-            })
-        }
     }
 
     /**

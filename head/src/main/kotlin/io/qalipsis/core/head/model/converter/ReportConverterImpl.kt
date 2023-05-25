@@ -49,15 +49,11 @@ internal class ReportConverterImpl(
             reportDataComponentRepository.findByIdInOrderById(reportEntity.dataComponents.map { it.id }).toList()
         } else emptyList()
 
-        val resolvedCampaignKeysAndNames = if (reportEntity.campaignNamesPatterns.isNotEmpty())
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                reportEntity.tenantId,
-                reportEntity.campaignNamesPatterns.map {
-                    it.replace("*", "%").replace("?", "_")
-                },
-                reportEntity.campaignKeys
-            )
-        else emptyList()
+        val resolvedCampaignKeysAndNames = campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+            reportEntity.tenantId,
+            reportEntity.campaignNamesPatterns.map { it.replace("*", "%").replace("?", "_") },
+            reportEntity.campaignKeys
+        )
         val resolvedCampaignKeys = resolvedCampaignKeysAndNames.map { it.key }
         val campaignKeysUnion = reportEntity.campaignKeys.plus(resolvedCampaignKeys).distinct()
         val resolvedScenarioNames =
@@ -94,9 +90,17 @@ internal class ReportConverterImpl(
      */
     suspend fun toModel(dataComponentEntity: ReportDataComponentEntity): DataComponent {
         return if (dataComponentEntity.type == Diagram.TYPE) {
-            Diagram(datas = dataComponentEntity.dataSeries.map { it.toModel("") })
+            Diagram(datas = dataComponentEntity.dataSeries.map {
+                it.toModel(
+                    userRepository.findUsernameById(it.creatorId) ?: ""
+                )
+            })
         } else {
-            DataTable(datas = dataComponentEntity.dataSeries.map { it.toModel("") })
+            DataTable(datas = dataComponentEntity.dataSeries.map {
+                it.toModel(
+                    userRepository.findUsernameById(it.creatorId) ?: ""
+                )
+            })
         }
     }
 }

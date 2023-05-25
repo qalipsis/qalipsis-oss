@@ -1166,6 +1166,15 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 )
             ).isEmpty()
 
+            // when campaign name patterns list and campaign keys list are empty
+            assertThat(
+                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                    tenant.id,
+                    listOf(),
+                    listOf()
+                )
+            ).isEmpty()
+
             // when campaign keys do not match
             assertThat(
                 campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(

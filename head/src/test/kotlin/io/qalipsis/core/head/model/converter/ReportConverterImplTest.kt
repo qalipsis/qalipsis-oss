@@ -75,9 +75,16 @@ internal class ReportConverterImplTest {
 
     @Test
     fun `should convert simple entity to model with all empty lists`() = testDispatcherProvider.runTest {
-        //given
+        // given
         val version = Instant.now().minusMillis(1)
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf(),
+                listOf()
+            )
+        } returns listOf()
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -92,10 +99,10 @@ internal class ReportConverterImplTest {
             scenarioNamesPatterns = listOf(),
             dataComponents = listOf()
         )
-        //when
+        // when
         val report = reportConverterImpl.convertToModel(reportEntity)
 
-        //then
+        // then
         assertThat(report).isDataClassEqualTo(
             Report(
                 reference = "report-ref",
@@ -112,6 +119,11 @@ internal class ReportConverterImplTest {
             )
         )
         coVerifyOrder {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf(),
+                listOf()
+            )
             userRepository.findUsernameById(456L)
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
@@ -119,18 +131,21 @@ internal class ReportConverterImplTest {
 
     @Test
     fun `should convert complete entity to model`() = testDispatcherProvider.runTest {
-        //given
+        // given
         val dataSeries1 = relaxedMockk<DataSeries>()
         val dataSeries2 = relaxedMockk<DataSeries>()
         val dataSeries3 = relaxedMockk<DataSeries>()
         val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries1
+            every { creatorId } returns 456L
         }
         val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries2
+            every { creatorId } returns 456L
         }
         val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries3
+            every { creatorId } returns 456L
         }
         val version = Instant.now().minusMillis(1)
         coEvery { reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L)) } returns listOf(
@@ -151,8 +166,8 @@ internal class ReportConverterImplTest {
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
-                listOf("camp-1%", "%camp-2"),
-                listOf("camp-1", "camp-2")
+                listOf("camp%-%1", "camp%-%2"),
+                listOf("campaign-key1", "campaign-key3")
             )
         } returns listOf(
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
@@ -162,13 +177,11 @@ internal class ReportConverterImplTest {
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
-                listOf("scen-1%", "%scen-2"),
+                listOf("scen%-%1", "scen%-%"),
                 listOf(
-                    "camp-1",
-                    "camp-2",
                     "campaign-key1",
-                    "campaign-key2",
-                    "campaign-key3"
+                    "campaign-key3",
+                    "campaign-key2"
                 )
             )
         } returns listOf("scenario-1", "scenario-2", "scenario-3")
@@ -181,9 +194,9 @@ internal class ReportConverterImplTest {
             displayName = "my-report-name",
             sharingMode = SharingMode.WRITE,
             query = "This is the query",
-            campaignKeys = listOf("camp-1", "camp-2"),
-            campaignNamesPatterns = listOf("camp-1*", "*camp-2"),
-            scenarioNamesPatterns = listOf("scen-1*", "*scen-2"),
+            campaignKeys = listOf("campaign-key1", "campaign-key3"),
+            campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
+            scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
             dataComponents = listOf(
                 ReportDataComponentEntity(
                     id = 1L,
@@ -199,10 +212,10 @@ internal class ReportConverterImplTest {
                 )
             )
         )
-        //when
+        // when
         val report = reportConverterImpl.convertToModel(reportEntity)
 
-        //then
+        // then
         assertThat(report).isDataClassEqualTo(
             Report(
                 reference = "report-ref",
@@ -210,14 +223,14 @@ internal class ReportConverterImplTest {
                 creator = "the-user",
                 displayName = "my-report-name",
                 sharingMode = SharingMode.WRITE,
-                campaignKeys = listOf("camp-1", "camp-2"),
-                campaignNamesPatterns = listOf("camp-1*", "*camp-2"),
+                campaignKeys = listOf("campaign-key1", "campaign-key3"),
+                campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
                 resolvedCampaigns = listOf(
                     CampaignKeyAndName("campaign-key1", "campaign-name1"),
                     CampaignKeyAndName("campaign-key2", "campaign-name2"),
                     CampaignKeyAndName("campaign-key3", "campaign-name3")
                 ),
-                scenarioNamesPatterns = listOf("scen-1*", "*scen-2"),
+                scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
                 resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
                 dataComponents = listOf(
                     Diagram(datas = listOf(dataSeries1, dataSeries2)),
@@ -229,20 +242,21 @@ internal class ReportConverterImplTest {
             reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
-                listOf("camp-1%", "%camp-2"),
-                listOf("camp-1", "camp-2")
+                listOf("camp%-%1", "camp%-%2"),
+                listOf("campaign-key1", "campaign-key3")
             )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
-                listOf("scen-1%", "%scen-2"),
+                listOf("scen%-%1", "scen%-%"),
                 listOf(
-                    "camp-1",
-                    "camp-2",
                     "campaign-key1",
-                    "campaign-key2",
-                    "campaign-key3"
+                    "campaign-key3",
+                    "campaign-key2"
                 )
             )
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
             userRepository.findUsernameById(456L)
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
@@ -250,16 +264,18 @@ internal class ReportConverterImplTest {
 
     @Test
     fun `should convert entity to model with empty data components`() = testDispatcherProvider.runTest {
-        //given
+        // given
         val version = Instant.now().minusMillis(1)
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
-                listOf("camp-1%", "%camp-2"),
+                listOf("camp%-%1", "camp%-%2"),
                 listOf("camp-1", "camp-2")
             )
         } returns listOf(
+            CampaignKeyAndName("camp-1", "camp-name1"),
+            CampaignKeyAndName("camp-2", "camp-name2"),
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
             CampaignKeyAndName("campaign-key3", "campaign-name3")
@@ -267,7 +283,7 @@ internal class ReportConverterImplTest {
         coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
-                listOf("scen-1%", "%scen-2"),
+                listOf("scen%-%1", "scen%-%"),
                 listOf(
                     "camp-1",
                     "camp-2",
@@ -287,14 +303,14 @@ internal class ReportConverterImplTest {
             sharingMode = SharingMode.READONLY,
             query = "This is the query",
             campaignKeys = listOf("camp-1", "camp-2"),
-            campaignNamesPatterns = listOf("camp-1*", "*camp-2"),
-            scenarioNamesPatterns = listOf("scen-1*", "*scen-2"),
+            campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
+            scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
             dataComponents = listOf()
         )
-        //when
+        // when
         val report = reportConverterImpl.convertToModel(reportEntity)
 
-        //then
+        // then
         assertThat(report).isDataClassEqualTo(
             Report(
                 reference = "report-ref",
@@ -303,13 +319,15 @@ internal class ReportConverterImplTest {
                 displayName = "my-report-name",
                 sharingMode = SharingMode.READONLY,
                 campaignKeys = listOf("camp-1", "camp-2"),
-                campaignNamesPatterns = listOf("camp-1*", "*camp-2"),
+                campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
                 resolvedCampaigns = listOf(
+                    CampaignKeyAndName("camp-1", "camp-name1"),
+                    CampaignKeyAndName("camp-2", "camp-name2"),
                     CampaignKeyAndName("campaign-key1", "campaign-name1"),
                     CampaignKeyAndName("campaign-key2", "campaign-name2"),
                     CampaignKeyAndName("campaign-key3", "campaign-name3")
                 ),
-                scenarioNamesPatterns = listOf("scen-1*", "*scen-2"),
+                scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
                 resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
                 dataComponents = listOf()
             )
@@ -317,12 +335,12 @@ internal class ReportConverterImplTest {
         coVerifyOrder {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
-                listOf("camp-1%", "%camp-2"),
+                listOf("camp%-%1", "camp%-%2"),
                 listOf("camp-1", "camp-2")
             )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
-                listOf("scen-1%", "%scen-2"),
+                listOf("scen%-%1", "scen%-%"),
                 listOf(
                     "camp-1",
                     "camp-2",
@@ -338,18 +356,21 @@ internal class ReportConverterImplTest {
 
     @Test
     fun `should convert entity to model when campaign names patterns list is empty`() = testDispatcherProvider.runTest {
-        //given
+        // given
         val dataSeries1 = relaxedMockk<DataSeries>()
         val dataSeries2 = relaxedMockk<DataSeries>()
         val dataSeries3 = relaxedMockk<DataSeries>()
         val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries1
+            every { creatorId } returns 456L
         }
         val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries2
+            every { creatorId } returns 456L
         }
         val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries3
+            every { creatorId } returns 456L
         }
         val version = Instant.now().minusMillis(1)
         coEvery { reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L)) } returns listOf(
@@ -368,9 +389,19 @@ internal class ReportConverterImplTest {
         )
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         coEvery {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf(),
+                listOf("camp-1", "camp-2")
+            )
+        } returns listOf(
+            CampaignKeyAndName("camp-1", "campaign-name1"),
+            CampaignKeyAndName("camp-2", "campaign-name2"),
+        )
+        coEvery {
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
-                listOf("scen-1%", "%scen-2"),
+                listOf("scen%-%1", "scen%-%"),
                 listOf(
                     "camp-1",
                     "camp-2"
@@ -388,7 +419,7 @@ internal class ReportConverterImplTest {
             query = "This is the query",
             campaignKeys = listOf("camp-1", "camp-2"),
             campaignNamesPatterns = listOf(),
-            scenarioNamesPatterns = listOf("scen-1*", "*scen-2"),
+            scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
             dataComponents = listOf(
                 ReportDataComponentEntity(
                     id = 1L,
@@ -404,10 +435,10 @@ internal class ReportConverterImplTest {
                 )
             )
         )
-        //when
+        // when
         val report = reportConverterImpl.convertToModel(reportEntity)
 
-        //then
+        // then
         assertThat(report).isDataClassEqualTo(
             Report(
                 reference = "report-ref",
@@ -417,8 +448,11 @@ internal class ReportConverterImplTest {
                 sharingMode = SharingMode.WRITE,
                 campaignKeys = listOf("camp-1", "camp-2"),
                 campaignNamesPatterns = listOf(),
-                resolvedCampaigns = listOf(),
-                scenarioNamesPatterns = listOf("scen-1*", "*scen-2"),
+                resolvedCampaigns = listOf(
+                    CampaignKeyAndName("camp-1", "campaign-name1"),
+                    CampaignKeyAndName("camp-2", "campaign-name2"),
+                ),
+                scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
                 resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
                 dataComponents = listOf(
                     Diagram(datas = listOf(dataSeries1, dataSeries2)),
@@ -428,33 +462,44 @@ internal class ReportConverterImplTest {
         )
         coVerifyOrder {
             reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf(),
+                listOf("camp-1", "camp-2")
+            )
             campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
                 123L,
-                listOf("scen-1%", "%scen-2"),
+                listOf("scen%-%1", "scen%-%"),
                 listOf(
                     "camp-1",
                     "camp-2"
                 )
             )
             userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
-    fun `should convert entity to model when scenario names patterns list is empty`() = testDispatcherProvider.runTest {
-        //given
+    fun `should convert entity to model when campaign keys list is empty`() = testDispatcherProvider.runTest {
+        // given
         val dataSeries1 = relaxedMockk<DataSeries>()
         val dataSeries2 = relaxedMockk<DataSeries>()
         val dataSeries3 = relaxedMockk<DataSeries>()
         val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries1
+            every { creatorId } returns 456L
         }
         val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries2
+            every { creatorId } returns 456L
         }
         val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
             every { toModel(any()) } returns dataSeries3
+            every { creatorId } returns 456L
         }
         val version = Instant.now().minusMillis(1)
         coEvery { reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L)) } returns listOf(
@@ -475,10 +520,253 @@ internal class ReportConverterImplTest {
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
-                listOf("camp-1%", "%camp-2"),
+                listOf("camp%-%1", "camp%-%2"),
+                listOf()
+            )
+        } returns listOf(
+            CampaignKeyAndName("campaign-key1", "campaign-name1"),
+            CampaignKeyAndName("campaign-key2", "campaign-name2"),
+        )
+        coEvery {
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                123L,
+                listOf("scen%-%1", "scen%-%"),
+                listOf(
+                    "campaign-key1",
+                    "campaign-key2"
+                )
+            )
+        } returns listOf("scenario-1", "scenario-2", "scenario-3")
+        val reportEntity = ReportEntity(
+            id = 1L,
+            reference = "report-ref",
+            version = version,
+            tenantId = 123L,
+            creatorId = 456L,
+            displayName = "my-report-name",
+            sharingMode = SharingMode.WRITE,
+            query = "This is the query",
+            campaignKeys = listOf(),
+            campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
+            scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
+            dataComponents = listOf(
+                ReportDataComponentEntity(
+                    id = 1L,
+                    type = DataComponentType.DIAGRAM,
+                    reportId = 1L,
+                    dataSeries = listOf()
+                ),
+                ReportDataComponentEntity(
+                    id = 2L,
+                    type = DataComponentType.DATA_TABLE,
+                    reportId = 1L,
+                    dataSeries = listOf()
+                )
+            )
+        )
+        // when
+        val report = reportConverterImpl.convertToModel(reportEntity)
+
+        // then
+        assertThat(report).isDataClassEqualTo(
+            Report(
+                reference = "report-ref",
+                version = version,
+                creator = "the-user",
+                displayName = "my-report-name",
+                sharingMode = SharingMode.WRITE,
+                campaignKeys = listOf(),
+                campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
+                resolvedCampaigns = listOf(
+                    CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                    CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                ),
+                scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
+                resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
+                dataComponents = listOf(
+                    Diagram(datas = listOf(dataSeries1, dataSeries2)),
+                    DataTable(datas = listOf(dataSeries3))
+                )
+            )
+        )
+        coVerifyOrder {
+            reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp%-%1", "camp%-%2"),
+                listOf()
+            )
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                123L,
+                listOf("scen%-%1", "scen%-%"),
+                listOf(
+                    "campaign-key1",
+                    "campaign-key2"
+                )
+            )
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+        }
+        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+    }
+
+    @Test
+    fun `should convert entity to model when campaign names patterns list and campaign keys list are empty`() = testDispatcherProvider.runTest {
+        // given
+        val dataSeries1 = relaxedMockk<DataSeries>()
+        val dataSeries2 = relaxedMockk<DataSeries>()
+        val dataSeries3 = relaxedMockk<DataSeries>()
+        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries1
+            every { creatorId } returns 456L
+        }
+        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries2
+            every { creatorId } returns 456L
+        }
+        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries3
+            every { creatorId } returns 456L
+        }
+        val version = Instant.now().minusMillis(1)
+        coEvery { reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L)) } returns listOf(
+            ReportDataComponentEntity(
+                id = 1L,
+                type = DataComponentType.DIAGRAM,
+                reportId = 1L,
+                dataSeries = listOf(dataSeriesEntity1, dataSeriesEntity2)
+            ),
+            ReportDataComponentEntity(
+                id = 2L,
+                type = DataComponentType.DATA_TABLE,
+                reportId = 1L,
+                dataSeries = listOf(dataSeriesEntity3)
+            )
+        )
+        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf(),
+                listOf()
+            )
+        } returns listOf()
+        coEvery {
+            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
+                123L,
+                listOf("scen%-%1", "scen%-%"),
+                listOf()
+            )
+        } returns listOf()
+        val reportEntity = ReportEntity(
+            id = 1L,
+            reference = "report-ref",
+            version = version,
+            tenantId = 123L,
+            creatorId = 456L,
+            displayName = "my-report-name",
+            sharingMode = SharingMode.WRITE,
+            query = "This is the query",
+            campaignKeys = listOf(),
+            campaignNamesPatterns = listOf(),
+            scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
+            dataComponents = listOf(
+                ReportDataComponentEntity(
+                    id = 1L,
+                    type = DataComponentType.DIAGRAM,
+                    reportId = 1L,
+                    dataSeries = listOf()
+                ),
+                ReportDataComponentEntity(
+                    id = 2L,
+                    type = DataComponentType.DATA_TABLE,
+                    reportId = 1L,
+                    dataSeries = listOf()
+                )
+            )
+        )
+        // when
+        val report = reportConverterImpl.convertToModel(reportEntity)
+
+        // then
+        assertThat(report).isDataClassEqualTo(
+            Report(
+                reference = "report-ref",
+                version = version,
+                creator = "the-user",
+                displayName = "my-report-name",
+                sharingMode = SharingMode.WRITE,
+                campaignKeys = listOf(),
+                campaignNamesPatterns = listOf(),
+                resolvedCampaigns = listOf(),
+                scenarioNamesPatterns = listOf("scen*-*1", "scen*-*"),
+                resolvedScenarioNames = listOf(),
+                dataComponents = listOf(
+                    Diagram(datas = listOf(dataSeries1, dataSeries2)),
+                    DataTable(datas = listOf(dataSeries3))
+                )
+            )
+        )
+        coVerifyOrder {
+            reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf(),
+                listOf()
+            )
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+        }
+        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+    }
+
+    @Test
+    fun `should convert entity to model when scenario names patterns list is empty`() = testDispatcherProvider.runTest {
+        // given
+        val dataSeries1 = relaxedMockk<DataSeries>()
+        val dataSeries2 = relaxedMockk<DataSeries>()
+        val dataSeries3 = relaxedMockk<DataSeries>()
+        val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries1
+            every { creatorId } returns 456L
+        }
+        val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries2
+            every { creatorId } returns 456L
+        }
+        val dataSeriesEntity3 = relaxedMockk<DataSeriesEntity> {
+            every { toModel(any()) } returns dataSeries3
+            every { creatorId } returns 456L
+        }
+        val version = Instant.now().minusMillis(1)
+        coEvery { reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L)) } returns listOf(
+            ReportDataComponentEntity(
+                id = 1L,
+                type = DataComponentType.DIAGRAM,
+                reportId = 1L,
+                dataSeries = listOf(dataSeriesEntity1, dataSeriesEntity2)
+            ),
+            ReportDataComponentEntity(
+                id = 2L,
+                type = DataComponentType.DATA_TABLE,
+                reportId = 1L,
+                dataSeries = listOf(dataSeriesEntity3)
+            )
+        )
+        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery {
+            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
+                123L,
+                listOf("camp%-%1", "camp%-%2"),
                 listOf("camp-1", "camp-2")
             )
         } returns listOf(
+            CampaignKeyAndName("camp-1", "camp-name1"),
+            CampaignKeyAndName("camp-2", "camp-name2"),
             CampaignKeyAndName("campaign-key1", "campaign-name1"),
             CampaignKeyAndName("campaign-key2", "campaign-name2"),
             CampaignKeyAndName("campaign-key3", "campaign-name3")
@@ -500,6 +788,7 @@ internal class ReportConverterImplTest {
             "scenario-3",
             "scenario-4"
         )
+        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -510,7 +799,7 @@ internal class ReportConverterImplTest {
             sharingMode = SharingMode.WRITE,
             query = "This is the query",
             campaignKeys = listOf("camp-1", "camp-2"),
-            campaignNamesPatterns = listOf("camp-1*", "*camp-2"),
+            campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
             scenarioNamesPatterns = listOf(),
             dataComponents = listOf(
                 ReportDataComponentEntity(
@@ -527,10 +816,10 @@ internal class ReportConverterImplTest {
                 )
             )
         )
-        //when
+        // when
         val report = reportConverterImpl.convertToModel(reportEntity)
 
-        //then
+        // then
         assertThat(report).isDataClassEqualTo(
             Report(
                 reference = "report-ref",
@@ -539,8 +828,10 @@ internal class ReportConverterImplTest {
                 displayName = "my-report-name",
                 sharingMode = SharingMode.WRITE,
                 campaignKeys = listOf("camp-1", "camp-2"),
-                campaignNamesPatterns = listOf("camp-1*", "*camp-2"),
+                campaignNamesPatterns = listOf("camp*-*1", "camp*-*2"),
                 resolvedCampaigns = listOf(
+                    CampaignKeyAndName("camp-1", "camp-name1"),
+                    CampaignKeyAndName("camp-2", "camp-name2"),
                     CampaignKeyAndName("campaign-key1", "campaign-name1"),
                     CampaignKeyAndName("campaign-key2", "campaign-name2"),
                     CampaignKeyAndName("campaign-key3", "campaign-name3")
@@ -557,7 +848,7 @@ internal class ReportConverterImplTest {
             reportDataComponentRepository.findByIdInOrderById(listOf(1L, 2L))
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
-                listOf("camp-1%", "%camp-2"),
+                listOf("camp%-%1", "camp%-%2"),
                 listOf("camp-1", "camp-2")
             )
             campaignScenarioRepository.findNameByCampaignKeys(
@@ -572,6 +863,9 @@ internal class ReportConverterImplTest {
                     ), true
                 )
             )
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
+            userRepository.findUsernameById(456L)
             userRepository.findUsernameById(456L)
         }
         confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)

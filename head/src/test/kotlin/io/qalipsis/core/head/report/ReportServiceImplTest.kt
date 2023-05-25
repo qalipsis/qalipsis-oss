@@ -46,7 +46,6 @@ import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
-import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
@@ -73,6 +72,7 @@ import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 /**
  * @author Joël Valère
@@ -96,9 +96,6 @@ internal class ReportServiceImplTest {
 
     @MockK
     private lateinit var campaignRepository: CampaignRepository
-
-    @MockK
-    private lateinit var campaignScenarioRepository: CampaignScenarioRepository
 
     @MockK
     private lateinit var dataSeriesRepository: DataSeriesRepository
@@ -138,6 +135,30 @@ internal class ReportServiceImplTest {
     internal fun `should create the report with the default sharing mode and empty campaign keys and scenario names patterns`() =
         testDispatcherProvider.runTest {
             // given
+            val reportEntity = ReportEntity(
+                reference = "the-reference",
+                tenantId = 123L,
+                creatorId = 456L,
+                displayName = "report-name",
+                sharingMode = SharingMode.READONLY,
+                campaignKeys = listOf(),
+                campaignNamesPatterns = listOf(),
+                scenarioNamesPatterns = listOf(),
+                dataComponents = listOf()
+            )
+            val report = Report(
+                reference = "the-reference",
+                version = Instant.EPOCH,
+                creator = "the-user",
+                displayName = "report-name",
+                sharingMode = SharingMode.READONLY,
+                campaignKeys = listOf(),
+                campaignNamesPatterns = listOf(),
+                resolvedCampaigns = listOf(),
+                scenarioNamesPatterns = listOf(),
+                resolvedScenarioNames = listOf(),
+                dataComponents = listOf()
+            )
             coEvery { reportRepository.save(any()) } returnsArgument 0
             coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
@@ -148,6 +169,7 @@ internal class ReportServiceImplTest {
                     refEq("report-name")
                 )
             } returns false
+            coEvery { reportConverter.convertToModel(reportEntity) } returns report
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(displayName = "report-name")
 
@@ -195,13 +217,13 @@ internal class ReportServiceImplTest {
                 tenantRepository.findIdByReference(refEq("my-tenant"))
                 userRepository.findIdByUsername(refEq("the-user"))
                 reportRepository.save(any())
+                reportConverter.convertToModel(reportEntity)
             }
             confirmVerified(
                 reportRepository,
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -212,6 +234,52 @@ internal class ReportServiceImplTest {
     @Test
     internal fun `should create the report by specifying all fields`() = testDispatcherProvider.runTest {
         // given
+        val reportEntity = ReportEntity(
+            reference = "report-ref",
+            tenantId = 123L,
+            creatorId = 456L,
+            displayName = "report-name",
+            sharingMode = SharingMode.NONE,
+            campaignKeys = listOf("campaign-key1", "campaign-key2"),
+            campaignNamesPatterns = listOf("*", "\\w"),
+            scenarioNamesPatterns = listOf("\\w"),
+            dataComponents = listOf(
+                ReportDataComponentEntity(
+                    id = 1,
+                    reportId = -1,
+                    type = DataComponentType.DIAGRAM,
+                    dataSeries = listOf(dataSeries[0])
+                ),
+                ReportDataComponentEntity(
+                    id = 2,
+                    reportId = -1,
+                    type = DataComponentType.DATA_TABLE,
+                    dataSeries = listOf(dataSeries[1])
+                )
+            )
+        )
+        val dataSeries1 = relaxedMockk<DataSeries>()
+        val dataSeries2 = relaxedMockk<DataSeries>()
+        val report = Report(
+            reference = "report-ref",
+            version = Instant.EPOCH,
+            creator = "the-user",
+            displayName = "report-name",
+            sharingMode = SharingMode.NONE,
+            campaignKeys = listOf("campaign-key1", "campaign-key2"),
+            campaignNamesPatterns = listOf("*", "\\w"),
+            resolvedCampaigns = listOf(
+                CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                CampaignKeyAndName("campaign-key3", "campaign-name3")
+            ),
+            scenarioNamesPatterns = listOf("\\w"),
+            resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
+            dataComponents = listOf(
+                Diagram(listOf(dataSeries1)),
+                DataTable(listOf(dataSeries2))
+            )
+        )
         coEvery {
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                 refEq("my-tenant"),
@@ -224,24 +292,6 @@ internal class ReportServiceImplTest {
         coEvery {
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
         } returns setOf("campaign-key1", "campaign-key2")
-        coEvery {
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                123L,
-                listOf("%", "\\w"),
-                listOf("campaign-key1", "campaign-key2")
-            )
-        } returns listOf(
-            CampaignKeyAndName("campaign-key1", "campaign-name1"),
-            CampaignKeyAndName("campaign-key2", "campaign-name2"),
-            CampaignKeyAndName("campaign-key3", "campaign-name3")
-        )
-        coEvery {
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                123,
-                listOf("\\w"),
-                listOf("campaign-key1", "campaign-key2", "campaign-key3")
-            )
-        } returns listOf("scenario-1", "scenario-2", "scenario-3")
         coEvery {
             dataSeriesRepository.checkExistenceByTenantAndReference(
                 refEq("my-tenant"),
@@ -276,6 +326,7 @@ internal class ReportServiceImplTest {
         )
         coEvery { idGenerator.short() } returns "report-ref"
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { reportConverter.convertToModel(reportEntity) } returns report
 
         val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
             displayName = "report-name",
@@ -359,25 +410,13 @@ internal class ReportServiceImplTest {
                 references = listOf("series-ref-2")
             )
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                123L,
-                listOf("%", "\\w"),
-                listOf("campaign-key1", "campaign-key2")
-            )
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                123,
-                listOf("\\w"),
-                listOf("campaign-key1", "campaign-key2", "campaign-key3")
-            )
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
+            reportConverter.convertToModel(reportEntity)
         }
         confirmVerified(
             reportRepository,
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -426,7 +465,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -484,7 +522,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -528,7 +565,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -571,7 +607,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -614,7 +649,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -655,7 +689,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -697,7 +730,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -725,6 +757,44 @@ internal class ReportServiceImplTest {
                     )
                 )
             )
+            val updatedReport = ReportEntity(
+                reference = "report-ref",
+                tenantId = 123L,
+                creatorId = 456L,
+                displayName = "new-report-name",
+                sharingMode = SharingMode.NONE,
+                campaignKeys = listOf("campaign-key1"),
+                campaignNamesPatterns = listOf("*", "\\w"),
+                scenarioNamesPatterns = listOf("\\w"),
+                dataComponents = listOf(
+                    ReportDataComponentEntity(
+                        id = 1,
+                        reportId = -1,
+                        type = DataComponentType.DATA_TABLE,
+                        dataSeries = listOf(dataSeries[0])
+                    )
+                )
+            )
+            val dataSeries1 = DataSeries(dataSeries[0], "the-user")
+            val report = Report(
+                reference = "report-ref",
+                version = Instant.EPOCH,
+                creator = "the-user",
+                displayName = "new-report-name",
+                sharingMode = SharingMode.NONE,
+                campaignKeys = listOf("campaign-key1"),
+                campaignNamesPatterns = listOf("*", "\\w"),
+                resolvedCampaigns = listOf(
+                    CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                    CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                    CampaignKeyAndName("campaign-key3", "campaign-name3")
+                ),
+                scenarioNamesPatterns = listOf("\\w"),
+                resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
+                dataComponents = listOf(
+                    DataTable(listOf(dataSeries1))
+                )
+            )
             coEvery {
                 reportRepository.getReportIfUpdatable(
                     tenant = refEq("my-tenant"),
@@ -745,24 +815,6 @@ internal class ReportServiceImplTest {
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             } returns setOf("campaign-key1")
             coEvery {
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                    123L,
-                    listOf("%", "\\w"),
-                    listOf("campaign-key1")
-                )
-            } returns listOf(
-                CampaignKeyAndName("campaign-key1", "campaign-name1"),
-                CampaignKeyAndName("campaign-key2", "campaign-name2"),
-                CampaignKeyAndName("campaign-key3", "campaign-name3")
-            )
-            coEvery {
-                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                    123,
-                    listOf("\\w"),
-                    listOf("campaign-key1", "campaign-key2", "campaign-key3")
-                )
-            } returns listOf("scenario-1", "scenario-2", "scenario-3")
-            coEvery {
                 dataSeriesRepository.checkExistenceByTenantAndReference(
                     refEq("my-tenant"),
                     refEq("series-ref-1")
@@ -782,6 +834,7 @@ internal class ReportServiceImplTest {
             )
             coJustRun { reportDataComponentRepository.deleteByReportId(-1L) }
             coEvery { reportRepository.update(any()) } returnsArgument 0
+            coEvery { reportConverter.convertToModel(updatedReport) } returns report
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
                 displayName = "new-report-name",
@@ -864,7 +917,6 @@ internal class ReportServiceImplTest {
                     reference = refEq("report-ref"),
                     creatorId = 456L
                 )
-                userRepository.findUsernameById(456L)
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                     refEq("my-tenant"),
                     refEq("new-report-name"),
@@ -882,24 +934,13 @@ internal class ReportServiceImplTest {
                     references = listOf("series-ref-1")
                 )
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                    123L,
-                    listOf("%", "\\w"),
-                    listOf("campaign-key1")
-                )
-                campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                    123,
-                    listOf("\\w"),
-                    listOf("campaign-key1", "campaign-key2", "campaign-key3")
-                )
-                userRepository.findUsernameById(456L)
+                reportConverter.convertToModel(updatedReport)
             }
             confirmVerified(
                 reportRepository,
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -919,6 +960,20 @@ internal class ReportServiceImplTest {
                 sharingMode = SharingMode.WRITE,
                 campaignKeys = listOf("campaign-key1"),
                 campaignNamesPatterns = listOf("*")
+            )
+            val report = Report(
+                reference = "report-ref",
+                version = Instant.EPOCH,
+                creator = "the-user",
+                displayName = "report-name",
+                sharingMode = SharingMode.WRITE,
+                campaignKeys = listOf("campaign-key1"),
+                campaignNamesPatterns = listOf("*"),
+                resolvedCampaigns = listOf(
+                    CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                    CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                    CampaignKeyAndName("campaign-key3", "campaign-name3")
+                )
             )
             coEvery {
                 reportRepository.getReportIfUpdatable(
@@ -944,21 +999,9 @@ internal class ReportServiceImplTest {
             } returns setOf(
                 "campaign-key1"
             )
-            coEvery {
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                    123L,
-                    listOf("%"),
-                    listOf("campaign-key1")
-                )
-            } returns listOf(
-                CampaignKeyAndName("campaign-key1", "campaign-name1")
-            )
-            coEvery { campaignScenarioRepository.findNameByCampaignKeys(any(), any()) } returns listOf(
-                "scenario-1",
-                "scenario-2"
-            )
             coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns true
             coEvery { dataSeriesRepository.findByTenantAndReference(refEq("my-tenant"), any()) } returns dataSeries[1]
+            coEvery { reportConverter.convertToModel(reportEntity) } returns report
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
                 displayName = "report-name",
@@ -983,9 +1026,9 @@ internal class ReportServiceImplTest {
                 prop(Report::sharingMode).isEqualTo(SharingMode.WRITE)
                 prop(Report::campaignKeys).hasSize(1)
                 prop(Report::campaignNamesPatterns).hasSize(1)
-                prop(Report::resolvedCampaigns).hasSize(1)
+                prop(Report::resolvedCampaigns).hasSize(3)
                 prop(Report::scenarioNamesPatterns).hasSize(0)
-                prop(Report::resolvedScenarioNames).hasSize(2)
+                prop(Report::resolvedScenarioNames).hasSize(0)
                 prop(Report::dataComponents).hasSize(0)
             }
             coVerifyOrder {
@@ -995,26 +1038,19 @@ internal class ReportServiceImplTest {
                     reference = refEq("report-ref"),
                     creatorId = 456L
                 )
-                userRepository.findUsernameById(456L)
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                     refEq("my-tenant"),
                     refEq("report-name"),
                     -1
                 )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-                campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                    123L,
-                    listOf("%"),
-                    listOf("campaign-key1")
-                )
-                campaignScenarioRepository.findNameByCampaignKeys(any(), any())
+                reportConverter.convertToModel(reportEntity)
             }
             confirmVerified(
                 reportRepository,
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1080,7 +1116,6 @@ internal class ReportServiceImplTest {
                     reference = refEq("report-ref"),
                     creatorId = 456L
                 )
-                userRepository.findUsernameById(456L)
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                     refEq("my-tenant"),
                     refEq("report-name"),
@@ -1093,7 +1128,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1113,7 +1147,44 @@ internal class ReportServiceImplTest {
             campaignKeys = listOf("campaign-key1"),
             campaignNamesPatterns = listOf("*"),
             dataComponents = listOf()
-
+        )
+        val updatedReport = ReportEntity(
+            reference = "report-ref",
+            tenantId = 123L,
+            creatorId = 456L,
+            displayName = "new-report-name",
+            sharingMode = SharingMode.READONLY,
+            campaignKeys = listOf("campaign-key1"),
+            campaignNamesPatterns = listOf("*", "\\w"),
+            scenarioNamesPatterns = listOf("\\w"),
+            dataComponents = listOf(
+                ReportDataComponentEntity(
+                    id = 1,
+                    reportId = -1,
+                    type = DataComponentType.DIAGRAM,
+                    dataSeries = listOf(dataSeries[1])
+                )
+            )
+        )
+        val dataSeries1 = DataSeries(dataSeries[1], "the-user")
+        val report = Report(
+            reference = "report-ref",
+            version = Instant.EPOCH,
+            creator = "the-user",
+            displayName = "new-report-name",
+            sharingMode = SharingMode.READONLY,
+            campaignKeys = listOf("campaign-key1"),
+            campaignNamesPatterns = listOf("*", "\\w"),
+            resolvedCampaigns = listOf(
+                CampaignKeyAndName("campaign-key1", "campaign-name1"),
+                CampaignKeyAndName("campaign-key2", "campaign-name2"),
+                CampaignKeyAndName("campaign-key3", "campaign-name3")
+            ),
+            scenarioNamesPatterns = listOf("\\w"),
+            resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
+            dataComponents = listOf(
+                Diagram(listOf(dataSeries1))
+            )
         )
         coEvery {
             reportRepository.getReportIfUpdatable(
@@ -1137,20 +1208,6 @@ internal class ReportServiceImplTest {
                 listOf("campaign-key1")
             )
         } returns setOf("campaign-key1")
-        coEvery {
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                123L,
-                listOf("%", "\\w"),
-                listOf("campaign-key1")
-            )
-        } returns listOf(
-            CampaignKeyAndName("campaign-key1", "campaign-name1"),
-            CampaignKeyAndName("campaign-key2", "campaign-name2"),
-            CampaignKeyAndName("campaign-key3", "campaign-name3")
-        )
-        coEvery {
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(any(), any(), any())
-        } returns listOf("scenario-1", "scenario-2", "scenario-3")
         coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns true
         coEvery {
             dataSeriesRepository.findAllByTenantAndReferences(
@@ -1168,6 +1225,7 @@ internal class ReportServiceImplTest {
         )
         coJustRun { reportDataComponentRepository.deleteByReportId(any()) }
         coEvery { reportRepository.update(any()) } returnsArgument 0
+        coEvery { reportConverter.convertToModel(updatedReport) } returns report
 
         val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
             displayName = "new-report-name",
@@ -1250,7 +1308,6 @@ internal class ReportServiceImplTest {
                 reference = refEq("report-ref"),
                 creatorId = 456L
             )
-            userRepository.findUsernameById(456L)
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                 refEq("my-tenant"),
                 refEq("new-report-name"),
@@ -1262,30 +1319,18 @@ internal class ReportServiceImplTest {
                 reference = refEq("series-ref-2")
             )
             reportDataComponentRepository.deleteByReportId(-1L)
-            reportRepository.update(any())
             dataSeriesRepository.findAllByTenantAndReferences(
                 tenant = refEq("my-tenant"),
                 references = listOf("series-ref-2")
             )
             reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
-                123L,
-                listOf("%", "\\w"),
-                listOf("campaign-key1")
-            )
-            campaignScenarioRepository.findNameByNamePatternsAndCampaignKeys(
-                123,
-                listOf("\\w"),
-                listOf("campaign-key1", "campaign-key2", "campaign-key3")
-            )
-            userRepository.findUsernameById(456L)
+            reportConverter.convertToModel(updatedReport)
         }
         confirmVerified(
             reportRepository,
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -1336,7 +1381,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1386,7 +1430,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -1433,7 +1476,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -1480,7 +1522,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -1523,7 +1564,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1564,7 +1604,6 @@ internal class ReportServiceImplTest {
             tenantRepository,
             userRepository,
             campaignRepository,
-            campaignScenarioRepository,
             reportDataComponentRepository,
             dataSeriesRepository,
             idGenerator,
@@ -1608,7 +1647,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1652,7 +1690,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1696,7 +1733,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1750,7 +1786,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
@@ -1804,7 +1839,6 @@ internal class ReportServiceImplTest {
                 tenantRepository,
                 userRepository,
                 campaignRepository,
-                campaignScenarioRepository,
                 reportDataComponentRepository,
                 dataSeriesRepository,
                 idGenerator,
