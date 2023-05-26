@@ -71,17 +71,17 @@ internal class ContextInitializer(
         }
         environments.add("$role".lowercase())
 
-        // The user can create a application-config.yml file to overload the default.
+        // The user can create an application-config.yml file to overload the default.
         environments.add("config")
 
         return ApplicationContext.builder()
-            .banner(true)
             .environments(*environments.toTypedArray() + this.commandLineEnvironments)
             .packages("io.qalipsis")
             .mainClass(MicronautBootstrap::class.java)
             .properties(properties)
             .deduceEnvironment(false)
             .args(*(commandLineConfiguration.map { "--$it" }.toTypedArray()))
+            .banner(false)
     }
 
     /**

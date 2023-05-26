@@ -20,6 +20,9 @@
 package io.qalipsis.runtime.bootstrap
 
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.banner.Banner
+import io.micronaut.context.banner.ResourceBanner
+import io.micronaut.core.io.scan.ClassPathResourceLoader
 import io.micronaut.runtime.EmbeddedApplication
 import io.qalipsis.api.coroutines.CoroutineScopeProvider
 import io.qalipsis.api.lang.tryAndLogOrNull
@@ -31,6 +34,7 @@ import io.qalipsis.core.lifetime.HeadStartupComponent
 import io.qalipsis.core.lifetime.ProcessBlocker
 import io.qalipsis.core.lifetime.ProcessExitCodeSupplier
 import kotlinx.coroutines.runBlocking
+import java.io.PrintStream
 import java.util.Optional
 
 /**
@@ -56,6 +60,7 @@ internal class QalipsisApplicationContext(
 
     fun execute(applicationContext: ApplicationContext): Int {
         this.applicationContext = applicationContext
+        printBanner()
         activeEnvironments = applicationContext.environment.activeNames
         processBlockers =
             applicationContext.getBeansOfType(ProcessBlocker::class.java).sortedBy(ProcessBlocker::getOrder)
@@ -92,6 +97,27 @@ internal class QalipsisApplicationContext(
         }
 
         return exitCode
+    }
+
+    /**
+     * Print the QALIPSIS banner with version.
+     */
+    private fun printBanner() {
+        resolveBanner(System.out).print()
+    }
+
+
+    /**
+     * Print the QALIPSIS banner with version.
+     */
+    private fun resolveBanner(out: PrintStream): Banner {
+        val bannerFile = when (role) {
+            DeploymentRole.HEAD -> "qalipsis-head-banner.txt"
+            DeploymentRole.FACTORY -> "qalipsis-factory-banner.txt"
+            else -> "qalipsis-banner.txt"
+        }
+        return ClassPathResourceLoader.defaultLoader(javaClass.classLoader).getResource("banners/$bannerFile")
+            .map { ResourceBanner(it, out) }.get()
     }
 
     /**

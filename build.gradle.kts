@@ -28,6 +28,7 @@ plugins {
     `maven-publish`
     signing
     id("com.github.jk1.dependency-license-report") version "1.17"
+    id("com.palantir.git-version") version "3.0.0"
 }
 
 licenseReport {
@@ -66,6 +67,7 @@ allprojects {
     version = File(rootDir, "project.version").readText().trim()
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
+    apply(plugin = "com.palantir.git-version")
 
     repositories {
         mavenLocal()
@@ -165,7 +167,13 @@ fun Project.configureNotPlatform() {
             }
         }
 
-        val replacedPropertiesInResources = mapOf("project.version" to project.version)
+        val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+        val gitDetails = versionDetails()
+        val replacedPropertiesInResources = mapOf(
+            "project.version" to project.version,
+            "git.commit" to gitDetails.gitHash,
+            "git.branch" to (gitDetails.branchName ?: "<Unknown>")
+        )
         withType<ProcessResources> {
             filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to replacedPropertiesInResources)
         }
