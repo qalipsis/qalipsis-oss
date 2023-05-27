@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":qalipsis-api-dsl"))
 
     implementation("com.squareup:javapoet:1.13.0")
-    implementation("com.squareup:kotlinpoet:1.12.0")
+    implementation("com.squareup:kotlinpoet:1.13.2")
 
     api("io.micronaut:micronaut-inject-java")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core")

@@ -95,7 +95,8 @@ interface CampaignReportLiveStateRegistry {
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
-        count: Int = 1
+        count: Int = 1,
+        cause: Throwable? = null,
     ): Long
 
 }

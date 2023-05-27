@@ -22,18 +22,18 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
 plugins {
     idea
     java
-    kotlin("jvm") version "1.6.21"
-    kotlin("plugin.serialization") version "1.6.21"
-    kotlin("kapt") version "1.6.21"
-    kotlin("plugin.allopen") version "1.6.21"
+    kotlin("jvm") version "1.8.21"
+    kotlin("plugin.serialization") version "1.8.21"
+    kotlin("kapt") version "1.8.21"
+    kotlin("plugin.allopen") version "1.8.21"
 
-    id("nebula.contacts") version "5.1.0"
-    id("nebula.info") version "9.1.1"
-    id("nebula.maven-publish") version "17.3.3"
-    id("nebula.maven-scm") version "17.3.3"
-    id("nebula.maven-manifest") version "17.3.3"
-    id("nebula.maven-apache-license") version "17.3.3"
-    id ("com.github.jk1.dependency-license-report") version "1.17"
+    id("nebula.contacts") version "6.0.0"
+    id("nebula.info") version "11.4.1"
+    id("nebula.maven-publish") version "18.4.0"
+    id("nebula.maven-scm") version "18.4.0"
+    id("nebula.maven-manifest") version "18.4.0"
+    id("nebula.maven-apache-license") version "18.4.0"
+    id("com.github.jk1.dependency-license-report") version "1.17"
     signing
 }
 
@@ -45,7 +45,8 @@ licenseReport {
         )
     )
     allowedLicensesFile = File("$projectDir/build-config/allowed-licenses.json")
-    filters = arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
+    filters =
+        arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
 }
 
 description = "Qalipsis API"
@@ -99,6 +100,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 
@@ -143,15 +145,12 @@ fun Project.isNotPlatform() = !name.contains("platform")
 fun Project.configureNotPlatform() {
     apply(plugin = "java")
 
-    configure<JavaPluginConvention> {
+    java {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
 
     tasks {
-        withType<Jar> {
-            archiveBaseName.set("io-qalipsis-${project.name}")
-        }
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
@@ -240,6 +239,6 @@ val testTasks = subprojects.flatMap {
 
 tasks.register("testReport", TestReport::class) {
     this.group = "verification"
-    destinationDir = file("${buildDir}/reports/tests")
-    reportOn(*(testTasks.toTypedArray()))
+    destinationDirectory.set(file("${buildDir}/reports/tests"))
+    testResults.from(*(testTasks.toTypedArray()))
 }

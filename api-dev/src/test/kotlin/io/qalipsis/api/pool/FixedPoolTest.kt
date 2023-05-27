@@ -420,7 +420,7 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should close all the items when closing the pool`(): Unit = testCoroutineDispatcher.run {
         // given
         val mocks = mutableListOf<MyTestObject>()

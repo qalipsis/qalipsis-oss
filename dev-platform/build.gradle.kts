@@ -18,29 +18,29 @@ plugins {
     `java-platform`
 }
 
-val kotlin = "1.7.10"
-val kotlinCoroutines = "1.6.4"
-val kotlinSerialization = "1.4.0"
+val kotlin = "1.8.21"
+val kotlinCoroutines = "1.7.1"
+val kotlinSerialization = "1.5.1"
 
-val micronaut = "3.7.+"
-val jackson = "2.13.2"
+val micronaut = "3.9.+"
+val jackson = "2.15.1"
 val klogging = "2.1.23"
 val logback = "1.4.+"
-val slf4j = "2.0.1"
+val slf4j = "2.0.7"
 val guava = "29.0-jre"
-val caffeineCache = "2.8.+"
+val caffeineCache = "3.1.6"
 val cuid = "0.1.1"
 val commonsLang = "3.+"
 
-val netty = "4.1.82.Final"
-val bouncycastle = "1.64"
+val netty = "4.1.93.Final"
+val bouncycastle = "1.70"
 val postgresqlDriver = "42.3.1"
 
 val testContainers = "1.+"
 val mockk = "1.10.+"
-val catadioptre = "0.4.+"
+val catadioptre = "0.5.+"
 val awaitility = "4.2.+"
-val assertk = "0.25"
+val assertk = "0.26.1"
 
 javaPlatform {
     allowDependencies()

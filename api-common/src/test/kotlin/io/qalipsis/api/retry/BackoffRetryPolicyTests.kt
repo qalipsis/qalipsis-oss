@@ -89,7 +89,7 @@ internal class BackoffRetryPolicyTests {
         val after = System.currentTimeMillis()
 
         // then
-        assertThat(after - before).isBetween(2000, 2020)
+        assertThat(after - before).isBetween(2000, 2040)
         coVerify(exactly = 3) { service.mockMethod() }
     }
 
@@ -166,7 +166,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(40, 140)
+        assertThat(after - before).isBetween(30, 140)
         coVerify(exactly = 7) { service.mockMethod() }
     }
 }

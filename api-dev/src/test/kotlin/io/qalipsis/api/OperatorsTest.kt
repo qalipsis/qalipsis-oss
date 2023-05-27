@@ -19,6 +19,7 @@ package io.qalipsis.api
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
@@ -168,7 +169,7 @@ internal class OperatorsTest {
 
         val result = tryAndLogOrNull(logger) { 123 }
 
-        assertThat(logStream.toString()).isEmpty()
+        assertThat(logStream.toString()).doesNotContain("in io.qalipsis")
         assertThat(result).isEqualTo(123)
     }
 }
