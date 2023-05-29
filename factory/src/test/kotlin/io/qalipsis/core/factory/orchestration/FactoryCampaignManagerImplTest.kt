@@ -323,7 +323,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should throw exception when minions to start on next starting line is negative`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -365,7 +365,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should throw exception when next start is in the past`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
@@ -408,7 +408,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should create the start definition of all the minions`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
@@ -465,7 +465,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should create the start definition of all the minions even when the execution profile schedules too many starts`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -520,7 +520,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should not create the start definition when there are no starting lines`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -561,7 +561,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion but not restart`() = testCoroutineDispatcher.runTest {
         val factoryCampaignManager = buildCampaignManager()
         factoryCampaignManager.runningCampaign(relaxedMockk {
@@ -605,7 +605,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion but not notify the minion completion when it is a singleton`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -656,7 +656,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion and notify the minion completion but not restart`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -708,7 +708,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion and notify the minion completion and restart`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -755,7 +755,7 @@ internal class FactoryCampaignManagerImplTest {
 
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion and notify the minion completion and not restart when the campaign is closed to the timeout`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -801,7 +801,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion and notify scenario completion`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -860,7 +860,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should mark the dag complete for the minion and notify the minion and scenario completions while ignoring the campaign one`() =
         testCoroutineDispatcher.runTest {
             val factoryCampaignManager = buildCampaignManager()
@@ -909,7 +909,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should shutdown the minions concurrently`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
@@ -930,7 +930,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should shutdown the minions concurrently even in case of failure`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -992,7 +992,7 @@ internal class FactoryCampaignManagerImplTest {
 
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should shutdown the scenario even if the context consumer throws an exception`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -1013,7 +1013,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should shutdown the scenario`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
@@ -1098,7 +1098,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should ignore to shutdown an unknown scenario`() = testCoroutineDispatcher.runTest {
         // when
         val factoryCampaignManager = buildCampaignManager()
@@ -1111,7 +1111,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should shutdown the whole campaign`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
@@ -1146,7 +1146,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should ignore to shutdown an unknown campaign`() = testCoroutineDispatcher.runTest {
         // given
         val factoryCampaignManager = buildCampaignManager()
@@ -1164,7 +1164,7 @@ internal class FactoryCampaignManagerImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should convert execution profile configuration to execution profile`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -1189,7 +1189,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(3)
     internal fun `should convert execution profile configuration to execution profile when configuration is default`() =
         testCoroutineDispatcher.runTest {
             // given

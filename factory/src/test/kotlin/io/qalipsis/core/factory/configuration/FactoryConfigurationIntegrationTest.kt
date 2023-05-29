@@ -32,47 +32,55 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Duration
 
-@MicronautTest(
-    environments = [ExecutionEnvironments.FACTORY],
-    packages = ["io.qalipsis.core.factory"],
-    startApplication = false
-)
 internal class FactoryConfigurationIntegrationTest {
 
-    @Test
-    @MicronautTest(startApplication = false)
-    @Timeout(10)
-    internal fun `should create the factory configuration with the default values`(factoryConfiguration: FactoryConfiguration) {
-        assertThat(factoryConfiguration).all {
-            prop(FactoryConfiguration::nodeId).isNotEmpty()
-            prop(FactoryConfiguration::tags).isEmpty()
-            prop(FactoryConfiguration::metadataPath).isEqualTo("./metadata")
-            prop(FactoryConfiguration::tenant).isEqualTo("_qalipsis_ten_")
-            prop(FactoryConfiguration::zone).isNullOrEmpty()
-            prop(FactoryConfiguration::handshake).all {
-                prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("handshake-request")
-                prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("handshake-response")
-                prop(FactoryConfiguration.HandshakeConfiguration::timeout).isEqualTo(Duration.ofSeconds(30))
-            }
-            prop(FactoryConfiguration::cache).all {
-                prop(FactoryConfiguration.CacheConfiguration::ttl).isEqualTo(Duration.ofMinutes(1))
-                prop(FactoryConfiguration.CacheConfiguration::keyPrefix).isEqualTo("shared-state-registry")
-            }
-            prop(FactoryConfiguration::assignment).all {
-                prop(FactoryConfiguration.AssignmentConfiguration::evaluationBatchSize).isEqualTo(100)
-                prop(FactoryConfiguration.AssignmentConfiguration::timeout).isEqualTo(Duration.ofSeconds(10))
-            }
-            prop(FactoryConfiguration::campaign).all {
-                prop(FactoryConfiguration.CampaignConfiguration::maxScenarioStepSpecificationsCount).isEqualTo(100)
+
+    @MicronautTest(
+        environments = [ExecutionEnvironments.FACTORY],
+        packages = ["io.qalipsis.core.factory"],
+        startApplication = false
+    )
+    @Nested
+    inner class DefaultConfiguration {
+        @Test
+        @Timeout(10)
+        internal fun `should create the factory configuration with the default values`(factoryConfiguration: FactoryConfiguration) {
+            assertThat(factoryConfiguration).all {
+                prop(FactoryConfiguration::nodeId).isNotEmpty()
+                prop(FactoryConfiguration::tags).isEmpty()
+                prop(FactoryConfiguration::metadataPath).isEqualTo("./metadata")
+                prop(FactoryConfiguration::tenant).isEqualTo("_qalipsis_ten_")
+                prop(FactoryConfiguration::zone).isNullOrEmpty()
+                prop(FactoryConfiguration::handshake).all {
+                    prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("handshake-request")
+                    prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("handshake-response")
+                    prop(FactoryConfiguration.HandshakeConfiguration::timeout).isEqualTo(Duration.ofSeconds(30))
+                }
+                prop(FactoryConfiguration::cache).all {
+                    prop(FactoryConfiguration.CacheConfiguration::ttl).isEqualTo(Duration.ofMinutes(1))
+                    prop(FactoryConfiguration.CacheConfiguration::keyPrefix).isEqualTo("shared-state-registry")
+                }
+                prop(FactoryConfiguration::assignment).all {
+                    prop(FactoryConfiguration.AssignmentConfiguration::evaluationBatchSize).isEqualTo(100)
+                    prop(FactoryConfiguration.AssignmentConfiguration::timeout).isEqualTo(Duration.ofSeconds(10))
+                }
+                prop(FactoryConfiguration::campaign).all {
+                    prop(FactoryConfiguration.CampaignConfiguration::maxScenarioStepSpecificationsCount).isEqualTo(100)
+                }
             }
         }
     }
 
-    @Test
+    @MicronautTest(
+        environments = [ExecutionEnvironments.FACTORY],
+        packages = ["io.qalipsis.core.factory"],
+        startApplication = false
+    )
     @PropertySource(
         Property(name = "factory.node-id", value = "The node ID"),
         Property(name = "factory.tags", value = "key1=value1,key2=value2"),
@@ -90,34 +98,36 @@ internal class FactoryConfigurationIntegrationTest {
         Property(name = "factory.assignment.timeout", value = "143s"),
         Property(name = "factory.campaign.configuration.maxScenarioStepSpecificationsCount", value = "550")
     )
-    @MicronautTest(startApplication = false)
-    @Timeout(10)
-    internal fun `should create the factory configuration with specified values`(factoryConfiguration: FactoryConfiguration) {
-        assertThat(factoryConfiguration).all {
-            prop(FactoryConfiguration::nodeId).isEqualTo("The node ID")
-            prop(FactoryConfiguration::tags).all {
-                hasSize(2)
-                key("key1").isEqualTo("value1")
-                key("key2").isEqualTo("value2")
-            }
-            prop(FactoryConfiguration::metadataPath).isEqualTo("./another-metadata-path")
-            prop(FactoryConfiguration::tenant).isEqualTo("the tenant")
-            prop(FactoryConfiguration::zone).isEqualTo("en")
-            prop(FactoryConfiguration::handshake).all {
-                prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("The handshake request channel")
-                prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("The handshake response channel")
-                prop(FactoryConfiguration.HandshakeConfiguration::timeout).isEqualTo(Duration.ofMillis(20))
-            }
-            prop(FactoryConfiguration::cache).all {
-                prop(FactoryConfiguration.CacheConfiguration::ttl).isEqualTo(Duration.ofMinutes(2))
-                prop(FactoryConfiguration.CacheConfiguration::keyPrefix).isEqualTo("some-other-registry")
-            }
-            prop(FactoryConfiguration::assignment).all {
-                prop(FactoryConfiguration.AssignmentConfiguration::evaluationBatchSize).isEqualTo(67542)
-                prop(FactoryConfiguration.AssignmentConfiguration::timeout).isEqualTo(Duration.ofSeconds(143))
-            }
-            prop(FactoryConfiguration::campaign).all {
-                prop(FactoryConfiguration.CampaignConfiguration::maxScenarioStepSpecificationsCount).isEqualTo(550)
+    @Nested
+    inner class SpecifiedConfiguration {
+        @Timeout(10)
+        internal fun `should create the factory configuration with specified values`(factoryConfiguration: FactoryConfiguration) {
+            assertThat(factoryConfiguration).all {
+                prop(FactoryConfiguration::nodeId).isEqualTo("The node ID")
+                prop(FactoryConfiguration::tags).all {
+                    hasSize(2)
+                    key("key1").isEqualTo("value1")
+                    key("key2").isEqualTo("value2")
+                }
+                prop(FactoryConfiguration::metadataPath).isEqualTo("./another-metadata-path")
+                prop(FactoryConfiguration::tenant).isEqualTo("the tenant")
+                prop(FactoryConfiguration::zone).isEqualTo("en")
+                prop(FactoryConfiguration::handshake).all {
+                    prop(FactoryConfiguration.HandshakeConfiguration::requestChannel).isEqualTo("The handshake request channel")
+                    prop(FactoryConfiguration.HandshakeConfiguration::responseChannel).isEqualTo("The handshake response channel")
+                    prop(FactoryConfiguration.HandshakeConfiguration::timeout).isEqualTo(Duration.ofMillis(20))
+                }
+                prop(FactoryConfiguration::cache).all {
+                    prop(FactoryConfiguration.CacheConfiguration::ttl).isEqualTo(Duration.ofMinutes(2))
+                    prop(FactoryConfiguration.CacheConfiguration::keyPrefix).isEqualTo("some-other-registry")
+                }
+                prop(FactoryConfiguration::assignment).all {
+                    prop(FactoryConfiguration.AssignmentConfiguration::evaluationBatchSize).isEqualTo(67542)
+                    prop(FactoryConfiguration.AssignmentConfiguration::timeout).isEqualTo(Duration.ofSeconds(143))
+                }
+                prop(FactoryConfiguration::campaign).all {
+                    prop(FactoryConfiguration.CampaignConfiguration::maxScenarioStepSpecificationsCount).isEqualTo(550)
+                }
             }
         }
     }

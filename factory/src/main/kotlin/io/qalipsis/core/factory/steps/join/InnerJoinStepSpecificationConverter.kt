@@ -84,8 +84,9 @@ internal class InnerJoinStepSpecificationConverter(
     private fun <O> createRightDataSupplier(secondaryStep: Step<*, *>): Topic<CorrelationRecord<*>> {
         val topic = broadcastTopic<CorrelationRecord<*>>()
         // A step is added as output to forward the data to the topic.
+        // Since the step is technical, its name is prefixed by 2 underscores.
         val dataSupplier = TopicMirrorStep<O, CorrelationRecord<*>>(
-            "${secondaryStep.name}-topic-mirror-step-${idGenerator.short()}",
+            "__${secondaryStep.name}-topic-mirror-step-${idGenerator.short()}",
             topic, { _, value -> value != null },
             { context, value -> CorrelationRecord(context.minionId, context.stepName, value) }
         )

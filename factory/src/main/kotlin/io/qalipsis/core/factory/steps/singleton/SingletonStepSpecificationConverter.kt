@@ -30,6 +30,7 @@ import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.core.factory.orchestration.StepUtils.type
 import io.qalipsis.core.factory.steps.topicrelatedsteps.TopicBuilder
 import io.qalipsis.core.factory.steps.topicrelatedsteps.TopicConfiguration
 import io.qalipsis.core.factory.steps.topicrelatedsteps.TopicDataPushStep
@@ -75,7 +76,8 @@ internal class SingletonStepSpecificationConverter(
             val topic: Topic<Any?> = TopicBuilder.build(topicConfig)
 
             // A step is added as output to forward the data to the topic.
-            val consumer = TopicMirrorStep<Any?, Any?>(idGenerator.short(), topic)
+            // Since the step is technical, its name is prefixed by 2 underscores.
+            val consumer = TopicMirrorStep<Any?, Any?>("__${idGenerator.short()}", topic)
             decoratedStep.addNext(consumer)
             // No other next step can be added to a singleton step.
             creationContext.createdStep(NoMoreNextStepDecorator(decoratedStep))
@@ -85,7 +87,7 @@ internal class SingletonStepSpecificationConverter(
                 // All the next steps are wrapped so that they can receive the data from the topic.
                 if (it.name.isBlank()) {
                     // Create a name here to identify replaced steps.
-                    it.name = idGenerator.short()
+                    it.name = "_${it.type}_${idGenerator.short()}"
                 }
                 @Suppress("UNCHECKED_CAST")
                 SingletonProxyStepSpecification(

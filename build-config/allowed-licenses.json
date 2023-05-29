@@ -133,6 +133,30 @@
     {
       "moduleLicense": ".*",
       "moduleName": "software.amazon.awssdk:bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.google.protobuf:protobuf-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.grpc:grpc-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.zipkin.brave:brave-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.zipkin.reporter2:zipkin-reporter-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.apache.logging.log4j:log4j-bom"
     }
   ]
 }

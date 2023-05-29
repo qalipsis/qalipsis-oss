@@ -54,6 +54,7 @@ import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
+import io.qalipsis.core.factory.orchestration.StepUtils.type
 import io.qalipsis.core.factory.steps.MinionsKeeperAware
 import io.qalipsis.core.factory.steps.PipeStep
 import io.qalipsis.core.factory.steps.RunnerAware
@@ -260,12 +261,13 @@ internal class FactoryInitializerImpl(
         if (parentDag != null && parentStep != null && stepsSpecifications.isEmpty()) {
             // Adds a PipeStep for security of concurrency between the executed steps and the completion of the DAG.
             // TODO This workaround should be removed in a later version.
-            val pipeStep = PipeStep<Any?>(buildNewStepName())
+            val pipeStep = PipeStep<Any?>("__${buildNewStepName()}")
             parentDag.addStep(pipeStep)
             parentStep.addNext(pipeStep)
 
             // Adds a DeadEndStep step at the end of a DAG to notify that there is nothing after.
-            val deadEndStep = dagTransitionStepFactory.createDeadEnd(buildNewStepName() + "_dead-end", parentDag.name)
+            val deadEndStep =
+                dagTransitionStepFactory.createDeadEnd("__${buildNewStepName()}" + "_dead-end", parentDag.name)
             parentDag.addStep(deadEndStep)
             pipeStep.addNext(deadEndStep)
         }
@@ -286,13 +288,13 @@ internal class FactoryInitializerImpl(
             if (parentDag != null && parentStep != null && stepSpecification.directedAcyclicGraphName != parentDag.name) {
                 // Adds a PipeStep for security of concurrency between the executed steps and the completion of the DAG.
                 // TODO This workaround should be removed in a later version.
-                val pipeStep = PipeStep<Any?>(buildNewStepName())
+                val pipeStep = PipeStep<Any?>("__${buildNewStepName()}_pre-dag-transition")
                 parentDag.addStep(pipeStep)
                 parentStep.addNext(pipeStep)
 
                 // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
                 val dagTransitionStep = dagTransitionStepFactory.createTransition(
-                    buildNewStepName() + "_transition",
+                    "__${buildNewStepName()}_transition",
                     parentDag.name,
                     stepSpecification.directedAcyclicGraphName
                 )
@@ -392,11 +394,11 @@ internal class FactoryInitializerImpl(
      */
     private fun addMissingStepName(spec: StepSpecification<Any?, Any?, *>) {
         if (spec.name.isBlank()) {
-            spec.name = buildNewStepName()
+            spec.name = "_${spec.type}-${buildNewStepName()}"
         }
     }
 
-    private fun buildNewStepName() = "_${idGenerator.short()}"
+    private fun buildNewStepName() = "${idGenerator.short()}"
 
     private suspend fun decorateStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         context.createdStep?.let {

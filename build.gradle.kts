@@ -20,11 +20,11 @@
 plugins {
     idea
     java
-    kotlin("jvm") version "1.6.21"
-    kotlin("kapt") version "1.6.21"
-    kotlin("plugin.allopen") version "1.6.21"
-    kotlin("plugin.serialization") version "1.6.21"
-    kotlin("plugin.noarg") version "1.6.21"
+    kotlin("jvm") version "1.8.21"
+    kotlin("kapt") version "1.8.21"
+    kotlin("plugin.allopen") version "1.8.21"
+    kotlin("plugin.serialization") version "1.8.21"
+    kotlin("plugin.noarg") version "1.8.21"
     `maven-publish`
     signing
     id("com.github.jk1.dependency-license-report") version "1.17"
@@ -153,10 +153,6 @@ fun Project.configureNotPlatform() {
     }
 
     tasks {
-        withType<Jar> {
-            archiveBaseName.set("io-qalipsis-${project.name}")
-        }
-
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
                 jvmTarget = target.majorVersion
@@ -240,6 +236,6 @@ tasks.register("displayVersion") {
 
 tasks.register("testReport", TestReport::class) {
     this.group = "verification"
-    destinationDir = file("${buildDir}/reports/tests")
-    reportOn(*(testTasks.toTypedArray()))
+    destinationDirectory.set(file("${buildDir}/reports/tests"))
+    testResults.from(*(testTasks.toTypedArray()))
 }

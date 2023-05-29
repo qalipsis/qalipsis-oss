@@ -27,14 +27,18 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
+import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.paranamer.ParanamerModule
+import io.micronaut.context.annotation.Requires
 import io.micronaut.context.event.BeanCreatedEvent
 import io.micronaut.context.event.BeanCreatedEventListener
 import io.micronaut.jackson.modules.BeanIntrospectionModule
+import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 
 @Singleton
+@Requires(env = [ExecutionEnvironments.HEAD])
 internal class ObjectMapperCreationListener : BeanCreatedEventListener<ObjectMapper> {
 
     override fun onCreated(event: BeanCreatedEvent<ObjectMapper>): ObjectMapper {
@@ -44,13 +48,12 @@ internal class ObjectMapperCreationListener : BeanCreatedEventListener<ObjectMap
             registerModule(ParanamerModule())
             registerModule(BeanIntrospectionModule())
             registerModule(
-                KotlinModule(
-                    nullToEmptyCollection = true,
-                    nullToEmptyMap = true,
-                    nullIsSameAsDefault = true
-                )
+                kotlinModule {
+                    configure(KotlinFeature.NullToEmptyCollection, true)
+                    configure(KotlinFeature.NullToEmptyMap, true)
+                    configure(KotlinFeature.NullIsSameAsDefault, true)
+                }
             )
-
             enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
             enable(MapperFeature.AUTO_DETECT_CREATORS)
