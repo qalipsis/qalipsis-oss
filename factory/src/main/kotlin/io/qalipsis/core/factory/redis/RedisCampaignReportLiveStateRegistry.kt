@@ -96,7 +96,8 @@ internal class RedisCampaignReportLiveStateRegistry(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
-        count: Int
+        count: Int,
+        cause: Throwable?
     ): Long {
         val key = buildRedisReportKey(campaignKey, scenarioName) + FAILED_STEP_EXECUTION_KEY_POSTFIX
         return redisCommands.hincrby(key, stepName, count.toLong()) ?: 0

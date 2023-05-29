@@ -52,7 +52,7 @@ import javax.annotation.PreDestroy
 
 @Singleton
 @Requires(env = [STANDALONE])
-internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
+internal class StandaloneCampaignReportStateKeeperImpl(
     private val idGenerator: IdGenerator,
     @Value("\${campaign.report.cache.time-to-live:PT10M}") cacheExpire: Duration
 ) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker, CampaignReportProvider {
@@ -81,14 +81,14 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
 
     @LogInput(Level.DEBUG)
     override suspend fun start(campaignKey: CampaignKey, scenarioName: ScenarioName) {
+
         runningCampaignLatch.lock()
-        campaignStates.get(campaignKey)!!
-            .put(scenarioName, InMemoryScenarioReportingExecutionState(scenarioName))
+        campaignStates[campaignKey]!![scenarioName] = InMemoryScenarioReportingExecutionState(scenarioName)
     }
 
     @LogInput(Level.DEBUG)
     override suspend fun complete(campaignKey: CampaignKey, scenarioName: ScenarioName) {
-        campaignStates.get(campaignKey)!!.get(scenarioName)!!.end = Instant.now()
+        campaignStates[campaignKey]!![scenarioName]!!.end = Instant.now()
     }
 
     @LogInput(Level.DEBUG)
@@ -99,7 +99,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     @LogInput(Level.DEBUG)
     override suspend fun abort(campaignKey: CampaignKey) {
         val abortTimestamp = Instant.now()
-        campaignStates.get(campaignKey)
+        campaignStates[campaignKey]
             ?.filterValues { state -> state.end == null && state.abort == null }
             ?.forEach { (_, state) ->
                 state.abort = abortTimestamp
@@ -118,7 +118,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         message: String
     ): Any {
         return (messageId?.toString()?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
-            campaignStates.get(campaignKey)!!.get(scenarioName)!!.messages[id] =
+            campaignStates[campaignKey]!![scenarioName]!!.messages[id] =
                 ReportMessage(stepName, id, severity, message)
         }
     }
@@ -135,12 +135,12 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         stepName: StepName,
         messageId: Any
     ) {
-        campaignStates.get(campaignKey)!!.get(scenarioName)!!.messages.remove(messageId)
+        campaignStates[campaignKey]!![scenarioName]!!.messages.remove(messageId)
     }
 
     @LogInput
     override suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int): Long {
-        return campaignStates.get(campaignKey)!!.get(scenarioName)!!.startedMinionsCounter.addAndGet(
+        return campaignStates[campaignKey]!![scenarioName]!!.startedMinionsCounter.addAndGet(
             count
         ).toLong()
     }
@@ -151,7 +151,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         scenarioName: ScenarioName,
         count: Int
     ): Long {
-        return campaignStates.get(campaignKey)!!.get(scenarioName)!!.completedMinionsCounter.addAndGet(
+        return campaignStates[campaignKey]!![scenarioName]!!.completedMinionsCounter.addAndGet(
             count
         ).toLong()
     }
@@ -163,8 +163,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         stepName: StepName,
         count: Int
     ): Long {
-        return campaignStates.get(campaignKey)!!
-            .get(scenarioName)!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
+        return campaignStates[campaignKey]!![scenarioName]!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
     }
 
     @LogInput
@@ -172,16 +171,16 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
-        count: Int
+        count: Int,
+        cause: Throwable?
     ): Long {
-        return campaignStates.get(campaignKey)!!
-            .get(scenarioName)!!.failedStepExecutionsCounter.addAndGet(count).toLong()
+        return campaignStates[campaignKey]!![scenarioName]!!.failedStepExecutionsCounter.addAndGet(count).toLong()
     }
 
     @LogInputAndOutput
     override suspend fun generateReport(campaignKey: CampaignKey): CampaignReport? {
         join()
-        val scenariosReports = campaignStates.get(campaignKey)
+        val scenariosReports = campaignStates[campaignKey]
             ?.map { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
         return scenariosReports?.toCampaignReport()
     }
@@ -189,7 +188,7 @@ internal class StandaloneInMemoryCampaignReportStateKeeperImpl(
     @LogInputAndOutput
     override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails {
         join()
-        return campaignStates.get(campaignKey)?.map { (_, runningScenarioCampaign) ->
+        return campaignStates[campaignKey]?.map { (_, runningScenarioCampaign) ->
             runningScenarioCampaign.toReport(campaignKey)
         }?.toCampaignExecutionDetails() ?: throw IllegalArgumentException("No report found for the expected campaign")
     }

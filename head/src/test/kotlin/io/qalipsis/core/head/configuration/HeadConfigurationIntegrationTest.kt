@@ -31,32 +31,36 @@ import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Zone
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.net.URL
 import java.time.Duration
 
-@MicronautTest(
-    environments = [ExecutionEnvironments.HEAD],
-    packages = ["io.qalipsis.core.head"],
-    startApplication = false
-)
 internal class HeadConfigurationIntegrationTest {
 
-    @Test
-    @MicronautTest(startApplication = false)
-    @Timeout(10)
-    internal fun `should create the head configuration with the default values`(headConfiguration: HeadConfiguration) {
-        assertThat(headConfiguration).all {
-            prop(HeadConfiguration::handshakeRequestChannel).isEqualTo("handshake-request")
-            prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("unicast-")
-            prop(HeadConfiguration::heartbeatChannel).isEqualTo("heartbeat")
-            prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofSeconds(30))
-            prop(HeadConfiguration::zones).isEmpty()
+    @MicronautTest(
+        environments = [ExecutionEnvironments.HEAD],
+        packages = ["io.qalipsis.core.head"],
+        startApplication = false
+    )
+    @Nested
+    inner class DefaultConfiguration {
+
+        @Test
+        @Timeout(10)
+        internal fun `should create the head configuration with the default values`(headConfiguration: HeadConfiguration) {
+            assertThat(headConfiguration).all {
+                prop(HeadConfiguration::handshakeRequestChannel).isEqualTo("handshake-request")
+                prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("unicast-")
+                prop(HeadConfiguration::heartbeatChannel).isEqualTo("heartbeat")
+                prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofSeconds(30))
+                prop(HeadConfiguration::zones).isEmpty()
+            }
         }
     }
 
-    @Test
+
     @PropertySource(
         Property(name = "head.handshake-request-channel", value = "The handshake request channel"),
         Property(name = "head.unicast-channel-prefix", value = "The unicast channel prefix"),
@@ -71,30 +75,38 @@ internal class HeadConfigurationIntegrationTest {
         Property(name = "head.zones[1].description", value = "Central Europe country"),
         Property(name = "head.zones[1].image", value = "http://images-from-austria.fr/logo"),
     )
-    @MicronautTest(startApplication = false)
-    @Timeout(10)
-    internal fun `should create the head configuration with specified values`(headConfiguration: HeadConfiguration) {
-        assertThat(headConfiguration).all {
-            prop(HeadConfiguration::handshakeRequestChannel).isEqualTo("The handshake request channel")
-            prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("The unicast channel prefix")
-            prop(HeadConfiguration::heartbeatChannel).isEqualTo("The heartbeat channel")
-            prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofMinutes(3))
-            prop(HeadConfiguration::zones).all {
-                hasSize(2)
-                containsAll(
-                    Zone(
-                        key = "fr",
-                        title = "France",
-                        description = "Western Europe country",
-                        image = URL("http://images-from-france.fr/logo"),
-                    ),
-                    Zone(
-                        key = "at",
-                        title = "Austria",
-                        description = "Central Europe country",
-                        image = URL("http://images-from-austria.fr/logo"),
+    @MicronautTest(
+        environments = [ExecutionEnvironments.HEAD],
+        packages = ["io.qalipsis.core.head"],
+        startApplication = false
+    )
+    @Nested
+    inner class SpecifiedConfiguration {
+        @Test
+        @Timeout(10)
+        internal fun `should create the head configuration with specified values`(headConfiguration: HeadConfiguration) {
+            assertThat(headConfiguration).all {
+                prop(HeadConfiguration::handshakeRequestChannel).isEqualTo("The handshake request channel")
+                prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("The unicast channel prefix")
+                prop(HeadConfiguration::heartbeatChannel).isEqualTo("The heartbeat channel")
+                prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofMinutes(3))
+                prop(HeadConfiguration::zones).all {
+                    hasSize(2)
+                    containsAll(
+                        Zone(
+                            key = "fr",
+                            title = "France",
+                            description = "Western Europe country",
+                            image = URL("http://images-from-france.fr/logo"),
+                        ),
+                        Zone(
+                            key = "at",
+                            title = "Austria",
+                            description = "Central Europe country",
+                            image = URL("http://images-from-austria.fr/logo"),
+                        )
                     )
-                )
+                }
             }
         }
     }

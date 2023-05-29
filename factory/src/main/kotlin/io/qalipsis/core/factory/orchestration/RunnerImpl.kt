@@ -46,6 +46,8 @@ import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.context.StepContextBuilder
 import io.qalipsis.core.factory.context.StepContextImpl
+import io.qalipsis.core.factory.orchestration.StepUtils.isTechnical
+import io.qalipsis.core.factory.orchestration.StepUtils.type
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -298,48 +300,59 @@ internal class RunnerImpl(
     private suspend fun executeSingleStep(minion: Minion, step: Step<*, *>, stepContext: StepContext<*, *>) {
         if (!stepContext.isExhausted || isErrorProcessingStep(step)) {
             log.trace { "Performing the execution of the step..." }
-            stepContext.stepType = stepTypes.computeIfAbsent(step.name) { getStepType(step) }
-            eventsLogger.info("step.execution.started", tagsSupplier = { stepContext.toEventTags() })
+            stepContext.stepType = stepTypes.computeIfAbsent(step.name) { step.type }
 
-            val runningStepsGauge = runningStepsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
-                meterRegistry.gauge(
-                    "running-steps",
-                    listOf(Tag.of("scenario", scenario)),
-                    AtomicInteger()
-                )
-            }
-            runningStepsGauge.incrementAndGet()
+            val runningStepsGauge = if (!step.isTechnical) {
+                eventsLogger.info("step.execution.started", tagsSupplier = { stepContext.toEventTags() })
+                runningStepsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
+                    meterRegistry.gauge(
+                        "running-steps",
+                        listOf(Tag.of("scenario", scenario)),
+                        AtomicInteger()
+                    )
+                }.apply {
+                    incrementAndGet()
+                }
+            } else null
             val start = System.nanoTime()
             try {
                 @Suppress("UNCHECKED_CAST")
                 executeStep(minion, step as Step<Any?, Any?>, stepContext as StepContext<Any?, Any?>)
-                Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventsLogger.info("step.execution.complete", tagsSupplier = { stepContext.toEventTags() })
-                    meterRegistry.timer("step-execution", "step", step.name, "status", "completed").record(duration)
+                if (!step.isTechnical) {
+                    Duration.ofNanos(System.nanoTime() - start).let { duration ->
+                        eventsLogger.info("step.execution.complete", tagsSupplier = { stepContext.toEventTags() })
+                        meterRegistry.timer("step-execution", "step", step.name, "status", "completed").record(duration)
+                    }
+                    reportLiveStateRegistry.recordSuccessfulStepExecution(
+                        stepContext.campaignKey,
+                        minion.scenarioName,
+                        step.name
+                    )
                 }
-                reportLiveStateRegistry.recordSuccessfulStepExecution(
-                    stepContext.campaignKey,
-                    minion.scenarioName,
-                    step.name
-                )
                 log.trace { "Step completed with success" }
             } catch (t: Throwable) {
-                val duration = Duration.ofNanos(System.nanoTime() - start)
-                reportLiveStateRegistry.recordFailedStepExecution(
-                    stepContext.campaignKey,
-                    minion.scenarioName,
-                    step.name
-                )
                 val cause = getFailureCause(t, stepContext, step)
-                eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { stepContext.toEventTags() })
-                meterRegistry.timer("step-execution", "step", step.name, "status", "failed").record(duration)
+                if (step.isTechnical) {
+                    eventsLogger.warn("minion.operation.failed", cause, tagsSupplier = { stepContext.toEventTags() })
+                } else {
+                    val duration = Duration.ofNanos(System.nanoTime() - start)
+                    reportLiveStateRegistry.recordFailedStepExecution(
+                        stepContext.campaignKey,
+                        minion.scenarioName,
+                        step.name
+                    )
+                    eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { stepContext.toEventTags() })
+                    meterRegistry.timer("step-execution", "step", step.name, "status", "failed").record(duration)
+                }
                 log.warn(t) { "Step completed with an exception, the context is marked as exhausted" }
                 stepContext.isExhausted = true
             }
-            runningStepsGauge.decrementAndGet()
-            executedStepCounters.computeIfAbsent(minion.scenarioName) { scenario ->
-                meterRegistry.counter("executed-steps", "scenario", scenario)
-            }.increment()
+            if (!step.isTechnical) {
+                runningStepsGauge?.decrementAndGet()
+                executedStepCounters.computeIfAbsent(minion.scenarioName) { scenario ->
+                    meterRegistry.counter("executed-steps", "scenario", scenario)
+                }.increment()
+            }
         } else {
             log.trace { "The step will not be executed on minion because the context is exhausted and the step cannot process it" }
         }
@@ -354,6 +367,7 @@ internal class RunnerImpl(
         // Once the step was executed, the context can be closed since it is no longer used.
         stepContext.close()
     }
+
 
     /**
      * Extracts the actual cause of the step execution failure.
@@ -377,14 +391,6 @@ internal class RunnerImpl(
             isErrorProcessingStep(step.decorated)
         } else {
             step is ErrorProcessingStep
-        }
-    }
-
-    private fun getStepType(step: Step<*, *>): String {
-        return if (step is StepDecorator<*, *>) {
-            getStepType(step.decorated)
-        } else {
-            step::class.simpleName!!.substringAfterLast(".").substringBefore("Step")
         }
     }
 

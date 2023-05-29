@@ -55,7 +55,7 @@ internal interface HeadConfiguration {
      * Duration of the heartbeat to emit from the factories.
      */
     @get:PositiveDuration
-    @get:Bindable(defaultValue = "PT30s")
+    @get:Bindable(defaultValue = "PT30S")
     val heartbeatDelay: Duration
 
     /**

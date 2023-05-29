@@ -195,9 +195,9 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     @Query(
         value =
         """SELECT 
-                MIN("start") as "minStart", 
-                MAX(COALESCE("end", NOW())) as "maxEnd", 
-                (EXTRACT(EPOCH FROM MAX(AGE(COALESCE("end", NOW()), start))))::int as "maxDurationSec"
+                MIN("start") as "min_start", 
+                MAX(COALESCE("end", NOW())) as "max_end", 
+                (EXTRACT(EPOCH FROM MAX(AGE(COALESCE("end", NOW()), start))))::int as "max_duration_sec"
             FROM campaign as campaign_entity_
             WHERE key in (:campaignKeys)
                 AND EXISTS 
@@ -210,16 +210,16 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
      */
     @Query(
         """WITH buckets as (SELECT CAST (start AS TIMESTAMP WITH TIME ZONE), start + :timeframe::interval
-           AS endVal FROM generate_series(:startIdentifier::timestamp, :endIdentifier::timestamp - :timeframe::interval,
+           AS end_val FROM generate_series(:startIdentifier::timestamp, :endIdentifier::timestamp - :timeframe::interval,
            :timeframe::interval) AS start)
-           SELECT COUNT(*) as count, buckets.start AS "seriesStart", c.result as status
-           FROM campaign c RIGHT JOIN buckets ON c.start >= buckets.start AND c.start < buckets.endVal 
+           SELECT COUNT(*) as count, buckets.start AS "series_start", c.result as status
+           FROM campaign c RIGHT JOIN buckets ON c.start >= buckets.start AND c.start < buckets.end_val 
             WHERE c.end IS NOT NULL AND EXISTS
                                         (SELECT 1
                                          FROM tenant 
                                          WHERE id = c.tenant_id AND reference = :tenantReference
                                         )
-           GROUP BY "seriesStart", c.result ORDER BY "seriesStart", c.result """
+           GROUP BY "series_start", c.result ORDER BY "series_start", c.result """
     )
     suspend fun retrieveCampaignsStatusHistogram(
         tenantReference: String, startIdentifier: Instant, endIdentifier: Instant, timeframe: Duration
@@ -235,11 +235,11 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
                 campaign_entity_.name as name,
                 campaign_entity_.zones as zones,
                 campaign_entity_.result as result, 
-                EXTRACT(epoch FROM campaign_entity_.end::timestamp -  campaign_entity_.start::timestamp):: BIGINT as "executionTime", 
-                cr.started_minions as "startedMinions", 
-                cr.completed_minions as "completedMinions", 
-                cr.successful_executions as "successfulExecutions", 
-                cr.failed_executions as "failedExecutions", 
+                EXTRACT(epoch FROM campaign_entity_.end::timestamp -  campaign_entity_.start::timestamp):: BIGINT as "execution_time", 
+                cr.started_minions as "started_minions", 
+                cr.completed_minions as "completed_minions", 
+                cr.successful_executions as "successful_executions", 
+                cr.failed_executions as "failed_executions", 
                 NULL as resolved_zones
             FROM campaign campaign_entity_
                 INNER JOIN campaign_report cr 

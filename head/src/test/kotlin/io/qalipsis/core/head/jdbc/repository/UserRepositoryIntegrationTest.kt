@@ -80,7 +80,7 @@ internal class UserRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetched = userRepository.findById(saved.id)
 
         // then
-        assertThat(fetched).all {
+        assertThat(fetched).isNotNull().all {
             prop(UserEntity::username).isEqualTo(saved.username)
         }
         assertThat(fetched!!.creation.toEpochMilli() == saved.creation.toEpochMilli())

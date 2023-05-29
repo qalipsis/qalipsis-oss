@@ -128,7 +128,7 @@ internal class ScenarioImplTest {
     }
 
     @Test
-    internal fun `should interrupt the start when a step is in timeout`() = testCoroutineDispatcher.runTest {
+    internal fun `should interrupt the start when a step is in timeout`() = testCoroutineDispatcher.run {
         // given
         val mockedSteps = mutableListOf<StartableStoppableStep>()
         val scenario = buildDagsByScenario(mockedSteps, Duration.ofMillis(100))

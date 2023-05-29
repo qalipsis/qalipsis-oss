@@ -62,6 +62,8 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         // given
         val httpPort = SocketUtils.findAvailableTcpPort()
         val qalipsisBootstrap = QalipsisBootstrap()
+
+        // when
         val exitCodeFuture = CompletableFuture.supplyAsync {
             qalipsisBootstrap.start(
                 arrayOf(
@@ -75,16 +77,9 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 )
             )
         }
-        Thread.sleep(3000)
-
-        // when
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:$httpPort"))
-            .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
-            .build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
         // then
+        checkRestEndpointAvailability(httpPort)
         val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
             .getProperty<Any>("singletonScope")
             .getProperty<Map<Any, BeanRegistration<*>>>("singletonByBeanDefinition")
@@ -97,7 +92,6 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             none { it.startsWith("io.qalipsis.core.factory") }
         }
 
-        assertThat(response.body()).isEqualTo("Welcome to Qalipsis")
         assertThrows<TimeoutException> {
             exitCodeFuture.get(2, TimeUnit.SECONDS)
         }
@@ -110,6 +104,8 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         // given
         val httpPort = SocketUtils.findAvailableTcpPort()
         val qalipsisBootstrap = QalipsisBootstrap()
+
+        // when
         val exitCodeFuture = CompletableFuture.supplyAsync {
             qalipsisBootstrap.start(
                 arrayOf(
@@ -126,16 +122,9 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 }.toTypedArray()
             )
         }
-        Thread.sleep(3000)
-
-        // when
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:$httpPort"))
-            .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
-            .build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
         // then
+        checkRestEndpointAvailability(httpPort)
         val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
             .getProperty<Any>("singletonScope")
             .getProperty<Map<Any, BeanRegistration<*>>>("singletonByBeanDefinition")
@@ -148,7 +137,6 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             none { it.startsWith("io.qalipsis.core.factory") }
         }
 
-        assertThat(response.body()).isEqualTo("Welcome to Qalipsis")
         assertThrows<TimeoutException> {
             exitCodeFuture.get(2, TimeUnit.SECONDS)
         }
@@ -159,6 +147,8 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
     internal fun `should create a process to start head with the web interface only and remain active`() {
         // given
         val httpPort = SocketUtils.findAvailableTcpPort()
+
+        // when
         val qalipsisProcess = jvmProcessUtils.startNewJavaProcess(
             Qalipsis::class,
             arguments = arrayOf(
@@ -171,23 +161,8 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             jvmOptions = arrayOf("-Xmx256m")
         )
 
-        // when
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:$httpPort"))
-            .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
-            .build()
-
         // then
-        Awaitility.await("Querying homepage")
-            .atMost(Duration.ofSeconds(20))
-            .pollInterval(Duration.ofSeconds(2))
-            .until {
-                kotlin.runCatching {
-                    client.send(request, HttpResponse.BodyHandlers.ofString())
-                }.getOrNull() != null
-            }
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        assertThat(response.body()).isEqualTo("Welcome to Qalipsis")
+        checkRestEndpointAvailability(httpPort)
         assertThrows<TimeoutException> {
             qalipsisProcess.await(Duration.ofSeconds(2))
         }
@@ -201,14 +176,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
     @Timeout(20)
     internal fun `should start head with the autostart and remain active because there is no factory to auto execute`() {
         // given
-        val httpPort = SocketUtils.findAvailableTcpPort()
         val qalipsisBootstrap = QalipsisBootstrap()
         val exitCodeFuture = CompletableFuture.supplyAsync {
             qalipsisBootstrap.start(
                 arrayOf(
                     "head",
                     "--autostart",
-                    "-c", "micronaut.server.port=$httpPort",
                     "-c",
                     "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
                     "-c", "report.export.console.enabled=true",
@@ -236,6 +209,23 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         assertThrows<TimeoutException> {
             exitCodeFuture.get(2, TimeUnit.SECONDS)
         }
+    }
+
+    private fun checkRestEndpointAvailability(httpPort: Int) {
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:$httpPort"))
+            .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
+            .build()
+        Awaitility.await("Querying homepage")
+            .atMost(Duration.ofSeconds(20))
+            .pollInterval(Duration.ofSeconds(2))
+            .until {
+                kotlin.runCatching {
+                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                }.getOrNull() != null
+            }
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        assertThat(response.body()).isEqualTo("Welcome to Qalipsis")
     }
 
     companion object {

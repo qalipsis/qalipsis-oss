@@ -57,6 +57,7 @@ val apiVersion: String by project
 dependencies {
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     api("io.micronaut.redis:micronaut-redis-lettuce")
+    api("org.apache.commons:commons-lang3:3.+")
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
