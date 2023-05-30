@@ -65,7 +65,7 @@ internal class HandshakeManagerTest {
         every { headConfiguration.unicastChannelPrefix } returns "the-unicast-channel-prefix-"
         every { headConfiguration.heartbeatChannel } returns "the-heartbeat-channel"
         every { headConfiguration.heartbeatDelay } returns Duration.ofSeconds(123)
-        every { headConfiguration.zones } returns setOf(Zone("by", "belarus", "description"))
+        every { headConfiguration.cluster.zones } returns setOf(Zone("by", "belarus", "description"))
     }
 
     @JvmField

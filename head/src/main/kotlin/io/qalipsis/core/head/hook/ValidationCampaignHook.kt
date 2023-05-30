@@ -103,7 +103,7 @@ internal class ValidationCampaignHook(
         /**
          * Keys of the zones supported by the cluster.
          */
-        val allowedZones = headConfiguration.zones.map { it.key }.toSet()
+        val allowedZones = headConfiguration.cluster.zones.map { it.key }.toSet()
 
         if (zones.isNotEmpty()) {
             if (!allowedZones.containsAll(zones.keys)) {

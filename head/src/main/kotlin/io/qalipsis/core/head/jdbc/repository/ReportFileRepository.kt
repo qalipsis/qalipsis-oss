@@ -26,6 +26,7 @@ import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
+import java.time.Instant
 
 /**
  * Micronaut's data repository to operate with [ReportFileEntity].
@@ -36,6 +37,7 @@ import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface ReportFileRepository : CoroutineCrudRepository<ReportFileEntity, Long> {
+
     /**
      * Finds a file report in a tenant by its report task reference.
      * The report is returned only if the username of the requestor is same as
@@ -64,4 +66,10 @@ internal interface ReportFileRepository : CoroutineCrudRepository<ReportFileEnti
         reportTaskReference: Long,
         username: String
     ): ReportFileEntity?
+
+
+    /**
+     * Deletes all records of report file less than the given minimalFileExpiryDate.
+     */
+    suspend fun deleteAllByCreationTimestampLessThan(minimalFileExpiryDate: Instant)
 }

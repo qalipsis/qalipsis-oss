@@ -21,6 +21,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
@@ -31,10 +33,13 @@ import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.model.ReportTaskStatus
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 
 internal class ReportTaskRepositoryIntegrationTest : PostgresqlTemplateTest() {
@@ -155,7 +160,7 @@ internal class ReportTaskRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should return null for unknown task reference`() = testDispatcherProvider.run {
         //given
-        val saved = reportTaskRepository.save(reportTaskPrototype)
+        reportTaskRepository.save(reportTaskPrototype)
 
         //when
         val fetched =
@@ -205,6 +210,43 @@ internal class ReportTaskRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 prop(ReportTaskEntity::creator).isEqualTo(saved.creator)
                 prop(ReportTaskEntity::status).isEqualTo(ReportTaskStatus.COMPLETED)
                 prop(ReportTaskEntity::tenantReference).isEqualTo(saved.tenantReference)
+            }
+        }
+
+    @Test
+    fun `should delete outdated report tasks`() =
+        testDispatcherProvider.run {
+            //given
+            val updateTimestamp = Instant.parse("2023-03-18T13:01:07.445312Z")
+            val updateTimestamp2 = Instant.parse("2023-05-18T13:01:07.445312Z")
+            val updateTimestamp3 = Instant.now().minus(30, ChronoUnit.DAYS).plusSeconds(1)
+            reportTaskRepository.save(
+                reportTaskPrototype.copy(
+                    updateTimestamp = updateTimestamp,
+                    reference = "report-task-1"
+                )
+            )
+            val saved2 = reportTaskRepository.save(
+                reportTaskPrototype.copy(
+                    updateTimestamp = updateTimestamp2,
+                    reference = "report-task-2"
+                )
+            )
+            val saved3 = reportTaskRepository.save(reportTaskPrototype.copy(updateTimestamp = updateTimestamp3))
+            val fetchedBeforeDeletion = reportTaskRepository.findAll().count()
+            assertThat(fetchedBeforeDeletion).isEqualTo(3)
+
+            //when
+            reportTaskRepository.deleteAllByUpdateTimestampLessThan(Instant.now().minus(30, ChronoUnit.DAYS))
+
+            //then
+            val fetchedAfterDeletion = reportTaskRepository.findAll().toList()
+            assertThat(fetchedAfterDeletion).isNotNull().all {
+                hasSize(2)
+                containsExactlyInAnyOrder(
+                    saved2,
+                    saved3,
+                )
             }
         }
 }

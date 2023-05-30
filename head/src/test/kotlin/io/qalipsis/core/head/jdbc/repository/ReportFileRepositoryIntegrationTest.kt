@@ -21,6 +21,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
@@ -31,6 +33,8 @@ import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.model.ReportTaskStatus
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
@@ -191,4 +195,30 @@ internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
         //then
         assertNull(fileContent)
     }
+
+    @Test
+    fun `should delete outdated report files`() =
+        testDispatcherProvider.run {
+            //given
+            val creationTimestamp = Instant.parse("2023-03-18T13:01:07.445312Z")
+            val creationTimestamp2 = Instant.parse("2023-05-18T13:01:07.445312Z")
+            val creationTimestamp3 = Instant.now().minus(4, ChronoUnit.DAYS).plusSeconds(1)
+            reportFileRepository.save(reportFilePrototype.copy(creationTimestamp = creationTimestamp))
+            reportFileRepository.save(reportFilePrototype.copy(creationTimestamp = creationTimestamp2))
+            val saved3 = reportFileRepository.save(reportFilePrototype.copy(creationTimestamp = creationTimestamp3))
+            val fetchedBeforeDeletion = reportFileRepository.findAll().count()
+            assertThat(fetchedBeforeDeletion).isEqualTo(3)
+
+            //when
+            reportFileRepository.deleteAllByCreationTimestampLessThan(Instant.now().minus(4, ChronoUnit.DAYS))
+
+            //then
+            val fetchedAfterDeletion = reportFileRepository.findAll().toList()
+            assertThat(fetchedAfterDeletion).isNotNull().all {
+                hasSize(1)
+                containsExactlyInAnyOrder(
+                    saved3
+                )
+            }
+        }
 }

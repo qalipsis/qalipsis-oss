@@ -25,6 +25,7 @@ import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
+import java.time.Instant
 
 /**
  * Micronaut's data repository to operate with [ReportTaskEntity].
@@ -34,6 +35,7 @@ import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface ReportTaskRepository : CoroutineCrudRepository<ReportTaskEntity, Long> {
+
     /**
      * Returns the [ReportTaskEntity] that matches the id and creator.
      */
@@ -41,4 +43,10 @@ internal interface ReportTaskRepository : CoroutineCrudRepository<ReportTaskEnti
         tenant: String,
         reference: String
     ): ReportTaskEntity?
+
+
+    /**
+     * Deletes all records of report task less than the given minimalTaskExpiryDate.
+     */
+    suspend fun deleteAllByUpdateTimestampLessThan(minimalTaskExpiryDate: Instant)
 }
