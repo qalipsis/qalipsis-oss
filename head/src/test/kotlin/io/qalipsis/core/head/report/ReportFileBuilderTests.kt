@@ -258,7 +258,7 @@ internal class ReportFileBuilderTests {
         )
         coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns aggregationResult
         coEvery { timeSeriesDataQueryService.search(any(), any(), any()) } returns tableData
-        coEvery { headConfiguration.zones } returns zones
+        coEvery { headConfiguration.cluster.zones } returns zones
         coEvery { campaignRepository.findInstantsAndDuration(any(), any()) } returns campaignsInstantsAndDuration
 
         //when

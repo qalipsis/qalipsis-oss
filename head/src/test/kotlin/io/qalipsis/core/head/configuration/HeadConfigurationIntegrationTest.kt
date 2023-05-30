@@ -25,6 +25,7 @@ import assertk.assertions.containsAll
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
@@ -55,7 +56,7 @@ internal class HeadConfigurationIntegrationTest {
                 prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("unicast-")
                 prop(HeadConfiguration::heartbeatChannel).isEqualTo("heartbeat")
                 prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofSeconds(30))
-                prop(HeadConfiguration::zones).isEmpty()
+                prop(HeadConfiguration::cluster).prop(HeadConfiguration.ClusterConfiguration::zones).isEmpty()
             }
         }
     }
@@ -66,14 +67,15 @@ internal class HeadConfigurationIntegrationTest {
         Property(name = "head.unicast-channel-prefix", value = "The unicast channel prefix"),
         Property(name = "head.heartbeat-channel", value = "The heartbeat channel"),
         Property(name = "head.heartbeat-delay", value = "PT3M"),
-        Property(name = "head.zones[0].key", value = "fr"),
-        Property(name = "head.zones[0].title", value = "France"),
-        Property(name = "head.zones[0].description", value = "Western Europe country"),
-        Property(name = "head.zones[0].image", value = "http://images-from-france.fr/logo"),
-        Property(name = "head.zones[1].key", value = "at"),
-        Property(name = "head.zones[1].title", value = "Austria"),
-        Property(name = "head.zones[1].description", value = "Central Europe country"),
-        Property(name = "head.zones[1].image", value = "http://images-from-austria.fr/logo"),
+        Property(name = "head.cluster.on-demand-factories", value = "true"),
+        Property(name = "head.cluster.zones[0].key", value = "fr"),
+        Property(name = "head.cluster.zones[0].title", value = "France"),
+        Property(name = "head.cluster.zones[0].description", value = "Western Europe country"),
+        Property(name = "head.cluster.zones[0].image", value = "http://images-from-france.fr/logo"),
+        Property(name = "head.cluster.zones[1].key", value = "at"),
+        Property(name = "head.cluster.zones[1].title", value = "Austria"),
+        Property(name = "head.cluster.zones[1].description", value = "Central Europe country"),
+        Property(name = "head.cluster.zones[1].image", value = "http://images-from-austria.fr/logo"),
     )
     @MicronautTest(
         environments = [ExecutionEnvironments.HEAD],
@@ -90,22 +92,25 @@ internal class HeadConfigurationIntegrationTest {
                 prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("The unicast channel prefix")
                 prop(HeadConfiguration::heartbeatChannel).isEqualTo("The heartbeat channel")
                 prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofMinutes(3))
-                prop(HeadConfiguration::zones).all {
-                    hasSize(2)
-                    containsAll(
-                        Zone(
-                            key = "fr",
-                            title = "France",
-                            description = "Western Europe country",
-                            image = URL("http://images-from-france.fr/logo"),
-                        ),
-                        Zone(
-                            key = "at",
-                            title = "Austria",
-                            description = "Central Europe country",
-                            image = URL("http://images-from-austria.fr/logo"),
+                prop(HeadConfiguration::cluster).all {
+                    prop(HeadConfiguration.ClusterConfiguration::onDemandFactories).isTrue()
+                    prop(HeadConfiguration.ClusterConfiguration::zones).all {
+                        hasSize(2)
+                        containsAll(
+                            Zone(
+                                key = "fr",
+                                title = "France",
+                                description = "Western Europe country",
+                                image = URL("http://images-from-france.fr/logo"),
+                            ),
+                            Zone(
+                                key = "at",
+                                title = "Austria",
+                                description = "Central Europe country",
+                                image = URL("http://images-from-austria.fr/logo"),
+                            )
                         )
-                    )
+                    }
                 }
             }
         }

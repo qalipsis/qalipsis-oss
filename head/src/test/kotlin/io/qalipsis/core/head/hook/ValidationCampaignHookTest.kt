@@ -69,7 +69,7 @@ internal class ValidationCampaignHookTest {
 
     @BeforeEach
     internal fun setup() {
-        every { headConfiguration.zones } returns setOf(
+        every { headConfiguration.cluster.zones } returns setOf(
             Zone(key = "FR", title = "France", description = "description"),
             Zone(key = "EN", title = "England", description = "description")
         )

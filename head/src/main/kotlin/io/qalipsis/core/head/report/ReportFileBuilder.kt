@@ -56,7 +56,8 @@ internal class ReportFileBuilder(
     ): CampaignReportDetail {
         campaignData.forEach { campaign ->
             val zones = mutableSetOf<Zone>()
-            campaign.resolvedZones = headConfiguration.zones.filter { zone -> zone.key in campaign.zones }.toSet()
+            campaign.resolvedZones =
+                headConfiguration.cluster.zones.filter { zone -> zone.key in campaign.zones }.toSet()
             campaign.apply { resolvedZones = zones }
         }
         val tableData = mutableListOf<Collection<TimeSeriesRecord>>()

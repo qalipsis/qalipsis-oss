@@ -71,7 +71,7 @@ class ZoneControllerIntegrationTest {
                 image = URL("http://images-from-austria.fr/logo"),
             )
         )
-        coEvery { headConfiguration.zones } returns zones
+        coEvery { headConfiguration.cluster.zones } returns zones
         val listRequest = HttpRequest.GET<Set<Zone>>("/")
 
         // when
