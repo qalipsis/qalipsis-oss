@@ -186,10 +186,18 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     }
 
     @LogInputAndOutput
-    override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails {
-        join()
-        return campaignStates[campaignKey]?.map { (_, runningScenarioCampaign) ->
-            runningScenarioCampaign.toReport(campaignKey)
-        }?.toCampaignExecutionDetails() ?: throw IllegalArgumentException("No report found for the expected campaign")
+    override suspend fun retrieveCampaignsReports(
+        tenant: String,
+        campaignKeys: Collection<CampaignKey>
+    ): Collection<CampaignExecutionDetails> {
+        return campaignKeys.mapNotNull { campaignKey ->
+            val scenariosReports = campaignStates[campaignKey]
+                ?.mapNotNull { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
+            if (scenariosReports?.isNotEmpty() == true) {
+                scenariosReports.toCampaignExecutionDetails()
+            }else{
+                null
+            }
+        }
     }
 }

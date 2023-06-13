@@ -52,35 +52,41 @@ internal class DatabaseCampaignReportProvider(
     private val scenarioReportMessageRepository: ScenarioReportMessageRepository
 ) : CampaignReportProvider {
 
-    override suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails {
-        val campaignEntity = requireNotNull(campaignRepository.findByTenantAndKey(tenant, campaignKey))
-        val campaign = campaignConverter.convertToModel(campaignEntity)
-        // When working with the database, the report is only available once the campaign is complete.
-        val reportEntity = campaignReportRepository.findByCampaignId(campaignEntity.id)
-        return CampaignExecutionDetails(
-            version = campaign.version,
-            key = campaign.key,
-            creation = campaign.creation,
-            name = campaign.name,
-            speedFactor = campaign.speedFactor,
-            scheduledMinions = campaign.scheduledMinions,
-            softTimeout = campaign.softTimeout,
-            hardTimeout = campaign.hardTimeout,
-            start = campaign.start,
-            end = campaign.end,
-            status = reportEntity?.status ?: campaign.status,
-            failureReason = campaign.failureReason,
-            configurerName = campaign.configurerName,
-            aborterName = campaign.aborterName,
-            scenarios = campaign.scenarios,
-            zones = campaign.zones,
-            startedMinions = reportEntity?.startedMinions,
-            completedMinions = reportEntity?.completedMinions,
-            successfulExecutions = reportEntity?.successfulExecutions,
-            failedExecutions = reportEntity?.failedExecutions,
-            scenariosReports = reportEntity?.scenariosReports?.let { mapScenarioReport(it) }
-                ?: ongoingScenariosDetails(campaignEntity.id),
-        )
+
+    override suspend fun retrieveCampaignsReports(
+        tenant: String,
+        campaignKeys: Collection<CampaignKey>
+    ): Collection<CampaignExecutionDetails> {
+        val campaignEntities = campaignRepository.findByTenantAndKeys(tenant, campaignKeys)
+        return campaignEntities.map { campaignEntity ->
+            val campaign = campaignConverter.convertToModel(campaignEntity)
+            // When working with the database, the report is only available once the campaign is complete.
+            val campaignReport = campaignReportRepository.findByCampaignId(campaignEntity.id)
+            CampaignExecutionDetails(
+                version = campaign.version,
+                key = campaign.key,
+                creation = campaign.creation,
+                name = campaign.name,
+                speedFactor = campaign.speedFactor,
+                scheduledMinions = campaign.scheduledMinions,
+                softTimeout = campaign.softTimeout,
+                hardTimeout = campaign.hardTimeout,
+                start = campaign.start,
+                end = campaign.end,
+                status = campaignReport?.status ?: campaign.status,
+                failureReason = campaign.failureReason,
+                configurerName = campaign.configurerName,
+                aborterName = campaign.aborterName,
+                scenarios = campaign.scenarios,
+                zones = campaign.zones,
+                startedMinions = campaignReport?.startedMinions,
+                completedMinions = campaignReport?.completedMinions,
+                successfulExecutions = campaignReport?.successfulExecutions,
+                failedExecutions = campaignReport?.failedExecutions,
+                scenariosReports = campaignReport?.scenariosReports?.let { mapScenarioReport(it) }
+                    ?: ongoingScenariosDetails(campaignEntity.id)
+            )
+        }
     }
 
 

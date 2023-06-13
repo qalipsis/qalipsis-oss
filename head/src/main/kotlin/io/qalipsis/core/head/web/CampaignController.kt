@@ -53,6 +53,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import javax.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
+import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 
@@ -230,14 +231,14 @@ internal class CampaignController(
     }
 
     /**
-     * REST endpoint to get the complete execution report of a completed campaign.
+     * REST endpoint to get the complete execution report of a completed or running set of campaigns.
      */
-    @Get("/{campaignKey}")
+    @Get("/{campaignKeys}")
     @Operation(
-        summary = "Retrieve campaign report",
-        description = "Reports the details of the execution of a completed or running campaign and its scenario",
+        summary = "Retrieve a list of campaigns reports",
+        description = "Reports the details of the execution of a completed or running campaigns and their scenarios",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaign report"),
+            ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaigns reports"),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
             ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
         ],
@@ -255,13 +256,13 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Key of the campaign to retrieve",
+            description = "Comma separated list of keys of the campaigns to retrieve",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable campaignKey: String,
-    ): HttpResponse<CampaignExecutionDetails> {
-        val report = campaignReportProvider.retrieveCampaignReport(tenant, campaignKey)
-        return HttpResponse.ok(report)
+        ) @NotEmpty @PathVariable campaignKeys: List<String>
+    ): HttpResponse<Collection<CampaignExecutionDetails>> {
+        val reports = campaignReportProvider.retrieveCampaignsReports(tenant, campaignKeys)
+        return HttpResponse.ok(reports)
     }
 
     /**

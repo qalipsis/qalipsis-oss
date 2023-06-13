@@ -43,7 +43,6 @@ import io.mockk.every
 import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.FAILED
 import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
@@ -123,7 +122,7 @@ internal class CampaignControllerIntegrationTest {
     fun campaignScheduler() = campaignScheduler
 
     @BeforeEach
-    internal fun setUp() {
+    fun setUp() {
         excludeRecords {
             campaignExecutor.hashCode()
             campaignService.hashCode()
@@ -512,7 +511,7 @@ internal class CampaignControllerIntegrationTest {
     }
 
     @Test
-    fun `should successfully retrieve the campaign report per tenant`() {
+    fun `should successfully retrieve the report of one campaign in a tenant`() {
         // given
         val campaignExecutionDetails =
             CampaignExecutionDetails(
@@ -576,21 +575,259 @@ internal class CampaignControllerIntegrationTest {
                 )
             )
 
-        val getCampaignReportRequest = HttpRequest.GET<CampaignReport>("/first_campaign/")
+        val getCampaignReportRequest = HttpRequest.GET<CampaignExecutionDetails>("/key-1/")
         coEvery {
-            campaignReportProvider.retrieveCampaignReport(Defaults.TENANT, "first_campaign")
-        } returns campaignExecutionDetails
+            campaignReportProvider.retrieveCampaignsReports(Defaults.TENANT, listOf("key-1"))
+        } returns listOf(campaignExecutionDetails)
 
         // when
-        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, CampaignExecutionDetails::class.java)
+        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
 
         // then
         coVerifyOnce {
-            campaignReportProvider.retrieveCampaignReport(Defaults.TENANT, "first_campaign")
+            campaignReportProvider.retrieveCampaignsReports(Defaults.TENANT, listOf("key-1"))
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.isEqualTo(campaignExecutionDetails)
+            transform("body") { it.body() }.isEqualTo(listOf(campaignExecutionDetails))
+        }
+        confirmVerified(
+            campaignService,
+            campaignExecutor,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    fun `should successfully retrieve the report of multiples campaigns in a tenant`() {
+        // given
+        val campaignExecutionDetails =
+            CampaignExecutionDetails(
+                creation = Instant.now(),
+                version = Instant.now(),
+                key = "key-1",
+                name = "This is a campaign",
+                speedFactor = 1.0,
+                start = Instant.now(),
+                scheduledMinions = 123,
+                end = null,
+                configurerName = Defaults.USER,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenarios = listOf(
+                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+                ),
+                startedMinions = 0,
+                completedMinions = 0,
+                successfulExecutions = 0,
+                failedExecutions = 0,
+                scenariosReports = listOf(
+                    ScenarioExecutionDetails(
+                        id = "my-scenario-1",
+                        name = "The scenario 1",
+                        start = Instant.now().minusMillis(1111),
+                        end = Instant.now(),
+                        startedMinions = 0,
+                        completedMinions = 0,
+                        successfulExecutions = 0,
+                        failedExecutions = 0,
+                        status = FAILED,
+                        messages = listOf(
+                            ReportMessage(
+                                stepName = "my-step-1",
+                                messageId = "message-id-1",
+                                severity = INFO,
+                                message = "Hello from test 1"
+                            )
+                        )
+                    ),
+                    ScenarioExecutionDetails(
+                        id = "my-scenario-2",
+                        name = "The scenario 2",
+                        start = Instant.now().minusMillis(1111),
+                        end = Instant.now(),
+                        startedMinions = 1,
+                        completedMinions = 1,
+                        successfulExecutions = 1,
+                        failedExecutions = 1,
+                        status = ExecutionStatus.ABORTED,
+                        messages = listOf(
+                            ReportMessage(
+                                stepName = "my-step-2",
+                                messageId = "message-id-2",
+                                severity = INFO,
+                                message = "Hello from test 2"
+                            )
+                        )
+                    )
+                )
+            )
+        val campaignExecutionDetails2 =
+            CampaignExecutionDetails(
+                creation = Instant.now(),
+                version = Instant.now(),
+                key = "key-2",
+                name = "This is a campaign",
+                speedFactor = 1.0,
+                start = Instant.now(),
+                scheduledMinions = 123,
+                end = null,
+                configurerName = Defaults.USER,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenarios = listOf(
+                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+                ),
+                startedMinions = 0,
+                completedMinions = 0,
+                successfulExecutions = 0,
+                failedExecutions = 0,
+                scenariosReports = listOf()
+            )
+        val campaignExecutionDetails3 =
+            CampaignExecutionDetails(
+                creation = Instant.now(),
+                version = Instant.now(),
+                key = "key-3",
+                name = "This is a campaign",
+                speedFactor = 1.0,
+                start = Instant.now(),
+                scheduledMinions = 123,
+                end = null,
+                configurerName = Defaults.USER,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenarios = listOf(
+                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+                ),
+                startedMinions = 0,
+                completedMinions = 0,
+                successfulExecutions = 0,
+                failedExecutions = 0,
+                scenariosReports = listOf(
+                    ScenarioExecutionDetails(
+                        id = "my-scenario-1",
+                        name = "The scenario 1",
+                        start = Instant.now().minusMillis(1111),
+                        end = Instant.now(),
+                        startedMinions = 0,
+                        completedMinions = 0,
+                        successfulExecutions = 0,
+                        failedExecutions = 0,
+                        status = FAILED,
+                        messages = listOf(
+                            ReportMessage(
+                                stepName = "my-step-1",
+                                messageId = "message-id-1",
+                                severity = INFO,
+                                message = "Hello from test 1"
+                            )
+                        )
+                    )
+                )
+            )
+        val campaignExecutionDetails4 =
+            CampaignExecutionDetails(
+                creation = Instant.now(),
+                version = Instant.now(),
+                key = "key-4",
+                name = "This is a campaign",
+                speedFactor = 1.0,
+                start = Instant.now(),
+                scheduledMinions = 123,
+                end = null,
+                configurerName = Defaults.USER,
+                status = ExecutionStatus.SUCCESSFUL,
+                scenarios = listOf(
+                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+                ),
+                startedMinions = 0,
+                completedMinions = 0,
+                successfulExecutions = 0,
+                failedExecutions = 0,
+                scenariosReports = listOf(
+                    ScenarioExecutionDetails(
+                        id = "my-scenario-2",
+                        name = "The scenario 2",
+                        start = Instant.now().minusMillis(1111),
+                        end = Instant.now(),
+                        startedMinions = 1,
+                        completedMinions = 1,
+                        successfulExecutions = 1,
+                        failedExecutions = 1,
+                        status = ExecutionStatus.ABORTED,
+                        messages = listOf(
+                            ReportMessage(
+                                stepName = "my-step-2",
+                                messageId = "message-id-2",
+                                severity = INFO,
+                                message = "Hello from test 2"
+                            )
+                        )
+                    )
+                )
+            )
+
+        val getCampaignReportRequest = HttpRequest.GET<Collection<CampaignExecutionDetails>>("/key-1,key-3,key-4,key-2")
+        coEvery {
+            campaignReportProvider.retrieveCampaignsReports(Defaults.TENANT, listOf("key-1", "key-3", "key-4", "key-2"))
+        } returns listOf(
+            campaignExecutionDetails,
+            campaignExecutionDetails3,
+            campaignExecutionDetails4,
+            campaignExecutionDetails2
+        )
+
+        // when
+        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
+
+        // then
+        coVerifyOnce {
+            campaignReportProvider.retrieveCampaignsReports(Defaults.TENANT, listOf("key-1", "key-3", "key-4", "key-2"))
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(
+                listOf(
+                    campaignExecutionDetails,
+                    campaignExecutionDetails3,
+                    campaignExecutionDetails4,
+                    campaignExecutionDetails2
+                )
+            )
+        }
+        confirmVerified(
+            campaignService,
+            campaignExecutor,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    fun `should successfully return an empty list when keys list weren't found`() {
+        // given
+        val getCampaignReportRequest = HttpRequest.GET<CampaignExecutionDetails>("/key-1/")
+        coEvery {
+            campaignReportProvider.retrieveCampaignsReports(Defaults.TENANT, listOf("key-1"))
+        } returns listOf()
+
+        // when
+        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
+
+        // then
+        coVerifyOnce {
+            campaignReportProvider.retrieveCampaignsReports(Defaults.TENANT, listOf("key-1"))
+        }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(listOf())
         }
         confirmVerified(
             campaignService,

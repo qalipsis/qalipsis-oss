@@ -21,6 +21,9 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
@@ -59,7 +62,7 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
     @Inject
     private lateinit var campaignRepository: CampaignRepository
 
-    lateinit var messagePrototype: ScenarioReportMessageEntity
+    private lateinit var messagePrototype: ScenarioReportMessageEntity
 
     @BeforeEach
     fun setUp() = testDispatcherProvider.run {
@@ -75,10 +78,10 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
                 result = ExecutionStatus.SUCCESSFUL,
                 configurer = 1
             )
-        val campaingEntity = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
+        val campaignEntity = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
         val campaignReportPrototype =
             CampaignReportEntity(
-                campaignId = campaingEntity.id,
+                campaignId = campaignEntity.id,
                 startedMinions = 1000,
                 completedMinions = 990,
                 successfulExecutions = 990,
@@ -163,5 +166,104 @@ internal class ScenarioReportMessageRepositoryIntegrationTest : PostgresqlTempla
 
         // then
         assertThat(scenarioReportMessageRepository.findAll().count()).isEqualTo(0)
+    }
+
+    @Test
+    fun `should retrieve a collection of messages by scenario report IDs`() = testDispatcherProvider.run {
+        // given
+        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant"))
+        val campaignPrototype =
+            CampaignEntity(
+                key = "key-1",
+                name = "This is a campaign",
+                speedFactor = 123.0,
+                scheduledMinions = 345,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                result = ExecutionStatus.SUCCESSFUL,
+                configurer = 1
+            )
+        val campaignEntity = campaignRepository.save(campaignPrototype.copy(tenantId = tenant2.id))
+        val campaignReportPrototype =
+            CampaignReportEntity(
+                campaignId = campaignEntity.id,
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                status = ExecutionStatus.SUCCESSFUL
+            )
+        val campaignReportEntity = campaignReportRepository.save(campaignReportPrototype)
+        val scenarioReportPrototype =
+            ScenarioReportEntity(
+                name = RandomStringUtils.randomAlphanumeric(7),
+                campaignReportId = campaignReportEntity.id,
+                start = Instant.now().minusSeconds(900),
+                end = Instant.now().minusSeconds(600),
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                status = ExecutionStatus.SUCCESSFUL
+            )
+        val scenarioReport1 = scenarioReportRepository.save(scenarioReportPrototype.copy(name = RandomStringUtils.randomAlphanumeric(7)))
+        val scenarioReport2 = scenarioReportRepository.save(scenarioReportPrototype.copy(name = RandomStringUtils.randomAlphanumeric(7)))
+        val scenarioReport3 = scenarioReportRepository.save(scenarioReportPrototype.copy(name = RandomStringUtils.randomAlphanumeric(7)))
+        messagePrototype = ScenarioReportMessageEntity(
+            scenarioReportId = scenarioReport1.id,
+            stepName = "my-step",
+            messageId = "my-message-1",
+            severity = ReportMessageSeverity.INFO,
+            message = "This is the first message"
+        )
+        val saved1 = scenarioReportMessageRepository.save(messagePrototype.copy())
+        val saved2 = scenarioReportMessageRepository.save(messagePrototype.copy(scenarioReportId = scenarioReport2.id))
+        val saved3 = scenarioReportMessageRepository.save(messagePrototype.copy(scenarioReportId = scenarioReport3.id))
+
+        // when all scenario IDs exist
+        var fetched = scenarioReportMessageRepository.findByScenarioReportIdInOrderById(listOf(scenarioReport1.id, scenarioReport3.id))
+
+        // then
+        assertThat(fetched).isNotNull().all {
+            hasSize(2)
+            index(0).all {
+                prop(ScenarioReportMessageEntity::id).isEqualTo(saved1.id)
+                prop(ScenarioReportMessageEntity::scenarioReportId).isEqualTo(saved1.scenarioReportId)
+                prop(ScenarioReportMessageEntity::stepName).isEqualTo(saved1.stepName)
+                prop(ScenarioReportMessageEntity::messageId).isEqualTo(saved1.messageId)
+                prop(ScenarioReportMessageEntity::severity).isEqualTo(saved1.severity)
+                prop(ScenarioReportMessageEntity::message).isEqualTo(saved1.message)
+            }
+            index(1).all {
+                prop(ScenarioReportMessageEntity::id).isEqualTo(saved3.id)
+                prop(ScenarioReportMessageEntity::scenarioReportId).isEqualTo(saved3.scenarioReportId)
+                prop(ScenarioReportMessageEntity::stepName).isEqualTo(saved3.stepName)
+                prop(ScenarioReportMessageEntity::messageId).isEqualTo(saved3.messageId)
+                prop(ScenarioReportMessageEntity::severity).isEqualTo(saved3.severity)
+                prop(ScenarioReportMessageEntity::message).isEqualTo(saved3.message)
+            }
+        }
+
+        // when one scenario ID doesn't exist
+        fetched = scenarioReportMessageRepository.findByScenarioReportIdInOrderById(listOf(scenarioReport2.id, 255))
+
+        // then
+        assertThat(fetched).isNotNull().all {
+            hasSize(1)
+            index(0).all {
+                prop(ScenarioReportMessageEntity::id).isEqualTo(saved2.id)
+                prop(ScenarioReportMessageEntity::scenarioReportId).isEqualTo(saved2.scenarioReportId)
+                prop(ScenarioReportMessageEntity::stepName).isEqualTo(saved2.stepName)
+                prop(ScenarioReportMessageEntity::messageId).isEqualTo(saved2.messageId)
+                prop(ScenarioReportMessageEntity::severity).isEqualTo(saved2.severity)
+                prop(ScenarioReportMessageEntity::message).isEqualTo(saved2.message)
+            }
+        }
+
+        // when scenario IDs do not exist
+        fetched = scenarioReportMessageRepository.findByScenarioReportIdInOrderById(listOf(501, 255))
+
+        // then
+        assertThat(fetched).isEmpty()
     }
 }

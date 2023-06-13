@@ -29,10 +29,10 @@ import io.qalipsis.core.head.model.CampaignExecutionDetails
  */
 internal interface CampaignReportProvider {
     /**
-     * Retrieves the CampaignReport matching the specified [campaignKey].
+     * Retrieves the CampaignReport matching the specified list of [campaignKeys].
      *
      * @param tenant the reference of the tenant owning the data.
-     * @param campaignKey the ID of the campaign to retrieve
+     * @param campaignKeys the collection of keys of the campaigns to retrieve
      */
-    suspend fun retrieveCampaignReport(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails
+    suspend fun retrieveCampaignsReports(tenant: String, campaignKeys: Collection<CampaignKey>): Collection<CampaignExecutionDetails>
 }

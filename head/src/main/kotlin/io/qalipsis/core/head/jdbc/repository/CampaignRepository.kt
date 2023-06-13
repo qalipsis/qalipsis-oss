@@ -63,6 +63,20 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
     )
     suspend fun findByTenantAndKey(tenant: String, campaignKey: String): CampaignEntity?
 
+    /**
+     * Retrieve a collection of campaign in a tenant based on their keys.
+     *
+     * @param tenant the tenant reference
+     * @param campaignKeys the set of campaign keys
+     */
+    @Query(
+        """SELECT *
+            FROM campaign
+            WHERE key IN (:campaignKeys) AND EXISTS 
+            (SELECT 1 FROM tenant WHERE reference = :tenant AND id = campaign.tenant_id)"""
+    )
+    suspend fun findByTenantAndKeys(tenant: String, campaignKeys: Collection<String>): Collection<CampaignEntity>
+
     @Query(
         """SELECT campaign.id
             FROM campaign

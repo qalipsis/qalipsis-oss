@@ -99,9 +99,7 @@ internal class CampaignExecutionDetails(
         if (successfulExecutions != other.successfulExecutions) return false
         if (failedExecutions != other.failedExecutions) return false
         if (status != other.status) return false
-        if (scenariosReports != other.scenariosReports) return false
-
-        return true
+        return scenariosReports == other.scenariosReports
     }
 
     override fun hashCode(): Int {
