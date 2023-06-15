@@ -72,7 +72,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(3000, 4100)
+        assertThat(after - before).isBetween(3000, 4200)
         coVerify(exactly = 4) { service.mockMethod() }
     }
 

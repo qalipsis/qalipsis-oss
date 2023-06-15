@@ -99,4 +99,24 @@ interface CampaignReportLiveStateRegistry {
         cause: Throwable? = null,
     ): Long
 
+
+    /**
+     * Records the successful initialization of a step.
+     */
+    suspend fun recordSuccessfulStepInitialization(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName
+    ) = Unit
+
+    /**
+     * Records the failed initialization of a step.
+     */
+    suspend fun recordFailedStepInitialization(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        cause: Throwable? = null,
+    ) = Unit
+
 }
