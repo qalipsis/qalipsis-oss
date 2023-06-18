@@ -218,7 +218,7 @@ internal class ReportTaskRepositoryIntegrationTest : PostgresqlTemplateTest() {
         testDispatcherProvider.run {
             //given
             val updateTimestamp = Instant.parse("2023-03-18T13:01:07.445312Z")
-            val updateTimestamp2 = Instant.parse("2023-05-18T13:01:07.445312Z")
+            val updateTimestamp2 = Instant.now().minus(5, ChronoUnit.DAYS)
             val updateTimestamp3 = Instant.now().minus(30, ChronoUnit.DAYS).plusSeconds(1)
             reportTaskRepository.save(
                 reportTaskPrototype.copy(
