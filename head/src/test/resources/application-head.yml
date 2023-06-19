@@ -12,3 +12,8 @@ head:
 micronaut:
   security:
     enabled: false
+  executors:
+    scheduled:
+      type: SCHEDULED
+      core-pool-size: 2
+      number-of-threads: 4

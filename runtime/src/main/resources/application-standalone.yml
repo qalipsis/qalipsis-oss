@@ -15,3 +15,10 @@ head:
   heartbeat-channel: heartbeat
   heartbeat-duration: 30s
   heartbeat-consumer-group-name: heartbeat-group-name
+
+micronaut:
+  executors:
+    scheduled:
+      type: SCHEDULED
+      core-pool-size: 2
+      number-of-threads: 4

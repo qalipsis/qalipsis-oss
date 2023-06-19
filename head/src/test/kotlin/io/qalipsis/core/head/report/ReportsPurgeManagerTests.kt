@@ -31,6 +31,7 @@ import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
+import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -56,21 +57,18 @@ internal class ReportsPurgeManagerTests {
 
     private lateinit var reportRecordsTTLConfiguration: ReportRecordsTTLConfiguration
 
-    private lateinit var reportsPurgeManager: ReportsPurgeManager
-
     @BeforeEach
     fun setUp() {
         reportRecordsTTLConfiguration = mockk {
             every { taskTimeToLive } returns Duration.ofHours(2)
             every { fileTimeToLive } returns Duration.ofHours(5)
         }
-        reportsPurgeManager =
-            ReportsPurgeManager(reportRecordsTTLConfiguration, reportTaskRepository, reportFileRepository)
     }
 
     @Test
     fun `uses specified task records time to live to prune report tasks `() = testDispatcherProvider.run {
         //given
+        val reportsPurgeManager = buildReportsPurgeManager()
         val currentTime = getTimeMock()
         coJustRun { reportTaskRepository.deleteAllByUpdateTimestampLessThan(any()) }
 
@@ -87,6 +85,7 @@ internal class ReportsPurgeManagerTests {
     @Test
     fun `uses specified file records time to live to prune report files `() = testDispatcherProvider.run {
         //given
+        val reportsPurgeManager = buildReportsPurgeManager()
         val currentTime = getTimeMock()
         coJustRun { reportFileRepository.deleteAllByCreationTimestampLessThan(any()) }
 
@@ -107,5 +106,12 @@ internal class ReportsPurgeManagerTests {
         every { Clock.systemUTC() } returns fixedClock
         return now
     }
+
+    private fun CoroutineScope.buildReportsPurgeManager() = ReportsPurgeManager(
+        reportRecordsTTLConfiguration,
+        reportTaskRepository,
+        reportFileRepository,
+        this
+    )
 
 }

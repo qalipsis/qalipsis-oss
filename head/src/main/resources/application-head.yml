@@ -14,3 +14,9 @@ report:
     junit:
       enabled: false
       folder: test-results
+micronaut:
+  executors:
+    scheduled:
+      type: SCHEDULED
+      core-pool-size: 2
+      number-of-threads: 4

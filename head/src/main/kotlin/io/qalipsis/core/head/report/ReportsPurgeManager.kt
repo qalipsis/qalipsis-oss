@@ -23,11 +23,17 @@ import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.scheduling.annotation.Scheduled
+import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.configuration.ExecutionEnvironments.AUTOSTART
+import io.qalipsis.core.configuration.ExecutionEnvironments.HEAD
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
 import io.qalipsis.core.head.jdbc.repository.ReportFileRepository
 import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import java.time.Instant
 
 /**
@@ -38,25 +44,29 @@ import java.time.Instant
 @Singleton
 @Requirements(
     Requires(beans = [ReportRecordsTTLConfiguration::class, ReportTaskRepository::class, ReportFileRepository::class]),
+    Requires(env = [HEAD, STANDALONE]),
     Requires(notEnv = [AUTOSTART])
 )
 internal class ReportsPurgeManager(
     private val reportRecordsConfiguration: ReportRecordsTTLConfiguration,
     private val reportTaskRepository: ReportTaskRepository,
     private val reportFileRepository: ReportFileRepository,
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope
 ) {
 
     /**
      * Runs at the configured time to prune stale report records, defaults to 24 hours.
      */
     @Scheduled(cron = "\${report.records.cron:0 0 0 1/1 * ?}")
-    suspend fun executeTask() {
-        try {
-            this.pruneReportTaskRecords()
-            this.pruneReportFileRecords()
-        } catch (ex: Exception) {
-            logger.error(ex) { ex.message }
-            throw ex
+    fun executeTask() {
+        backgroundScope.async {
+            try {
+                pruneReportTaskRecords()
+                pruneReportFileRecords()
+            } catch (ex: Exception) {
+                logger.error(ex) { ex.message }
+                throw ex
+            }
         }
     }
 
