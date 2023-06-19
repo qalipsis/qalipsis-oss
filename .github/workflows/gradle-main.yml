@@ -78,7 +78,7 @@ jobs:
           $SIGNING_PRIVATE_KEY | base64 --decode > /tmp/privateKey.txt ;
           echo "signing.secretKeyRingFile=/tmp/privateKey.txt" >> $HOME/.gradle/gradle.properties
 
-      - name: Prepare Publishing configuration
+      - name: Prepare publishing configuration
         env:
           OSSRH_USERNAME: ${{secrets.SONATYPE_OSS_USERNAME}}
           OSSRH_PASSWORD: ${{secrets.SONATYPE_OSS_PASSWORD}}
