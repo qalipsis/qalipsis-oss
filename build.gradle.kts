@@ -105,8 +105,8 @@ allprojects {
     }
 
     val signingKeyId = "signing.keyId"
-    signing {
-        if (System.getProperty(signingKeyId) != null || System.getenv(signingKeyId) != null) {
+    if (System.getProperty(signingKeyId) != null || System.getenv(signingKeyId) != null) {
+        signing {
             publishing.publications.forEach { sign(it) }
         }
     }
