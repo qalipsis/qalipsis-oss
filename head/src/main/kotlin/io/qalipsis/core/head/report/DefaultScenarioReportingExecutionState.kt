@@ -39,5 +39,5 @@ internal data class DefaultScenarioReportingExecutionState(
     override var end: Instant?,
     override var abort: Instant?,
     override val status: ExecutionStatus?,
-    override val messages: Map<Any, ReportMessage>
+    override val messages: List<ReportMessage>
 ) : ScenarioReportingExecutionState

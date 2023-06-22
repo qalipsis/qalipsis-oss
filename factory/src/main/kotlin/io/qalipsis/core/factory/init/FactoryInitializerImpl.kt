@@ -97,9 +97,6 @@ internal class FactoryInitializerImpl(
     private val factoryConfiguration: FactoryConfiguration,
     @Nullable private val handshakeBlocker: HandshakeBlocker?,
     @PositiveDuration
-    @Property(name = "campaign.step.start-timeout", defaultValue = "30s")
-    private val stepStartTimeout: Duration,
-    @PositiveDuration
     @Property(name = "scenario.conversion.timeout", defaultValue = "5s")
     private val conversionTimeout: Duration,
     @Property(name = "scenario.allow-empty", defaultValue = "false")
@@ -157,8 +154,7 @@ internal class FactoryInitializerImpl(
                     { "The maximal number of steps specifications in a step scenario should not exceed ${factoryConfiguration.campaign.maxScenarioStepSpecificationsCount}, but was ${scenarioSpecification.size}" }
 
                     log.info { "Converting the scenario specification $scenarioName" }
-                    val scenario =
-                        convertScenario(scenarioName, scenarioSpecification)
+                    val scenario = convertScenario(scenarioName, scenarioSpecification)
                     allScenarios.add(scenario)
                     scenario.dags.forEach { dag ->
                         dagsByScenario.computeIfAbsent(scenarioName) { ConcurrentHashMap() }[dag.name] = dag
@@ -207,7 +203,6 @@ internal class FactoryInitializerImpl(
             executionProfile = executionProfile,
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,
-            stepStartTimeout = stepStartTimeout,
             factoryChannel = factoryChannel
         )
         scenarioRegistry.add(scenario)
@@ -394,7 +389,11 @@ internal class FactoryInitializerImpl(
      */
     private fun addMissingStepName(spec: StepSpecification<Any?, Any?, *>) {
         if (spec.name.isBlank()) {
+            // Generates a name with an underscore to specify an anonymous one.
             spec.name = "_${spec.type}-${buildNewStepName()}"
+        } else if (spec.name == "__") {
+            // If the user specified a hidden name, the hidden aspect is kept.
+            spec.name = "__${spec.type}-${buildNewStepName()}"
         }
     }
 

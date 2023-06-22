@@ -42,6 +42,7 @@ internal class PaceStepSpecificationConverter :
     override suspend fun <I, O> convert(creationContext: StepCreationContext<PaceStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as PaceStepSpecification<I>
+        spec.reporting.reportErrors = false
         val step = PaceStep<I>(spec.name, spec.specification)
         creationContext.createdStep(step)
     }

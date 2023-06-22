@@ -37,6 +37,8 @@ import io.qalipsis.api.executionprofile.StageExecutionProfile
 import io.qalipsis.api.executionprofile.TimeFrameExecutionProfile
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
+import io.qalipsis.api.runtime.ScenarioStartStopConfiguration
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogOutput
@@ -73,6 +75,7 @@ internal class FactoryCampaignManagerImpl(
     private val factoryChannel: FactoryChannel,
     private val sharedStateRegistry: SharedStateRegistry,
     private val contextConsumer: Optional<ContextConsumer>,
+    private val campaignReportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
     @Property(name = "factory.graceful-shutdown.minion", defaultValue = "1s")
     private val minionGracefulShutdown: Duration = Duration.ofSeconds(1),
@@ -176,7 +179,11 @@ internal class FactoryCampaignManagerImpl(
             minionAssignmentKeeper.readSchedulePlan(campaignKey, scenarioName)
 
             log.info { "Starting campaign $campaignKey on scenario $scenarioName" }
-            scenarioRegistry[scenarioName]!!.start(campaignKey)
+            scenarioRegistry[scenarioName]!!.start(object : ScenarioStartStopConfiguration {
+                override val campaignKey = campaignKey
+                override val campaignReportLiveStateRegistry =
+                    this@FactoryCampaignManagerImpl.campaignReportLiveStateRegistry
+            })
 
             if (contextConsumer.isPresent) {
                 tryAndLogOrNull(log) {
@@ -318,7 +325,11 @@ internal class FactoryCampaignManagerImpl(
                         contextConsumer.get().stop()
                     }
                 }
-                scenarioRegistry[scenarioName]!!.stop(campaignKey)
+                scenarioRegistry[scenarioName]!!.stop(object : ScenarioStartStopConfiguration {
+                    override val campaignKey = campaignKey
+                    override val campaignReportLiveStateRegistry =
+                        this@FactoryCampaignManagerImpl.campaignReportLiveStateRegistry
+                })
             } catch (e: Exception) {
                 log.trace(e) { "The scenario $scenarioName was not successfully shut down: ${e.message}" }
                 throw e
@@ -331,7 +342,14 @@ internal class FactoryCampaignManagerImpl(
         if (runningCampaign.campaignKey == campaign.campaignKey) {
             withCancellableTimeout(campaignGracefulShutdown) {
                 minionsKeeper.shutdownAll()
-                assignableScenariosExecutionProfiles.keys.forEach { scenarioRegistry[it]!!.stop(campaign.campaignKey) }
+                val shutdownConfiguration = object : ScenarioStartStopConfiguration {
+                    override val campaignKey = campaign.campaignKey
+                    override val campaignReportLiveStateRegistry =
+                        this@FactoryCampaignManagerImpl.campaignReportLiveStateRegistry
+                }
+                assignableScenariosExecutionProfiles.keys.forEach {
+                    scenarioRegistry[it]!!.stop(shutdownConfiguration)
+                }
                 runningCampaign = EMPTY_CAMPAIGN
                 sharedStateRegistry.clear()
                 assignableScenariosExecutionProfiles.clear()

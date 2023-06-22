@@ -22,6 +22,7 @@ package io.qalipsis.core.head.redis
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
+import io.lettuce.core.api.coroutines.RedisListCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
@@ -35,6 +36,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.DefaultScenarioReportingExecutionState
 import io.qalipsis.core.head.report.toCampaignReport
+import io.qalipsis.core.math.percentOf
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.onEach
@@ -54,6 +56,7 @@ import java.time.Instant
 internal class RedisCampaignReportStateKeeper(
     private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,
     private val redisSetCommands: RedisSetCoroutinesCommands<String, String>,
+    private val redisListCommands: RedisListCoroutinesCommands<String, String>,
     private val redisHashCommands: RedisHashCoroutinesCommands<String, String>
 ) : CampaignReportStateKeeper {
 
@@ -111,19 +114,62 @@ internal class RedisCampaignReportStateKeeper(
         return scenarios.map { scenarioName ->
             val rootKey = buildRedisReportKey(campaignKey, scenarioName)
             val scenarioData =
-                redisHashCommands.hgetall(rootKey).toList(mutableListOf()).associate { kv -> kv.key to kv.value }
-                    .toMutableMap()
-            val successes =
-                redisHashCommands.hgetall(rootKey + SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX).toList(mutableListOf())
+                redisHashCommands.hgetall(rootKey).toList().associate { kv -> kv.key to kv.value }.toMutableMap()
+
+            // Count of successful and failed executions, keyed by step names.
+            val successfulExecutions =
+                redisHashCommands.hgetall(rootKey + SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX).toList()
                     .associate { kv -> kv.key to (kv.value?.toInt() ?: 0) }
-            val failures =
-                redisHashCommands.hgetall(rootKey + FAILED_STEP_EXECUTION_KEY_POSTFIX).toList(mutableListOf())
-                    .associate { kv -> kv.key to (kv.value?.toInt() ?: 0) }
+
+            // Count of steps failures, stored with the step and exception class name as key, converted as maps of count by errors and by step.
+            val failedExecutions = mutableMapOf<String, Int>()
+            val executionFailuresDetails =
+                redisHashCommands.hgetall(rootKey + FAILED_STEP_EXECUTION_KEY_POSTFIX).toList()
+                    // Group by step name.
+                    .groupBy { it.key.substringBeforeLast(":") }
+                    .flatMap { (stepName, errors) ->
+                        var totalFailures = 0
+                        val typedErrors = errors.associate {
+                            val errorType = it.key.substringAfterLast(":")
+                            val errorsCount = it.value?.toIntOrNull() ?: 0
+                            totalFailures += errorsCount
+                            errorType to errorsCount
+                        }
+                        failedExecutions[stepName] = totalFailures
+
+                        var index = -1
+                        typedErrors.map { (errorType, count) ->
+                            index++
+                            ReportMessage(
+                                stepName,
+                                "${stepName}_failure_$index",
+                                ReportMessageSeverity.ERROR,
+                                "Count of errors $errorType: $count (${count.percentOf(totalFailures)}%)"
+                            )
+                        }
+                    }
 
             val startTimestamp = Instant.parse(scenarioData.remove(START_TIMESTAMP_FIELD))
             val endTimestamp = scenarioData.remove(END_TIMESTAMP_FIELD)?.let(Instant::parse)
             val abortTimestamp = scenarioData.remove(ABORTED_TIMESTAMP_FIELD)?.let(Instant::parse)
             val status = if (abortTimestamp != null) ExecutionStatus.ABORTED else null
+
+            val successfullyInitializedSteps =
+                redisListCommands.lrange("$rootKey$SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX", 0, -1)
+            val initializationFailures =
+                redisHashCommands.hgetall("$rootKey$FAILED_STEP_INITIALIZATION_KEY_POSTFIX").toList().map {
+                    val stepName = it.key
+                    val message = it.value
+                    ReportMessage(stepName, "${stepName}_init", ReportMessageSeverity.ERROR, message)
+                }
+            val initializationMessages = listOf(
+                ReportMessage(
+                    "_init",
+                    "_init",
+                    ReportMessageSeverity.INFO,
+                    "Steps successfully initialized: ${successfullyInitializedSteps.joinToString()}"
+                )
+            ) + initializationFailures
 
             val messages = scenarioData
                 // All the messages have a key containing the step and messages IDs, separated by a slash.
@@ -133,20 +179,20 @@ internal class RedisCampaignReportStateKeeper(
                     val stepName = key.substringBefore("/$messageId")
                     val severity = ReportMessageSeverity.valueOf(value.substringBefore("/"))
                     val message = value.substringAfter("/")
-                    (messageId as Any) to ReportMessage(stepName, messageId, severity, message)
-                }.toMap()
+                    ReportMessage(stepName, messageId, severity, message)
+                }
 
             DefaultScenarioReportingExecutionState(
                 scenarioName = scenarioName,
                 start = startTimestamp,
                 startedMinions = scenarioData[STARTED_MINIONS_FIELD]?.toInt() ?: 0,
                 completedMinions = scenarioData[COMPLETED_MINIONS_FIELD]?.toInt() ?: 0,
-                successfulStepExecutions = successes.values.sum(),
-                failedStepExecutions = failures.values.sum(),
+                successfulStepExecutions = successfulExecutions.values.sum(),
+                failedStepExecutions = failedExecutions.values.sum(),
                 end = endTimestamp,
                 abort = abortTimestamp,
                 status = status,
-                messages = messages
+                messages = initializationMessages + executionFailuresDetails + messages
             ).toReport(campaignKey)
         }.toCampaignReport()
     }
@@ -160,6 +206,7 @@ internal class RedisCampaignReportStateKeeper(
         campaignKey: CampaignKey, scenarioName: ScenarioName
     ) = "$campaignKey-report:${scenarioName}"
 
+
     private companion object {
 
         const val STARTED_MINIONS_FIELD = "__started-minions"
@@ -171,6 +218,10 @@ internal class RedisCampaignReportStateKeeper(
         const val SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX = ":successful-step-executions"
 
         const val FAILED_STEP_EXECUTION_KEY_POSTFIX = ":failed-step-executions"
+
+        const val SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX = ":successful-step-initializations"
+
+        const val FAILED_STEP_INITIALIZATION_KEY_POSTFIX = ":failed-step-initializations"
 
         const val START_TIMESTAMP_FIELD = "__start"
 

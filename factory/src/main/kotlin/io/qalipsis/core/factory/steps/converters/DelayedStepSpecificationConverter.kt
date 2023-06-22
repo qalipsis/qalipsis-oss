@@ -41,6 +41,7 @@ internal class DelayedStepSpecificationConverter : StepSpecificationConverter<De
     override suspend fun <I, O> convert(creationContext: StepCreationContext<DelayStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as DelayStepSpecification<I>
+        spec.reporting.reportErrors = false
         val step = DelayStep<I>(spec.name, spec.duration)
         creationContext.createdStep(step)
     }

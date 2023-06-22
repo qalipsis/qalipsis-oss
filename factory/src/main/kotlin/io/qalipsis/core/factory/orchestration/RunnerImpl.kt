@@ -20,18 +20,14 @@
 package io.qalipsis.core.factory.orchestration
 
 import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.Tag
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
-import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.meters.CampaignMeterRegistry
-import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.ErrorProcessingStep
@@ -41,20 +37,17 @@ import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.context.StepContextBuilder
 import io.qalipsis.core.factory.context.StepContextImpl
-import io.qalipsis.core.factory.orchestration.StepUtils.isTechnical
-import io.qalipsis.core.factory.orchestration.StepUtils.type
+import io.qalipsis.core.factory.context.TailStepContext
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.MDC
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -72,16 +65,8 @@ import java.util.concurrent.atomic.AtomicInteger
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 internal class RunnerImpl(
-    private val eventsLogger: EventsLogger,
-    private val meterRegistry: CampaignMeterRegistry,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepExecutor, Runner, CampaignLifeCycleAware {
-
-    /**
-     * Map keeping the type of the steps.
-     */
-    private val stepTypes = ConcurrentHashMap<String, String>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private val runningStepsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
@@ -116,11 +101,11 @@ internal class RunnerImpl(
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ) {
         minion.completeMdcContext()
+        MDC.put("step", rootStep.name)
         minion.start()
 
         log.trace { "Running minion" }
         try {
-            MDC.put("step", rootStep.name)
             minion.launch(coroutineScope) {
                 log.trace { "Starting the execution of a subtree of tasks for the minion" }
                 propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
@@ -149,14 +134,37 @@ internal class RunnerImpl(
 
     override suspend fun complete(minion: Minion, rootStep: Step<*, *>, completionContext: CompletionContext): Job? {
         minion.completeMdcContext()
+        MDC.put("step", rootStep.name)
         return try {
-            MDC.put("step", rootStep.name)
             minion.launch(coroutineScope) {
                 propagatePrematureCompletion(this, completionContext, listOf(rootStep), minion)
             }
         } finally {
             MDC.clear()
         }
+    }
+
+    /**
+     * Propagate the completion of the minion execution to the [nextSteps] and their successors.
+     */
+    private suspend fun propagatePrematureCompletion(
+        minionScope: CoroutineScope,
+        completionContext: CompletionContext,
+        nextSteps: Collection<Step<*, *>>,
+        minion: Minion
+    ) {
+        minion.completeMdcContext()
+        nextSteps.forEach { step ->
+            log.trace { "Propagating the minion's completion on step ${step.name} with context $completionContext" }
+            MDC.put("step", step.name)
+            minion.launch(minionScope) {
+                tryAndLogOrNull(log) {
+                    step.complete(completionContext)
+                }
+                propagatePrematureCompletion(minionScope, completionContext, step.next, minion)
+            }
+        }
+        minion.cleanMdcContext()
     }
 
     /**
@@ -181,8 +189,8 @@ internal class RunnerImpl(
             // If the step is the latest one of the chain and a completion operation is provided, the output channel
             // is provided to completion operation.
             log.trace { "Launching the completionConsumer for the latest step of the graph ${step.name}" }
-            MDC.put("step", "_completion")
             latch = Latch(true, "step-execution-propagation")
+            MDC.put("step", "_completion")
             minion.launch(minionScope) {
                 latch.await() // Blocks the execution of the completion block until the step is really executed.
                 completionConsumer(stepContext)
@@ -195,6 +203,13 @@ internal class RunnerImpl(
         }
 
         executeSingleStep(minion, step, stepContext)
+
+        // Once the execution is done - successfully or not - and the tail is received, we notify the step
+        // with the completion of the minion workflow at its level.
+        if (stepContext.isTail) {
+            log.trace { "Propagating the completion of the step ${step.name} for minion ${stepContext.minionId} from context $stepContext" }
+            step.complete(stepContext.equivalentCompletionContext)
+        }
         latch?.release()
     }
 
@@ -215,22 +230,21 @@ internal class RunnerImpl(
         stepContext: StepContext<*, *>,
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ) {
-        log.trace { "Starting the coroutine to consume output and execute next steps" }
-        stepContext as StepContextImpl<*, *> // Just for smart casting.
+        log.trace { "Starting the coroutine to consume output and execute next steps of step ${stepContext.stepName} with context $stepContext" }
 
-        @Suppress("UNCHECKED_CAST")
-        for (outputRecord in stepContext.output as Channel<StepContext.StepOutputRecord<*>>) {
+        var propagatedTail = false
+        (stepContext as? StepContextImpl<*, *>)?.consume { outputRecord ->
+            // Mark that the tail is already propagated to the next steps.
+            propagatedTail = propagatedTail || outputRecord.isTail
             nextSteps.forEach { nextStep ->
                 // Each next step is executed in its individual coroutine and with a dedicated context.
                 @Suppress("UNCHECKED_CAST")
-                val nextContext =
-                    StepContextBuilder.next<Any?, Any?, Any?>(
-                        outputRecord.value,
-                        stepContext as StepContext<Any?, Any?>,
-                        nextStep.name
-                    )
+                val nextContext = StepContextBuilder.next<Any?, Any?, Any?>(
+                    outputRecord.value,
+                    stepContext as StepContext<Any?, Any?>,
+                    nextStep.name
+                )
                 nextContext.isTail = outputRecord.isTail
-
                 MDC.put("step", nextStep.name)
                 minion.launch(minionScope) {
                     log.trace { "Launching the coroutine for the next step ${nextStep.name}" }
@@ -250,46 +264,41 @@ internal class RunnerImpl(
                 }
             }
         } else if (!stepContext.generatedOutput) {
-            log.trace { "The context generated no output" }
+            log.trace { "The context $stepContext generated no output" }
             // If the execution workflow is interrupted because of lack of data, the optional completion consumer
             // is executed.
             if (completionConsumer != null) {
-                MDC.put("step", "_completion")
                 log.trace { "Executing the completion consumer" }
+                MDC.put("step", "_completion")
                 minion.launch(minionScope) {
                     completionConsumer(stepContext)
                 }
             }
-
-            // And the premature completion of execution is propagated.
-            if (stepContext.isTail) {
-                log.trace { "Propagating completion for minion ${stepContext.minionId} from context $stepContext" }
-                propagatePrematureCompletion(minionScope, stepContext.equivalentCompletionContext, nextSteps, minion)
-            }
         }
-    }
 
-    /**
-     * Propagate the completion of the minion execution to the [nextSteps] and their successors.
-     */
-    private suspend fun propagatePrematureCompletion(
-        minionScope: CoroutineScope,
-        completionContext: CompletionContext,
-        nextSteps: Collection<Step<*, *>>,
-        minion: Minion
-    ) {
-        nextSteps.forEach { step ->
-            log.trace { "Propagating the minion's completion on step ${step.name} with context $completionContext" }
+        // Propagate the dummy tail to ensure that the completion of the minion is performed.
+        if (stepContext.isTail && !stepContext.isExhausted && !propagatedTail && nextSteps.isNotEmpty()) {
+            (stepContext as? StepContextImpl<*, *>)?.run {
+                // We have to ensure that the jobs to complete that step and its descendants are executed after
+                // the ones that consume all the generated outputs, in order to avoid race concurrency.
+                log.trace { "Waiting for all the generated records during the iteration to be generated" }
+                awaitEmptyOutput()
+            }
 
-            minion.completeMdcContext()
-            MDC.put("step", step.name)
-            minion.launch(minionScope) {
-                tryAndLogOrNull(log) {
-                    step.complete(completionContext)
+            log.trace { "Propagating completion for minion ${stepContext.minionId} from context $stepContext" }
+            val tailContext = TailStepContext(stepContext)
+            nextSteps.forEach { nextStep ->
+                MDC.put("step", nextStep.name)
+                minion.launch(minionScope) {
+                    log.trace { "Launching the coroutine for the next step ${nextStep.name}" }
+                    propagateStepExecution(
+                        minionScope,
+                        minion,
+                        nextStep,
+                        tailContext.copy(stepName = nextStep.name),
+                        completionConsumer
+                    )
                 }
-                minion.cleanMdcContext()
-                MDC.remove("step")
-                propagatePrematureCompletion(minionScope, completionContext, step.next, minion)
             }
         }
     }
@@ -297,94 +306,34 @@ internal class RunnerImpl(
     /**
      * Executes a single step and monitors its execution.
      */
-    private suspend fun executeSingleStep(minion: Minion, step: Step<*, *>, stepContext: StepContext<*, *>) {
-        if (!stepContext.isExhausted || isErrorProcessingStep(step)) {
-            log.trace { "Performing the execution of the step..." }
-            stepContext.stepType = stepTypes.computeIfAbsent(step.name) { step.type }
-
-            val runningStepsGauge = if (!step.isTechnical) {
-                eventsLogger.info("step.execution.started", tagsSupplier = { stepContext.toEventTags() })
-                runningStepsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
-                    meterRegistry.gauge(
-                        "running-steps",
-                        listOf(Tag.of("scenario", scenario)),
-                        AtomicInteger()
-                    )
-                }.apply {
-                    incrementAndGet()
-                }
-            } else null
-            val start = System.nanoTime()
-            try {
-                @Suppress("UNCHECKED_CAST")
-                executeStep(minion, step as Step<Any?, Any?>, stepContext as StepContext<Any?, Any?>)
-                if (!step.isTechnical) {
-                    Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                        eventsLogger.info("step.execution.complete", tagsSupplier = { stepContext.toEventTags() })
-                        meterRegistry.timer("step-execution", "step", step.name, "status", "completed").record(duration)
+    private suspend fun executeSingleStep(
+        minion: Minion,
+        step: Step<*, *>,
+        stepContext: StepContext<*, *>
+    ) {
+        if (stepContext !is TailStepContext) {
+            if (!stepContext.isExhausted || isErrorProcessingStep(step)) {
+                log.trace { "Performing the execution of the step..." }
+                try {
+                    executeStep(minion, step as Step<Any?, Any?>, stepContext as StepContext<Any?, Any?>)
+                } catch (t: Throwable) {
+                    stepContext.addError(StepError(t))
+                    stepContext.isExhausted = true
+                    if (log.isTraceEnabled) {
+                        log.warn(t) { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
+                    } else {
+                        log.warn { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
                     }
-                    reportLiveStateRegistry.recordSuccessfulStepExecution(
-                        stepContext.campaignKey,
-                        minion.scenarioName,
-                        step.name
-                    )
                 }
-                log.trace { "Step completed with success" }
-            } catch (t: Throwable) {
-                val cause = getFailureCause(t, stepContext, step)
-                if (step.isTechnical) {
-                    eventsLogger.warn("minion.operation.failed", cause, tagsSupplier = { stepContext.toEventTags() })
-                } else {
-                    val duration = Duration.ofNanos(System.nanoTime() - start)
-                    reportLiveStateRegistry.recordFailedStepExecution(
-                        stepContext.campaignKey,
-                        minion.scenarioName,
-                        step.name
-                    )
-                    eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { stepContext.toEventTags() })
-                    meterRegistry.timer("step-execution", "step", step.name, "status", "failed").record(duration)
-                }
-                log.warn(t) { "Step completed with an exception, the context is marked as exhausted" }
-                stepContext.isExhausted = true
+            } else {
+                log.trace { "The step will not be executed on minion because the context is exhausted and the step cannot process it" }
             }
-            if (!step.isTechnical) {
-                runningStepsGauge?.decrementAndGet()
-                executedStepCounters.computeIfAbsent(minion.scenarioName) { scenario ->
-                    meterRegistry.counter("executed-steps", "scenario", scenario)
-                }.increment()
-            }
-        } else {
-            log.trace { "The step will not be executed on minion because the context is exhausted and the step cannot process it" }
-        }
-
-        // Once the execution is done - successfully or not - and the tail is received, we notify the step
-        // with the completion of the minion workflow at its level.
-        if (stepContext.isTail) {
-            log.trace { "Completing the step ${step.name} for minion ${stepContext.minionId} from context $stepContext" }
-            step.complete(stepContext.equivalentCompletionContext)
         }
 
         // Once the step was executed, the context can be closed since it is no longer used.
         stepContext.close()
     }
 
-
-    /**
-     * Extracts the actual cause of the step execution failure.
-     */
-    private fun getFailureCause(t: Throwable, stepContext: StepContext<*, *>, step: Step<*, *>) = when {
-        t !is StepExecutionException -> {
-            stepContext.addError(StepError(t, step.name))
-            t
-        }
-
-        t.cause != null -> {
-            stepContext.addError(StepError(t.cause!!, step.name))
-            t.cause!!
-        }
-
-        else -> stepContext.errors.lastOrNull()?.message
-    }
 
     private fun isErrorProcessingStep(step: Step<*, *>): Boolean {
         return if (step is StepDecorator<*, *>) {

@@ -19,18 +19,31 @@
 
 package io.qalipsis.core.factory.steps
 
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.Tag
+import io.micrometer.core.instrument.Timer
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
+import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
-import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor
-import java.util.concurrent.atomic.AtomicLong
+import io.qalipsis.core.exceptions.StepExecutionException
+import io.qalipsis.core.factory.orchestration.StepUtils.isHidden
+import io.qalipsis.core.factory.orchestration.StepUtils.type
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Decorator of a step, that records the successes and errors of the [decorated] step and reports the state
@@ -40,7 +53,11 @@ import java.util.concurrent.atomic.AtomicLong
  */
 internal class ReportingStepDecorator<I, O>(
     override val decorated: Step<I, O>,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
+    private val reportErrors: Boolean,
+    private val eventsLogger: EventsLogger,
+    private val meterRegistry: CampaignMeterRegistry,
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
+    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
     override val name: StepName
@@ -50,42 +67,138 @@ internal class ReportingStepDecorator<I, O>(
 
     override val next = decorated.next
 
-    private val successCount = AtomicLong()
+    private val stepType = decorated.type
 
-    private val errorCount = AtomicLong()
+    /**
+     * Meter storing the number of running steps.
+     */
+    private lateinit var runningStepsGauge: AtomicInteger
+
+    /**
+     * Cumulative counter of the executed steps.
+     */
+    private lateinit var executedStepCounter: Counter
+
+    /**
+     * Timer for successful completion.
+     */
+    private lateinit var completionTimer: Timer
+
+    /**
+     * Timer for failure.
+     */
+    private lateinit var failureTimer: Timer
+
+    /**
+     * Specifies whether the decorated step is visible for the reporting.
+     */
+    private val isDecoratedVisible = !decorated.isHidden
 
     override suspend fun start(context: StepStartStopContext) {
-        successCount.set(0)
-        errorCount.set(0)
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(stepStartTimeout.toMillis()) {
+                    decorated.start(context)
+                    reportLiveStateRegistry.recordSuccessfulStepInitialization(
+                        context.campaignKey,
+                        context.scenarioName,
+                        decorated.name
+                    )
+                }
+            }
+        } catch (t: Throwable) {
+            reportLiveStateRegistry.recordFailedStepInitialization(
+                context.campaignKey,
+                context.scenarioName,
+                decorated.name,
+                t
+            )
+            throw t
+        }
+
+        runningStepsGauge = meterRegistry.gauge(
+            "running-steps",
+            listOf(Tag.of("scenario", context.scenarioName)),
+            AtomicInteger()
+        )
+        executedStepCounter = meterRegistry.counter("executed-steps", "scenario", context.scenarioName)
+        completionTimer = meterRegistry.timer("step-execution", "step", decorated.name, "status", "completed")
+        failureTimer = meterRegistry.timer("step-execution", "step", decorated.name, "status", "failed")
         super<StepDecorator>.start(context)
     }
 
     override suspend fun stop(context: StepStartStopContext) {
-        val result = """"Success: ${successCount.get()}, Execution errors: ${errorCount.get()}""""
-        val severity = if (errorCount.get() > 0) {
-            ReportMessageSeverity.ERROR
-        } else {
-            ReportMessageSeverity.INFO
-        }
-        reportLiveStateRegistry.put(context.campaignKey, context.scenarioName, this.name, severity, result)
-        log.info { "Stopping the step ${this.name} for the campaign ${context.campaignKey}: $result" }
         super<StepDecorator>.stop(context)
     }
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
-        try {
-            val exhaustedBefore = context.isExhausted
-            decorated.execute(minion, context)
+        log.trace { "Reporting the started execution of the decorated step" }
+        context.stepType = stepType
 
-            if (context.isExhausted && !exhaustedBefore) {
-                errorCount.incrementAndGet()
-            } else {
-                successCount.incrementAndGet()
+        val runningStepsGauge = if (isDecoratedVisible) {
+            eventsLogger.debug("step.execution.started", tagsSupplier = { context.toEventTags() })
+            runningStepsGauge.apply { incrementAndGet() }
+        } else null
+
+        val start = System.nanoTime()
+        try {
+            @Suppress("UNCHECKED_CAST")
+            log.trace { "Performing the execution of the decorated..." }
+            executeStep(minion, decorated as Step<Any?, Any?>, context as StepContext<Any?, Any?>)
+            if (isDecoratedVisible) {
+                log.trace { "Reporting the successful execution of the decorated step" }
+                Duration.ofNanos(System.nanoTime() - start).let { duration ->
+                    eventsLogger.debug("step.execution.complete", tagsSupplier = { context.toEventTags() })
+                    completionTimer.record(duration)
+                }
+                reportLiveStateRegistry.recordSuccessfulStepExecution(
+                    context.campaignKey,
+                    context.scenarioName,
+                    decorated.name
+                )
             }
+            log.trace { "Step completed with success" }
         } catch (t: Throwable) {
-            errorCount.incrementAndGet()
+            val cause = getFailureCause(t, context, decorated)
+            if (isDecoratedVisible) {
+                log.trace { "Reporting the failed execution of the decorated step" }
+                eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { context.toEventTags() })
+                val duration = Duration.ofNanos(System.nanoTime() - start)
+                failureTimer.record(duration)
+
+                reportLiveStateRegistry.recordFailedStepExecution(
+                    context.campaignKey,
+                    context.scenarioName,
+                    decorated.name,
+                    cause = supplyIf(reportErrors) { t }
+                )
+            } else {
+                eventsLogger.warn("minion.operation.failed", cause, tagsSupplier = { context.toEventTags() })
+            }
             throw t
+        } finally {
+            if (isDecoratedVisible) {
+                runningStepsGauge?.decrementAndGet()
+                executedStepCounter.increment()
+            }
         }
+    }
+
+    /**
+     * Extracts the actual cause of the step execution failure.
+     */
+    private fun getFailureCause(t: Throwable, stepContext: StepContext<*, *>, step: Step<*, *>) = when {
+        t !is StepExecutionException -> {
+            stepContext.addError(StepError(t, step.name))
+            t
+        }
+
+        t.cause != null -> {
+            stepContext.addError(StepError(t.cause!!, step.name))
+            t.cause!!
+        }
+
+        else -> stepContext.errors.lastOrNull()?.message
     }
 
     override suspend fun execute(context: StepContext<I, O>) {

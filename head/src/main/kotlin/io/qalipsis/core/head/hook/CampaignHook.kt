@@ -40,4 +40,9 @@ internal interface CampaignHook : Ordered {
      */
     suspend fun preSchedule(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign) =
         preCreate(campaignConfiguration, runningCampaign)
+
+    /**
+     * Hook to process the campaign details when it starts.
+     */
+    suspend fun preStart(runningCampaign: RunningCampaign) = Unit
 }

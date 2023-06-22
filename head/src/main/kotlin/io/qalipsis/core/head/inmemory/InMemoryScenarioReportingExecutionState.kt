@@ -44,13 +44,16 @@ data class InMemoryScenarioReportingExecutionState(
 
     val failedStepExecutionsCounter = AtomicInteger()
 
+    val keyedMessages = linkedMapOf<String, ReportMessage>()
+
     override var end: Instant? = null
 
     override var abort: Instant? = null
 
     override var status: ExecutionStatus? = null
 
-    override val messages = linkedMapOf<Any, ReportMessage>()
+    override val messages: List<ReportMessage>
+        get() = keyedMessages.values.toList()
 
     override val startedMinions: Int
         get() = startedMinionsCounter.get()

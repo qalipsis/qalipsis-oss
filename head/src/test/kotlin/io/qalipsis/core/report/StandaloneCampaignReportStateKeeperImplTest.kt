@@ -29,6 +29,9 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.key
 import assertk.assertions.prop
+import io.mockk.coVerifyOrder
+import io.mockk.confirmVerified
+import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -36,10 +39,13 @@ import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.head.inmemory.InMemoryScenarioReportingExecutionState
 import io.qalipsis.core.head.inmemory.StandaloneCampaignReportStateKeeperImpl
 import io.qalipsis.core.head.inmemory.catadioptre.campaignStates
+import io.qalipsis.core.head.inmemory.consolereporter.ConsoleCampaignProgressionReporter
 import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
+import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
@@ -48,7 +54,9 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.TimeoutException
 
+@WithMockk
 internal class StandaloneCampaignReportStateKeeperImplTest {
 
     @JvmField
@@ -57,10 +65,14 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
 
     private val idGenerator = TestIdGenerator
 
+    @RelaxedMockK
+    private lateinit var consoleReporter: ConsoleCampaignProgressionReporter
+
     @Test
     internal fun `should start the scenario in all the campaigns`() = testDispatcherProvider.run {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
 
         // when
         campaignStateKeeper.start("the campaign-1", "the scenario-1")
@@ -111,7 +123,8 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @Test
     internal fun `should start the scenario`() = testDispatcherProvider.run {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
 
         // when
         campaignStateKeeper.start("the campaign", "the scenario")
@@ -130,12 +143,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOnce {
+            consoleReporter.start("the scenario")
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should complete the started scenario`() = testDispatcherProvider.run {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -159,12 +177,18 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.complete("the scenario")
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should add a message to the started scenario`() = testDispatcherProvider.runTest {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -193,7 +217,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                     .isEqualTo(0)
                 prop(InMemoryScenarioReportingExecutionState::messages).all {
                     hasSize(1)
-                    key(messageId).all {
+                    index(0).all {
                         prop(ReportMessage::messageId).isEqualTo(messageId)
                         prop(ReportMessage::stepName).isEqualTo("the step")
                         prop(ReportMessage::severity).isEqualTo(ReportMessageSeverity.INFO)
@@ -202,12 +226,24 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 }
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.attachMessage(
+                scenarioName = "the scenario",
+                stepName = "the step",
+                severity = ReportMessageSeverity.INFO,
+                messageId = any(),
+                message = "The message"
+            )
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should delete a message from the started scenario`() = testDispatcherProvider.runTest {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
         val messageId = campaignStateKeeper.put(
             "the campaign",
@@ -238,12 +274,25 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.attachMessage(
+                scenarioName = "the scenario",
+                stepName = "the step",
+                severity = ReportMessageSeverity.INFO,
+                messageId = any(),
+                message = "The message"
+            )
+            consoleReporter.detachMessage("the scenario", "the step", messageId)
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should record started minions to the started scenario`() = testDispatcherProvider.runTest {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -268,12 +317,19 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.recordStartedMinion("the scenario", 5)
+            consoleReporter.recordStartedMinion("the scenario", 3)
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should record completed minions to the started scenario`() = testDispatcherProvider.runTest {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -298,12 +354,19 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.recordCompletedMinion("the scenario", 5)
+            consoleReporter.recordCompletedMinion("the scenario", 3)
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should successful steps to the started scenario`() = testDispatcherProvider.runTest {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -329,17 +392,26 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.recordSuccessfulStepExecution("the scenario", "the step", 5)
+            consoleReporter.recordSuccessfulStepExecution("the scenario", "the step", 3)
+            consoleReporter.recordSuccessfulStepExecution("the scenario", "the other step", 10)
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     internal fun `should record failed steps to the started scenario`() = testDispatcherProvider.runTest {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
+        val failure = TimeoutException()
         campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "the step", 5)
-        campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "the step", 3)
+        campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "the step", 3, failure)
         campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "the other step", 10)
 
         // then
@@ -360,13 +432,21 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(InMemoryScenarioReportingExecutionState::messages).isEmpty()
             }
         }
+        coVerifyOrder {
+            consoleReporter.start("the scenario")
+            consoleReporter.recordFailedStepExecution("the scenario", "the step", 5, null)
+            consoleReporter.recordFailedStepExecution("the scenario", "the step", 3, refEq(failure))
+            consoleReporter.recordFailedStepExecution("the scenario", "the other step", 10, null)
+        }
+        confirmVerified(consoleReporter)
     }
 
     @Test
     @Timeout(1)
     internal fun `should not generate a report while there are running scenarios`() = testDispatcherProvider.run {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario 1")
 
         // when + then
@@ -381,7 +461,8 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @Timeout(1)
     internal fun `should not generate a report when nothing started`() = testDispatcherProvider.run {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
 
         // when + then
         assertThrows<NoSuchElementException> {
@@ -393,7 +474,8 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @Timeout(1)
     internal fun `should allow the report when the campaign started and is aborted`() = testDispatcherProvider.run {
         // given
-        val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignStateKeeper.start("the campaign", "the scenario 1")
         campaignStateKeeper.abort("the campaign")
 
@@ -415,7 +497,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -428,20 +510,18 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             state1.startedMinionsCounter.addAndGet(1231)
             state1.completedMinionsCounter.addAndGet(234)
             state1.successfulStepExecutionsCounter.addAndGet(7643)
-            state1.failedStepExecutionsCounter.addAndGet(2345)
-            state1.messages["the id 1"] =
+            state1.keyedMessages["the id 1"] =
                 ReportMessage("step 1", "the id 1", ReportMessageSeverity.INFO, " The message 1")
-            state1.messages["the id 2"] =
+            state1.keyedMessages["the id 2"] =
                 ReportMessage("step 2", "the id 2", ReportMessageSeverity.INFO, " The message 2")
 
             state2.end = Instant.now().minusSeconds(123)
             state2.startedMinionsCounter.addAndGet(765)
             state2.completedMinionsCounter.addAndGet(345)
             state2.successfulStepExecutionsCounter.addAndGet(854)
-            state2.failedStepExecutionsCounter.addAndGet(3567)
-            state2.messages["the id 3"] =
+            state2.keyedMessages["the id 3"] =
                 ReportMessage("step 1", "the id 3", ReportMessageSeverity.INFO, " The message 3")
-            state2.messages["the id 4"] =
+            state2.keyedMessages["the id 4"] =
                 ReportMessage("step 2", "the id 4", ReportMessageSeverity.INFO, " The message 4")
             campaignStateKeeper.complete("the campaign")
 
@@ -457,7 +537,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignReport::startedMinions).isEqualTo(1231 + 765)
                 prop(CampaignReport::completedMinions).isEqualTo(234 + 345)
                 prop(CampaignReport::successfulExecutions).isEqualTo(7643 + 854)
-                prop(CampaignReport::failedExecutions).isEqualTo(2345 + 3567)
+                prop(CampaignReport::failedExecutions).isEqualTo(0)
                 prop(CampaignReport::scenariosReports).hasSize(2)
             }
         }
@@ -468,7 +548,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -481,20 +561,18 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             state1.startedMinionsCounter.addAndGet(1231)
             state1.completedMinionsCounter.addAndGet(234)
             state1.successfulStepExecutionsCounter.addAndGet(7643)
-            state1.failedStepExecutionsCounter.addAndGet(2345)
-            state1.messages["the id 1"] =
+            state1.keyedMessages["the id 1"] =
                 ReportMessage("step 1", "the id 1", ReportMessageSeverity.INFO, " The message 1")
-            state1.messages["the id 2"] =
+            state1.keyedMessages["the id 2"] =
                 ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
 
             state2.end = Instant.now().minusSeconds(123)
             state2.startedMinionsCounter.addAndGet(765)
             state2.completedMinionsCounter.addAndGet(345)
             state2.successfulStepExecutionsCounter.addAndGet(854)
-            state2.failedStepExecutionsCounter.addAndGet(3567)
-            state2.messages["the id 3"] =
+            state2.keyedMessages["the id 3"] =
                 ReportMessage("step 1", "the id 3", ReportMessageSeverity.INFO, " The message 3")
-            state2.messages["the id 4"] =
+            state2.keyedMessages["the id 4"] =
                 ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
             campaignStateKeeper.complete("the campaign")
 
@@ -510,7 +588,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignReport::startedMinions).isEqualTo(1231 + 765)
                 prop(CampaignReport::completedMinions).isEqualTo(234 + 345)
                 prop(CampaignReport::successfulExecutions).isEqualTo(7643 + 854)
-                prop(CampaignReport::failedExecutions).isEqualTo(2345 + 3567)
+                prop(CampaignReport::failedExecutions).isEqualTo(0)
                 prop(CampaignReport::scenariosReports).hasSize(2)
             }
         }
@@ -521,7 +599,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -535,9 +613,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             state1.completedMinionsCounter.addAndGet(234)
             state1.successfulStepExecutionsCounter.addAndGet(7643)
             state1.failedStepExecutionsCounter.addAndGet(2345)
-            state1.messages["the id 1"] =
+            state1.keyedMessages["the id 1"] =
                 ReportMessage("step 1", "the id 1", ReportMessageSeverity.INFO, " The message 1")
-            state1.messages["the id 2"] =
+            state1.keyedMessages["the id 2"] =
                 ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
 
             state2.end = Instant.now()
@@ -545,9 +623,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             state2.completedMinionsCounter.addAndGet(345)
             state2.successfulStepExecutionsCounter.addAndGet(854)
             state2.failedStepExecutionsCounter.addAndGet(3567)
-            state2.messages["the id 3"] =
+            state2.keyedMessages["the id 3"] =
                 ReportMessage("step 1", "the id 3", ReportMessageSeverity.ERROR, " The message 3")
-            state2.messages["the id 4"] =
+            state2.keyedMessages["the id 4"] =
                 ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
             campaignStateKeeper.complete("the campaign")
 
@@ -573,7 +651,8 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should generate a report for all the scenarios of the campaign as abort when there is one abort`() =
         testDispatcherProvider.run {
             // given
-            val campaignStateKeeper = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+            val campaignStateKeeper =
+                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -587,9 +666,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             state1.completedMinionsCounter.addAndGet(234)
             state1.successfulStepExecutionsCounter.addAndGet(7643)
             state1.failedStepExecutionsCounter.addAndGet(2345)
-            state1.messages["the id 1"] =
+            state1.keyedMessages["the id 1"] =
                 ReportMessage("step 1", "the id 1", ReportMessageSeverity.ABORT, " The message 1")
-            state1.messages["the id 2"] =
+            state1.keyedMessages["the id 2"] =
                 ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
 
             state2.end = Instant.now()
@@ -597,9 +676,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             state2.completedMinionsCounter.addAndGet(345)
             state2.successfulStepExecutionsCounter.addAndGet(854)
             state2.failedStepExecutionsCounter.addAndGet(3567)
-            state2.messages["the id 3"] =
+            state2.keyedMessages["the id 3"] =
                 ReportMessage("step 1", "the id 3", ReportMessageSeverity.ERROR, " The message 3")
-            state2.messages["the id 4"] =
+            state2.keyedMessages["the id 4"] =
                 ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
             campaignStateKeeper.complete("the campaign")
 
@@ -624,7 +703,8 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @Timeout(1)
     internal fun `should retrieve the report details for a unique campaign`() = testDispatcherProvider.run {
         // given
-        val campaignReportProvider = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignReportProvider =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.complete("key-1", "the scenario 1")
@@ -638,9 +718,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state11.completedMinionsCounter.addAndGet(234)
         state11.successfulStepExecutionsCounter.addAndGet(7643)
         state11.failedStepExecutionsCounter.addAndGet(2345)
-        state11.messages["the id 1"] =
+        state11.keyedMessages["the id 1"] =
             ReportMessage("step 1", "the id 1", ReportMessageSeverity.ABORT, " The message 1")
-        state11.messages["the id 2"] =
+        state11.keyedMessages["the id 2"] =
             ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
 
         state12.end = Instant.now()
@@ -648,9 +728,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state12.completedMinionsCounter.addAndGet(345)
         state12.successfulStepExecutionsCounter.addAndGet(854)
         state12.failedStepExecutionsCounter.addAndGet(3567)
-        state12.messages["the id 3"] =
+        state12.keyedMessages["the id 3"] =
             ReportMessage("step 1", "the id 3", ReportMessageSeverity.ERROR, " The message 3")
-        state12.messages["the id 4"] =
+        state12.keyedMessages["the id 4"] =
             ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
         campaignReportProvider.complete("key-1")
 
@@ -688,7 +768,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details for a collection of campaigns`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-2", "the scenario 1")
@@ -710,9 +790,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state11.completedMinionsCounter.addAndGet(234)
         state11.successfulStepExecutionsCounter.addAndGet(7643)
         state11.failedStepExecutionsCounter.addAndGet(2345)
-        state11.messages["the id 1"] =
+        state11.keyedMessages["the id 1"] =
             ReportMessage("step 1", "the id 1", ReportMessageSeverity.ABORT, " The message 1")
-        state11.messages["the id 2"] =
+        state11.keyedMessages["the id 2"] =
             ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
 
         state12.end = Instant.now()
@@ -720,9 +800,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state12.completedMinionsCounter.addAndGet(345)
         state12.successfulStepExecutionsCounter.addAndGet(854)
         state12.failedStepExecutionsCounter.addAndGet(3567)
-        state12.messages["the id 3"] =
+        state12.keyedMessages["the id 3"] =
             ReportMessage("step 1", "the id 3", ReportMessageSeverity.ERROR, " The message 3")
-        state12.messages["the id 4"] =
+        state12.keyedMessages["the id 4"] =
             ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
         campaignReportProvider.complete("key-1")
 
@@ -731,9 +811,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state21.completedMinionsCounter.addAndGet(345)
         state21.successfulStepExecutionsCounter.addAndGet(854)
         state21.failedStepExecutionsCounter.addAndGet(3567)
-        state21.messages["the id 5"] =
+        state21.keyedMessages["the id 5"] =
             ReportMessage("step 1", "the id 5", ReportMessageSeverity.ABORT, " The message 5")
-        state21.messages["the id 6"] =
+        state21.keyedMessages["the id 6"] =
             ReportMessage("step 2", "the id 6", ReportMessageSeverity.ERROR, " The message 6")
         campaignReportProvider.complete("key-2")
 
@@ -742,9 +822,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state31.completedMinionsCounter.addAndGet(345)
         state31.successfulStepExecutionsCounter.addAndGet(854)
         state31.failedStepExecutionsCounter.addAndGet(3567)
-        state31.messages["the id 7"] =
+        state31.keyedMessages["the id 7"] =
             ReportMessage("step 1", "the id 7", ReportMessageSeverity.INFO, " The message 7")
-        state31.messages["the id 8"] =
+        state31.keyedMessages["the id 8"] =
             ReportMessage("step 2", "the id 8", ReportMessageSeverity.ABORT, " The message 8")
         campaignReportProvider.complete("key-3")
 
@@ -816,7 +896,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @Timeout(1)
     internal fun `should retrieve the report details when a campaign key is missing`() = testDispatcherProvider.run {
         // given
-        val campaignReportProvider = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+        val campaignReportProvider = StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5))
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-3", "the scenario 2")
@@ -834,9 +914,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state11.completedMinionsCounter.addAndGet(234)
         state11.successfulStepExecutionsCounter.addAndGet(7643)
         state11.failedStepExecutionsCounter.addAndGet(2345)
-        state11.messages["the id 1"] =
+        state11.keyedMessages["the id 1"] =
             ReportMessage("step 1", "the id 1", ReportMessageSeverity.ABORT, " The message 1")
-        state11.messages["the id 2"] =
+        state11.keyedMessages["the id 2"] =
             ReportMessage("step 2", "the id 2", ReportMessageSeverity.WARN, " The message 2")
 
         state12.end = Instant.now()
@@ -844,9 +924,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state12.completedMinionsCounter.addAndGet(345)
         state12.successfulStepExecutionsCounter.addAndGet(854)
         state12.failedStepExecutionsCounter.addAndGet(3567)
-        state12.messages["the id 3"] =
+        state12.keyedMessages["the id 3"] =
             ReportMessage("step 1", "the id 3", ReportMessageSeverity.ERROR, " The message 3")
-        state12.messages["the id 4"] =
+        state12.keyedMessages["the id 4"] =
             ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
         campaignReportProvider.complete("key-1")
 
@@ -855,9 +935,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         state31.completedMinionsCounter.addAndGet(345)
         state31.successfulStepExecutionsCounter.addAndGet(854)
         state31.failedStepExecutionsCounter.addAndGet(3567)
-        state31.messages["the id 7"] =
+        state31.keyedMessages["the id 7"] =
             ReportMessage("step 1", "the id 7", ReportMessageSeverity.INFO, " The message 7")
-        state31.messages["the id 8"] =
+        state31.keyedMessages["the id 8"] =
             ReportMessage("step 2", "the id 8", ReportMessageSeverity.ABORT, " The message 8")
         campaignReportProvider.complete("key-3")
 
@@ -909,14 +989,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
 
     @Test
     @Timeout(1)
-    internal fun `should retrieve the report details when all campaign keys are missing`() = testDispatcherProvider.run {
-        // given
-        val campaignReportProvider = StandaloneCampaignReportStateKeeperImpl(idGenerator, Duration.ofSeconds(5))
+    internal fun `should retrieve the report details when all campaign keys are missing`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignReportProvider =
+                StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5))
 
-        // when
-        val report = campaignReportProvider.retrieveCampaignsReports("my-tenant", listOf("keys-1", "campaign-1", "my-key"))
+            // when
+            val report =
+                campaignReportProvider.retrieveCampaignsReports("my-tenant", listOf("keys-1", "campaign-1", "my-key"))
 
-        // then
-        assertThat(report.toList()).isEmpty()
-    }
+            // then
+            assertThat(report.toList()).isEmpty()
+        }
 }

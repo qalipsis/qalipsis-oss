@@ -227,9 +227,7 @@ internal open class MinionImpl(
         if (other !is MinionImpl) return false
 
         if (id != other.id) return false
-        if (campaignKey != other.campaignKey) return false
-
-        return true
+        return campaignKey == other.campaignKey
     }
 
     override fun hashCode(): Int {

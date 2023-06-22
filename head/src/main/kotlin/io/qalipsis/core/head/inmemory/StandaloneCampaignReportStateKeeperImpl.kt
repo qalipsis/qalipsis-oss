@@ -37,12 +37,14 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.head.inmemory.consolereporter.ConsoleCampaignProgressionReporter
 import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.core.head.report.toCampaignExecutionDetails
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.lifetime.ProcessBlocker
+import jakarta.annotation.Nullable
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Duration
@@ -54,6 +56,7 @@ import javax.annotation.PreDestroy
 @Requires(env = [STANDALONE])
 internal class StandaloneCampaignReportStateKeeperImpl(
     private val idGenerator: IdGenerator,
+    @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?,
     @Value("\${campaign.report.cache.time-to-live:PT10M}") cacheExpire: Duration
 ) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker, CampaignReportProvider {
 
@@ -81,18 +84,20 @@ internal class StandaloneCampaignReportStateKeeperImpl(
 
     @LogInput(Level.DEBUG)
     override suspend fun start(campaignKey: CampaignKey, scenarioName: ScenarioName) {
-
+        consoleCampaignProgressionReporter?.start(scenarioName)
         runningCampaignLatch.lock()
         campaignStates[campaignKey]!![scenarioName] = InMemoryScenarioReportingExecutionState(scenarioName)
     }
 
     @LogInput(Level.DEBUG)
     override suspend fun complete(campaignKey: CampaignKey, scenarioName: ScenarioName) {
+        consoleCampaignProgressionReporter?.complete(scenarioName)
         campaignStates[campaignKey]!![scenarioName]!!.end = Instant.now()
     }
 
     @LogInput(Level.DEBUG)
     override suspend fun complete(campaignKey: CampaignKey) {
+        consoleCampaignProgressionReporter?.stop()
         runningCampaignLatch.cancel()
     }
 
@@ -114,11 +119,12 @@ internal class StandaloneCampaignReportStateKeeperImpl(
         scenarioName: ScenarioName,
         stepName: StepName,
         severity: ReportMessageSeverity,
-        messageId: Any?,
+        messageId: String?,
         message: String
-    ): Any {
-        return (messageId?.toString()?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
-            campaignStates[campaignKey]!![scenarioName]!!.messages[id] =
+    ): String {
+        return (messageId?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
+            consoleCampaignProgressionReporter?.attachMessage(scenarioName, stepName, severity, id, message)
+            campaignStates[campaignKey]!![scenarioName]!!.keyedMessages[id] =
                 ReportMessage(stepName, id, severity, message)
         }
     }
@@ -135,14 +141,14 @@ internal class StandaloneCampaignReportStateKeeperImpl(
         stepName: StepName,
         messageId: Any
     ) {
-        campaignStates[campaignKey]!![scenarioName]!!.messages.remove(messageId)
+        consoleCampaignProgressionReporter?.detachMessage(scenarioName, stepName, messageId)
+        campaignStates[campaignKey]!![scenarioName]!!.keyedMessages.remove(messageId)
     }
 
     @LogInput
-    override suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int): Long {
-        return campaignStates[campaignKey]!![scenarioName]!!.startedMinionsCounter.addAndGet(
-            count
-        ).toLong()
+    override suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int) {
+        consoleCampaignProgressionReporter?.recordStartedMinion(scenarioName, count)
+        campaignStates[campaignKey]!![scenarioName]!!.startedMinionsCounter.addAndGet(count)
     }
 
     @LogInput
@@ -150,10 +156,9 @@ internal class StandaloneCampaignReportStateKeeperImpl(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         count: Int
-    ): Long {
-        return campaignStates[campaignKey]!![scenarioName]!!.completedMinionsCounter.addAndGet(
-            count
-        ).toLong()
+    ) {
+        consoleCampaignProgressionReporter?.recordCompletedMinion(scenarioName, count)
+        campaignStates[campaignKey]!![scenarioName]!!.completedMinionsCounter.addAndGet(count)
     }
 
     @LogInput
@@ -162,8 +167,28 @@ internal class StandaloneCampaignReportStateKeeperImpl(
         scenarioName: ScenarioName,
         stepName: StepName,
         count: Int
-    ): Long {
-        return campaignStates[campaignKey]!![scenarioName]!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
+    ) {
+        consoleCampaignProgressionReporter?.recordSuccessfulStepExecution(scenarioName, stepName, count)
+        campaignStates[campaignKey]!![scenarioName]!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
+    }
+
+    @LogInputAndOutput
+    override suspend fun recordSuccessfulStepInitialization(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName
+    ) {
+        consoleCampaignProgressionReporter?.recordSuccessfulStepInitialization(campaignKey, scenarioName, stepName)
+    }
+
+    @LogInputAndOutput
+    override suspend fun recordFailedStepInitialization(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        cause: Throwable?
+    ) {
+        consoleCampaignProgressionReporter?.recordFailedStepInitialization(campaignKey, scenarioName, stepName, cause)
     }
 
     @LogInput
@@ -173,8 +198,9 @@ internal class StandaloneCampaignReportStateKeeperImpl(
         stepName: StepName,
         count: Int,
         cause: Throwable?
-    ): Long {
-        return campaignStates[campaignKey]!![scenarioName]!!.failedStepExecutionsCounter.addAndGet(count).toLong()
+    ) {
+        consoleCampaignProgressionReporter?.recordFailedStepExecution(scenarioName, stepName, count, cause)
+        campaignStates[campaignKey]!![scenarioName]!!.failedStepExecutionsCounter.addAndGet(count).toLong()
     }
 
     @LogInputAndOutput

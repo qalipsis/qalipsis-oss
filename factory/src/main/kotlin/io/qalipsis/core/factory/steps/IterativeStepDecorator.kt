@@ -42,6 +42,7 @@ import java.time.Duration
 internal class IterativeStepDecorator<I, O>(
     private val iterations: Long = 1,
     delay: Duration = Duration.ZERO,
+    private val stopOnError: Boolean = false,
     override val decorated: Step<I, O>
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
@@ -65,50 +66,58 @@ internal class IterativeStepDecorator<I, O>(
         context.isTail = false
 
         // Reusing the same channel for all the iterations.
-        val internalInputChannel = Channel<I>(1)
+        val innerInputChannel = Channel<I>(1)
 
         var remainingIterations = iterations
         var repetitionIndex = 0L
         while (remainingIterations > 0) {
             log.trace { "Executing iteration $repetitionIndex for context $context" }
 
-            val internalOutputChannel = Channel<StepOutputRecord<O>>(Factory.UNLIMITED)
+            val innerOutputChannel = Channel<StepOutputRecord<O>>(Factory.UNLIMITED)
             val innerContext =
                 context.duplicate(
-                    inputChannel = internalInputChannel,
-                    outputChannel = internalOutputChannel,
+                    inputChannel = innerInputChannel,
+                    outputChannel = innerOutputChannel,
                     stepIterationIndex = repetitionIndex
                 )
             innerContext.isTail = isOuterContextTail && remainingIterations == 1L
+            log.trace { "Inner context: $innerContext" }
 
             // Provides the input value again for each iteration.
-            if (internalInputChannel.isEmpty) {
-                internalInputChannel.send(inputValue)
+            if (innerInputChannel.isEmpty) {
+                log.trace { "Adding the input value to the inner context" }
+                innerInputChannel.send(inputValue)
             }
+            var exception: Throwable? = null
             try {
+                log.trace { "Executing the step" }
                 executeStep(minion, decorated, innerContext)
+                log.trace { "Collecting the potential errors" }
                 innerContext.errors.forEach(context::addError)
-                forwardOutput(context, internalOutputChannel, innerContext)
+                log.trace { "Forwarding the output" }
+                forwardOutput(context, innerOutputChannel, innerContext)
             } catch (t: Throwable) {
-                // Resets the isTail flag before leaving.
-                context.isTail = isOuterContextTail
+                exception = t
+                innerContext.isExhausted = true
                 log.debug(t) { "The repeated step ${decorated.name} failed: ${t.message}" }
-                throw t
             }
 
-            if (innerContext.isExhausted) {
+            if (innerContext.isExhausted && stopOnError) {
                 log.trace { "Stopping the iteration, because the inner step failed" }
-                remainingIterations = 0
-                // Resets the isTail flag before leaving.
-                context.isTail = isOuterContextTail
                 log.debug { "The repeated step ${decorated.name} failed." }
+                exception?.let {
+                    // Resets the isTail flag before leaving.
+                    context.isTail = isOuterContextTail
+                    throw it
+                }
                 context.isExhausted = true
-            } else if (!innerContext.generatedOutput && innerContext.isTail) {
                 remainingIterations = 0
-                log.trace { "Stopping the iteration, because the inner step forced the context to be a tail" }
+            } else if (!innerContext.generatedOutput && innerContext.isTail) {
+                log.trace { "Stopping the iteration, because the inner step forced the context to be a tail (remaining iterations: $remainingIterations)" }
+                remainingIterations = 0
             } else {
                 remainingIterations--
-                log.trace { "Executed iteration ${innerContext.stepIterationIndex} for context ${context}, remaining $remainingIterations" }
+                log.trace { "Executed iteration ${innerContext.stepIterationIndex + 1} for context ${context}, remaining $remainingIterations" }
 
                 if (remainingIterations > 0) {
                     repetitionIndex++
@@ -117,7 +126,7 @@ internal class IterativeStepDecorator<I, O>(
                 }
             }
         }
-        internalInputChannel.cancel()
+        innerInputChannel.cancel()
         context.isTail = isOuterContextTail
         log.trace { "End of the iterations for context $context" }
     }
@@ -127,26 +136,39 @@ internal class IterativeStepDecorator<I, O>(
         internalOutputChannel: Channel<StepOutputRecord<O>>,
         innerContext: StepContext<I, O>
     ) {
-        internalOutputChannel.close() // Close for send, not for receive.
+        // Close the channel for send, not for receive.
+        internalOutputChannel.close()
         if (innerContext.generatedOutput) {
             if (innerContext.isTail) {
-                // When dealing with the tails, that's an exception to handle.
+                log.trace { "The inner context is a tail, processing each value" }
+                // When dealing with the tails, that's a special case to handle.
                 var isTail = false
                 val values = mutableListOf<O>()
-                internalOutputChannel.consumeEach {
-                    values += it.value
-                    isTail = isTail || it.isTail
+                internalOutputChannel.consumeEach { record ->
+                    values += record.value
+                    isTail = isTail || record.isTail
                 }
+                log.trace { "${values.size} value(s) to be forwarded" }
                 values.forEachIndexed { index, o ->
                     if (isTail && index == values.size - 1) {
+                        log.trace { "Marking the outer context as tail" }
                         outerContext.isTail = true
                     }
+                    log.trace { "Forwarding the unitary value to the outer context" }
                     outerContext.send(o)
                 }
             } else {
+                log.trace { "The inner context is a not tail, the records values are just forwarded" }
                 internalOutputChannel.consumeEach { outerContext.send(it.value) }
             }
+        } else {
+            log.trace { "There is no output to forward" }
+            if (innerContext.isTail) {
+                log.trace { "Marking the outer context as tail" }
+                outerContext.isTail = true
+            }
         }
+        // Close for all operations.
         internalOutputChannel.cancel()
     }
 

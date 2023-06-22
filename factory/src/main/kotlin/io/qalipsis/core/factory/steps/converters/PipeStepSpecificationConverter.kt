@@ -41,6 +41,7 @@ internal class PipeStepSpecificationConverter : StepSpecificationConverter<StepS
 
     override suspend fun <I, O> convert(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val step = PipeStep<I>(creationContext.stepSpecification.name)
+        creationContext.stepSpecification.reporting.reportErrors = false
         creationContext.createdStep(step)
     }
 

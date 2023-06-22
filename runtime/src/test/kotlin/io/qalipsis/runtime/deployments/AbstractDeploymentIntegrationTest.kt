@@ -75,7 +75,7 @@ internal abstract class AbstractDeploymentIntegrationTest {
                 }
                 prop(ScenarioReport::startedMinions).isEqualTo(2_000)
                 prop(ScenarioReport::completedMinions).isEqualTo(2_000)
-                prop(ScenarioReport::successfulStepExecutions).isEqualTo(4_000)
+                prop(ScenarioReport::successfulStepExecutions).isEqualTo(6_000)
                 prop(ScenarioReport::failedStepExecutions).isEqualTo(0)
                 prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
             }

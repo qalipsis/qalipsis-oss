@@ -25,7 +25,6 @@ import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isBetween
 import assertk.assertions.isDataClassEqualTo
-import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.key
@@ -57,7 +56,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
-    private lateinit var registry: RedisCampaignReportStateKeeper
+    private lateinit var reportStateKeeper: RedisCampaignReportStateKeeper
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
@@ -68,29 +67,29 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     internal fun `should start and stop scenarios, then create a report`() = testDispatcherProvider.run {
         // when
         val beforeStart = Instant.now()
-        initCampaignReportData("my-campaign")
+        initCampaignReportData("my-campaign", withFailures = true)
         val afterStart = Instant.now()
         val beforeCompleteScenario1 = Instant.now()
-        registry.complete("my-campaign", "my-scenario-1")
+        reportStateKeeper.complete("my-campaign", "my-scenario-1")
         val beforeCompleteScenario2 = Instant.now()
-        registry.complete("my-campaign", "my-scenario-2")
+        reportStateKeeper.complete("my-campaign", "my-scenario-2")
         val beforeCompleteScenario3 = Instant.now()
-        registry.complete("my-campaign", "my-scenario-3")
+        reportStateKeeper.complete("my-campaign", "my-scenario-3")
         val afterCompleteScenario3 = Instant.now()
-        registry.complete("my-campaign")
+        reportStateKeeper.complete("my-campaign")
 
-        val report = registry.generateReport("my-campaign")
+        val report = reportStateKeeper.generateReport("my-campaign")
 
         // then
         assertThat(report).all {
             prop(CampaignReport::campaignKey).isEqualTo("my-campaign")
             prop(CampaignReport::start).isNotNull().isBetween(beforeStart, afterStart)
             prop(CampaignReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
-            prop(CampaignReport::status).isEqualTo(ExecutionStatus.WARNING)
+            prop(CampaignReport::status).isEqualTo(ExecutionStatus.FAILED)
             prop(CampaignReport::startedMinions).isEqualTo(54 + 32)
             prop(CampaignReport::completedMinions).isEqualTo(43)
             prop(CampaignReport::successfulExecutions).isEqualTo(21 + 43 + 32)
-            prop(CampaignReport::failedExecutions).isEqualTo(22 + 32)
+            prop(CampaignReport::failedExecutions).isEqualTo(22)
             prop(CampaignReport::scenariosReports).all {
                 hasSize(3)
                 transform { it.associateBy { it.scenarioName } }.all {
@@ -98,14 +97,32 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
                         prop(ScenarioReport::end).isNotNull()
                             .isBetween(beforeCompleteScenario1, beforeCompleteScenario2)
-                        prop(ScenarioReport::status).isEqualTo(ExecutionStatus.WARNING)
+                        prop(ScenarioReport::status).isEqualTo(ExecutionStatus.FAILED)
                         prop(ScenarioReport::startedMinions).isEqualTo(54)
                         prop(ScenarioReport::completedMinions).isEqualTo(43)
                         prop(ScenarioReport::successfulExecutions).isEqualTo(21 + 43)
                         prop(ScenarioReport::failedExecutions).isEqualTo(22)
                         prop(ScenarioReport::messages).all {
-                            hasSize(3)
+                            hasSize(6)
                             transform { it.associateBy { it.messageId } }.all {
+                                key("_init").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "_init", "_init", ReportMessageSeverity.INFO,
+                                        "Steps successfully initialized: my-step-1, my-step-2"
+                                    )
+                                )
+                                key("my-step-3_init").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-3", "my-step-3_init", ReportMessageSeverity.ERROR,
+                                        "Any init failure"
+                                    )
+                                )
+                                key("my-step-1_failure_0").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-1", "my-step-1_failure_0", ReportMessageSeverity.ERROR,
+                                        "Count of errors this-is-an-error: 22 (100.0%)"
+                                    )
+                                )
                                 key("message-1").isDataClassEqualTo(
                                     ReportMessage(
                                         "my-step-1", "message-1", ReportMessageSeverity.WARN,
@@ -136,15 +153,23 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::startedMinions).isEqualTo(32)
                         prop(ScenarioReport::completedMinions).isEqualTo(0)
                         prop(ScenarioReport::successfulExecutions).isEqualTo(32)
-                        prop(ScenarioReport::failedExecutions).isEqualTo(32)
+                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
                         prop(ScenarioReport::messages).all {
-                            hasSize(1)
-                            index(0).isDataClassEqualTo(
-                                ReportMessage(
-                                    "my-step-1", "message-2", ReportMessageSeverity.INFO,
-                                    "This is the second message"
+                            hasSize(2)
+                            transform { it.associateBy { it.messageId } }.all {
+                                key("_init").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "_init", "_init", ReportMessageSeverity.INFO,
+                                        "Steps successfully initialized: my-step-2"
+                                    )
                                 )
-                            )
+                                key("message-2").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-1", "message-2", ReportMessageSeverity.INFO,
+                                        "This is the second message"
+                                    )
+                                )
+                            }
                         }
                     }
 
@@ -156,7 +181,15 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::completedMinions).isEqualTo(0)
                         prop(ScenarioReport::successfulExecutions).isEqualTo(0)
                         prop(ScenarioReport::failedExecutions).isEqualTo(0)
-                        prop(ScenarioReport::messages).isEmpty()
+                        prop(ScenarioReport::messages).all {
+                            hasSize(1)
+                            index(0).isDataClassEqualTo(
+                                ReportMessage(
+                                    "_init", "_init", ReportMessageSeverity.INFO,
+                                    "Steps successfully initialized: my-step-1"
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -167,13 +200,13 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     internal fun `should start and abort, then create a report`() = testDispatcherProvider.run {
         // when
         val beforeStart = Instant.now()
-        initCampaignReportData("my-campaign")
+        initCampaignReportData("my-campaign", withFailures = false)
         val afterStart = Instant.now()
         val beforeAbort = Instant.now()
-        registry.abort("my-campaign")
+        reportStateKeeper.abort("my-campaign")
         val afterAbort = Instant.now()
 
-        val report = registry.generateReport("my-campaign")
+        val report = reportStateKeeper.generateReport("my-campaign")
 
         // then
         assertThat(report).all {
@@ -184,7 +217,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
             prop(CampaignReport::startedMinions).isEqualTo(54 + 32)
             prop(CampaignReport::completedMinions).isEqualTo(43)
             prop(CampaignReport::successfulExecutions).isEqualTo(21 + 43 + 32)
-            prop(CampaignReport::failedExecutions).isEqualTo(22 + 32)
+            prop(CampaignReport::failedExecutions).isEqualTo(0)
             prop(CampaignReport::scenariosReports).all {
                 hasSize(3)
                 transform { it.associateBy { it.scenarioName } }.all {
@@ -195,10 +228,16 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::startedMinions).isEqualTo(54)
                         prop(ScenarioReport::completedMinions).isEqualTo(43)
                         prop(ScenarioReport::successfulExecutions).isEqualTo(21 + 43)
-                        prop(ScenarioReport::failedExecutions).isEqualTo(22)
+                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
                         prop(ScenarioReport::messages).all {
-                            hasSize(3)
+                            hasSize(4)
                             transform { it.associateBy { it.messageId } }.all {
+                                key("_init").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "_init", "_init", ReportMessageSeverity.INFO,
+                                        "Steps successfully initialized: my-step-1, my-step-2"
+                                    )
+                                )
                                 key("message-1").isDataClassEqualTo(
                                     ReportMessage(
                                         "my-step-1", "message-1", ReportMessageSeverity.WARN,
@@ -228,15 +267,23 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::startedMinions).isEqualTo(32)
                         prop(ScenarioReport::completedMinions).isEqualTo(0)
                         prop(ScenarioReport::successfulExecutions).isEqualTo(32)
-                        prop(ScenarioReport::failedExecutions).isEqualTo(32)
+                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
                         prop(ScenarioReport::messages).all {
-                            hasSize(1)
-                            index(0).isDataClassEqualTo(
-                                ReportMessage(
-                                    "my-step-1", "message-2", ReportMessageSeverity.INFO,
-                                    "This is the second message"
+                            hasSize(2)
+                            transform { it.associateBy { it.messageId } }.all {
+                                key("_init").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "_init", "_init", ReportMessageSeverity.INFO,
+                                        "Steps successfully initialized: my-step-2"
+                                    )
                                 )
-                            )
+                                key("message-2").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-1", "message-2", ReportMessageSeverity.INFO,
+                                        "This is the second message"
+                                    )
+                                )
+                            }
                         }
                     }
 
@@ -248,7 +295,15 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::completedMinions).isEqualTo(0)
                         prop(ScenarioReport::successfulExecutions).isEqualTo(0)
                         prop(ScenarioReport::failedExecutions).isEqualTo(0)
-                        prop(ScenarioReport::messages).isEmpty()
+                        prop(ScenarioReport::messages).all {
+                            hasSize(1)
+                            index(0).isDataClassEqualTo(
+                                ReportMessage(
+                                    "_init", "_init", ReportMessageSeverity.INFO,
+                                    "Steps successfully initialized: my-step-1"
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -260,23 +315,30 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         testDispatcherProvider.run {
             // given
             initCampaignReportData("my-campaign-1")
-            initCampaignReportData("my-campaign-2")
+            initCampaignReportData("my-campaign-2", withFailures = true)
 
-            assertThat(connection.sync().keys("my-campaign-1*").count()).isEqualTo(8)
-            assertThat(connection.sync().keys("my-campaign-2*").count()).isEqualTo(8)
+            assertThat(connection.sync().keys("my-campaign-1*").count()).isEqualTo(9)
+            assertThat(connection.sync().keys("my-campaign-2*").count()).isEqualTo(11)
 
             // when
-            registry.clear("my-campaign-2")
+            reportStateKeeper.clear("my-campaign-2")
 
             // then
-            assertThat(connection.sync().keys("my-campaign-1*").count()).isEqualTo(8)
+            assertThat(connection.sync().keys("my-campaign-1*").count()).isEqualTo(9)
             assertThat(connection.sync().keys("my-campaign-2*").count()).isEqualTo(0)
         }
 
-    private suspend fun initCampaignReportData(campaign: String) {
-        registry.start(campaign, "my-scenario-1")
-        registry.start(campaign, "my-scenario-2")
-        registry.start(campaign, "my-scenario-3")
+    private suspend fun initCampaignReportData(campaign: String, withFailures: Boolean = false) {
+        reportStateKeeper.start(campaign, "my-scenario-1")
+        reportStateKeeper.start(campaign, "my-scenario-2")
+        reportStateKeeper.start(campaign, "my-scenario-3")
+
+        setSuccessfulInitializedSteps(campaign, "my-scenario-1", "my-step-1", "my-step-2")
+        if (withFailures) {
+            setFailedInitializedSteps(campaign, "my-scenario-1", "my-step-3")
+        }
+        setSuccessfulInitializedSteps(campaign, "my-scenario-2", "my-step-2")
+        setSuccessfulInitializedSteps(campaign, "my-scenario-3", "my-step-1")
 
         putMessage(
             campaign, "my-scenario-1", "my-step-1", ReportMessageSeverity.WARN, "message-1",
@@ -298,14 +360,35 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         setMinionsCounts(campaign, "my-scenario-1", 54, 43)
         setMinionsCounts(campaign, "my-scenario-2", 32, 0)
 
-        setExecutionsCounts(campaign, "my-scenario-1", "my-step-1", 21, 22)
+        setExecutionsCounts(campaign, "my-scenario-1", "my-step-1", 21, if (withFailures) 22 else 0)
         setExecutionsCounts(campaign, "my-scenario-1", "my-step-2", 43, 0)
-        setExecutionsCounts(campaign, "my-scenario-2", "my-step-1", 32, 32)
+        setExecutionsCounts(campaign, "my-scenario-2", "my-step-1", 32, 0)
         setExecutionsCounts(campaign, "my-scenario-2", "my-step-2", 0, 0)
     }
 
+    private fun setSuccessfulInitializedSteps(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        vararg stepNames: StepName,
+    ) {
+        connection.sync().rpush(
+            "$campaignKey-report:$scenarioName:successful-step-initializations",
+            *stepNames
+        )
+    }
 
-    private suspend fun putMessage(
+    private fun setFailedInitializedSteps(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+    ) {
+        connection.sync().hset(
+            "$campaignKey-report:$scenarioName:failed-step-initializations",
+            stepName, "Any init failure"
+        )
+    }
+
+    private fun putMessage(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
@@ -319,7 +402,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         connection.sync().hset(key, field, value)
     }
 
-    private suspend fun setMinionsCounts(
+    private fun setMinionsCounts(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         started: Int,
@@ -334,7 +417,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         }
     }
 
-    private suspend fun setExecutionsCounts(
+    private fun setExecutionsCounts(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
@@ -350,7 +433,11 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         }
         if (failed > 0) {
             connection.sync()
-                .hset("$campaignKey-report:$scenarioName:failed-step-executions", stepName, failed.toString())
+                .hset(
+                    "$campaignKey-report:$scenarioName:failed-step-executions",
+                    "$stepName:this-is-an-error",
+                    failed.toString()
+                )
         }
     }
 }

@@ -128,9 +128,7 @@ internal class StageStepTest {
         val step = StageStep<Double, String>("", null, mockk())
         step.addNext(headStep)
 
-        val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
-            every { gauge(any(), any(), any<Number>()) } returnsArgument 2
-        }, relaxedMockk(), this)
+        val runner = RunnerImpl(this)
         step.runner = runner
         val ctx = coreStepContext<Double, String>(input = 3.0)
         val results = mutableListOf<String>()
@@ -172,9 +170,7 @@ internal class StageStepTest {
         val step = StageStep<Int, String>("", null, mockk())
         step.addNext(headStep)
 
-        val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
-            every { gauge(any(), any(), any<Number>()) } returnsArgument 2
-        }, relaxedMockk(), this)
+        val runner = RunnerImpl(this)
         step.runner = runner
 
         val ctx = coreStepContext<Int, String>(input = 3)
@@ -221,9 +217,7 @@ internal class StageStepTest {
             val step = StageStep<Int, String>("", null, mockk())
             step.addNext(headStep)
 
-            val runner = RunnerImpl(relaxedMockk(), relaxedMockk {
-                every { gauge(any(), any(), any<Number>()) } returnsArgument 2
-            }, relaxedMockk(), this)
+            val runner = RunnerImpl(this)
             step.runner = runner
 
             val ctx = coreStepContext<Int, String>(input = 3)

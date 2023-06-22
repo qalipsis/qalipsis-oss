@@ -28,6 +28,7 @@ import io.qalipsis.api.executionprofile.stages
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
 import io.qalipsis.api.steps.delay
+import io.qalipsis.api.steps.execute
 import io.qalipsis.api.steps.filterNotNull
 import io.qalipsis.api.steps.flatten
 import io.qalipsis.api.steps.innerJoin
@@ -42,9 +43,24 @@ object DeploymentTestScenario {
     fun deploymentTest() {
         scenario {
             minionsCount = 2_000
-            profile { regular(1000, 1000) }
+            profile { regular(1000, 200) }
         }.start()
             .returns(Unit)
+            .delay(2000)
+            .blackHole()
+    }
+
+    @Scenario("deployment-test-with-failures")
+    fun deploymentTestWithFailures() {
+        scenario {
+            minionsCount = 2_000
+            profile { regular(1000, 200) }
+        }.start()
+            .returns(Unit)
+            .delay(2000)
+            .execute<Unit, Unit> {
+                throw RuntimeException("There is a failure")
+            }
             .blackHole()
     }
 

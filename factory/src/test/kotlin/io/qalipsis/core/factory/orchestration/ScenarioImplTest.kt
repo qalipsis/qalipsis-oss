@@ -20,10 +20,14 @@
 package io.qalipsis.core.factory.orchestration
 
 import io.mockk.coEvery
+import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.factory.communication.FactoryChannel
@@ -34,11 +38,9 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -85,7 +87,9 @@ internal class ScenarioImplTest {
         }
 
         // when
-        scenario.start("camp-1")
+        scenario.start(mockk {
+            every { campaignKey } returns "camp-1"
+        })
 
         // then
         assertEquals(mockedSteps.size, calledStart.get())
@@ -118,64 +122,14 @@ internal class ScenarioImplTest {
             val context = StepStartStopContext(
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
-                dagId = step.dagId,
+                dagId = step.dagName,
                 stepName = step.name
             )
             coVerifyOnce {
                 step.start(eq(context))
             }
         }
-    }
-
-    @Test
-    internal fun `should interrupt the start when a step is in timeout`() = testCoroutineDispatcher.run {
-        // given
-        val mockedSteps = mutableListOf<StartableStoppableStep>()
-        val scenario = buildDagsByScenario(mockedSteps, Duration.ofMillis(100))
-        coEvery { mockedSteps[2].start(any()) } coAnswers { delay(200) }
-
-        // when
-        scenario.start("camp-1")
-
-        // then
-        coVerifyOnce {
-            factoryChannel.publishFeedback(
-                CampaignStartedForDagFeedback(
-                    "camp-1", "my-scenario", "dag-1", FeedbackStatus.IN_PROGRESS
-                )
-            )
-            factoryChannel.publishFeedback(
-                CampaignStartedForDagFeedback(
-                    "camp-1",
-                    "my-scenario",
-                    "dag-1",
-                    FeedbackStatus.FAILED,
-                    "The start of the DAG dag-1 failed: Timed out waiting for 100 ms"
-                )
-            )
-        }
-        mockedSteps.subList(0, 2).forEach { step ->
-            val context = StepStartStopContext(
-                campaignKey = "camp-1",
-                scenarioName = "my-scenario",
-                dagId = step.dagId,
-                stepName = step.name
-            )
-            coVerifyOnce {
-                step.start(eq(context))
-            }
-        }
-        mockedSteps.forEach { step ->
-            val context = StepStartStopContext(
-                campaignKey = "camp-1",
-                scenarioName = "my-scenario",
-                dagId = step.dagId,
-                stepName = step.name
-            )
-            coVerifyOnce {
-                step.stop(eq(context))
-            }
-        }
+        confirmVerified(factoryChannel)
     }
 
     @Test
@@ -186,7 +140,9 @@ internal class ScenarioImplTest {
         coEvery { mockedSteps[2].start(any()) } throws RuntimeException("this is the error")
 
         // when
-        scenario.start("camp-1")
+        scenario.start(mockk {
+            every { campaignKey } returns "camp-1"
+        })
 
         // then
         coVerifyOnce {
@@ -209,7 +165,7 @@ internal class ScenarioImplTest {
             val context = StepStartStopContext(
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
-                dagId = step.dagId,
+                dagId = step.dagName,
                 stepName = step.name
             )
             coVerifyOnce {
@@ -220,13 +176,14 @@ internal class ScenarioImplTest {
             val context = StepStartStopContext(
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
-                dagId = step.dagId,
+                dagId = step.dagName,
                 stepName = step.name
             )
             coVerifyOnce {
                 step.stop(eq(context))
             }
         }
+        confirmVerified(factoryChannel)
     }
 
     @Test
@@ -243,7 +200,9 @@ internal class ScenarioImplTest {
         }
 
         // when
-        scenario.stop("camp-1")
+        scenario.stop(mockk {
+            every { campaignKey } returns "camp-1"
+        })
 
         // then
         assertEquals(mockedSteps.size, calledStop.get())
@@ -251,36 +210,35 @@ internal class ScenarioImplTest {
             val context = StepStartStopContext(
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
-                dagId = step.dagId,
+                dagId = step.dagName,
                 stepName = step.name
             )
             coVerifyOnce {
                 step.stop(eq(context))
             }
         }
+        confirmVerified(factoryChannel)
     }
 
     private fun buildDagsByScenario(
-        mockedSteps: MutableList<StartableStoppableStep>,
-        stepStartTimeout: Duration = Duration.ofSeconds(30)
+        mockedSteps: MutableList<StartableStoppableStep>
     ): ScenarioImpl {
         val scenarioImpl = ScenarioImpl(
             name = "my-scenario",
             executionProfile = relaxedMockk(),
-            factoryChannel = factoryChannel,
-            stepStartTimeout = stepStartTimeout
+            factoryChannel = factoryChannel
         )
 
         scenarioImpl.createIfAbsent("dag-1") {
             testDag(id = "dag-1") {
-                addStep(spyk(StartableStoppableStep("dag-1")).also {
+                addStep(spyk(StartableStoppableStep("dag-1", "step-1-1")).also {
                     mockedSteps.add(it)
-                    it.new().also {
+                    it.new("step-1-2").also {
                         mockedSteps.add(it)
                     }
-                    it.new().also {
+                    it.new("step-1-3").also {
                         mockedSteps.add(it)
-                        it.new().also {
+                        it.new("step-1-4").also {
                             mockedSteps.add(it)
                         }
                     }
@@ -289,7 +247,7 @@ internal class ScenarioImplTest {
         }
         scenarioImpl.createIfAbsent("dag-2") {
             testDag(id = "dag-2") {
-                addStep(spyk(StartableStoppableStep("dag-2")).also {
+                addStep(spyk(StartableStoppableStep("dag-2", "step-2-1")).also {
                     mockedSteps.add(it)
                 })
             }
@@ -298,15 +256,15 @@ internal class ScenarioImplTest {
     }
 
 
-    private data class StartableStoppableStep(val dagId: DirectedAcyclicGraphName) :
-        AbstractStep<Any?, Any?>("", null) {
+    private data class StartableStoppableStep(val dagName: DirectedAcyclicGraphName, val stepName: StepName) :
+        AbstractStep<Any?, Any?>(stepName, null) {
 
         override suspend fun execute(context: StepContext<Any?, Any?>) {
             // No-Op.
         }
 
-        fun new(): StartableStoppableStep {
-            val nextStep = spyk(StartableStoppableStep(dagId))
+        fun new(stepName: StepName): StartableStoppableStep {
+            val nextStep = spyk(StartableStoppableStep(dagName, stepName))
             this.addNext(nextStep)
             return nextStep
         }

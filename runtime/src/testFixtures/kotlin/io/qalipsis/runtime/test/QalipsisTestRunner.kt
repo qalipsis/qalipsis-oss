@@ -78,7 +78,7 @@ internal class ConfigurableQalipsisTestRunnerImpl : ConfigurableQalipsisTestRunn
 
     val environments = mutableListOf("config")
 
-    val configuration = mutableListOf<String>()
+    val configuration = mutableListOf("report.export.console-live.enabled=false")
 
     override fun withScenarios(vararg scenarios: String): ConfigurableQalipsisTestRunner {
         this.scenarios.addAll(scenarios.toList())

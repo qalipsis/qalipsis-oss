@@ -54,6 +54,7 @@ dependencies {
     implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    implementation("com.varabyte.kotter:kotter-jvm:1.+")
 
     implementation("io.micronaut.security:micronaut-security")
     implementation("com.google.guava:guava")

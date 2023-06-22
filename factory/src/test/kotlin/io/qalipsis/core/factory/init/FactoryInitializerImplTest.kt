@@ -162,7 +162,6 @@ internal class FactoryInitializerImplTest {
                 factoryChannel,
                 factoryConfiguration,
                 handshakeBlocker,
-                Duration.ofSeconds(30),
                 Duration.ofSeconds(1)
             ), recordPrivateCalls = true
         )

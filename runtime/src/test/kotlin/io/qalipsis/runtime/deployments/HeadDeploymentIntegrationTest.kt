@@ -34,7 +34,7 @@ import io.micronaut.http.MediaType
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
 import io.qalipsis.runtime.deployments.PostgresTestContainerConfiguration.testProperties
-import org.awaitility.Awaitility
+import org.awaitility.kotlin.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -71,7 +71,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "-c", "micronaut.server.port=$httpPort",
                     "-c",
                     "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-                    "-c", "report.export.console.enabled=true",
+                    "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
                 )
@@ -114,7 +114,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "-c", "micronaut.server.port=$httpPort",
                     "-c",
                     "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-                    "-c", "report.export.console.enabled=true",
+                    "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
                 ) + PGSQL_CONTAINER.testProperties().flatMap { (key, value) ->
@@ -164,7 +164,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         // then
         checkRestEndpointAvailability(httpPort)
         assertThrows<TimeoutException> {
-            qalipsisProcess.await(Duration.ofSeconds(2))
+            qalipsisProcess.await(Duration.ofSeconds(5))
         }
         assertThat(qalipsisProcess.outputLines).all {
             any { it.matches(Regex(".*to wait before exiting the process.*WebProcessBlocker.*")) }
@@ -184,7 +184,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "--autostart",
                     "-c",
                     "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-                    "-c", "report.export.console.enabled=true",
+                    "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
                 )
@@ -216,7 +216,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             .uri(URI.create("http://localhost:$httpPort"))
             .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
             .build()
-        Awaitility.await("Querying homepage")
+        await.await("Querying homepage")
             .atMost(Duration.ofSeconds(20))
             .pollInterval(Duration.ofSeconds(2))
             .until {

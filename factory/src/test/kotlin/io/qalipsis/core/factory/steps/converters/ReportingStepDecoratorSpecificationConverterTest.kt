@@ -21,11 +21,14 @@ package io.qalipsis.core.factory.steps.converters
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.qalipsis.api.events.EventsLogger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.scenario.StepSpecificationRegistry
@@ -39,6 +42,7 @@ import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 /**
  * @author Eric Jessé
@@ -57,10 +61,18 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
     lateinit var decoratedStep: Step<Int, String>
 
     @RelaxedMockK
-    lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
+    private lateinit var eventsLogger: EventsLogger
+
+    @RelaxedMockK
+    private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
+
+    @RelaxedMockK
+    private lateinit var meterRegistry: CampaignMeterRegistry
 
     @RelaxedMockK
     lateinit var stepSpecification: StepSpecification<Int, String, *>
+
+    private val stepStartTimeout: Duration = Duration.ofSeconds(543)
 
     @InjectMockKs
     lateinit var decorator: ReportingStepDecoratorSpecificationConverter
@@ -85,6 +97,10 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
         assertThat(creationContext.createdStep!!).isInstanceOf(ReportingStepDecorator::class).all {
             prop("reportLiveStateRegistry").isSameAs(reportLiveStateRegistry)
             prop("decorated").isSameAs(decoratedStep)
+            prop("eventsLogger").isSameAs(eventsLogger)
+            prop("meterRegistry").isSameAs(meterRegistry)
+            prop("stepStartTimeout").isEqualTo(Duration.ofSeconds(543))
+            prop("reportErrors").isEqualTo(true)
         }
     }
 
@@ -99,7 +115,14 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
         decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
-        assertThat(creationContext.createdStep).isSameAs(decoratedStep)
+        assertThat(creationContext.createdStep!!).isInstanceOf(ReportingStepDecorator::class).all {
+            prop("reportLiveStateRegistry").isSameAs(reportLiveStateRegistry)
+            prop("decorated").isSameAs(decoratedStep)
+            prop("eventsLogger").isSameAs(eventsLogger)
+            prop("meterRegistry").isSameAs(meterRegistry)
+            prop("stepStartTimeout").isEqualTo(Duration.ofSeconds(543))
+            prop("reportErrors").isEqualTo(false)
+        }
     }
 
 }
