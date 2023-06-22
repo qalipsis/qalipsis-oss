@@ -38,7 +38,7 @@ data class ReportMessage(
 
     @field:Schema(description = "Identifier of the message")
     @field:NotBlank
-    val messageId: Any,
+    val messageId: String,
 
     @field:Schema(description = "Severity of the report message")
     val severity: ReportMessageSeverity,

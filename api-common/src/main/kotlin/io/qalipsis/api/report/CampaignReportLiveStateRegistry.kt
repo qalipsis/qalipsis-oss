@@ -50,9 +50,9 @@ interface CampaignReportLiveStateRegistry {
         scenarioName: ScenarioName,
         stepName: StepName,
         severity: ReportMessageSeverity,
-        messageId: Any? = null,
+        messageId: String? = null,
         message: String
-    ): Any
+    ): String
 
     /**
      * Deletes a message previously put in the campaign report, for example when a previously failing step is now
@@ -65,14 +65,14 @@ interface CampaignReportLiveStateRegistry {
      *
      * @return the count of currently running minions in the scenario
      */
-    suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int = 1): Long
+    suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int = 1)
 
     /**
      * Increments the counter of the completed (whether successful or not) minions by [count].
      *
      * @return the count of currently running minions in the scenario
      */
-    suspend fun recordCompletedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int = 1): Long
+    suspend fun recordCompletedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int = 1)
 
     /**
      * Increments the counter of the successful step executions by [count].
@@ -84,7 +84,7 @@ interface CampaignReportLiveStateRegistry {
         scenarioName: ScenarioName,
         stepName: StepName,
         count: Int = 1
-    ): Long
+    )
 
     /**
      * Increments the counter of the failed step executions by [count].
@@ -97,7 +97,7 @@ interface CampaignReportLiveStateRegistry {
         stepName: StepName,
         count: Int = 1,
         cause: Throwable? = null,
-    ): Long
+    )
 
 
     /**
@@ -107,7 +107,7 @@ interface CampaignReportLiveStateRegistry {
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName
-    ) = Unit
+    )
 
     /**
      * Records the failed initialization of a step.
@@ -117,6 +117,6 @@ interface CampaignReportLiveStateRegistry {
         scenarioName: ScenarioName,
         stepName: StepName,
         cause: Throwable? = null,
-    ) = Unit
+    )
 
 }
