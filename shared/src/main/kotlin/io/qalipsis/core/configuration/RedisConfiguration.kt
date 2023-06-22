@@ -21,6 +21,16 @@ package io.qalipsis.core.configuration
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.api.async.BaseRedisAsyncCommands
+import io.lettuce.core.api.async.RedisAsyncCommands
+import io.lettuce.core.api.async.RedisHashAsyncCommands
+import io.lettuce.core.api.async.RedisKeyAsyncCommands
+import io.lettuce.core.api.async.RedisListAsyncCommands
+import io.lettuce.core.api.async.RedisScriptingAsyncCommands
+import io.lettuce.core.api.async.RedisSetAsyncCommands
+import io.lettuce.core.api.async.RedisSortedSetAsyncCommands
+import io.lettuce.core.api.async.RedisStreamAsyncCommands
+import io.lettuce.core.api.async.RedisStringAsyncCommands
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.BaseRedisCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
@@ -33,6 +43,7 @@ import io.lettuce.core.api.coroutines.RedisSortedSetCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisStreamCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisStringCoroutinesCommands
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
+import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands
 import io.lettuce.core.cluster.api.coroutines
 import io.lettuce.core.cluster.api.coroutines.RedisClusterCoroutinesCommands
 import io.micronaut.context.annotation.Bean
@@ -49,7 +60,8 @@ internal class RedisConfiguration {
      * Coroutine commands for a Redis standalone.
      */
     @Bean(
-        typed = [BaseRedisCoroutinesCommands::class,
+        typed = [
+            BaseRedisCoroutinesCommands::class,
             RedisHashCoroutinesCommands::class,
             RedisKeyCoroutinesCommands::class,
             RedisListCoroutinesCommands::class,
@@ -57,7 +69,8 @@ internal class RedisConfiguration {
             RedisSetCoroutinesCommands::class,
             RedisSortedSetCoroutinesCommands::class,
             RedisStreamCoroutinesCommands::class,
-            RedisStringCoroutinesCommands::class]
+            RedisStringCoroutinesCommands::class
+        ]
     )
     @Requires(beans = [StatefulRedisConnection::class])
     @Requirements(
@@ -69,10 +82,35 @@ internal class RedisConfiguration {
     }
 
     /**
+     * Async commands for a Redis standalone.
+     */
+    @Bean(
+        typed = [
+            BaseRedisAsyncCommands::class,
+            RedisHashAsyncCommands::class,
+            RedisKeyAsyncCommands::class,
+            RedisListAsyncCommands::class,
+            RedisScriptingAsyncCommands::class,
+            RedisSetAsyncCommands::class,
+            RedisSortedSetAsyncCommands::class,
+            RedisStreamAsyncCommands::class,
+            RedisStringAsyncCommands::class
+        ]
+    )
+    @Requirements(
+        Requires(beans = [StatefulRedisConnection::class]),
+        Requires(missingBeans = [StatefulRedisClusterConnection::class])
+    )
+    fun asyncRedisCommands(connection: StatefulRedisConnection<String, String>): RedisAsyncCommands<String, String> {
+        return connection.async()
+    }
+
+    /**
      * Coroutine commands for a Redis cluster.
      */
     @Bean(
-        typed = [BaseRedisCoroutinesCommands::class,
+        typed = [
+            BaseRedisCoroutinesCommands::class,
             RedisHashCoroutinesCommands::class,
             RedisKeyCoroutinesCommands::class,
             RedisListCoroutinesCommands::class,
@@ -87,4 +125,23 @@ internal class RedisConfiguration {
         return connection.coroutines()
     }
 
+    /**
+     * Async commands for a Redis cluster.
+     */
+    @Bean(
+        typed = [
+            BaseRedisAsyncCommands::class,
+            RedisHashAsyncCommands::class,
+            RedisKeyAsyncCommands::class,
+            RedisListAsyncCommands::class,
+            RedisScriptingAsyncCommands::class,
+            RedisSetAsyncCommands::class,
+            RedisSortedSetAsyncCommands::class,
+            RedisStreamAsyncCommands::class,
+            RedisStringAsyncCommands::class]
+    )
+    @Requires(beans = [StatefulRedisClusterConnection::class])
+    fun asyncRedisClusterCommands(connection: StatefulRedisClusterConnection<String, String>): RedisAdvancedClusterAsyncCommands<String, String> {
+        return connection.async()
+    }
 }

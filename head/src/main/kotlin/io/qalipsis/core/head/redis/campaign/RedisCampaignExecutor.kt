@@ -40,6 +40,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import jakarta.inject.Named
@@ -64,6 +65,7 @@ internal class RedisCampaignExecutor(
     campaignReportStateKeeper: CampaignReportStateKeeper,
     headConfiguration: HeadConfiguration,
     campaignConstraintsProvider: CampaignConstraintsProvider,
+    campaignHooks: Collection<CampaignHook>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     private val campaignExecutionContext: CampaignExecutionContext,
     private val redisOperations: CampaignRedisOperations,
@@ -75,7 +77,8 @@ internal class RedisCampaignExecutor(
     headConfiguration,
     coroutineScope,
     campaignExecutionContext,
-    campaignConstraintsProvider
+    campaignConstraintsProvider,
+    campaignHooks
 ) {
 
     @LogInputAndOutput

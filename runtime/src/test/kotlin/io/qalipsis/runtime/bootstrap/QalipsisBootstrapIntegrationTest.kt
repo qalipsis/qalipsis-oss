@@ -94,6 +94,7 @@ internal class QalipsisBootstrapIntegrationTest {
             arrayOf(
                 "-a",
                 "-s", "do-nothing-scenario",
+                "-c", "report.export.console-live.enabled=false",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
@@ -119,6 +120,7 @@ internal class QalipsisBootstrapIntegrationTest {
                     "-a",
                     "-s", "do-nothing-scenario",
                     "-e", "these", "-e", "are", "-e", "my", "-e", "additional", "-e", "environments",
+                    "-c", "report.export.console-live.enabled=false",
                     "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                     "-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                     "-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
@@ -136,7 +138,15 @@ internal class QalipsisBootstrapIntegrationTest {
     @Test
     @Timeout(20)
     internal fun `should return an error when the scenario does not exist`() {
-        val exitCode = QalipsisBootstrap().start(arrayOf("-a", "-s", "no-scenario"))
+        val exitCode = QalipsisBootstrap().start(
+            arrayOf(
+                "-a",
+                "-s",
+                "no-scenario",
+                "-c",
+                "report.export.console-live.enabled=false"
+            )
+        )
 
         assertNotEquals(0, exitCode)
     }
@@ -144,7 +154,15 @@ internal class QalipsisBootstrapIntegrationTest {
     @Test
     @Timeout(20)
     internal fun `should return an error when the scenario fails`() {
-        val exitCode = QalipsisBootstrap().start(arrayOf("-a", "-s", "failing-scenario"))
+        val exitCode = QalipsisBootstrap().start(
+            arrayOf(
+                "-a",
+                "-s",
+                "failing-scenario",
+                "-c",
+                "report.export.console-live.enabled=false"
+            )
+        )
 
         assertNotEquals(0, exitCode)
     }
@@ -159,6 +177,7 @@ internal class QalipsisBootstrapIntegrationTest {
                 "-a",
                 "-s", "do-nothing-scenario",
                 "-c", "property.test=$randomValue",
+                "-c", "report.export.console-live.enabled=false",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
@@ -181,7 +200,17 @@ internal class QalipsisBootstrapIntegrationTest {
         // given
         val qalipsisBootstrap = QalipsisBootstrap()
         val thread = Thread {
-            qalipsisBootstrap.start(arrayOf("-a", "-s", "do-nothing-scenario", "-c", "runtime.minimal-duration=5s"))
+            qalipsisBootstrap.start(
+                arrayOf(
+                    "-a",
+                    "-s",
+                    "do-nothing-scenario",
+                    "-c",
+                    "runtime.minimal-duration=5s",
+                    "-c",
+                    "report.export.console-live.enabled=false"
+                )
+            )
         }.apply { start() }
         Thread.sleep(2000)
         assertThat(qalipsisBootstrap.applicationContext.isRunning).isTrue()

@@ -44,6 +44,7 @@ import kotlinx.coroutines.channels.consumeEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
@@ -67,7 +68,7 @@ internal class IterativeStepDecoratorTest {
     private lateinit var decorated: Step<Any, Int>
 
     private val mockedIterativeStepDecorator: IterativeStepDecorator<Any, Int> by lazy(LazyThreadSafetyMode.NONE) {
-        IterativeStepDecorator(1, relaxedMockk(), decorated)
+        IterativeStepDecorator(1, relaxedMockk(), true, decorated)
     }
 
     @Test
@@ -135,7 +136,7 @@ internal class IterativeStepDecoratorTest {
         val innerContextTailFlags = mutableListOf<Boolean>()
         val outerContextTailFlags = mutableListOf<Boolean>()
 
-        val step = spyk(IterativeStepDecorator(10, decorated = decoratedStep))
+        val step = spyk(IterativeStepDecorator(10, stopOnError = true, decorated = decoratedStep))
         val outputChannel = Channel<StepOutputRecord<Int>?>(Channel.UNLIMITED)
         val outerContext = coreStepContext(input = testEntity, outputChannel = outputChannel).also { it.isTail = true }
         var counter = 0
@@ -188,8 +189,77 @@ internal class IterativeStepDecoratorTest {
         // Verifies that only the very latest record is marked with "isTail".
         val outputTails = mutableListOf<Boolean>()
         outputChannel.consumeEach { outputTails.add(it!!.isTail) }
-        assertThat(outputTails).containsExactly(*((0..18).map { false }.toTypedArray() + true))
+        assertThat(outputTails).containsExactly(*((buildList { repeat(19) { add(false) } }) + true).toTypedArray())
     }
+
+    @Test
+    @Timeout(3)
+    fun `should iterate on decorated step with tail only at end if originally set when errors are ignored`() =
+        testDispatcherProvider.runTest {
+            val testEntity = TestEntity()
+            val capturedContexts = mutableListOf<StepContext<*, *>>()
+            val capturedInputs = mutableListOf<Any?>()
+            val decoratedStep: Step<TestEntity, Int> = relaxedMockk()
+
+            val innerContextTailFlags = mutableListOf<Boolean>()
+            val outerContextTailFlags = mutableListOf<Boolean>()
+
+            val step = spyk(IterativeStepDecorator(10, stopOnError = false, decorated = decoratedStep))
+            val outputChannel = Channel<StepOutputRecord<Int>?>(Channel.UNLIMITED)
+            val outerContext =
+                coreStepContext(input = testEntity, outputChannel = outputChannel).also { it.isTail = true }
+            var counter = 0
+            coEvery { step.executeStep(refEq(minion), refEq(decoratedStep), any()) } coAnswers {
+                val innerContext = thirdArg<StepContext<TestEntity, Int>>()
+                if (innerContext.stepIterationIndex % 2 != 0L) {
+                    throw RuntimeException("Failing the iteration ${innerContext.stepIterationIndex}")
+                } else {
+                    innerContextTailFlags.add(innerContext.isTail)
+                    capturedInputs.add(innerContext.receive())
+                    outerContextTailFlags.add(outerContext.isTail)
+
+                    // Two values are sent each for each call.
+                    innerContext.send(counter++)
+                    innerContext.send(counter++)
+                }
+            }
+
+            // when
+            step.execute(minion, outerContext)
+
+            // then
+            coVerifyExactly(10) {
+                step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(outerContext))
+            }
+
+            // Tail flag should all be false on the generated values.
+            repeat(5) {
+                Assertions.assertFalse(innerContextTailFlags[it])
+                Assertions.assertFalse(outerContextTailFlags[it])
+            }
+            // At the end of the step, the outer context also gets the tail back.
+            Assertions.assertTrue(outerContext.isTail)
+
+            Assertions.assertFalse(outerContext.isExhausted)
+            Assertions.assertEquals(5, capturedInputs.size)
+            // The same input is always reused.
+            capturedInputs.forEach {
+                Assertions.assertSame(testEntity, it)
+            }
+            Assertions.assertFalse((outerContext.output as Channel).isClosedForReceive)
+
+            // The same input is always reused.
+            capturedContexts.forEach {
+                Assertions.assertSame(testEntity, it.receive())
+            }
+
+            // Close the output channel to read it all.
+            outputChannel.close()
+            // Verifies that only the very latest record is marked with "isTail".
+            val outputTails = mutableListOf<Boolean>()
+            outputChannel.consumeEach { outputTails.add(it!!.isTail) }
+            assertThat(outputTails).containsExactly(*(buildList { repeat(10) { add(false) } }).toTypedArray())
+        }
 
     @Test
     @Timeout(3)
@@ -340,7 +410,7 @@ internal class IterativeStepDecoratorTest {
                 every { retryPolicy } returns null
                 every { next } returns mutableListOf()
             }
-            val step = spyk(IterativeStepDecorator(10, decorated = decoratedStep))
+            val step = spyk(IterativeStepDecorator(10, stopOnError = true, decorated = decoratedStep))
             val ctx = coreStepContext<Any, Any>(TestEntity()).also { it.isTail = true }
             assertThrows<RuntimeException> {
                 step.execute(minion, ctx)
@@ -348,7 +418,7 @@ internal class IterativeStepDecoratorTest {
 
             Assertions.assertTrue(ctx.isTail)
             coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx)) }
-            // We let the runner take care of the error management.
+            // We let the runner take care of the error management when an exception was generated.
             Assertions.assertFalse(ctx.isExhausted)
             Assertions.assertEquals(1, executionCount.get())
             Assertions.assertTrue(ctx.errors.isEmpty())
@@ -367,7 +437,7 @@ internal class IterativeStepDecoratorTest {
                 every { retryPolicy } returns null
                 every { next } returns mutableListOf()
             }
-            val step = spyk(IterativeStepDecorator(10, decorated = decoratedStep))
+            val step = spyk(IterativeStepDecorator(10, stopOnError = true, decorated = decoratedStep))
             val ctx = coreStepContext<TestEntity, Any>(TestEntity()).also { it.isTail = false }
             assertThrows<RuntimeException> {
                 step.execute(minion, ctx)
@@ -377,6 +447,35 @@ internal class IterativeStepDecoratorTest {
             coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx)) }
             // We let the runner take care of the error management.
             Assertions.assertFalse(ctx.isExhausted)
+            Assertions.assertEquals(1, executionCount.get())
+            Assertions.assertTrue(ctx.errors.isEmpty())
+            Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
+        }
+
+    @Test
+    @Timeout(3)
+    fun `should forward failed state even without exception and set the tail flag back to true if originally set`() =
+        testDispatcherProvider.runTest {
+            val executionCount = AtomicInteger(0)
+            val decoratedStep: Step<Any, Any> = mockk {
+                coEvery { execute(any(), any()) } answers {
+                    executionCount.incrementAndGet()
+                    secondArg<StepContext<*, *>>().isExhausted = true
+                }
+                every { retryPolicy } returns null
+                every { next } returns mutableListOf()
+            }
+            val step = spyk(IterativeStepDecorator(10, stopOnError = true, decorated = decoratedStep))
+            val ctx = coreStepContext<Any, Any>(TestEntity()).also { it.isTail = true }
+
+            assertDoesNotThrow {
+                step.execute(minion, ctx)
+            }
+
+            Assertions.assertTrue(ctx.isTail)
+            coVerifyOnce { step.executeStep(refEq(minion), refEq(decoratedStep), nrefEq(ctx)) }
+            // When no exception was set, the outer context should transport the failure.
+            Assertions.assertTrue(ctx.isExhausted)
             Assertions.assertEquals(1, executionCount.get())
             Assertions.assertTrue(ctx.errors.isEmpty())
             Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)

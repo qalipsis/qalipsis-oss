@@ -30,11 +30,11 @@ internal object StepUtils {
      * Resolves the type group of a step specification.
      */
     val StepSpecification<*, *, *>.type: String
-        get() = if (name.endsWith("StepSpecification")) {
-            this::class.simpleName!!.substringAfterLast(".").substringBefore("StepSpecification")
-        } else {
-            this::class.simpleName!!.substringAfterLast(".").substringBefore("Specification")
-        }.let { StringUtils.splitByCharacterTypeCamelCase(it).joinToString("-") { it.lowercase() } }
+        get() {
+            val className =
+                this::class.java.canonicalName.substringAfterLast(".").replace(Regex("(Step)?Specification.*$"), "")
+            return className.let { StringUtils.splitByCharacterTypeCamelCase(it).joinToString("-") { it.lowercase() } }
+        }
 
     /**
      * Resolves the type group of a step.
@@ -43,13 +43,13 @@ internal object StepUtils {
         get() = if (this is StepDecorator<*, *>) {
             this.decorated.type
         } else {
-            this::class.simpleName!!.substringAfterLast(".").substringBefore("Step")
+            this::class.java.canonicalName.substringAfterLast(".").substringBefore("Step")
         }.let { StringUtils.splitByCharacterTypeCamelCase(it).joinToString("-") { it.lowercase() } }
 
     /**
      * Verifies whether the step only exists for technical reason and should not be seen from the users.
      */
-    val Step<*, *>.isTechnical: Boolean
+    val Step<*, *>.isHidden: Boolean
         get() = this.name.startsWith("__")
 
     /**

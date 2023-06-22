@@ -41,6 +41,7 @@ import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
@@ -63,7 +64,8 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val headConfiguration: HeadConfiguration,
     private val coroutineScope: CoroutineScope,
     private val campaignExecutionContext: C,
-    private val campaignConstraintsProvider: CampaignConstraintsProvider
+    private val campaignConstraintsProvider: CampaignConstraintsProvider,
+    private val campaignHooks: Collection<CampaignHook>
 ) : CampaignExecutor, FeedbackListener<Feedback> {
 
     private val processingMutex = Mutex()
@@ -155,6 +157,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         }
         runningCampaign.hardTimeoutSec = hardTimeout.epochSecond
         runningCampaign.softTimeoutSec = softTimeout?.takeIf { it < hardTimeout }?.epochSecond ?: -1
+        campaignHooks.forEach { it.preStart(runningCampaign) }
         campaignService.start(tenant, runningCampaign.key, start, softTimeout, hardTimeout)
 
         selectedScenarios.forEach {

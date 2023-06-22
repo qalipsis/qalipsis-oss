@@ -29,6 +29,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.sync.Latch
+import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -65,6 +66,28 @@ internal class StepContextImpl<IN, OUT>(
     private var latch: Latch? = null
     private var immutableEventTags: Map<String, String>? = null
     private var immutableMetersTags: Tags? = null
+
+    private val bufferedOutputRecords = SuspendedCountLatch()
+
+    /**
+     * Awaits that the output is totally consumed.
+     */
+    suspend fun awaitEmptyOutput() {
+        if (generatedOutput) {
+            bufferedOutputRecords.await()
+        }
+    }
+
+    suspend fun consume(block: suspend (StepContext.StepOutputRecord<OUT>) -> Unit) {
+        for (outputRecord in output as Channel<StepContext.StepOutputRecord<OUT>>) {
+            try {
+                block(outputRecord)
+            } finally {
+                bufferedOutputRecords.decrement()
+            }
+        }
+    }
+
     override var generatedOutput: Boolean = false
 
     override val errors: List<StepError>
@@ -72,6 +95,7 @@ internal class StepContextImpl<IN, OUT>(
 
     override val hasInput: Boolean
         get() = !input.isEmpty
+
 
     override val equivalentCompletionContext: CompletionContext
         get() = DefaultCompletionContext(
@@ -99,6 +123,7 @@ internal class StepContextImpl<IN, OUT>(
      * Send a record to the next steps.
      */
     override suspend fun send(element: OUT) {
+        bufferedOutputRecords.increment()
         output.send(StepContext.StepOutputRecord(element, isTail))
         generatedOutput = true
     }
@@ -215,7 +240,7 @@ internal class StepContextImpl<IN, OUT>(
     }
 
     override fun toString(): String {
-        return "StepContextImpl(campaignKey='$campaignKey', minionId='$minionId', scenarioName='$scenarioName', parentStepName=$previousStepName, stepName='$stepName', isTail='$isTail', iteration='$stepIterationIndex')"
+        return "StepContextImpl(campaignKey='$campaignKey', minionId='$minionId', scenarioName='$scenarioName', parentStepName=$previousStepName, stepName='$stepName', isTail='$isTail', iteration='$stepIterationIndex', generatedOutput='$generatedOutput')"
     }
 
 }

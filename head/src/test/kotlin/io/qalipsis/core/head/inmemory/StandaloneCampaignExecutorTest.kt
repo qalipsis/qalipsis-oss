@@ -62,6 +62,7 @@ import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
@@ -113,6 +114,12 @@ internal class StandaloneCampaignExecutorTest {
 
     @RelaxedMockK
     private lateinit var validation: DefaultCampaignConfiguration.Validation
+
+    @RelaxedMockK
+    private lateinit var campaignHook1: CampaignHook
+
+    @RelaxedMockK
+    private lateinit var campaignHook2: CampaignHook
 
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
@@ -203,6 +210,8 @@ internal class StandaloneCampaignExecutorTest {
                 campaignService.prepare("my-tenant", "my-campaign")
                 headChannel.subscribeFeedback("feedbacks")
                 campaignConstraintsProvider.supply(any())
+                campaignHook1.preStart(refEq(runningCampaign))
+                campaignHook2.preStart(refEq(runningCampaign))
                 campaignService.start("my-tenant", "my-campaign", any(), any(), any())
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-1", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
@@ -227,7 +236,9 @@ internal class StandaloneCampaignExecutorTest {
                 campaignReportStateKeeper,
                 headConfiguration,
                 campaignConstraintsProvider,
-                campaignExecutionContext
+                campaignExecutionContext,
+                campaignHook1,
+                campaignHook2
             )
         }
 
@@ -693,7 +704,8 @@ internal class StandaloneCampaignExecutorTest {
                 headConfiguration,
                 campaignConstraintsProvider,
                 scope,
-                campaignExecutionContext
+                campaignExecutionContext,
+                listOf(campaignHook1, campaignHook2)
             ), recordPrivateCalls = true
         )
 }

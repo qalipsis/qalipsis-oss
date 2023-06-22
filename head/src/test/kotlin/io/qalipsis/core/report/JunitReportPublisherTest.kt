@@ -87,7 +87,7 @@ internal class JunitReportPublisherTest {
                     messages = listOf(
                         ReportMessage(
                             stepName = "normal test",
-                            messageId = 1,
+                            messageId = "1",
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         )
@@ -145,13 +145,13 @@ internal class JunitReportPublisherTest {
                     messages = listOf(
                         ReportMessage(
                             stepName = "normal test",
-                            messageId = 1,
+                            messageId = "1",
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         ),
                         ReportMessage(
                             stepName = "failed test",
-                            messageId = 2,
+                            messageId = "2",
                             severity = ReportMessageSeverity.ERROR,
                             message = "failed"
                         )
@@ -211,13 +211,13 @@ internal class JunitReportPublisherTest {
                     messages = listOf(
                         ReportMessage(
                             stepName = "normal test",
-                            messageId = 1,
+                            messageId = "1",
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         ),
                         ReportMessage(
                             stepName = "failed test",
-                            messageId = 2,
+                            messageId = "2",
                             severity = ReportMessageSeverity.ERROR,
                             message = "failed"
                         )
@@ -236,13 +236,13 @@ internal class JunitReportPublisherTest {
                     messages = listOf(
                         ReportMessage(
                             stepName = "normal test",
-                            messageId = 1,
+                            messageId = "1",
                             severity = ReportMessageSeverity.INFO,
                             message = "passed"
                         ),
                         ReportMessage(
                             stepName = "failed test",
-                            messageId = 2,
+                            messageId = "2",
                             severity = ReportMessageSeverity.ERROR,
                             message = "failed"
                         )

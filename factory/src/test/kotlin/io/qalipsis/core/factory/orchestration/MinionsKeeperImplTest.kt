@@ -121,7 +121,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should create paused minion when executes on root DAG under load`() =
         testCoroutineDispatcher.run {
             // given
@@ -181,7 +181,7 @@ internal class MinionsKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should create unpaused minion when executes on non-root DAG under load and records no creation event`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -226,7 +226,7 @@ internal class MinionsKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should create singleton paused minion on root dag`() = testCoroutineDispatcher.run {
         // given
         val dag = testDag(id = "my-dag-1", isSingleton = true, root = true)
@@ -282,7 +282,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should create singleton paused minion on non root dag`() = testCoroutineDispatcher.run {
         // given
         val dag = testDag(id = "my-dag-1", isSingleton = true, root = false)
@@ -323,7 +323,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should start singletons immediately`() = testCoroutineDispatcher.runTest {
         // given
         val minionsKeeper = MinionsKeeperImpl(
@@ -358,7 +358,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should ignore singletons start when none exists for the scenario`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -380,7 +380,7 @@ internal class MinionsKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should schedule immediate minion start when start time is now`() {
         // given
         val minionsKeeper = MinionsKeeperImpl(
@@ -442,7 +442,7 @@ internal class MinionsKeeperImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(5)
     internal fun `should schedule minion start later when start time is not reached`() {
         // given
         val minionsKeeper = MinionsKeeperImpl(

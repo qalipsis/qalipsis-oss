@@ -67,6 +67,7 @@ internal class QalipsisBootstrapWithExternalSourcesIntegrationTest {
             arrayOf(
                 "-a",
                 "-s", "do-nothing-scenario",
+                "-c", "report.export.console.enabled=false",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
                 "-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",

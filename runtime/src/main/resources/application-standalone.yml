@@ -1,10 +1,12 @@
 report:
   export:
     console:
-      enabled: true
+      enabled: false
     junit:
       enabled: false
       folder: test-results
+    console-live:
+      enabled: true
 
 head:
   handshake-request-channel: handshake-request
@@ -22,3 +24,8 @@ micronaut:
       type: SCHEDULED
       core-pool-size: 2
       number-of-threads: 4
+
+logging:
+  annotations.enabled: false
+  file:
+    async: true

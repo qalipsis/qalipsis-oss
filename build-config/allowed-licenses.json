@@ -55,6 +55,9 @@
       "moduleLicense": "The 2-Clause BSD License"
     },
     {
+      "moduleLicense": "The 3-Clause BSD License"
+    },
+    {
       "moduleLicense": ".*",
       "moduleName": "com.amazonaws:aws-java-sdk-bom"
     },
@@ -157,6 +160,10 @@
     {
       "moduleLicense": ".*",
       "moduleName": "org.apache.logging.log4j:log4j-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "net.jcip:jcip-annotations"
     }
   ]
 }

@@ -32,6 +32,7 @@ import assertk.assertions.isNotSameAs
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
 import assertk.assertions.matches
+import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -44,7 +45,9 @@ import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfileIterator
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.executionprofile.RegularExecutionProfile
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Scenario
+import io.qalipsis.api.runtime.ScenarioStartStopConfiguration
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
@@ -111,6 +114,9 @@ internal class FactoryCampaignManagerImplTest {
 
     @RelaxedMockK
     private lateinit var contextConsumerOptional: Optional<ContextConsumer>
+
+    @RelaxedMockK
+    lateinit var campaignReportLiveStateRegistry: CampaignReportLiveStateRegistry
 
     @BeforeEach
     internal fun setUp() {
@@ -203,6 +209,7 @@ internal class FactoryCampaignManagerImplTest {
         factoryChannel,
         sharedStateRegistry,
         Optional.of(contextConsumer),
+        campaignReportLiveStateRegistry,
         this
     )
 
@@ -257,7 +264,14 @@ internal class FactoryCampaignManagerImplTest {
         coVerifyOrder {
             minionAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             scenarioRegistry["my-scenario"]
-            scenario.start("my-campaign")
+            scenario.start(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
             contextConsumer.start()
         }
         confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
@@ -317,7 +331,14 @@ internal class FactoryCampaignManagerImplTest {
         coVerifyOrder {
             minionAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             scenarioRegistry["my-scenario"]
-            scenario.start("my-campaign")
+            scenario.start(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
         }
         confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
     }
@@ -967,6 +988,7 @@ internal class FactoryCampaignManagerImplTest {
                 factoryChannel,
                 sharedStateRegistry,
                 Optional.of(contextConsumer),
+                campaignReportLiveStateRegistry,
                 this,
                 minionGracefulShutdown = Duration.ofMillis(5)
             )
@@ -1007,7 +1029,14 @@ internal class FactoryCampaignManagerImplTest {
             // then
             coVerifyOrder {
                 contextConsumer.stop()
-                scenario.stop("my-campaign")
+                scenario.stop(withArg {
+                    assertThat(it).all {
+                        prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                        prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                            campaignReportLiveStateRegistry
+                        )
+                    }
+                })
             }
             confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
         }
@@ -1026,7 +1055,14 @@ internal class FactoryCampaignManagerImplTest {
         // then
         coVerifyOrder {
             contextConsumer.stop()
-            scenario.stop("my-campaign")
+            scenario.stop(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
         }
         confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
     }
@@ -1045,6 +1081,7 @@ internal class FactoryCampaignManagerImplTest {
             factoryChannel,
             sharedStateRegistry,
             Optional.of(contextConsumer),
+            campaignReportLiveStateRegistry,
             this,
             scenarioGracefulShutdown = Duration.ofMillis(1)
         )
@@ -1060,7 +1097,14 @@ internal class FactoryCampaignManagerImplTest {
         // then
         coVerifyOrder {
             contextConsumer.stop()
-            scenario.stop("my-campaign")
+            scenario.stop(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
         }
         confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
     }
@@ -1080,6 +1124,7 @@ internal class FactoryCampaignManagerImplTest {
             factoryChannel,
             sharedStateRegistry,
             Optional.of(contextConsumer),
+            campaignReportLiveStateRegistry,
             this
         )
 
@@ -1092,7 +1137,14 @@ internal class FactoryCampaignManagerImplTest {
         assertThat(exception.message).isEqualTo("There is an error")
         coVerifyOrder {
             contextConsumer.stop()
-            scenario.stop("my-campaign")
+            scenario.stop(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
         }
         confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
     }
@@ -1134,8 +1186,22 @@ internal class FactoryCampaignManagerImplTest {
         // then
         coVerifyOnce {
             minionsKeeper.shutdownAll()
-            scenario1.stop("my-campaign")
-            scenario2.stop("my-campaign")
+            scenario1.stop(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
+            scenario2.stop(withArg {
+                assertThat(it).all {
+                    prop(ScenarioStartStopConfiguration::campaignKey).isEqualTo("my-campaign")
+                    prop(ScenarioStartStopConfiguration::campaignReportLiveStateRegistry).isSameAs(
+                        campaignReportLiveStateRegistry
+                    )
+                }
+            })
             sharedStateRegistry.clear()
         }
         assertThat(factoryCampaignManager).all {

@@ -43,13 +43,16 @@ internal class IterativeStepDecoratorSpecificationConverter :
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification
         if (spec.iterations > 1) {
-            val iterativeStep = IterativeStepDecorator(spec.iterations,
-                if (!spec.iterationPeriods.isNegative) spec.iterationPeriods else Duration.ZERO,
-                creationContext.createdStep!!)
+            val iterativeStep = IterativeStepDecorator(
+                iterations = spec.iterations,
+                delay = if (!spec.iterationPeriods.isNegative) spec.iterationPeriods else Duration.ZERO,
+                stopOnError = spec.stopIterationsOnError,
+                decorated = creationContext.createdStep!!
+            )
             if (spec.nextSteps.isEmpty()) {
                 log.trace { "Adding a black hole step to the iterative step with no next" }
                 // Add a black hole in order to consume the output and make sure all the iterations can be performed.
-                spec.add(BlackHoleStepSpecification<Any?>())
+                spec.add(BlackHoleStepSpecification<Any?>().apply { name = "__" })
             }
             creationContext.createdStep(iterativeStep)
         }

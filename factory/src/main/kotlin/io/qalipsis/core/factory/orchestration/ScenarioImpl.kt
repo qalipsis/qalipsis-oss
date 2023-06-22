@@ -31,6 +31,7 @@ import io.qalipsis.api.retry.NoRetryPolicy
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Scenario
+import io.qalipsis.api.runtime.ScenarioStartStopConfiguration
 import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.annotations.LogInput
@@ -38,9 +39,7 @@ import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -51,8 +50,7 @@ internal class ScenarioImpl(
     override val executionProfile: ExecutionProfile,
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
-    private val factoryChannel: FactoryChannel,
-    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
+    private val factoryChannel: FactoryChannel
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepName, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
@@ -92,19 +90,19 @@ internal class ScenarioImpl(
     }
 
     @LogInput(level = Level.DEBUG)
-    override suspend fun start(campaignKey: CampaignKey) {
+    override suspend fun start(configuration: ScenarioStartStopConfiguration) {
         val scenarioName = this.name
         try {
-            startAllDags(scenarioName, campaignKey)
+            startAllDags(configuration.campaignKey, scenarioName)
         } catch (e: Exception) {
             log.error(e) { "An error occurred while starting the scenario $scenarioName: ${e.message}" }
-            stopAllDags(campaignKey, scenarioName)
+            stopAllDags(configuration.campaignKey, scenarioName)
         }
     }
 
     private suspend fun startAllDags(
-        scenarioName: ScenarioName,
-        campaignKey: CampaignKey
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName
     ) {
         internalDags.values.forEach { dag ->
             CampaignStartedForDagFeedback(
@@ -153,31 +151,30 @@ internal class ScenarioImpl(
         }
     }
 
-    private suspend fun startStepRecursively(step: Step<*, *>, context: StepStartStopContext) {
-        // The start is not surrounded by a try catch because they all have to start successfully to be able to start
-        // a campaign.
-        withTimeout(stepStartTimeout.toMillis()) {
-            step.start(context)
-        }
-        step.next.forEach {
-            startStepRecursively(it, context)
+    private suspend fun startStepRecursively(
+        step: Step<*, *>,
+        context: StepStartStopContext
+    ) {
+        step.start(context.copy(stepName = step.name))
+        step.next.forEach { nextStep ->
+            startStepRecursively(nextStep, context)
         }
     }
 
     @LogInput(level = Level.DEBUG)
-    override suspend fun stop(campaignKey: CampaignKey) {
+    override suspend fun stop(configuration: ScenarioStartStopConfiguration) {
         val scenarioName = this.name
-        stopAllDags(campaignKey, scenarioName)
+        stopAllDags(configuration.campaignKey, scenarioName)
     }
 
     private suspend fun stopAllDags(campaignKey: CampaignKey, scenarioName: ScenarioName) {
-        internalDags.values.map { it.name to it.rootStep.get() }.forEach {
+        internalDags.values.map { it.name to it.rootStep.get() }.forEach { (dagName, step) ->
             stopStepRecursively(
-                it.second, StepStartStopContext(
+                step, StepStartStopContext(
                     campaignKey = campaignKey,
                     scenarioName = scenarioName,
-                    dagId = it.first,
-                    stepName = it.second.name
+                    dagId = dagName,
+                    stepName = step.name
                 )
             )
         }
@@ -186,7 +183,7 @@ internal class ScenarioImpl(
 
     private suspend fun stopStepRecursively(step: Step<*, *>, context: StepStartStopContext) {
         tryAndLogOrNull(log) {
-            step.stop(context)
+            step.stop(context.copy(stepName = step.name))
         }
         step.next.forEach {
             stopStepRecursively(it, context)

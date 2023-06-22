@@ -51,7 +51,7 @@ interface ScenarioReportingExecutionState {
 
     val status: ExecutionStatus?
 
-    val messages: Map<Any, ReportMessage>
+    val messages: List<ReportMessage>
 
     fun toReport(campaignKey: String): ScenarioReport {
         val endTimestamp = end
@@ -62,9 +62,9 @@ interface ScenarioReportingExecutionState {
             endTimestamp ?: abortTimestamp ?: Instant.now()
         }
         val actualStatus = status ?: when {
-            messages.values.any { it.severity == ReportMessageSeverity.ABORT } -> ExecutionStatus.ABORTED
-            messages.values.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
-            messages.values.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
+            abortTimestamp != null || messages.any { it.severity == ReportMessageSeverity.ABORT } -> ExecutionStatus.ABORTED
+            failedStepExecutions > 0 || messages.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
+            messages.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
             else -> ExecutionStatus.SUCCESSFUL
         }
 
@@ -78,7 +78,7 @@ interface ScenarioReportingExecutionState {
             successfulStepExecutions,
             failedStepExecutions,
             actualStatus,
-            messages.values.toList()
+            messages
         )
     }
 }

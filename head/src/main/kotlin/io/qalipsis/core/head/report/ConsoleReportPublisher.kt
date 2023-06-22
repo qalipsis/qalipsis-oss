@@ -26,6 +26,8 @@ import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.core.configuration.ExecutionEnvironments.HEAD
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.head.inmemory.consolereporter.ConsoleCampaignProgressionReporter
+import jakarta.annotation.Nullable
 import jakarta.inject.Singleton
 import java.time.Duration
 
@@ -40,13 +42,16 @@ import java.time.Duration
     Requires(env = [HEAD, STANDALONE]),
     Requires(property = "report.export.console.enabled", defaultValue = "false", value = "true")
 )
-internal class ConsoleReportPublisher : CampaignReportPublisher {
+internal class ConsoleReportPublisher(
+    @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?
+) : CampaignReportPublisher {
 
     override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
-        val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }
+        consoleCampaignProgressionReporter?.report() ?: run {
+            val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }
 
-        println(
-            """
+            println(
+                """
 ============================================================
 =====================  CAMPAIGN REPORT =====================
 ============================================================   
@@ -62,12 +67,12 @@ Failed steps executions............${report.failedExecutions}
 Status.............................${report.status}
    
         """
-        )
+            )
 
-        report.scenariosReports.forEach { scenarioReport ->
-            val scenarioDuration = scenarioReport.end.let { Duration.between(report.start, it).toSeconds() }
-            println(
-                """
+            report.scenariosReports.forEach { scenarioReport ->
+                val scenarioDuration = scenarioReport.end.let { Duration.between(report.start, it).toSeconds() }
+                println(
+                    """
 =====================  SCENARIO REPORT =====================
 Scenario...........................${scenarioReport.scenarioName}
 Start..............................${scenarioReport.start}
@@ -80,14 +85,15 @@ Failed steps executions............${scenarioReport.failedExecutions}
 Status.............................${scenarioReport.status}
 Messages:
 ${
-                    if (scenarioReport.messages.isEmpty()) "\tNone" else scenarioReport.messages.joinToString(
-                        "\n"
-                    ) {
-                        "- ${it.severity}:".padEnd(10) + "step '${it.stepName}' - ${it.message}"
+                        if (scenarioReport.messages.isEmpty()) "\tNone" else scenarioReport.messages.joinToString(
+                            "\n"
+                        ) {
+                            "- ${it.severity}:".padEnd(10) + "step '${it.stepName}' - ${it.message}"
+                        }
                     }
-                }
         """
-            )
+                )
+            }
         }
     }
 

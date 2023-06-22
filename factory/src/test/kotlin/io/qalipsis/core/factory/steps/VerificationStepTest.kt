@@ -105,13 +105,6 @@ internal class VerificationStepTest {
         coVerifyOnce {
             successCounter.increment()
             eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
-            reportLiveStateRegistry.put(
-                eq("my-campaign"),
-                eq("my-scenario"),
-                eq("my-step"),
-                eq(ReportMessageSeverity.INFO),
-                any()
-            )
         }
 
         confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
@@ -142,13 +135,6 @@ internal class VerificationStepTest {
         coVerifyOnce {
             successCounter.increment()
             eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
-            reportLiveStateRegistry.put(
-                eq("my-campaign"),
-                eq("my-scenario"),
-                eq("my-step"),
-                eq(ReportMessageSeverity.INFO),
-                any()
-            )
         }
         confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
     }
@@ -216,12 +202,38 @@ internal class VerificationStepTest {
         coVerifyOnce {
             errorCounter.increment()
             eventsLogger.warn("step.assertion.error", value = "The error", timestamp = any(), tagsSupplier = any())
+        }
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
+    }
+
+    @Test
+    @Timeout(1)
+    fun `should not forward data when assertion fails`() = runBlockingTest {
+        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) {
+            throw Error("The error")
+        }
+        step.start(stepStartStopContext)
+        val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
+
+        step.execute(ctx)
+        step.stop(relaxedMockk {
+            every { campaignKey } returns "my-campaign"
+            every { scenarioName } returns "my-scenario"
+        })
+        assertTrue((ctx.output as Channel).isEmpty)
+
+        assertFalse((ctx.output as Channel).isClosedForReceive)
+        assertTrue(ctx.isExhausted)
+
+        coVerifyOnce {
+            failureCounter.increment()
+            eventsLogger.warn("step.assertion.failure", value = "The error", timestamp = any(), tagsSupplier = any())
             reportLiveStateRegistry.put(
                 eq("my-campaign"),
                 eq("my-scenario"),
                 eq("my-step"),
                 eq(ReportMessageSeverity.ERROR),
-                any()
+                "Assertion failure(s): 1"
             )
         }
         confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)

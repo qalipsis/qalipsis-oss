@@ -49,3 +49,5 @@ factory:
     minion: 500ms
     scenario: 1s
     campaign: 3s
+
+report.export.console-live.enabled: false

@@ -19,14 +19,22 @@
 
 package io.qalipsis.core.factory.steps.converters
 
+import io.micronaut.context.annotation.Property
 import io.qalipsis.api.annotations.StepConverter
+import io.qalipsis.api.constraints.PositiveDuration
+import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.AbstractStepSpecification
+import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
+import io.qalipsis.core.factory.orchestration.StepUtils.isHidden
 import io.qalipsis.core.factory.steps.ReportingStepDecorator
+import io.qalipsis.core.factory.steps.StartStopReportingStepDecorator
+import java.time.Duration
 
 /**
  * [StepSpecificationDecoratorConverter] from any [AbstractStepSpecification] to [ReportingStepDecorator].
@@ -35,15 +43,38 @@ import io.qalipsis.core.factory.steps.ReportingStepDecorator
  */
 @StepConverter
 internal class ReportingStepDecoratorSpecificationConverter(
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
+    private val eventsLogger: EventsLogger,
+    private val meterRegistry: CampaignMeterRegistry,
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
+    @PositiveDuration
+    @Property(name = "campaign.step.start-timeout", defaultValue = "30s")
+    private val stepStartTimeout: Duration,
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 
     override val order: Int = 100
 
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
-        val spec = creationContext.stepSpecification
-        if (spec.reporting.reportErrors) {
-            creationContext.createdStep(ReportingStepDecorator(creationContext.createdStep!!, reportLiveStateRegistry))
+        val specification = creationContext.stepSpecification
+        if (specification is SingletonStepSpecification || creationContext.createdStep!!.isHidden) {
+            creationContext.createdStep(
+                StartStopReportingStepDecorator(
+                    creationContext.createdStep!!,
+                    eventsLogger,
+                    reportLiveStateRegistry,
+                    stepStartTimeout
+                )
+            )
+        } else {
+            creationContext.createdStep(
+                ReportingStepDecorator(
+                    creationContext.createdStep!!,
+                    creationContext.stepSpecification.reporting.reportErrors,
+                    eventsLogger,
+                    meterRegistry,
+                    reportLiveStateRegistry,
+                    stepStartTimeout
+                )
+            )
         }
     }
 

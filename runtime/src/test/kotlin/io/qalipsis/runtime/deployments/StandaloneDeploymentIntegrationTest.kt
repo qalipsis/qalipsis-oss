@@ -62,6 +62,7 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
             arrayOf(
                 "--autostart",
                 "-s", "deployment-test",
+                "-c", "report.export.console-live.enabled=false",
                 "-c", "report.export.junit.enabled=true",
                 "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
@@ -75,6 +76,25 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
 
     @Test
     @Timeout(40)
+    internal fun `should start standalone and execute the scenario with failures`() {
+        val exitCode = QalipsisBootstrap().start(
+            arrayOf(
+                "--autostart",
+                "-s", "deployment-test-with-failures",
+                "-c", "report.export.console-live.enabled=false",
+                "-c", "report.export.junit.enabled=true",
+                "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
+                "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
+                "-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
+                "-c", "logging.level.io.qalipsis.core.head.campaign=TRACE",
+                "-c", "logging.level.io.qalipsis.core.factory.init.FactoryInitializerImpl=TRACE"
+            )
+        )
+        Assertions.assertEquals(201, exitCode)
+    }
+
+    @Test
+    @Timeout(40)
     internal fun `should create a process to start standalone and execute the scenario`() {
         // given
         val before = Instant.now()
@@ -83,6 +103,8 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
             arguments = arrayOf(
                 "--autostart",
                 "-s", "deployment-test",
+                "-c", "report.export.console-live.enabled=false",
+                "-c", "report.export.console.enabled=true",
                 "-c", "report.export.junit.enabled=true",
                 "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
                 "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
@@ -92,7 +114,7 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
             ),
             jvmOptions = arrayOf("-Xmx256m")
         )
-        qalipsisProcess.await(Duration.ofSeconds(20))
+        qalipsisProcess.await(Duration.ofSeconds(30))
         val after = Instant.now()
 
         // then

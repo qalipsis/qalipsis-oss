@@ -20,7 +20,8 @@
 package io.qalipsis.core.factory.redis
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
+import io.lettuce.core.api.async.RedisHashAsyncCommands
+import io.lettuce.core.api.async.RedisListAsyncCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
@@ -37,7 +38,8 @@ import jakarta.inject.Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalLettuceCoroutinesApi
 internal class RedisCampaignReportLiveStateRegistry(
-    private val redisCommands: RedisHashCoroutinesCommands<String, String>,
+    private val redisHashCommands: RedisHashAsyncCommands<String, String>,
+    private val redisListCommands: RedisListAsyncCommands<String, String>,
     private val idGenerator: IdGenerator
 ) : CampaignReportLiveStateRegistry {
 
@@ -49,7 +51,7 @@ internal class RedisCampaignReportLiveStateRegistry(
         messageId: Any
     ) {
         val field = "${stepName}/${messageId}"
-        redisCommands.hdel(buildRedisReportKey(campaignKey, scenarioName), field)
+        redisHashCommands.hdel(buildRedisReportKey(campaignKey, scenarioName), field)
     }
 
     @LogInputAndOutput
@@ -58,13 +60,13 @@ internal class RedisCampaignReportLiveStateRegistry(
         scenarioName: ScenarioName,
         stepName: StepName,
         severity: ReportMessageSeverity,
-        messageId: Any?,
+        messageId: String?,
         message: String
-    ): Any {
-        return (messageId?.toString()?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
+    ): String {
+        return (messageId?.takeIf(String::isNotBlank) ?: idGenerator.short()).also { id ->
             val field = "${stepName}/${id}"
             val value = "${severity}/${message.trim()}"
-            redisCommands.hset(buildRedisReportKey(campaignKey, scenarioName), field, value)
+            redisHashCommands.hset(buildRedisReportKey(campaignKey, scenarioName), field, value)
         }
     }
 
@@ -78,17 +80,48 @@ internal class RedisCampaignReportLiveStateRegistry(
     ) = "${campaignKey}-report:${scenarioName}"
 
     @LogInput
+    override suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int) {
+        redisHashCommands.hincrby(buildRedisReportKey(campaignKey, scenarioName), STARTED_MINIONS_FIELD, count.toLong())
+        redisHashCommands.hincrby(buildRedisReportKey(campaignKey, scenarioName), RUNNING_MINIONS_FIELD, count.toLong())
+    }
+
+    @LogInput
     override suspend fun recordCompletedMinion(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         count: Int
-    ): Long {
-        redisCommands.hincrby(buildRedisReportKey(campaignKey, scenarioName), COMPLETED_MINIONS_FIELD, count.toLong())
-        return redisCommands.hincrby(
+    ) {
+        redisHashCommands.hincrby(
+            buildRedisReportKey(campaignKey, scenarioName),
+            COMPLETED_MINIONS_FIELD,
+            count.toLong()
+        )
+        redisHashCommands.hincrby(
             buildRedisReportKey(campaignKey, scenarioName),
             RUNNING_MINIONS_FIELD,
             -1 * count.toLong()
-        ) ?: 0
+        )
+    }
+
+    override suspend fun recordFailedStepInitialization(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        cause: Throwable?
+    ) {
+        val key = buildRedisReportKey(campaignKey, scenarioName) + FAILED_STEP_INITIALIZATION_KEY_POSTFIX
+        val causeName = cause?.javaClass?.canonicalName?.let { "$it: " } ?: ""
+        val causeMessage = cause?.message ?: "<Unknown>"
+        redisHashCommands.hset(key, stepName, "$causeName$causeMessage")
+    }
+
+    override suspend fun recordSuccessfulStepInitialization(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        stepName: StepName
+    ) {
+        val key = buildRedisReportKey(campaignKey, scenarioName) + SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX
+        redisListCommands.rpush(key, stepName)
     }
 
     @LogInput
@@ -98,20 +131,10 @@ internal class RedisCampaignReportLiveStateRegistry(
         stepName: StepName,
         count: Int,
         cause: Throwable?
-    ): Long {
-        val key = buildRedisReportKey(campaignKey, scenarioName) + FAILED_STEP_EXECUTION_KEY_POSTFIX
-        return redisCommands.hincrby(key, stepName, count.toLong()) ?: 0
-    }
-
-    @LogInput
-    override suspend fun recordStartedMinion(campaignKey: CampaignKey, scenarioName: ScenarioName, count: Int): Long {
-        redisCommands.hincrby(buildRedisReportKey(campaignKey, scenarioName), STARTED_MINIONS_FIELD, count.toLong())
-        return redisCommands.hincrby(
-            buildRedisReportKey(campaignKey, scenarioName),
-            RUNNING_MINIONS_FIELD,
-            count.toLong()
-        )
-            ?: 0
+    ) {
+        val failureKey = buildRedisReportKey(campaignKey, scenarioName) + FAILED_STEP_EXECUTION_KEY_POSTFIX
+        val causeName = cause?.javaClass?.canonicalName ?: "<Unknown>"
+        redisHashCommands.hincrby(failureKey, "$stepName:$causeName", count.toLong())
     }
 
     @LogInput
@@ -120,9 +143,9 @@ internal class RedisCampaignReportLiveStateRegistry(
         scenarioName: ScenarioName,
         stepName: StepName,
         count: Int
-    ): Long {
+    ) {
         val key = buildRedisReportKey(campaignKey, scenarioName) + SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX
-        return redisCommands.hincrby(key, stepName, count.toLong()) ?: 0
+        redisHashCommands.hincrby(key, stepName, count.toLong())
     }
 
     private companion object {
@@ -136,6 +159,10 @@ internal class RedisCampaignReportLiveStateRegistry(
         const val SUCCESSFUL_STEP_EXECUTION_KEY_POSTFIX = ":successful-step-executions"
 
         const val FAILED_STEP_EXECUTION_KEY_POSTFIX = ":failed-step-executions"
+
+        const val SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX = ":successful-step-initializations"
+
+        const val FAILED_STEP_INITIALIZATION_KEY_POSTFIX = ":failed-step-initializations"
 
     }
 

@@ -165,7 +165,7 @@ internal class CampaignAutoStarter(
     @LogInput
     suspend fun completeCampaign(directive: CompleteCampaignDirective) {
         if (directive.isSuccessful) {
-            log.info { "The campaign ${directive.campaignKey} was completed successfully: ${directive.message ?: "<no detail>"}" }
+            log.info { "The campaign ${directive.campaignKey} was completed: ${directive.message?.takeIf { it.isNotBlank() } ?: "<no detail>"}" }
         } else {
             log.error { "The campaign ${directive.campaignKey} failed: ${directive.message ?: "<no detail>"}" }
             error = directive.message?.takeIf { it.isNotBlank() }

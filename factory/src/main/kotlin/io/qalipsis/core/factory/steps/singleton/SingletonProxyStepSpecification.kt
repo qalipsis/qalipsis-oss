@@ -27,7 +27,6 @@ import io.qalipsis.api.scenario.StepSpecificationRegistry
 import io.qalipsis.api.steps.StepReportingSpecification
 import io.qalipsis.api.steps.StepSpecification
 import java.time.Duration
-import javax.validation.constraints.Positive
 
 /**
  * Specification for a [io.qalipsis.api.steps.Step] running behind a singleton.
@@ -50,10 +49,11 @@ internal open class SingletonProxyStepSpecification<T>(
 
     override var timeout: Duration? = null
 
-    @field:Positive
-    override var iterations: Long = 0
+    override val iterations: Long = 0
 
-    override var iterationPeriods: Duration = Duration.ZERO
+    override val iterationPeriods: Duration = Duration.ZERO
+
+    override val stopIterationsOnError: Boolean = false
 
     override var retryPolicy: RetryPolicy? = null
 

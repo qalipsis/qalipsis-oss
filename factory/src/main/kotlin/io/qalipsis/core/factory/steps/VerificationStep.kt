@@ -30,7 +30,8 @@ import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.steps.AbstractStep
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Step to assert data.
@@ -47,11 +48,7 @@ internal class VerificationStep<I, O>(
     }
 ) : AbstractStep<I, O>(id, null) {
 
-    private val successCount = AtomicLong()
-
-    private val failureCount = AtomicLong()
-
-    private val errorCount = AtomicLong()
+    private val assertionFailuresCount = AtomicInteger()
 
     private lateinit var successMeter: Counter
 
@@ -59,11 +56,14 @@ internal class VerificationStep<I, O>(
 
     private lateinit var errorMeter: Counter
 
+    private var started = AtomicBoolean()
+
     override suspend fun start(context: StepStartStopContext) {
         val tags = context.toMetersTags()
         successMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "success"))
         failureMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "failure"))
         errorMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "error"))
+        started.set(true)
         super.start(context)
     }
 
@@ -71,18 +71,16 @@ internal class VerificationStep<I, O>(
         val input = context.receive()
         try {
             val output = assertionBlock(input)
-            successCount.incrementAndGet()
             successMeter.increment()
             eventsLogger.info("step.assertion.success") { context.toEventTags() }
             context.send(output)
         } catch (e: Error) {
-            failureCount.incrementAndGet()
+            assertionFailuresCount.incrementAndGet()
             context.isExhausted = true
             context.addError(StepError(e, this.name))
             failureMeter.increment()
             eventsLogger.warn("step.assertion.failure", value = e.message) { context.toEventTags() }
         } catch (t: Throwable) {
-            errorCount.incrementAndGet()
             context.isExhausted = true
             context.addError(StepError(t, this.name))
             errorMeter.increment()
@@ -90,17 +88,16 @@ internal class VerificationStep<I, O>(
         }
     }
 
-
     override suspend fun stop(context: StepStartStopContext) {
-        val result =
-            """"Success: ${successCount.get()}, Failures (verification errors): ${failureCount.get()}, Errors (execution errors): ${errorCount.get()}""""
-        val severity = if (failureCount.get() > 0 || errorCount.get() > 0) {
-            ReportMessageSeverity.ERROR
-        } else {
-            ReportMessageSeverity.INFO
+        if (started.compareAndExchange(true, false) && assertionFailuresCount.get() > 0) {
+            reportLiveStateRegistry.put(
+                context.campaignKey,
+                context.scenarioName,
+                this.name,
+                ReportMessageSeverity.ERROR,
+                "Assertion failure(s): ${assertionFailuresCount.get()}"
+            )
         }
-        reportLiveStateRegistry.put(context.campaignKey, context.scenarioName, this.name, severity, result)
-        log.info { "Stopping the verification step ${this.name} for the campaign ${context.campaignKey}: $result" }
         super.stop(context)
     }
 

@@ -26,3 +26,8 @@ factory:
 
 streaming:
   platform: redis
+
+logging:
+  annotations.enabled: false
+  file:
+    async: true

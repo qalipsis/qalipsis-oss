@@ -21,6 +21,8 @@ package io.qalipsis.core.factory.redis
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.util.concurrent.TimeoutException
 
 @ExperimentalLettuceCoroutinesApi
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
@@ -146,96 +149,128 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
     @Test
     internal fun `should count started and completed minions`() = testDispatcherProvider.run {
         // Starting minions.
-        var runningMinions = registry.recordStartedMinion("my-campaign", "my-scenario-1", 3)
-        assertThat(runningMinions).isEqualTo(3)
+        registry.recordStartedMinion("my-campaign", "my-scenario-1", 3)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__started-minions")).isEqualTo(3)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__running-minions")).isEqualTo(3)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__completed-minions")).isNull()
 
-        runningMinions = registry.recordStartedMinion("my-campaign", "my-scenario-2", 2)
-        assertThat(runningMinions).isEqualTo(2)
+        registry.recordStartedMinion("my-campaign", "my-scenario-2", 2)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__started-minions")).isEqualTo(2)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__running-minions")).isEqualTo(2)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__completed-minions")).isNull()
 
-        runningMinions = registry.recordStartedMinion("my-campaign", "my-scenario-1", 5)
-        assertThat(runningMinions).isEqualTo(8)
+        registry.recordStartedMinion("my-campaign", "my-scenario-1", 5)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__started-minions")).isEqualTo(8)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__running-minions")).isEqualTo(8)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__completed-minions")).isNull()
 
-        runningMinions = registry.recordStartedMinion("my-campaign", "my-scenario-2", 3)
-        assertThat(runningMinions).isEqualTo(5)
+        registry.recordStartedMinion("my-campaign", "my-scenario-2", 3)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__started-minions")).isEqualTo(5)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__running-minions")).isEqualTo(5)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__completed-minions")).isNull()
 
         // Completing minions.
-        runningMinions = registry.recordCompletedMinion("my-campaign", "my-scenario-1", 2)
-        assertThat(runningMinions).isEqualTo(6)
+        registry.recordCompletedMinion("my-campaign", "my-scenario-1", 2)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__started-minions")).isEqualTo(8)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__running-minions")).isEqualTo(6)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__completed-minions")).isEqualTo(2)
 
-        runningMinions = registry.recordCompletedMinion("my-campaign", "my-scenario-2", 1)
-        assertThat(runningMinions).isEqualTo(4)
+        registry.recordCompletedMinion("my-campaign", "my-scenario-2", 1)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__started-minions")).isEqualTo(5)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__running-minions")).isEqualTo(4)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__completed-minions")).isEqualTo(1)
 
-        runningMinions = registry.recordCompletedMinion("my-campaign", "my-scenario-1", 3)
-        assertThat(runningMinions).isEqualTo(3)
+        registry.recordCompletedMinion("my-campaign", "my-scenario-1", 3)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__started-minions")).isEqualTo(8)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__running-minions")).isEqualTo(3)
         assertThat(getCounter("my-campaign-report:my-scenario-1", "__completed-minions")).isEqualTo(5)
 
-        runningMinions = registry.recordCompletedMinion("my-campaign", "my-scenario-2", 4)
-        assertThat(runningMinions).isEqualTo(0)
+        registry.recordCompletedMinion("my-campaign", "my-scenario-2", 4)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__started-minions")).isEqualTo(5)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__running-minions")).isEqualTo(0)
         assertThat(getCounter("my-campaign-report:my-scenario-2", "__completed-minions")).isEqualTo(5)
     }
 
     @Test
+    internal fun `should count successful and failed step initializations`() = testDispatcherProvider.run {
+        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-1", "my-step-2")
+        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-1", "my-step-1")
+        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-2", "my-step-1")
+
+        registry.recordFailedStepInitialization("my-campaign", "my-scenario-1", "my-step-3")
+        registry.recordFailedStepInitialization(
+            "my-campaign",
+            "my-scenario-1",
+            "my-step-4",
+            TimeoutException("The process could not be completed in time")
+        )
+        registry.recordFailedStepInitialization(
+            "my-campaign",
+            "my-scenario-2",
+            "my-step-3",
+            TimeoutException("The other process could not be completed in time")
+        )
+
+        assertThat(getList("my-campaign-report:my-scenario-1:successful-step-initializations")).all {
+            hasSize(2)
+            containsExactly("my-step-2", "my-step-1")
+        }
+        assertThat(getList("my-campaign-report:my-scenario-2:successful-step-initializations")).all {
+            hasSize(1)
+            containsOnly("my-step-1")
+        }
+        assertThat(getValues("my-campaign-report:my-scenario-1:failed-step-initializations")).all {
+            hasSize(2)
+            key("my-step-3").isEqualTo("<Unknown>")
+            key("my-step-4").isEqualTo("java.util.concurrent.TimeoutException: The process could not be completed in time")
+        }
+        assertThat(getValues("my-campaign-report:my-scenario-2:failed-step-initializations")).all {
+            hasSize(1)
+            key("my-step-3").isEqualTo("java.util.concurrent.TimeoutException: The other process could not be completed in time")
+        }
+    }
+
+    @Test
     internal fun `should count successful and failed step executions`() = testDispatcherProvider.run {
-        var successes = registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-1")
-        assertThat(successes).isEqualTo(1)
+        registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-1")
+        registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-1")
+        registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-2")
+        registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-2", "my-step-1")
 
-        successes = registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-1")
-        assertThat(successes).isEqualTo(2)
-
-        successes = registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-2")
-        assertThat(successes).isEqualTo(1)
-
-        successes = registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-2", "my-step-1")
-        assertThat(successes).isEqualTo(1)
-
-        var failures = registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-1")
-        assertThat(failures).isEqualTo(1)
-        failures = registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-1")
-        assertThat(failures).isEqualTo(2)
-        failures = registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-1")
-        assertThat(failures).isEqualTo(3)
-
-        failures = registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-2")
-        assertThat(failures).isEqualTo(1)
-
-        failures = registry.recordFailedStepExecution("my-campaign", "my-scenario-2", "my-step-1")
-        assertThat(failures).isEqualTo(1)
-        failures = registry.recordFailedStepExecution("my-campaign", "my-scenario-2", "my-step-1")
-        assertThat(failures).isEqualTo(2)
+        registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-1")
+        registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-1", 1, TimeoutException(""))
+        registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-1", 3, TimeoutException(""))
+        registry.recordFailedStepExecution("my-campaign", "my-scenario-1", "my-step-2")
+        registry.recordFailedStepExecution("my-campaign", "my-scenario-2", "my-step-1")
+        registry.recordFailedStepExecution("my-campaign", "my-scenario-2", "my-step-1", 1, TimeoutException(""))
 
         assertThat(getCounter("my-campaign-report:my-scenario-1:successful-step-executions", "my-step-1")).isEqualTo(2)
         assertThat(getCounter("my-campaign-report:my-scenario-1:successful-step-executions", "my-step-2")).isEqualTo(1)
         assertThat(getCounter("my-campaign-report:my-scenario-2:successful-step-executions", "my-step-1")).isEqualTo(1)
         assertThat(getCounter("my-campaign-report:my-scenario-2:successful-step-executions", "my-step-3")).isNull()
 
-        assertThat(getCounter("my-campaign-report:my-scenario-1:failed-step-executions", "my-step-1")).isEqualTo(3)
-        assertThat(getCounter("my-campaign-report:my-scenario-1:failed-step-executions", "my-step-2")).isEqualTo(1)
-        assertThat(getCounter("my-campaign-report:my-scenario-2:failed-step-executions", "my-step-1")).isEqualTo(2)
-        assertThat(getCounter("my-campaign-report:my-scenario-2:failed-step-executions", "my-step-3")).isNull()
+        assertThat(getCounters("my-campaign-report:my-scenario-1:failed-step-executions")).all {
+            hasSize(3)
+            key("my-step-1:<Unknown>").isEqualTo(1)
+            key("my-step-1:java.util.concurrent.TimeoutException").isEqualTo(4)
+            key("my-step-2:<Unknown>").isEqualTo(1)
+        }
+        assertThat(getCounters("my-campaign-report:my-scenario-2:failed-step-executions")).all {
+            hasSize(2)
+            key("my-step-1:<Unknown>").isEqualTo(1)
+            key("my-step-1:java.util.concurrent.TimeoutException").isEqualTo(1)
+        }
     }
 
     private suspend fun getCounter(key: String, field: String): Int? =
         redisCoroutinesCommands.hget(key, field)?.toInt()
+
+    private suspend fun getCounters(key: String): Map<String, Int?> =
+        redisCoroutinesCommands.hgetall(key).toList().associate { it.key to it.value?.toIntOrNull() }
+
+    private suspend fun getList(key: String): List<String> =
+        redisCoroutinesCommands.lrange(key, 0, -1)
+
+    private suspend fun getValues(key: String): Map<String, String?> =
+        redisCoroutinesCommands.hgetall(key).toList().associate { it.key to it.value }
 }
