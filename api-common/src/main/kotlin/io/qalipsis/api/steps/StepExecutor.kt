@@ -17,6 +17,7 @@
 package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Minion
 
 /**
@@ -30,11 +31,20 @@ interface StepExecutor {
      * Executes a step either using its retry policy if defined or directly otherwise.
      */
     suspend fun <I, O> executeStep(minion: Minion, step: Step<I, O>, stepContext: StepContext<I, O>) {
-        if (step.retryPolicy != null) {
-            step.retryPolicy!!.execute(stepContext) { step.execute(minion, it) }
+        val retryPolicy = step.retryPolicy
+        if (retryPolicy != null) {
+            log.trace { "Executing the step ${step.name} with retry policy of type ${retryPolicy.javaClass.canonicalName} and context $stepContext" }
+            retryPolicy.execute(stepContext) { step.execute(minion, it) }
         } else {
+            log.trace { "Executing the step ${step.name} without retry policy and with context $stepContext" }
             step.execute(minion, stepContext)
         }
+    }
+
+    private companion object {
+
+        val log = logger()
+
     }
 
 }

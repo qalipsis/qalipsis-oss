@@ -63,8 +63,12 @@ interface ConfigurableStepSpecification<INPUT, OUTPUT, SELF : StepSpecification<
 
     /**
      * Defines how many times and how often the step execution has to be repeated.
+     *
+     * @param iterations count of iterations to perform
+     * @param period delay to wait between the end of an execution and the start of the next one (default to no delay)
+     * @param stopOnError stop the iterations when an execution fails (default to false)
      */
-    fun iterate(iterations: Long, period: Duration = Duration.ZERO)
+    fun iterate(iterations: Long, period: Duration = Duration.ZERO, stopOnError: Boolean = false)
 
     /**
      * Configures the reporting for the step.

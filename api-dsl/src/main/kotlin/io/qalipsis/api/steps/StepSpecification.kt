@@ -67,6 +67,11 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
     val iterationPeriods: Duration
 
     /**
+     * When the step has to be repeated via several iterations, specify whether an execution should stop the iterations.
+     */
+    val stopIterationsOnError: Boolean
+
+    /**
      * The [RetryPolicy] to apply when using the step, if it requires one.
      */
     val retryPolicy: RetryPolicy?

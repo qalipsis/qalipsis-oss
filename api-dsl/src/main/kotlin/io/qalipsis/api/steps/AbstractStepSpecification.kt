@@ -16,6 +16,7 @@
 
 package io.qalipsis.api.steps
 
+import io.qalipsis.api.constraints.PositiveOrZeroDuration
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.retry.RetryPolicy
@@ -24,7 +25,6 @@ import java.time.Duration
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
-import javax.validation.constraints.PositiveOrZero
 
 /**
  * Generic specification for the step specifications. The actual operations are added by extensions.
@@ -51,8 +51,10 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
     @field:Positive
     override var iterations: Long = 1
 
-    @field:PositiveOrZero
+    @field:PositiveOrZeroDuration
     override var iterationPeriods: Duration = Duration.ZERO
+
+    override var stopIterationsOnError: Boolean = false
 
     override var retryPolicy: RetryPolicy? = null
 
@@ -72,9 +74,10 @@ abstract class AbstractStepSpecification<INPUT, OUTPUT, SELF : StepSpecification
         this.retryPolicy = retryPolicy
     }
 
-    override fun iterate(iterations: Long, period: Duration) {
+    override fun iterate(iterations: Long, period: Duration, stopOnError: Boolean) {
         this.iterations = iterations
         this.iterationPeriods = period
+        this.stopIterationsOnError = stopOnError
     }
 
     override fun add(step: StepSpecification<*, *, *>) {

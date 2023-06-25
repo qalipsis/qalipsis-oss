@@ -111,8 +111,8 @@ fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.stage(
     steps: StepSpecification<*, INPUT, *>.() -> StepSpecification<*, OUTPUT, *>
 ): StageStepSpecification<INPUT, OUTPUT> {
 
-    // We actually creates a start and end boundaries, surrounding the specifications to group.
-    val groupStartName = if (stageName.isBlank()) Cuid.createCuid() else stageName
+    // We actually create a start and end boundaries, surrounding the specifications to group.
+    val groupStartName = if (stageName.isBlank() || stageName == "__") "__${Cuid.createCuid()}" else stageName
     val start = StageStepStartSpecification<INPUT>()
     start.scenario = this.scenario
     this.add(start)
@@ -126,6 +126,6 @@ fun <INPUT, OUTPUT> StepSpecification<*, INPUT, *>.stage(
     end.scenario = this.scenario
     tail.add(end)
 
-    // The end boundary of the group is returned to that next step specifications can be added to the group.
+    // The end boundary of the group is returned so that next step specifications can be added to the group.
     return end
 }

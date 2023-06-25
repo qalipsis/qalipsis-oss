@@ -74,6 +74,9 @@ abstract class AbstractPluginStepWrapper<I, O>(private val wrappedStepSpec: Step
 
     override var reporting: StepReportingSpecification = wrappedStepSpec.reporting
 
+    override val stopIterationsOnError: Boolean
+        get() = wrappedStepSpec.stopIterationsOnError
+
     override fun add(step: StepSpecification<*, *, *>) {
         wrappedStepSpec.add(step)
     }
