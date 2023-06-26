@@ -42,14 +42,13 @@ import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.Duration
 
 /**
  * @author Eric Jessé
  */
 @Suppress("UNCHECKED_CAST")
 @WithMockk
-internal class ReportingStepDecoratorSpecificationConverterTest {
+internal class ReportingStepDecoratorConverterTest {
 
     @RelaxedMockK
     lateinit var scenarioSpecification: StepSpecificationRegistry
@@ -72,10 +71,8 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
     @RelaxedMockK
     lateinit var stepSpecification: StepSpecification<Int, String, *>
 
-    private val stepStartTimeout: Duration = Duration.ofSeconds(543)
-
     @InjectMockKs
-    lateinit var decorator: ReportingStepDecoratorSpecificationConverter
+    lateinit var decorator: ReportingStepDecoratorConverter
 
     @Test
     internal fun `should have order 100`() {
@@ -99,7 +96,6 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
             prop("decorated").isSameAs(decoratedStep)
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
-            prop("stepStartTimeout").isEqualTo(Duration.ofSeconds(543))
             prop("reportErrors").isEqualTo(true)
         }
     }
@@ -120,7 +116,6 @@ internal class ReportingStepDecoratorSpecificationConverterTest {
             prop("decorated").isSameAs(decoratedStep)
             prop("eventsLogger").isSameAs(eventsLogger)
             prop("meterRegistry").isSameAs(meterRegistry)
-            prop("stepStartTimeout").isEqualTo(Duration.ofSeconds(543))
             prop("reportErrors").isEqualTo(false)
         }
     }

@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.init
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -36,6 +37,7 @@ import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.mockk.justRun
@@ -64,6 +66,7 @@ import io.qalipsis.core.factory.init.catadioptre.convertScenario
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
+import io.qalipsis.core.factory.steps.BlackHoleStep
 import io.qalipsis.core.factory.steps.DagTransitionStep
 import io.qalipsis.core.factory.steps.DeadEndStep
 import io.qalipsis.core.factory.steps.PipeStep
@@ -198,8 +201,10 @@ internal class FactoryInitializerImplTest {
         }
 
         // then
-        assertThat(exception.message).isEqualTo("java.lang.IllegalArgumentException: " +
-                "The maximal number of steps specifications in a step scenario should not exceed 100, but was 1003")
+        assertThat(exception.message).isEqualTo(
+            "java.lang.IllegalArgumentException: " +
+                    "The maximal number of steps specifications in a step scenario should not exceed 100, but was 1003"
+        )
 
         verifyOrder {
             factoryInitializer.refresh()
@@ -353,7 +358,7 @@ internal class FactoryInitializerImplTest {
 
         // when
         factoryInitializer.coInvokeInvisible<Void>(
-            "convertSteps",
+            "convertNextSteps",
             scenarioSpecification, scenario, null, null,
             // Only the root steps are passed.
             listOf(stepSpecification1, stepSpecification3)
@@ -415,17 +420,18 @@ internal class FactoryInitializerImplTest {
                 any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()
             )
         } answers {
-            (firstArg() as StepCreationContext<*>).createdStep(PipeStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
+            (firstArg() as StepCreationContext<*>).createdStep(BlackHoleStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
         }
         coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
         val deadEndStep = relaxedMockk<DeadEndStep<*>> { }
         every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep
         val dagTransitionStep = relaxedMockk<DagTransitionStep<*>> { }
-        every { dagTransitionStepFactory.createTransition(any(), "dag-2", "dag-1") } returns dagTransitionStep
+        excludeRecords { dagTransitionStep.name }
+        every { dagTransitionStepFactory.createTransition(any(), "dag-2", "dag-1", true) } returns dagTransitionStep
 
         // when
         factoryInitializer.coInvokeInvisible<Void>(
-            "convertSteps",
+            "convertNextSteps",
             scenarioSpecification, scenario, null, null,
             // Only the root steps are passed.
             listOf(stepSpecification3)
@@ -436,16 +442,25 @@ internal class FactoryInitializerImplTest {
         assertThat(scenario["dag-1"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
             prop(DirectedAcyclicGraph::tags).isEmpty()
-            prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
+            prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
+                .prop(Step<*, *>::next)
                 .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
                 .index(0).isSameAs(deadEndStep)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(4)
             prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
-            prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
-                .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
-                .index(0).prop(Step<*, *>::next).index(0).isSameAs(dagTransitionStep)
+            prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
+                .prop(Step<*, *>::next).all {
+                hasSize(1)
+                index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
+                    hasSize(1)
+                    index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                        hasSize(1)
+                        index(0).isSameAs(dagTransitionStep)
+                    }
+                }
+            }
         }
         // 3 steps were created.
         coVerifyExactly(3) {
@@ -455,7 +470,122 @@ internal class FactoryInitializerImplTest {
         coVerifyExactly(6) {
             factoryInitializer["injectDependencies"](any<Step<*, *>>())
         }
+        coVerifyOnce {
+            dagTransitionStepFactory.createTransition(any(), "dag-2", "dag-1", true)
+            dagTransitionStepFactory.createDeadEnd(any(), "dag-1")
+            dagTransitionStep.addNext(refEq(scenario["dag-1"]!!.rootStep.forceGet()))
+        }
+        confirmVerified(dagTransitionStepFactory, dagTransitionStep)
     }
+
+    @Test
+    internal fun `should convert steps and followers on two consecutive DAGs but not notify the DAG completion when splitting`() =
+        testDispatcherProvider.run {
+            // given
+            val scenarioSpecification: ConfiguredScenarioSpecification = relaxedMockk(
+                ScenarioSpecification::class, StepSpecificationRegistry::class
+            )
+            val scenario = testScenario()
+            val stepSpecification1: StepSpecification<Any?, Any?, *> = relaxedMockk {
+                every { directedAcyclicGraphName } returns "dag-1"
+                every { tags } returns emptyMap()
+            }
+            val stepSpecification2: StepSpecification<Any?, Any?, *> = relaxedMockk {
+                every { directedAcyclicGraphName } returns "dag-2"
+
+            }
+            val stepSpecification3: StepSpecification<Any?, Any?, *> = relaxedMockk {
+                every { nextSteps } returns mutableListOf(stepSpecification1, stepSpecification2)
+                every { directedAcyclicGraphName } returns "dag-2"
+
+            }
+            val stepSpecification4: StepSpecification<Any?, Any?, *> = relaxedMockk {
+                every { nextSteps } returns mutableListOf(stepSpecification3)
+                every { directedAcyclicGraphName } returns "dag-2"
+                every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
+            }
+            val atomicInteger = AtomicInteger()
+            coEvery {
+                factoryInitializer.coInvokeInvisible<Unit>(
+                    "convertSingleStep",
+                    any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()
+                )
+            } answers {
+                (firstArg() as StepCreationContext<*>).createdStep(BlackHoleStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
+            }
+            coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+            val deadEndStep1 = relaxedMockk<DeadEndStep<*>> { }
+            every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep1
+            val deadEndStep2 = relaxedMockk<DeadEndStep<*>> { }
+            every { dagTransitionStepFactory.createDeadEnd(any(), "dag-2") } returns deadEndStep2
+            val dagTransitionStep = relaxedMockk<DagTransitionStep<*>> { }
+            excludeRecords { dagTransitionStep.name }
+            every {
+                dagTransitionStepFactory.createTransition(
+                    any(),
+                    "dag-2",
+                    "dag-1",
+                    false
+                )
+            } returns dagTransitionStep
+
+            // when
+            factoryInitializer.coInvokeInvisible<Void>(
+                "convertNextSteps",
+                scenarioSpecification, scenario, null, null,
+                // Only the root steps are passed.
+                listOf(stepSpecification4)
+            )
+
+            // then
+            // Only two dags were created.
+            assertThat(scenario["dag-1"]).isNotNull().all {
+                prop(DirectedAcyclicGraph::stepsCount).isEqualTo(3)
+                prop(DirectedAcyclicGraph::tags).isEmpty()
+                prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
+                    .prop(Step<*, *>::next)
+                    .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
+                    .index(0).isSameAs(deadEndStep1)
+            }
+            assertThat(scenario["dag-2"]).isNotNull().all {
+                prop(DirectedAcyclicGraph::stepsCount).isEqualTo(6)
+                prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
+                prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
+                    .prop(Step<*, *>::next).all {
+                    hasSize(1)
+                    index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
+                        hasSize(2)
+                        index(0).prop(Step<*, *>::next).all {
+                            hasSize(1)
+                            index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                                hasSize(1)
+                                index(0).isSameAs(deadEndStep2)
+                            }
+                        }
+                        index(1).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                            hasSize(1)
+                            index(0).isSameAs(dagTransitionStep)
+                        }
+                    }
+                }
+            }
+            // 4 steps were created.
+            coVerifyExactly(4) {
+                factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+                factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            }
+            coVerifyExactly(8) {
+                factoryInitializer["injectDependencies"](any<Step<*, *>>())
+            }
+
+            coVerifyOnce {
+                dagTransitionStepFactory.createTransition(any(), "dag-2", "dag-1", false)
+                dagTransitionStepFactory.createDeadEnd(any(), "dag-1")
+                dagTransitionStepFactory.createDeadEnd(any(), "dag-2")
+                dagTransitionStep.addNext(refEq(scenario["dag-1"]!!.rootStep.forceGet()))
+            }
+            confirmVerified(dagTransitionStepFactory, dagTransitionStep)
+        }
 
     @Test
     internal fun `should not convert followers when step is not converted`() = testDispatcherProvider.run {
@@ -490,7 +620,7 @@ internal class FactoryInitializerImplTest {
 
         // when
         factoryInitializer.coInvokeInvisible<Void>(
-            "convertSteps",
+            "convertNextSteps",
             scenarioSpecification, scenario, null, null,
             // Only the root steps are passed.
             listOf(stepSpecification1, stepSpecification3)
@@ -521,7 +651,7 @@ internal class FactoryInitializerImplTest {
         }
         val latch = Latch(true)
         coEvery {
-            factoryInitializer["convertSteps"](
+            factoryInitializer["convertNextSteps"](
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),
                 any<Step<*, *>>(),
@@ -543,7 +673,7 @@ internal class FactoryInitializerImplTest {
         }
 
         coVerify {
-            factoryInitializer["convertSteps"](
+            factoryInitializer["convertNextSteps"](
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),
                 any<Step<*, *>>(),
@@ -570,7 +700,7 @@ internal class FactoryInitializerImplTest {
 
         // then
         coVerifyNever {
-            factoryInitializer["convertSteps"](
+            factoryInitializer["convertNextSteps"](
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),
                 any<Step<*, *>>(),

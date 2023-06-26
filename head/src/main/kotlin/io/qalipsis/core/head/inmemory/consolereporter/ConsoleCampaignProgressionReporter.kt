@@ -87,7 +87,7 @@ internal class ConsoleCampaignProgressionReporter : CampaignHook, ProcessBlocker
         val consoleRenderer = ConsoleRenderer(campaignState)
         campaignCompletion = CompletableFuture()
 
-        thread(name = "console-live-reporter", isDaemon = true) {
+        thread(name = "console-live-reporter", isDaemon = false) {
             session(clearTerminal = true) {
                 section {
                     consoleRenderer.render(this)
@@ -117,6 +117,21 @@ internal class ConsoleCampaignProgressionReporter : CampaignHook, ProcessBlocker
 
     suspend fun report() {
         delay(2000)
+        val consoleRenderer = ConsoleRenderer(campaignState)
+        session(clearTerminal = true) {
+            section {
+                consoleRenderer.render(this)
+            }.runUntilSignal {
+                addTimer(1.seconds, repeat = true) {
+                    rerender()
+                    if (campaignCompletion.isDone) {
+                        log.info { "Stopping the rendering of the live in the console" }
+                        repeat = false
+                        signal()
+                    }
+                }
+            }
+        }
         consoleAppender?.start()
         processBlocker.cancel()
     }
@@ -124,8 +139,7 @@ internal class ConsoleCampaignProgressionReporter : CampaignHook, ProcessBlocker
     override suspend fun preSchedule(
         campaignConfiguration: CampaignConfiguration,
         runningCampaign: RunningCampaign
-    ) =
-        Unit
+    ) = Unit
 
     override suspend fun preStart(runningCampaign: RunningCampaign) {
         if (runningCampaign.hardTimeoutSec > 0) {

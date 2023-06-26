@@ -44,8 +44,6 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.delay
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -210,41 +208,6 @@ internal class ReportingStepDecoratorTest {
                 cause = withArg {
                     assertThat(it).isInstanceOf<RuntimeException>().prop(RuntimeException::message)
                         .isEqualTo("An error")
-                }
-            )
-        }
-        confirmVerified(
-            meterRegistry,
-            eventsLogger,
-            runningStepsGauge,
-            failureTimer,
-            completionTimer,
-            executedStepCounter,
-            reportLiveStateRegistry
-        )
-    }
-
-    @Test
-    fun `should fail when the start is timed out`() = testDispatcherProvider.run {
-        // given
-        coEvery { decorated.start(any()) } coAnswers { delay(stepStartTimeout.plusMillis(10).toMillis()) }
-
-        // when
-        val exception = assertThrows<RuntimeException> {
-            reportingStepDecorator.start(startStopContext)
-        }
-
-        // then
-        assertThat(exception.message).isEqualTo("Timed out waiting for 30 ms")
-        coVerifyOnce {
-            decorated.start(refEq(startStopContext))
-            reportLiveStateRegistry.recordFailedStepInitialization(
-                campaignKey = "my-campaign",
-                scenarioName = "my-scenario",
-                stepName = "the decorated",
-                cause = withArg {
-                    assertThat(it).isInstanceOf<TimeoutCancellationException>().prop(RuntimeException::message)
-                        .isEqualTo("Timed out waiting for 30 ms")
                 }
             )
         }

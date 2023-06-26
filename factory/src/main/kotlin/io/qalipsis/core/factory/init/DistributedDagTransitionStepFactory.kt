@@ -23,6 +23,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
@@ -30,6 +31,7 @@ import io.qalipsis.core.factory.redis.RedisDistributedMinionAssignmentKeeper
 import io.qalipsis.core.factory.steps.ContextForwarder
 import io.qalipsis.core.factory.steps.DeadEndStep
 import io.qalipsis.core.factory.steps.DistributedDagTransitionStep
+import io.qalipsis.core.factory.steps.WorkflowStepDecorator
 import jakarta.inject.Singleton
 
 /**
@@ -43,25 +45,33 @@ import jakarta.inject.Singleton
 internal class DistributedDagTransitionStepFactory(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val localAssignmentStore: LocalAssignmentStore,
-    private val contextForwarder: ContextForwarder
+    private val contextForwarder: ContextForwarder,
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
 ) : DagTransitionStepFactory {
 
-    override fun createDeadEnd(stepName: StepName, sourceDagId: DirectedAcyclicGraphName): DeadEndStep<*> {
-        return DeadEndStep<Any?>(stepName, sourceDagId, factoryCampaignManager)
+    override fun createDeadEnd(stepName: StepName, sourceDagId: DirectedAcyclicGraphName): Step<*, *> {
+        return WorkflowStepDecorator(
+            DeadEndStep<Any?>(stepName, sourceDagId, factoryCampaignManager),
+            reportLiveStateRegistry
+        )
     }
 
     override fun createTransition(
         stepName: StepName,
         sourceDagId: DirectedAcyclicGraphName,
-        targetDagId: DirectedAcyclicGraphName
+        targetDagId: DirectedAcyclicGraphName,
+        notifyDagCompletion: Boolean
     ): Step<*, Any?> {
-        return DistributedDagTransitionStep(
-            stepName,
-            sourceDagId,
-            targetDagId,
-            factoryCampaignManager,
-            localAssignmentStore,
-            contextForwarder
+        return WorkflowStepDecorator(
+            DistributedDagTransitionStep(
+                stepName,
+                sourceDagId,
+                targetDagId,
+                factoryCampaignManager,
+                localAssignmentStore,
+                contextForwarder,
+                notifyDagCompletion
+            ), reportLiveStateRegistry
         )
     }
 }

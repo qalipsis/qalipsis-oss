@@ -22,6 +22,7 @@ package io.qalipsis.core.factory.steps
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import java.time.Instant
 
@@ -33,16 +34,24 @@ import java.time.Instant
 internal open class DagTransitionStep<I>(
     id: StepName,
     private val dagId: DirectedAcyclicGraphName,
-    private val factoryCampaignManager: FactoryCampaignManager
+    private val factoryCampaignManager: FactoryCampaignManager,
+    private val notifyDagCompletion: Boolean
 ) : PipeStep<I>(id) {
 
     override suspend fun complete(completionContext: CompletionContext) {
-        factoryCampaignManager.notifyCompleteMinion(
-            completionContext.minionId,
-            Instant.ofEpochMilli(completionContext.minionStart),
-            completionContext.campaignKey,
-            completionContext.scenarioName,
-            dagId
-        )
+        if (notifyDagCompletion) {
+            log.trace { "DAG $dagId completed for the context $completionContext" }
+            factoryCampaignManager.notifyCompleteMinion(
+                completionContext.minionId,
+                Instant.ofEpochMilli(completionContext.minionStart),
+                completionContext.campaignKey,
+                completionContext.scenarioName,
+                dagId
+            )
+        }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

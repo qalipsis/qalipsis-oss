@@ -209,7 +209,7 @@ internal class FactoryInitializerImpl(
 
         runBlocking(coroutineDispatcher) {
             @Suppress("UNCHECKED_CAST")
-            convertSteps(
+            convertNextSteps(
                 scenarioSpecification, scenario, null, null,
                 scenarioSpecification.rootSteps as List<StepSpecification<Any?, Any?, *>>
             )
@@ -221,24 +221,26 @@ internal class FactoryInitializerImpl(
     }
 
     @LogInput
-    internal suspend fun convertSteps(
+    internal suspend fun convertNextSteps(
         scenarioSpecification: ConfiguredScenarioSpecification,
         scenario: Scenario,
         parentStep: Step<*, *>?,
         parentDag: DirectedAcyclicGraph?,
         stepsSpecifications: List<StepSpecification<Any?, Any?, *>>
     ) {
+        val hasStepInSameDag = stepsSpecifications.any { it.directedAcyclicGraphName == parentDag?.name }
         decorateStepForDagEndIfRequired(parentDag, stepsSpecifications, parentStep)
         coroutineScope {
             stepsSpecifications.map { stepSpecification ->
 
                 launch {
                     convertStepRecursively(
-                        scenarioSpecification,
-                        scenario,
-                        parentDag,
-                        parentStep,
-                        stepSpecification
+                        scenarioSpecification = scenarioSpecification,
+                        scenario = scenario,
+                        parentDag = parentDag,
+                        parentStep = parentStep,
+                        stepSpecification = stepSpecification,
+                        notifyPotentialDagCompletion = !hasStepInSameDag
                     )
                 }
             }
@@ -273,14 +275,18 @@ internal class FactoryInitializerImpl(
         scenario: Scenario,
         parentDag: DirectedAcyclicGraph?,
         parentStep: Step<*, *>?,
-        stepSpecification: StepSpecification<Any?, Any?, *>
+        stepSpecification: StepSpecification<Any?, Any?, *>,
+        notifyPotentialDagCompletion: Boolean
     ) {
         log.debug {
             "Creating step ${stepSpecification.name.takeIf(String::isNotBlank) ?: "<no specified name>"} specified by ${stepSpecification::class.qualifiedName} with parent ${parentStep?.name ?: "<ROOT>"} in DAG ${stepSpecification.directedAcyclicGraphName}"
         }
 
         val actualParent =
-            if (parentDag != null && parentStep != null && stepSpecification.directedAcyclicGraphName != parentDag.name) {
+            if (parentDag != null
+                && parentStep != null
+                && stepSpecification.directedAcyclicGraphName != parentDag.name
+            ) {
                 // Adds a PipeStep for security of concurrency between the executed steps and the completion of the DAG.
                 // TODO This workaround should be removed in a later version.
                 val pipeStep = PipeStep<Any?>("__${buildNewStepName()}_pre-dag-transition")
@@ -289,9 +295,10 @@ internal class FactoryInitializerImpl(
 
                 // Adds a DagTransitionStep step at the end of a DAG to notify the change to a new DAG.
                 val dagTransitionStep = dagTransitionStepFactory.createTransition(
-                    "__${buildNewStepName()}_transition",
-                    parentDag.name,
-                    stepSpecification.directedAcyclicGraphName
+                    stepName = "__${buildNewStepName()}_transition",
+                    sourceDagId = parentDag.name,
+                    targetDagId = stepSpecification.directedAcyclicGraphName,
+                    notifyDagCompletion = notifyPotentialDagCompletion
                 )
                 parentDag.addStep(dagTransitionStep)
                 pipeStep.addNext(dagTransitionStep)
@@ -324,7 +331,7 @@ internal class FactoryInitializerImpl(
             }
 
             @Suppress("UNCHECKED_CAST")
-            convertSteps(
+            convertNextSteps(
                 scenarioSpecification, scenario, step, dag,
                 stepSpecification.nextSteps as List<StepSpecification<Any?, Any?, *>>
             )

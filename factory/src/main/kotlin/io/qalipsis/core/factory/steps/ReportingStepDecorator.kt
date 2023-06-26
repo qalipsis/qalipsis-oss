@@ -39,9 +39,6 @@ import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.orchestration.StepUtils.isHidden
 import io.qalipsis.core.factory.orchestration.StepUtils.type
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -56,8 +53,7 @@ internal class ReportingStepDecorator<I, O>(
     private val reportErrors: Boolean,
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
-    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
     override val name: StepName
@@ -96,16 +92,12 @@ internal class ReportingStepDecorator<I, O>(
 
     override suspend fun start(context: StepStartStopContext) {
         try {
-            withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(stepStartTimeout.toMillis()) {
-                    decorated.start(context)
-                    reportLiveStateRegistry.recordSuccessfulStepInitialization(
-                        context.campaignKey,
-                        context.scenarioName,
-                        decorated.name
-                    )
-                }
-            }
+            decorated.start(context)
+            reportLiveStateRegistry.recordSuccessfulStepInitialization(
+                context.campaignKey,
+                context.scenarioName,
+                decorated.name
+            )
         } catch (t: Throwable) {
             reportLiveStateRegistry.recordFailedStepInitialization(
                 context.campaignKey,

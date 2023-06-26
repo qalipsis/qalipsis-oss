@@ -32,10 +32,6 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.api.steps.StepDecorator
 import io.qalipsis.api.steps.StepExecutor
 import io.qalipsis.core.exceptions.StepExecutionException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
-import java.time.Duration
 
 /**
  * Decorator of a step, that records the successes and errors of the [decorated] step and reports the
@@ -46,8 +42,7 @@ import java.time.Duration
 internal class StartStopReportingStepDecorator<I, O>(
     override val decorated: Step<I, O>,
     private val eventsLogger: EventsLogger,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
-    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
+    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : Step<I, O>, StepExecutor, StepDecorator<I, O> {
 
     override val name: StepName
@@ -61,11 +56,7 @@ internal class StartStopReportingStepDecorator<I, O>(
 
     override suspend fun start(context: StepStartStopContext) {
         try {
-            withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(stepStartTimeout.toMillis()) {
-                    decorated.start(context)
-                }
-            }
+            decorated.start(context)
             eventTags = context.toEventTags()
         } catch (t: Throwable) {
             reportLiveStateRegistry.recordFailedStepInitialization(

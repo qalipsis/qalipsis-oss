@@ -64,7 +64,7 @@ internal open class SingletonProxyStepSpecification<T>(
 
     override var tags = mutableMapOf<String, String>()
 
-    override fun split(block: SingletonProxyStepSpecification<T>.() -> Unit): SingletonProxyStepSpecification<T> {
+    override fun split(block: StepSpecification<T, T, *>.() -> Unit): SingletonProxyStepSpecification<T> {
         // Nothing to do.
         return this
     }

@@ -24,7 +24,6 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
-import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -70,9 +69,9 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
     lateinit var decorator: TimeoutStepDecoratorSpecificationConverter
 
     @Test
-    internal fun `should have order 500`() {
+    internal fun `should have order 10`() {
         // then + when
-        assertEquals(500, decorator.order)
+        assertEquals(10, decorator.order)
     }
 
     @Test

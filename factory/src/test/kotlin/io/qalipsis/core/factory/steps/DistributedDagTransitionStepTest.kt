@@ -65,7 +65,8 @@ internal class DistributedDagTransitionStepTest {
             "this-is-the-next-dag",
             factoryCampaignManager,
             localAssignmentStore,
-            contextForwarder
+            contextForwarder,
+            false
         )
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
@@ -101,7 +102,8 @@ internal class DistributedDagTransitionStepTest {
             "this-is-the-next-dag",
             factoryCampaignManager,
             localAssignmentStore,
-            contextForwarder
+            contextForwarder,
+            false
         )
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
@@ -136,7 +138,8 @@ internal class DistributedDagTransitionStepTest {
             "this-is-the-next-dag",
             factoryCampaignManager,
             localAssignmentStore,
-            contextForwarder
+            contextForwarder,
+            true
         )
         val ctx = DefaultCompletionContext(
             campaignKey = "my-campaign",
@@ -167,6 +170,39 @@ internal class DistributedDagTransitionStepTest {
 
     @Test
     @Timeout(1)
+    internal fun `should not complete pipeline operation when the flag is diabled`() = testCoroutineDispatcher.runTest {
+        // given
+        val step = DistributedDagTransitionStep<Int>(
+            "",
+            "this-is-my-dag",
+            "this-is-the-next-dag",
+            factoryCampaignManager,
+            localAssignmentStore,
+            contextForwarder,
+            false
+        )
+        val ctx = DefaultCompletionContext(
+            campaignKey = "my-campaign",
+            scenarioName = "my-scenario",
+            minionId = "my-minion",
+            minionStart = 12756412L,
+            lastExecutedStepName = "step-1",
+            errors = emptyList()
+        )
+        every { localAssignmentStore.isLocal("my-scenario", "my-minion", "this-is-the-next-dag") } returns true
+
+        // when
+        step.complete(ctx)
+
+        //then
+        coVerifyOnce {
+            localAssignmentStore.isLocal("my-scenario", "my-minion", "this-is-the-next-dag")
+        }
+        confirmVerified(factoryCampaignManager, contextForwarder)
+    }
+
+    @Test
+    @Timeout(1)
     internal fun `should complete pipeline operation then forward the complete execution when the next DAG is remote`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -176,7 +212,8 @@ internal class DistributedDagTransitionStepTest {
                 "this-is-the-next-dag",
                 factoryCampaignManager,
                 localAssignmentStore,
-                contextForwarder
+                contextForwarder,
+                true
             )
             val ctx = DefaultCompletionContext(
                 campaignKey = "my-campaign",
