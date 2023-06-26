@@ -38,8 +38,9 @@ internal class DistributedDagTransitionStep<I>(
     private val nextDagId: DirectedAcyclicGraphName,
     factoryCampaignManager: FactoryCampaignManager,
     private val localAssignmentStore: LocalAssignmentStore,
-    private val contextForwarder: ContextForwarder
-) : DagTransitionStep<I>(id, dagId, factoryCampaignManager), ErrorProcessingStep<I, I> {
+    private val contextForwarder: ContextForwarder,
+    notifyDagCompletion: Boolean
+) : DagTransitionStep<I>(id, dagId, factoryCampaignManager, notifyDagCompletion), ErrorProcessingStep<I, I> {
 
     override suspend fun execute(context: StepContext<I, I>) {
         if (localAssignmentStore.isLocal(context.scenarioName, context.minionId, nextDagId)) {

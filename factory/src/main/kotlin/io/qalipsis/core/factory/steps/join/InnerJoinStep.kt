@@ -27,6 +27,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -36,6 +37,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.slf4j.MDC
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -98,18 +100,22 @@ internal class InnerJoinStep<I, O>(
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
             consumptionJobs.add(
                 coroutineScope.launch {
+                    MDC.put("campaign", context.campaignKey)
+                    MDC.put("scenario", context.scenarioName)
+                    MDC.put("step", context.stepName)
                     log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepName}" }
                     val subscription = corr.topic.subscribe(stepName)
                     while (subscription.isActive()) {
                         val record = subscription.pollValue()
                         keyExtractor(record)?.let { key ->
-                            log.trace { "Adding right record to cache with key '$key' as ${key::class}" }
+                            log.trace { "Adding right record to cache with key '$key' as ${key::class.qualifiedName}" }
                             cache.get(key).thenAccept { entry ->
                                 coroutineScope.launch { entry.addValue(record.stepName, record.value) }
                             }
                         }
                     }
                     log.debug { "Leaving the coroutine buffering right records" }
+                    MDC.clear()
                 }
             )
         }
@@ -122,7 +128,7 @@ internal class InnerJoinStep<I, O>(
         rightCorrelations.forEach { it.topic.close() }
     }
 
-    override suspend fun execute(context: StepContext<I, O>) {
+    override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         if (!running) throw NotInitializedStepException()
 
         val input = context.receive()
@@ -131,21 +137,35 @@ internal class InnerJoinStep<I, O>(
             ?.let { key ->
                 try {
                     log.trace { "Searching correlation values for key '$key' as ${key::class}" }
-                    val latch = Latch(true, "inner-join-step-${name}")
-                    cache.get(key).thenAccept { entry ->
-                        coroutineScope.launch {
-                            val secondaryValues = entry.get()
-                            log.trace { "Forwarding a correlated set of values" }
-                            context.send(outputSupplier(input, secondaryValues))
-                            latch.release()
+                    val waitingRightLatch = Latch(true, "inner-join-step-${name}-$key")
+                    cache[key].thenAccept { entry ->
+                        runCatching {
+                            coroutineScope.launch {
+                                MDC.put("campaign", context.campaignKey)
+                                MDC.put("scenario", context.scenarioName)
+                                MDC.put("step", context.stepName)
+                                minion.completeMdcContext()
+                                minion.launch(this) {
+                                    val secondaryValues = entry.get()
+                                    log.trace { "Forwarding a correlated set of values to context $context" }
+                                    context.send(outputSupplier(input, secondaryValues))
+                                    waitingRightLatch.cancel()
+                                }
+                                MDC.clear()
+                            }
                         }
                     }
-                    latch.await()
+                    waitingRightLatch.await()
                 } finally {
                     log.trace { "Invalidating cache with key $key as ${key::class}" }
                     cache.synchronous().invalidate(key)
                 }
             }
+    }
+
+    override suspend fun execute(context: StepContext<I, O>) {
+        // This method should never be called.
+        throw NotImplementedError()
     }
 
     @KTestable

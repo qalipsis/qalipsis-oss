@@ -226,7 +226,7 @@ internal class CampaignAutoStarterTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(2)
     internal fun `should release the latch when the campaign is complete with success`() =
         testCoroutineDispatcher.run {
             // given

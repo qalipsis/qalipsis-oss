@@ -22,22 +22,28 @@ package io.qalipsis.core.factory.init
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
-import io.qalipsis.core.factory.steps.DeadEndStep
 
 internal interface DagTransitionStepFactory {
 
     /**
      * Creates a new step in charge or managing the transition between two directed acyclic graphs.
      */
-    fun createDeadEnd(stepName: StepName, sourceDagId: DirectedAcyclicGraphName): DeadEndStep<*>
+    fun createDeadEnd(stepName: StepName, sourceDagId: DirectedAcyclicGraphName): Step<*, *>
 
     /**
      * Creates a new step in charge or managing the transition between two directed acyclic graphs.
+     *
+     * @param stepName the name of the transition step to create
+     * @param sourceDagId the name of the DAG upside the step
+     * @param targetDagId the name of the DAG downside the step
+     * @param notifyDagCompletion indicates whether the step should notify the completion of the source dag
+     *
      */
     fun createTransition(
         stepName: StepName,
         sourceDagId: DirectedAcyclicGraphName,
-        targetDagId: DirectedAcyclicGraphName
+        targetDagId: DirectedAcyclicGraphName,
+        notifyDagCompletion: Boolean
     ): Step<*, *>
 
 }

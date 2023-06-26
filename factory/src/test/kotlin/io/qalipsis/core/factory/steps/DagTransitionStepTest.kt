@@ -48,7 +48,7 @@ internal class DagTransitionStepTest {
     @Timeout(1)
     internal fun `should only forward input to output`() = testCoroutineDispatcher.runTest {
         // given
-        val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
+        val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager, true)
         val ctx = StepTestHelper.createStepContext<Int, Int>(
             input = 1,
             campaignKey = "my-campaign",
@@ -66,12 +66,11 @@ internal class DagTransitionStepTest {
         confirmVerified(factoryCampaignManager)
     }
 
-
     @Test
     @Timeout(1)
     internal fun `should notify DAG completion when complete is called`() = testCoroutineDispatcher.runTest {
         // given
-        val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager)
+        val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager, true)
         val ctx = DefaultCompletionContext(
             campaignKey = "my-campaign",
             scenarioName = "my-scenario",
@@ -96,4 +95,26 @@ internal class DagTransitionStepTest {
         }
         confirmVerified(factoryCampaignManager)
     }
+
+    @Test
+    @Timeout(1)
+    internal fun `should not notify DAG completion when complete is called when the flag is disabled`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val step = DagTransitionStep<Int>("", "this-is-my-dag", factoryCampaignManager, false)
+            val ctx = DefaultCompletionContext(
+                campaignKey = "my-campaign",
+                scenarioName = "my-scenario",
+                minionId = "my-minion",
+                minionStart = 657234L,
+                lastExecutedStepName = "step-1",
+                errors = emptyList()
+            )
+
+            // when
+            step.complete(ctx)
+
+            //then
+            confirmVerified(factoryCampaignManager)
+        }
 }

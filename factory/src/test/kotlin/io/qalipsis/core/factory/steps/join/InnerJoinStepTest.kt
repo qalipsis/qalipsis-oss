@@ -26,6 +26,7 @@ import io.qalipsis.api.messaging.Topic
 import io.qalipsis.api.messaging.broadcastTopic
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.exceptions.NotInitializedStepException
+import io.qalipsis.core.factory.orchestration.MinionImpl
 import io.qalipsis.core.factory.steps.join.catadioptre.hasKeyInCache
 import io.qalipsis.core.factory.steps.join.catadioptre.isCacheEmpty
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -56,10 +57,11 @@ internal class InnerJoinStepTest {
             Duration.ofSeconds(10), { _, _ -> }
         )
         val ctx = StepTestHelper.createStepContext<Long, Unit>()
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", pauseAtStart = false)
 
         // then
         assertThrows<NotInitializedStepException> {
-            step.execute(ctx)
+            step.execute(minion, ctx)
         }
     }
 
@@ -76,10 +78,11 @@ internal class InnerJoinStepTest {
         val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
 
         val ctx = buildStepContext(entityFromLeft)
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", pauseAtStart = false)
 
         // when
         val execution = launch {
-            step.execute(ctx)
+            step.execute(minion, ctx)
         }
         // Send with delay and in an order different from secondary correlations definitions.
         delay(50)
@@ -109,6 +112,7 @@ internal class InnerJoinStepTest {
         val entityFromLeft = TestLeftJoinEntity(123, "From Left")
         val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
         val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", pauseAtStart = false)
 
         val ctx = buildStepContext(entityFromLeft)
 
@@ -116,7 +120,7 @@ internal class InnerJoinStepTest {
         // Send with in an order different from the secondary correlations definitions.
         topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromRight2))
         topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromRight1))
-        step.execute(ctx)
+        step.execute(minion, ctx)
 
         // then
         Assertions.assertFalse(ctx.isExhausted)
@@ -141,6 +145,7 @@ internal class InnerJoinStepTest {
             val entityFromLeft = TestLeftJoinEntity(123, "From Left")
             val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
             val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
+            val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", pauseAtStart = false)
 
             val ctx = buildStepContext(entityFromLeft)
 
@@ -155,7 +160,7 @@ internal class InnerJoinStepTest {
                 topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromRight2))
             }
             startLatch.release()
-            step.execute(ctx)
+            step.execute(minion, ctx)
 
             // then
             Assertions.assertFalse(ctx.isExhausted)
@@ -218,9 +223,10 @@ internal class InnerJoinStepTest {
         }
         val ctx = buildStepContext(relaxedMockk { })
         step.start(relaxedMockk())
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", pauseAtStart = false)
 
         // when
-        step.execute(ctx)
+        step.execute(minion, ctx)
 
         // then
         Assertions.assertFalse(ctx.isExhausted)

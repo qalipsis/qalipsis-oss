@@ -184,15 +184,15 @@ internal class RunnerImpl(
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ) {
         log.trace { "Executing step ${step.name} with context $stepContext" }
-        var latch: Latch? = null
+        var latchForExternalCompletion: Latch? = null
         if (step.next.isEmpty() && completionConsumer != null) {
             // If the step is the latest one of the chain and a completion operation is provided, the output channel
             // is provided to completion operation.
             log.trace { "Launching the completionConsumer for the latest step of the graph ${step.name}" }
-            latch = Latch(true, "step-execution-propagation")
+            latchForExternalCompletion = Latch(true, "step-execution-propagation")
             MDC.put("step", "_completion")
             minion.launch(minionScope) {
-                latch.await() // Blocks the execution of the completion block until the step is really executed.
+                latchForExternalCompletion.await() // Blocks the execution of the completion block until the step is really executed.
                 completionConsumer(stepContext)
             }
         } else if (step.next.isNotEmpty()) {
@@ -210,7 +210,7 @@ internal class RunnerImpl(
             log.trace { "Propagating the completion of the step ${step.name} for minion ${stepContext.minionId} from context $stepContext" }
             step.complete(stepContext.equivalentCompletionContext)
         }
-        latch?.release()
+        latchForExternalCompletion?.release()
     }
 
     /**

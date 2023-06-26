@@ -37,7 +37,7 @@ internal class TimeoutStepDecoratorSpecificationConverter(
     private val meterRegistry: CampaignMeterRegistry
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 
-    override val order: Int = 500
+    override val order: Int = 10
 
     override suspend fun decorate(creationContext: StepCreationContext<StepSpecification<*, *, *>>) {
         val spec = creationContext.stepSpecification

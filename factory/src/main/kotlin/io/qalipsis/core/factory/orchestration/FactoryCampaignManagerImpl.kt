@@ -41,6 +41,7 @@ import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.ScenarioStartStopConfiguration
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.annotations.LogOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
@@ -97,12 +98,12 @@ internal class FactoryCampaignManagerImpl(
     @KTestable
     private val assignableScenariosExecutionProfiles = mutableMapOf<ScenarioName, ExecutionProfile>()
 
-    @LogInput
+    @LogInputAndOutput
     override fun isLocallyExecuted(campaignKey: CampaignKey): Boolean {
         return runningCampaign.campaignKey == campaignKey
     }
 
-    @LogInput
+    @LogInputAndOutput
     override fun isLocallyExecuted(campaignKey: CampaignKey, scenarioName: ScenarioName): Boolean {
         return runningCampaign.campaignKey == campaignKey && scenarioName in assignableScenariosExecutionProfiles.keys
     }
@@ -280,6 +281,7 @@ internal class FactoryCampaignManagerImpl(
             }
         }
         if (completionState.scenarioComplete) {
+            log.debug { "The scenario $scenarioName is now complete" }
             factoryChannel.publishFeedback(
                 EndOfCampaignScenarioFeedback(
                     campaignKey = campaignKey,

@@ -36,6 +36,7 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.steps.DagTransitionStep
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import kotlinx.coroutines.runBlocking
@@ -156,7 +157,7 @@ internal class ScenarioImpl(
         context: StepStartStopContext
     ) {
         step.start(context.copy(stepName = step.name))
-        step.next.forEach { nextStep ->
+        step.next.filterNot { it is DagTransitionStep<*> }.forEach { nextStep ->
             startStepRecursively(nextStep, context)
         }
     }

@@ -36,6 +36,8 @@ import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.collections.concurrentTableOf
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.factory.campaign.Campaign
+import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -60,7 +62,7 @@ internal class MinionsKeeperImpl(
     private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
-) : MinionsKeeper {
+) : MinionsKeeper, CampaignLifeCycleAware {
 
     private val minions: MutableMap<MinionId, MinionImpl> = ConcurrentHashMap()
 
@@ -77,6 +79,10 @@ internal class MinionsKeeperImpl(
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private val runningMinionsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
+
+    override suspend fun close(campaign: Campaign) {
+        log.debug { "Not completed minions: $minions" }
+    }
 
     override fun contains(minionId: MinionId) = minions.containsKey(minionId)
 
