@@ -72,8 +72,9 @@ class DummyStepSpecification : AbstractStepSpecification<Unit, Int, DummyStepSpe
 /**
  * Creates a [DummyStepSpecification] as next step.
  */
-fun <INPUT> AbstractStepSpecification<*, INPUT, *>.dummy(): DummyStepSpecification {
+fun <INPUT> StepSpecification<*, INPUT, *>.dummy(name: String? = null): DummyStepSpecification {
     val step = DummyStepSpecification()
+    name?.let { step.name = name }
     this.add(step)
     return step
 }

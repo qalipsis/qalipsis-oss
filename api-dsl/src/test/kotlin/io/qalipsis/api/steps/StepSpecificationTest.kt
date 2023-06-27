@@ -16,11 +16,17 @@
 
 package io.qalipsis.api.steps
 
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.prop
 import io.mockk.every
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotSame
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -43,23 +49,41 @@ internal class StepSpecificationTest {
 
     @Test
     internal fun `should add the steps as next at once`() {
-        val previousStep = DummyStepSpecification()
+        val previousStep = DummyStepSpecification().apply {
+            name = "root"
+        }
+        previousStep.directedAcyclicGraphName = "root-dag"
         previousStep.split {
-            dummy().add(relaxedMockk {
+            dummy("step-1").add(relaxedMockk {
                 every { name } returns "last-step"
             })
 
-            dummy()
+            dummy("step-2")
+        }
+            .dummy("step-3")
+
+        assertThat(previousStep.nextSteps).all {
+            hasSize(3)
+            index(0).isInstanceOf<DummyStepSpecification>().all {
+                prop(StepSpecification<*, *, *>::name).isEqualTo("step-1")
+                prop(StepSpecification<*, *, *>::directedAcyclicGraphName).isEqualTo("dag-1")
+                prop(StepSpecification<*, *, *>::nextSteps).all {
+                    hasSize(1)
+                    index(0).all {
+                        prop(StepSpecification<*, *, *>::name).isEqualTo("last-step")
+                        prop(StepSpecification<*, *, *>::directedAcyclicGraphName).isEmpty()
+                    }
+                }
+            }
+            index(1).isInstanceOf<DummyStepSpecification>().all {
+                prop(StepSpecification<*, *, *>::name).isEqualTo("step-2")
+                prop(StepSpecification<*, *, *>::directedAcyclicGraphName).isEqualTo("dag-2")
+            }
+            index(2).isInstanceOf<DummyStepSpecification>().all {
+                prop(StepSpecification<*, *, *>::name).isEqualTo("step-3")
+                prop(StepSpecification<*, *, *>::directedAcyclicGraphName).isEqualTo("root-dag")
+            }
         }
 
-        assertEquals(2, previousStep.nextSteps.size)
-        assertTrue(previousStep.nextSteps[0] is DummyStepSpecification)
-        assertTrue(previousStep.nextSteps[0] is DummyStepSpecification)
-
-        assertNotSame(previousStep, previousStep.nextSteps[0])
-        assertNotSame(previousStep, previousStep.nextSteps[1])
-        assertNotSame(previousStep.nextSteps[0], previousStep.nextSteps[1])
-
-        assertEquals("last-step", previousStep.nextSteps[0].nextSteps[0].name)
     }
 }

@@ -119,10 +119,10 @@ interface StepSpecification<INPUT, OUTPUT, SELF : StepSpecification<INPUT, OUTPU
      * }.map{...}
      * ```
      */
-    fun split(block: SELF.() -> Unit): SELF {
+    fun split(block: StepSpecification<INPUT, OUTPUT, *>.() -> Unit): SELF {
         @Suppress("UNCHECKED_CAST")
-        (this as SELF).block()
-        return this
+        SplitStepSpecificationDecorator(this).block()
+        return this as SELF
     }
 
 }

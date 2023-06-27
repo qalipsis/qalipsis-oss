@@ -179,6 +179,26 @@ internal class ScenarioSpecificationImplementationTest {
     }
 
     @Test
+    internal fun `should create a new DAG when the name is not empty but remains undefined`() {
+        // given
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val previous = relaxedMockk<StepSpecification<*, *, *>> {
+            every { directedAcyclicGraphName } returns "my-dag"
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
+        }
+        val next = relaxedMockk<StepSpecification<*, *, *>> {
+            every { directedAcyclicGraphName } returns "_"
+            every { tags } returns mapOf("key1" to "value1", "key2" to "value2")
+        }
+
+        // when
+        scenario.registerNext(previous, next)
+
+        // then
+        every { next setProperty "directedAcyclicGraphName" value "dag-1" }
+    }
+
+    @Test
     internal fun `should not create a new DAG when the tags are equal and there is no singleton`() {
         // given
         val scenario = ScenarioSpecificationImplementation("my-scenario")

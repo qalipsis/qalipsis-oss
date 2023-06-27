@@ -61,7 +61,7 @@ internal class ScenarioSpecificationImplementation(
         step.scenario = this
         rootSteps.add(step)
         register(step)
-        if (step.directedAcyclicGraphName.isBlank()) {
+        if (step.directedAcyclicGraphName.isBlank() || step.directedAcyclicGraphName == "_") {
             step.directedAcyclicGraphName = this.buildDagId()
         }
     }
@@ -75,7 +75,7 @@ internal class ScenarioSpecificationImplementation(
 
     override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
         register(nextStep)
-        if (nextStep.directedAcyclicGraphName.isBlank()) {
+        if (isDagNameBlankOrUndefined(nextStep.directedAcyclicGraphName)) {
             if (isNewDag(previousStep, nextStep)) {
                 nextStep.directedAcyclicGraphName = buildDagId(previousStep.directedAcyclicGraphName)
             } else {
@@ -85,12 +85,25 @@ internal class ScenarioSpecificationImplementation(
     }
 
     /**
+     *  Verifies whether the DAG should receive a new name or inherit from its parent.
+     *  The underscore _ is a value used to force the creation of a new DAG and prevent from inheriting from the previous one.
+     */
+    private fun isDagNameBlankOrUndefined(dagName: String) = dagName.isBlank() || dagName == "_"
+
+    /**
+     *  Verifies whether the DAG should receive a new name.
+     *  The underscore _ is a value used to force the creation of a new DAG and prevent from inheriting from the previous one.
+     */
+    private fun isDagNameUndefined(dagName: String) = dagName == "_"
+
+    /**
      * Checks whether a new DAG has to be created for [nextStep].
      */
     private fun isNewDag(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>): Boolean {
         return ((previousStep as? SingletonStepSpecification)?.isReallySingleton == true)
                 || ((nextStep as? SingletonStepSpecification)?.isReallySingleton == true)
                 || previousStep.tags != nextStep.tags
+                || isDagNameUndefined(nextStep.directedAcyclicGraphName)
     }
 
     override fun register(step: StepSpecification<*, *, *>) {
