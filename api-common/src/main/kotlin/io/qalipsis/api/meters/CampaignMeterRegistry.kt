@@ -16,13 +16,9 @@
 
 package io.qalipsis.api.meters
 
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.DistributionSummary
-import io.micrometer.core.instrument.Meter
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.Timer
-import java.util.function.Consumer
+import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.context.StepName
 import java.util.function.ToDoubleFunction
 
 /**
@@ -35,24 +31,79 @@ import java.util.function.ToDoubleFunction
  */
 interface CampaignMeterRegistry {
 
-    fun getMeters(): List<Meter>
+    fun counter(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap()
+    ): Counter
 
-    fun forEachMeter(consumer: Consumer<in Meter>)
+    fun summary(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap()
+    ): DistributionSummary
 
+    fun timer(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap()
+    ): Timer
+
+    fun <T> gauge(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap(),
+        stateObject: T,
+        valueFunction: ToDoubleFunction<T>
+    ): Gauge
+
+    fun <T : Number> gauge(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap(),
+        number: T
+    ): Gauge
+
+    fun <T : Collection<*>> gaugeCollectionSize(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap(),
+        collection: T
+    ): Gauge
+
+    fun <T : Map<*, *>> gaugeMapSize(
+        scenarioName: ScenarioName = "",
+        stepName: StepName = "",
+        name: String,
+        tags: Map<String, String> = emptyMap(),
+        map: T
+    ): Gauge
+
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun counter(name: String, tags: Iterable<Tag>): Counter
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun counter(name: String, vararg tags: String): Counter
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun summary(name: String, tags: Iterable<Tag>): DistributionSummary
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun summary(name: String, vararg tags: String): DistributionSummary
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun timer(name: String, tags: Iterable<Tag>): Timer
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun timer(name: String, vararg tags: String): Timer
 
-    fun more(): MeterRegistry.More
-
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun <T> gauge(
         name: String,
         tags: Iterable<Tag>,
@@ -60,21 +111,14 @@ interface CampaignMeterRegistry {
         valueFunction: ToDoubleFunction<T>
     ): T
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T
 
-    fun <T : Number> gauge(name: String, number: T): T
-
-    fun <T> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T
-
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun <T : Collection<*>> gaugeCollectionSize(name: String, tags: Iterable<Tag>, collection: T): T
 
+    @Deprecated(message = "Use the function with the scenario and step as argument")
     fun <T : Map<*, *>> gaugeMapSize(name: String, tags: Iterable<Tag>, map: T): T
-
-    fun remove(meter: Meter): Meter
-
-    fun removeByPreFilterId(preFilterId: Meter.Id): Meter
-
-    fun remove(mappedId: Meter.Id): Meter
 
     fun clear()
 }
