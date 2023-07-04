@@ -21,7 +21,6 @@ package io.qalipsis.core.factory.steps
 
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
@@ -56,7 +55,12 @@ internal class TimeoutStepDecorator<I, O>(
                 executeStep(minion, decorated, context)
             }
         } catch (e: TimeoutCancellationException) {
-            meterRegistry.counter("step-${name}-timeout", "minion", context.minionId).increment()
+            meterRegistry.counter(
+                scenarioName = context.scenarioName,
+                stepName = context.stepName,
+                name = "step-timeout",
+                mapOf("minion" to context.minionId)
+            ).increment()
             context.isExhausted = true
             throw e
         }
@@ -66,11 +70,5 @@ internal class TimeoutStepDecorator<I, O>(
         // This method should never be called.
         throw NotImplementedError()
     }
-
-    companion object {
-        @JvmStatic
-        private val log = logger()
-    }
-
 
 }

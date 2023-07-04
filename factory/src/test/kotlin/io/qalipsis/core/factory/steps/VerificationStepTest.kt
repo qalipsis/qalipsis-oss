@@ -19,22 +19,21 @@
 
 package io.qalipsis.core.factory.steps
 
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.Tags
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Counter
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -42,12 +41,17 @@ import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * @author Eric Jessé
  */
 @WithMockk
 internal class VerificationStepTest {
+
+    @JvmField
+    @RegisterExtension
+    val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
     private lateinit var eventsLogger: EventsLogger
@@ -72,22 +76,39 @@ internal class VerificationStepTest {
 
     @BeforeEach
     internal fun setUp() {
-        val meterTags = relaxedMockk<Tags>()
-        val successMeterTags = relaxedMockk<Tags>()
-        val failureMeterTags = relaxedMockk<Tags>()
-        val errorMeterTags = relaxedMockk<Tags>()
-        every { stepStartStopContext.toMetersTags() } returns meterTags
-        every { meterTags.and("status", "success") } returns successMeterTags
-        every { meterTags.and("status", "failure") } returns failureMeterTags
-        every { meterTags.and("status", "error") } returns errorMeterTags
-        every { meterRegistry.counter("step-my-step-assertion", refEq(successMeterTags)) } returns successCounter
-        every { meterRegistry.counter("step-my-step-assertion", refEq(failureMeterTags)) } returns failureCounter
-        every { meterRegistry.counter("step-my-step-assertion", refEq(errorMeterTags)) } returns errorCounter
+        val meterTags = mapOf<String, String>()
+        every { stepStartStopContext.toEventTags() } returns meterTags
+        every { stepStartStopContext.scenarioName } returns "my-scenario"
+        every { stepStartStopContext.stepName } returns "my-step"
+        every {
+            meterRegistry.counter(
+                scenarioName = "my-scenario",
+                stepName = "my-step",
+                name = "assertion",
+                tags = meterTags + ("status" to "success")
+            )
+        } returns successCounter
+        every {
+            meterRegistry.counter(
+                scenarioName = "my-scenario",
+                stepName = "my-step",
+                name = "assertion",
+                tags = meterTags + ("status" to "failure")
+            )
+        } returns failureCounter
+        every {
+            meterRegistry.counter(
+                scenarioName = "my-scenario",
+                stepName = "my-step",
+                name = "assertion",
+                tags = meterTags + ("status" to "error")
+            )
+        } returns errorCounter
     }
 
     @Test
     @Timeout(1)
-    fun `should simply forward with default step`() = runBlockingTest {
+    fun `should simply forward with default step`() = testCoroutineDispatcher.runTest {
         val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry)
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
@@ -112,7 +133,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(2)
-    fun `should apply mapping`() = runBlockingTest {
+    fun `should apply mapping`() = testCoroutineDispatcher.runTest {
         val step = VerificationStep<Int, String>(
             "my-step",
             eventsLogger,
@@ -141,7 +162,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun `should not forward data when assertion throwing error`() = runBlockingTest {
+    fun `should not forward data when assertion throwing error`() = testCoroutineDispatcher.runTest {
         val step =
             VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) { value ->
                 fail<Any>("This is an error")
@@ -182,7 +203,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun `should not forward data when assertion throwing exception`() = runBlockingTest {
+    fun `should not forward data when assertion throwing exception`() = testCoroutineDispatcher.runTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) {
             throw RuntimeException("The error")
         }
@@ -208,7 +229,7 @@ internal class VerificationStepTest {
 
     @Test
     @Timeout(1)
-    fun `should not forward data when assertion fails`() = runBlockingTest {
+    fun `should not forward data when assertion fails`() = testCoroutineDispatcher.runTest {
         val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) {
             throw Error("The error")
         }
@@ -233,7 +254,7 @@ internal class VerificationStepTest {
                 eq("my-scenario"),
                 eq("my-step"),
                 eq(ReportMessageSeverity.ERROR),
-                "Assertion failure(s): 1"
+                "Assertion failure(s): 1 (See the details in the events)"
             )
         }
         confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)

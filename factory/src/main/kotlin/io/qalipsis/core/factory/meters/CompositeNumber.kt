@@ -1,4 +1,4 @@
-package io.qalipsis.core.factory.campaign
+package io.qalipsis.core.factory.meters
 
 import io.micrometer.core.instrument.Meter
 import java.util.concurrent.ConcurrentHashMap

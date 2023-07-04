@@ -48,8 +48,6 @@ internal class VerificationStepSpecificationConverter(
     override suspend fun <I, O> convert(creationContext: StepCreationContext<VerificationStepSpecification<*, *>>) {
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as VerificationStepSpecification<I, O>
-        // The reporting is done by the step itself and should not added by the decorator.
-        spec.reporting.reportErrors = false
         val step =
             VerificationStep(spec.name, eventsLogger, meterRegistry, reportLiveStateRegistry, spec.verificationBlock)
         creationContext.createdStep(step)

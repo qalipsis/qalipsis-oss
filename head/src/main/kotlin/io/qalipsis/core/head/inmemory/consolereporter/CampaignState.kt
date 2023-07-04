@@ -22,6 +22,7 @@ package io.qalipsis.core.head.inmemory.consolereporter
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessageSeverity
 import java.time.Duration
@@ -106,7 +107,7 @@ data class ScenarioState(val scenarioName: ScenarioName) {
 
     val end = AtomicReference<Instant>()
 
-    val stepInitializationOrder = mutableListOf<StepName>()
+    val stepInitializationOrder = concurrentList<StepName>()
 
     val steps = ConcurrentHashMap(LinkedHashMap<StepName, StepState>())
 

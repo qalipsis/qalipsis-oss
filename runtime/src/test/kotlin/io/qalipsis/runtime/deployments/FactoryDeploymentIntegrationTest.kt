@@ -23,6 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.any
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.none
 import assertk.assertions.startsWith
 import io.aerisconsulting.catadioptre.getProperty
@@ -70,7 +71,12 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         assertThat(qalipsisCoreSingletonObjectsPackages).all {
             none { it.startsWith("io.qalipsis.core.head") }
-            none { it.startsWith("io.qalipsis.core.report") }
+            none {
+                it.all {
+                    it.startsWith("io.qalipsis.core.report")
+                    it.isNotEqualTo("io.qalipsis.core.reporter.CompositeMeterReporter")
+                }
+            }
             any { it.startsWith("io.qalipsis.core.factory") }
         }
 

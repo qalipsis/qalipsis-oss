@@ -1,9 +1,26 @@
-package io.qalipsis.core.factory.campaign
+/*
+ * QALIPSIS
+ * Copyright (C) 2023 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+package io.qalipsis.core.factory.meters
 
 import io.micrometer.core.instrument.Clock
-import io.micrometer.core.instrument.Meter
-import io.micrometer.core.instrument.Timer
-import io.micrometer.core.instrument.distribution.HistogramSnapshot
+import io.qalipsis.api.meters.Timer
 import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
@@ -26,11 +43,7 @@ internal data class CompositeTimer(
     private val clock: Clock,
     private val scenarioLevelTimer: Timer,
     private val campaignLevelTimer: Timer
-) : Timer {
-
-    override fun getId(): Meter.Id = scenarioLevelTimer.id
-
-    override fun takeSnapshot(): HistogramSnapshot = scenarioLevelTimer.takeSnapshot()
+) : Timer by scenarioLevelTimer {
 
     override fun record(amount: Long, unit: TimeUnit) {
         scenarioLevelTimer.record(amount, unit)
@@ -71,12 +84,4 @@ internal data class CompositeTimer(
             record(e - s, NANOSECONDS)
         }
     }
-
-    override fun count() = scenarioLevelTimer.count()
-
-    override fun totalTime(unit: TimeUnit) = scenarioLevelTimer.totalTime(unit)
-
-    override fun max(unit: TimeUnit) = scenarioLevelTimer.max(unit)
-
-    override fun baseTimeUnit(): TimeUnit = scenarioLevelTimer.baseTimeUnit()
 }

@@ -25,7 +25,6 @@ import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
-import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
@@ -59,10 +58,10 @@ internal class VerificationStep<I, O>(
     private var started = AtomicBoolean()
 
     override suspend fun start(context: StepStartStopContext) {
-        val tags = context.toMetersTags()
-        successMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "success"))
-        failureMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "failure"))
-        errorMeter = meterRegistry.counter("step-${name}-assertion", tags.and("status", "error"))
+        val tags = context.toEventTags()
+        successMeter = meterRegistry.counter(context.scenarioName, name, "assertion", tags + ("status" to "success"))
+        failureMeter = meterRegistry.counter(context.scenarioName, name, "assertion", tags + ("status" to "failure"))
+        errorMeter = meterRegistry.counter(context.scenarioName, name, "assertion", tags + ("status" to "error"))
         started.set(true)
         super.start(context)
     }
@@ -95,14 +94,9 @@ internal class VerificationStep<I, O>(
                 context.scenarioName,
                 this.name,
                 ReportMessageSeverity.ERROR,
-                "Assertion failure(s): ${assertionFailuresCount.get()}"
+                "Assertion failure(s): ${assertionFailuresCount.get()} (See the details in the events)"
             )
         }
         super.stop(context)
-    }
-
-    companion object {
-        @JvmStatic
-        private val log = logger()
     }
 }
