@@ -23,9 +23,9 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameAs
+import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
@@ -71,7 +71,7 @@ internal class VerificationStepSpecificationConverterTest :
         converter.convert<String, Int>(creationContext as StepCreationContext<VerificationStepSpecification<*, *>>)
 
         // then
-        assertThat(spec.reporting.reportErrors).isFalse()
+        assertThat(spec.reporting.reportErrors).isTrue()
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
             prop(VerificationStep<*, *>::name).isEqualTo("my-step")
             prop("reportLiveStateRegistry").isSameAs(campaignReportLiveStateRegistry)

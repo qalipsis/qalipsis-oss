@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.math
 
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 
@@ -26,5 +27,20 @@ import kotlin.math.roundToInt
  * Creates a rounded percentage representation of this number in regard of [total].
  */
 fun Number.percentOf(total: Number): Double {
-    return (10_000 * this.toDouble() / total.toDouble()).roundToInt().toDouble() / 100.00
+    return (100 * this.toDouble() / total.toDouble()).roundTwoDecimals()
+}
+
+/**
+ * Round the double, using the specified number of decimal.
+ */
+fun Double.round(decimal: Int): Double {
+    val factor = 10.0.pow(decimal)
+    return (factor * this).roundToInt().toDouble() / factor
+}
+
+/**
+ * Round the double.
+ */
+fun Double.roundTwoDecimals(): Double {
+    return this.round(2)
 }

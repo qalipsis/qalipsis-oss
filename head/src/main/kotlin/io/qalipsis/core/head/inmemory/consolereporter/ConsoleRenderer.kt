@@ -32,6 +32,7 @@ import com.varabyte.kotter.runtime.render.RenderScope
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.math.percentOf
 import java.util.concurrent.atomic.AtomicInteger
@@ -40,7 +41,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * Displays the current state of the campaign into the console.
  * This service is only applicable for the standalone mode.
  */
-internal class ConsoleRenderer(private val campaignState: CampaignState) {
+internal class ConsoleRenderer(
+    private val campaignState: CampaignState,
+    private val meterRegistry: CampaignMeterRegistry,
+    private val meterReporter: ConsoleMeterReporter
+) {
 
     fun render(renderScope: MainRenderScope) {
         with(renderScope) {
@@ -188,8 +193,8 @@ internal class ConsoleRenderer(private val campaignState: CampaignState) {
         renderErrors(scenarioState.errorsByType)
         renderMessages(scenarioState.messages)
 
-        scenarioState.stepInitializationOrder.forEach { stepName ->
-            scenarioState.steps[stepName]?.let { state -> renderStep(stepName, state) }
+        scenarioState.stepInitializationOrder.distinct().forEach { stepName ->
+            scenarioState.steps[stepName]?.let { state -> renderStep(scenarioName, stepName, state) }
         }
     }
 
@@ -231,10 +236,11 @@ internal class ConsoleRenderer(private val campaignState: CampaignState) {
      * Renders the details of a single scenario.
      */
     private fun RenderScope.renderStep(
+        scenarioName: ScenarioName,
         stepName: StepName,
         stepState: StepState
     ) {
-        text("${INDENTATION}\u2699 Step $stepName".padEnd(TWO_COLS_SIZE))
+        text("  \u2699 Step $stepName".padEnd(TWO_COLS_SIZE))
         if (stepState.failedInitialization.get()) {
             red {
                 text("Initialization failed, look at the messages below")
@@ -256,6 +262,8 @@ internal class ConsoleRenderer(private val campaignState: CampaignState) {
         }
         textLine()
 
+        meterReporter.renderStepMeters(this, scenarioName, stepName, WIDTH, "${INDENTATION}${INDENTATION}")
+
         renderErrors(stepState.errorsByType)
         renderMessages(stepState.messages.values)
     }
@@ -265,10 +273,12 @@ internal class ConsoleRenderer(private val campaignState: CampaignState) {
 
         val log = logger()
 
-        const val TWO_COLS_SIZE = 60
+        const val WIDTH = 120
 
-        const val THREE_COLS_SIZE = 40
+        const val TWO_COLS_SIZE = WIDTH / 2
 
-        val INDENTATION = " ".padStart(3)
+        const val THREE_COLS_SIZE = WIDTH / 3
+
+        val INDENTATION = " ".repeat(2)
     }
 }

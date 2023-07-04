@@ -23,9 +23,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
-import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.Timer
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -37,6 +35,8 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step

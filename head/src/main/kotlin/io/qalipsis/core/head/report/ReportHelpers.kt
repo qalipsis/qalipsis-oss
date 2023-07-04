@@ -48,7 +48,7 @@ internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
             any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
             any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
             none { it.start != null } -> ExecutionStatus.QUEUED
-            any { it.end == null } -> ExecutionStatus.QUEUED
+            any { it.end == null } -> ExecutionStatus.IN_PROGRESS
             else -> ExecutionStatus.SUCCESSFUL
         },
         scenariosReports = toList()

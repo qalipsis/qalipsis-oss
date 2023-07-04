@@ -137,19 +137,43 @@ internal class ReportingStepDecorator<I, O>(
             @Suppress("UNCHECKED_CAST")
             log.trace { "Performing the execution of the decorated..." }
             executeStep(minion, decorated as Step<Any?, Any?>, context as StepContext<Any?, Any?>)
-            if (isDecoratedVisible) {
-                log.trace { "Reporting the successful execution of the decorated step" }
-                Duration.ofNanos(System.nanoTime() - start).let { duration ->
-                    eventsLogger.debug("step.execution.complete", tagsSupplier = { context.toEventTags() })
-                    completionTimer.record(duration)
+            if (context.isExhausted) {
+                log.trace { "Step completed with failure" }
+                if (isDecoratedVisible) {
+                    log.trace { "Reporting the failed execution of the decorated step" }
+                    eventsLogger.warn(
+                        "step.execution.failed",
+                        context.errors.lastOrNull()?.message,
+                        tagsSupplier = { context.toEventTags() })
+                    val duration = Duration.ofNanos(System.nanoTime() - start)
+                    failureTimer.record(duration)
+
+                    reportLiveStateRegistry.recordFailedStepExecution(
+                        context.campaignKey,
+                        context.scenarioName,
+                        decorated.name
+                    )
+                } else {
+                    eventsLogger.warn(
+                        "minion.operation.failed",
+                        context.errors.lastOrNull()?.message,
+                        tagsSupplier = { context.toEventTags() })
                 }
-                reportLiveStateRegistry.recordSuccessfulStepExecution(
-                    context.campaignKey,
-                    context.scenarioName,
-                    decorated.name
-                )
+            } else {
+                log.trace { "Step completed successfully" }
+                if (isDecoratedVisible) {
+                    log.trace { "Reporting the successful execution of the decorated step" }
+                    Duration.ofNanos(System.nanoTime() - start).let { duration ->
+                        eventsLogger.debug("step.execution.complete", tagsSupplier = { context.toEventTags() })
+                        completionTimer.record(duration)
+                    }
+                    reportLiveStateRegistry.recordSuccessfulStepExecution(
+                        context.campaignKey,
+                        context.scenarioName,
+                        decorated.name
+                    )
+                }
             }
-            log.trace { "Step completed with success" }
         } catch (t: Throwable) {
             val cause = getFailureCause(t, context, decorated)
             if (isDecoratedVisible) {

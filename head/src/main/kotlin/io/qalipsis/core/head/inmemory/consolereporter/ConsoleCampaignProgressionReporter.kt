@@ -30,6 +30,7 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -51,7 +52,10 @@ import kotlin.time.Duration.Companion.seconds
     Requires(env = [ExecutionEnvironments.STANDALONE]),
     Requires(property = "report.export.console-live.enabled", defaultValue = "false", value = "true")
 )
-internal class ConsoleCampaignProgressionReporter : CampaignHook, ProcessBlocker {
+internal class ConsoleCampaignProgressionReporter(
+    private val meterRegistry: CampaignMeterRegistry,
+    private val consoleMeterReporter: ConsoleMeterReporter
+) : CampaignHook, ProcessBlocker {
 
     private lateinit var campaignState: CampaignState
 
@@ -84,7 +88,7 @@ internal class ConsoleCampaignProgressionReporter : CampaignHook, ProcessBlocker
         }
 
         consoleAppender = disableLogbackConsoleAppender()
-        val consoleRenderer = ConsoleRenderer(campaignState)
+        val consoleRenderer = ConsoleRenderer(campaignState, meterRegistry, consoleMeterReporter)
         campaignCompletion = CompletableFuture()
 
         thread(name = "console-live-reporter", isDaemon = false) {
@@ -117,7 +121,7 @@ internal class ConsoleCampaignProgressionReporter : CampaignHook, ProcessBlocker
 
     suspend fun report() {
         delay(2000)
-        val consoleRenderer = ConsoleRenderer(campaignState)
+        val consoleRenderer = ConsoleRenderer(campaignState, meterRegistry, consoleMeterReporter)
         session(clearTerminal = true) {
             section {
                 consoleRenderer.render(this)
