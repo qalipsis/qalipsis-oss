@@ -30,8 +30,8 @@ import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.report.JunitReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import org.junit.Assert
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.io.File
@@ -107,8 +107,7 @@ internal class JunitReportPublisherTest {
         val expectedReport =
             File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml").readText()
                 .replace("__time__", time.toString())
-
-        Assert.assertEquals(expectedReport, generatedReport)
+        assertEqualXml(expectedReport, generatedReport)
     }
 
     @Test
@@ -165,7 +164,6 @@ internal class JunitReportPublisherTest {
         //when
         junitReportPublisher.publish(campaignKey, campaignReport)
 
-
         //then
         val generatedReport =
             File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
@@ -173,8 +171,7 @@ internal class JunitReportPublisherTest {
         val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
             .readText()
             .replace("__time__", time.toString())
-
-        Assert.assertEquals(expectedReport, generatedReport)
+        assertEqualXml(expectedReport, generatedReport)
     }
 
     @Test
@@ -256,15 +253,114 @@ internal class JunitReportPublisherTest {
         junitReportPublisher.publish("foo", campaignReport)
 
         //then
-        campaignReport.scenariosReports.forEach {
-            val generatedReport = File(generatedReportFolder + "/foo/${it.scenarioName}.xml")
+        val generatedReport =
+            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
                 .readText()
                 .replace(Regex("""timestamp="[^"]+""""), """timestamp="$time"""")
-            val expectedReport = File(expectedReportFolder + "/${it.scenarioName}.xml")
+        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
+            .readText()
+            .replace("__time__", time.toString())
+        assertEqualXml(expectedReport, generatedReport)
+    }
+
+    @Test
+    fun `should write report for multiple scenarios with errors`() = testCoroutineDispatcher.run {
+        //given
+        val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
+
+        val campaignKey = "foo"
+
+        val timeDiffSeconds = 10L
+        val start = Instant.now().minusSeconds(timeDiffSeconds)
+        val end = Instant.now()
+
+        val campaignReport = CampaignReport(
+            campaignKey = campaignKey,
+            start = start,
+            end = end,
+            scheduledMinions = 987,
+            startedMinions = 123,
+            completedMinions = 4231,
+            successfulExecutions = 42,
+            failedExecutions = 234,
+            scenariosReports = listOf(
+                ScenarioReport(
+                    campaignKey = campaignKey,
+                    scenarioName = "bar5",
+                    start = start,
+                    end = end,
+                    startedMinions = 2342,
+                    completedMinions = 23,
+                    successfulExecutions = 4234,
+                    failedExecutions = 45,
+                    status = ExecutionStatus.SUCCESSFUL,
+                    messages = listOf(
+                        ReportMessage(
+                            stepName = "normal test",
+                            messageId = "1",
+                            severity = ReportMessageSeverity.INFO,
+                            message = "passed"
+                        ),
+                        ReportMessage(
+                            stepName = "failed test",
+                            messageId = "2",
+                            severity = ReportMessageSeverity.ERROR,
+                            message = "failed"
+                        )
+                    )
+                ),
+                ScenarioReport(
+                    campaignKey = campaignKey,
+                    scenarioName = "bar7",
+                    start = start,
+                    end = end,
+                    startedMinions = 2392,
+                    completedMinions = 23,
+                    successfulExecutions = 4299,
+                    failedExecutions = 25,
+                    status = ExecutionStatus.SUCCESSFUL,
+                    messages = listOf(
+                        ReportMessage(
+                            stepName = "Second normal test",
+                            messageId = "1",
+                            severity = ReportMessageSeverity.ABORT,
+                            message = "passed second"
+                        ),
+                        ReportMessage(
+                            stepName = "Second failed test",
+                            messageId = "2",
+                            severity = ReportMessageSeverity.WARN,
+                            message = "failed again"
+                        ),
+                        ReportMessage(
+                            stepName = "Second failed test",
+                            messageId = "7",
+                            severity = ReportMessageSeverity.ABORT,
+                            message = "Just Aborted again"
+                        ),
+                        ReportMessage(
+                            stepName = "Second failed test",
+                            messageId = "6",
+                            severity = ReportMessageSeverity.ERROR,
+                            message = "ABorted failed again"
+                        )
+                    )
+                )
+            ), status = ExecutionStatus.SUCCESSFUL
+        )
+        val time = getTimeMock()
+
+        //when
+        junitReportPublisher.publish(campaignKey, campaignReport)
+
+        //then
+        val generatedReport =
+            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
                 .readText()
-                .replace("__time__", time.toString())
-            Assert.assertEquals(expectedReport, generatedReport)
-        }
+        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
+            .readText()
+            .replace("__time__", time.toString())
+        assertEqualXml(expectedReport, generatedReport)
     }
 
     @AfterEach
@@ -278,5 +374,15 @@ internal class JunitReportPublisherTest {
         mockkStatic(Clock::class)
         every { Clock.systemUTC() } returns fixedClock
         return now
+    }
+
+    /**
+     * Compares two xml fragments.
+     */
+    private fun assertEqualXml(expected: String, actual: String) {
+        val pattern = Regex(">\\s+<") // pattern to match whitespace between tags.
+        val strippedXml1 = expected.replace(pattern, "><")
+        val strippedXml2 = actual.replace(pattern, "><")
+        assertEquals(strippedXml1, strippedXml2)
     }
 }

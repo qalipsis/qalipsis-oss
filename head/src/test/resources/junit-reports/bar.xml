@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="bar" tests="1" skipped="0" failures="0" errors="0" timestamp="__time__" hostname="Qalipsis" time="10">
-  <testcase name="normal test" time="10"/>
-  <system-out><![CDATA[
+<testsuites id="foo" name="foo" tests="276" failures="0" time="10s">
+    <testsuite id="foo-bar" name="bar" tests="4279" skipped="0" failures="0" errors="0" timestamp="__time__" hostname="Qalipsis" time="10s">
+        <testcase id="foo-bar-normal test" name="normal test" time="0" tests="1" failures="0"/>
+        <system-out><![CDATA[
 INFO  Step normal test: passed
   ]]></system-out>
-  <system-err><![CDATA[
+        <system-err><![CDATA[
 
   ]]></system-err>
-</testsuite>
+    </testsuite>
+</testsuites>
