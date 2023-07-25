@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites id="foo" name="foo" tests="276" failures="4" time="10s">
+    <testsuite id="foo-bar5" name="bar5" tests="4279" skipped="0" failures="1" errors="0" timestamp="__time__" hostname="Qalipsis" time="10s">
+        <testcase id="foo-bar5-normal test" name="normal test" time="0" tests="1" failures="0"/>
+        <testcase id="foo-bar5-failed test" name="failed test" time="0" tests="1" failures="1">
+            <failure message="failed" type="ERROR"/>
+        </testcase>
+        <system-out><![CDATA[
+INFO  Step normal test: passed
+  ]]></system-out>
+        <system-err><![CDATA[
+
+  ]]></system-err>
+    </testsuite>
+    <testsuite id="foo-bar7" name="bar7" tests="4324" skipped="0" failures="1" errors="2" timestamp="__time__" hostname="Qalipsis" time="10s">
+        <testcase id="foo-bar7-Second normal test" name="Second normal test" time="0" tests="1" failures="1">
+            <failure message="passed second" type="ABORT"/>
+        </testcase>
+        <testcase id="foo-bar7-Second failed test" name="Second failed test" time="0" tests="3" failures="2">
+            <failure message="Just Aborted again" type="ABORT"/>
+            <failure message="ABorted failed again" type="ERROR"/>
+        </testcase>
+        <system-out><![CDATA[
+WARN  Step Second failed test: failed again
+  ]]></system-out>
+        <system-err><![CDATA[
+
+  ]]></system-err>
+    </testsuite>
+</testsuites>

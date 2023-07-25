@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="bar2" tests="2" skipped="0" failures="0" errors="1" timestamp="__time__" hostname="Qalipsis" time="10">
-  <testcase name="normal test" time="10"/>
-  <testcase name="failed test" time="10">
-    <failure message="failed" type="ERROR"/>
-  </testcase>
-  <system-out><![CDATA[
+<testsuites id="foo" name="foo" tests="276" failures="1" time="10s">
+    <testsuite id="foo-bar2" name="bar2" tests="4279" skipped="0" failures="1" errors="0" timestamp="__time__" hostname="Qalipsis" time="10s">
+        <testcase id="foo-bar2-normal test" name="normal test" time="0" tests="1" failures="0"/>
+        <testcase id="foo-bar2-failed test" name="failed test" time="0" tests="1" failures="1">
+            <failure message="failed" type="ERROR"/>
+        </testcase>
+        <system-out><![CDATA[
 INFO  Step normal test: passed
   ]]></system-out>
-  <system-err><![CDATA[
-ERROR Step failed test: failed
+        <system-err><![CDATA[
+
   ]]></system-err>
-</testsuite>
+    </testsuite>
+</testsuites>
