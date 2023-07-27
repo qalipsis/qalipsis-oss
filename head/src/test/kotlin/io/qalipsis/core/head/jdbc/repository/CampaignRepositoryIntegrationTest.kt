@@ -50,8 +50,8 @@ import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
-import io.qalipsis.core.head.report.CampaignData
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
+import io.qalipsis.core.head.report.CampaignData
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.count
@@ -2472,7 +2472,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(campaignRepository.findByTenantAndKeys("my-tenant", listOf("key-1", "key-3", "key-2"))).isNotNull()
             .all {
                 hasSize(3)
-                isEqualTo(listOf(saved1, saved2, saved3))
+                containsExactlyInAnyOrder(saved1, saved2, saved3)
             }
 
         assertThat(campaignRepository.findByTenantAndKeys("my-tenant", listOf("key-5", "key-6", "key-4"))).isNotNull()
@@ -2520,6 +2520,52 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(campaignRepository.findIdByTenantAndKey("my-tenant-2", "key-6")).isNotNull().isEqualTo(saved6.id)
 
         assertThat(campaignRepository.findIdByTenantAndKey("my-tenant-2", "key-2")).isNull()
+    }
+
+    @Test
+    fun `should retrieve a scheduled campaign by its tenant and key`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val saved1 = campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-1",
+                tenantId = tenant.id,
+                zones = setOf("at", "fr"),
+                result = SCHEDULED
+            )
+        )
+        campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-13",
+                tenantId = tenant.id,
+                zones = setOf("at", "fr"),
+                result = SCHEDULED
+            )
+        )
+        assertThat(campaignRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(campaignRepository.findByTenantAndKeyAndScheduled("my-tenant", "key-1"))
+            .isNotNull()
+            .isEqualTo(saved1)
+    }
+
+    @Test
+    fun `should retrieve no campaign if the status is not scheduled`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-1",
+                tenantId = tenant.id,
+                zones = setOf("at", "fr"),
+            )
+        )
+        assertThat(campaignRepository.findAll().count()).isEqualTo(1)
+
+        // when + then
+        assertThat(campaignRepository.findByTenantAndKeyAndScheduled("my-tenant", "key-1"))
+            .isNull()
     }
 
 }

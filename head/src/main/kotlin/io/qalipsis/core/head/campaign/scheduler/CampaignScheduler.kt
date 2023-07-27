@@ -24,7 +24,7 @@ internal interface CampaignScheduler {
      * Schedule a campaign test to execute frequently.
      *
      * @param tenant tenant owning the campaign to schedule
-     * @param configurer consider the user's name who configure the campaign
+     * @param configurer name of the user who configured the campaign
      * @param configuration configuration of the campaign to schedule
      */
     suspend fun schedule(
@@ -32,4 +32,20 @@ internal interface CampaignScheduler {
         configurer: String,
         configuration: CampaignConfiguration
     ): RunningCampaign
+
+    /**
+     * Updates a scheduled campaign test.
+     *
+     * @param tenant tenant owning the campaign to schedule
+     * @param configurer name of the user who configured the campaign
+     * @param campaignKey unique identifier of the campaign to be updated
+     * @param configuration configuration of the campaign schedule to be updated
+     */
+    suspend fun update(
+        tenant: String,
+        configurer: String,
+        campaignKey: CampaignKey,
+        configuration: CampaignConfiguration
+    ): RunningCampaign
+
 }

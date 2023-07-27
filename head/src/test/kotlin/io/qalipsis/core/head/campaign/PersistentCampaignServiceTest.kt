@@ -41,6 +41,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
+import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
@@ -54,11 +55,11 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
-import org.junit.jupiter.api.BeforeAll
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -84,6 +85,9 @@ internal class PersistentCampaignServiceTest {
 
     @RelaxedMockK
     private lateinit var campaignPreparator: CampaignPreparator
+
+    @RelaxedMockK
+    private lateinit var campaignScheduler: CampaignScheduler
 
     private lateinit var persistentCampaignService: PersistentCampaignService
 
@@ -496,6 +500,60 @@ internal class PersistentCampaignServiceTest {
             campaignConverter,
             factoryRepository,
             campaignPreparator
+        )
+    }
+
+    @Test
+    internal fun `should cancel future jobs when the campaign status is scheduled`() = testDispatcherProvider.run {
+        val now = Instant.now()
+        val campaign = CampaignEntity(
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scheduledMinions = 345,
+            start = now,
+            configurer = 199,
+            result = ExecutionStatus.SCHEDULED
+        )
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
+        coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
+        coEvery { campaignRepository.update(any()) } returnsArgument 0
+        coEvery { campaignPreparator.cancelSchedule(any()) } returnsArgument 0
+
+        // when
+        persistentCampaignService.abort("my-tenant", "my-aborter", "my-campaign")
+
+        // then
+        val capturedEntity = mutableListOf<CampaignEntity>()
+        coVerifyOnce {
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+            userRepository.findIdByUsername("my-aborter")
+            campaignRepository.update(capture(capturedEntity))
+            campaignPreparator.cancelSchedule("my-campaign")
+        }
+        assertThat(capturedEntity).all {
+            hasSize(1)
+            any {
+                it.isInstanceOf(CampaignEntity::class).all {
+                    prop(CampaignEntity::key).isEqualTo("my-campaign")
+                    prop(CampaignEntity::name).isEqualTo("This is a campaign")
+                    prop(CampaignEntity::scheduledMinions).isEqualTo(345)
+                    prop(CampaignEntity::speedFactor).isEqualTo(123.2)
+                    prop(CampaignEntity::configurer).isEqualTo(199)
+                    prop(CampaignEntity::aborter).isEqualTo(111)
+                    prop(CampaignEntity::result).isEqualTo(ExecutionStatus.ABORTED)
+                }
+            }
+        }
+
+        confirmVerified(
+            userRepository,
+            campaignRepository,
+            campaignScenarioRepository,
+            campaignConverter,
+            factoryRepository,
+            campaignPreparator,
+            campaignScheduler
         )
     }
 

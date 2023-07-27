@@ -156,7 +156,16 @@ internal class PersistentCampaignService(
     @LogInput
     override suspend fun abort(tenant: String, aborter: String?, campaignKey: String) {
         campaignRepository.findByTenantAndKey(tenant, campaignKey)?.let { campaign ->
-            campaignRepository.update(campaign.copy(aborter = aborter?.let { userRepository.findIdByUsername(it) }))
+            campaignRepository.update(
+                campaign.copy(
+                    aborter = aborter?.let { userRepository.findIdByUsername(it) },
+                    result = ExecutionStatus.ABORTED
+                )
+            )
+            //Cancels the job that handles campaign scheduling.
+            if (campaign.result == ExecutionStatus.SCHEDULED) {
+                campaignPreparator.cancelSchedule(campaignKey)
+            }
         }
     }
 
