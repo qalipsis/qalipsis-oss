@@ -2,7 +2,6 @@ package io.qalipsis.core.head.campaign
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -16,7 +15,6 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import jakarta.inject.Singleton
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.count
 
 /**
@@ -37,8 +35,6 @@ internal class CampaignPreparator(
     private val campaignConfigurationConverter: CampaignConfigurationConverter,
     private val hooks: List<CampaignHook>
 ) {
-
-    private val campaignScheduleKeyStore: MutableMap<CampaignKey, Job> = mutableMapOf()
 
     /**
      * Convert and save a campaign during its creation or scheduling.
@@ -79,26 +75,6 @@ internal class CampaignPreparator(
             CampaignScenarioEntity(campaignId = campaign.id, name = scenarioName, minionsCount = scenario.minionsCount)
         }).count()
         return runningCampaign
-    }
-
-    /**
-     * Cancels a scheduled test campaign job.
-     *
-     * @param campaignKey identifier to the job to be cancelled
-     */
-    suspend fun cancelSchedule(campaignKey: CampaignKey) {
-        campaignScheduleKeyStore[campaignKey]?.cancel()
-        campaignScheduleKeyStore.remove(campaignKey)
-    }
-
-    /**
-     * Updates the campaign schedule keystore.
-     *
-     * @param campaignKey identifier to the job to be added to the store
-     * @param scheduleJob background job that handles scheduling of the test campaign
-     */
-    suspend fun updateSchedule(campaignKey: CampaignKey, scheduleJob: Job) {
-        campaignScheduleKeyStore[campaignKey] = scheduleJob
     }
 
 }

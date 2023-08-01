@@ -72,6 +72,9 @@ internal class DefaultCampaignSchedulerImplTest {
     @RelaxedMockK
     private lateinit var campaignPreparator: CampaignPreparator
 
+    @RelaxedMockK
+    private lateinit var scheduledCampaignsRegistry: ScheduledCampaignsRegistry
+
     @MockK
     lateinit var factoryService: FactoryService
 
@@ -87,6 +90,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             )
         )
@@ -149,6 +153,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -167,7 +172,7 @@ internal class DefaultCampaignSchedulerImplTest {
         // then
         coVerifyOrder {
             defaultCampaignSchedulerImpl["schedulingExecution"](refEq("campaign-key"), refEq(instant))
-            campaignPreparator.updateSchedule("campaign-key", any<Job>())
+            scheduledCampaignsRegistry.updateSchedule("campaign-key", any<Job>())
         }
         confirmVerified(
             userRepository,
@@ -175,7 +180,8 @@ internal class DefaultCampaignSchedulerImplTest {
             tenantRepository,
             campaignRepository,
             factoryService,
-            campaignPreparator
+            campaignPreparator,
+            scheduledCampaignsRegistry
         )
 
     }
@@ -190,6 +196,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -287,6 +294,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -340,6 +348,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -407,6 +416,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -489,6 +499,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -529,6 +540,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -571,6 +583,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -629,6 +642,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -685,10 +699,10 @@ internal class DefaultCampaignSchedulerImplTest {
                     refEq(updateConfiguration)
                 )
                 campaignRepository.findByTenantAndKeyAndScheduled(refEq("my-tenant"), refEq(campaignKey))
-                campaignPreparator.cancelSchedule(refEq(campaignKey))
+                scheduledCampaignsRegistry.cancelSchedule(refEq(campaignKey))
                 defaultCampaignSchedulerImpl.schedule(refEq("my-tenant"), refEq("my-user"), refEq(updateConfiguration))
             }
-            confirmVerified(campaignRepository)
+            confirmVerified(campaignRepository, scheduledCampaignsRegistry, defaultCampaignSchedulerImpl)
         }
 
     @Test
@@ -702,6 +716,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true

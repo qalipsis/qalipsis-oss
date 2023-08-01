@@ -43,6 +43,7 @@ internal class DefaultCampaignSchedulerImpl(
     private val campaignRepository: CampaignRepository,
     private val factoryService: FactoryService,
     private val campaignPreparator: CampaignPreparator,
+    private val scheduledCampaignsRegistry: ScheduledCampaignsRegistry,
     @Named(ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : CampaignScheduler, HeadStartupComponent {
 
@@ -66,7 +67,7 @@ internal class DefaultCampaignSchedulerImpl(
         val scheduleJob = coroutineScope.launch {
             schedulingExecution(campaignKey, instant)
         }
-        campaignPreparator.updateSchedule(campaignKey, scheduleJob)
+        scheduledCampaignsRegistry.updateSchedule(campaignKey, scheduleJob)
     }
 
     @LogInput
@@ -99,7 +100,7 @@ internal class DefaultCampaignSchedulerImpl(
         requireNotNull(campaignRepository.findByTenantAndKeyAndScheduled(tenant, campaignKey)) {
             "Campaign does not exist"
         }
-        campaignPreparator.cancelSchedule(campaignKey)
+        scheduledCampaignsRegistry.cancelSchedule(campaignKey)
         return schedule(tenant, configurer, configuration)
     }
 

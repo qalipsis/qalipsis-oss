@@ -42,6 +42,7 @@ import io.mockk.spyk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
+import io.qalipsis.core.head.campaign.scheduler.ScheduledCampaignsRegistry
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
@@ -89,6 +90,9 @@ internal class PersistentCampaignServiceTest {
     @RelaxedMockK
     private lateinit var campaignScheduler: CampaignScheduler
 
+    @RelaxedMockK
+    private lateinit var scheduledCampaignsRegistry: ScheduledCampaignsRegistry
+
     private lateinit var persistentCampaignService: PersistentCampaignService
 
     @BeforeAll
@@ -100,7 +104,8 @@ internal class PersistentCampaignServiceTest {
                 campaignScenarioRepository = campaignScenarioRepository,
                 campaignConverter = campaignConverter,
                 factoryRepository = factoryRepository,
-                campaignPreparator = campaignPreparator
+                campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry
             ),
             recordPrivateCalls = true
         )
@@ -518,7 +523,7 @@ internal class PersistentCampaignServiceTest {
         coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
         coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
         coEvery { campaignRepository.update(any()) } returnsArgument 0
-        coEvery { campaignPreparator.cancelSchedule(any()) } returnsArgument 0
+        coEvery { scheduledCampaignsRegistry.cancelSchedule(any()) } returnsArgument 0
 
         // when
         persistentCampaignService.abort("my-tenant", "my-aborter", "my-campaign")
@@ -529,7 +534,7 @@ internal class PersistentCampaignServiceTest {
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             userRepository.findIdByUsername("my-aborter")
             campaignRepository.update(capture(capturedEntity))
-            campaignPreparator.cancelSchedule("my-campaign")
+            scheduledCampaignsRegistry.cancelSchedule("my-campaign")
         }
         assertThat(capturedEntity).all {
             hasSize(1)
