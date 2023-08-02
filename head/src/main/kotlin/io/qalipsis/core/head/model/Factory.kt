@@ -52,9 +52,7 @@ internal open class Factory(
 
         other as Factory
 
-        if (nodeId != other.nodeId) return false
-
-        return true
+        return nodeId == other.nodeId
     }
 
     override fun hashCode(): Int {

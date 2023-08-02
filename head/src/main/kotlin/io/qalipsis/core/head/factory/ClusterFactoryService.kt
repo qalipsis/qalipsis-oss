@@ -284,7 +284,7 @@ internal class ClusterFactoryService(
             repository.updateAll(toUpdate as List<T>).collect()
         }
         val toSave =
-            mutableNewTags.filter { newSelector -> remaining.filter { it.key == newSelector.key }.isEmpty() }
+            mutableNewTags.filter { newSelector -> remaining.none { it.key == newSelector.key } }
                 .map { (key, value) -> FactoryTagEntity(entityId, key, value) }
         if (toSave.isNotEmpty()) {
             repository.saveAll(toSave as Iterable<T>).collect()
@@ -363,5 +363,13 @@ internal class ClusterFactoryService(
                 scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
             }
         } ?: scenarioRepository.findAllActiveWithSorting(tenant, ScenarioEntity::name.name).map(ScenarioEntity::toModel)
+    }
+
+    @LogInputAndOutput
+    override suspend fun getFactoriesHealth(
+        tenant: String,
+        factories: Collection<NodeId>
+    ): Collection<FactoryHealth> {
+        return factoryRepository.getFactoriesHealth(tenant, factories)
     }
 }

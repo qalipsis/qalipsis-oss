@@ -186,14 +186,16 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                 val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
                 log.trace { "Campaign state $campaignState" }
                 campaignState.inject(campaignExecutionContext)
-                val directives = campaignState.init()
                 campaignService.abort(tenant, aborter, campaignKey)
-                set(campaignState)
                 if (hard) {
                     campaignReportStateKeeper.abort(campaignKey)
                 }
-                directives.forEach {
-                    headChannel.publishDirective(it)
+                val directives = campaignState.init()
+                if (!campaignState.isCompleted) {
+                    set(campaignState)
+                    directives.forEach {
+                        headChannel.publishDirective(it)
+                    }
                 }
             }
         }

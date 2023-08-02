@@ -96,7 +96,9 @@ internal open class MinionsAssignmentState(
     }
 
     override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<CampaignExecutionContext> {
-        return AbortingState(campaign, abortConfiguration, "The campaign was aborted")
+        return abort(campaign) {
+            AbortingState(campaign, abortConfiguration, "The campaign was aborted")
+        }
     }
 
     override fun toString(): String {

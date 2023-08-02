@@ -1382,6 +1382,31 @@ internal class ClusterFactoryServiceTest {
     }
 
     @Test
+    internal fun `should check factories health`() = testDispatcherProvider.run {
+        // given
+        val factories = listOf<FactoryHealth>(relaxedMockk(), relaxedMockk())
+        coEvery {
+            factoryRepository.getFactoriesHealth(
+                refEq("my-tenant"),
+                listOf("node-1", "node-2")
+            )
+        } returns factories
+
+        // when
+        val factoryHealths = clusterFactoryService.getFactoriesHealth("my-tenant", listOf("node-1", "node-2"))
+
+        // then
+        assertThat(factoryHealths).all {
+            hasSize(2)
+            isEqualTo(factories)
+        }
+        coVerifyOrder {
+            factoryRepository.getFactoriesHealth(refEq("my-tenant"), listOf("node-1", "node-2"))
+        }
+        confirmVerified(factoryRepository, campaignRepository, campaignFactoryRepository)
+    }
+
+    @Test
     internal fun `should do no release when no factory is found`() = testDispatcherProvider.run {
         // when
         clusterFactoryService.releaseFactories(mockk(), emptyList())

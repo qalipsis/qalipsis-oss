@@ -370,8 +370,8 @@ internal class StandaloneCampaignExecutorTest {
         coVerifyOrder {
             campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
-            campaignExecutor.set(capture(newState))
             campaignReportStateKeeper.abort("first_campaign")
+            campaignExecutor.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
         confirmVerified(campaignService, campaignReportStateKeeper, headChannel)

@@ -20,9 +20,11 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.Feedback
+import io.qalipsis.core.heartbeat.Heartbeat
 
 /**
  * Parent class of all implementations of [CampaignExecutionState].
@@ -65,5 +67,21 @@ internal abstract class AbstractCampaignExecutionState<C : CampaignExecutionCont
 
     override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<C> {
         return this
+    }
+
+    protected suspend fun abort(
+        campaign: RunningCampaign,
+        toDoWithResult: () -> CampaignExecutionState<CampaignExecutionContext>
+    ): CampaignExecutionState<CampaignExecutionContext> {
+        val healthyFactories = context.factoryService.getFactoriesHealth(campaign.tenant, campaign.factories.keys)
+            .filter { it.state == Heartbeat.State.IDLE }.map { it.nodeId }.toSet()
+        return if (healthyFactories.isEmpty()) {
+            // If no factory is healthy return DisabledState
+            DisabledState(campaign, isSuccessful = false)
+        } else {
+            // Else only keep healthy factories and return AbortingState
+            campaign.factories.keys.removeIf { it !in healthyFactories }
+            toDoWithResult()
+        }
     }
 }

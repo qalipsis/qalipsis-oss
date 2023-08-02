@@ -17,24 +17,22 @@
  *
  */
 
-package io.qalipsis.core.head.redis.campaign
+package io.qalipsis.core.head.factory
 
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.qalipsis.core.campaigns.RunningCampaign
-import io.qalipsis.core.directives.Directive
-import io.qalipsis.core.head.campaign.states.DisabledState
+import io.micronaut.core.annotation.Introspected
+import io.qalipsis.api.serialization.InstantKotlinSerializer
+import io.qalipsis.core.heartbeat.Heartbeat
+import kotlinx.serialization.Serializable
+import java.time.Instant
 
-@ExperimentalLettuceCoroutinesApi
-internal class RedisDisabledState(
-    campaign: RunningCampaign,
-    isSuccessful: Boolean = true,
-    private val operations: CampaignRedisOperations
-) : DisabledState(campaign, isSuccessful) {
-    override suspend fun doInit(): List<Directive> {
-        return try {
-            super.doInit()
-        } finally {
-            operations.clean(campaign)
-        }
-    }
-}
+/**
+ *  Representation of a factory's health.
+ *
+ * @author Joël Valère
+ */
+@Introspected
+data class FactoryHealth(
+    val nodeId: String,
+    @Serializable(with = InstantKotlinSerializer::class) val timestamp: Instant,
+    val state: Heartbeat.State = Heartbeat.State.IDLE
+)

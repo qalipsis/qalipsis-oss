@@ -25,10 +25,14 @@ import assertk.assertions.any
 import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
+import assertk.assertions.prop
+import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
@@ -37,6 +41,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.heartbeat.Heartbeat
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -45,6 +50,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Duration
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
@@ -76,8 +82,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         unicastChannel = "unicast-channel"
     )
 
-    private val tenantPrototype =
-        TenantEntity(Instant.now(), "my-tenant", "test-tenant")
+    private val tenantPrototype = TenantEntity(Instant.now(), "my-tenant", "test-tenant")
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {
@@ -265,6 +270,496 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 hasSize(1)
                 any { it.transform { factory -> factory.id == factory1.id && factory.tags.isNotEmpty() } }
                 transform { it.map(FactoryEntity::id) }.containsOnly(factory1.id)
+            }
+        }
+
+    @Test
+    fun `should fetch factories health from a tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-two"))
+            val instant = Instant.now()
+            val factory1 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory2 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory3 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-3",
+                        registrationNodeId = "the-registration-node-id-3",
+                        tenantId = savedTenant2.id
+                    )
+                )
+            factoryStateRepository.saveAll(
+                listOf(
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.plusSeconds(4),
+                        latency = 654,
+                        state = FactoryStateValue.UNHEALTHY
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant.plusSeconds(2),
+                        latency = 123,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory3.id,
+                        healthTimestamp = instant.minusSeconds(1),
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    )
+                )
+            ).count()
+            assertThat(factoryRepository.findAll().count()).isEqualTo(3)
+
+            // when
+            val factoryHealths = factoryRepository.getFactoriesHealth(
+                "my-tenant",
+                listOf("the-node-id-1", "the-node-id-2", "the-node-id-3")
+            ) as List
+
+            // then
+            assertThat(factoryHealths).isNotNull().all {
+                hasSize(2)
+                index(0).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-1")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.plusSeconds(4))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.UNHEALTHY)
+                }
+                index(1).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-2")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.plusSeconds(2))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.OFFLINE)
+                }
+            }
+        }
+
+    @Test
+    fun `should always fetch most recent factories health from a tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-two"))
+            val instant = Instant.now()
+            val factory1 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory2 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory3 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-3",
+                        registrationNodeId = "the-registration-node-id-3",
+                        tenantId = savedTenant2.id
+                    )
+                )
+            factoryStateRepository.saveAll(
+                listOf(
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minusSeconds(11),
+                        latency = 654,
+                        state = FactoryStateValue.UNHEALTHY
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minusSeconds(8),
+                        latency = 654,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minusSeconds(5),
+                        latency = 654,
+                        state = FactoryStateValue.REGISTERED
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minusSeconds(2),
+                        latency = 654,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.plusSeconds(1),
+                        latency = 654,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.plusSeconds(4),
+                        latency = 654,
+                        state = FactoryStateValue.UNHEALTHY
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant,
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant.plusSeconds(2),
+                        latency = 123,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory3.id,
+                        healthTimestamp = instant.minusSeconds(1),
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    )
+                )
+            ).count()
+
+            // when
+            val factoryHealths = factoryRepository.getFactoriesHealth(
+                "my-tenant",
+                listOf("the-node-id-1", "the-node-id-2", "the-node-id-3")
+            ) as List
+
+            // then
+            assertThat(factoryHealths).isNotNull().all {
+                hasSize(2)
+                index(0).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-1")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.plusSeconds(4))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.UNHEALTHY)
+                }
+                index(1).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-2")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.plusSeconds(2))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.OFFLINE)
+                }
+            }
+        }
+
+    @Test
+    fun `should only consider healthy factories as unhealthy when health timestamp is older than 2 minutes`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-two"))
+            val instant = Instant.now()
+            val factory1 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory2 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory3 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-3",
+                        registrationNodeId = "the-registration-node-id-3",
+                        tenantId = savedTenant2.id
+                    )
+                )
+            factoryStateRepository.saveAll(
+                listOf(
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(11, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.UNHEALTHY
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(9, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(7, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.REGISTERED
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(5, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(3, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant,
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant.plusSeconds(2),
+                        latency = 123,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory3.id,
+                        healthTimestamp = instant.minusSeconds(1),
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    )
+                )
+            ).count()
+
+            // when
+            val factoryHealths = factoryRepository.getFactoriesHealth(
+                "my-tenant",
+                listOf("the-node-id-1", "the-node-id-2", "the-node-id-3")
+            ) as List
+
+            // then
+            assertThat(factoryHealths).isNotNull().all {
+                hasSize(2)
+                index(0).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-1")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.minus(Duration.ofMinutes(3)))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.UNHEALTHY)
+                }
+                index(1).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-2")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.plusSeconds(2))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.OFFLINE)
+                }
+            }
+        }
+
+    @Test
+    fun `should not consider registered or offline factories as unhealthy when health timestamp is older than 2 minutes`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-two"))
+            val instant = Instant.now()
+            val factory1 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory2 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory3 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-3",
+                        registrationNodeId = "the-registration-node-id-3",
+                        tenantId = savedTenant2.id
+                    )
+                )
+            factoryStateRepository.saveAll(
+                listOf(
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(11, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.UNHEALTHY
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(9, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(7, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.REGISTERED
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(5, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minus(3, ChronoUnit.MINUTES),
+                        latency = 654,
+                        state = FactoryStateValue.REGISTERED
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant.minus(6, ChronoUnit.MINUTES),
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant.minus(4, ChronoUnit.MINUTES),
+                        latency = 123,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory3.id,
+                        healthTimestamp = instant.minusSeconds(1),
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    )
+                )
+            ).count()
+
+            // when
+            val factoryHealths = factoryRepository.getFactoriesHealth(
+                "my-tenant",
+                listOf("the-node-id-1", "the-node-id-2", "the-node-id-3")
+            ) as List
+
+            // then
+            assertThat(factoryHealths).isNotNull().all {
+                hasSize(2)
+                index(0).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-1")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.minus(3, ChronoUnit.MINUTES))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.REGISTERED)
+                }
+                index(1).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-2")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.minus(4, ChronoUnit.MINUTES))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.OFFLINE)
+                }
+            }
+        }
+
+    @Test
+    fun `should fetch factories health from another tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val savedTenant1 = tenantRepository.save(tenantPrototype.copy())
+            val savedTenant2 = tenantRepository.save(tenantPrototype.copy(reference = "qalipsis-two"))
+            val instant = Instant.now()
+            val factory1 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-1",
+                        registrationNodeId = "the-registration-node-id-1",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory2 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-2",
+                        registrationNodeId = "the-registration-node-id-2",
+                        tenantId = savedTenant1.id
+                    )
+                )
+            val factory3 =
+                factoryRepository.save(
+                    factoryPrototype.copy(
+                        nodeId = "the-node-id-3",
+                        registrationNodeId = "the-registration-node-id-3",
+                        tenantId = savedTenant2.id
+                    )
+                )
+            factoryStateRepository.saveAll(
+                listOf(
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minusSeconds(5),
+                        latency = 654,
+                        state = FactoryStateValue.REGISTERED
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory1.id,
+                        healthTimestamp = instant.minusSeconds(2),
+                        latency = 654,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant,
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory2.id,
+                        healthTimestamp = instant.plusSeconds(2),
+                        latency = 123,
+                        state = FactoryStateValue.OFFLINE
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory3.id,
+                        healthTimestamp = instant.minusSeconds(5),
+                        latency = 123,
+                        state = FactoryStateValue.REGISTERED
+                    ),
+                    FactoryStateEntity(
+                        factoryId = factory3.id,
+                        healthTimestamp = instant.minusSeconds(1),
+                        latency = 123,
+                        state = FactoryStateValue.IDLE
+                    )
+                )
+            ).count()
+
+            // when
+            val factoryHealths = factoryRepository.getFactoriesHealth(
+                "qalipsis-two",
+                listOf("the-node-id-1", "the-node-id-2", "the-node-id-3")
+            ) as List
+
+            // then
+            assertThat(factoryHealths).isNotNull().all {
+                hasSize(1)
+                index(0).all {
+                    prop(FactoryHealth::nodeId).isEqualTo("the-node-id-3")
+                    prop(FactoryHealth::timestamp).isEqualTo(instant.minusSeconds(1))
+                    prop(FactoryHealth::state).isEqualTo(Heartbeat.State.IDLE)
+                }
             }
         }
 

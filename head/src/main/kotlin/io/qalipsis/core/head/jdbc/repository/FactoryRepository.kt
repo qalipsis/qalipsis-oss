@@ -26,6 +26,7 @@ import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 
 /**
@@ -90,6 +91,35 @@ internal interface FactoryRepository : CoroutineCrudRepository<FactoryEntity, Lo
     )
     @Join(value = "tags", type = Join.Type.LEFT_FETCH)
     suspend fun getAvailableFactoriesForScenarios(tenant: String, names: Collection<String>): List<FactoryEntity>
+
+    /**
+     * Checks factories' health in a [tenant]. In factory_state table,
+     * we only select the row corresponding to the more recent health_timestamp.
+     *
+     * @param tenant the tenant's reference
+     * @param factoryNodeIds the collection of factories to check
+     */
+    @Query(
+        """SELECT factory_max_timestamp.node_id, 
+                fs.health_timestamp AS timestamp, 
+                CASE WHEN timestamp < (now() - interval '$HEALTH_QUERY_INTERVAL') 
+                        AND fs.state = 'IDLE' THEN 'UNHEALTHY'
+                    ELSE fs.state
+                END AS state 
+            FROM factory_state as fs
+            INNER JOIN
+                (SELECT fs_.factory_id, f.node_id, MAX(health_timestamp) AS timestamp
+                    FROM factory_state AS fs_ 
+                    INNER JOIN factory AS f
+                        ON fs_.factory_id = f.id 
+                    WHERE f.node_id in (:factoryNodeIds)
+                        AND EXISTS (SELECT 1 FROM tenant WHERE reference = :tenant AND id = f.tenant_id)
+                    GROUP BY factory_id, f.node_id)
+                AS factory_max_timestamp 
+                ON fs.factory_id = factory_max_timestamp.factory_id 
+                AND fs.health_timestamp = factory_max_timestamp.timestamp"""
+    )
+    suspend fun getFactoriesHealth(tenant: String, factoryNodeIds: Collection<String>): Collection<FactoryHealth>
 
     private companion object {
 

@@ -60,15 +60,19 @@ internal class RedisRunningState(
         return when {
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
+
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
+
             feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
+
             feedback is FailedCampaignFeedback -> RedisFailureState(
                 campaign,
                 feedback.error ?: "",
                 operations
             )
+
             feedback is CompleteMinionFeedback -> RedisRunningState(
                 campaign, operations, true, listOf(
                     MinionsShutdownDirective(
@@ -79,6 +83,7 @@ internal class RedisRunningState(
                     )
                 )
             )
+
             feedback is EndOfCampaignScenarioFeedback -> {
                 context.campaignReportStateKeeper.complete(feedback.campaignKey, feedback.scenarioName)
                 context.campaignService.closeScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)
@@ -92,6 +97,7 @@ internal class RedisRunningState(
                     )
                 )
             }
+
             feedback is CampaignScenarioShutdownFeedback -> {
                 if (operations.markFeedbackForScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)) {
                     context.campaignReportStateKeeper.complete(feedback.campaignKey)
@@ -100,11 +106,14 @@ internal class RedisRunningState(
                     this
                 }
             }
+
             else -> this
         }
     }
 
     override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<CampaignExecutionContext> {
-        return RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
+        return abort(campaign) {
+            RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
+        }
     }
 }

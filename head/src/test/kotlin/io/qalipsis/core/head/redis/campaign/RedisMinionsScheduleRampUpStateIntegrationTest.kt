@@ -32,6 +32,8 @@ import assertk.assertions.isNotSameAs
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.mockk.coEvery
+import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
@@ -45,9 +47,13 @@ import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
+import io.qalipsis.core.head.campaign.states.DisabledState
+import io.qalipsis.core.head.factory.FactoryHealth
+import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
 internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisStateIntegrationTest() {
@@ -277,22 +283,152 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
         }
 
     @Test
-    fun `should return a new RedisAbortingState`() = testDispatcherProvider.run {
+    fun `should return a new redis disabled state when no factory can be found`() = testDispatcherProvider.run {
         // given
         val state = RedisMinionsScheduleRampUpState(campaign, operations)
         state.run {
             inject(campaignExecutionContext)
             init()
         }
+        every { campaign.factories.keys } returns mutableSetOf("node-1", "node-2", "node-3")
+        coEvery {
+            factoryService.getFactoriesHealth(
+                "my-tenant",
+                mutableSetOf("node-1", "node-2", "node-3")
+            )
+        } returns setOf()
 
         // when
         val newState = state.abort(AbortRunningCampaign())
 
         // then
-        assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
+        assertThat(newState).isInstanceOf(DisabledState::class).all {
             prop("campaign").isSameAs(campaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("isSuccessful").isSameAs(false)
+        }
+        coVerifyOrder {
+            factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
+
+    @Test
+    fun `should return a new redis aborting state when some factories are unhealthy`() = testDispatcherProvider.run {
+        // given
+        val state = RedisMinionsScheduleRampUpState(campaign, operations)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
+        val instant = Instant.now()
+        val abortRunningCampaign = AbortRunningCampaign()
+
+        every { campaign.factories.keys } returns mutableSetOf("node-1", "node-2", "node-3")
+        coEvery {
+            factoryService.getFactoriesHealth(
+                "my-tenant",
+                mutableSetOf("node-1", "node-2", "node-3")
+            )
+        } returns setOf(
+            FactoryHealth("node-1", instant, Heartbeat.State.IDLE),
+            FactoryHealth("node-2", instant, Heartbeat.State.OFFLINE),
+            FactoryHealth("node-3", instant, Heartbeat.State.UNHEALTHY)
+        )
+
+        // when
+        val newState = state.abort(abortRunningCampaign)
+
+        // then
+        assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
+            prop("campaign").isSameAs(campaign)
+            prop("abortConfiguration").isSameAs(abortRunningCampaign)
+            prop("error").isSameAs("The campaign was aborted")
+            prop("operations").isSameAs(operations)
+        }
+        assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
+        coVerifyOrder {
+            factoryService.getFactoriesHealth("my-tenant", mutableSetOf("node-1"))
+        }
+        confirmVerified(factoryService, campaignReportStateKeeper)
+    }
+
+    @Test
+    internal fun `should return a new redis aborting state when all factories are healthy`() =
+        testDispatcherProvider.run {
+            // given
+            val state = RedisRunningState(campaign, operations)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
+            val instant = Instant.now()
+            val abortRunningCampaign = AbortRunningCampaign()
+
+            every { campaign.factories.keys } returns mutableSetOf("node-1", "node-2", "node-3")
+            coEvery {
+                factoryService.getFactoriesHealth(
+                    "my-tenant",
+                    mutableSetOf("node-1", "node-2", "node-3")
+                )
+            } returns setOf(
+                FactoryHealth("node-1", instant, Heartbeat.State.IDLE),
+                FactoryHealth("node-2", instant, Heartbeat.State.IDLE),
+                FactoryHealth("node-3", instant, Heartbeat.State.IDLE)
+            )
+
+            // when
+            val newState = state.abort(abortRunningCampaign)
+
+            // then
+            assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
+                prop("campaign").isSameAs(campaign)
+                prop("abortConfiguration").isSameAs(abortRunningCampaign)
+                prop("error").isSameAs("The campaign was aborted")
+                prop("operations").isSameAs(operations)
+            }
+            assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
+            coVerifyOrder {
+                factoryService.getFactoriesHealth("my-tenant", mutableSetOf("node-1", "node-2", "node-3"))
+            }
+            confirmVerified(factoryService, campaignReportStateKeeper)
+        }
+
+    @Test
+    internal fun `should return a new redis aborting state when all factories are unhealthy`() =
+        testDispatcherProvider.run {
+            // given
+            val state = RedisRunningState(campaign, operations)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
+            val instant = Instant.now()
+            val abortRunningCampaign = AbortRunningCampaign()
+
+            every { campaign.factories.keys } returns mutableSetOf("node-1", "node-2", "node-3")
+            coEvery {
+                factoryService.getFactoriesHealth(
+                    "my-tenant",
+                    mutableSetOf("node-1", "node-2", "node-3")
+                )
+            } returns setOf(
+                FactoryHealth("node-1", instant, Heartbeat.State.REGISTERED),
+                FactoryHealth("node-2", instant, Heartbeat.State.OFFLINE),
+                FactoryHealth("node-3", instant, Heartbeat.State.UNHEALTHY)
+            )
+
+            // when
+            val newState = state.abort(abortRunningCampaign)
+
+            // then
+            assertThat(newState).isInstanceOf(DisabledState::class).all {
+                prop("campaign").isSameAs(campaign)
+                prop("isSuccessful").isSameAs(false)
+            }
+            assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
+            coVerifyOrder {
+                factoryService.getFactoriesHealth("my-tenant", mutableSetOf("node-1", "node-2", "node-3"))
+            }
+            confirmVerified(factoryService, campaignReportStateKeeper)
+        }
 }

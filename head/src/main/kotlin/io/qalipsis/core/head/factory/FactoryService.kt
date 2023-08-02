@@ -43,7 +43,10 @@ internal interface FactoryService : HeartbeatListener {
     /**
      * Returns all factories supporting the scenarios with the given identifiers.
      */
-    suspend fun getAvailableFactoriesForScenarios(tenant: String, scenarioNames: Collection<ScenarioName>): Collection<Factory>
+    suspend fun getAvailableFactoriesForScenarios(
+        tenant: String,
+        scenarioNames: Collection<ScenarioName>
+    ): Collection<Factory>
 
     /**
      * Marks all the specified factories as busy and lock them for future use.
@@ -64,4 +67,12 @@ internal interface FactoryService : HeartbeatListener {
      * Lists all the active scenarios in [tenant], sorted by [sort].
      */
     suspend fun getAllActiveScenarios(tenant: String, sort: String?): Collection<ScenarioSummary>
+
+    /**
+     * Checks factories' health in a [tenant].
+     *
+     * @param tenant the tenant's reference
+     * @param factories the collection of factories to check
+     */
+    suspend fun getFactoriesHealth(tenant: String, factories: Collection<NodeId>): Collection<FactoryHealth>
 }

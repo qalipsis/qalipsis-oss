@@ -457,6 +457,7 @@ internal class PersistentCampaignServiceTest {
             speedFactor = 123.2,
             scheduledMinions = 345,
             start = now,
+            result = ExecutionStatus.ABORTED,
             configurer = 199
         )
         coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
@@ -483,6 +484,7 @@ internal class PersistentCampaignServiceTest {
                     prop(CampaignEntity::speedFactor).isEqualTo(123.2)
                     prop(CampaignEntity::configurer).isEqualTo(199)
                     prop(CampaignEntity::aborter).isEqualTo(111)
+                    prop(CampaignEntity::result).isEqualTo(ExecutionStatus.ABORTED)
                 }
             }
         }

@@ -35,7 +35,13 @@ import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
-import io.qalipsis.api.report.ExecutionStatus.*
+import io.qalipsis.api.report.ExecutionStatus.ABORTED
+import io.qalipsis.api.report.ExecutionStatus.FAILED
+import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
+import io.qalipsis.api.report.ExecutionStatus.QUEUED
+import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
+import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
+import io.qalipsis.api.report.ExecutionStatus.WARNING
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
@@ -52,7 +58,7 @@ import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
@@ -130,13 +136,49 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
+    fun `should update the aborter and the result`() = testDispatcherProvider.run {
+        // given
+        val instant = Instant.now()
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val aborter = userRepository.save(UserEntity(username = "John Doe"))
+        val saved = campaignRepository.save(
+            campaignPrototype.copy(
+                tenantId = tenant.id,
+                failureReason = "This is the failure",
+                zones = setOf("fr", "at"),
+                start = instant.plusSeconds(1),
+                end = null
+            )
+        )
+
+        // when
+        val fetched = campaignRepository.update(saved.copy(aborter = aborter.id, result = ABORTED))
+
+        // then
+        assertThat(fetched).isNotNull().all {
+            prop(CampaignEntity::key).isEqualTo("the-campaign-id")
+            prop(CampaignEntity::name).isEqualTo("This is my new campaign")
+            prop(CampaignEntity::scheduledMinions).isEqualTo(123)
+            prop(CampaignEntity::tenantId).isEqualTo(tenant.id)
+            prop(CampaignEntity::speedFactor).isEqualTo(123.0)
+            prop(CampaignEntity::start).isEqualTo(instant.plusSeconds(1))
+            prop(CampaignEntity::end).isEqualTo(null)
+            prop(CampaignEntity::aborter).isEqualTo(aborter.id)
+            prop(CampaignEntity::result).isEqualTo(ABORTED)
+            prop(CampaignEntity::configurer).isEqualTo(1L)
+            prop(CampaignEntity::failureReason).isEqualTo("This is the failure")
+            prop(CampaignEntity::zones).isEqualTo(setOf("fr", "at"))
+        }
+    }
+
+    @Test
     fun `should find the ID of the running campaign`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val saved = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
 
         // when + then
-        Assertions.assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key))
+        assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved.key))
 
         // when
         campaignRepository.update(saved.copy(end = null))
@@ -169,9 +211,9 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved2.key)
             ).isEqualTo(saved2.id)
 
-            Assertions.assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved2.key))
+            assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("my-tenant", saved2.key))
 
-            Assertions.assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved.key))
+            assertNull(campaignRepository.findIdByTenantAndKeyAndEndIsNull("qalipsis-2", saved.key))
         }
 
     @Test

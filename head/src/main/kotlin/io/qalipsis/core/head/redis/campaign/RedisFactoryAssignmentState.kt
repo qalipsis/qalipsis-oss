@@ -70,6 +70,8 @@ internal class RedisFactoryAssignmentState(
     }
 
     override suspend fun abort(abortConfiguration: AbortRunningCampaign): CampaignExecutionState<CampaignExecutionContext> {
-        return RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
+        return abort(campaign) {
+            RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
+        }
     }
 }

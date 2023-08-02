@@ -752,7 +752,6 @@ internal class ReportServiceImplTest {
     internal fun `should not get the report if not shared and not owned`() = testDispatcherProvider.runTest {
         // given
         val reportServiceImpl = buildReportService()
-        val creatorId = 456L
         coEvery {
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
                 tenant = refEq("my-tenant"),
@@ -1679,7 +1678,6 @@ internal class ReportServiceImplTest {
     internal fun `should not delete the report when not owned if not shared`() = testDispatcherProvider.runTest {
         // given
         val reportServiceImpl = buildReportService()
-        val creatorId = 456L
         coEvery {
             reportRepository.getReportIfUpdatable(
                 tenant = refEq("my-tenant"),

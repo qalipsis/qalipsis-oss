@@ -32,6 +32,7 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Factory
@@ -149,6 +150,21 @@ internal class InMemoryFactoryService(
             }
         }
         return scenarioSummaryRepository.getAll()
+    }
+
+    @LogInputAndOutput
+    override suspend fun getFactoriesHealth(
+        tenant: String,
+        factories: Collection<NodeId>
+    ): Collection<FactoryHealth> {
+        return factories.map {
+            val factory = factoriesByNodeId[it]
+            FactoryHealth(
+                factory?.nodeId as String,
+                factory.healthState.get().timestamp,
+                factory.healthState.get().state
+            )
+        }
     }
 
     /**
