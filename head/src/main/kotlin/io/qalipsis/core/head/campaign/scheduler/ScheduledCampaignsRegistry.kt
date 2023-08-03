@@ -19,9 +19,13 @@
 
 package io.qalipsis.core.head.campaign.scheduler
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.lang.tryAndLogOrNull
 import jakarta.inject.Singleton
 import kotlinx.coroutines.Job
+import mu.KotlinLogging
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Manages records of scheduled campaign's job.
@@ -31,7 +35,8 @@ import kotlinx.coroutines.Job
 @Singleton
 internal class ScheduledCampaignsRegistry {
 
-    private val campaignScheduleKeyStore: MutableMap<CampaignKey, Job> = mutableMapOf()
+    @KTestable
+    private val campaignScheduleKeyStore: ConcurrentHashMap<CampaignKey, Job> = ConcurrentHashMap()
 
     /**
      * Cancels a scheduled test campaign job.
@@ -39,7 +44,7 @@ internal class ScheduledCampaignsRegistry {
      * @param campaignKey identifier to the job to be cancelled
      */
     suspend fun cancelSchedule(campaignKey: CampaignKey) {
-        campaignScheduleKeyStore[campaignKey]?.cancel()
+        tryAndLogOrNull(log) { campaignScheduleKeyStore[campaignKey]?.cancel() }
         campaignScheduleKeyStore.remove(campaignKey)
     }
 
@@ -51,5 +56,11 @@ internal class ScheduledCampaignsRegistry {
      */
     suspend fun updateSchedule(campaignKey: CampaignKey, scheduleJob: Job) {
         campaignScheduleKeyStore[campaignKey] = scheduleJob
+    }
+
+    companion object {
+
+        @JvmStatic
+        val log = KotlinLogging.logger { }
     }
 }
