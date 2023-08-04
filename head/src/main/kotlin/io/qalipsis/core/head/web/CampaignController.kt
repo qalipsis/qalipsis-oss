@@ -28,6 +28,7 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
@@ -365,5 +366,38 @@ internal class CampaignController(
     ): HttpResponse<Campaign> {
         val campaignKey = campaignScheduler.schedule(tenant, authentication.name, configuration).key
         return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
+    }
+
+    /**
+     * REST endpoint to update a scheduled campaign.
+     */
+    @Put("schedule/{campaignKey}")
+    @Operation(
+        summary = "Updates a scheduled campaign test",
+        description = "Updates a scheduled campaign with the newly provided details of campaign configuration",
+        responses = [
+            ApiResponse(responseCode = "200", description = "Scheduled campaign test has been updated successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
+            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.WRITE_CAMPAIGN)
+    @Timed("campaigns-schedule-update")
+    suspend fun reschedule(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
+        @NotBlank @PathVariable campaignKey: String,
+        @Body @Valid configuration: CampaignConfiguration
+    ): HttpResponse<Campaign> {
+        val updatedCampaignKey = campaignScheduler.update(tenant, authentication.name, campaignKey, configuration).key
+        return HttpResponse.ok(campaignService.retrieve(tenant, updatedCampaignKey))
     }
 }

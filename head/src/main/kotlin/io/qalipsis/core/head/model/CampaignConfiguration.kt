@@ -91,7 +91,7 @@ internal data class CampaignConfiguration(
     @field:Schema(description = "The instant of the next execution", required = true)
     val scheduledAt: Instant? = null,
 
-    @field:Schema(description = "The service that handle de scheduling", required = true)
+    @field:Schema(description = "Configuration of the scheduling", required = true)
     val scheduling: Scheduling? = null
 )
 

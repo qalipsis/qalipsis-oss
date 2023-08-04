@@ -36,13 +36,14 @@ import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
+import kotlinx.coroutines.Job
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * @author Joël Valère
@@ -71,6 +72,9 @@ internal class DefaultCampaignSchedulerImplTest {
     @RelaxedMockK
     private lateinit var campaignPreparator: CampaignPreparator
 
+    @RelaxedMockK
+    private lateinit var scheduledCampaignsRegistry: ScheduledCampaignsRegistry
+
     @MockK
     lateinit var factoryService: FactoryService
 
@@ -86,6 +90,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             )
         )
@@ -148,6 +153,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -166,6 +172,7 @@ internal class DefaultCampaignSchedulerImplTest {
         // then
         coVerifyOrder {
             defaultCampaignSchedulerImpl["schedulingExecution"](refEq("campaign-key"), refEq(instant))
+            scheduledCampaignsRegistry.updateSchedule("campaign-key", any<Job>())
         }
         confirmVerified(
             userRepository,
@@ -173,7 +180,8 @@ internal class DefaultCampaignSchedulerImplTest {
             tenantRepository,
             campaignRepository,
             factoryService,
-            campaignPreparator
+            campaignPreparator,
+            scheduledCampaignsRegistry
         )
 
     }
@@ -188,6 +196,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -285,6 +294,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -338,6 +348,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -405,6 +416,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -487,6 +499,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -527,6 +540,7 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                 coroutineScope = this
             ),
             recordPrivateCalls = true
@@ -569,6 +583,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
                 ),
                 recordPrivateCalls = true
@@ -614,6 +629,138 @@ internal class DefaultCampaignSchedulerImplTest {
                 factoryService,
                 campaignPreparator
             )
+        }
+
+    @Test
+    internal fun `should update a scheduled campaign and cancel future pre-scheduled tasks`() =
+        testDispatcherProvider.run {
+            defaultCampaignSchedulerImpl = spyk(
+                DefaultCampaignSchedulerImpl(
+                    userRepository = userRepository,
+                    campaignExecutor = campaignExecutor,
+                    tenantRepository = tenantRepository,
+                    campaignRepository = campaignRepository,
+                    factoryService = factoryService,
+                    campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
+                    coroutineScope = this
+                ),
+                recordPrivateCalls = true
+            )
+
+            // given
+            val campaignKey = "my-campaign"
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val updateConfiguration = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-7" to ScenarioRequest(3),
+                    "scenario-8" to ScenarioRequest(5)
+                ),
+                scheduledAt = scheduleAt
+            )
+            val runningCampaign = relaxedMockk<RunningCampaign> {
+                every { key } returns "new-campaign-key"
+                every { scenarios } returns mapOf(
+                    "scenario-7" to relaxedMockk { every { minionsCount } returns 61272 },
+                    "scenario-8" to relaxedMockk { every { minionsCount } returns 19921 }
+                )
+            }
+            coEvery {
+                defaultCampaignSchedulerImpl.schedule(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns runningCampaign
+            val campaignEntity = CampaignEntity(
+                key = "the-campaign-id",
+                name = "This is a campaign",
+                speedFactor = 123.0,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                scheduledMinions = 345,
+                result = SCHEDULED,
+                configurer = 1
+            )
+            coEvery { campaignRepository.findByTenantAndKeyAndScheduled(any(), any()) } returns campaignEntity
+
+            // when
+            val result = defaultCampaignSchedulerImpl.update("my-tenant", "my-user", campaignKey, updateConfiguration)
+
+            // then
+            assertThat(result).isSameAs(runningCampaign)
+            coVerifyOrder {
+                defaultCampaignSchedulerImpl.update(
+                    refEq("my-tenant"),
+                    refEq("my-user"),
+                    refEq(campaignKey),
+                    refEq(updateConfiguration)
+                )
+                campaignRepository.findByTenantAndKeyAndScheduled(refEq("my-tenant"), refEq(campaignKey))
+                scheduledCampaignsRegistry.cancelSchedule(refEq(campaignKey))
+                defaultCampaignSchedulerImpl.schedule(refEq("my-tenant"), refEq("my-user"), refEq(updateConfiguration))
+            }
+            confirmVerified(campaignRepository, scheduledCampaignsRegistry, defaultCampaignSchedulerImpl)
+        }
+
+    @Test
+    internal fun `should throw an exception when a valid scheduled campaign test cannot be found`() =
+        testDispatcherProvider.run {
+            defaultCampaignSchedulerImpl = spyk(
+                DefaultCampaignSchedulerImpl(
+                    userRepository = userRepository,
+                    campaignExecutor = campaignExecutor,
+                    tenantRepository = tenantRepository,
+                    campaignRepository = campaignRepository,
+                    factoryService = factoryService,
+                    campaignPreparator = campaignPreparator,
+                    scheduledCampaignsRegistry = scheduledCampaignsRegistry,
+                    coroutineScope = this
+                ),
+                recordPrivateCalls = true
+            )
+
+            // given
+            val campaignKey = "my-campaign"
+            val scheduleAt = Instant.now().plusSeconds(60)
+            val configuration = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf(
+                    "scenario-7" to ScenarioRequest(3),
+                    "scenario-8" to ScenarioRequest(5)
+                ),
+                scheduledAt = scheduleAt
+            )
+            coEvery { campaignRepository.findByTenantAndKeyAndScheduled(any(), any()) } returns null
+
+            // when
+            val caught = assertThrows<IllegalArgumentException> {
+                defaultCampaignSchedulerImpl.update(
+                    "my-tenant",
+                    "my-user",
+                    campaignKey,
+                    configuration
+                )
+            }
+
+            // then
+            assertThat(caught).all {
+                prop(IllegalArgumentException::message).isEqualTo("Campaign does not exist")
+            }
+
+            coVerifyOrder {
+                defaultCampaignSchedulerImpl.update(
+                    refEq("my-tenant"),
+                    refEq("my-user"),
+                    refEq(campaignKey),
+                    refEq(configuration)
+                )
+                campaignRepository.findByTenantAndKeyAndScheduled(refEq("my-tenant"), refEq(campaignKey))
+            }
+            confirmVerified(campaignRepository)
         }
 
     private fun getTimeMock(): Instant {

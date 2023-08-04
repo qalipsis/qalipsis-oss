@@ -30,6 +30,7 @@ import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.campaign.scheduler.ScheduledCampaignsRegistry
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
@@ -56,7 +57,8 @@ internal class PersistentCampaignService(
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val campaignConverter: CampaignConverter,
     private val factoryRepository: FactoryRepository,
-    private val campaignPreparator: CampaignPreparator
+    private val campaignPreparator: CampaignPreparator,
+    private val scheduledCampaignsRegistry: ScheduledCampaignsRegistry
 ) : CampaignService {
 
     @LogInputAndOutput
@@ -156,7 +158,16 @@ internal class PersistentCampaignService(
     @LogInput
     override suspend fun abort(tenant: String, aborter: String?, campaignKey: String) {
         campaignRepository.findByTenantAndKey(tenant, campaignKey)?.let { campaign ->
-            campaignRepository.update(campaign.copy(aborter = aborter?.let { userRepository.findIdByUsername(it) }))
+            campaignRepository.update(
+                campaign.copy(
+                    aborter = aborter?.let { userRepository.findIdByUsername(it) },
+                    result = ExecutionStatus.ABORTED
+                )
+            )
+            //Cancels the job that handles campaign scheduling.
+            if (campaign.result == ExecutionStatus.SCHEDULED) {
+                scheduledCampaignsRegistry.cancelSchedule(campaignKey)
+            }
         }
     }
 

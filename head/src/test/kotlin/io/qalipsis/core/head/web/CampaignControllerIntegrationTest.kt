@@ -581,7 +581,8 @@ internal class CampaignControllerIntegrationTest {
         } returns listOf(campaignExecutionDetails)
 
         // when
-        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
+        val response = httpClient.toBlocking()
+            .exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
 
         // then
         coVerifyOnce {
@@ -783,7 +784,8 @@ internal class CampaignControllerIntegrationTest {
         )
 
         // when
-        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
+        val response = httpClient.toBlocking()
+            .exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
 
         // then
         coVerifyOnce {
@@ -819,7 +821,8 @@ internal class CampaignControllerIntegrationTest {
         } returns listOf()
 
         // when
-        val response = httpClient.toBlocking().exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
+        val response = httpClient.toBlocking()
+            .exchange(getCampaignReportRequest, Argument.listOf(CampaignExecutionDetails::class.java))
 
         // then
         coVerifyOnce {
@@ -1051,4 +1054,110 @@ internal class CampaignControllerIntegrationTest {
             campaignScheduler
         )
     }
+
+    @Test
+    fun `should successfully update a scheduled campaign given the right configurations`() {
+        // given
+        val campaignConfiguration = CampaignConfiguration(
+            name = "This is a campaign",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+        val campaignKey = "my-campaign"
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns campaignKey
+        }
+        coEvery {
+            campaignScheduler.update(
+                Defaults.TENANT,
+                Defaults.USER,
+                campaignKey,
+                eq(campaignConfiguration)
+            )
+        } returns runningCampaign
+        val updatedCampaign = Campaign(
+            creation = Instant.now(),
+            version = Instant.now(),
+            key = RandomStringUtils.randomAlphanumeric(10),
+            name = "This is a campaign",
+            speedFactor = 1.0,
+            start = Instant.now(),
+            scheduledMinions = 123,
+            end = null,
+            configurerName = Defaults.USER,
+            aborterName = Defaults.USER,
+            status = IN_PROGRESS,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+        coEvery { campaignService.retrieve(Defaults.TENANT, "my-campaign") } returns updatedCampaign
+
+        // when
+        val executeRequest = HttpRequest.PUT("/schedule/$campaignKey", campaignConfiguration)
+        val response = httpClient.toBlocking().exchange(
+            executeRequest,
+            Campaign::class.java
+        )
+
+        // then
+        coVerifyOrder {
+            // Called with the default user.
+            campaignScheduler.update(Defaults.TENANT, Defaults.USER, campaignKey, eq(campaignConfiguration))
+            campaignService.retrieve(Defaults.TENANT, "my-campaign")
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(updatedCampaign)
+        }
+        confirmVerified(
+            campaignService,
+            campaignExecutor,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService,
+            campaignScheduler
+        )
+    }
+
+    @Test
+    fun `should throw an exception to updating a scheduled campaign with unknown campaign Key`() {
+        // given
+        val campaignConfiguration = CampaignConfiguration(
+            name = "This is a campaign",
+            scenarios = mapOf("Scenario1" to ScenarioRequest(1), "Scenario2" to ScenarioRequest(11))
+        )
+        val campaignKey = "unknown-campaign"
+        coEvery {
+            campaignScheduler.update(
+                Defaults.TENANT,
+                Defaults.USER,
+                campaignKey,
+                eq(campaignConfiguration)
+            )
+        } throws IllegalArgumentException("Campaign does not exist")
+
+        // when
+        val executeRequest = HttpRequest.PUT("/schedule/$campaignKey", campaignConfiguration)
+        val response = assertThrows<HttpClientResponseException> {
+            httpClient.toBlocking().exchange(
+                executeRequest,
+                Campaign::class.java
+            )
+        }
+
+        // then
+        coVerifyOrder {
+            campaignScheduler.update(Defaults.TENANT, Defaults.USER, campaignKey, eq(campaignConfiguration))
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("body") { it.response.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
+                .containsOnly("Campaign does not exist")
+        }
+        confirmVerified(campaignService)
+    }
+
 }

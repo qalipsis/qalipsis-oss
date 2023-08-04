@@ -43,6 +43,7 @@ internal class DefaultCampaignSchedulerImpl(
     private val campaignRepository: CampaignRepository,
     private val factoryService: FactoryService,
     private val campaignPreparator: CampaignPreparator,
+    private val scheduledCampaignsRegistry: ScheduledCampaignsRegistry,
     @Named(ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : CampaignScheduler, HeadStartupComponent {
 
@@ -63,9 +64,10 @@ internal class DefaultCampaignSchedulerImpl(
     }
 
     override suspend fun schedule(campaignKey: CampaignKey, instant: Instant) {
-        coroutineScope.launch {
+        val scheduleJob = coroutineScope.launch {
             schedulingExecution(campaignKey, instant)
         }
+        scheduledCampaignsRegistry.updateSchedule(campaignKey, scheduleJob)
     }
 
     @LogInput
@@ -74,7 +76,6 @@ internal class DefaultCampaignSchedulerImpl(
         configurer: String,
         configuration: CampaignConfiguration
     ): RunningCampaign {
-
         require(configuration.scheduledAt?.isAfter(Instant.now()) == true) {
             "The schedule time should be in the future"
         }
@@ -88,6 +89,19 @@ internal class DefaultCampaignSchedulerImpl(
         configuration.scheduledAt?.let { schedule(runningCampaign.key, it) }
 
         return runningCampaign
+    }
+
+    override suspend fun update(
+        tenant: String,
+        configurer: String,
+        campaignKey: CampaignKey,
+        configuration: CampaignConfiguration
+    ): RunningCampaign {
+        requireNotNull(campaignRepository.findByTenantAndKeyAndScheduled(tenant, campaignKey)) {
+            "Campaign does not exist"
+        }
+        scheduledCampaignsRegistry.cancelSchedule(campaignKey)
+        return schedule(tenant, configurer, configuration)
     }
 
     @KTestable
