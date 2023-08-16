@@ -207,14 +207,20 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         ).toList()
         reportDataComponentRepository.saveAll(
             dataComponents.mapIndexed { index, reportDataComponentEntity ->
-                reportDataComponentEntity.copy(reportId = reportSaved.id, dataSeries = listOf(dataSeriesEntities[index]))
+                reportDataComponentEntity.copy(
+                    reportId = reportSaved.id,
+                    dataSeries = listOf(dataSeriesEntities[index])
+                )
             }
         ).toList()
 
         // when
         val fetchedWithPartialDataComponents = reportRepository.findById(reportSaved.id)!!
-        val dataComponentEntities = reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id }).toList()
-        val fetchedWithFullDataComponents = fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities)
+        val dataComponentEntities =
+            reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id })
+                .toList()
+        val fetchedWithFullDataComponents =
+            fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities)
 
         // then
         assertThat(fetchedWithFullDataComponents).isNotNull().all {
@@ -240,7 +246,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DATA_TABLE)
                     prop(ReportDataComponentEntity::dataSeries).all {
                         hasSize(1)
-                        index(0).all{
+                        index(0).all {
                             prop(DataSeriesEntity::reference).isEqualTo("my-series_DATA_TABLE")
                             prop(DataSeriesEntity::tenantId).isEqualTo(tenant.id)
                             prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
@@ -378,14 +384,20 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         reportDataComponentRepository.saveAll(
             dataComponents.mapIndexed { index, reportDataComponentEntity ->
-                reportDataComponentEntity.copy(reportId = reportSaved.id, dataSeries = listOf(dataSeriesEntities[index]))
+                reportDataComponentEntity.copy(
+                    reportId = reportSaved.id,
+                    dataSeries = listOf(dataSeriesEntities[index])
+                )
             }
         ).toList()
 
         // when
         val fetchedWithPartialDataComponents = reportRepository.findById(reportSaved.id)!!
-        val dataComponentEntities = reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id }).toList()
-        val fetchedWithFullDataComponents = fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities)
+        val dataComponentEntities =
+            reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id })
+                .toList()
+        val fetchedWithFullDataComponents =
+            fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities)
 
         // then
         assertThat(fetchedWithFullDataComponents).isNotNull().all {
@@ -454,8 +466,10 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         val fetchUpdatedWithPartialDataComponents =
             reportRepository.findByTenantAndReference(tenant = "my-tenant", reference = "report-ref")
         val newDataComponentEntities =
-            reportDataComponentRepository.findByIdInOrderById(fetchUpdatedWithPartialDataComponents.dataComponents.map { it.id }).toList()
-        val fetchedUpdatedWithFullDataComponents = fetchUpdatedWithPartialDataComponents.copy(dataComponents = newDataComponentEntities)
+            reportDataComponentRepository.findByIdInOrderById(fetchUpdatedWithPartialDataComponents.dataComponents.map { it.id })
+                .toList()
+        val fetchedUpdatedWithFullDataComponents =
+            fetchUpdatedWithPartialDataComponents.copy(dataComponents = newDataComponentEntities)
         val newDataSeriesEntities = dataSeriesRepository.findAll().toList()
 
         // then
@@ -479,7 +493,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DIAGRAM)
                     prop(ReportDataComponentEntity::dataSeries).all {
                         hasSize(2)
-                        index(1).all{
+                        index(1).all {
                             prop(DataSeriesEntity::reference).isEqualTo("my-series-update-2")
                             prop(DataSeriesEntity::tenantId).isEqualTo(tenant.id)
                             prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
@@ -587,8 +601,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when
         val fetchedWithPartialDataComponents = reportRepository.findById(reportSaved.id)!!
-        val dataComponentEntities = reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id }).toList()
-        val fetchedWithFullDataComponents = fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities)
+        val dataComponentEntities =
+            reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id })
+                .toList()
+        val fetchedWithFullDataComponents =
+            fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities)
 
         // then
         assertThat(fetchedWithFullDataComponents).isNotNull().all {
@@ -604,9 +621,10 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(ReportEntity::scenarioNamesPatterns).isEmpty()
             prop(ReportEntity::dataComponents).all {
                 hasSize(1000)
-                repeat(1000){ index ->
+                repeat(1000) { index ->
                     index(index).all {
-                        val expectedType = if ((index % 2) == 0) DataComponentType.DATA_TABLE else DataComponentType.DIAGRAM
+                        val expectedType =
+                            if ((index % 2) == 0) DataComponentType.DATA_TABLE else DataComponentType.DIAGRAM
                         prop(ReportDataComponentEntity::type).isEqualTo(expectedType)
                         prop(ReportDataComponentEntity::dataSeries).all {
                             hasSize(1)
@@ -658,8 +676,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         // when
         val fetchedWithPartialDataComponents = reportRepository.findById(reportSaved.id)!!
-        val dataComponentEntities = reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id }).toList()
-        val fetchedWithFullDataComponents = fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities.reversed())
+        val dataComponentEntities =
+            reportDataComponentRepository.findByIdInOrderById(fetchedWithPartialDataComponents.dataComponents.map { it.id })
+                .toList()
+        val fetchedWithFullDataComponents =
+            fetchedWithPartialDataComponents.copy(dataComponents = dataComponentEntities.reversed())
 
         // then
         assertThat(fetchedWithFullDataComponents).isNotNull().all {
@@ -675,9 +696,10 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(ReportEntity::scenarioNamesPatterns).isEmpty()
             prop(ReportEntity::dataComponents).all {
                 hasSize(1000)
-                repeat(1000){ index ->
+                repeat(1000) { index ->
                     index(index).all {
-                        val expectedType = if ((index % 2) == 0) DataComponentType.DIAGRAM else DataComponentType.DATA_TABLE
+                        val expectedType =
+                            if ((index % 2) == 0) DataComponentType.DIAGRAM else DataComponentType.DATA_TABLE
                         val dataSeriesIndex = dataComponentEntities.size - 1 - index
                         prop(ReportDataComponentEntity::type).isEqualTo(expectedType)
                         prop(ReportDataComponentEntity::dataSeries).all {
@@ -708,7 +730,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        val fetched = reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "my-tenant", reference = "report-ref", creatorId = creator.id)
+        val fetched = reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
+            tenant = "my-tenant",
+            reference = "report-ref",
+            creatorId = creator.id
+        )
 
         // then
         assertThat(fetched).isNotNull().all {
@@ -743,7 +769,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        val fetched = reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(tenant = "my-tenant", reference = "report-ref", creatorId = creator2.id)
+        val fetched = reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
+            tenant = "my-tenant",
+            reference = "report-ref",
+            creatorId = creator2.id
+        )
 
         // then
         assertThat(fetched).isNotNull().all {
@@ -805,7 +835,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        val fetched = reportRepository.getReportIfUpdatable(tenant = "my-tenant", reference = "report-ref", creatorId = creator2.id)
+        val fetched = reportRepository.getReportIfUpdatable(
+            tenant = "my-tenant",
+            reference = "report-ref",
+            creatorId = creator2.id
+        )
 
         // then
         assertThat(fetched).isNotNull().all {
@@ -824,31 +858,32 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    fun `should not retrieve and existing a report when not owned and not shared in write`() = testDispatcherProvider.run {
-        // given
-        val tenant = tenantRepository.save(tenantPrototype.copy())
-        val creator = userRepository.save(userPrototype.copy())
-        val creator2 = userRepository.save(userPrototype.copy(username = "other-user"))
-        reportRepository.save(
-            ReportEntity(
-                reference = "report-ref",
-                tenantId = tenant.id,
-                creatorId = creator.id,
-                displayName = "my-report-name",
-                sharingMode = SharingMode.NONE
+    fun `should not retrieve and existing a report when not owned and not shared in write`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val creator2 = userRepository.save(userPrototype.copy(username = "other-user"))
+            reportRepository.save(
+                ReportEntity(
+                    reference = "report-ref",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "my-report-name",
+                    sharingMode = SharingMode.NONE
+                )
             )
-        )
 
-        // when
-        val report = reportRepository.getReportIfUpdatable(
-            tenant = "my-tenant",
-            reference = "report-ref",
-            creatorId = creator2.id
-        )
+            // when
+            val report = reportRepository.getReportIfUpdatable(
+                tenant = "my-tenant",
+                reference = "report-ref",
+                creatorId = creator2.id
+            )
 
-        // then
-        Assertions.assertNull(report)
-    }
+            // then
+            Assertions.assertNull(report)
+        }
 
     @Test
     fun `should fetch all reports saved with the default params`() = testDispatcherProvider.run {
@@ -862,7 +897,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(
             reportRepository.searchReports(
                 tenant.reference, creator.username, Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(reportEntity)
     }
 
@@ -903,7 +938,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(
             reportRepository.searchReports(
                 tenant.reference, creator.username, Pageable.from(0, 3, Sort.of(Sort.Order("sharingMode")))
-            ).content
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(3)
             containsOnly(reportWithNoSharingMode, reportWithReadSharingMode, reportWithWriteSharingMode)
@@ -912,6 +947,318 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             index(2).prop(ReportEntity::id).isEqualTo(reportWithWriteSharingMode.id)
         }
     }
+
+    @Test
+    fun `should reproduce the current state of cloud db and fetch all reports without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val report1 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "79wbqxlndc",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "New campaign pattern",
+                    sharingMode = SharingMode.WRITE,
+                    campaignNamesPatterns = listOf("New Campaign")
+                )
+            )
+            val report2 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "79gpezu117",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "Spike on Login",
+                    sharingMode = SharingMode.WRITE,
+                    campaignNamesPatterns = listOf("Spike on Login")
+                )
+            )
+            val report3 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "36i6jlv586",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "A new report",
+                    sharingMode = SharingMode.WRITE,
+                    campaignKeys = listOf(
+                        "test-tenant-1:clhjj1y4900000j84rdg9iq3t",
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf"
+                    )
+                )
+            )
+            val report4 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "88jgiz1x2d",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "This is a new one",
+                    sharingMode = SharingMode.WRITE,
+                    campaignKeys = listOf(
+                        "test-tenant-1:clhjj1y4900000j84rdg9iq3t",
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf"
+                    )
+                )
+            )
+            val report5 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "847vmsn2sk",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "kM123",
+                    sharingMode = SharingMode.WRITE,
+                    campaignKeys = listOf(
+                        "test-tenant-1:cldvuhx9z00240120mmssl0r9",
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf",
+                        "test-tenant-1:clhjj1y4900000j84rdg9iq3t"
+                    )
+                )
+            )
+            val report6 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "555thldnmk",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "KM Report 9527",
+                    sharingMode = SharingMode.WRITE,
+                    campaignKeys = listOf(
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf"
+                    )
+                )
+            )
+            val report7 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "55bf8uffsg",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "KM Report T456",
+                    sharingMode = SharingMode.WRITE,
+                    campaignKeys = listOf(
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf"
+                    )
+                )
+            )
+            val report8 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "55ehn6lr9p",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "KM Report T789",
+                    sharingMode = SharingMode.READONLY,
+                    campaignKeys = listOf(
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf"
+                    )
+                )
+            )
+            val report9 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "98wekd5bdg",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "New Report",
+                    sharingMode = SharingMode.WRITE,
+                    campaignKeys = listOf(
+                        "test-tenant-1:cled7a4u6000001758kw1qmgf",
+                        "test-tenant-1:cld63tq44000b0120cqwf3pmu",
+                        "test-tenant-1:cld78m3p1000i0120k9q5q3bw"
+                    )
+                )
+            )
+            val report10 = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "646mgyfwj0",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "Do nothing",
+                    campaignKeys = listOf(
+                        "test-tenant-1:cliosq48c00080j55ckax3j00"
+                    )
+                )
+            )
+            reportRepository.save(
+                reportPrototype.copy(
+                    reference = "32v8i26rgx",
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "test campaignpatterns",
+                    sharingMode = SharingMode.READONLY,
+                    campaignNamesPatterns = listOf(
+                        "Checkout stress test",
+                        "Spike on Login"
+                    )
+                )
+            )
+
+            // Save related data components.
+            val dataComponentsForReport8 = reportDataComponentRepository.saveAll(
+                listOf(
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DIAGRAM,
+                        reportId = report8.id,
+                        dataSeries = emptyList()
+                    ),
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DATA_TABLE,
+                        reportId = report8.id,
+                        dataSeries = emptyList()
+                    )
+                )
+            ).toList()
+            val dataComponentsForReport10 = reportDataComponentRepository.saveAll(
+                listOf(
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DATA_TABLE,
+                        reportId = report10.id,
+                        dataSeries = emptyList()
+                    ),
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DIAGRAM,
+                        reportId = report10.id,
+                        dataSeries = emptyList()
+                    )
+                )
+            ).toList()
+            val dataComponentsForReport6 = reportDataComponentRepository.saveAll(
+                listOf(
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DIAGRAM,
+                        reportId = report6.id,
+                        dataSeries = emptyList()
+                    ),
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DATA_TABLE,
+                        reportId = report6.id,
+                        dataSeries = emptyList()
+                    ),
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DIAGRAM,
+                        reportId = report6.id,
+                        dataSeries = emptyList()
+                    )
+                )
+            ).toList()
+            val dataComponentsForReport5 = reportDataComponentRepository.saveAll(
+                listOf(
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DATA_TABLE,
+                        reportId = report5.id,
+                        dataSeries = emptyList()
+                    ),
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DIAGRAM,
+                        reportId = report5.id,
+                        dataSeries = emptyList()
+                    )
+                )
+            ).toList()
+            val dataComponentsForReport7 = reportDataComponentRepository.saveAll(
+                listOf(
+                    ReportDataComponentEntity(
+                        type = DataComponentType.DIAGRAM,
+                        reportId = report7.id,
+                        dataSeries = emptyList()
+                    )
+                )
+            ).toList()
+            assertThat(reportRepository.findAll().count()).isEqualTo(11)
+
+
+            // When searching and sort on displayName ascendant.
+            var result = reportRepository.searchReports(
+                "my-tenant",
+                "my-user",
+                Pageable.from(0, 4, Sort.of(Sort.Order.asc("displayName", true)))
+            ).content.map { reportRepository.findById(it)!! } // We are sure that the report exists.
+            // then
+            assertThat(result).all {
+                hasSize(4)
+                containsOnly(
+                    report3,
+                    report10.copy(
+                        dataComponents = dataComponentsForReport10
+                    ),
+                    report6.copy(
+                        dataComponents = dataComponentsForReport6
+                    ),
+                    report7.copy(
+                        dataComponents = dataComponentsForReport7
+                    )
+                )
+                index(0).prop(ReportEntity::displayName).isEqualTo("A new report")
+                index(1).prop(ReportEntity::displayName).isEqualTo("Do nothing")
+                index(2).prop(ReportEntity::displayName).isEqualTo("KM Report 9527")
+                index(3).prop(ReportEntity::displayName).isEqualTo("KM Report T456")
+            }
+
+            // When searching and sort on reference descendant.
+            result = reportRepository.searchReports(
+                "my-tenant",
+                "my-user",
+                Pageable.from(0, 10, Sort.of(Sort.Order.desc("reference", true)))
+            ).content.map { reportRepository.findById(it)!! } // We are sure that the report exists.
+            // then
+            assertThat(result).all {
+                hasSize(10)
+                containsOnly(
+                    report9,
+                    report4,
+                    report5.copy(
+                        dataComponents = dataComponentsForReport5
+                    ),
+                    report1,
+                    report2,
+                    report10.copy(
+                        dataComponents = dataComponentsForReport10
+                    ),
+                    report8.copy(
+                        dataComponents = dataComponentsForReport8
+                    ),
+                    report7.copy(
+                        dataComponents = dataComponentsForReport7
+                    ),
+                    report6.copy(
+                        dataComponents = dataComponentsForReport6
+                    ),
+                    report3
+                )
+                index(0).prop(ReportEntity::reference).isEqualTo("98wekd5bdg")
+                index(1).prop(ReportEntity::reference).isEqualTo("88jgiz1x2d")
+                index(2).prop(ReportEntity::reference).isEqualTo("847vmsn2sk")
+                index(3).prop(ReportEntity::reference).isEqualTo("79wbqxlndc")
+                index(4).prop(ReportEntity::reference).isEqualTo("79gpezu117")
+                index(5).prop(ReportEntity::reference).isEqualTo("646mgyfwj0")
+                index(6).prop(ReportEntity::reference).isEqualTo("55ehn6lr9p")
+                index(7).prop(ReportEntity::reference).isEqualTo("55bf8uffsg")
+                index(8).prop(ReportEntity::reference).isEqualTo("555thldnmk")
+                index(9).prop(ReportEntity::reference).isEqualTo("36i6jlv586")
+            }
+
+
+            // When searching on the second page with case-insensitive.
+            result = reportRepository.searchReports(
+                "my-tenant",
+                "my-user",
+                Pageable.from(1, 4, Sort.of(Sort.Order.asc("displayName", true)))
+            ).content.map { reportRepository.findById(it)!! } // We are sure that the report exists.
+            // then
+            assertThat(result).all {
+                hasSize(4)
+                containsOnly(
+                    report8.copy(
+                        dataComponents = dataComponentsForReport8
+                    ),
+                    report5.copy(
+                        dataComponents = dataComponentsForReport5
+                    ),
+                    report1,
+                    report9
+                )
+                index(0).prop(ReportEntity::displayName).isEqualTo("KM Report T789")
+                index(1).prop(ReportEntity::displayName).isEqualTo("kM123")
+                index(2).prop(ReportEntity::displayName).isEqualTo("New campaign pattern")
+                index(3).prop(ReportEntity::displayName).isEqualTo("New Report")
+            }
+        }
 
     @Test
     fun `should fetch all reports and sort them by the sharing mode desc`() = testDispatcherProvider.run {
@@ -950,7 +1297,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(
             reportRepository.searchReports(
                 tenant.reference, creator.username, Pageable.from(0, 3, Sort.of(Sort.Order.desc("sharingMode")))
-            ).content
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(3)
             containsOnly(reportWithNoSharingMode, reportWithReadSharingMode, reportWithWriteSharingMode)
@@ -961,59 +1308,60 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
     }
 
     @Test
-    fun `should fetch all reports that belong to user alone or sharing mode is not none`() = testDispatcherProvider.run {
-        // given
-        val tenant = tenantRepository.save(tenantPrototype.copy())
-        val creator = userRepository.save(userPrototype.copy())
-        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
-        val report1 = reportRepository.save(
-            reportPrototype.copy(
-                tenantId = tenant.id,
-                creatorId = creator.id
+    fun `should fetch all reports that belong to user alone or sharing mode is not none`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val report1 = reportRepository.save(
+                reportPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id
+                )
             )
-        )
-        val reportWithWriteSharingMode = reportRepository.save(
-            reportPrototype.copy(
-                reference = "report-ref-1",
-                tenantId = tenant.id,
-                creatorId = anotherCreator.id,
-                displayName = "my-report-name-1",
-                sharingMode = SharingMode.WRITE,
+            val reportWithWriteSharingMode = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "report-ref-1",
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    displayName = "my-report-name-1",
+                    sharingMode = SharingMode.WRITE,
+                )
             )
-        )
-        val reportWithNoSharingMode = reportRepository.save(
-            reportPrototype.copy(
-                reference = "report-ref-2",
-                tenantId = tenant.id,
-                creatorId = anotherCreator.id,
-                displayName = "my-report-name-2",
-                sharingMode = SharingMode.NONE
+            val reportWithNoSharingMode = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "report-ref-2",
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    displayName = "my-report-name-2",
+                    sharingMode = SharingMode.NONE
+                )
             )
-        )
-        val reportWithReadSharingMode = reportRepository.save(
-            reportPrototype.copy(
-                reference = "report-ref-3",
-                tenantId = tenant.id,
-                creatorId = anotherCreator.id,
-                displayName = "my-report-name-3"
+            val reportWithReadSharingMode = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "report-ref-3",
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    displayName = "my-report-name-3"
+                )
             )
-        )
-        assertThat(reportRepository.findAll().count()).isEqualTo(4)
+            assertThat(reportRepository.findAll().count()).isEqualTo(4)
 
-        // when + then
-        assertThat(
-            reportRepository.searchReports(
-                tenant.reference, creator.username, Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
-            ).content
-        ).all {
-            hasSize(3)
-            containsOnly(report1, reportWithWriteSharingMode, reportWithReadSharingMode)
-            index(0).prop(ReportEntity::id).isEqualTo(report1.id)
-            index(1).prop(ReportEntity::id).isEqualTo(reportWithWriteSharingMode.id)
-            index(2).prop(ReportEntity::id).isEqualTo(reportWithReadSharingMode.id)
-            doesNotContain(reportWithNoSharingMode)
+            // when + then
+            assertThat(
+                reportRepository.searchReports(
+                    tenant.reference, creator.username, Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
+                ).content.map { reportRepository.findById(it)!! }
+            ).all {
+                hasSize(3)
+                containsOnly(report1, reportWithWriteSharingMode, reportWithReadSharingMode)
+                index(0).prop(ReportEntity::id).isEqualTo(report1.id)
+                index(1).prop(ReportEntity::id).isEqualTo(reportWithWriteSharingMode.id)
+                index(2).prop(ReportEntity::id).isEqualTo(reportWithReadSharingMode.id)
+                doesNotContain(reportWithNoSharingMode)
+            }
         }
-    }
 
     @Test
     fun `should fetch only reports belonging to only the specified tenant`() = testDispatcherProvider.run {
@@ -1042,7 +1390,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(
             reportRepository.searchReports(
                 otherTenant.reference, creator.username, Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(1)
             containsOnly(reportWithOtherTenant)
@@ -1075,8 +1423,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%e-1"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%e-1"),
+                Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(1)
             containsOnly(anotherReport)
@@ -1117,13 +1468,19 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%Na_E-%"),
+                Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(saved1)
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(1, 1, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%Na_E-%"),
+                Pageable.from(1, 1, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(saved2)
     }
 
@@ -1161,66 +1518,76 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(0, 1, Sort.of(Sort.Order.desc("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%Na_E-%"),
+                Pageable.from(0, 1, Sort.of(Sort.Order.desc("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(saved2)
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%Na_E-%"), Pageable.from(1, 1, Sort.of(Sort.Order.desc("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%Na_E-%"),
+                Pageable.from(1, 1, Sort.of(Sort.Order.desc("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(saved1)
     }
 
     @Test
-    fun `should find all reports with filter on data series display name included in report`() = testDispatcherProvider.run {
-        // given
-        val tenant = tenantRepository.save(tenantPrototype.copy())
-        val creator = userRepository.save(userPrototype.copy())
-        val saved = reportRepository.save(
-            reportPrototype.copy(
-                reference = "report-ref",
-                tenantId = tenant.id,
-                creatorId = creator.id,
-                displayName = "my-report-name",
-            )
-        )
-        val dataSeriesEntities = dataSeriesRepository.saveAll(
-            dataComponents.map { reportDataComponentEntity ->
-                DataSeriesEntity(
-                    reference = "series-ref_${reportDataComponentEntity.type}",
+    fun `should find all reports with filter on data series display name included in report`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val saved = reportRepository.save(
+                reportPrototype.copy(
+                    reference = "report-ref",
                     tenantId = tenant.id,
                     creatorId = creator.id,
-                    displayName = "my-series-name_${reportDataComponentEntity.type}",
-                    dataType = DataType.METERS,
-                    valueName = "my-value",
+                    displayName = "my-report-name",
                 )
-            }
-        ).toList()
-        reportDataComponentRepository.saveAll(
-            dataComponents.mapIndexed { index, reportDataComponentEntity ->
-                reportDataComponentEntity.copy(reportId = saved.id, dataSeries = listOf(dataSeriesEntities[index]))
-            }
-        ).toList()
-
-        // when + then
-        assertThat(
-            reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%-series%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
-        ).all{
-            hasSize(1)
-            index(0).prop(ReportEntity::id).isEqualTo(saved.id)
-            index(0).prop(ReportEntity::dataComponents).all {
-                hasSize(2)
-                index(0).all {
-                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DIAGRAM)
+            )
+            val dataSeriesEntities = dataSeriesRepository.saveAll(
+                dataComponents.map { reportDataComponentEntity ->
+                    DataSeriesEntity(
+                        reference = "series-ref_${reportDataComponentEntity.type}",
+                        tenantId = tenant.id,
+                        creatorId = creator.id,
+                        displayName = "my-series-name_${reportDataComponentEntity.type}",
+                        dataType = DataType.METERS,
+                        valueName = "my-value",
+                    )
                 }
-                index(1).all {
-                    prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DATA_TABLE)
+            ).toList()
+            reportDataComponentRepository.saveAll(
+                dataComponents.mapIndexed { index, reportDataComponentEntity ->
+                    reportDataComponentEntity.copy(reportId = saved.id, dataSeries = listOf(dataSeriesEntities[index]))
+                }
+            ).toList()
+
+            // when + then
+            assertThat(
+                reportRepository.searchReports(
+                    tenant.reference,
+                    creator.username,
+                    listOf("%-series%"),
+                    Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+                ).content.map { reportRepository.findById(it)!! }
+            ).all {
+                hasSize(1)
+                index(0).prop(ReportEntity::id).isEqualTo(saved.id)
+                index(0).prop(ReportEntity::dataComponents).all {
+                    hasSize(2)
+                    index(0).all {
+                        prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DIAGRAM)
+                    }
+                    index(1).all {
+                        prop(ReportDataComponentEntity::type).isEqualTo(DataComponentType.DATA_TABLE)
+                    }
                 }
             }
         }
-    }
 
     @Test
     fun `should find only reports that match filter on data series display name`() = testDispatcherProvider.run {
@@ -1284,9 +1651,12 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%-series-%"), Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
-            ).content
-        ).all{
+                tenant.reference,
+                creator.username,
+                listOf("%-series-%"),
+                Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
+        ).all {
             hasSize(1)
             index(0).prop(ReportEntity::id).isEqualTo(saved.id)
             index(0).prop(ReportEntity::dataComponents).all {
@@ -1364,9 +1734,12 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%-series%"), Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
-            ).content
-        ).all{
+                tenant.reference,
+                creator.username,
+                listOf("%-series%"),
+                Pageable.from(0, 4, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
+        ).all {
             hasSize(1)
             index(0).prop(ReportEntity::id).isEqualTo(saved.id)
             index(0).prop(ReportEntity::dataComponents).all {
@@ -1406,8 +1779,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%NaME-1"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%NaME-1"),
+                Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(1)
             containsOnly(anotherReport)
@@ -1440,8 +1816,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("_nother%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("_nother%"),
+                Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(1)
             containsOnly(anotherReport)
@@ -1453,7 +1832,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val creator = userRepository.save(userPrototype.copy())
-        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
+        val anotherCreator =
+            userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
         reportRepository.save(
             reportPrototype.copy(
                 tenantId = tenant.id,
@@ -1474,8 +1854,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%que-u%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%que-u%"),
+                Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).all {
             hasSize(1)
             containsOnly(anotherReport)
@@ -1487,7 +1870,8 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val creator = userRepository.save(userPrototype.copy())
-        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
+        val anotherCreator =
+            userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
         reportRepository.save(
             reportPrototype.copy(
                 tenantId = tenant.id,
@@ -1508,8 +1892,11 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // when + then
         assertThat(
             reportRepository.searchReports(
-                tenant.reference, creator.username, listOf("%good%"), Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
-            ).content
+                tenant.reference,
+                creator.username,
+                listOf("%good%"),
+                Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
         ).isEmpty()
     }
 
@@ -1550,14 +1937,14 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         assertThat(
             reportRepository.searchReports(
                 tenant.reference, creator.username, Pageable.from(0, 2, Sort.of(Sort.Order("sharingMode")))
-            ).content
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(reportWithNoSharingMode, reportWithReadSharingMode)
 
         // when + then
         assertThat(
             reportRepository.searchReports(
                 tenant.reference, creator.username, Pageable.from(1, 2, Sort.of(Sort.Order("sharingMode")))
-            ).content
+            ).content.map { reportRepository.findById(it)!! }
         ).containsOnly(reportWithWriteSharingMode)
     }
 }
