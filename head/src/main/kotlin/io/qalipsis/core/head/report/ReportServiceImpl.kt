@@ -259,16 +259,17 @@ internal class ReportServiceImpl(
             ?: Sort.of(Sort.Order(ReportEntity::displayName.name))
         val pageable = Pageable.from(page, size, sorting)
 
-        val reportEntityPage = if (filters.isNotEmpty()) {
+        val reportIdsPage = if (filters.isNotEmpty()) {
             reportRepository.searchReports(tenant, username, filters.formatsFilters(), pageable)
         } else {
             reportRepository.searchReports(tenant, username, pageable)
         }
+        val entities = reportRepository.findByIdIn(reportIdsPage.content).associateBy { it.id }
         return QalipsisPage(
-            page = reportEntityPage.pageNumber,
-            totalPages = reportEntityPage.totalPages,
-            totalElements = reportEntityPage.totalSize,
-            elements = reportEntityPage.content.map { id -> reportRepository.findById(id)!! }
+            page = reportIdsPage.pageNumber,
+            totalPages = reportIdsPage.totalPages,
+            totalElements = reportIdsPage.totalSize,
+            elements = reportIdsPage.content.mapNotNull { id -> entities[id]!! }
                 .map { reportConverter.convertToModel(it) } // We are sure that the report exists.
         )
     }

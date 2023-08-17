@@ -40,6 +40,9 @@ import io.qalipsis.core.head.jdbc.entity.ReportEntity
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long> {
 
+    // TODO No need to declare the query, only tests are required.
+    fun findByIdIn(ids: Collection<Long>): Collection<ReportEntity>
+
     /**
      * Find a report in a tenant by its reference.
      *
