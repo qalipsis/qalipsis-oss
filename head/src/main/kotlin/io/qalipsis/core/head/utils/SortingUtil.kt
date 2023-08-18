@@ -70,9 +70,9 @@ internal object SortingUtil {
             }
         val sortOrder = properties.last().lowercase()
         return if ("desc" == sortOrder) {
-            Sort.of(Sort.Order.desc(sortProperty?.name))
+            Sort.of(Sort.Order.desc(sortProperty?.name, true))
         } else {
-            Sort.of(Sort.Order.asc(sortProperty?.name))
+            Sort.of(Sort.Order.asc(sortProperty?.name, true))
         }
     }
 }

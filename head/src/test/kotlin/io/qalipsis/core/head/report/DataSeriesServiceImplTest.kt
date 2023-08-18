@@ -1047,7 +1047,7 @@ internal class DataSeriesServiceImplTest {
                 mockk { every { id } returns 12L; every { displayName } returns "User 1" },
                 mockk { every { id } returns 34L; every { displayName } returns "User 2" }
             )
-            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("fieldName")))
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("fieldName", true)))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
             coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
 
@@ -1141,7 +1141,7 @@ internal class DataSeriesServiceImplTest {
                 mockk { every { id } returns 12L; every { displayName } returns "User 1" },
                 mockk { every { id } returns 34L; every { displayName } returns "User 2" }
             )
-            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("fieldName")))
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("fieldName", true)))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
             coEvery {
                 dataSeriesRepository.searchDataSeries(

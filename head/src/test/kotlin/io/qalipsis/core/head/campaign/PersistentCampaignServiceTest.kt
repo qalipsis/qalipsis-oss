@@ -289,7 +289,7 @@ internal class PersistentCampaignServiceTest {
             // given
             val campaignEntity1 = relaxedMockk<CampaignEntity>()
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
-            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name", true)))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
 
             val campaign1 = relaxedMockk<Campaign>()
@@ -332,7 +332,7 @@ internal class PersistentCampaignServiceTest {
             // given
             val campaignEntity1 = relaxedMockk<CampaignEntity>()
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
-            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("name")))
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("name", true)))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
 
             val campaign1 = relaxedMockk<Campaign>()
@@ -375,7 +375,7 @@ internal class PersistentCampaignServiceTest {
             // given
             val campaignEntity1 = relaxedMockk<CampaignEntity>()
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
-            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name", true)))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
 
             val campaign1 = relaxedMockk<Campaign>()
@@ -420,7 +420,7 @@ internal class PersistentCampaignServiceTest {
             val campaignEntity2 = relaxedMockk<CampaignEntity>()
             val filter1 = "%test%"
             val filter2 = "%he%lo%"
-            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name")))
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name", true)))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
             coEvery { campaignRepository.findAll("my-tenant", listOf(filter1, filter2), pageable) } returns page
 

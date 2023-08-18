@@ -115,9 +115,14 @@ internal class ReportServiceImpl(
     override suspend fun create(
         tenant: String,
         creator: String,
-        reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
+        reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest,
     ): Report {
-        require(!reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, reportCreationAndUpdateRequest.displayName)) {
+        require(
+            !reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                tenant,
+                reportCreationAndUpdateRequest.displayName
+            )
+        ) {
             "A report named ${reportCreationAndUpdateRequest.displayName} already exists in your organization"
         }
         if (reportCreationAndUpdateRequest.campaignKeys.isNotEmpty()) {
@@ -162,7 +167,7 @@ internal class ReportServiceImpl(
         tenant: String,
         username: String,
         reference: String,
-        reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
+        reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest,
     ): Report {
         val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
         val reportEntity = requireNotNull(
@@ -174,7 +179,13 @@ internal class ReportServiceImpl(
         ) {
             REPORT_UPDATE_DENY
         }
-        require(!reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, reportCreationAndUpdateRequest.displayName, reportEntity.id)) {
+        require(
+            !reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
+                tenant,
+                reportCreationAndUpdateRequest.displayName,
+                reportEntity.id
+            )
+        ) {
             "A report named ${reportCreationAndUpdateRequest.displayName} already exists in your organization"
         }
 
@@ -242,22 +253,24 @@ internal class ReportServiceImpl(
         filters: Collection<String>,
         sort: String?,
         page: Int,
-        size: Int
+        size: Int,
     ): QalipsisPage<Report> {
         val sorting = sort?.let { SortingUtil.sort(ReportEntity::class, it) }
             ?: Sort.of(Sort.Order(ReportEntity::displayName.name))
         val pageable = Pageable.from(page, size, sorting)
 
-        val reportEntityPage = if (filters.isNotEmpty()) {
+        val reportIdsPage = if (filters.isNotEmpty()) {
             reportRepository.searchReports(tenant, username, filters.formatsFilters(), pageable)
         } else {
             reportRepository.searchReports(tenant, username, pageable)
         }
+        val entities = reportRepository.findByIdIn(reportIdsPage.content).associateBy { it.id }
         return QalipsisPage(
-            page = reportEntityPage.pageNumber,
-            totalPages = reportEntityPage.totalPages,
-            totalElements = reportEntityPage.totalSize,
-            elements = reportEntityPage.content.map { reportConverter.convertToModel(it) }
+            page = reportIdsPage.pageNumber,
+            totalPages = reportIdsPage.totalPages,
+            totalElements = reportIdsPage.totalSize,
+            elements = reportIdsPage.content.mapNotNull { id -> entities[id] }
+                .map { reportConverter.convertToModel(it) } // We are sure that the report exists.
         )
     }
 
@@ -347,7 +360,7 @@ internal class ReportServiceImpl(
     private suspend fun toEntity(
         reportId: Long,
         tenant: String,
-        dataComponentCreationAndUpdateRequest: DataComponentCreationAndUpdateRequest
+        dataComponentCreationAndUpdateRequest: DataComponentCreationAndUpdateRequest,
     ): ReportDataComponentEntity {
         return if (dataComponentCreationAndUpdateRequest.type == Diagram.TYPE) {
             val diagram = dataComponentCreationAndUpdateRequest as DiagramCreationAndUpdateRequest
@@ -363,7 +376,7 @@ internal class ReportServiceImpl(
      */
     private suspend fun checkDataSeriesInDataComponent(
         tenant: String,
-        dataComponentCreationAndUpdateRequest: DataComponentCreationAndUpdateRequest
+        dataComponentCreationAndUpdateRequest: DataComponentCreationAndUpdateRequest,
     ): Boolean {
         if (dataComponentCreationAndUpdateRequest.type == Diagram.TYPE) {
             val diagram = dataComponentCreationAndUpdateRequest as DiagramCreationAndUpdateRequest
@@ -390,7 +403,7 @@ internal class ReportServiceImpl(
         reportId: Long,
         type: DataComponentType,
         tenant: String,
-        dataSeries: List<String>
+        dataSeries: List<String>,
     ): ReportDataComponentEntity {
         val dataSeriesEntities = dataSeriesRepository.findAllByTenantAndReferences(tenant, dataSeries)
         return ReportDataComponentEntity(reportId = reportId, type = type, dataSeries = dataSeriesEntities)
