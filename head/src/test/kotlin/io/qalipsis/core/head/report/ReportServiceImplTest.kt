@@ -38,6 +38,7 @@ import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
@@ -1720,15 +1721,19 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.run {
             // given
             val reportServiceImpl = buildReportService()
-            val reportEntity1 = relaxedMockk<ReportEntity>()
-            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val reportEntity1 = relaxedMockk<ReportEntity> {
+                every { id } returns 1
+            }
+            val reportEntity2 = relaxedMockk<ReportEntity> {
+                every { id } returns 2
+            }
             val report1 = relaxedMockk<Report>()
             val report2 = relaxedMockk<Report>()
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
             val page = Page.of(listOf(reportEntity1.id, reportEntity2.id), pageable, 2)
             coEvery { reportRepository.searchReports(refEq("my-tenant"), "user", pageable) } returns page
             coEvery { reportConverter.convertToModel(any()) } returns report1 andThen report2
-            coEvery { reportRepository.findById(any()) } returns reportEntity1 andThen reportEntity2
+            coEvery { reportRepository.findByIdIn(listOf(1, 2)) } returns listOf(reportEntity1, reportEntity2)
 
             // when
             val result = reportServiceImpl.search("my-tenant", "user", emptyList(), null, 0, 20)
@@ -1745,8 +1750,7 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 reportRepository.searchReports(refEq("my-tenant"), "user", pageable)
-                reportRepository.findById(any())
-                reportRepository.findById(any())
+                reportRepository.findByIdIn(listOf(1, 2))
                 reportConverter.convertToModel(refEq(reportEntity1))
                 reportConverter.convertToModel(refEq(reportEntity2))
             }
@@ -1769,13 +1773,17 @@ internal class ReportServiceImplTest {
             val reportServiceImpl = buildReportService()
             val report1 = relaxedMockk<Report>()
             val report2 = relaxedMockk<Report>()
-            val reportEntity1 = relaxedMockk<ReportEntity>()
-            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val reportEntity1 = relaxedMockk<ReportEntity> {
+                every { id } returns 1
+            }
+            val reportEntity2 = relaxedMockk<ReportEntity> {
+                every { id } returns 2
+            }
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("campaignKeys", true)))
             val page = Page.of(listOf(reportEntity1.id, reportEntity2.id), pageable, 2)
             coEvery { reportRepository.searchReports(refEq("my-tenant"), "user", pageable) } returns page
             coEvery { reportConverter.convertToModel(any()) } returns report1 andThen report2
-            coEvery { reportRepository.findById(any()) } returns reportEntity1 andThen reportEntity2
+            coEvery { reportRepository.findByIdIn(listOf(1, 2)) } returns listOf(reportEntity1, reportEntity2)
 
             // when
             val result = reportServiceImpl.search("my-tenant", "user", emptyList(), "campaignKeys:asc", 0, 20)
@@ -1792,8 +1800,7 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 reportRepository.searchReports(refEq("my-tenant"), "user", pageable)
-                reportRepository.findById(any())
-                reportRepository.findById(any())
+                reportRepository.findByIdIn(listOf(1, 2))
                 reportConverter.convertToModel(refEq(reportEntity1))
                 reportConverter.convertToModel(refEq(reportEntity2))
             }
@@ -1816,13 +1823,17 @@ internal class ReportServiceImplTest {
             val reportServiceImpl = buildReportService()
             val report1 = relaxedMockk<Report>()
             val report2 = relaxedMockk<Report>()
-            val reportEntity1 = relaxedMockk<ReportEntity>()
-            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val reportEntity1 = relaxedMockk<ReportEntity> {
+                every { id } returns 1
+            }
+            val reportEntity2 = relaxedMockk<ReportEntity> {
+                every { id } returns 2
+            }
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("campaignKeys", true)))
             val page = Page.of(listOf(reportEntity2.id, reportEntity1.id), pageable, 2)
             coEvery { reportRepository.searchReports(refEq("my-tenant"), "user", pageable) } returns page
             coEvery { reportConverter.convertToModel(any()) } returns report2 andThen report1
-            coEvery { reportRepository.findById(any()) } returns reportEntity2 andThen reportEntity1
+            coEvery { reportRepository.findByIdIn(listOf(2, 1)) } returns listOf(reportEntity2, reportEntity1)
 
             // when
             val result = reportServiceImpl.search("my-tenant", "user", emptyList(), "campaignKeys:desc", 0, 20)
@@ -1839,10 +1850,69 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 reportRepository.searchReports(refEq("my-tenant"), "user", pageable)
-                reportRepository.findById(any())
-                reportRepository.findById(any())
+                reportRepository.findByIdIn(listOf(2, 1))
                 reportConverter.convertToModel(refEq(reportEntity2))
                 reportConverter.convertToModel(refEq(reportEntity1))
+            }
+            confirmVerified(
+                reportRepository,
+                tenantRepository,
+                userRepository,
+                campaignRepository,
+                reportDataComponentRepository,
+                dataSeriesRepository,
+                idGenerator,
+                reportConverter
+            )
+        }
+
+    @Test
+    internal fun `should return the searched reports from the repository with sorting desc and also conserve the order of report IDs when mapping to entities`() =
+        testDispatcherProvider.run {
+            // given
+            val reportServiceImpl = buildReportService()
+            val report1 = relaxedMockk<Report>()
+            val report2 = relaxedMockk<Report>()
+            val report4 = relaxedMockk<Report>()
+            val report7 = relaxedMockk<Report>()
+            val reportEntity1 = relaxedMockk<ReportEntity> {
+                every { id } returns 1
+            }
+            val reportEntity2 = relaxedMockk<ReportEntity> {
+                every { id } returns 2
+            }
+            val reportEntity4 = relaxedMockk<ReportEntity> {
+                every { id } returns 4
+            }
+            val reportEntity7 = relaxedMockk<ReportEntity> {
+                every { id } returns 7
+            }
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("campaignKeys", true)))
+            val page = Page.of(listOf(reportEntity4.id, reportEntity2.id, reportEntity1.id, reportEntity7.id), pageable, 2)
+            coEvery { reportRepository.searchReports(refEq("my-tenant"), "user", pageable) } returns page
+            coEvery { reportConverter.convertToModel(any()) } returns report4 andThen report2 andThen report1 andThen report7
+            coEvery { reportRepository.findByIdIn(listOf(4, 2, 1, 7)) } returns listOf(reportEntity1, reportEntity2, reportEntity4, reportEntity7)
+
+            // when
+            val result = reportServiceImpl.search("my-tenant", "user", emptyList(), "campaignKeys:desc", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<Report>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Report>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Report>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Report>::elements).all {
+                    hasSize(4)
+                    containsExactly(report4, report2, report1, report7)
+                }
+            }
+            coVerifyOrder {
+                reportRepository.searchReports(refEq("my-tenant"), "user", pageable)
+                reportRepository.findByIdIn(listOf(4, 2, 1, 7))
+                reportConverter.convertToModel(refEq(reportEntity4))
+                reportConverter.convertToModel(refEq(reportEntity2))
+                reportConverter.convertToModel(refEq(reportEntity1))
+                reportConverter.convertToModel(refEq(reportEntity7))
             }
             confirmVerified(
                 reportRepository,
@@ -1863,8 +1933,12 @@ internal class ReportServiceImplTest {
             val reportServiceImpl = buildReportService()
             val filter1 = "%Un%u_%"
             val filter2 = "%u_Er%"
-            val reportEntity1 = relaxedMockk<ReportEntity>()
-            val reportEntity2 = relaxedMockk<ReportEntity>()
+            val reportEntity1 = relaxedMockk<ReportEntity> {
+                every { id } returns 1
+            }
+            val reportEntity2 = relaxedMockk<ReportEntity> {
+                every { id } returns 2
+            }
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
             val page = Page.of(listOf(reportEntity1.id, reportEntity2.id), Pageable.from(0, 20), 2)
             coEvery {
@@ -1878,7 +1952,7 @@ internal class ReportServiceImplTest {
             val report1 = relaxedMockk<Report>()
             val report2 = relaxedMockk<Report>()
             coEvery { reportConverter.convertToModel(any()) } returns report1 andThen report2
-            coEvery { reportRepository.findById(any()) } returns reportEntity1 andThen reportEntity2
+            coEvery { reportRepository.findByIdIn(listOf(1, 2)) } returns listOf(reportEntity1, reportEntity2)
 
             // when
             val result =
@@ -1896,8 +1970,7 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 reportRepository.searchReports(refEq("my-tenant"), "user", listOf(filter1, filter2), pageable)
-                reportRepository.findById(any())
-                reportRepository.findById(any())
+                reportRepository.findByIdIn(listOf(1, 2))
                 reportConverter.convertToModel(refEq(reportEntity1))
                 reportConverter.convertToModel(refEq(reportEntity2))
             }
@@ -1920,8 +1993,12 @@ internal class ReportServiceImplTest {
             val reportServiceImpl = buildReportService()
             val filter1 = "%F_oo%"
             val filter2 = "%Us_r%"
-            val reportEntity2 = relaxedMockk<ReportEntity>()
-            val reportEntity3 = relaxedMockk<ReportEntity>()
+            val reportEntity2 = relaxedMockk<ReportEntity> {
+                every { id } returns 2
+            }
+            val reportEntity3 = relaxedMockk<ReportEntity> {
+                every { id } returns 3
+            }
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("sharingMode", true)))
             val page = Page.of(listOf(reportEntity2.id, reportEntity3.id), Pageable.from(0, 20), 2)
             coEvery {
@@ -1935,7 +2012,7 @@ internal class ReportServiceImplTest {
             val report2 = relaxedMockk<Report>()
             val report3 = relaxedMockk<Report>()
             coEvery { reportConverter.convertToModel(any()) } returns report2 andThen report3
-            coEvery { reportRepository.findById(any()) } returns reportEntity2 andThen reportEntity3
+            coEvery { reportRepository.findByIdIn(listOf(2, 3)) } returns listOf(reportEntity2, reportEntity3)
 
             // when
             val result =
@@ -1953,8 +2030,7 @@ internal class ReportServiceImplTest {
             }
             coVerifyOrder {
                 reportRepository.searchReports("my-tenant", "user", listOf(filter1, filter2), pageable)
-                reportRepository.findById(any())
-                reportRepository.findById(any())
+                reportRepository.findByIdIn(listOf(2, 3))
                 reportConverter.convertToModel(refEq(reportEntity2))
                 reportConverter.convertToModel(refEq(reportEntity3))
             }

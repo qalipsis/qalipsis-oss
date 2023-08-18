@@ -269,7 +269,7 @@ internal class ReportServiceImpl(
             page = reportIdsPage.pageNumber,
             totalPages = reportIdsPage.totalPages,
             totalElements = reportIdsPage.totalSize,
-            elements = reportIdsPage.content.mapNotNull { id -> entities[id]!! }
+            elements = reportIdsPage.content.mapNotNull { id -> entities[id] }
                 .map { reportConverter.convertToModel(it) } // We are sure that the report exists.
         )
     }

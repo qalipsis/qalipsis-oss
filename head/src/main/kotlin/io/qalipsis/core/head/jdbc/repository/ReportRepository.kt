@@ -40,7 +40,14 @@ import io.qalipsis.core.head.jdbc.entity.ReportEntity
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long> {
 
-    // TODO No need to declare the query, only tests are required.
+
+    /**
+     * Find a list of report based on their internal IDs.
+     *
+     * The details of the [io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity] should be
+     * fetched separately using [ReportDataComponentRepository.findByIdInOrderById] once the report was fetched.
+     */
+    @Join(value = "dataComponents", type = Join.Type.LEFT_FETCH)
     fun findByIdIn(ids: Collection<Long>): Collection<ReportEntity>
 
     /**
