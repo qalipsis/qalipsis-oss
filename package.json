@@ -12,5 +12,11 @@
     "@nuxt/devtools": "latest",
     "@types/node": "18.17.3",
     "nuxt": "3.6.5"
+  },
+  "dependencies": {
+    "@ant-design-vue/nuxt": "1.1.0",
+    "@pinia/nuxt": "0.4.11",
+    "pinia": "2.1.6",
+    "sass": "1.66.0"
   }
 }

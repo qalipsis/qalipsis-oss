@@ -1,0 +1,9 @@
+@import './color';
+
+/* Divide line */
+.divide-line {
+    margin: 1.25rem 0;
+    height: 1px;
+    background-color: $grey-2;
+    border: none;
+}
