@@ -10,7 +10,13 @@
 
 <script setup lang="ts">    
 const props = defineProps<{
+    /**
+     * The initial model value to be bound.
+     */
     modelValue: string,
+    /**
+     * The options for the dropdown menu.
+     */
     options: FormDropdownOption[]
 }>();
 

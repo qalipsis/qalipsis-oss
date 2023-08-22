@@ -137,6 +137,10 @@ const drawerSize = props.size ?? "large";
     .drawer-footer-section {
         width: 100%;
 
+        .divide-line {
+            margin: 1.25rem 0;
+        }
+
         .button-groups {
             display: flex;
             align-items: center;

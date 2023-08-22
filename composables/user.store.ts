@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 
 interface UserStoreState {
-  user?: User;
+  user: User;
   tenants: Tenant[];
   currentTenantReference: string;
   permissions: PermissionEnum[];
@@ -10,6 +10,7 @@ interface UserStoreState {
 export const useUserStore = defineStore("User", {
   state: (): UserStoreState => {
       return {
+          user: null,
           currentTenantReference: localStorage.getItem(TenantHelper.TENANT_LOCAL_STORAGE_PROPERTY_KEY) ?? '',
           tenants: [],
           permissions: []
@@ -20,13 +21,9 @@ export const useUserStore = defineStore("User", {
   },
   actions: {
       storeTenant(tenantReference: string): void {
-          this.currentTenantReference = tenantReference;
           localStorage.setItem(TenantHelper.TENANT_LOCAL_STORAGE_PROPERTY_KEY, tenantReference);
       },
       hasAnyPermission(requiredPermissions: PermissionEnum[]): boolean {
-          console.log(requiredPermissions)
-          console.log(this.permissions)
-          console.log(requiredPermissions.some(requiredPermission => this.permissions.includes(requiredPermission)))
           return requiredPermissions.length === 0 ?
               true : requiredPermissions.some(requiredPermission => this.permissions.includes(requiredPermission))
       },

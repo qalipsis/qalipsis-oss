@@ -4,7 +4,7 @@
             <div class="icon-wrapper">
                 <BaseIcon icon="/icons/icon-logo.svg" />
             </div>
-            <div v-if="!collapsed" class="text-wrapper text-2xl text-bold">
+            <div v-if="!collapsed" class="text-wrapper text-xl text-bold">
                 QALIPSIS
             </div>
         </div>
@@ -13,19 +13,21 @@
                 v-for="menuItem in menuItems"
                 class="menu-container"
                 :key="menuItem.path"
-                :class="{ 'menu-container--active': menuItem.path === activePath || menuItem.subOptions?.some(o => o.path === activePath) }">
-                <div class="item-indicator"></div>
-                <a-menu-item v-if="!menuItem.subOptions" @click="handleMenuItemClick(menuItem.path)" :key="menuItem.path">
-                    <div class="option-container">
-                        <div class="icon-wrapper">
-                            <BaseIcon :icon="menuItem.icon" />
+                :class="{ 'menu-container--active': menuItem.path === activePath || menuItem.subMenuItems?.some(o => o.path === activePath) }">
+                <BasePermission :permissions="menuItem.permissions">
+                    <div class="item-indicator"></div>
+                    <a-menu-item v-if="!menuItem.subMenuItems" @click="handleMenuItemClick(menuItem.path)" :key="menuItem.path">
+                        <div class="option-container">
+                            <div class="icon-wrapper">
+                                <BaseIcon :icon="menuItem.icon" />
+                            </div>
+                            <span class="text-wrapper">
+                                {{ menuItem.text }}
+                            </span>
                         </div>
-                        <span class="text-wrapper">
-                            {{ menuItem.text }}
-                        </span>
-                    </div>
-                </a-menu-item>
-                <a-sub-menu v-if="menuItem.subOptions && menuItem.subOptions.length > 0">
+                    </a-menu-item>
+                </BasePermission>
+                <a-sub-menu v-if="menuItem.subMenuItems && menuItem.subMenuItems.length > 0">
                     <template #title>
                         <div class="option-container">
                             <div class="icon-wrapper">
@@ -36,14 +38,18 @@
                             </span>
                         </div>
                     </template>
-                    <a-menu-item v-for="subOption in menuItem.subOptions" :key="subOption.path"
-                        @click="handleMenuItemClick(subOption.path)" style="height: fit-content;">
-                        <div class="option-container">
-                            <span class="text-wrapper">
-                                {{ subOption.text }}
-                            </span>
-                        </div>
-                    </a-menu-item>
+                    <template v-for="subOption in menuItem.subMenuItems" :key="subOption.path">
+                        <BasePermission :permissions="subOption.permissions">
+                            <a-menu-item 
+                                @click="handleMenuItemClick(subOption.path)" style="height: fit-content;">
+                                <div class="option-container">
+                                    <span class="text-wrapper">
+                                        {{ subOption.text }}
+                                    </span>
+                                </div>
+                            </a-menu-item>
+                        </BasePermission>
+                    </template>
                 </a-sub-menu>
             </div>
         </a-menu>
@@ -51,8 +57,6 @@
 </template>
 
 <script setup lang="ts">
-import { SidebarMenuItem } from 'utils/sidebar.helper';
-
 const router = useRouter();
 
 defineProps<{
@@ -67,7 +71,7 @@ defineProps<{
     collapsed: boolean
 }>();
 
-const activePath = ref(router.currentRoute.value.name?.toString() ?? '');
+const activePath = computed(() => router.currentRoute.value.name);
 
 /**
  * Navigates to the page when clicking the button.
@@ -75,7 +79,6 @@ const activePath = ref(router.currentRoute.value.name?.toString() ?? '');
  * @param path The path url to be navigated
  */
 const handleMenuItemClick = (path: string) => {
-    activePath.value = path;
     navigateTo(path);
 }
 

@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 
-const { fetchProfile } = useUserApi();
+const { fetchProfile, fetchPermissions } = useUserApi();
 const userStore = useUserStore();
 
 const currentTenantReference = ref(userStore.currentTenantReference);
@@ -57,6 +57,9 @@ onMounted(async () => {
   if (userStore.currentTenantReference || profile.tenants.length === 1) {
     const tenantToStore = userStore.currentTenantReference ?? profile.tenants[0].reference;
     userStore.storeTenant(tenantToStore);
+    userStore.$patch({
+      currentTenantReference: tenantToStore
+    });
     _showPage();
 
     return;
@@ -67,7 +70,10 @@ onMounted(async () => {
 })
 
 const handleSelectTenantConfirmButtonClick = () => {
-  userStore.storeTenant(currentTenantReference.value!);
+  userStore.storeTenant(currentTenantReference.value);
+  userStore.$patch({
+    currentTenantReference: currentTenantReference.value
+  });
   _showPage();
 }
 
@@ -89,6 +95,12 @@ const _showTenantModal = () => {
 }
 
 const _showPage = async () => {
+  // Updates the user permissions
+  const permissions = await fetchPermissions();
+  userStore.$patch({
+    permissions: permissions
+  });
+
   // Closes the tenant modal
   tenantModalOpen.value = false;
   // Displays the page
