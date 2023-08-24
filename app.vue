@@ -1,23 +1,31 @@
 <template>
-  <a-layout>
-    <a-layout-content v-if="canViewPage">
-      <a-layout>
-        <Sidebar />
-        <a-layout-content>
-          <NuxtPage />
-        </a-layout-content>
-      </a-layout>
-    </a-layout-content>
-    <BaseModal 
-      title="Select tenant"
-      v-model:open="tenantModalOpen"
-      @confirm-btn-click="handleSelectTenantConfirmButtonClick()">
-      <FormSelect 
-        v-model="currentTenantReference"
-        :options="tenantOptions">
-      </FormSelect>
-    </BaseModal>
-  </a-layout>
+  <a-config-provider
+    :theme="{
+      token: {
+        colorPrimary: '#41c9ca',
+      },
+    }"
+  >
+    <a-layout>
+      <a-layout-content v-if="canViewPage">
+        <a-layout>
+          <Sidebar />
+          <a-layout-content>
+            <NuxtPage />
+          </a-layout-content>
+        </a-layout>
+      </a-layout-content>
+      <BaseModal 
+        title="Select tenant"
+        v-model:open="tenantModalOpen"
+        @confirm-btn-click="handleSelectTenantConfirmButtonClick()">
+        <FormSelect 
+          v-model="currentTenantReference"
+          :options="tenantOptions">
+        </FormSelect>
+      </BaseModal>
+    </a-layout>
+  </a-config-provider>
 </template>
 
 <script setup lang="ts">

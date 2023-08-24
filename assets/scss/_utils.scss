@@ -5,3 +5,65 @@
 .cursor-pointer {
     cursor: pointer;
 }
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.space-between {
+    justify-content: space-between;
+}
+
+/* Classes for padding and margin */
+@for $i from 1 through 10 {
+    // PADDING
+    .p-#{$i} {
+      padding: #{.25rem * $i} !important;
+    }
+  
+    
+    // PADDING LEFT
+    .pl-#{$i} {
+        padding-left: #{.25rem * $i} !important;
+    }
+  
+    // PADDING RIGHT
+    .pr-#{$i} {
+      padding-right: #{.25rem * $i} !important;
+    }
+  
+    // PADDING TOP
+    .pt-#{$i} {
+      padding-top: #{.25rem * $i} !important;
+    }
+  
+    // PADDING BOTTOM
+    .pb-#{$i} {
+      padding-bottom: #{.25rem * $i} !important;
+    }
+  
+    // MARGIN LEFT
+    .ml-#{$i} {
+      margin-left: #{.25rem * $i} !important;
+  }
+  
+    // MARGIN RIGHT
+    .mr-#{$i} {
+      margin-right: #{.25rem * $i} !important;
+    }
+  
+    // MARGIN TOP
+    .mt-#{$i} {
+      margin-top: #{.25rem * $i} !important;
+    }
+  
+    // MARGIN BOTTOM
+    .mb-#{$i} {
+      margin-bottom: #{.25rem * $i} !important;
+    }
+  
+  }

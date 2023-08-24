@@ -211,6 +211,7 @@
     /* No extra margin for h1 - h7 tag */
     h#{7 - $i} {
         margin: 0;
+        font-weight: 500;
     }
 }
 

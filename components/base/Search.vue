@@ -25,6 +25,10 @@ const value = ref('');
 const active = ref(props.collapsable === false);
 
 const debouncedSearch = debounce(() => {
+    if (props.collapsable && !value.value) {
+        active.value = false;
+    }
+
     emits('search', value.value);
 }, 300);
 
@@ -45,7 +49,7 @@ const handleTextInputChange = () => {
 @import "../../assets/scss/color";
 @import "../../assets/scss/variables";
 
-$search-input-height: 2.25rem;
+$search-input-height: 2.75rem;
 $icon-width: 2.25rem;
 
 .search-container {
@@ -70,13 +74,13 @@ $icon-width: 2.25rem;
     }
 
     .search-input {
-        height: 2rem;
+        height: 2.25rem;
         border: none;
         outline: none;
         padding: 0;
         width: 0;
         transition: width 0.3s ease;
-
+        border-radius: $default-radius; 
         &--active {
             width: 10rem;
             padding: 0 0.5rem;

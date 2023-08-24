@@ -1,4 +1,5 @@
 @import './color';
+@import './variables';
 
 /* Divide line */
 .divide-line {
@@ -6,4 +7,50 @@
     height: 1px;
     background-color: $grey-2;
     border: none;
+}
+
+/* Shared page content container */
+.page-content-container {
+    padding: 0 $content-padding;
+}
+
+/* Overrides the table css */
+.ant-table-wrapper .ant-table-thead>tr>th {
+    background: white;
+}
+
+.ant-pagination-total-text {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+/* Notification */
+.notification {
+    width: 23.75rem;
+    padding: 2rem 1rem;
+    border-radius: .75rem;
+    border: solid 2px $grey-10;
+    background-color: $light-grey-highlight;
+    box-shadow: 0 1rem 1.25rem 0 rgba(153, 147, 163, 0.19);
+
+    .ant-notification-notice-icon {
+        top: 50%;
+        transform: translateY(-50%);
+        margin: 0;
+    }
+
+    .ant-notification-notice-close {
+        top: .25rem;
+        right: .5rem;
+    }
+
+    &--error {
+        border: solid 2px #e3cfd6;
+        background-color: #fdeaf1;
+    }
+}
+
+.ant-notification-notice .ant-notification-notice-with-icon .ant-notification-notice-message {
+    margin-inline-start: 5rem;
 }

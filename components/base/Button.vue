@@ -66,7 +66,7 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
         filter: $white-svg;
     }
 
-    &:hover {
+    &:not([disabled]):hover {
         background-color: $primary-color-medium !important;
         color: $white !important;
     }
@@ -82,7 +82,7 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
         filter: $black-svg;
     }
 
-    &:hover {
+    &:not([disabled]):hover {
         color: $primary-color-medium;
         border-color: $primary-color-medium;
 
