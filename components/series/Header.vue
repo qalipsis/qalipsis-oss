@@ -27,8 +27,8 @@
                 />
             </div>
         </div>
-        <SeriesConfirmDeleteModal
-            ref="seriesConfirmDeleteModal"
+        <SeriesDeleteConfirmationModal
+            ref="seriesDeleteConfirmationModal"
             :dataSeriesReferences="dataSeriesReferences"
             :modalContent="deleteModalContent"
         />
@@ -40,17 +40,16 @@
 const seriesTableStore = useSeriesTableStore();
 const seriesSearchQuery = ref('');
 const deleteAllBtnDisabled = computed(() => seriesTableStore.selectedRows?.length === 0);
-const deleteModalOpen = ref(false);
 const dataSeriesReferences = computed(() => seriesTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${seriesTableStore.selectedRows.map(r => r.displayName).join(',')}`)
-const seriesConfirmDeleteModal = ref(null);
+const seriesDeleteConfirmationModal = ref(null);
 
 const handleCreateSeriesBtnClick = () => {
 
 }
 
 const handleDeleteSelectedSeriesBtnClick = () => {
-    seriesConfirmDeleteModal.value.open();
+    seriesDeleteConfirmationModal.value.open();
 }
 
 const handleSearch = () => {

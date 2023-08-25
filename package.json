@@ -16,6 +16,7 @@
   "dependencies": {
     "@ant-design-vue/nuxt": "1.1.0",
     "@pinia/nuxt": "0.4.11",
+    "date-fns": "2.30.0",
     "pinia": "2.1.6",
     "sass": "1.66.0"
   }

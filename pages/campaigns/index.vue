@@ -1,7 +1,6 @@
 <template>
-    <div>
-        campaigns
-    </div>
+    <CampaignsHeader />
+    <CampaignsContent />
 </template>
 
 <script setup lang="ts">

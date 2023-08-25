@@ -9,7 +9,7 @@
     @change="handlePaginationChange">
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div class="flex items-center cursor-pointer" @click="handleEditBtnClick(record)">
+        <div class="flex items-center cursor-pointer table-item-link" @click="handleEditBtnClick(record)">
           <div class="dot" :style="{ backgroundColor: `${record.color || 'transparent'}` }"></div>
           <span>{{ record.displayName }}</span>
         </div>
@@ -20,7 +20,7 @@
       <template v-if="column.key === 'actions'">
         <BasePermission :permissions="[PermissionEnum.WRITE_SERIES]">
           <a-dropdown trigger="click">
-            <a @click.prevent class="menu-icon">
+            <a @click.prevent class="table-action-item-wrapper">
               <div class="flex items-center">
                 <BaseIcon icon="/icons/icon-menu.svg" />
               </div>
@@ -28,19 +28,19 @@
             <template #overlay>
               <a-menu>
                 <a-menu-item v-if="!record.disabled">
-                  <div class="flex items-center series-action-item" @click="handleDeleteBtnClick(record)">
+                  <div class="flex items-center table-action-item" @click="handleDeleteBtnClick(record)">
                     <BaseIcon icon="/icons/icon-delete-small.svg" />
                     <span> Delete </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item v-if="!record.disabled">
-                  <div class="flex items-center series-action-item" @click="handleEditBtnClick(record)">
+                  <div class="flex items-center table-action-item" @click="handleEditBtnClick(record)">
                     <BaseIcon icon="/icons/icon-edit-small.svg" />
                     <span> Edit </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item>
-                  <div class="flex items-center series-action-item"  @click="handleDuplicateBtnClick(record)">
+                  <div class="flex items-center table-action-item"  @click="handleDuplicateBtnClick(record)">
                     <BaseIcon icon="/icons/icon-duplicate.svg" />
                     <span> Duplicate </span>
                   </div>
@@ -52,8 +52,8 @@
       </template>
     </template>
   </a-table>
-  <SeriesConfirmDeleteModal
-    ref="seriesConfirmDeleteModal"
+  <SeriesDeleteConfirmationModal
+    ref="seriesDeleteConfirmationModal"
     :dataSeriesReferences="dataSeriesReferences"
     :modalContent="deleteModalContent"
   />
@@ -63,11 +63,13 @@
 import { storeToRefs } from "pinia";
 
 const seriesTableStore = useSeriesTableStore();
+const userStore = useUserStore();
+
 const tableColumnConfigs = SeriesHelper.getTableColumnConfigs();
 const { dataSource, totalElements } = storeToRefs(seriesTableStore);
 const currentPage = computed(() => seriesTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
-const seriesConfirmDeleteModal = ref(null);
+const seriesDeleteConfirmationModal = ref(null);
 const dataSeriesReferences = ref([]);
 const deleteModalContent = ref('');
 
@@ -99,6 +101,15 @@ onMounted(async () => {
   } catch (error) {
     ErrorHelper.handleHttpRequestError(error)
   }
+})
+
+onBeforeUnmount(() => {
+  seriesTableStore.$reset();
+})
+
+watch(() => userStore.currentTenantReference, async () => {
+  seriesTableStore.$reset();
+  await seriesTableStore.fetchDataSeriesTableDataSource();
 })
 
 const handlePaginationChange = async (
@@ -136,7 +147,7 @@ const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData)
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   dataSeriesReferences.value = [dataSeriesTableData.key];
   deleteModalContent.value = dataSeriesTableData.displayName;
-  seriesConfirmDeleteModal.value.open();
+  seriesDeleteConfirmationModal.value.open();
 }
 
 
@@ -148,23 +159,5 @@ const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   height: .5rem;
   border-radius: 50%;
   margin-right: .5rem
-}
-
-.series-action-item {
-  height: 2rem;
-
-  span {
-    padding-left: .5rem
-  }
-}
-
-.menu-icon {
-  visibility: hidden;
-}
-
-:deep(.ant-table-row:hover) {
-  .menu-icon {
-    visibility: visible;
-  }
 }
 </style>

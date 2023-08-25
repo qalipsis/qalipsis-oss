@@ -1,5 +1,42 @@
+import { differenceInCalendarDays, format, intervalToDuration } from "date-fns";
+
 export class TimeframeHelper {
 
+    /**
+     * Formats the date time by the given format
+     * 
+     * @param dateTime The date time
+     * @param timeFormat The format
+     * @returns The formatted time text
+     */
+    static toSpecificFormat(dateTime: Date, timeFormat: string): string {
+        return format(dateTime, timeFormat);
+    }
+    /**
+     * Calculates elapsed time based on passed time intervals.
+     * 
+     * @param `start` - Date object, contains date when time interval started.
+     * @param `end` - Date object, contains date when time interval ended.
+     * 
+     * @remark `duration` - API - https://date-fns.org/v2.29.1/docs/intervalToDuration
+     * @remark `days` - API - https://date-fns.org/v2.29.1/docs/differenceInCalendarDays
+     */
+    static elapsedTime(start: Date, end: Date): string {
+        const duration = intervalToDuration({ start, end });
+        const days = differenceInCalendarDays(end, start);
+
+        return Object.keys(duration).reduce((acc, cur) => {
+            const validTimePeriods = ['days', 'hours', 'minutes', 'seconds'];
+
+            if (validTimePeriods.includes(cur) && duration[cur]) {
+                return cur === 'days'
+                    ? acc += `${days}${cur[0]} `
+                    : acc += `${duration[cur]}${cur[0]} `;
+            }
+
+            return acc
+        }, '');
+    }
     /**
      * Converts the milliseconds to hh:mm:ss format
      * 
@@ -46,10 +83,10 @@ export class TimeframeHelper {
             value: null,
             unit: TimeframeUnit.MS
         };
-    
+
         let formattedTimeframeUnit = TimeframeUnit.MS;
         let formattedTimeframe = timeframeUnitInSeconds * 1000;
-    
+
         if (formattedTimeframe % 3600000 === 0) {
             formattedTimeframeUnit = TimeframeUnit.HR
             formattedTimeframe = formattedTimeframe / 3600000
@@ -63,7 +100,7 @@ export class TimeframeHelper {
             formattedTimeframeUnit = TimeframeUnit.MS;
             formattedTimeframe = formattedTimeframe;
         }
-    
+
         return {
             unit: formattedTimeframeUnit,
             value: formattedTimeframe

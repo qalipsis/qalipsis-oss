@@ -1,6 +1,7 @@
 <template>
-    <ReportsHeader />
-    <ReportsContent />
+    <div class="page-content-container">
+        <CampaignsTable />
+    </div>
 </template>
 
 <script setup lang="ts">
