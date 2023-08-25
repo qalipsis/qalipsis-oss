@@ -13,7 +13,7 @@
             <BaseButton
                 :btn-style="'stroke'"
                 :text="cancelBtnText"
-                @click="emits('update:open', false)"
+                @click="emits('cancelBtnClick')"
             />
             <BaseButton
                 :text="confirmBtnText"
@@ -48,9 +48,9 @@ const props = defineProps<{
 }>();
 const emits = defineEmits<{
     /**
-     * Two way binding event for opening/closing the modal.
+     * Cancel button click event emitter.
      */
-    (e: "update:open", v: boolean): void,
+    (e: "cancelBtnClick"): void,
     /**
      * Confirm button click event emitter.
      */

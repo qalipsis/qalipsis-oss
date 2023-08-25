@@ -1,13 +1,13 @@
 <template>
     <BaseModal 
         :open="open"
-        :title="'Delete series'"
+        :title="'Delete reports'"
         confirmBtnText="Delete"
         @cancelBtnClick="emits('update:open', false)"
         @confirmBtnClick="handleConfirmButtonClick"
         >
         <section>
-            <div>Do you want to delete the following data series:</div>
+            <div>Do you want to delete the following reports:</div>
             <span class="text-bold">{{ modalContent }}</span>
         </section>
     </BaseModal>
@@ -17,17 +17,17 @@
 const props = defineProps<{
     open: boolean;
     modalContent: string;
-    dataSeriesReferences: string[];
+    reportReferences: string[];
 }>()
 const emits = defineEmits<{
     (e: 'update:open', v: boolean): void
 }>()
-const seriesTableStore = useSeriesTableStore();
+const reportsTableStore = useReportsTableStore();
 
 const handleConfirmButtonClick = async () => {
     try {
-        const { deleteDataSeries } = useDataSeriesApi();
-        await deleteDataSeries(props.dataSeriesReferences);
+        const { deleteReports } = useReportApi();
+        await deleteReports(props.reportReferences);
         emits('update:open', false)
         NotificationHelper.success(`Successfully delete ${props.modalContent}`);
     } catch (error) {
@@ -35,18 +35,18 @@ const handleConfirmButtonClick = async () => {
     }
 
     // When the selected data reference are greater or equal to the current display data
-    let pageIndex = seriesTableStore.currentPageIndex;
-    if (props.dataSeriesReferences.length > seriesTableStore.dataSource?.length) {
+    let pageIndex = reportsTableStore.currentPageIndex;
+    if (props.reportReferences.length > reportsTableStore.dataSource?.length) {
         // Sets the current page index to the previous one. 
-        pageIndex = seriesTableStore.currentPageIndex - 1 >= 0 ? seriesTableStore.currentPageIndex - 1 : 0;
+        pageIndex = reportsTableStore.currentPageIndex - 1 >= 0 ? reportsTableStore.currentPageIndex - 1 : 0;
     }
 
-    seriesTableStore.$patch({
+    reportsTableStore.$patch({
         currentPageIndex: pageIndex,
         selectedRows: []
     })
 
-    seriesTableStore.fetchDataSeriesTableDataSource();
+    reportsTableStore.fetchReportsTableDataSource();
 }
 
 </script>

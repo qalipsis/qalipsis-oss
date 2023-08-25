@@ -28,7 +28,7 @@
             </div>
         </div>
         <SeriesDeleteConfirmationModal
-            ref="seriesDeleteConfirmationModal"
+            v-model:open="modalOpen"
             :dataSeriesReferences="dataSeriesReferences"
             :modalContent="deleteModalContent"
         />
@@ -36,24 +36,27 @@
 </template>
 
 <script setup lang="ts">
-
 const seriesTableStore = useSeriesTableStore();
 const seriesSearchQuery = ref('');
 const deleteAllBtnDisabled = computed(() => seriesTableStore.selectedRows?.length === 0);
 const dataSeriesReferences = computed(() => seriesTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${seriesTableStore.selectedRows.map(r => r.displayName).join(',')}`)
-const seriesDeleteConfirmationModal = ref(null);
+const modalOpen = ref(false);
 
 const handleCreateSeriesBtnClick = () => {
 
 }
 
 const handleDeleteSelectedSeriesBtnClick = () => {
-    seriesDeleteConfirmationModal.value.open();
+    modalOpen.value = true;
 }
 
 const handleSearch = () => {
-
+    seriesTableStore.$patch({
+        filter: TableHelper.getSanitizedQuery(seriesSearchQuery.value),
+        currentPageIndex: 0
+    });
+    seriesTableStore.fetchDataSeriesTableDataSource();
 }
 
 </script>

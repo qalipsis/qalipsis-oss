@@ -16,7 +16,7 @@ export const useReportsTableStore = defineStore("ReportsTable", {
     selectedRowKeys: state => state.selectedRows?.length > 0 ? state.selectedRows.map((r: ReportTableData) => r.reference) : []
   },
   actions: {
-    async fetchReportTableDataSource(): Promise<void> {
+    async fetchReportsTableDataSource(): Promise<void> {
       const { fetchReports } = useReportApi();
       const pageQueryParams: PageQueryParams = {
         page: this.currentPageIndex,

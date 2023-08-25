@@ -17,7 +17,8 @@
       </a-layout-content>
       <BaseModal 
         title="Select tenant"
-        v-model:open="tenantModalOpen"
+        :open="tenantModalOpen"
+        @cancel-btn-click="tenantModalOpen = false"
         @confirm-btn-click="handleSelectTenantConfirmButtonClick()">
         <FormSelect 
           v-model="currentTenantReference"

@@ -1,6 +1,6 @@
 <template>
     <div class="search-container" :class="{ 'search-container--active': active}">
-        <input 
+        <input
             class="search-input"
             :class="{ 'search-input--active': active}"
             type="text"
@@ -15,25 +15,28 @@
 
 <script setup lang="ts">
 const props = defineProps<{
+    modelValue: string;
     placeholder: string;
     collapsable?: boolean;
 }>();
 const emits = defineEmits<{
+    (e: "update:modelValue", value: string): void,
     (e: 'search', v: string): void,
 }>()
-const value = ref('');
+const value = ref(props.modelValue);
 const active = ref(props.collapsable === false);
 
 const debouncedSearch = debounce(() => {
     if (props.collapsable && !value.value) {
         active.value = false;
     }
-
+    emits('update:modelValue', value.value);
     emits('search', value.value);
 }, 300);
 
 const handleSearchIconClick = () => {
     if (active.value) {
+        emits('update:modelValue', value.value);
         emits('search', value.value);
     } else {
         active.value = true;

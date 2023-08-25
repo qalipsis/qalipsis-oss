@@ -24,11 +24,15 @@
             </template>
         </template>
     </a-table>
+    <ReportsDeleteConfirmationModal
+        v-model:open="modalOpen"
+        :reportReferences="reportReferences"
+        :modalContent="deleteModalContent"
+    />
 </template>
   
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { ReportTableData } from "utils/report";
 
 const userStore = useUserStore();
 const reportsTableStore = useReportsTableStore();
@@ -52,10 +56,13 @@ const pagination = reactive({
     total: totalElements,
     ...TableHelper.sharedPaginationProperties
 });
+const reportReferences = ref<string[]>([]);
+const deleteModalContent = ref('');
+const modalOpen = ref(false);
 
 onMounted(async () => {
     try {
-        await reportsTableStore.fetchReportTableDataSource();
+        await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
         ErrorHelper.handleHttpRequestError(error)
     }
@@ -67,7 +74,7 @@ onBeforeUnmount(() => {
 
 watch(() => userStore.currentTenantReference, async () => {
     reportsTableStore.$reset();
-    await reportsTableStore.fetchReportTableDataSource();
+    await reportsTableStore.fetchReportsTableDataSource();
 })
 
 const handlePaginationChange = async (
@@ -81,7 +88,7 @@ const handlePaginationChange = async (
             sort: sort,
             currentPageIndex: currentPageIndex
         })
-        await reportsTableStore.fetchReportTableDataSource();
+        await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
         ErrorHelper.handleHttpRequestError(error)
     }
@@ -92,7 +99,9 @@ const handleReportNameClick = (reportTableData: ReportTableData) => {
 }
 
 const handleDeleteBtnClick = (reportTableData: ReportTableData) => {
-
+    reportReferences.value = [reportTableData.reference];
+    deleteModalContent.value = reportTableData.displayName;
+    modalOpen.value = true
 }
 
 </script>

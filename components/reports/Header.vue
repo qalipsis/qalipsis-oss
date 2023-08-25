@@ -27,6 +27,11 @@
                 />
             </div>
         </div>
+        <ReportsDeleteConfirmationModal
+            v-model:open="modalOpen"
+            :reportReferences="reportReferences"
+            :modalContent="deleteModalContent"
+        />
     </BaseHeader>
 </template>
 
@@ -35,19 +40,24 @@
 const reportsTableStore = useReportsTableStore();
 const reportSearchQuery = ref('');
 const deleteAllBtnDisabled = computed(() => reportsTableStore.selectedRows?.length === 0);
-const dataSeriesReferences = computed(() => reportsTableStore.selectedRowKeys);
+const reportReferences = computed(() => reportsTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${reportsTableStore.selectedRows.map(r => r.displayName).join(',')}`)
-const reportsDeleteConfirmationModal = ref(null);
+const modalOpen = ref(false);
 
 const handleCreateReportBtnClick = () => {
 
 }
 
 const handleDeleteSelectedReportsBtnClick = () => {
+    modalOpen.value = true;
 }
 
 const handleSearch = () => {
-
+    reportsTableStore.$patch({
+        filter: TableHelper.getSanitizedQuery(reportSearchQuery.value),
+        currentPageIndex: 0
+    });
+    reportsTableStore.fetchReportsTableDataSource();
 }
 
 </script>

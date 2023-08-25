@@ -1,5 +1,5 @@
 export const useReportApi = () => {
-    const { get$ } = baseApi();
+    const { get$, delete$ } = baseApi();
 
     /**
      * Fetches the campaigns
@@ -11,7 +11,22 @@ export const useReportApi = () => {
         return get$<Page<Report>>("/reports", pageQueryParams);
     }
 
+    /**
+     * Deletes the reports
+     * 
+     * @param reportReferences The report references to be deleted
+     */
+    const deleteReports = async (reportReferences: string[]): Promise<void> => {
+        /**
+         * FIXME: 
+         * It should be modified when the BE supports to deletion of several reports by the references in one call.
+         */
+        await Promise.all(reportReferences.map(ref => delete$(`/reports/${ref}`)));
+    }
+
+
     return {
-        fetchReports
+        fetchReports,
+        deleteReports
     }
 }

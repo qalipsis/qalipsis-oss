@@ -53,7 +53,7 @@
     </template>
   </a-table>
   <SeriesDeleteConfirmationModal
-    ref="seriesDeleteConfirmationModal"
+    v-model:open="modalOpen"
     :dataSeriesReferences="dataSeriesReferences"
     :modalContent="deleteModalContent"
   />
@@ -69,9 +69,9 @@ const tableColumnConfigs = SeriesHelper.getTableColumnConfigs();
 const { dataSource, totalElements } = storeToRefs(seriesTableStore);
 const currentPage = computed(() => seriesTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
-const seriesDeleteConfirmationModal = ref(null);
-const dataSeriesReferences = ref([]);
+const dataSeriesReferences = ref<string[]>([]);
 const deleteModalContent = ref('');
+const modalOpen = ref(false);
 
 const pagination = reactive({
   current: currentPage,
@@ -147,7 +147,7 @@ const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData)
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   dataSeriesReferences.value = [dataSeriesTableData.key];
   deleteModalContent.value = dataSeriesTableData.displayName;
-  seriesDeleteConfirmationModal.value.open();
+  modalOpen.value = true
 }
 
 

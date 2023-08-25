@@ -24,10 +24,15 @@
 
 <script setup lang="ts">
 
+const campaignsTableStore = useCampaignsTableStore();
 const campaignSearchQuery = ref('');
 
 const handleSearch = () => {
-
+    campaignsTableStore.$patch({
+        filter: TableHelper.getSanitizedQuery(campaignSearchQuery.value),
+        currentPageIndex: 0
+    });
+    campaignsTableStore.fetchCampaignsTableDataSource();
 }
 
 const handleCreateCampaignBtnClick = () => {
