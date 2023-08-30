@@ -9,7 +9,7 @@
         @change="handlePaginationChange">
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'name'">
-                <div class="flex items-center cursor-pointer table-item-link" @click="handleNameClick(record)">
+                <div :class="{'cursor-pointer table-item-link': nameClickable }" class="flex items-center" @click="handleNameClick(record)">
                     <span>{{ record.name }}</span>
                 </div>
             </template>
@@ -31,6 +31,7 @@
 import { storeToRefs } from "pinia";
 
 const props = defineProps<{
+    nameClickable?: boolean;
     rowSelectionEnabled?: boolean;
 }>()
 
@@ -43,19 +44,20 @@ const currentPage = computed(() => campaignsTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys);
 const pagination = reactive({
     current: currentPage,
-    pageSize: PageHelper.defaultPageSize,
+    pageSize: campaignsTableStore.pageSize,
     total: totalElements,
     ...TableHelper.sharedPaginationProperties
 });
 const rowSelection = props.rowSelectionEnabled ? reactive({
     preserveSelectedRowKeys: true,
     selectedRowKeys: selectedRowKeys,
-    onChange: (_: string[], selectedRows: DataSeriesTableData[]) => {
-        seriesTableStore.$patch({
+    onChange: (selectedRowKeys: string[], selectedRows: CampaignTableData[]) => {
+        campaignsTableStore.$patch({
+            selectedRowKeys: selectedRowKeys,
             selectedRows: selectedRows
         });
     },
-    getCheckboxProps: (record: DataSeriesTableData) => {
+    getCheckboxProps: (record: CampaignTableData) => {
         return {
             disabled: record.disabled
         }
@@ -97,7 +99,7 @@ const handlePaginationChange = async (
 }
 
 const handleNameClick = (campaignTableData: CampaignTableData) => {
-
+    navigateTo(`campaigns/${campaignTableData.key}`);
 }
 
 </script>

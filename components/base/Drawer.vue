@@ -10,7 +10,7 @@
         <section class="base-drawer-section">
             <header class="drawer-header-section">
                 <h2>{{ title }}</h2>
-                <div class="close-btn" @click="emit('update:open', false)">
+                <div class="close-btn" @click="emit('cancelBtnClick')">
                     <img src="/icons/icon-close-black.svg" alt="">
                 </div>
             </header>
@@ -25,7 +25,7 @@
                             class="full-width"
                             :btn-style="'stroke'"
                             :text="cancelBtnText"
-                            @click="emit('update:open', false)"
+                            @click="emit('cancelBtnClick')"
                         />
                     </div>
                     <div class="button-wrapper">
@@ -76,7 +76,7 @@ const props = defineProps<{
     /**
      * The custom width of the drawer
      */
-    width?: string;
+    width?: number;
 
     /**
      * The size of the drawer default | large
@@ -85,13 +85,13 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
     /**
-     * Two way binding event for updating visible property
-     */
-    (e: "update:open", v: boolean): void,
-    /**
      * Confirm button click event emitter.
      */
-    (e: "confirmBtnClick"): void
+    (e: "confirmBtnClick"): void,
+    /**
+     * Cancel button click event emitter.
+     */
+    (e: "cancelBtnClick"): void
 }>();
 
 const confirmBtnText = props.confirmBtnText ?? "Confirm";

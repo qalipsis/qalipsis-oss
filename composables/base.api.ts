@@ -30,7 +30,7 @@ export const baseApi = () => {
     } 
 
     const getRequestHeaders = (): HeadersInit => {
-        const requestHeader = {};
+        const requestHeader: { [key: string]: string } = {};
         const currentTenant = localStorage.getItem(TenantHelper.TENANT_LOCAL_STORAGE_PROPERTY_KEY);
 
         if (currentTenant) {

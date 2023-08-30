@@ -3,10 +3,9 @@
         :class="defaultBtnClass"
         :disabled="disabled"
         @click="emit('click')">
-        <template v-if="icon">
-            <img :src="icon" />
-        </template>
-        <span>
+        <BaseIcon v-if="icon" :icon="icon" :class="{ 'icon-disabled': disabled }">
+        </BaseIcon>
+        <span :class="{ 'text-grey-1': disabled }">
             {{ text }}
         </span>
     </a-button>
@@ -34,7 +33,7 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
 
 
 @mixin button {
-    height: 2.75rem;
+    height: $item-height;
     padding: 0.75rem 0.5rem;
     font-size: 1rem;
     border-radius: $default-radius;
@@ -62,13 +61,16 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
     border: none;
     transition: background-color .2s ease-in-out;
 
-    img {
-        filter: $white-svg;
-    }
+    &:not([disabled]) {
+        img {
+            filter: $white-svg;
+        }
 
-    &:not([disabled]):hover {
-        background-color: $primary-color-medium !important;
-        color: $white !important;
+        &:hover {
+            background-color: $primary-color-medium !important;
+            color: $white !important;
+        }
+
     }
 }
 
@@ -78,18 +80,19 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
     color: $black;
     transition: border-color .2s ease-in-out;
 
-    img {
-        filter: $black-svg;
-    }
-
-    &:not([disabled]):hover {
-        color: $primary-color-medium;
-        border-color: $primary-color-medium;
-
+    &:not([disabled]) {
         img {
-            filter: $primary-color-svg;
+            filter: $black-svg;
         }
-
+        
+        &:hover {
+            color: $primary-color-medium;
+            border-color: $primary-color-medium;
+            
+            img {
+                filter: $primary-color-svg;
+            }
+        }
     }
 }
 

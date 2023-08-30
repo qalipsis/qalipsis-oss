@@ -79,7 +79,7 @@ const activePath = computed(() => router.currentRoute.value.name);
  * @param path The path url to be navigated
  */
 const handleMenuItemClick = (path: string) => {
-    navigateTo(path);
+    navigateTo(`/${path}`);
 }
 
 </script>
@@ -110,7 +110,7 @@ $menu-item-height: 3.75rem;
 /** Overrides the ant-design menu styles */
 .sidebar-section {
 
-    :deep(.ant-menu-vertical .ant-menu-item, ),
+    :deep(.ant-menu-vertical .ant-menu-item),
     :deep(.ant-menu-vertical .ant-menu-submenu-title) {
         height: $menu-item-height;
         padding-inline: 0;

@@ -43,7 +43,8 @@ const handleConfirmButtonClick = async () => {
 
     reportsTableStore.$patch({
         currentPageIndex: pageIndex,
-        selectedRows: []
+        selectedRows: [],
+        selectedRowKeys: []
     })
 
     reportsTableStore.fetchReportsTableDataSource();

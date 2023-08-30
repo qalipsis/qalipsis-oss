@@ -6,14 +6,15 @@ export const useSeriesTableStore = defineStore("SeriesTable", {
       currentPageIndex: 0,
       filter: '',
       sort: '',
+      pageSize: PageHelper.defaultPageSize,
       totalElements: 0,
       dataSource: [],
-      selectedRows: []
+      selectedRows: [],
+      selectedRowKeys: [],
     }
   },
   getters: {
     currentPageNumber: state => state.currentPageIndex + 1,
-    selectedRowKeys: state => state.selectedRows?.length > 0 ? state.selectedRows.map((r: DataSeriesTableData) => r.key) : []
   },
   actions: {
     async fetchDataSeriesTableDataSource(): Promise<void> {
@@ -22,7 +23,7 @@ export const useSeriesTableStore = defineStore("SeriesTable", {
       const userName = userStore.user.displayName;
       const pageQueryParams: PageQueryParams = {
         page: this.currentPageIndex,
-        size: PageHelper.defaultPageSize,
+        size: this.pageSize
       }
 
       if (this.filter) {

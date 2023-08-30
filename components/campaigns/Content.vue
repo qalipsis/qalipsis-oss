@@ -1,13 +1,5 @@
 <template>
     <div class="page-content-container">
-        <CampaignsTable />
+        <CampaignsTable :nameClickable="true" />
     </div>
 </template>
-
-<script setup lang="ts">
-
-</script>
-
-<style scoped lang="scss">
-
-</style>

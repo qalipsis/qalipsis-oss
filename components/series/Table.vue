@@ -17,7 +17,7 @@
       <template v-if="column.key === 'sharingMode'">
         <span>{{ record.sharedText }}</span>
       </template>
-      <template v-if="column.key === 'actions'">
+      <template v-if="column.key === 'actions' && !tableActionsHidden">
         <BasePermission :permissions="[PermissionEnum.WRITE_SERIES]">
           <a-dropdown trigger="click">
             <a @click.prevent class="table-action-item-wrapper">
@@ -61,12 +61,20 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-
-const seriesTableStore = useSeriesTableStore();
-const userStore = useUserStore();
+import { DataSeriesTableData } from "utils/series";
 
 const tableColumnConfigs = SeriesHelper.getTableColumnConfigs();
+
+const props = defineProps<{
+  tableActionsHidden?: boolean,
+  maxSelectedRows?: number,
+  selectedDataSeriesReferences?: string[]
+}>()
+
+const seriesTableStore = useSeriesTableStore();
 const { dataSource, totalElements } = storeToRefs(seriesTableStore);
+const userStore = useUserStore();
+
 const currentPage = computed(() => seriesTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
 const dataSeriesReferences = ref<string[]>([]);
@@ -75,7 +83,7 @@ const modalOpen = ref(false);
 
 const pagination = reactive({
   current: currentPage,
-  pageSize: PageHelper.defaultPageSize,
+  pageSize: seriesTableStore.pageSize,
   total: totalElements,
   ...TableHelper.sharedPaginationProperties
 })
@@ -83,20 +91,42 @@ const pagination = reactive({
 const rowSelection = reactive({
   preserveSelectedRowKeys: true,
   selectedRowKeys: selectedRowKeys,
-  onChange: (_: string[], selectedRows: DataSeriesTableData[]) => {
+  onChange: (selectedRowKeys: string[], selectedRows: DataSeriesTableData[]) => {
     seriesTableStore.$patch({
-      selectedRows: selectedRows
+      selectedRows: selectedRows,
+      selectedRowKeys: selectedRowKeys
     });
   },
   getCheckboxProps: (record: DataSeriesTableData) => {
+    /**
+     * Disable the row select when
+     * 1. The data series is minion count
+     * 2. The max number of row selection is specified and the selected row is more than the max number.
+     * 3. The row is disabled
+     */
+    const isMinionCount = record.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE;
+    let disabled = false;
+    if (isMinionCount) {
+      disabled = true
+    } else if (props.maxSelectedRows) {
+      disabled = selectedRowKeys.value.length > props.maxSelectedRows;
+    } else {
+      disabled = record.disabled
+    }
     return {
-      disabled: record.disabled
+      disabled: disabled
     }
   },
 })
 
 onMounted(async () => {
   try {
+    if (props.selectedDataSeriesReferences) {
+      seriesTableStore.$patch({
+        selectedRowKeys: props.selectedDataSeriesReferences
+      })
+    }
+
     await seriesTableStore.fetchDataSeriesTableDataSource();
   } catch (error) {
     ErrorHelper.handleHttpRequestError(error)
@@ -129,6 +159,7 @@ const handlePaginationChange = async (
     }
 }
 
+// TODO:
 const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
 
 }
@@ -149,7 +180,6 @@ const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   deleteModalContent.value = dataSeriesTableData.displayName;
   modalOpen.value = true
 }
-
 
 </script>
 

@@ -101,27 +101,13 @@ export interface CampaignTableData extends Campaign {
      * The tag of the status.
      */
     statusTag: Tag;
+
+    /**
+     * A flag to indicate if the row can be selected.
+     */
+    disabled?: boolean;
 }
 
-/**
- * Details of the execution of a completed or running campaign and its scenario
- */
-export interface Scenario {
-    /**
-     * Last stored update of the scenario.
-     */
-    version: string;
-
-    /**
-     * Display name of the scenario.
-     */
-    name: string;
-
-    /**
-     * Number of minions executed in the scenario.
-     */
-    minionsCount: number;
-}
 
 /**
  * Execution status of a ScenarioReport or CampaignReport.
@@ -161,4 +147,50 @@ export enum ExecutionStatus {
      * IN_PROGRESS - the campaign is currently running
      */
     IN_PROGRESS = 'IN_PROGRESS'
+}
+
+/**
+ * Details of the execution of a completed or running campaign and its scenario.
+ */
+export interface CampaignExecutionDetails {
+    version: string;
+    key: string;
+    creation: string;
+    name: string;
+    speedFactor: number;
+    scheduledMinions?: number;
+    timeout?: string;
+    hardTimeout?: boolean;
+    start?: string;
+    end?: string;
+    status: ExecutionStatus;
+    failureReason?: string;
+    configurerName?: string;
+    aborterName?: string;
+    scenarios?: Scenario[];
+    zones?: string[];
+    /**
+     * Counts of minions when the campaign started.
+     */
+    startedMinions: number;
+
+    /**
+     * Counts of minions that completed the campaign.
+     */
+    completedMinions: number;
+
+    /**
+     * Counts of steps that successfully completed.
+     */
+    successfulExecutions: number;
+
+    /**
+     * Counts of steps that failed.
+     */
+    failedExecutions: number;
+
+    /**
+     * Individual details of the scenario executed during the campaign.
+     */
+    scenariosReports: ScenarioExecutionDetails[];
 }

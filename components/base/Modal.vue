@@ -2,7 +2,8 @@
     <a-modal
         :open="open"
         :footer="null"
-        :closable="false">
+        :closable="closable"
+        @cancel="handleCancel">
         <header class="header-section">
             <h2>{{ title }}</h2>
         </header>
@@ -13,11 +14,11 @@
             <BaseButton
                 :btn-style="'stroke'"
                 :text="cancelBtnText"
-                @click="emits('cancelBtnClick')"
+                @click="emit('cancelBtnClick')"
             />
             <BaseButton
                 :text="confirmBtnText"
-                @click="emits('confirmBtnClick')"
+                @click="emit('confirmBtnClick')"
             />
         </footer>
     </a-modal>
@@ -45,8 +46,13 @@ const props = defineProps<{
      */
     cancelBtnText?: string;
 
+    /**
+     * A flag to indicate if the close button should be displayed
+     */
+    closable?: boolean;
+
 }>();
-const emits = defineEmits<{
+const emit = defineEmits<{
     /**
      * Cancel button click event emitter.
      */
@@ -54,11 +60,23 @@ const emits = defineEmits<{
     /**
      * Confirm button click event emitter.
      */
-    (e: "confirmBtnClick"): void
+    (e: "confirmBtnClick"): void,
+    /**
+     * Close button click event emitter
+     */
+    (e: "close"): void
+
 }>();
 
 const confirmBtnText = props.confirmBtnText ?? "Confirm";
 const cancelBtnText = props.cancelBtnText ?? "Cancel";
+
+const handleCancel = () => {
+    // Only emits the close the event when the modal is closable
+    if (props.closable) {
+        emit("close");
+    }
+}
 
 </script>
 
@@ -79,7 +97,6 @@ const cancelBtnText = props.cancelBtnText ?? "Cancel";
     @include default-section;
     justify-content: center;
     padding: 1rem 1rem 2rem 1rem;
-    width: 100%;
 }
 
 .footer-section {

@@ -6,14 +6,15 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
             currentPageIndex: 0,
             filter: '',
             sort: '',
+            pageSize: PageHelper.defaultPageSize,
             totalElements: 0,
             dataSource: [],
-            selectedRows: []
+            selectedRows: [],
+            selectedRowKeys: []
         }
     },
     getters: {
         currentPageNumber: state => state.currentPageIndex + 1,
-        selectedRowKeys: state => state.selectedRows?.length > 0 ? state.selectedRows.map((r: CampaignTableData) => r.key) : []
     },
     actions: {
         async fetchCampaignsTableDataSource(pageSize?: number): Promise<void> {
@@ -32,7 +33,7 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
             }
 
               const response = await fetchCampaigns(pageQueryParams);
-              const tableData: CampaignTableData[] = CampaignHelper.toCampaignTableData(response.elements);
+              const tableData: CampaignTableData[] = CampaignHelper.toTableData(response.elements);
               this.dataSource = tableData;
               this.totalElements = response.totalElements;
         }

@@ -6,21 +6,22 @@ export const useReportsTableStore = defineStore("ReportsTable", {
       currentPageIndex: 0,
       filter: '',
       sort: '',
+      pageSize: PageHelper.defaultPageSize,
       totalElements: 0,
       dataSource: [],
-      selectedRows: []
+      selectedRows: [],
+      selectedRowKeys: []
     }
   },
   getters: {
     currentPageNumber: state => state.currentPageIndex + 1,
-    selectedRowKeys: state => state.selectedRows?.length > 0 ? state.selectedRows.map((r: ReportTableData) => r.reference) : []
   },
   actions: {
     async fetchReportsTableDataSource(): Promise<void> {
       const { fetchReports } = useReportApi();
       const pageQueryParams: PageQueryParams = {
         page: this.currentPageIndex,
-        size: PageHelper.defaultPageSize,
+        size: this.pageSize,
       }
 
       if (this.filter) {

@@ -76,6 +76,16 @@ export interface DataSeries {
 }
 
 /**
+ * An interface for the data series option
+ */
+export interface DataSeriesOption extends DataSeries {
+    /**
+     * A flag to indicate if the options is selected
+     */
+    isActive: boolean
+}
+
+/**
  * Data series creation details.
  * 
  * @description

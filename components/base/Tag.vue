@@ -29,5 +29,6 @@ const emit = defineEmits<{
     border: none;
     padding: 0 .75rem;
     border-radius: 10px;
+    margin: 0;
 }
 </style>

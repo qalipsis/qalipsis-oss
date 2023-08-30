@@ -1,5 +1,10 @@
+import { Page, PageQueryParams } from "utils/page";
+import { DataSeries } from "utils/series";
+
 export const useDataSeriesApi = () => {
     const { get$, delete$, post$ } = baseApi();
+    const { getCache$ } = cacheApi();
+
     /**
      * Fetches the data series
      * 
@@ -8,6 +13,40 @@ export const useDataSeriesApi = () => {
      */
     const fetchDataSeries = async (pageQueryParams: PageQueryParams): Promise<Page<DataSeries>> => {
         return get$<Page<DataSeries>>("/data-series", pageQueryParams);
+    }
+
+    /**
+     * Fetches all data series
+     * 
+     * @returns All data series
+     */
+    const fetchAllDataSeries = async (): Promise<DataSeries[]> => {
+        return getAllCachedDataSeries({
+            page: 0,
+            size: 50
+        }, []);
+    }
+    
+    /**
+     * Fetches the all data series.
+     * 
+     * @param queryParams The page query params.
+     * @param dataSeries The list of fetched data series.
+     * @returns The list of all data series.
+     */
+    const getAllCachedDataSeries = async (queryParams: PageQueryParams, dataSeries: DataSeries[]): Promise<DataSeries[]> => {
+        return getCache$<Page<DataSeries>, PageQueryParams>( `/data-series`, queryParams)
+            .then((res: Page<DataSeries>) => {
+                const dataSeriesPage: Page<DataSeries> = res;
+                dataSeries.push(...res?.elements);
+                if (dataSeriesPage.page < dataSeriesPage.totalPages - 1) {
+                    queryParams.page = queryParams.page! + 1;
+
+                    return getAllCachedDataSeries(queryParams, dataSeries)
+                } else {
+                    return Promise.resolve(dataSeries)
+                }
+            });
     }
 
     /**
@@ -54,6 +93,7 @@ export const useDataSeriesApi = () => {
     return {
         fetchDataSeries,
         deleteDataSeries,
-        duplicateDataSeries
+        duplicateDataSeries,
+        fetchAllDataSeries
     }
 }

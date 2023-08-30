@@ -44,15 +44,16 @@ const selectedRowKeys = computed(() => reportsTableStore.selectedRowKeys);
 const rowSelection = reactive({
   preserveSelectedRowKeys: true,
   selectedRowKeys: selectedRowKeys,
-  onChange: (_: string[], selectedRows: ReportTableData[]) => {
+  onChange: (selectedRowKeys: string[], selectedRows: ReportTableData[]) => {
     reportsTableStore.$patch({
-      selectedRows: selectedRows
+      selectedRows: selectedRows,
+      selectedRowKeys: selectedRowKeys
     });
   }
 })
 const pagination = reactive({
     current: currentPage,
-    pageSize: PageHelper.defaultPageSize,
+    pageSize: reportsTableStore.pageSize,
     total: totalElements,
     ...TableHelper.sharedPaginationProperties
 });

@@ -118,6 +118,11 @@
     border: none;
 }
 
+/* Button */
+.ant-btn-default:disabled {
+    color: $grey-1;
+}
+
 /* Shared page content container */
 .page-content-container {
     padding: 0 $content-padding;
@@ -164,6 +169,17 @@
     margin-inline-start: 5rem;
 }
 
+/* Icon */
+.icon-link {
+    &:hover {
+        filter: $primary-color-svg;
+    }
+}
+
+.icon-disabled {
+    filter: $grey-svg;
+}
+
 /* Table */
 .table-item-link {
     cursor: pointer;
@@ -197,6 +213,68 @@
 
         img {
             filter: $primary-color-svg
+        }
+    }
+}
+
+/* Color legends */
+.color-legend {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* Tooltip */
+.custom-tooltip {
+    padding: 1rem;
+    min-width: 17.5rem;
+    border-radius: 10px;
+    background-color: #131616db;
+    color: #fff;
+    font-weight: 300;
+    font-family: Outfit;
+
+    &__title {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: .75rem;
+        border-bottom: 1px solid #ffffff42;
+    
+        &-day, &-time {
+          font-size: 14px;
+          font-weight: 400;
+        }
+    }
+
+    &__content {
+        width: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    &__marker {
+        width: .75rem;
+        height: .75rem;
+        margin-right: .5rem;
+        border-radius: 50%;
+        border: 2px solid #fff;
+    }
+
+    &__text {
+        display: flex;
+        flex: 1 0 ;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #fff;
+        padding: .5rem 0;
+        font-weight: 400;
+    
+        &-name {
+          color: #ffffffcc;
+          font-size: 14px;  
+          padding-right: .25rem;
         }
     }
 }
