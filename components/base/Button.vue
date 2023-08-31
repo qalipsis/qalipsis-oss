@@ -56,12 +56,13 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
 
 .base-btn {
     @include button;
-    background-color: $primary-color;
-    color: $white;
-    border: none;
-    transition: background-color .2s ease-in-out;
 
     &:not([disabled]) {
+        background-color: $primary-color;
+        color: $white;
+        border: none;
+        transition: background-color .2s ease-in-out;
+        
         img {
             filter: $white-svg;
         }

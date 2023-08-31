@@ -9,7 +9,7 @@
         :destroy-on-close="true">
         <section class="base-drawer-section">
             <header class="drawer-header-section">
-                <h2>{{ title }}</h2>
+                <BaseTitle :content="title"  />
                 <div class="close-btn" @click="emit('cancelBtnClick')">
                     <img src="/icons/icon-close-black.svg" alt="">
                 </div>

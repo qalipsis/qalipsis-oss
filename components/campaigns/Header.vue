@@ -1,7 +1,7 @@
 <template>
     <BaseHeader>
         <div class="flex items-center full-width space-between">
-            <h2>Campaigns</h2>
+            <BaseTitle content="Campaigns" />
             <div class="flex items-center">
                 <BaseSearch 
                     v-model="campaignSearchQuery" 

@@ -278,3 +278,39 @@
         }
     }
 }
+
+/* Title */
+.editable-title {
+    font-size: 1.75rem;
+    font-weight: 500;
+    margin-bottom: 0px;
+    
+    &.ant-typography {
+        margin-bottom: 0;
+    }
+
+    .ant-input {
+      font-weight: 500;
+      font-size: 1.75rem;
+      padding: 0 .5rem;
+      border-right: solid 1px $grey-8;
+  
+      &:hover, &:focus {
+        border-right: solid 1px $primary-color;
+      }
+    }
+}
+
+/* Icon */
+.icon--active {
+    filter: $primary-color-svg;
+}
+
+/* Input */
+.ant-input {
+    height: $item-height;
+
+    &::placeholder {
+        color: $grey-1;
+    }
+}

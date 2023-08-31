@@ -5,7 +5,7 @@
         :closable="closable"
         @cancel="handleCancel">
         <header class="header-section">
-            <h2>{{ title }}</h2>
+            <BaseTitle :content="title" />
         </header>
         <div class="content-section">
             <slot></slot>

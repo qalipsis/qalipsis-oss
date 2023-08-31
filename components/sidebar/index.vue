@@ -49,7 +49,7 @@ const toggleSidebar = () => {
     top: 0;
     width: 2rem;
     height: 2rem;
-    top: 2rem;
+    top: 2.5rem;
     left: 14rem;
     display: flex;
     position: absolute;

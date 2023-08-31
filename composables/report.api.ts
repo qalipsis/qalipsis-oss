@@ -1,5 +1,5 @@
 export const useReportApi = () => {
-    const { get$, delete$ } = baseApi();
+    const { get$, delete$, post$ } = baseApi();
 
     /**
      * Fetches the campaigns
@@ -9,6 +9,10 @@ export const useReportApi = () => {
      */
     const fetchReports = async (pageQueryParams: PageQueryParams): Promise<Page<Report>> => {
         return get$<Page<Report>>("/reports", pageQueryParams);
+    }
+
+    const createReport = async (reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Promise<Report> => {
+        return post$<Report, ReportCreationAndUpdateRequest>("/reports", reportCreationAndUpdateRequest);
     }
 
     /**
@@ -27,6 +31,7 @@ export const useReportApi = () => {
 
     return {
         fetchReports,
+        createReport,
         deleteReports
     }
 }

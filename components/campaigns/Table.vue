@@ -31,8 +31,9 @@
 import { storeToRefs } from "pinia";
 
 const props = defineProps<{
-    nameClickable?: boolean;
-    rowSelectionEnabled?: boolean;
+    nameClickable?: boolean,
+    rowSelectionEnabled?: boolean,
+    maxSelectedRows?: number
 }>()
 
 const userStore = useUserStore();
@@ -49,6 +50,8 @@ const pagination = reactive({
     ...TableHelper.sharedPaginationProperties
 });
 const rowSelection = props.rowSelectionEnabled ? reactive({
+    // Hides the selected all button when the max number of row selection is specified
+    hideSelectAll: props.maxSelectedRows,
     preserveSelectedRowKeys: true,
     selectedRowKeys: selectedRowKeys,
     onChange: (selectedRowKeys: string[], selectedRows: CampaignTableData[]) => {
@@ -58,8 +61,18 @@ const rowSelection = props.rowSelectionEnabled ? reactive({
         });
     },
     getCheckboxProps: (record: CampaignTableData) => {
+        let disabled = false;
+        if (record?.status === ExecutionStatus.SCHEDULED) {
+            disabled = true
+        } else if (props.maxSelectedRows) {
+            // When the max number of row selection is specified, the row is disabled when it is not yet selected.
+            disabled = selectedRowKeys.value.length >= props.maxSelectedRows && !selectedRowKeys.value.includes(record?.key);
+        } else {
+            disabled = record?.disabled
+        }
+
         return {
-            disabled: record.disabled
+            disabled: disabled
         }
     },
 }) : null;
@@ -99,6 +112,8 @@ const handlePaginationChange = async (
 }
 
 const handleNameClick = (campaignTableData: CampaignTableData) => {
+    if (!props.nameClickable) return;
+
     navigateTo(`campaigns/${campaignTableData.key}`);
 }
 

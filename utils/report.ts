@@ -95,3 +95,46 @@ export interface DataComponent {
      */
     type: DataComponentType;
 }
+
+export interface ReportCreationAndUpdateRequest {
+    /**
+     * Display name of the report, should be unique into a tenant
+     */
+    displayName: string;
+
+    /**
+     * Sharing mode with the other members of the tenant
+     */
+    sharingMode?: SharingMode;
+
+    /**
+     * List of keys that represent campaigns to include in the report
+     */
+    campaignKeys?: string[];
+
+    /**
+     * List of keys that represent campaigns to include in the report
+     */
+    campaignNamesPatterns?: string[];
+
+    /**
+     * List of scenarios to include in the report
+     */
+    scenarioNamesPatterns?: string[];
+
+    /**
+     * List of data component to include in the report
+     */
+    dataComponents?: DataComponentCreationAndUpdateRequest[];
+}
+
+export interface DataComponentCreationAndUpdateRequest {
+    /**
+     * The references of the data series.
+     */
+    dataSeriesReferences: string[];
+    /**
+     * The type of the data component.
+     */
+    type: DataComponentType;
+}

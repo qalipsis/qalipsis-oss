@@ -89,6 +89,8 @@ const pagination = reactive({
 })
 
 const rowSelection = reactive({
+  // Hides the selected all button when the max number of row selection is specified
+  hideSelectAll: props.maxSelectedRows,
   preserveSelectedRowKeys: true,
   selectedRowKeys: selectedRowKeys,
   onChange: (selectedRowKeys: string[], selectedRows: DataSeriesTableData[]) => {
@@ -109,7 +111,8 @@ const rowSelection = reactive({
     if (isMinionCount) {
       disabled = true
     } else if (props.maxSelectedRows) {
-      disabled = selectedRowKeys.value.length > props.maxSelectedRows;
+      // When the max number of row selection is specified, the row is disabled when it is not yet selected.
+      disabled = selectedRowKeys.value.length > props.maxSelectedRows && !selectedRowKeys.value.includes(record.reference);
     } else {
       disabled = record.disabled
     }

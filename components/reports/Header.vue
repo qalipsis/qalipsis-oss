@@ -1,7 +1,7 @@
 <template>
     <BaseHeader>
         <div class="flex items-center full-width space-between">
-            <h2>Reports</h2>
+            <BaseTitle content="Reports" />
             <div class="flex items-center">
                 <BaseSearch 
                     v-model="reportSearchQuery" 
@@ -45,7 +45,7 @@ const deleteModalContent = computed(() => `${reportsTableStore.selectedRows.map(
 const modalOpen = ref(false);
 
 const handleCreateReportBtnClick = () => {
-
+    navigateTo('reports/new')
 }
 
 const handleDeleteSelectedReportsBtnClick = () => {
