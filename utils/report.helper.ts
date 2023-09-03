@@ -6,6 +6,16 @@ export class ReportHelper {
         }))
     }
 
+    // TODO:
+    static toReportTableComponentData() {
+
+    }
+
+    // TODO:
+    static toReportChartComponentData() {
+
+    }
+
     static getTableColumnConfigs() {
         return [
             {

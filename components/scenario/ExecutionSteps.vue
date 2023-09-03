@@ -21,7 +21,7 @@
     <a-modal
         v-if="executionStepModalOpen"
         v-model:open="executionStepModalOpen"
-        title="Execution steps"
+        :title="scenarioName"
         :footer="null"
         :closable="true">
         <section class="flex items-center mt-5">

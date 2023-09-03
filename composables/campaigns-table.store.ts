@@ -6,7 +6,7 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
             currentPageIndex: 0,
             filter: '',
             sort: '',
-            pageSize: PageHelper.defaultPageSize,
+            pageSize: TableHelper.defaultPageSize,
             totalElements: 0,
             dataSource: [],
             selectedRows: [],
@@ -21,7 +21,7 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
             const { fetchCampaigns } = useCampaignApi();
             const pageQueryParams: PageQueryParams = {
                 page: this.currentPageIndex,
-                size: pageSize ?? PageHelper.defaultPageSize,
+                size: pageSize ?? TableHelper.defaultPageSize,
             }
 
             if (this.filter) {

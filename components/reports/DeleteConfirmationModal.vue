@@ -3,7 +3,7 @@
         :open="open"
         :title="'Delete reports'"
         confirmBtnText="Delete"
-        @cancelBtnClick="emits('update:open', false)"
+        @close="emits('update:open', false)"
         @confirmBtnClick="handleConfirmButtonClick"
         >
         <section>

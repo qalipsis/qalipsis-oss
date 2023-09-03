@@ -218,3 +218,23 @@ export interface ScenarioReport {
      */
     messages: ReportMessage[];
 }
+
+/**
+ * The properties related to the scenario drawer.
+ */
+export interface ScenarioDrawer {
+    /**
+     * A flag to indicate if the drawer should be visible.
+     */
+    open: boolean;
+
+    /**
+     * The title of the drawer.
+     */
+    title: string;
+
+    /**
+     * The messages to be displayed in the drawer.
+     */
+    messages: ReportMessage[];
+}

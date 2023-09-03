@@ -96,7 +96,7 @@ const handlePaginationChange = async (
 }
 
 const handleReportNameClick = (reportTableData: ReportTableData) => {
-
+    navigateTo(`/reports/${reportTableData.reference}`)
 }
 
 const handleDeleteBtnClick = (reportTableData: ReportTableData) => {

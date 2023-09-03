@@ -8,7 +8,6 @@ export const baseApi = () => {
             query: {
                 ...query
             }, 
-            headers: getRequestHeaders()
         })
     }
 
@@ -17,7 +16,6 @@ export const baseApi = () => {
             baseURL: config.public.apiBaseUrl,
             method: 'post',
             body: JSON.stringify(requestParams),
-            headers: getRequestHeaders()
         })
     }
 
@@ -25,20 +23,8 @@ export const baseApi = () => {
         return $fetch<T>(url, {
             baseURL: config.public.apiBaseUrl,
             method: 'delete',
-            headers: getRequestHeaders()
         })
     } 
-
-    const getRequestHeaders = (): HeadersInit => {
-        const requestHeader: { [key: string]: string } = {};
-        const currentTenant = localStorage.getItem(TenantHelper.TENANT_LOCAL_STORAGE_PROPERTY_KEY);
-
-        if (currentTenant) {
-            requestHeader[TenantHelper.TENANT_REQUEST_HEADER_KEY] = currentTenant
-        }
-
-        return requestHeader;
-    }
 
     return {
         get$,

@@ -143,6 +143,10 @@ export class CampaignHelper {
         }
     }
 
+    static toCampaignOptions(CampaignExecutionDetails: CampaignExecutionDetails[]): void {
+
+    }
+
     static getTableColumnConfigs() {
         return [
             {

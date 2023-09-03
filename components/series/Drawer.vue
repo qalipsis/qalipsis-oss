@@ -3,7 +3,7 @@
         title="Series"
         :open="open"
         :width="920"
-        @cancel-btn-click="emit('update:open', false)"
+        @close="emit('update:open', false)"
         @confirm-btn-click="handleConfirmButtonClick"
     >
         <div class="flex content-end full-width mt-2 mb-2">
@@ -34,7 +34,7 @@ const emit = defineEmits<{
 
 const seriesTableStore = useSeriesTableStore();
 
-const seriesSearchQuery = ref('');
+const seriesSearchQuery = ref("");
 
 const handleConfirmButtonClick = () => {
     emit("selectedDataSeriesChange", seriesTableStore.selectedRowKeys);

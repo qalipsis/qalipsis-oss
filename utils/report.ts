@@ -35,13 +35,6 @@ export interface Report {
     campaignNamesPatterns?: string[];
 
     /**
-     * The concatenation of the campaign names.
-     * @remarks
-     * This property is used for displaying the creation time on the table
-     */
-    concatenatedCampaignNames?: string;
-
-    /**
      * List of campaign keys to be included in the report and obtained based on campaign name pattern
      */
     resolvedCampaigns?: CampaignKeyAndName[];

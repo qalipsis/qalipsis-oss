@@ -60,7 +60,8 @@ const handleCheckedChange = async (checked: boolean) => {
     if (checked) {
         campaignsTableStore.$patch({
             currentPageIndex: 0,
-            dataSource: campaignsTableStore.selectedRows
+            dataSource: campaignsTableStore.selectedRows,
+            totalElements: campaignsTableStore.selectedRows.length
         })
     } else {
         campaignsTableStore.$patch({

@@ -6,11 +6,12 @@
         :closable="false"
         :mask-closable="maskClosable"
         :width="width"
+        @close="handleCancelBtnClick"
         :destroy-on-close="true">
         <section class="base-drawer-section">
             <header class="drawer-header-section">
                 <BaseTitle :content="title"  />
-                <div class="close-btn" @click="emit('cancelBtnClick')">
+                <div class="close-btn" @click="handleCancelBtnClick">
                     <img src="/icons/icon-close-black.svg" alt="">
                 </div>
             </header>
@@ -25,7 +26,7 @@
                             class="full-width"
                             :btn-style="'stroke'"
                             :text="cancelBtnText"
-                            @click="emit('cancelBtnClick')"
+                            @click="handleCancelBtnClick"
                         />
                     </div>
                     <div class="button-wrapper">
@@ -89,14 +90,24 @@ const emit = defineEmits<{
      */
     (e: "confirmBtnClick"): void,
     /**
+     * Close event emitter
+     */
+     (e: "close"): void,
+    /**
      * Cancel button click event emitter.
      */
-    (e: "cancelBtnClick"): void
+    (e: "update:open", v: boolean): void,
+
 }>();
 
 const confirmBtnText = props.confirmBtnText ?? "Confirm";
 const cancelBtnText = props.cancelBtnText ?? "Cancel";
 const drawerSize = props.size ?? "large";
+
+const handleCancelBtnClick = () => {
+    emit("update:open", false);
+    emit("close")
+}
 
 </script>
 

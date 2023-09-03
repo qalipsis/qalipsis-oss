@@ -18,7 +18,7 @@
       <BaseModal 
         title="Select tenant"
         :open="tenantModalOpen"
-        @cancel-btn-click="tenantModalOpen = false"
+        @close="tenantModalOpen = false"
         @confirm-btn-click="handleSelectTenantConfirmButtonClick()">
         <FormSelect 
           v-model="currentTenantReference"

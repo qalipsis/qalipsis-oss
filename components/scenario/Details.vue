@@ -30,6 +30,14 @@
         </td>
       </tr>
     </table>
+    <ScenarioMessageDrawer
+      v-if="scenarioDrawer.open"
+      v-model:open="scenarioDrawer.open"
+      :title="scenarioDrawer.title"
+      :messages="scenarioDrawer.messages"
+    >
+
+    </ScenarioMessageDrawer>
 </template>
 
 <script setup lang="ts">
@@ -37,8 +45,26 @@ defineProps<{
     scenarioReports: ScenarioReport[]
 }>();
 
-const handleTagClick = (report: ScenarioReport) => {
 
+/**
+ * The object includes the properties for the scenario drawer.
+ * 
+ * @see ScenarioDrawer
+ */
+ const scenarioDrawer = reactive<ScenarioDrawer>({
+  open: false,
+  messages: [],
+  title: ''
+})
+
+
+const handleTagClick = (report: ScenarioReport) => {
+  scenarioDrawer.open = true;
+  scenarioDrawer.title = report.name;
+  scenarioDrawer.messages = report.messages.map(message => ({
+    ...message,
+    severityTag: ScenarioHelper.toSeverityTag(message.severity)
+  }))
 }
 
 </script>

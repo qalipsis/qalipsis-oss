@@ -1,10 +1,27 @@
 import { ApexOptions } from "apexcharts";
 import { format } from "date-fns";
-import { ColorHelper } from "./color.helper";
 
 export class ScenarioHelper {
     static SCENARIO_SUMMARY_NAME = 'Campaign Summary';
     static SCENARIO_SUMMARY_ID = 'campaignSummary';
+    static getMessageTableColumnConfigs() {
+        return [{
+            title: 'Step Name',
+            dataIndex: 'stepName',
+            key: 'displayName',
+        },
+        {
+            title: 'Severity',
+            dataIndex: 'severity',
+            key: 'severity',
+        },
+        {
+            title: 'Message',
+            dataIndex: 'message',
+            key: 'message',
+        }];
+    }
+
     static MINION_STACKED_BAR_CHART_OPTIONS: ApexOptions = {
         colors: [ColorHelper.PRIMARY_COLOR_HEX_CODE, ColorHelper.PURPLE_COLOR_HEX_CODE, ColorHelper.GREY_2_HEX_CODE],
         chart: {
@@ -94,6 +111,7 @@ export class ScenarioHelper {
             },
         }
     }
+
     static EXECUTION_STEP_DONUT_CHART_OPTIONS: ApexOptions = {
         colors: [ColorHelper.PRIMARY_COLOR_HEX_CODE, ColorHelper.PINK_HEX_CODE],
         chart: {
@@ -143,7 +161,8 @@ export class ScenarioHelper {
                 }
             },
         }
-    };
+    }
+
     /**
      * Gets the scenario reports for the UI.
      * 
@@ -203,6 +222,42 @@ export class ScenarioHelper {
     }
 
     /**
+     * Converts the severity to a tag.
+     * 
+     * @param severity The severity of the report message.
+     * @returns A tag for displaying the severity on the table.
+     */
+    static toSeverityTag(severity: ReportMessageSeverity): Tag {
+        switch (severity) {
+            case ReportMessageSeverity.INFO:
+                return {
+                    text: severity,
+                    backgroundCssClass: 'bg-light-purple',
+                    textCssClass: 'text-purple',
+                };
+            case ReportMessageSeverity.ERROR:
+            case ReportMessageSeverity.ABORT:
+                return {
+                    text: severity,
+                    textCssClass: 'text-pink',
+                    backgroundCssClass: 'bg-light-pink'
+                };
+            case ReportMessageSeverity.WARN:
+                return {
+                    text: severity,
+                    textCssClass: 'text-yellow',
+                    backgroundCssClass: 'bg-light-yellow'
+                };
+            default:
+                return {
+                    text: severity,
+                    textCssClass: 'text-grey',
+                    backgroundCssClass: 'bg-grey-4'
+                };
+        }
+    }
+
+    /**
      * The time display text for the campaign
      * 
      * @param start The start date time in ISO string format
@@ -227,7 +282,7 @@ export class ScenarioHelper {
             const startDateText = format(startDate, 'MM/dd/yy, HH:mm:ss');
             const endDateFormat = hasIdenticalDate ? 'HH:mm:ss' : 'MM/dd/yy, HH:mm:ss';
             const endDateText = format(endDate, endDateFormat);
-    
+
             return end ?
                 `${startDateText} -> ${endDateText}(${intervalInHHMMSSFormat})` :
                 `${startDateText}(${intervalInHHMMSSFormat})`
@@ -238,13 +293,13 @@ export class ScenarioHelper {
     }
 
     /**
-   * Calculate the minion data series for the stacked bar chart.
-   * 
-   * @param completedMinions the number of completed minions
-   * @param startedMinions the number of started minions
-   * @param scheduledMinions the number of scheduled minions
-   * @returns the data series for the stacked bar chart
-   */
+     * Calculate the minion data series for the stacked bar chart.
+     * 
+     * @param completedMinions the number of completed minions
+     * @param startedMinions the number of started minions
+     * @param scheduledMinions the number of scheduled minions
+     * @returns the data series for the stacked bar chart
+     */
     static toMinionBarChartSeries(completedMinions: number, startedMinions: number, scheduledMinions: number): ApexAxisChartSeries {
         // The bar chart length for the completed minions is the same as the number of completed minions
         const completedMinionsBarChartLength = completedMinions;

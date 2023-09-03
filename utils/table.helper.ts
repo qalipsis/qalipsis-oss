@@ -1,4 +1,5 @@
 export class TableHelper {
+    static defaultPageSize = 10;
 
     static getSanitizedQuery = (query: string): string => {
         /**

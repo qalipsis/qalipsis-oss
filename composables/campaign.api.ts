@@ -31,6 +31,16 @@ export const useCampaignApi = () => {
     }
 
     /**
+     * Fetches multiple campaign details
+     * 
+     * @param campaignReferences The references of the campaign
+     * @returns The list of campaign details
+     */
+    const fetchMultipleCampaignsDetails = (campaignReferences: string[]): Promise<CampaignExecutionDetails[]> => {
+        return get$<CampaignExecutionDetails>(`/campaigns/${campaignReferences.join(",")}`)
+    }
+
+    /**
      * Abort a campaign with the provided campaign name and details of abortion.
      *
      * @param key key of the campaign.
@@ -43,6 +53,7 @@ export const useCampaignApi = () => {
     return {
         fetchCampaigns,
         fetchCampaignDetails,
+        fetchMultipleCampaignsDetails,
         abortCampaign
     }
 }

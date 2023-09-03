@@ -21,7 +21,7 @@
     <a-modal
         v-if="minionsModalOpen"
         v-model:open="minionsModalOpen"
-        title="Minions"
+        :title="scenarioName"
         :footer="null"
         :closable="true">
         <section class="mt-5">

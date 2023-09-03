@@ -24,7 +24,7 @@
                     v-if="chartOptions && !isLoadingChart"
                     :options="chartOptions"
                     :series="chartDataSeries"
-                    :height="480"
+                    :height="460"
                     @zoomed="handleZoom"
                 />
             </div>
@@ -32,13 +32,22 @@
         <BaseModal 
             title="Stop campaign"
             :open="campaignStopModalOpen"
-            cancel-btn-text="Soft"
-            confirm-btn-text="Hard"
             :closable="true"
-            @close="campaignStopModalOpen = false"
-            @cancel-btn-click="handleSoftStopButtonClick()"
-            @confirm-btn-click="handleHardStopButtonClick()">
+            @close="campaignStopModalOpen = false">
             <span>How do you want to interrupt the running campaign?</span>
+            <template #customFooter>
+                <div class="flex items-center space-around">
+                    <BaseButton
+                        :btn-style="'stroke'"
+                        text="Soft"
+                        @click="handleSoftStopButtonClick"
+                    />
+                    <BaseButton
+                        text="Hard"
+                        @click="handleHardStopButtonClick"
+                    />
+                </div>
+            </template>
         </BaseModal>
     </div>
 </template>

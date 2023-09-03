@@ -3,24 +3,30 @@
         :open="open"
         :footer="null"
         :closable="closable"
-        @cancel="handleCancel">
+        @cancel="handleCancelBtnClick">
         <header class="header-section">
             <BaseTitle :content="title" />
         </header>
         <div class="content-section">
             <slot></slot>
         </div>
-        <footer class="footer-section">
-            <BaseButton
-                :btn-style="'stroke'"
-                :text="cancelBtnText"
-                @click="emit('cancelBtnClick')"
-            />
-            <BaseButton
-                :text="confirmBtnText"
-                @click="emit('confirmBtnClick')"
-            />
-        </footer>
+        <div v-if="$slots.customFooter">
+            <slot name="customFooter"></slot>
+        </div>
+        <div v-else>
+            <footer class="footer-section">
+                <BaseButton
+                    :btn-style="'stroke'"
+                    :text="cancelBtnText"
+                    @click="handleCancelBtnClick"
+                />
+                <BaseButton
+                    :text="confirmBtnText"
+                    @click="emit('confirmBtnClick')"
+                />
+            </footer>
+        </div>
+
     </a-modal>
 </template>
 
@@ -54,28 +60,26 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
     /**
-     * Cancel button click event emitter.
-     */
-    (e: "cancelBtnClick"): void,
-    /**
      * Confirm button click event emitter.
      */
     (e: "confirmBtnClick"): void,
     /**
-     * Close button click event emitter
+     * Close event emitter
      */
-    (e: "close"): void
+    (e: "close"): void,
+    /**
+     * Two way binding event
+     */
+    (e: "update:open", v:boolean): void
 
 }>();
 
 const confirmBtnText = props.confirmBtnText ?? "Confirm";
 const cancelBtnText = props.cancelBtnText ?? "Cancel";
 
-const handleCancel = () => {
-    // Only emits the close the event when the modal is closable
-    if (props.closable) {
-        emit("close");
-    }
+const handleCancelBtnClick = () => {
+    emit("update:open", false);
+    emit("close")
 }
 
 </script>

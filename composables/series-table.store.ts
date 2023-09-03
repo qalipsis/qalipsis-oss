@@ -6,7 +6,7 @@ export const useSeriesTableStore = defineStore("SeriesTable", {
       currentPageIndex: 0,
       filter: '',
       sort: '',
-      pageSize: PageHelper.defaultPageSize,
+      pageSize: TableHelper.defaultPageSize,
       totalElements: 0,
       dataSource: [],
       selectedRows: [],
