@@ -90,10 +90,11 @@ dependencies {
     implementation("io.micronaut.views:micronaut-views-thymeleaf")
     implementation("org.xhtmlrenderer:flying-saucer-pdf:9.1.22")
     implementation("org.xhtmlrenderer:flying-saucer-core")
+    implementation("org.jsoup:jsoup")
+    implementation("org.apache.xmlgraphics:batik-transcoder:1.17")
     implementation("org.thymeleaf.extras:thymeleaf-extras-java8time")
     implementation("org.jfree:jfreechart:1.0.19")
     implementation("org.jfree:org.jfree.svg:5.0.5")
-
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")

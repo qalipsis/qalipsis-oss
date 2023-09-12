@@ -51,7 +51,7 @@ import java.time.Duration
 import java.time.Instant
 
 @WithMockk
-internal class ReportFileBuilderTests {
+internal class ReportFileBuilderTest {
     @RegisterExtension
     @JvmField
     val testDispatcherProvider = TestDispatcherProvider()
@@ -262,7 +262,11 @@ internal class ReportFileBuilderTests {
         coEvery { campaignRepository.findInstantsAndDuration(any(), any()) } returns campaignsInstantsAndDuration
 
         //when
-        val result = reportFileBuilder.execute(reportEntity, "my-tenant", listOf(campaignData, campaignData2))
+        val result = reportFileBuilder.populateCampaignReportDetail(
+            reportEntity,
+            "my-tenant",
+            listOf(campaignData, campaignData2)
+        )
 
         //then
         assertThat(result).all {

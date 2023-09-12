@@ -25,7 +25,6 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
-import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Delete
@@ -316,7 +315,7 @@ internal class ReportController(
         )
     }
 
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces("application/pdf;base64")
     @Get("/file/{taskReference}")
     @Operation(
         summary = "Downloads a report",

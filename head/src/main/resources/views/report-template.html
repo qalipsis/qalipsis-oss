@@ -3,39 +3,32 @@
 <head>
   <title th:title="${displayName}"></title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <link type="text/css" media="all" href="public/style.css"
+  <link type="text/css" media="print" href="/public/style.css"
+        th:href="${stylePath}" rel="stylesheet"/>
+  <link type="text/css" media="all" href="/public/style.css"
         th:href="@{public/style.css}" rel="stylesheet"/>
-  <style th:inline="css">
-    @import url("[[${fontUrl}]]");
-    @font-face {
-    font-family: "Outfit";
-    src: url('[[${fontUrl}]]') format("truetype");
-    font-weight: 400;
-    }
-    body {
-      font-family: "Outfit";
-    }
-
-  </style>
 </head>
 <body>
 <div class="container">
   <h1 th:text="${title}">No Report Title</h1>
-  <section class="campaign-list">
-    <div class="btn-transparent" th:each="campaign: ${campaigns}">
-      <span class="color"></span>
-      <h3 th:text="${campaign.name}">No Campaign name</h3>
-    </div>
-  </section>
+  <div style="clear:both; margin-top: 28px;">
+    <section class="campaign-list">
+      <div class="btn-transparent" th:each="campaign: ${campaigns}">
+        <span class="color"></span>
+        <h3 class="campaign-name" th:text="${campaign.name}">No Campaign name</h3>
+      </div>
+    </section>
+  </div>
   <section>
     <div class="campaign-summary" th:each="campaign: ${campaigns}"
-         th:insert="fragments/campaign-summary :: campaign-summary(${campaign})" th:remove="tag"></div>
+         th:insert="fragments/campaign-summary :: campaign-summary(${campaign}, ${timeImage}, ${userImage})"
+         th:remove="tag"></div>
   </section>
   <section class="chart" th:if="${chartImages == null || chartImages.empty}">
     <p>No Chart available</p>
   </section>
   <section class="chart" th:each="chartImage: ${chartImages}">
-    <img th:src="@{|data:image/svg+xml;base64,${chartImage}|}" alt="Requests Chart"/>
+    <img class="img" th:src="@{|data:image/svg+xml;base64,${chartImage}|}" alt="Requests Chart"/>
   </section>
   <section th:if="${eventTableData != null and eventTableData.isEmpty()}">
     <p>No TimeSeries Record available</p>

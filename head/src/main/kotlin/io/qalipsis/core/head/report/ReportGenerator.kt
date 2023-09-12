@@ -65,7 +65,7 @@ internal class ReportGenerator(
                     report.scenarioNamesPatterns
                 )
             require(campaignData.isNotEmpty()) { "No matching campaign for specified campaign keys, campaign name patterns and scenario name patterns" }
-            val campaignReportDetail = reportFileBuilder.execute(report, tenant, campaignData)
+            val campaignReportDetail = reportFileBuilder.populateCampaignReportDetail(report, tenant, campaignData)
             val dataSeries = report.dataComponents.flatMap { it.dataSeries }
             val reportFile = templateReportService.generatePdf(
                 report,

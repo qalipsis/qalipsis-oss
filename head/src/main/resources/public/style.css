@@ -139,11 +139,6 @@ table {
 add root styles and other general css rules
 */
 
-:root {
-  --black: #06181a;
-  --grey: #939b9d;
-}
-
 * {
   box-sizing: border-box;
   padding: 0;
@@ -152,20 +147,16 @@ add root styles and other general css rules
 
 html,
 body {
-  height: 100%;
 }
 
 html {
   font-size: 62.5%;
   font-family: "Outfit", sans-serif, -apple-system, BlinkMacSystemFont,
   Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
-  height: 100%;
-  width: 100vw;
 }
 
 body {
-  color: var(--black);
-  width: 100vw;
+  color: #06181a;
   line-height: normal;
   letter-spacing: normal;
   font-weight: normal;
@@ -178,45 +169,50 @@ img {
   max-width: 100%;
 }
 
-.container {
-  margin: 0 auto;
-  padding: 20px 195px;
-  width: 100%;
-}
-
 /* *****************************TYPO START************************* */
 
 h1 {
   font-weight: 500;
   font-size: 32px;
-  margin-bottom: 28px;
 }
 
 h3 {
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 p {
   font-size: 14px;
 }
-
 /* *****************************TYPO END************************* */
 
 /* *****************************CAMPAIGN LIST START************************* */
 .campaign-list {
-  display: flex;
-  column-gap: 12px;
-  margin-bottom: 32px;
+  overflow: hidden;
+  margin-bottom: 22px;
 }
 
+
 .btn-transparent {
-  display: flex;
-  align-items: center;
-  width: fit-content;
+  display: inline-block;
   border-radius: 8px;
   border: solid 1px #8c3cee;
   padding: 5px 12px 7px 13px;
+  margin: 0 12px 10px 0;
+  white-space: nowrap
+
+}
+.btn-transparent .color,
+.btn-transparent .campaign-name,
+.campaign-summary-top .campaign-summary-title,
+.campaign-summary-top .campaign-summary-top-first {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.campaign-summary-top .campaign-summary-title {
+  margin-right: none;
 }
 
 /* *****************************CAMPAIGN LIST END************************* */
@@ -224,10 +220,11 @@ p {
 /* *****************************CAMPAIGN SUMMARY START************************* */
 .campaign-summary {
   margin: 0 0 10px 0;
-  padding: 16px 29px 8px 20px;
+  padding: 20px 29px 8px 20px;
   border-radius: 12px;
   background-color: #f6f8f8;
   width: 100%;
+  overflow: hidden;
 }
 
 .campaign-summary-hr {
@@ -235,11 +232,6 @@ p {
   background: #dae1e1;
   margin: 19px 0 24px;
   display: block;
-}
-
-.campaign-summary-top {
-  display: flex;
-  align-items: center;
 }
 
 .button-wrapper {
@@ -251,27 +243,28 @@ p {
   margin: 0px 10px 0px 26px;
   text-align: center;
   color: #28b48f;
-  background-color: rgb(65, 201, 202, .12);
+  background-color: #e8f9f9;
+  display: inline-block;
 }
 
 div.SUCCESSFUL, div.IN_PROGRESS {
   color: #28b48f;
-  background-color: rgb(65, 201, 202, .12);
+  background-color: #e8f9f9;
 }
 
 div.WARNING {
   color: #FF9900;
-  background-color: rgb(255, 255, 102, .5);
+  background-color: #ffffb2;
 }
 
 div.FAILED, div.ABORTED {
   color: #f33278;
-  background-color: rgb(255, 102, 102, .12);
+  background-color: #ffecec;
 }
 
 div.SCHEDULED, div.QUEUED {
   color: #003399;
-  background-color: rgb(51, 102, 255, .12);
+  background-color: #e6ecff;
 }
 
 .color {
@@ -282,40 +275,39 @@ div.SCHEDULED, div.QUEUED {
   border-radius: 50%;
   display: inline-block;
 }
+.campaign-summary-top-first .campaign-summary-title .color {
+  float: left;
+  margin: 4px 10px 0 0;
+}
 
 .campaign-summary-top-first {
-  display: flex;
-  align-items: center;
+  padding-top: 8px;
   width: 280px;
 }
 
 .campaign-summary-top-second {
-  display: flex;
-  column-gap: 30px;
+  display: block;
   margin-right: 24px;
+  padding-top: 8px;
 }
 
-.campaign-summary-top-second-items {
-  display: flex;
-  gap: 9px;
-  align-items: center;
+.campaign-summary-top-second-items-first {
+  margin-right: 30px;
 }
 
 .campaign-summary-top-third {
-  display: flex;
+  display: block;
   font-size: 13px;
-  column-gap: 13px;
-  align-items: center;
   margin-right: 12px;
 }
 
 .text-faint {
-  color: var(--grey);
+  color: #939b9d;
 }
 
 .vertical-divider {
   width: 1px;
-  height: 22px;
+  height: 24px;
   margin: 8px 15px 4px 0;
   border: solid 1px #dae1e1;
 }
@@ -326,34 +318,36 @@ div.SCHEDULED, div.QUEUED {
   border-radius: 50%;
   background: gray;
   color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: block;
   text-transform: uppercase;
+  margin-right: 13px;
 }
 
+.zone-content{
+  position: relative;
+  left: 10%;
+  top: 22%;
+  margin: auto;
+  display: block;
+}
 /* *****************************CAMPAIGN SUMMARY END************************* */
 
 /* *****************************CAMPAIGN DETAILS START************************* */
 .campaign-details-dash {
   width: 11px;
   height: 2px;
-  border: solid 1px var(--grey);
+  border: solid 1px #939b9d;
   display: block;
 }
 
 .campaign-details-more-info {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 12.2rem;
+  display: block;
 }
 
 .campaign-details-more-info-item {
-  display: flex;
-  align-items: baseline;
-  flex: 0 0 25%;
-  margin-bottom: 18px;
-  gap: 6px;
+  margin: 0 122px 18px 0;
+  white-space: nowrap;
+  float: left;
 }
 
 .campaign-details-more-info-item-key {
@@ -367,14 +361,14 @@ div.SCHEDULED, div.QUEUED {
   margin: 0 0 0 6px;
   padding: 1px 0;
   border-radius: 4px;
-  background-color: #edf0f0
+  background-color: #edf0f0;
+  display: inline-block;
 }
 
 .dotted-dashes {
-  height: 2px;
-  border: 1px dotted var(--grey);
-  display: block;
-  flex: auto;
+  border-top: 1px dotted #939b9d;
+  display: inline-block;
+  padding-bottom: 4px;
 }
 
 /* *****************************CAMPAIGN DETAILS END************************* */
@@ -389,10 +383,11 @@ table {
   color: #939b9d;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 1px 0 0 #e4e9e9;
+  border-bottom: 1px solid #e4e9e9;
   padding: 19px 90px 19px 0;
   text-align: left;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .data-series-table-data {
@@ -400,14 +395,18 @@ table {
   color: #06181a;
   font-size: 14px;
   font-weight: normal;
-  padding: 17px 40px 17px 1px;
-  box-shadow: 0 1px 0 0 #e4e9e9;
+  padding: 17px 35px 17px 1px;
+  border-bottom: 1px solid #e4e9e9;
+}
+
+.header-table-row th:first-child, .data-series-table-data:first-child{
+   padding-left: 16px;
 }
 
 .td-tag {
   padding: 1px 8px 4px;
   border-radius: 11px;
-  background-color: rgb(149, 147, 163, .12);
+  background-color: #f7f7f7;
   font-size: 12px;
   color: #08061a;
   width: fit-content;
@@ -422,10 +421,10 @@ table {
 }
 
 .table-section > *:not(:last-child) {
-    margin-bottom: 30px;
+  margin-bottom: 30px;
 }
 .header-table-row {
-    background: #f4f5f5
+  background: #f4f5f5
 }
 
 /* *****************************DATA SERIES TABLE SUMMARY END************************* */
@@ -442,4 +441,31 @@ table {
 
 /* *****************************DATA SERIES CHART END************************* */
 
+@page {
+  size: A4 landscape;
+}
+.campaign-summary-top {
+  whitespace: nowrap;
+  overflow: hidden;
+}
 
+.campaign-summary-top::before {
+  content: "";
+  display: table;
+}
+
+.campaign-summary-top::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.float-left {
+  float: left;
+}
+.pt-2 {
+  padding-top: 2px;
+}
+.pb-4 {
+  padding-bottom: 4px;
+}

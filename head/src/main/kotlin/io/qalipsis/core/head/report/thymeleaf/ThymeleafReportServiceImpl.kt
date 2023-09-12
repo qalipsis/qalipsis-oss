@@ -32,6 +32,8 @@ import io.qalipsis.core.head.report.TemplateBeanFactory
 import io.qalipsis.core.head.report.TemplateReportService
 import io.qalipsis.core.head.report.chart.ChartService
 import jakarta.inject.Singleton
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.thymeleaf.context.Context
 import org.xhtmlrenderer.pdf.ITextRenderer
 import java.io.ByteArrayOutputStream
@@ -71,7 +73,6 @@ internal class ThymeleafReportServiceImpl(
             )
         )
         val html = renderTemplate(campaignReportDetail, dataSeries, reportTempDir)
-
         return generatePdfFromHtml(html)
     }
 
@@ -88,10 +89,23 @@ internal class ThymeleafReportServiceImpl(
         dataSeries: Collection<DataSeriesEntity>,
         reportTempDir: Path
     ): String {
-
         val templateEngine = templateBeanFactory.templateEngine()
-        val chartImages = campaignReportDetail.chartData.mapIndexed { index, chartData ->
-            Files.readAllBytes(chartService.buildChart(chartData, dataSeries, index, reportTempDir)).toBase64()
+        val chartImages = mutableListOf<String>()
+        if (campaignReportDetail.chartData.isNotEmpty()) {
+            campaignReportDetail.chartData.mapIndexed { index, chartData ->
+                if (chartData.isNotEmpty()) {
+                    chartImages.add(
+                        Files.readAllBytes(
+                            chartService.buildChart(
+                                chartData,
+                                dataSeries,
+                                index,
+                                reportTempDir
+                            )
+                        ).toBase64()
+                    )
+                }
+            }
         }
         val fontUrl = loadFont(reportTempDir)
         val context = buildContext(campaignReportDetail, chartImages, fontUrl)
@@ -105,8 +119,14 @@ internal class ThymeleafReportServiceImpl(
      * @param campaignReportDetail contains data with which to set up the context
      * @param chartImages collection of base64 encoded strings of chart image files
      */
-    private fun buildContext(campaignReportDetail: CampaignReportDetail, chartImages: List<String>, fontUrl: String) =
-        Context().apply {
+    @KTestable
+    private fun buildContext(
+        campaignReportDetail: CampaignReportDetail,
+        chartImages: List<String>,
+        fontUrl: String
+    ): Context {
+        val assets = readResources()
+        return Context().apply {
             // Configure the report title.
             setVariable("title", campaignReportDetail.reportName)
             // Configure data to populate the campaign summary section.
@@ -127,24 +147,40 @@ internal class ThymeleafReportServiceImpl(
             setVariable("chartImages", chartImages)
             // Configure the path to read the font family.
             setVariable("fontUrl", fontUrl)
+            // Configure the path for the time svg icon.
+            setVariable("timeImage", assets["timeImage"])
+            // Configure the path for the user svg icon.
+            setVariable("userImage", assets["userImage"])
+            // Configure the path for the css styles.
+            setVariable("stylePath", assets["stylePath"])
         }
+    }
 
     /**
      * Generates a pdf template from HTML string.
      *
      * @param html HTML template to be rendered
      */
+    @KTestable
     private suspend fun generatePdfFromHtml(html: String): ByteArray {
         try {
             require(html.isNotEmpty()) { "HTML File is empty" }
+            val document = Jsoup.parse(html, CHARACTER_ENCODING)
+            document.outputSettings().syntax(Document.OutputSettings.Syntax.xml)
+            val iTextRenderer = ITextRenderer()
             val outputStream = ByteArrayOutputStream()
-            ITextRenderer().apply {
-                setDocumentFromString(html)
-                layout()
-                createPDF(outputStream)
-            }
+                iTextRenderer.apply {
+                    val sharedContext = sharedContext
+                    sharedContext.isPrint = true
+                    sharedContext.isInteractive = false
+                    // @FIXME This should help with the image rendering but it throws an exception.
+                    sharedContext.replacedElementFactory =
+                        MediaReplacedElementFactory(sharedContext.replacedElementFactory)
+                    setDocumentFromString(document.html())
+                    layout()
+                }
+            outputStream.use(iTextRenderer::createPDF)
             val fileContent = outputStream.toByteArray()
-            outputStream.close()
             assert(fileContent.isNotEmpty()) { "File content could not be read" }
             return fileContent
         } catch (e: Exception) {
@@ -156,6 +192,7 @@ internal class ThymeleafReportServiceImpl(
      * Reads the font file from the classpath to a temporal directory and returns
      * the path to be used in thymeleaf template.
      */
+    @KTestable
     private fun loadFont(reportTempDir: Path): String {
         val destinationPath = Files.createTempFile(reportTempDir, "outfit", ".ttf")
         val fontInputStream = javaClass.classLoader.getResourceAsStream("public/assets/outfit-font.ttf")
@@ -167,4 +204,36 @@ internal class ThymeleafReportServiceImpl(
     }
 
     private fun ByteArray.toBase64(): String = Base64.getEncoder().encodeToString(this)
+
+    /**
+     * Loads the css and image resources and writes them to a temporal directory.
+     */
+    private fun readResources(): Map<String, String> {
+        val reportTempDir = Files.createTempDirectory("assets").toAbsolutePath()
+        val timePath = Files.createTempFile(reportTempDir, "time", ".svg")
+        val userPath = Files.createTempFile(reportTempDir, "user", ".svg")
+        val cssPath = Files.createTempFile(reportTempDir, "style", ".css")
+        val timeInputStream = javaClass.classLoader.getResourceAsStream("public/images/time.svg")
+        val userInputStream = javaClass.classLoader.getResourceAsStream("public/images/user.svg")
+        val cssInputStream = javaClass.classLoader.getResourceAsStream("public/style.css")
+        timeInputStream?.let {
+            Files.copy(timeInputStream, timePath, StandardCopyOption.REPLACE_EXISTING)
+        }
+        userInputStream?.let {
+            Files.copy(userInputStream, userPath, StandardCopyOption.REPLACE_EXISTING)
+        }
+        cssInputStream?.let {
+            Files.copy(cssInputStream, cssPath, StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        return mapOf(
+            "timeImage" to timePath.absolutePathString(),
+            "userImage" to userPath.absolutePathString(),
+            "stylePath" to cssPath.absolutePathString(),
+        )
+    }
+
+    private companion object {
+        const val CHARACTER_ENCODING = "UTF-8"
+    }
 }

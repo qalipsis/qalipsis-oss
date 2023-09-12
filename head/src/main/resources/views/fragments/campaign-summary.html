@@ -2,70 +2,140 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 
 <body>
-<div th:fragment="campaign-summary(campaign)" class="campaign-summary">
-  <div class="campaign-summary-top">
-    <div class="campaign-summary-top-first">
-      <span class="color"></span>
-      <h3 th:text="${campaign.name}">No Campaign</h3>
-      <div class="button-wrapper" th:replace="fragments/button :: button (${campaign.result})"
-           th:classappend="${campaign.result}">
-        <span>Finished</span>
-      </div>
+<div th:fragment="campaign-summary(campaign, userImage, timeImage)" class="campaign-summary">
+    <div class="campaign-summary-top">
+        <div class="float-left campaign-summary-top-first">
+            <div class="campaign-summary-title">
+                <span class="float-left color"></span>
+                <h3 class="float-left pb-4" th:text="${campaign.name}">No Campaign</h3>
+            </div>
+            <div class="float-left button-wrapper" th:replace="fragments/button :: button (${campaign.result})"
+                 th:classappend="${campaign.result}">
+                <span>Finished</span>
+            </div>
+        </div>
+        <span class="float-left vertical-divider"></span>
+        <div class="float-left campaign-summary-top-second">
+            <div class="float-left campaign-summary-top-second-items campaign-summary-top-second-items-first">
+                <img class="float-left img" style="margin-right: 8px;" th:src="${timeImage}" src="${timeImage}"
+                     alt="Time icon"/>
+                <p class="float-left pt-2"
+                   th:text="${new java.lang.Integer(campaign.executionTime/ 60)} + 'mins' + ' ' + ${campaign.executionTime} % 60 + 's' ">
+                    1min 15s</p>
+            </div>
+            <div class="float-left campaign-summary-top-second-items">
+                <img class="float-left img" style="margin-right: 8px;" th:src="${userImage}" src="${userImage}"
+                     alt="user icon"/>
+                <p class="float-left pt-2" th:text="${campaign.startedMinions} + ' Minions'">30 Minions</p>
+            </div>
+        </div>
+        <span class="float-left vertical-divider"></span>
+        <div th:unless="${campaign.resolvedZones == null}" th:each="zone: ${campaign.resolvedZones}"
+             class="float-left campaign-summary-top-third">
+      <span th:if="${zone.image != null}" class="zone float-left"
+            th:style="'background-image: url(' + ${zone.image}+ '); background-repeat: no-repeat, repeat; background-size: cover;'"></span>
+            <div th:unless="${zone.image != null}" class="zone float-left">
+                <span class="zone-content" th:text="${zone.key}">KEY</span>
+            </div>
+            <div class="float-left">
+                <p class="text-faint" style="margin-bottom: 2px;">Load zone</p>
+                <p th:text="${zone.title}">Frankfurt</p>
+            </div>
+        </div>
     </div>
-    <span class="vertical-divider"></span>
-    <div class="campaign-summary-top-second">
-      <div class="campaign-summary-top-second-items">
-        <img src="/public/images/time.svg" alt="Time icon"/>
-        <p th:text="${new java.lang.Integer(campaign.executionTime/ 60)} + 'mins' + ' ' + ${campaign.executionTime} % 60 + 's' ">
-          1min 15s</p>
-      </div>
-      <div class="campaign-summary-top-second-items">
-        <img src="/public/images/user.svg" alt="user icon"/>
-        <p th:text="${campaign.startedMinions} + ' Minions'">30 Minions</p>
-      </div>
+    <span class="campaign-summary-hr"></span>
+    <div class="campaign-summary-bottom">
+        <ul class="campaign-details-more-info">
+            <li class="campaign-details-more-info-item" style="width: 230px;">
+                <table style="width: 100%; table-layout: fixed;">
+                    <tr style="display: inline-table; width: 100%; align-items: center;">
+                        <td>
+                            <div>
+                                <p class="campaign-details-more-info-item-key">Started Minions</p>
+                            </div>
+                        </td>
+                        <td style="width: 100%;">
+                            <span class="dotted-dashes" style="width: 100%; display: inline-block;"></span>
+                        </td>
+                        <td>
+                            <span class="campaign-details-more-info-item-value"
+                                  th:text="${campaign.startedMinions}">6</span>
+                        </td>
+                    </tr>
+                </table>
+            </li>
+            <li class="campaign-details-more-info-item" style="width: 230px;">
+                <table style="width: 100%; table-layout: fixed;">
+                    <tr style="display: inline-table; width: 100%; align-items: center;">
+                        <td>
+                            <div>
+                                <p class="campaign-details-more-info-item-key">Successful Step Executions</p>
+                            </div>
+                        </td>
+                        <td style="width: 100%;">
+                            <span class="dotted-dashes" style="width: 100%; display: inline-block;"></span>
+                        </td>
+                        <td>
+                            <span class="campaign-details-more-info-item-value"
+                                  th:text="${campaign.successfulExecutions}">323</span>
+                        </td>
+                    </tr>
+                </table>
+            </li>
+            <li class="campaign-details-more-info-item" style="width: 230px;">
+                <table style="width: 100%; table-layout: fixed;">
+                    <tr style="display: inline-table; width: 100%; align-items: center;">
+                        <td>
+                            <div>
+                                <p class="campaign-details-more-info-item-key">Failed Step Executions</p>
+                            </div>
+                        </td>
+                        <td style="width: 100%;">
+                            <span class="dotted-dashes" style="width: 100%; display: inline-block;"></span>
+                        </td>
+                        <td>
+                            <span class="campaign-details-more-info-item-value" th:text="${campaign.failedExecutions}">406</span>
+                        </td>
+                    </tr>
+                </table>
+            </li>
+            <li class="campaign-details-more-info-item" style="width: 230px;">
+                <table style="width: 100%; table-layout: fixed;">
+                    <tr style="display: inline-table; width: 100%; align-items: center;">
+                        <td>
+                            <div>
+                                <p class="campaign-details-more-info-item-key">Completed Minions</p>
+                            </div>
+                        </td>
+                        <td style="width: 100%;">
+                            <span class="dotted-dashes" style="width: 100%; display: inline-block;"></span>
+                        </td>
+                        <td>
+                            <span class="campaign-details-more-info-item-value" th:text="${campaign.completedMinions}">61</span>
+                        </td>
+                    </tr>
+                </table>
+            </li>
+            <li class="campaign-details-more-info-item" style="width: 230px;">
+                <table style="width: 100%; table-layout: fixed;">
+                    <tr style="display: inline-table; width: 100%; align-items: center;">
+                        <td>
+                            <div>
+                                <p class="campaign-details-more-info-item-key">Started Minions</p>
+                            </div>
+                        </td>
+                        <td style="width: 100%;">
+                            <span class="dotted-dashes" style="width: 100%; display: inline-block;"></span>
+                        </td>
+                        <td>
+                            <span class="campaign-details-more-info-item-value"
+                                  th:text="${campaign.startedMinions}">23</span>
+                        </td>
+                    </tr>
+                </table>
+            </li>
+        </ul>
     </div>
-    <span class="vertical-divider"></span>
-    <div th:each="zone: ${campaign.resolvedZones}" class="campaign-summary-top-third">
-      <span th:if="${zone.image != null}" class="zone"
-            th:style="'background-image:url(' + ${zone.image}+ '); background-repeat: no-repeat, repeat; background-size: cover;'"></span>
-      <span th:unless="${zone.image != null}" class="zone" th:text="${zone.key}">KEY</span>
-      <div>
-        <p class="text-faint">Load zone</p>
-        <p th:text="${zone.title}">Frankfurt</p>
-      </div>
-    </div>
-  </div>
-  <span class="campaign-summary-hr"></span>
-  <div class="campaign-summary-bottom">
-    <ul class="campaign-details-more-info">
-      <li class="campaign-details-more-info-item">
-        <p class="campaign-details-more-info-item-key">Started Minions</p>
-        <span class="dotted-dashes"></span>
-        <span class="campaign-details-more-info-item-value" th:text="${campaign.startedMinions}">1</span>
-      </li>
-      <li class="campaign-details-more-info-item">
-        <p class="campaign-details-more-info-item-key">Successful steps executions</p>
-        <span class="dotted-dashes"></span>
-        <span class="campaign-details-more-info-item-value"
-              th:text="${campaign.successfulExecutions}">1</span>
-      </li>
-      <li class="campaign-details-more-info-item">
-        <p class="campaign-details-more-info-item-key">Failed steps executions</p>
-        <span class="dotted-dashes"></span>
-        <span class="campaign-details-more-info-item-value" th:text="${campaign.failedExecutions}">0</span>
-      </li>
-      <li class="campaign-details-more-info-item">
-        <p class="campaign-details-more-info-item-key">Completed minions</p>
-        <span class="dotted-dashes"></span>
-        <span class="campaign-details-more-info-item-value" th:text="${campaign.completedMinions}">0</span>
-      </li>
-      <li class="campaign-details-more-info-item">
-        <p class="campaign-details-more-info-item-key">Started Minions</p>
-        <span class="dotted-dashes"></span>
-        <span class="campaign-details-more-info-item-value" th:text="${campaign.startedMinions}">0</span>
-      </li>
-    </ul>
-  </div>
 </div>
 </body>
 </html>
