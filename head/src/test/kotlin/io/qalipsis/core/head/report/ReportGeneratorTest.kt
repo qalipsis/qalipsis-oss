@@ -59,7 +59,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @WithMockk
-internal class ReportGeneratorTests {
+internal class ReportGeneratorTest {
 
     @RegisterExtension
     @JvmField
@@ -217,7 +217,13 @@ internal class ReportGeneratorTests {
                 )
             } returns byteArray
             val campaignReportDetail = relaxedMockk<CampaignReportDetail>()
-            coEvery { mockReportFileBuilder.execute(any(), any(), any()) } returns campaignReportDetail
+            coEvery {
+                mockReportFileBuilder.populateCampaignReportDetail(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns campaignReportDetail
             coEvery { reportFileRepository.save(any<ReportFileEntity>()) } returns reportFileEntity
             mockkStatic(Files::class)
             val tempPath = File("temp/${reportEntity.displayName}-${reportTaskEntity.reference}").toPath()
@@ -234,7 +240,11 @@ internal class ReportGeneratorTests {
                     emptyList(),
                     emptyList()
                 )
-                mockReportFileBuilder.execute(reportEntity, "my-tenant", listOf(campaignData, campaignData2))
+                mockReportFileBuilder.populateCampaignReportDetail(
+                    reportEntity,
+                    "my-tenant",
+                    listOf(campaignData, campaignData2)
+                )
                 mockTemplateReportService.generatePdf(
                     reportEntity,
                     campaignReportDetail,

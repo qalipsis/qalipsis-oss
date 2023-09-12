@@ -20,6 +20,7 @@ package io.qalipsis.core.report.thymeleaf
 
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.spyk
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.ExecutionStatus
@@ -36,6 +37,9 @@ import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
 import io.qalipsis.core.head.report.chart.ChartServiceImpl
 import io.qalipsis.core.head.report.chart.LineStyleGenerator
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -47,6 +51,8 @@ import org.thymeleaf.context.Context
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
+import org.xhtmlrenderer.pdf.ITextRenderer
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
@@ -54,11 +60,13 @@ import java.math.BigDecimal
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.io.path.absolutePathString
 
 
 @MicronautTest(startApplication = false)
@@ -67,6 +75,8 @@ internal class ReportTemplateFragmentTest {
     private lateinit var templateEngine: TemplateEngine
 
     private lateinit var snapshotDirectory: Path
+
+    private lateinit var localSnapshotDirectory: File
 
     private lateinit var report: ReportEntity
 
@@ -87,6 +97,11 @@ internal class ReportTemplateFragmentTest {
     fun init() {
         context = Context()
         createTemplateEngine()
+        //@TODO Exists only for testing purposes. Should be deleted after the rendering of images has been resolved.
+        localSnapshotDirectory = File(SNAPSHOT_DIRECTORY)
+        //@TODO Exists only for testing purposes. Should be deleted after the rendering of images has been resolved.
+        localSnapshotDirectory.mkdirs()
+
         snapshotDirectory = Files.createTempDirectory("__snapshot__")
         report = ReportEntity(
             id = 5L,
@@ -216,11 +231,11 @@ internal class ReportTemplateFragmentTest {
             """<section class="campaign-list">
                  <div class="btn-transparent">
                    <span class="color"></span>
-                   <h3>Fifth Campaign</h3>
+                   <h3 class="campaign-name">Fifth Campaign</h3>
                  </div>
                  <div class="btn-transparent">
                    <span class="color"></span>
-                   <h3>Campaign Seven</h3>
+                   <h3 class="campaign-name">Campaign Seven</h3>
                  </div>
              </section>
         """.trimIndent()
@@ -273,7 +288,7 @@ internal class ReportTemplateFragmentTest {
 
         //then
         assertTrue(result.contains("""<div class="campaign-summary">"""))
-        assertTrue(result.contains("""<h3>Campaign Seven</h3>"""))
+        assertTrue(result.contains("""<h3 class="float-left pb-4">Campaign Seven</h3>"""))
         assertTrue(result.contains("""<span class="campaign-details-more-info-item-value">46</span>"""))
         assertTrue(result.contains("""<span class="campaign-details-more-info-item-value">25</span>"""))
         assertTrue(result.contains("""<span class="campaign-details-more-info-item-value">21</span>"""))
@@ -620,7 +635,7 @@ internal class ReportTemplateFragmentTest {
         val base64ImagePath = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir)
         val imageByte = Files.readAllBytes(base64ImagePath).toBase64()
         val chartImageTemplate = """
-            <img src="data:image/svg+xml;base64,${imageByte}" alt="Requests Chart"/>
+            <img class="img" src="data:image/svg+xml;base64,${imageByte}" alt="Requests Chart"/>
         """.trimIndent().stripNewlines()
         context.setVariable("chartImages", listOf(Files.readAllBytes(base64ImagePath).toBase64()))
 
@@ -1067,9 +1082,11 @@ internal class ReportTemplateFragmentTest {
 
         //when
         val result = templateEngine.process("report-template", context)
+
+        //then
         assertTrue { result.contains("""<h1>Latest Event Report</h1>""") }
         assertTrue { result.contains("""<div class="campaign-summary">""") }
-        assertTrue { result.contains("""<h3>Campaign Seven</h3>""") }
+        assertTrue { result.contains("""<h3 class="campaign-name">Campaign Seven</h3>""") }
         assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">46</span>""") }
         assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">25</span>""") }
         assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">21</span>""") }
@@ -1447,9 +1464,11 @@ internal class ReportTemplateFragmentTest {
 
         //when
         val result = templateEngine.process("report-template", context)
+
+        //then
         assertTrue { result.contains("""<h1>Latest Meter Report</h1>""") }
         assertTrue { result.contains("""<div class="campaign-summary">""") }
-        assertTrue { result.contains("""<h3>Campaign Seven</h3>""") }
+        assertTrue { result.contains("""<h3 class="campaign-name">Campaign Seven</h3>""") }
         assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">46</span>""") }
         assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">25</span>""") }
         assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">21</span>""") }
@@ -1463,6 +1482,400 @@ internal class ReportTemplateFragmentTest {
         assertTrue { result.contains("""<td class="data-series-table-data" timestamp="2023-03-18T16:31:47.445312Z">${timestamp2}</td>""") }
 
         writeSnapshot(testInfo.displayName, result)
+    }
+
+    // @TODO should be deleted after the pdf image rendering issue has been fixed
+    //@Test
+    fun `Tests the generation of the right pdf with appropriate tests`(testInfo: TestInfo) {
+        //given
+        val aggregationResult = mapOf(
+            "data-series-1" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(5365547),
+                    value = BigDecimal(40),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.423412Z"),
+                    elapsed = Duration.ofNanos(6714011),
+                    value = BigDecimal(93),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(7240177),
+                    value = BigDecimal(231),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(8144072),
+                    value = BigDecimal(621),
+                    campaign = "campaign-2"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(66412659),
+                    value = BigDecimal(708),
+                    campaign = "campaign-2"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(71146859),
+                    value = BigDecimal(921),
+                    campaign = "campaign-2"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(71554376),
+                    value = BigDecimal(11),
+                    campaign = "campaign-3"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(85144072),
+                    value = BigDecimal(431),
+                    campaign = "campaign-3"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(65385417),
+                    value = BigDecimal(93),
+                    campaign = "campaign-4"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(7485427),
+                    value = BigDecimal(78),
+                    campaign = "campaign-4"
+                ),
+            ),
+            "data-series-2" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(62133262),
+                    value = BigDecimal(3113),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(51196872),
+                    value = BigDecimal(2100),
+                    campaign = "campaign-1"
+                ),
+            ),
+            "data-series-3" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(1206519),
+                    value = BigDecimal(112222),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(3245874),
+                    value = BigDecimal(100000),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(6845167),
+                    value = BigDecimal(95542),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(6128674),
+                    value = BigDecimal(10222),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(49068266),
+                    value = BigDecimal(164),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(62352851),
+                    value = BigDecimal(323),
+                    campaign = "campaign-1"
+                ),
+            ),
+            "data-series-4" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(3622647),
+                    value = BigDecimal(8932),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(8621647),
+                    value = BigDecimal(14222),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(5622647),
+                    value = BigDecimal(782422),
+                    campaign = "campaign-5"
+                ),
+            )
+        )
+        val aggregationResult2 = mapOf(
+            "data-series-5" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(5322547),
+                    value = BigDecimal(240),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.423412Z"),
+                    elapsed = Duration.ofNanos(6712111),
+                    value = BigDecimal(193),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(7990177),
+                    value = BigDecimal(239),
+                    campaign = "campaign-1"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(2344072),
+                    value = BigDecimal(622),
+                    campaign = "campaign-2"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(66412899),
+                    value = BigDecimal(702),
+                    campaign = "campaign-2"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(71146339),
+                    value = BigDecimal(921),
+                    campaign = "campaign-2"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(71554376),
+                    value = BigDecimal(15),
+                    campaign = "campaign-3"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(85145662),
+                    value = BigDecimal(453),
+                    campaign = "campaign-3"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(65115417),
+                    value = BigDecimal(76),
+                    campaign = "campaign-4"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(7400427),
+                    value = BigDecimal(178),
+                    campaign = "campaign-4"
+                ),
+            ),
+            "data-series-6" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(62133292),
+                    value = BigDecimal(5413),
+                    campaign = "campaign-7"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(51196870),
+                    value = BigDecimal(7100),
+                    campaign = "campaign-7"
+                ),
+            ),
+            "data-series-7" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(1244419),
+                    value = BigDecimal(444222),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(5675874),
+                    value = BigDecimal(109990),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(6842367),
+                    value = BigDecimal(955784),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(9990674),
+                    value = BigDecimal(13422),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(49164366),
+                    value = BigDecimal(1643),
+                    campaign = "campaign-8"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(62332351),
+                    value = BigDecimal(3230),
+                    campaign = "campaign-8"
+                ),
+            ),
+            "data-series-8" to listOf
+                (
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(3932647),
+                    value = BigDecimal(98132),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(8442147),
+                    value = BigDecimal(18422),
+                    campaign = "campaign-5"
+                ),
+                TimeSeriesAggregationResult(
+                    start = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                    elapsed = Duration.ofNanos(7622607),
+                    value = BigDecimal(789922),
+                    campaign = "campaign-5"
+                ),
+            )
+        )
+        val dataSeries = listOf(
+            dataSeriesEntity,
+            dataSeriesEntity.copy(reference = "data-series-2", color = "#800080", colorOpacity = 23),
+            dataSeriesEntity.copy(reference = "data-series-3", color = null, colorOpacity = null),
+            dataSeriesEntity.copy(reference = "data-series-4", color = "#6a329f", colorOpacity = 50),
+            dataSeriesEntity.copy(reference = "data-series-5", color = "#008000", colorOpacity = 60),
+            dataSeriesEntity.copy(reference = "data-series-6", color = "#f08080", colorOpacity = 100),
+            dataSeriesEntity.copy(reference = "data-series-7", color = null, colorOpacity = 83),
+            dataSeriesEntity.copy(reference = "data-series-8", color = "#3a3500", colorOpacity = 10),
+        )
+        val campaignList = listOf(
+            campaignDataPrototype, campaignDataPrototype.copy(
+                name = "Campaign Seven",
+                result = ExecutionStatus.SUCCESSFUL,
+                startedMinions = 46,
+                completedMinions = 16,
+                successfulExecutions = 25,
+                failedExecutions = 21,
+            ).apply {
+                resolvedZones = setOf(
+                    Zone(
+                        "CAN",
+                        "canada",
+                        "This is US",
+                        image = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+                    ),
+                    Zone(
+                        "SA",
+                        "southafrica",
+                        "This is SA",
+                        image = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
+                    ),
+                )
+            }
+        )
+        val timestamp1 =
+            Instant.parse("2023-03-16T09:15:22.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+                DateTimeFormatter.ofPattern("HH:mm:ss")
+            )
+        val timestamp2 =
+            Instant.parse("2023-03-13T15:09:41.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+                DateTimeFormatter.ofPattern("HH:mm:ss")
+            )
+        val eventTableData1 = setOf(
+            TimeSeriesEvent(
+                name = "Requests Made",
+                timestamp = Instant.parse("2023-03-18T16:31:47.445312Z"),
+                campaign = "Campaign 5 Longest",
+                scenario = "cassandra.save.saving.all",
+                number = BigDecimal(8368),
+                duration = Duration.ofHours(2).plusMinutes(15),
+                tags = null,
+                level = "Level 0"
+            ),
+            TimeSeriesEvent(
+                name = "Requests Per second",
+                timestamp = Instant.parse("2023-03-18T09:21:47.445312Z"),
+                campaign = null,
+                scenario = "elasticSearch.save.saving.all",
+                number = null,
+                duration = Duration.ofMinutes(3).minusSeconds(33),
+                tags = mapOf("zone1" to "EU", "zone2" to "BR", "zone3" to "US"),
+                level = "Level 0"
+            )
+        )
+        val eventTableData2 = setOf(
+            TimeSeriesEvent(
+                name = "Requests Made2",
+                timestamp = Instant.parse("2023-03-13T15:09:41.445312Z"),
+                campaign = "Campaign 5 Longest Again",
+                scenario = "cassandra.save.saving.all2",
+                number = BigDecimal(8368),
+                duration = Duration.ofHours(2).plusMinutes(25),
+                tags = null,
+                level = "Level 0"
+            ),
+            TimeSeriesEvent(
+                name = "Requests Per second2",
+                timestamp = Instant.parse("2023-03-16T09:15:22.445312Z"),
+                campaign = null,
+                scenario = "elasticSearch.save.saving.all2",
+                number = BigDecimal(8168),
+                duration = Duration.ofMinutes(8).minusSeconds(13),
+                tags = mapOf("zone1" to "EU", "zone2" to "BR", "zone3" to "US"),
+                level = "Level 0"
+            )
+        )
+        val title = "Latest Event Report"
+        val base64ImagePath1 = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir)
+        val base64ImagePath2 = chartService.buildChart(aggregationResult2, dataSeries, 1, chartTestDir)
+        val assets = readResources()
+        context.apply {
+            setVariable("title", title)
+            setVariable("campaigns", campaignList)
+            setVariable("eventTableData", listOf(eventTableData1, eventTableData2))
+            setVariable(
+                "chartImages",
+                listOf(Files.readAllBytes(base64ImagePath1).toBase64(), Files.readAllBytes(base64ImagePath2).toBase64())
+            )
+            setVariable("timeImage", assets["timeImage"])
+            setVariable("userImage", assets["userImage"])
+            setVariable("stylePath", assets["stylePath"])
+        }
+
+        //when
+        val result = templateEngine.process("report-template", context)
+        writeSnapshotLocally(testInfo.displayName, result)
+        writeHtmlToPdf(result)
     }
 
     private fun writeSnapshot(name: String, result: String) {
@@ -1490,7 +1903,74 @@ internal class ReportTemplateFragmentTest {
 
     private fun ByteArray.toBase64(): String = Base64.getEncoder().encodeToString(this)
 
+    // @TODO Exists only for testing purposes. Should be deleted after the rendering of images has been resolved.
+    private fun writeHtmlToPdf(html: String) {
+        try {
+            val document = Jsoup.parse(html, CHARACTER_ENCODING)
+            document.outputSettings().syntax(Document.OutputSettings.Syntax.xml)
+            val outputStream = ByteArrayOutputStream()
+            outputStream.use {
+                ITextRenderer().apply {
+                    val sharedContext = sharedContext
+                    sharedContext.isPrint = true
+                    sharedContext.isInteractive = false
+                    //@FIXME This should help with the image rendering but it throws an exception. Uncomment to debug
+                    sharedContext.replacedElementFactory =
+                        MediaReplacedElementFactory(sharedContext.replacedElementFactory)
+                    setDocumentFromString(document.html())
+                    layout()
+                    createPDF(outputStream)
+                }
+            }
+            val fileContent = outputStream.toByteArray()
+            val myFile = File("result.pdf")
+            myFile.writeBytes(fileContent)
+        } catch (ex: Exception) {
+            logger.error { "Exception: $ex" }
+        }
+    }
+
+
+    //@TODO Exists only for testing purposes. Should be deleted after the rendering of images has been resolved.
+    private fun readResources(): Map<String, String> {
+        val reportTempDir = Files.createTempDirectory("assets").toAbsolutePath()
+        val timePath = Files.createTempFile(reportTempDir, "time", ".svg")
+        val userPath = Files.createTempFile(reportTempDir, "user", ".svg")
+        val cssPath = Files.createTempFile(reportTempDir, "style", ".css")
+        val timeInputStream = javaClass.classLoader.getResourceAsStream("public/images/time.svg")
+        val userInputStream = javaClass.classLoader.getResourceAsStream("public/images/user.svg")
+        val cssInputStream = javaClass.classLoader.getResourceAsStream("public/style.css")
+        timeInputStream?.let {
+            Files.copy(timeInputStream, timePath, StandardCopyOption.REPLACE_EXISTING)
+        }
+        userInputStream?.let {
+            Files.copy(userInputStream, userPath, StandardCopyOption.REPLACE_EXISTING)
+        }
+        cssInputStream?.let {
+            Files.copy(cssInputStream, cssPath, StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        return mapOf(
+            "timeImage" to timePath.absolutePathString(),
+            "userImage" to userPath.absolutePathString(),
+            "stylePath" to cssPath.absolutePathString(),
+        )
+    }
+
+
+    //@TODO Exists only for testing purposes. Should be deleted after the rendering of images has been resolved.
+    private fun writeSnapshotLocally(name: String, result: String) {
+        try {
+            FileWriter("$localSnapshotDirectory/$name.html").use { fileWriter -> fileWriter.write(result) }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
     private companion object {
+        private val logger = logger()
+        const val SNAPSHOT_DIRECTORY = "src/test/__snapshot__"
+
         private const val HTML_OPENING_METADATA = """<!DOCTYPE html><html lang="en"><body>"""
 
         private const val HTML_CLOSING_METADATA = "</body></html>"
@@ -1523,5 +2003,4 @@ internal class ReportTemplateFragmentTest {
 
         const val RESOLVER_SUFFIX = ".html"
     }
-
 }

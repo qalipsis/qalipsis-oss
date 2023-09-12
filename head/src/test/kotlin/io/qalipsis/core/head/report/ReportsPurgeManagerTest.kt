@@ -43,7 +43,7 @@ import java.time.temporal.ChronoUnit
 
 
 @WithMockk
-internal class ReportsPurgeManagerTests {
+internal class ReportsPurgeManagerTest {
 
     @RegisterExtension
     @JvmField

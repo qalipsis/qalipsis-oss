@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.report.chart
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.lang.alsoWhenNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.TimeSeriesAggregationResult
@@ -56,25 +57,25 @@ import java.util.*
  */
 @Singleton
 internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : ChartService {
-    private lateinit var dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>
-    private lateinit var campaignKeyToLineMap: MutableMap<String, Int>
 
     override fun buildChart(
         data: Map<String, List<TimeSeriesAggregationResult>>,
         dataSeries: Collection<DataSeriesEntity>,
         index: Int,
-        reportTempDir: Path
+        reportTempDir: Path,
     ): Path {
-        dataSeriesDrawingConfigurations = mutableMapOf()
+        require(data.isNotEmpty()) { "Cannot generate chart with empty data" }
+        val dataSeriesDrawingConfigurations = mutableMapOf<String, DataSeriesDrawingConfiguration>()
+        val campaignKeyToLineMap = mutableMapOf<String, Int>()
         // Re-arrange the data to build time series pairs and other data structures needed to render and style the charts.
-        buildDataSet(data)
+        buildDataSet(data, campaignKeyToLineMap, dataSeriesDrawingConfigurations)
         // Map each dataSeries reference to a unique color.
         val dataSeriesEntityMap = dataSeries.associateBy { dataSeriesEntity -> dataSeriesEntity.reference }
-        mapDataSeriesToColour(dataSeriesEntityMap)
+        mapDataSeriesToColour(dataSeriesEntityMap, dataSeriesDrawingConfigurations)
         // Plot datasets, configure renderers and styling to the X and Y axes of the chart.
-        val plot = plotChart(XYPlot())
+        val plot = plotChart(XYPlot(), dataSeriesDrawingConfigurations, campaignKeyToLineMap)
         // Create a chart instance using the specified plot configurations.
-        val chart = createChart(plot)
+        val chart = createChart(plot, dataSeriesDrawingConfigurations)
         // Initialize temporary file location for the report file.
         val imageFilePath = Files.createTempFile(reportTempDir, "requestChart${index + 1}", ".svg")
         val svgGraphics = SVGGraphics2D(rectangleWidth, rectangleHeight)
@@ -90,29 +91,37 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
 
     /**
      * Re-arrange the data to build [XYSeries] and other data structures
-     * needed to render and style the charts.
+     * needed to generate and style the charts.
      *
      * @param data map of dataSeries references to the [TimeSeriesAggregationResult]
+     * @param campaignKeyToLineMap campaign keys mapped to their respective line indexes
+     * @param dataSeriesDrawingConfigurations dataseries references each mapped to its drawing configurations
      */
-    private fun buildDataSet(data: Map<String, List<TimeSeriesAggregationResult>>) {
-        campaignKeyToLineMap = mutableMapOf()
+    @KTestable
+    private fun buildDataSet(
+        data: Map<String, List<TimeSeriesAggregationResult>>,
+        campaignKeyToLineMap: MutableMap<String, Int>,
+        dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+    ) {
+        logger.info { "Starting chart generation" }
         var colorIndex = 0
         var campaignLineIndex = 0
-        data.forEach { dataSeriesEntry ->
+        data.forEach { (dataSeriesKey, timeSeriesAggregationResults) ->
             // Save the index of each data series entry keyed by the data series reference.
-            // Build the xySeriesMap which stores xySeries keyed to their campaignKey and data series references.
-            // The key is used in setting a renderer on a particular index per dataSeries.
+            // Build the xySeriesMap which stores xySeries keyed to their concatenated campaignKey and data series references.
+            // The key is used in setting a renderer on a particular index for each dataSeries.
+            // Retrieve a pre-existing drawing configuration or return a new instance.
             val dataSeriesDrawingConfiguration =
-                dataSeriesDrawingConfigurations.getOrDefault(dataSeriesEntry.key, DataSeriesDrawingConfiguration(-1))
+                dataSeriesDrawingConfigurations.getOrDefault(dataSeriesKey, DataSeriesDrawingConfiguration(-1))
             dataSeriesDrawingConfiguration.seriesIndex = colorIndex++
             // Update the dataSeriesDrawingConfiguration store.
-            dataSeriesDrawingConfigurations[dataSeriesEntry.key] = dataSeriesDrawingConfiguration
+            dataSeriesDrawingConfigurations[dataSeriesKey] = dataSeriesDrawingConfiguration
             // Map of unique time series sets, used in further generation of the dataset collection.
             val xySeriesMap = mutableMapOf<PlotCompositeKey, XYSeries>()
-            dataSeriesEntry.value.forEach { timeSeriesAggregationResult ->
+            timeSeriesAggregationResults.forEach { timeSeriesAggregationResult ->
                 val campaignKey = timeSeriesAggregationResult.campaign!!
                 // Create a key identifier for each unique series.
-                val plotCompositeKey = PlotCompositeKey(campaignKey, dataSeriesEntry.key)
+                val plotCompositeKey = PlotCompositeKey(campaignKey, dataSeriesKey)
                 // Create new [XYSeries] or get a pre-existing series and add new key-value pairs.
                 val xySeries = xySeriesMap.getOrDefault(plotCompositeKey, XYSeries(plotCompositeKey.compositeKey))
                     .also { it.add(timeSeriesAggregationResult.elapsed.toNanos(), timeSeriesAggregationResult.value) }
@@ -122,9 +131,9 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
                     campaignKeyToLineMap[campaignKey] = campaignLineIndex++
                 }
             }
-            // Creates different datasets collection by dataSeries reference from the key-value batches
+            // Create different datasets collection by dataSeries reference from the key-value batches
             // of the [XYSeries] created above.
-            createDatasetCollection(xySeriesMap)
+            createDatasetCollection(xySeriesMap, dataSeriesDrawingConfigurations)
         }
     }
 
@@ -133,9 +142,14 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
      * time series execution time mapped to their corresponding values.
      *
      * @param xySeriesMap map of unique time series sets, grouped by their campaignKeys and dataSeries
-     * references and keyed to their dataSeries References. Used in generating the dataset collection.
+     * references and keyed to their dataSeries References. Used in generating the dataset collection
+     * @param dataSeriesDrawingConfigurations dataseries references each mapped to its drawing configurations
      */
-    private fun createDatasetCollection(xySeriesMap: Map<PlotCompositeKey, XYSeries>) {
+    @KTestable
+    private fun createDatasetCollection(
+        xySeriesMap: Map<PlotCompositeKey, XYSeries>,
+        dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+    ) {
         xySeriesMap.forEach { (xySeriesKey, xySeriesEntry) ->
             // Split the series key to get the campaign key and dataSeries reference.
             val campaignKey = xySeriesKey.campaignKey
@@ -162,9 +176,16 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
     /**
      * Plot datasets, configure renderers and styling to the X and Y axes of the chart.
      *
-     * @param xyPlot instance of [XYPlot] to represent chart data.
+     * @param xyPlot instance of [XYPlot] to represent chart data
+     * @param dataSeriesDrawingConfigurations dataseries references each mapped to its drawing configurations
+     * @param campaignKeyToLineMap campaign keys mapped to their respective line indexes
      */
-    private fun plotChart(xyPlot: XYPlot): XYPlot {
+    @KTestable
+    private fun plotChart(
+        xyPlot: XYPlot,
+        dataSeriesDrawingConfigurations: Map<String, DataSeriesDrawingConfiguration>,
+        campaignKeyToLineMap: Map<String, Int>,
+    ): XYPlot {
         dataSeriesDrawingConfigurations.forEach { (_, dataSeriesDrawingConfiguration) ->
             val seriesIndex = dataSeriesDrawingConfiguration.seriesIndex
             // Set series collection in the plot accordingly: each index to the exact time series set that belongs to it.
@@ -214,17 +235,20 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
     }
 
     /**
-     * Maps dataSeriesReferences to their colors.
+     * Maps each drawing configuration to its respective colors.
      *
      * @param dataSeriesMap map of [DataSeriesEntity] keyed by their references.
+     * @param dataSeriesDrawingConfigurations map of [DataSeriesDrawingConfiguration] keyed by their dataSeries references.
      */
-    private fun mapDataSeriesToColour(dataSeriesMap: Map<String, DataSeriesEntity>) {
+    @KTestable
+    private fun mapDataSeriesToColour(
+        dataSeriesMap: Map<String, DataSeriesEntity>,
+        dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+    ) {
         dataSeriesDrawingConfigurations.forEach { (dataSeriesKey, dataSeriesDrawingConfiguration) ->
-            val dataSeriesEntity = dataSeriesMap[dataSeriesKey]!!
-            val seriesColor = dataSeriesEntity.color?.let {
-                hexToColor(
-                    it, dataSeriesEntity.colorOpacity
-                )
+            val dataSeriesEntity = dataSeriesMap[dataSeriesKey]
+            val seriesColor = dataSeriesEntity?.color?.let {
+                hexToColor(it, dataSeriesEntity.colorOpacity)
             } ?: generateRandomColour().darker()
             dataSeriesDrawingConfiguration.apply {
                 color = seriesColor
@@ -238,6 +262,7 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
      * @param colorHex the hex color (e.g #CCCCCCFF or #CCCCCC)
      * @param opacity the percentage value for opacity
      */
+    @KTestable
     private fun hexToColor(colorHex: String, opacity: Int?): Color? {
         val hex = colorHex.replace("#", "")
         return try {
@@ -248,6 +273,7 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
                 (((opacity ?: 100).toFloat() / 100) * 255).toInt()
             )
         } catch (e: Exception) {
+            logger.warn { "Unable to convert $colorHex to a valid color type" }
             null
         }
     }
@@ -256,28 +282,33 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
      * Creates a chart instance using the specified plot configurations.
      *
      * @param plot instance of [XYPlot] representing data in the form of (x, y) pairs.
+     * @param dataSeriesDrawingConfigurations map of [DataSeriesDrawingConfiguration] keyed by their dataSeries references.
      */
-    private fun createChart(plot: XYPlot): JFreeChart {
+    private fun createChart(
+        plot: XYPlot,
+        dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+    ): JFreeChart {
         ChartFactory.setChartTheme(buildChartTheme())
         val chart = JFreeChart(
             "", Font(FONT_FAMILY, Font.BOLD, 14), plot, true,
         ).apply { backgroundPaint = Color.white }
 
-        return createAndCustomizeLegend(chart)
+        return createAndCustomizeLegend(chart, dataSeriesDrawingConfigurations)
     }
 
     /**
      * Configures the chart attributes for the chart instance.
      */
     private fun buildChartTheme(): StandardChartTheme {
-        //FIXME Reading the specified font file, public/assets/outfit-font.ttf, always returns more bytes than its original file.
+        //FIXME Reading the specified font file, public/assets/outfit-font.ttf, always returns more bytes than its
+        // original file. The font path can be passed in from the build chart method above
         var font = Font("Tahoma", Font.PLAIN, 11)
         try {
-            val fontStream =
-                BufferedInputStream(javaClass.getResourceAsStream("public/assets/outfit-font.ttf"))
-            font = Font.createFont(Font.TRUETYPE_FONT, fontStream)
+            javaClass.getResourceAsStream("public/assets/outfit-font.ttf")?.let {
+                font = Font.createFont(Font.TRUETYPE_FONT, BufferedInputStream(it))
+            }
         } catch (ex: Exception) {
-            logger.debug { "Font cannot be created: ${ex.message}" }
+            logger.warn { "Font cannot be created: ${ex.message}" }
         }
         return StandardChartTheme(FONT_FAMILY).apply {
             regularFont = font.deriveFont(12f)
@@ -289,8 +320,12 @@ internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerat
      * Creates the dataSeries legend and customize the default legend.
      *
      * @param chart instance of [JFreeChart]
+     * @param dataSeriesDrawingConfigurations map of [DataSeriesDrawingConfiguration] keyed by their dataSeries references.
      */
-    private fun createAndCustomizeLegend(chart: JFreeChart): JFreeChart {
+    private fun createAndCustomizeLegend(
+        chart: JFreeChart,
+        dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+    ): JFreeChart {
         chart.legend.apply {
             frame = BlockBorder(Color(218, 225, 225))
             itemPaint = Color(6, 24, 26)

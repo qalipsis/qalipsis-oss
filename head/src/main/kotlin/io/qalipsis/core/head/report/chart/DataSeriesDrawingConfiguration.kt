@@ -25,7 +25,7 @@ import org.jfree.data.xy.XYSeriesCollection
 import java.awt.Color
 
 /**
- * Data class to hold chart building and styling properties Keyed by their dataSeries reference.
+ * Data class to hold chart building and styling properties keyed by their dataSeries reference.
  *
  * @property seriesIndex index of a unique data series set in a collection
  * @property color [java.awt.Color] object containing the color property to assign series

@@ -32,7 +32,7 @@ import io.qalipsis.core.head.model.Zone
 import jakarta.inject.Singleton
 
 /**
- * Handles collation of properties for use in assembling a report file.
+ * Handles collation of properties used in assembling a report file.
  *
  * @author Francisca Eze
  */
@@ -45,11 +45,11 @@ internal class ReportFileBuilder(
     /**
      * Assemble other parts of the data needed to construct a report.
      *
-     * @param report instance of the [ReportEntity] from which to populate report file.
+     * @param report instance of the [ReportEntity] from which to populate report file
      * @param tenant reference of the tenant owning the report
      * @param campaignData data class which contains all report data
      */
-    suspend fun execute(
+    suspend fun populateCampaignReportDetail(
         report: ReportEntity,
         tenant: String,
         campaignData: Collection<CampaignData>
