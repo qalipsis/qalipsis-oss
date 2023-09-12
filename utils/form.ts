@@ -1,4 +1,4 @@
-export interface FormDropdownOption {
+export interface FormMenuOption {
     /**
      * The label text of the option
      */

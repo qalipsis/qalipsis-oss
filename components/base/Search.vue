@@ -15,13 +15,14 @@
 
 <script setup lang="ts">
 const props = defineProps<{
+    // FIXME: modelValue can be removed
     modelValue: string;
     placeholder: string;
     collapsable?: boolean;
 }>();
-const emits = defineEmits<{
+const emit = defineEmits<{
     (e: "update:modelValue", value: string): void,
-    (e: 'search', v: string): void,
+    (e: "search", v: string): void,
 }>()
 const value = ref(props.modelValue);
 const active = ref(props.collapsable === false);
@@ -30,14 +31,14 @@ const debouncedSearch = debounce(() => {
     if (props.collapsable && !value.value) {
         active.value = false;
     }
-    emits('update:modelValue', value.value);
-    emits('search', value.value);
+    emit('update:modelValue', value.value);
+    emit('search', value.value);
 }, 300);
 
 const handleSearchIconClick = () => {
     if (active.value) {
-        emits('update:modelValue', value.value);
-        emits('search', value.value);
+        emit('update:modelValue', value.value);
+        emit('search', value.value);
     } else {
         active.value = true;
     }
@@ -52,14 +53,11 @@ const handleTextInputChange = () => {
 @import "../../assets/scss/color";
 @import "../../assets/scss/variables";
 
-$search-input-height: 2.75rem;
-$icon-width: 2.25rem;
-
 .search-container {
     display: flex;
     border: 1px solid transparent;
     border-radius: $default-radius;
-    height: $search-input-height;
+    height: $item-height;
     transition: width .5s;
     align-items: center;
     width: fit-content;
@@ -69,8 +67,8 @@ $icon-width: 2.25rem;
     }
 
     .icon-wrapper {
-        width: $icon-width;
-        height: $search-input-height;
+        width: 2.25rem;
+        height: $item-height;
         display: flex;
         align-items: center;
         justify-content: center;

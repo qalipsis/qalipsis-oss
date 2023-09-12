@@ -33,6 +33,7 @@
                         <BaseButton 
                             class="full-width"
                             :text="confirmBtnText"
+                            :disabled="confirmBtnDisabled"
                             @click="emit('confirmBtnClick')"
                         />
                     </div>
@@ -70,6 +71,11 @@ const props = defineProps<{
     confirmBtnText?: string;
 
     /**
+     * A flag to indicate if the confirm button should be disabled
+     */
+    confirmBtnDisabled?: boolean;
+
+    /**
      * The text for the cancel button.
      */
     cancelBtnText?: string;
@@ -100,8 +106,8 @@ const emit = defineEmits<{
 
 }>();
 
-const confirmBtnText = props.confirmBtnText ?? "Confirm";
-const cancelBtnText = props.cancelBtnText ?? "Cancel";
+const confirmBtnText = computed(() => props.confirmBtnText ?? "Confirm");
+const cancelBtnText = computed(() => props.cancelBtnText ?? "Cancel");
 const drawerSize = props.size ?? "large";
 
 const handleCancelBtnClick = () => {
@@ -122,6 +128,7 @@ const handleCancelBtnClick = () => {
     .drawer-header-section {
         display: flex;
         justify-content: space-between;
+        margin-bottom: 1rem;
 
         .close-btn {
             width: 2.5rem;

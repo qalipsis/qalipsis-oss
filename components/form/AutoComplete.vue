@@ -1,7 +1,7 @@
 <template>
     <div>
         <label class="form-label">{{ label }}</label>
-        <a-select
+        <a-auto-complete
             size="large"
             class="full-width"
             v-model:value="value"
@@ -9,9 +9,10 @@
             :status="errorStatus"
             :placeholder="placeholder"
             :disabled="disabled"
-            @change="emit('change', value)"
+            :filter-option="filterOption"
+            @select="emit('select', value)"
         >
-        </a-select>
+        </a-auto-complete>
         <FormErrorMessage :errorMessage="errorMessage"/>
     </div>
 </template>
@@ -32,10 +33,14 @@ const props = defineProps<{
     disabled?: boolean
 }>();
 const emit = defineEmits<{
-    (e: "change", v: string): void
+    (e: "select", v: string): void
 }>()
 
 const { value, errorMessage } = useField<string>(() => props.formControlName, props.fieldValidationSchema);
 const errorStatus = computed(() => errorMessage.value ? 'error' : '')
+
+const filterOption = (input: string, option: FormMenuOption) => {
+  return option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0;
+};
 
 </script>

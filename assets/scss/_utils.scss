@@ -2,6 +2,14 @@
   width: 100%;
 }
 
+.pointer-event-none {
+  pointer-events: none;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }

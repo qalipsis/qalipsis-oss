@@ -1,8 +1,8 @@
 import { Page, PageQueryParams } from "utils/page";
-import { DataSeries } from "utils/series";
+import { DataField, DataSeries, DataType } from "utils/series";
 
 export const useDataSeriesApi = () => {
-    const { get$, delete$, post$ } = baseApi();
+    const { get$, delete$, post$, patch$ } = baseApi();
     const { getCache$ } = cacheApi();
 
     /**
@@ -12,7 +12,7 @@ export const useDataSeriesApi = () => {
      * @returns The page list of data series
      */
     const fetchDataSeries = async (pageQueryParams: PageQueryParams): Promise<Page<DataSeries>> => {
-        return get$<Page<DataSeries>>("/data-series", pageQueryParams);
+        return get$<Page<DataSeries>, PageQueryParams>("/data-series", pageQueryParams);
     }
 
     /**
@@ -90,10 +90,73 @@ export const useDataSeriesApi = () => {
         return createDataSeries(dataSeriesCreationRequest)
     }
 
+    /**
+     * Fetches the available value names for the selected data type
+     * 
+     * @param dataType The data type.
+     * @returns The available value names.
+     */
+    const fetchValueNames = (dataType: DataType): Promise<string[]> => {
+        return get$<string[], unknown>(`/data-series/${dataType}/names`)
+    }
+
+    /**
+     * Fetches the available data fields for the selected data type
+     * 
+     * @param dataType The data type.
+     * @returns The available fields.
+     */
+    const fetchFields = (dataType: DataType): Promise<DataField[]> => {
+        return get$<DataField[], unknown>(`/data-series/${dataType}/fields`)
+    }
+
+    /**
+     * Fetches the tags for the tag options
+     * 
+     * @param dataType The data type
+     * @returns A map of the tags
+     */
+    const fetchTags = (dataType: DataType): Promise<{[key: string]: string[]}> => {
+        return get$<{[key: string]: string[]}, unknown>(`/data-series/${dataType}/tags`)
+    }
+
+    /**
+     * Check if the name of the series exists.
+     * 
+     * @param name The name of the series. 
+     * @returns If the name of the series already exists.
+     */
+    const isValidDisplayName = async (name: string): Promise<boolean> => {
+        const queryParams: PageQueryParams = {
+            size: 1,
+            filter: name
+        };
+        const response = await fetchDataSeries(queryParams);
+
+        return !response.elements.some(e => e.displayName.trim() === name.trim());
+    }
+
+    /**
+     * Updates the data series.
+     * 
+     * @param reference The identifier of the data series
+     * @param patchSeriesRequest A list contains the updated details of the data series
+     * @returns The updated details of the data series
+     */
+    const updateDataSeries = async (reference: string, patchSeriesRequest: DataSeriesPatch[]): Promise<DataSeries> => {
+        return patch$<DataSeries, DataSeriesPatch[]>(`/data-series/${reference}`, patchSeriesRequest);
+    }
+
     return {
         fetchDataSeries,
         deleteDataSeries,
         duplicateDataSeries,
-        fetchAllDataSeries
+        fetchAllDataSeries,
+        fetchValueNames,
+        fetchFields,
+        fetchTags,
+        updateDataSeries,
+        createDataSeries,
+        isValidDisplayName
     }
 }

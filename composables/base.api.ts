@@ -1,10 +1,10 @@
 export const baseApi = () => {
     const config = useRuntimeConfig();
 
-    const get$ = <T, R>(url: string, query: { [key: string]: R }): Promise<T> => {
+    const get$ = <T, R>(url: string, query?: { [key: string]: R }): Promise<T> => {
         return $fetch(url, {
             baseURL: config.public.apiBaseUrl,
-            method: 'get',
+            method: 'GET',
             query: {
                 ...query
             }, 
@@ -14,7 +14,15 @@ export const baseApi = () => {
     const post$ = <T, R>(url: string, requestParams: R): Promise<T> => {
         return $fetch<T>(url, {
             baseURL: config.public.apiBaseUrl,
-            method: 'post',
+            method: 'POST',
+            body: JSON.stringify(requestParams),
+        })
+    }
+
+    const patch$ = <T, R>(url: string, requestParams: R): Promise<T> => {
+        return $fetch<T>(url, {
+            baseURL: config.public.apiBaseUrl,
+            method: 'PATCH',
             body: JSON.stringify(requestParams),
         })
     }
@@ -22,13 +30,14 @@ export const baseApi = () => {
     const delete$ = <T>(url: string): Promise<T> => {
         return $fetch<T>(url, {
             baseURL: config.public.apiBaseUrl,
-            method: 'delete',
+            method: 'DELETE',
         })
     } 
 
     return {
         get$,
         post$,
+        patch$,
         delete$
     }
 }

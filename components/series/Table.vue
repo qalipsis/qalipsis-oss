@@ -57,6 +57,12 @@
     :dataSeriesReferences="dataSeriesReferences"
     :modalContent="deleteModalContent"
   />
+  <SeriesFormDrawer
+    v-if="formDrawerOpen"
+    v-model:open="formDrawerOpen"
+    :data-series="selectedDataSeries"
+    @dataSeriesUpdated="seriesTableStore.fetchDataSeriesTableDataSource()"
+  />
 </template>
 
 <script setup lang="ts">
@@ -77,6 +83,9 @@ const userStore = useUserStore();
 
 const currentPage = computed(() => seriesTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
+
+const selectedDataSeries = ref<DataSeriesTableData>();
+const formDrawerOpen = ref(false);
 const dataSeriesReferences = ref<string[]>([]);
 const deleteModalContent = ref('');
 const modalOpen = ref(false);
@@ -162,9 +171,9 @@ const handlePaginationChange = async (
     }
 }
 
-// TODO:
 const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
-
+  formDrawerOpen.value = true;
+  selectedDataSeries.value = dataSeriesTableData;
 }
 
 const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData) => {

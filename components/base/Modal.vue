@@ -14,7 +14,7 @@
             <slot name="customFooter"></slot>
         </div>
         <div v-else>
-            <footer class="footer-section">
+            <footer v-if="!footerHidden" class="footer-section">
                 <BaseButton
                     :btn-style="'stroke'"
                     :text="cancelBtnText"
@@ -57,6 +57,10 @@ const props = defineProps<{
      */
     closable?: boolean;
 
+    /**
+     * A flag to indicate if the footer should be hidden
+     */
+    footerHidden?: boolean;
 }>();
 const emit = defineEmits<{
     /**

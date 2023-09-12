@@ -7,7 +7,7 @@ export class ErrorHelper {
                 break;
             case 400:
                 if (error.response._data.errors?.[0]) {
-                    errorMessage = error.response._data.errors[0]
+                    errorMessage = error.response._data.errors[0].message
                 } else {
                     errorMessage = error.response._data?.message ? error.response.data?.message : 'Bad Request';
                 }

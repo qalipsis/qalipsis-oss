@@ -17,13 +17,15 @@
       </a-layout-content>
       <BaseModal 
         title="Select tenant"
-        :open="tenantModalOpen"
-        @close="tenantModalOpen = false"
-        @confirm-btn-click="handleSelectTenantConfirmButtonClick()">
-        <FormSelect 
-          v-model="currentTenantReference"
-          :options="tenantOptions">
-        </FormSelect>
+        v-model:open="tenantModalOpen"
+        :footer-hidden="true">
+        <a-select 
+            size="large"
+            v-model:value="currentTenantReference"
+            class="full-width"
+            :options="tenantOptions"
+            @change="handleTenantSelect">
+        </a-select>
       </BaseModal>
     </a-layout>
   </a-config-provider>
@@ -44,7 +46,7 @@ const tenantModalOpen = ref(false);
 /**
  * The select options for the tenant modal
  */
-const tenantOptions = ref<FormDropdownOption[]>([]);
+const tenantOptions = ref<FormMenuOption[]>([]);
 
 /**
  * A flag to indicate the if the page can be displayed.
@@ -78,7 +80,7 @@ onMounted(async () => {
 
 })
 
-const handleSelectTenantConfirmButtonClick = () => {
+const handleTenantSelect = () => {
   userStore.storeTenant(currentTenantReference.value);
   userStore.$patch({
     currentTenantReference: currentTenantReference.value
@@ -119,7 +121,7 @@ const _showPage = async () => {
 </script>
 
 <style scoped lang="scss">
-.ant-layout:deep {
+:deep(.ant-layout) {
   background: white;
 }
 </style>

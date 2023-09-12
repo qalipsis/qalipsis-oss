@@ -1,6 +1,28 @@
 import { differenceInCalendarDays, format, intervalToDuration } from "date-fns";
+import { FormMenuOption } from "./form";
 
 export class TimeframeHelper {
+
+    static getTimeframeUnitOptions = (): FormMenuOption[] => {
+        return [
+            {
+                value: TimeframeUnit.MS,
+                label: 'ms',
+            },
+            {
+                value: TimeframeUnit.SEC,
+                label: 'sec',
+            },
+            {
+                value: TimeframeUnit.MIN,
+                label: 'min',
+            },
+            {
+                value: TimeframeUnit.HR,
+                label: 'hr',
+            }
+        ];
+    }
 
     /**
      * Formats the date time by the given format

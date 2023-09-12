@@ -1,3 +1,5 @@
+import { FormattedTimeframe } from "./timeframe";
+
 /**
  * An interface that describes `series` data received from and to `/data-series` endpoint.
  */
@@ -382,17 +384,16 @@ export interface DataSeriesState {
     }
 }
 
-export interface SeriesForm {
-    displayName: string;
-    sharingMode: SharingMode;
-    fieldName: string;
+export interface DataSeriesForm {
+    name: string;
+    sharingMode: SharingMode | null;
     dataType: DataType;
-    eventName: string;
-    aggregation: QueryAggregationOperator;
-    timeframe: number;
+    valueName: string;
+    fieldName: string;
+    aggregationOperation: QueryAggregationOperator | null;
+    timeframeValue: number | null;
     timeframeUnit: TimeframeUnit;
-    colorHex: string;
+    color: string;
     colorOpacity: number;
     filters: DataSeriesFilter[];
-    displayFormat: string
 }

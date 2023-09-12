@@ -32,6 +32,11 @@
             :dataSeriesReferences="dataSeriesReferences"
             :modalContent="deleteModalContent"
         />
+        <SeriesFormDrawer
+            v-if="drawerOpen"
+            v-model:open="drawerOpen"
+            @data-series-updated="handleDataSeriesUpdated"
+        />
     </BaseHeader>
 </template>
 
@@ -42,13 +47,18 @@ const deleteAllBtnDisabled = computed(() => seriesTableStore.selectedRows?.lengt
 const dataSeriesReferences = computed(() => seriesTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${seriesTableStore.selectedRows.map(r => r.displayName).join(',')}`)
 const modalOpen = ref(false);
+const drawerOpen = ref(false);
 
 const handleCreateSeriesBtnClick = () => {
-
+    drawerOpen.value = true
 }
 
 const handleDeleteSelectedSeriesBtnClick = () => {
     modalOpen.value = true;
+}
+
+const handleDataSeriesUpdated = () => {
+    seriesTableStore.fetchDataSeriesTableDataSource();
 }
 
 const handleSearch = () => {

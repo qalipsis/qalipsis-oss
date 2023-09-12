@@ -9,8 +9,7 @@ export class NotificationHelper {
             placement: placement,
             class: styleClass,
             message: message,
-            icon: () => h('img', { src: '/icons/icon-notification-rocket.svg', width: 60 }),
-            closeIcon: () => h('img', { src: '/icons/icon-close-black.svg', width: 18 })
+            icon: () => h('img', { src: '/icons/icon-notification-rocket.svg', width: 60 })
         })
     }
 
@@ -19,8 +18,7 @@ export class NotificationHelper {
             placement: placement,
             class: styleClass,
             message: message,
-            icon: () => h('img', { src: '/icons/icon-info-emerald.svg', width: 60 }),
-            closeIcon: () => h('img', { src: '/icons/icon-close-black.svg', width: 18 })
+            icon: () => h('img', { src: '/icons/icon-info-emerald.svg', width: 60 })
         })
     }
 
@@ -30,8 +28,7 @@ export class NotificationHelper {
             placement: placement,
             class: styleClass,
             message: message,
-            icon: () => h('img', { src: '/icons/icon-info-yellow.svg', width: 60 }),
-            closeIcon: () => h('img', { src: '/icons/icon-close-black.svg', width: 18 })
+            icon: () => h('img', { src: '/icons/icon-info-yellow.svg', width: 60 })
         })
     }
 
@@ -41,8 +38,7 @@ export class NotificationHelper {
             class: `${styleClass} ${styleClass}--error`,
             duration: 0,
             message: message,
-            icon: () => h('img', { src: '/icons/icon-notification-error.svg', width: 100 }),
-            closeIcon: () => h('img', { src: '/icons/icon-close-black.svg', width: 18 })
+            icon: () => h('img', { src: '/icons/icon-notification-error.svg', width: 100 })
         })
     }
 
