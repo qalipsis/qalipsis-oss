@@ -24,14 +24,14 @@ import assertk.assertions.isEqualTo
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.nio.file.Files
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 
 /**
  * Test class to validate the execution of QALIPSIS as a standalone application.

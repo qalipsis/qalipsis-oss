@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.hook
 
 import io.micronaut.core.order.Ordered
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 
@@ -33,7 +34,7 @@ internal interface CampaignHook : Ordered {
     /**
      * Hook to process the campaign details before it is created.
      */
-    suspend fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign)
+    suspend fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign) = Unit
 
     /**
      * Hook to process the campaign details before it is scheduled.
@@ -45,4 +46,10 @@ internal interface CampaignHook : Ordered {
      * Hook to process the campaign details when it starts.
      */
     suspend fun preStart(runningCampaign: RunningCampaign) = Unit
+
+    /**
+     * Hook to process the campaign details after it terminates.
+     */
+    suspend fun afterStop(campaignKey: CampaignKey) = Unit
+
 }

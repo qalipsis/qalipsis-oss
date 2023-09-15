@@ -46,6 +46,9 @@ internal open class DisabledState(
                 }
             }
         }
+        context.campaignHooks.forEach {
+            it.afterStop(campaignKey)
+        }
 
         val directive = CompleteCampaignDirective(
             campaignKey = campaignKey,

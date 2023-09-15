@@ -28,6 +28,7 @@ import io.qalipsis.core.head.campaign.CampaignAutoStarter
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryWorkflowAssignmentResolver
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -72,6 +73,16 @@ internal abstract class AbstractStateTest {
 
     protected val reportPublishers: Collection<CampaignReportPublisher> by lazy {
         listOf(reportPublisher1, reportPublisher2)
+    }
+
+    @RelaxedMockK
+    protected lateinit var campaignHook1: CampaignHook
+
+    @RelaxedMockK
+    protected lateinit var campaignHook2: CampaignHook
+
+    protected val campaignHooks: Collection<CampaignHook> by lazy {
+        listOf(campaignHook1, campaignHook2)
     }
 
     @InjectMockKs

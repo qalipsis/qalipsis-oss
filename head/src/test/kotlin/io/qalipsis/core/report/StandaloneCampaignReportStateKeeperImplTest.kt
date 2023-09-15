@@ -46,15 +46,15 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.TimeoutException
 
 @WithMockk
 internal class StandaloneCampaignReportStateKeeperImplTest {
@@ -497,7 +497,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(
+                    idGenerator,
+                    consoleReporter,
+                    Duration.ofSeconds(5)
+                )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -548,7 +552,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(
+                    idGenerator,
+                    consoleReporter,
+                    Duration.ofSeconds(5)
+                )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -599,7 +607,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(
+                    idGenerator,
+                    consoleReporter,
+                    Duration.ofSeconds(5)
+                )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -652,7 +664,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignStateKeeper =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(
+                    idGenerator,
+                    consoleReporter,
+                    Duration.ofSeconds(5)
+                )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
@@ -896,7 +912,8 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @Timeout(1)
     internal fun `should retrieve the report details when a campaign key is missing`() = testDispatcherProvider.run {
         // given
-        val campaignReportProvider = StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5))
+        val campaignReportProvider =
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5))
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-3", "the scenario 2")

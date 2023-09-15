@@ -34,6 +34,7 @@ import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryWorkflowAssignmentResolver
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
@@ -91,6 +92,16 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
 
     @Inject
     protected lateinit var operations: CampaignRedisOperations
+
+    @RelaxedMockK
+    protected lateinit var campaignHook1: CampaignHook
+
+    @RelaxedMockK
+    protected lateinit var campaignHook2: CampaignHook
+
+    protected val campaignHooks: Collection<CampaignHook> by lazy {
+        listOf(campaignHook1, campaignHook2)
+    }
 
     @MockBean(FactoryService::class)
     fun factoryService(): FactoryService = factoryService

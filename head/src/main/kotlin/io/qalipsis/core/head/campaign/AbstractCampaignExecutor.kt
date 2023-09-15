@@ -42,14 +42,13 @@ import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
+import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import javax.validation.constraints.NotBlank
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Service in charge of keeping track of the campaigns executions across the whole cluster.
@@ -65,10 +64,9 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val coroutineScope: CoroutineScope,
     private val campaignExecutionContext: C,
     private val campaignConstraintsProvider: CampaignConstraintsProvider,
-    private val campaignHooks: Collection<CampaignHook>
+    private val campaignHooks: Collection<CampaignHook>,
+    private val lockProvider: LockProvider,
 ) : CampaignExecutor, FeedbackListener<Feedback> {
-
-    private val processingMutex = Mutex()
 
     override fun accept(feedback: Feedback): Boolean {
         return feedback is CampaignManagementFeedback
@@ -78,7 +76,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     override suspend fun notify(feedback: Feedback) {
         tryAndLog(log) {
             feedback as CampaignManagementFeedback
-            processingMutex.withLock {
+            lockProvider.withLock(feedback.campaignKey) {
                 val sourceCampaignState = get(feedback.tenant, feedback.campaignKey)
                 log.trace { "Processing $feedback on $sourceCampaignState" }
                 if (feedback is CampaignTimeoutFeedback) {
@@ -94,7 +92,6 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                         headChannel.publishDirective(it)
                     }
                 }
-
             }
         }
     }
@@ -102,7 +99,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     override suspend fun start(
         tenant: String,
         configurer: String,
-        configuration: CampaignConfiguration
+        configuration: CampaignConfiguration,
     ): RunningCampaign {
         val selectedScenarios = configuration.scenarios.keys
         val scenarios = factoryService.getActiveScenarios(tenant, selectedScenarios).distinctBy { it.name }
@@ -140,7 +137,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         configuration: CampaignConfiguration,
         tenant: String,
         selectedScenarios: Set<@NotBlank ScenarioName>,
-        scenarios: List<ScenarioSummary>
+        scenarios: List<ScenarioSummary>,
     ) {
         campaignService.prepare(tenant, runningCampaign.key)
         runningCampaign.broadcastChannel = getBroadcastChannelName(runningCampaign)
@@ -157,7 +154,9 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         }
         runningCampaign.hardTimeoutSec = hardTimeout.epochSecond
         runningCampaign.softTimeoutSec = softTimeout?.takeIf { it < hardTimeout }?.epochSecond ?: -1
-        campaignHooks.forEach { it.preStart(runningCampaign) }
+        campaignHooks.forEach {
+            it.preStart(runningCampaign)
+        }
         campaignService.start(tenant, runningCampaign.key, start, softTimeout, hardTimeout)
 
         selectedScenarios.forEach {
@@ -167,7 +166,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         val campaignStartState = create(runningCampaign, factories, scenarios)
         log.info { "Starting the campaign ${configuration.name} with scenarios ${scenarios.map { it.name }} on factories ${factories.map { it.nodeId }}" }
         campaignStartState.inject(campaignExecutionContext)
-        processingMutex.withLock {
+        lockProvider.withLock(campaignKey = runningCampaign.key) {
             log.trace { "Initializing the campaign state for start $campaignStartState" }
             val directives = campaignStartState.init()
             set(campaignStartState)
@@ -181,7 +180,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     @LogInput
     override suspend fun abort(tenant: String, aborter: String, campaignKey: String, hard: Boolean) {
         tryAndLog(log) {
-            processingMutex.withLock {
+            lockProvider.withLock(campaignKey) {
                 val sourceCampaignState = get(tenant, campaignKey)
                 val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
                 log.trace { "Campaign state $campaignState" }
@@ -209,7 +208,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     abstract suspend fun create(
         campaign: RunningCampaign,
         factories: Collection<Factory>,
-        scenarios: List<ScenarioSummary>
+        scenarios: List<ScenarioSummary>,
     ): CampaignExecutionState<C>
 
     @LogInputAndOutput
@@ -251,7 +250,6 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
             }
         }
     }
-
 
     companion object {
 

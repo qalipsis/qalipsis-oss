@@ -38,12 +38,12 @@ import io.qalipsis.core.head.report.DefaultScenarioReportingExecutionState
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.math.percentOf
 import jakarta.inject.Singleton
+import java.time.Instant
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.toSet
 import org.slf4j.event.Level.DEBUG
-import java.time.Instant
 
 /**
  * Implementation of [CampaignReportStateKeeper] based upon data storage in Redis.

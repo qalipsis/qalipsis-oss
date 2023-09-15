@@ -24,6 +24,7 @@ import io.qalipsis.core.head.campaign.CampaignAutoStarter
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryWorkflowAssignmentResolver
 import jakarta.inject.Singleton
@@ -42,5 +43,6 @@ internal class CampaignExecutionContext(
     val headChannel: HeadChannel,
     val assignmentResolver: FactoryWorkflowAssignmentResolver,
     val reportPublishers: Collection<CampaignReportPublisher>,
-    @Nullable val campaignAutoStarter: CampaignAutoStarter?
-)
+    @Nullable val campaignAutoStarter: CampaignAutoStarter?,
+    val campaignHooks: Collection<CampaignHook>
+    )
