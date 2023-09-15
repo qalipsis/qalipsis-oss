@@ -25,6 +25,7 @@ val kotlinSerialization = "1.5.1"
 val micronaut = "3.9.+"
 val jackson = "2.15.1"
 val klogging = "2.1.23"
+val logback = "1.4.+"
 val guava = "29.0-jre"
 val caffeineCache = "3.1.6"
 val cuid = "0.1.1"
@@ -56,8 +57,8 @@ dependencies {
 
     // Libraries that could be brought by other dependencies and break the compilation or execution.
     api("org.slf4j:slf4j-api")
-    api("ch.qos.logback:logback-classic")
-    api("ch.qos.logback:logback-core")
+    api("ch.qos.logback:logback-classic:$logback")
+    api("ch.qos.logback:logback-core:$logback")
     api("io.github.microutils:kotlin-logging-jvm:$klogging")
 
     constraints {
