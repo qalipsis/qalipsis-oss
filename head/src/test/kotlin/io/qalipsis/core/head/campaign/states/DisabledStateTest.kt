@@ -74,6 +74,8 @@ internal class DisabledStateTest : AbstractStateTest() {
                 campaignReportStateKeeper.generateReport("my-campaign")
                 reportPublisher1.publish("my-campaign", refEq(report))
                 reportPublisher2.publish("my-campaign", refEq(report))
+                campaignHook1.afterStop("my-campaign")
+                campaignHook2.afterStop("my-campaign")
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
             }
             confirmVerified(factoryService, campaignReportStateKeeper, campaignAutoStarter)
@@ -111,6 +113,8 @@ internal class DisabledStateTest : AbstractStateTest() {
                 campaignReportStateKeeper.generateReport("my-campaign")
                 reportPublisher1.publish("my-campaign", refEq(report))
                 reportPublisher2.publish("my-campaign", refEq(report))
+                campaignHook1.afterStop("my-campaign")
+                campaignHook2.afterStop("my-campaign")
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
             }
             confirmVerified(factoryService, campaignReportStateKeeper, campaignAutoStarter)

@@ -39,11 +39,11 @@ import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Singleton
-import kotlinx.coroutines.delay
-import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.delay
+import org.slf4j.LoggerFactory
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 

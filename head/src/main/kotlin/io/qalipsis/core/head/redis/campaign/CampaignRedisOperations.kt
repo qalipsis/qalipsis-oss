@@ -150,6 +150,7 @@ internal class CampaignRedisOperations(
         val campaign = campaignDetails["configuration"]?.let {
             protoBuf.decodeFromHexString<RunningCampaign>(it)
         }
+
         return campaign?.let { it to state!! }
     }
 

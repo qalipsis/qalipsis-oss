@@ -37,6 +37,7 @@ import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
+import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
@@ -61,6 +62,7 @@ internal class StandaloneCampaignExecutor(
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     campaignExecutionContext: CampaignExecutionContext,
     campaignHooks: Collection<CampaignHook>,
+    lockProvider: LockProvider
 ) : AbstractCampaignExecutor<CampaignExecutionContext>(
     headChannel,
     factoryService,
@@ -70,7 +72,8 @@ internal class StandaloneCampaignExecutor(
     coroutineScope,
     campaignExecutionContext,
     campaignConstraintsProvider,
-    campaignHooks
+    campaignHooks,
+    lockProvider
 ) {
 
     @KTestable

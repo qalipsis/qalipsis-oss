@@ -38,7 +38,7 @@ import java.util.Optional
 @Requires(beans = [AutostartCampaignConfiguration::class])
 internal class AutostartCampaignProcessExitSupplier(
     private val autostartCampaignConfiguration: AutostartCampaignConfiguration,
-    private val campaignReportStateKeeper: CampaignReportStateKeeper
+    private val campaignReportStateKeeper: CampaignReportStateKeeper,
 ) : ProcessExitCodeSupplier {
 
     override suspend fun await(): Optional<Int> {

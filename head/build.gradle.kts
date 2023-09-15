@@ -96,6 +96,7 @@ dependencies {
     implementation("org.thymeleaf.extras:thymeleaf-extras-java8time")
     implementation("org.jfree:jfreechart:1.0.19")
     implementation("org.jfree:org.jfree.svg:5.0.5")
+    implementation("com.github.sokomishalov.lokk:lokk-redis-lettuce:0.0.1")
 
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")
