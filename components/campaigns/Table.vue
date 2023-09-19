@@ -29,6 +29,7 @@
   
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { CampaignTableData } from "utils/campaign";
 
 const props = defineProps<{
     nameClickable?: boolean,
@@ -62,13 +63,19 @@ const rowSelection = props.rowSelectionEnabled ? reactive({
     },
     getCheckboxProps: (record: CampaignTableData) => {
         let disabled = false;
-        if (record?.status === ExecutionStatus.SCHEDULED) {
+        const selectableStatuses = [
+            ExecutionStatus.SUCCESSFUL,
+            ExecutionStatus.FAILED,
+            ExecutionStatus.ABORTED,
+            ExecutionStatus.WARNING
+        ];
+        if (record?.status && !selectableStatuses.includes(record.status)) {
             disabled = true
         } else if (props.maxSelectedRows) {
             // When the max number of row selection is specified, the row is disabled when it is not yet selected.
             disabled = selectedRowKeys.value.length >= props.maxSelectedRows && !selectedRowKeys.value.includes(record?.key);
         } else {
-            disabled = record?.disabled
+            disabled = record?.disabled ?? false;
         }
 
         return {

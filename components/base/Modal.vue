@@ -3,6 +3,7 @@
         :open="open"
         :footer="null"
         :closable="closable"
+        :maskClosable="maskClosable"
         @cancel="handleCancelBtnClick">
         <header class="header-section">
             <BaseTitle :content="title" />
@@ -56,6 +57,11 @@ const props = defineProps<{
      * A flag to indicate if the close button should be displayed
      */
     closable?: boolean;
+
+    /**
+     * A flag to indicate if the modal can be closed by the mask
+     */
+    maskClosable?: boolean;
 
     /**
      * A flag to indicate if the footer should be hidden

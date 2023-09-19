@@ -1,6 +1,6 @@
 import { ColorHelper } from "./color.helper";
 import { FormMenuOption } from "./form";
-import { DataSeries, DataSeriesCreationRequest, DataSeriesForm, DataSeriesPatch } from "./series";
+import { DataSeries, DataSeriesCreationRequest, DataSeriesFilter, DataSeriesForm, DataSeriesOption, DataSeriesPatch, DataSeriesTableData } from "./series";
 import { arraysEqual } from "./utils.helper";
 
 export class SeriesHelper {
@@ -67,12 +67,12 @@ export class SeriesHelper {
     }
 
     static toDataSeriesTableData(dataSeries: DataSeries[], userName: string): DataSeriesTableData[] {
-        return dataSeries.map(el => ({
+        return dataSeries.map<DataSeriesTableData>(el => ({
             ...el,
             key: el.reference,
-            sharedText: SeriesHelper.sharingModeToText[el.sharingMode],
+            sharedText: SeriesHelper.sharingModeToText[el.sharingMode!],
             filterNames: el.filters?.map(filter => filter.name),
-            formattedTimeframe: TimeframeHelper.toFormattedTimeframe(el.timeframeUnit),
+            formattedTimeframe: TimeframeHelper.toFormattedTimeframe(el.timeframeUnit!),
             disabled: (el.creator !== userName && el.sharingMode === SharingMode.READONLY) || el.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE
         }))
     }
@@ -221,7 +221,7 @@ export class SeriesHelper {
                 title: 'Shared',
                 dataIndex: 'sharingMode',
                 key: 'sharingMode',
-                sorter: (next: DataSeriesTableData, prev: DataSeriesTableData) => next.sharingMode.localeCompare(prev.sharingMode),
+                sorter: (next: DataSeriesTableData, prev: DataSeriesTableData) => next?.sharingMode?.localeCompare(prev.sharingMode!),
             },
             {
                 title: '',

@@ -17,7 +17,7 @@ export const useUserStore = defineStore("User", {
       }
   },
   getters: {
-      currentTenant: state => state.tenants.find(tenant => tenant.reference === state.currentTenantReference)
+      currentTenant: state => state.tenants.find(tenant => tenant.reference === state.currentTenantReference),
   },
   actions: {
       storeTenant(tenantReference: string): void {

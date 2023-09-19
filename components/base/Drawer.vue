@@ -128,7 +128,7 @@ const handleCancelBtnClick = () => {
     .drawer-header-section {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 1rem;
+        margin-bottom: .5rem;
 
         .close-btn {
             width: 2.5rem;

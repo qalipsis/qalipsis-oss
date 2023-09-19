@@ -10,43 +10,18 @@
       <a-layout-content v-if="canViewPage">
         <a-layout>
           <Sidebar />
-          <a-layout-content>
+          <a-layout-content style="max-height: 100vh; overflow-y: auto;">
             <NuxtPage />
           </a-layout-content>
         </a-layout>
       </a-layout-content>
-      <BaseModal 
-        title="Select tenant"
-        v-model:open="tenantModalOpen"
-        :footer-hidden="true">
-        <a-select 
-            size="large"
-            v-model:value="currentTenantReference"
-            class="full-width"
-            :options="tenantOptions"
-            @change="handleTenantSelect">
-        </a-select>
-      </BaseModal>
     </a-layout>
   </a-config-provider>
 </template>
 
 <script setup lang="ts">
-
 const { fetchProfile, fetchPermissions } = useUserApi();
 const userStore = useUserStore();
-
-const currentTenantReference = ref(userStore.currentTenantReference);
-
-/**
- * A flag to indicate if the tenant modal should open
- */
-const tenantModalOpen = ref(false);
-
-/**
- * The select options for the tenant modal
- */
-const tenantOptions = ref<FormMenuOption[]>([]);
 
 /**
  * A flag to indicate the if the page can be displayed.
@@ -59,51 +34,12 @@ onMounted(async () => {
 
   // Updates the profile store info
   userStore.$patch({
-    user: profile.user,
-    tenants: profile.tenants
+    user: profile.user
   })
 
-  // Displays the page when the current tenant reference is not empty,
-  // or there is only one tenant option
-  if (userStore.currentTenantReference || profile.tenants.length === 1) {
-    const tenantToStore = userStore.currentTenantReference ?? profile.tenants[0].reference;
-    userStore.storeTenant(tenantToStore);
-    userStore.$patch({
-      currentTenantReference: tenantToStore
-    });
-    _showPage();
-
-    return;
-  }
-
-  _showTenantModal();
-
+  _showPage();
 })
 
-const handleTenantSelect = () => {
-  userStore.storeTenant(currentTenantReference.value);
-  userStore.$patch({
-    currentTenantReference: currentTenantReference.value
-  });
-  _showPage();
-}
-
-const _showTenantModal = () => {
-  // Sets the tenant options
-  tenantOptions.value = userStore.tenants.map(tenant => ({
-    label: tenant.displayName,
-    value: tenant.reference
-  }));
-
-  // Sets the first tenant option as the default selected value for the dropdown
-  currentTenantReference.value = tenantOptions.value[0].value;
-
-  // Hides the page 
-  canViewPage.value = false;
-
-  // Displays the modal
-  tenantModalOpen.value = true;
-}
 
 const _showPage = async () => {
   // Updates the user permissions
@@ -112,8 +48,6 @@ const _showPage = async () => {
     permissions: permissions
   });
 
-  // Closes the tenant modal
-  tenantModalOpen.value = false;
   // Displays the page
   canViewPage.value = true;
 }

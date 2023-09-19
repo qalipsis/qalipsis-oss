@@ -6,7 +6,7 @@ export interface ChartData {
      * 
      * @see ApexOptions
      */
-    chartOption: ApexOptions;
+    chartOptions: ApexOptions;
     
     /**
      * The data series for the chart

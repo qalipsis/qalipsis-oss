@@ -1,3 +1,5 @@
+import { ScenarioExecutionDetails, ScenarioReport } from "./scenario";
+
 export interface Campaign {
     /**
      * Last change of the campaign
@@ -193,4 +195,10 @@ export interface CampaignExecutionDetails {
      * Individual details of the scenario executed during the campaign.
      */
     scenariosReports: ScenarioExecutionDetails[];
+}
+
+export interface CampaignOption extends CampaignExecutionDetails {
+    strokeDashArray: number,
+    isActive: boolean,
+    enrichedScenarioReports: ScenarioReport[]
 }

@@ -19,6 +19,14 @@ export const baseApi = () => {
         })
     }
 
+    const put$ = <T, R>(url: string, requestParams: R): Promise<T> => {
+        return $fetch<T>(url, {
+            baseURL: config.public.apiBaseUrl,
+            method: 'PUT',
+            body: JSON.stringify(requestParams),
+        })
+    }
+
     const patch$ = <T, R>(url: string, requestParams: R): Promise<T> => {
         return $fetch<T>(url, {
             baseURL: config.public.apiBaseUrl,
@@ -38,6 +46,7 @@ export const baseApi = () => {
         get$,
         post$,
         patch$,
-        delete$
+        delete$,
+        put$
     }
 }

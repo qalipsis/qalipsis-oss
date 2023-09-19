@@ -15,9 +15,10 @@ interface CacheItem {
  * The default time to live value in seconds for the cache.
  */
 const DEFAULT_TTL = 180;
+const  _cache: {[key: string]: CacheItem} = {};
 
 export const cacheApi = () => {
-    const  _cache: {[key: string]: CacheItem} = {};
+
     const { get$ } = baseApi();
 
     const getCache$ = async <T, R>(url: string, query: { [key: string]: R }, ttl = DEFAULT_TTL): Promise<T> => {
@@ -78,7 +79,9 @@ export const cacheApi = () => {
      */
     const isValidCache = (cacheKey: string): boolean => {
         // When the cache is not null, returns the result to check if the token is expired.
-        if (_cache[cacheKey]) return isBefore(new Date(), _cache[cacheKey].expirationTime);
+        if (_cache[cacheKey]) {
+            return isBefore(new Date(), _cache[cacheKey].expirationTime)
+        };
 
         // No cache found.
         return false;

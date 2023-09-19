@@ -96,7 +96,7 @@ const handleDataSeriesOptionClick = (dataSeriesOption: DataSeriesOption) => {
 const handleSearch = () => {
     const searchKeys = ["reference", "displayName", "dataType", "valueName"]
     const searchedResult = SearchHelper.performFuzzySearch<DataSeriesOption>(seriesQuery.value, dataSeriesOptions.value, searchKeys);
-    availableDataSeriesOptions.value = SeriesHelper.toDataSeriesOptions(searchedResult.slice(0, MAX_DATA_SERIES_TO_BE_DISPLAYED + 1), props.preselectedDataSeriesReferences);
+    availableDataSeriesOptions.value = SeriesHelper.toDataSeriesOptions(searchedResult.slice(0, SeriesHelper.MAX_DATA_SERIES_TO_BE_DISPLAYED + 1), props.preselectedDataSeriesReferences);
 }
 
 const handleShowMoreBtnClick = () => {

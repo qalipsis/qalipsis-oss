@@ -12,7 +12,7 @@ export const useDataSeriesApi = () => {
      * @returns The page list of data series
      */
     const fetchDataSeries = async (pageQueryParams: PageQueryParams): Promise<Page<DataSeries>> => {
-        return get$<Page<DataSeries>, PageQueryParams>("/data-series", pageQueryParams);
+        return get$<Page<DataSeries>, any>("/data-series", pageQueryParams);
     }
 
     /**

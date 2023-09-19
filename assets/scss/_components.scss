@@ -320,3 +320,17 @@
     margin-bottom: 0.25rem;
     font-weight: 500;
 }
+
+/* Report details component */
+.report-details-data-component {
+    .delete-btn-wrapper {
+        visibility: hidden;
+        transition: all .3s ease-in-out;
+    }
+
+    &:hover {
+        .delete-btn-wrapper {
+            visibility: visible;
+        }
+    }
+}

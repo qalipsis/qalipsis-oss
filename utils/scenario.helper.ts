@@ -1,5 +1,8 @@
 import { ApexOptions } from "apexcharts";
 import { format } from "date-fns";
+import { ReportMessage, ScenarioReport } from "./scenario";
+import { CampaignExecutionDetails } from "./campaign";
+import { Tag } from "./common";
 
 export class ScenarioHelper {
     static SCENARIO_SUMMARY_NAME = 'Campaign Summary';

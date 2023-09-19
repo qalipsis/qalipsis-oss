@@ -50,6 +50,14 @@
   box-shadow: 0 .5rem 1.25rem 0 rgba(61, 79, 86, 0.05)
 }
 
+.no-wrap {
+  flex-wrap: nowrap;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
 /* Classes for padding and margin */
 @for $i from 1 through 10 {
 

@@ -6,19 +6,19 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-    permissions: PermissionEnum[],
+    permissions: typeof PermissionEnum[],
     requiredAll?: boolean
 }>();
 const userStore = useUserStore();
 
 const canViewContent = computed(() => {
-    return props.requiredAll
-        ? props.permissions.every(permission => userStore.permissions.some(permission))
-        : userStore.permissions.some(permission => {
-            if (props.permissions.length) return props.permissions.includes(permission);
+    if (props.requiredAll) {
+        return userStore.permissions.every(permission => props.permissions.length ? props.permissions.includes(permission) : true);
+    }
 
-            return true;
-        });
+    return userStore.permissions.some(permission => {
+        return props.permissions.length ? props.permissions.includes(permission) : true;
+    });
 });
 
 </script>

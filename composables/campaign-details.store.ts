@@ -1,5 +1,8 @@
 import { ApexOptions } from "apexcharts";
 import { defineStore } from "pinia";
+import { CampaignExecutionDetails } from "utils/campaign";
+import { DataSeries } from "utils/series";
+import { TimeSeriesAggregationQueryParam } from "utils/time-series";
 
 interface CampaignDetailsStoreState {
   campaignDetails: CampaignExecutionDetails | null,
@@ -30,7 +33,7 @@ export const useCampaignDetailsStore = defineStore("CampaignDetails", {
     }
   },
   getters: {
-    selectedScenarioReports: state => ScenarioHelper.getSelectedScenarioReports(state.selectedScenarioNames, state.campaignDetails),
+    selectedScenarioReports: state => ScenarioHelper.getSelectedScenarioReports(state.selectedScenarioNames, state.campaignDetails!),
     selectedDataSeriesReferences: state => state.selectedDataSeries.map(dataSeries => dataSeries.reference)
   },
   actions: {
@@ -57,11 +60,11 @@ export const useCampaignDetailsStore = defineStore("CampaignDetails", {
       
       // Updates the x axis range if the time range min and max are defined
       if (this.timeRange.min) {
-        chartData.chartOptions.xaxis.min = +this.timeRange.min;
+        chartData.chartOptions.xaxis!.min = +this.timeRange.min;
       }
       
       if (this.timeRange.max) {
-        chartData.chartOptions.xaxis.max = +this.timeRange.max;
+        chartData.chartOptions.xaxis!.max = +this.timeRange.max;
       }
       
       this.chartDataSeries = chartData.chartDataSeries;

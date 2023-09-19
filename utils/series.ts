@@ -193,7 +193,7 @@ export interface DataSeriesTableData extends DataSeries {
     /**
      * The list of the field name to apply the filter.
      */
-    filterNames: string[];
+    filterNames?: string[];
 
     /**
      * A flag to check if the data series is disabled for editing.

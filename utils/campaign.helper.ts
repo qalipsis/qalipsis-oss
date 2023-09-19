@@ -1,5 +1,11 @@
 import { format } from "date-fns";
 import tinycolor from "tinycolor2";
+import { ChartData, ChartOptionData } from "./chart";
+import { TimeSeriesAggregationResult } from "./time-series";
+import { DataSeries } from "./series";
+import { Campaign, CampaignExecutionDetails, CampaignTableData } from "./campaign";
+import { Tag } from "./common";
+import { ApexOptions } from "apexcharts";
 
 export class CampaignHelper {
     static TOOLTIP_RENDERER: ((options: any) => any) = ({ seriesIndex, dataPointIndex, w }): string => {
@@ -8,7 +14,7 @@ export class CampaignHelper {
         const day = format(new Date(dt), 'yy-MM-dd');
         const time = format(new Date(dt), 'HH:mm:ss');
         let seriesContent: string[] = []
-        w.globals.initialSeries.forEach(series => series.data.forEach(point => {
+        w.globals.initialSeries.forEach((series: { data: any[]; color: any; name: any; }) => series.data.forEach(point => {
             if (point?.x === dt) {
                 seriesContent.push(
                     `<div class="custom-tooltip__content">
@@ -37,7 +43,7 @@ export class CampaignHelper {
     static toChartData(aggregationResult: { [key: string]: TimeSeriesAggregationResult[] }, dataSeries: DataSeries[], campaignExecutionDetails: CampaignExecutionDetails): ChartData {
         const aggregations = Object.entries(aggregationResult)?.filter(([_, value]) => value.length);
         const chartDataSeries: ApexAxisChartSeries = [];
-        const chartOptions = ChartHelper.DEFAULT_CHART_OPTIONS;
+        const chartOptions: ApexOptions = ChartHelper.DEFAULT_CHART_OPTIONS;
         const yAxisConfigs: ApexYAxis[] = [];
         chartOptions.tooltip!.custom = CampaignHelper.TOOLTIP_RENDERER;
         

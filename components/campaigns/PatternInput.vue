@@ -40,8 +40,8 @@ const handlePatternsValueChange = debounce(async () => {
     if (campaignPatternInput.value) {
         campaignPatterns = campaignPatternInput.value
             .split(',')
-            .filter(pattern => pattern)
-            .map(pattern => pattern.trim());
+            .map(pattern => pattern.trim())
+            .filter(pattern => pattern);
     }
     emit('campaignPatternsChange', campaignPatterns);
 }, 500)

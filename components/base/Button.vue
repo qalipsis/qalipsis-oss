@@ -29,30 +29,7 @@ const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
 
 <style scoped lang="scss">
 @import "../../assets/scss/color";
-@import "../../assets/scss/variables";
-
-
-@mixin button {
-    height: $item-height;
-    padding: 0.75rem 0.5rem;
-    font-size: 1rem;
-    border-radius: $default-radius;
-    min-width: 8.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    img {
-        width: 1.5rem;
-        height: 1.5rem;
-        padding-right: 0.5rem;
-    }
-
-    span {
-        color: inherit;
-        line-height: 1.5rem;
-    }
-}
+@import "../../assets/scss/mixins";
 
 .base-btn {
     @include button;

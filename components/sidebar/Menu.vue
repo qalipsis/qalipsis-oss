@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+import { SidebarMenuItem } from 'utils/sidebar';
+
 const router = useRouter();
 
 defineProps<{
@@ -114,6 +116,10 @@ $menu-item-height: 3.75rem;
     :deep(.ant-menu-vertical .ant-menu-submenu-title) {
         height: $menu-item-height;
         padding-inline: 0;
+    }
+
+    :deep(.ant-menu-light.ant-menu-root.ant-menu-vertical) {
+        border-inline-end: none;
     }
 
     :deep(.ant-menu-vertical .ant-menu-submenu) {

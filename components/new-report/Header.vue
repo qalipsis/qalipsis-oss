@@ -20,7 +20,7 @@
                 <BaseButton
                     class="ml-2"
                     text="Compare"
-                    @click="handleCreateReportBtnClick"
+                    @click="handleCompareReportBtnClick"
                     :disabled="!(selectedRowKeys.length > 0 || campaignPatterns.length > 0)"
                 />
             </div>
@@ -28,6 +28,7 @@
     </BaseHeader>
     <div class="page-content-container">
         <CampaignsPatternInput
+            :preset-campaign-patterns="presetCampaignPatterns"
             @campaignPatternsChange="handleCampaignPatternsChange($event)"
         />
     </div>
@@ -35,14 +36,18 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
+import { ReportCreationAndUpdateRequest } from 'utils/report';
 
-const { createReport } = useReportApi();
+const { createReport, updateReport } = useReportApi();
 
 const campaignsTableStore = useCampaignsTableStore();
 const { selectedRowKeys } = storeToRefs(campaignsTableStore);
+
 const searchQuery = ref("");
 const reportName = ref("New Report");
 const campaignPatterns = ref<string[]>([]);
+const presetCampaignPatterns = ref("");
+
 
 const handleCampaignPatternsChange = (patterns: string[]) => {
     campaignPatterns.value = patterns;
@@ -75,7 +80,7 @@ const handleCheckedChange = async (checked: boolean) => {
     }
 }
 
-const handleCreateReportBtnClick = async () => {
+const handleCompareReportBtnClick = async () => {
     const reportCreationRequest: ReportCreationAndUpdateRequest = {
         displayName: reportName.value,
         sharingMode: SharingMode.WRITE,

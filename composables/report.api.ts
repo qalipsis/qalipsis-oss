@@ -1,5 +1,9 @@
+import { Report, ReportCreationAndUpdateRequest } from "../utils/report";
+import { Page } from "../utils/page";
+import { PageQueryParams } from "../utils/page";
+
 export const useReportApi = () => {
-    const { get$, delete$, post$ } = baseApi();
+    const { get$, delete$, post$, put$ } = baseApi();
 
     /**
      * Fetches the campaigns
@@ -8,7 +12,18 @@ export const useReportApi = () => {
      * @returns The page list of data series
      */
     const fetchReports = async (pageQueryParams: PageQueryParams): Promise<Page<Report>> => {
-        return get$<Page<Report>>("/reports", pageQueryParams);
+        return get$<Page<Report>, any>("/reports", pageQueryParams);
+    }
+
+    /**
+     * Updates a report.
+     * 
+     * @param reportReference The identifier of the report.
+     * @param request The request for updating a report.
+     * @returns The updated report.
+     */
+    const updateReport = (reportReference: string, request: ReportCreationAndUpdateRequest): Promise<Report> => {
+        return put$<Report, ReportCreationAndUpdateRequest>(`/reports/${reportReference}`, request);
     }
 
     /**
@@ -18,7 +33,9 @@ export const useReportApi = () => {
      * @returns The details of the report
      */
     const fetchReportDetails = async (reference: string): Promise<Report> => {
-        return get$<Report>(`/reports/${reference}`);
+        const report = await get$<Report, unknown>(`/reports/${reference}`);
+        report.dataComponents = report.dataComponents.map(d => ({...d, id: Date.now()}))
+        return get$<Report, unknown>(`/reports/${reference}`);
     }
 
     /**
@@ -49,6 +66,7 @@ export const useReportApi = () => {
         fetchReports,
         fetchReportDetails,
         createReport,
+        updateReport,
         deleteReports
     }
 }
