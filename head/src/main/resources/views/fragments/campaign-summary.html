@@ -7,9 +7,9 @@
         <div class="float-left campaign-summary-top-first">
             <div class="campaign-summary-title">
                 <span class="float-left color"></span>
-                <h3 class="float-left pb-4" th:text="${campaign.name}">No Campaign</h3>
+                <h3 class="float-left pb-3" th:text="${campaign.name}">No Campaign</h3>
             </div>
-            <div class="float-left button-wrapper" th:replace="fragments/button :: button (${campaign.result})"
+            <div class="float-left button-wrapper" th:replace="~{fragments/button :: button (${campaign.result})}"
                  th:classappend="${campaign.result}">
                 <span>Finished</span>
             </div>
@@ -17,15 +17,15 @@
         <span class="float-left vertical-divider"></span>
         <div class="float-left campaign-summary-top-second">
             <div class="float-left campaign-summary-top-second-items campaign-summary-top-second-items-first">
-                <img class="float-left img" style="margin-right: 8px;" th:src="${timeImage}" src="${timeImage}"
-                     alt="Time icon"/>
+                <img class="float-left img" style="margin-right: 8px; padding-top: 2px;" th:src="${timeImage}"
+                     alt="pdf-image Time icon"/>
                 <p class="float-left pt-2"
                    th:text="${new java.lang.Integer(campaign.executionTime/ 60)} + 'mins' + ' ' + ${campaign.executionTime} % 60 + 's' ">
                     1min 15s</p>
             </div>
             <div class="float-left campaign-summary-top-second-items">
-                <img class="float-left img" style="margin-right: 8px;" th:src="${userImage}" src="${userImage}"
-                     alt="user icon"/>
+                <img class="float-left img" style="margin-right: 8px; padding-top: 2px;" th:src="${userImage}"
+                     alt="pdf-image user icon"/>
                 <p class="float-left pt-2" th:text="${campaign.startedMinions} + ' Minions'">30 Minions</p>
             </div>
         </div>
