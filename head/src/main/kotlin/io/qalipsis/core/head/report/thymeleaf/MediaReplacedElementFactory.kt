@@ -20,8 +20,13 @@
 package io.qalipsis.core.head.report.thymeleaf
 
 import com.lowagie.text.Image
-import io.qalipsis.core.head.web.handler.MediaReplacementException
-import org.apache.commons.io.IOUtils
+import io.qalipsis.api.logging.LoggerHelper.logger
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.*
+import org.apache.batik.transcoder.TranscoderInput
+import org.apache.batik.transcoder.TranscoderOutput
+import org.apache.batik.transcoder.image.PNGTranscoder
 import org.w3c.dom.Element
 import org.xhtmlrenderer.extend.ReplacedElement
 import org.xhtmlrenderer.extend.ReplacedElementFactory
@@ -31,8 +36,6 @@ import org.xhtmlrenderer.pdf.ITextFSImage
 import org.xhtmlrenderer.pdf.ITextImageElement
 import org.xhtmlrenderer.render.BlockBox
 import org.xhtmlrenderer.simple.extend.FormSubmissionListener
-import java.io.FileInputStream
-
 
 /**
  * Custom implementation of [ReplacedElementFactory] that defines the rendering process for image elements.
@@ -47,20 +50,18 @@ internal class MediaReplacedElementFactory(private val superFactory: ReplacedEle
     ): ReplacedElement? {
         val element: Element = blockBox.element
         val nodeName = element.nodeName
-        // Replace any <img class="img" /> with the binary data of `image.svg` into the PDF.
-        if ("img" == nodeName) {
-            //Returns the image src.
-            val imagePath: String = element.getAttribute("src")
+        if (IMG == nodeName && element.getAttribute(ALT).contains(PDF_IMAGE)) {
+            val imageString: String = element.getAttribute(SRC)
             try {
-                val fsImage = ITextFSImage(Image.getInstance(IOUtils.toByteArray(FileInputStream(imagePath))))
+                val fsImage = ITextFSImage(Image.getInstance(svgToPng(imageString)))
                 if (cssWidth != -1 || cssHeight != -1) {
                     fsImage.scale(cssWidth, cssHeight)
                 } else {
-                    fsImage.scale(2000, 1000)
+                    fsImage.scale(DEFAULT_ICON_SCALE_WIDTH, DEFAULT_ICON_SCALE_HEIGHT)
                 }
                 return ITextImageElement(fsImage)
             } catch (e: Exception) {
-                throw MediaReplacementException("There was a problem trying to process the images of the embedded template: $e")
+                logger.debug(e) { "There was a problem trying to process the images of the embedded template: ${e.message}" }
             }
         }
         return this.superFactory.createReplacedElement(layoutContext, blockBox, userAgentCallback, cssWidth, cssHeight)
@@ -72,4 +73,55 @@ internal class MediaReplacedElementFactory(private val superFactory: ReplacedEle
 
     override fun setFormSubmissionListener(listener: FormSubmissionListener?) =
         superFactory.setFormSubmissionListener(listener)
+
+    /**
+     * Converts the svg image to a convenient png byte array format.
+     *
+     * @param imageSrc the image string content
+     */
+    private fun svgToPng(imageSrc: String): ByteArray {
+        val base64ByteArray = Base64.getDecoder().decode(imageSrc)
+        // Set the input source as the SVG data.
+        val transcoderInput = ByteArrayInputStream(base64ByteArray).use { TranscoderInput(it) }
+        // Create an output stream for the converted image.
+        return ByteArrayOutputStream().use { outputStream ->
+            // Perform the SVG to PNG conversion.
+            PNGTranscoder().transcode(transcoderInput, TranscoderOutput(outputStream))
+            // Get the PNG image as a byte array.
+            outputStream.toByteArray()
+        }
+    }
+
+    /**
+     * Contains constants used within this class.
+     *
+     * @property logger custom logger instance
+     * @property DEFAULT_ICON_SCALE_WIDTH ideal number of units, to scale the width of the pdf icons to,
+     * if not previously specified in the css file. This value gives the best result for the icons, equivalent to the design on the style guide
+     * @property DEFAULT_ICON_SCALE_HEIGHT ideal number of units to scale the height of the pdf icons to,
+     * if not previously specified in the css file. This value gives the best result for the icons, equivalent to the design on the style guide
+     * @property ALT img element attribute that holds alternative text for image tags. Some image elements contain an alt attribute of
+     * "pdf-image" to correctly mark out the images that need extra processing before they are rendered in the pdf
+     * @property SRC img element attribute that holds the image content that is being rendered
+     * @property IMG specifies element tag that needs to be replaced
+     * @property PDF_IMAGE attribute name contained in all img elements to be replaced.
+     * This determines if an image content should be replaced
+     */
+    private companion object {
+
+        val logger = logger()
+
+        const val DEFAULT_ICON_SCALE_WIDTH = 285
+
+        const val DEFAULT_ICON_SCALE_HEIGHT = 300
+
+        const val ALT = "alt"
+
+        const val SRC = "src"
+
+        const val IMG = "img"
+
+        const val PDF_IMAGE = "pdf-image"
+    }
+
 }

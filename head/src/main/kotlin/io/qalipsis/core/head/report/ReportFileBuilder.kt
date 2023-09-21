@@ -52,7 +52,7 @@ internal class ReportFileBuilder(
     suspend fun populateCampaignReportDetail(
         report: ReportEntity,
         tenant: String,
-        campaignData: Collection<CampaignData>
+        campaignData: Collection<CampaignData>,
     ): CampaignReportDetail {
         campaignData.forEach { campaign ->
             val zones = mutableSetOf<Zone>()

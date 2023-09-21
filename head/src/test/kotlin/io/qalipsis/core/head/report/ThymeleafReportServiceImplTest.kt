@@ -26,6 +26,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.prop
+import io.micronaut.core.io.ResourceLoader
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
@@ -50,17 +51,18 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import java.io.File
+import java.math.BigDecimal
+import java.nio.file.Files
+import java.time.Duration
+import java.time.Instant
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
-import java.io.File
-import java.math.BigDecimal
-import java.nio.file.Files
-import java.time.Duration
-import java.time.Instant
 
 
 @WithMockk
@@ -80,6 +82,11 @@ internal class ThymeleafReportServiceImplTest {
     @MockK
     private lateinit var templateBeanFactory: TemplateBeanFactory
 
+    @MockK
+    private lateinit var resourceLoader: ResourceLoader
+
+    private val tempDirectory = "displayName-reference"
+
     @InjectMockKs
     @SpyK(recordPrivateCalls = true)
     private lateinit var templateReportService: ThymeleafReportServiceImpl
@@ -95,6 +102,11 @@ internal class ThymeleafReportServiceImplTest {
                 </body>
                 </html>
             """.trimIndent()
+
+    @AfterEach
+    fun cleanup() {
+        File(tempDirectory).deleteRecursively()
+    }
 
     @Test
     internal fun `should build the thymeleaf context`() {
@@ -148,7 +160,7 @@ internal class ThymeleafReportServiceImplTest {
         val chartImages = listOf("This is chart 1", "This is chart 2")
 
         //when
-        val context = templateReportService.buildContext(campaignReportDetail, chartImages, "valid-font-url")
+        val context = templateReportService.buildContext(campaignReportDetail, chartImages, "valid-font-url", Files.createTempDirectory(tempDirectory).toAbsolutePath())
 
         //then
         assertThat(context.getVariable("title")).isEqualTo("Test title")
@@ -181,7 +193,7 @@ internal class ThymeleafReportServiceImplTest {
     }
 
     @Test
-    fun `Generates pdf given a populated campaignReportDetail`() = testDispatcherProvider.runTest {
+    fun `Should generate pdf given a populated campaignReportDetail`() = testDispatcherProvider.runTest {
         //given
         val reportEntity = relaxedMockk<ReportEntity>()
         val campaignReportDetail = relaxedMockk<CampaignReportDetail>()
@@ -250,16 +262,16 @@ internal class ThymeleafReportServiceImplTest {
         )
         val context = relaxedMockk<Context> { }
         val campaignReportDetail = relaxedMockk<CampaignReportDetail>()
-        val path = Files.createTempDirectory("displayName-reference").toAbsolutePath()
+        val path = Files.createTempDirectory(tempDirectory).toAbsolutePath()
         coEvery { templateBeanFactory.templateEngine() } returns TemplateEngine()
-        coEvery { templateReportService.buildContext(any(), any(), any()) } returns context
+        coEvery { templateReportService.buildContext(any(), any(), any(), any()) } returns context
 
         //when
         templateReportService.renderTemplate(campaignReportDetail, listOf(dataSeriesEntity), path)
 
         //then
         coVerifyOnce {
-            templateReportService.buildContext(campaignReportDetail, emptyList(), any())
+            templateReportService.buildContext(campaignReportDetail, emptyList(), any(), any())
             templateReportService.loadFont(path)
         }
     }
@@ -267,7 +279,7 @@ internal class ThymeleafReportServiceImplTest {
     @Test
     fun `should load the font`() {
         //given
-        val currentReportTempDir = Files.createTempDirectory("displayName-reference").toAbsolutePath()
+        val currentReportTempDir = Files.createTempDirectory(tempDirectory).toAbsolutePath()
 
         //when
         val result = templateReportService.loadFont(currentReportTempDir)

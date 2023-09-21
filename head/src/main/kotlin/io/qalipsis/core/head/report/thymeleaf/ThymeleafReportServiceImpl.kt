@@ -19,6 +19,8 @@
 package io.qalipsis.core.head.report.thymeleaf
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.core.io.ResourceLoader
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.TimeSeriesEvent
 import io.qalipsis.api.report.TimeSeriesMeter
 import io.qalipsis.api.report.TimeSeriesRecord
@@ -32,16 +34,16 @@ import io.qalipsis.core.head.report.TemplateBeanFactory
 import io.qalipsis.core.head.report.TemplateReportService
 import io.qalipsis.core.head.report.chart.ChartService
 import jakarta.inject.Singleton
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.thymeleaf.context.Context
-import org.xhtmlrenderer.pdf.ITextRenderer
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
-import java.util.*
+import java.util.Base64
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.thymeleaf.context.Context
+import org.xhtmlrenderer.pdf.ITextRenderer
 import kotlin.io.path.absolutePathString
 
 
@@ -54,7 +56,8 @@ import kotlin.io.path.absolutePathString
 internal class ThymeleafReportServiceImpl(
     private val reportTaskRepository: ReportTaskRepository,
     private val chartService: ChartService,
-    private val templateBeanFactory: TemplateBeanFactory
+    private val templateBeanFactory: TemplateBeanFactory,
+    private val resourceLoader: ResourceLoader,
 ) : TemplateReportService {
 
     override suspend fun generatePdf(
@@ -108,7 +111,7 @@ internal class ThymeleafReportServiceImpl(
             }
         }
         val fontUrl = loadFont(reportTempDir)
-        val context = buildContext(campaignReportDetail, chartImages, fontUrl)
+        val context = buildContext(campaignReportDetail, chartImages, fontUrl, reportTempDir)
 
         return templateEngine.process("report-template", context)
     }
@@ -118,14 +121,17 @@ internal class ThymeleafReportServiceImpl(
      *
      * @param campaignReportDetail contains data with which to set up the context
      * @param chartImages collection of base64 encoded strings of chart image files
+     * @param fontUrl absolute string path of the font
+     * @param reportTempDir absolute path of the temporal directory to store current report related files
      */
     @KTestable
     private fun buildContext(
         campaignReportDetail: CampaignReportDetail,
         chartImages: List<String>,
-        fontUrl: String
+        fontUrl: String,
+        reportTempDir: Path,
     ): Context {
-        val assets = readResources()
+        val assets = readResources(reportTempDir)
         return Context().apply {
             // Configure the report title.
             setVariable("title", campaignReportDetail.reportName)
@@ -153,6 +159,8 @@ internal class ThymeleafReportServiceImpl(
             setVariable("userImage", assets["userImage"])
             // Configure the path for the css styles.
             setVariable("stylePath", assets["stylePath"])
+            // Configure the path for the logo image.
+            setVariable("logoImage", assets["logoImage"])
         }
     }
 
@@ -169,19 +177,19 @@ internal class ThymeleafReportServiceImpl(
             document.outputSettings().syntax(Document.OutputSettings.Syntax.xml)
             val iTextRenderer = ITextRenderer()
             val outputStream = ByteArrayOutputStream()
-                iTextRenderer.apply {
-                    val sharedContext = sharedContext
-                    sharedContext.isPrint = true
-                    sharedContext.isInteractive = false
-                    // @FIXME This should help with the image rendering but it throws an exception.
-                    sharedContext.replacedElementFactory =
-                        MediaReplacedElementFactory(sharedContext.replacedElementFactory)
-                    setDocumentFromString(document.html())
-                    layout()
-                }
+            iTextRenderer.apply {
+                val sharedContext = sharedContext
+                sharedContext.isPrint = true
+                sharedContext.isInteractive = false
+                sharedContext.replacedElementFactory =
+                    MediaReplacedElementFactory(sharedContext.replacedElementFactory)
+                setDocumentFromString(document.html())
+                layout()
+            }
             outputStream.use(iTextRenderer::createPDF)
             val fileContent = outputStream.toByteArray()
             assert(fileContent.isNotEmpty()) { "File content could not be read" }
+
             return fileContent
         } catch (e: Exception) {
             throw IllegalArgumentException(e.message)
@@ -208,32 +216,51 @@ internal class ThymeleafReportServiceImpl(
     /**
      * Loads the css and image resources and writes them to a temporal directory.
      */
-    private fun readResources(): Map<String, String> {
-        val reportTempDir = Files.createTempDirectory("assets").toAbsolutePath()
-        val timePath = Files.createTempFile(reportTempDir, "time", ".svg")
-        val userPath = Files.createTempFile(reportTempDir, "user", ".svg")
-        val cssPath = Files.createTempFile(reportTempDir, "style", ".css")
-        val timeInputStream = javaClass.classLoader.getResourceAsStream("public/images/time.svg")
-        val userInputStream = javaClass.classLoader.getResourceAsStream("public/images/user.svg")
-        val cssInputStream = javaClass.classLoader.getResourceAsStream("public/style.css")
-        timeInputStream?.let {
-            Files.copy(timeInputStream, timePath, StandardCopyOption.REPLACE_EXISTING)
-        }
-        userInputStream?.let {
-            Files.copy(userInputStream, userPath, StandardCopyOption.REPLACE_EXISTING)
-        }
-        cssInputStream?.let {
-            Files.copy(cssInputStream, cssPath, StandardCopyOption.REPLACE_EXISTING)
+    private fun readResources(reportTempDir: Path): Map<String, String> {
+        val resourceMap = mutableMapOf<String, String>()
+        try {
+            //Load the css file.
+            val cssPath = Files.createTempFile(reportTempDir, "style", ".css")
+            val cssInputStream = resourceLoader.getResourceAsStream("classpath:$CSS_STYLE_PATH")
+            cssInputStream?.let {
+                Files.copy(cssInputStream.get(), cssPath, StandardCopyOption.REPLACE_EXISTING)
+            }
+            //Load the image icons.
+            val userBytes = resourceLoader.getResourceAsStream("classpath:$USER_PATH")?.get()?.readBytes()
+            val timeBytes = resourceLoader.getResourceAsStream("classpath:$TIME_PATH").get().readBytes()
+            val logoBytes = resourceLoader.getResourceAsStream("classpath:$LOGO_PATH").get().readBytes()
+            resourceMap["timeImage"] = Base64.getEncoder().encodeToString(timeBytes)
+            resourceMap["userImage"] = Base64.getEncoder().encodeToString(userBytes)
+            resourceMap["logoImage"] = Base64.getEncoder().encodeToString(logoBytes)
+            resourceMap["stylePath"] = cssPath.absolutePathString()
+        } catch (ex: Exception) {
+            logger.debug { "Not able to load resource: $ex" }
         }
 
-        return mapOf(
-            "timeImage" to timePath.absolutePathString(),
-            "userImage" to userPath.absolutePathString(),
-            "stylePath" to cssPath.absolutePathString(),
-        )
+        return resourceMap
     }
 
+    /**
+     * Contains constants used within this class.
+     *
+     * @property logger custom logger instance
+     * @property CHARACTER_ENCODING specifies the character encoding system to be used
+     * @property TIME_PATH path to the location of the time icon
+     * @property USER_PATH path to the location of the user icon
+     * @property CSS_STYLE_PATH path to the location of the css styles
+     */
     private companion object {
+
+        val logger = logger()
+
         const val CHARACTER_ENCODING = "UTF-8"
+
+        const val TIME_PATH = "public/images/time.svg"
+
+        const val USER_PATH = "public/images/user.svg"
+
+        const val LOGO_PATH = "public/images/logo.svg"
+
+        const val CSS_STYLE_PATH = "public/style.css"
     }
 }

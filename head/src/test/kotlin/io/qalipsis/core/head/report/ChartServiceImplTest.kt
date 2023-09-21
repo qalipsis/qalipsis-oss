@@ -39,20 +39,22 @@ import io.qalipsis.core.head.report.chart.catadioptre.buildDataSet
 import io.qalipsis.core.head.report.chart.catadioptre.mapDataSeriesToColour
 import io.qalipsis.core.head.report.chart.catadioptre.plotChart
 import io.qalipsis.test.mockk.WithMockk
-import org.jfree.chart.plot.XYPlot
-import org.jfree.data.xy.XYSeries
-import org.jfree.data.xy.XYSeriesCollection
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.awt.Color
 import java.awt.Font
+import java.io.File
 import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
+import org.jfree.chart.plot.XYPlot
+import org.jfree.data.xy.XYSeries
+import org.jfree.data.xy.XYSeriesCollection
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @WithMockk
 internal class ChartServiceImplTest {
@@ -61,6 +63,11 @@ internal class ChartServiceImplTest {
 
     @InjectMockKs
     private lateinit var chartService: ChartServiceImpl
+
+    @AfterEach
+    fun cleanup() {
+        File("test").deleteRecursively()
+    }
 
     private val aggregationResult = mapOf(
         "data-series-1" to listOf

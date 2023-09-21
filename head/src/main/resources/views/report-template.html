@@ -10,7 +10,10 @@
 </head>
 <body>
 <div class="container">
-  <h1 th:text="${title}">No Report Title</h1>
+  <div>
+    <img class="logo float-left img" style="margin-right: 10px;" th:src="${logoImage}" alt="pdf-image Qalipsis Logo"/>
+    <h1 class="float-left" th:text="${title}">No Report Title</h1>
+  </div>
   <div style="clear:both; margin-top: 28px;">
     <section class="campaign-list">
       <div class="btn-transparent" th:each="campaign: ${campaigns}">
@@ -21,14 +24,14 @@
   </div>
   <section>
     <div class="campaign-summary" th:each="campaign: ${campaigns}"
-         th:insert="fragments/campaign-summary :: campaign-summary(${campaign}, ${timeImage}, ${userImage})"
+         th:insert="~{fragments/campaign-summary :: campaign-summary(${campaign}, ${timeImage}, ${userImage})}"
          th:remove="tag"></div>
   </section>
   <section class="chart" th:if="${chartImages == null || chartImages.empty}">
     <p>No Chart available</p>
   </section>
   <section class="chart" th:each="chartImage: ${chartImages}">
-    <img class="img" th:src="@{|data:image/svg+xml;base64,${chartImage}|}" alt="Requests Chart"/>
+    <img class="img" th:src="${chartImage}" alt="pdf-image Requests Chart"/>
   </section>
   <section th:if="${eventTableData != null and eventTableData.isEmpty()}">
     <p>No TimeSeries Record available</p>
@@ -36,7 +39,7 @@
   <section class="table-section" th:if="${eventTableData != null and !eventTableData.isEmpty()}">
     <div th:each="singleEventTableData: ${eventTableData}">
       <table class="campaign-table"
-             th:insert="fragments/time-series-event-table :: time-series-event-table(${singleEventTableData})"
+             th:insert="~{fragments/time-series-event-table :: time-series-event-table(${singleEventTableData})}"
              th:remove="tag"></table>
     </div>
   </section>
@@ -46,7 +49,7 @@
   <section class="table-section" th:if="${meterTableData != null and !meterTableData.isEmpty()}">
     <div th:each="singleMeterTableData: ${meterTableData}">
       <table class="campaign-table"
-             th:insert="fragments/time-series-meter-table :: time-series-meter-table(${singleMeterTableData})"
+             th:insert="~{fragments/time-series-meter-table :: time-series-meter-table(${singleMeterTableData})}"
              th:remove="tag"></table>
     </div>
   </section>
