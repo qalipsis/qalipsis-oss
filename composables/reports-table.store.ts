@@ -1,4 +1,7 @@
 import { defineStore } from "pinia";
+import { PageQueryParams } from "utils/page";
+import { ReportTableData } from "utils/report";
+import { TableStoreState } from "utils/table";
 
 export const useReportsTableStore = defineStore("ReportsTable", {
   state: (): TableStoreState<ReportTableData> => {
@@ -33,7 +36,7 @@ export const useReportsTableStore = defineStore("ReportsTable", {
       }
 
       const response = await fetchReports(pageQueryParams);
-      const tableData: ReportTableData[] = ReportHelper.toReportTableData(response.elements);
+      const tableData: ReportTableData[] = ReportHelper.toReportTableData(response.elements ?? []);
       this.dataSource = tableData;
       this.totalElements = response.totalElements;
     }

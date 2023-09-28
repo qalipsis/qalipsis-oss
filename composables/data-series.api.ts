@@ -1,5 +1,5 @@
 import { Page, PageQueryParams } from "utils/page";
-import { DataField, DataSeries, DataType } from "utils/series";
+import { DataField, DataSeries, DataSeriesCreationRequest, DataSeriesPatch, DataSeriesTableData, DataType } from "utils/series";
 
 export const useDataSeriesApi = () => {
     const { get$, delete$, post$, patch$ } = baseApi();
@@ -35,10 +35,10 @@ export const useDataSeriesApi = () => {
      * @returns The list of all data series.
      */
     const getAllCachedDataSeries = async (queryParams: PageQueryParams, dataSeries: DataSeries[]): Promise<DataSeries[]> => {
-        return getCache$<Page<DataSeries>, PageQueryParams>( `/data-series`, queryParams)
+        return getCache$<Page<DataSeries>, any>( `/data-series`, queryParams)
             .then((res: Page<DataSeries>) => {
                 const dataSeriesPage: Page<DataSeries> = res;
-                dataSeries.push(...res?.elements);
+                dataSeries.push(...(res?.elements ?? []));
                 if (dataSeriesPage.page < dataSeriesPage.totalPages - 1) {
                     queryParams.page = queryParams.page! + 1;
 
@@ -80,11 +80,11 @@ export const useDataSeriesApi = () => {
             sharingMode: dataSeriesTableData.sharingMode,
             color: dataSeriesTableData.color,
             colorOpacity: dataSeriesTableData.colorOpacity,
-            filters: dataSeriesTableData.filters,
             fieldName: dataSeriesTableData.fieldName,
             aggregationOperation: dataSeriesTableData.aggregationOperation,
             timeframeUnit: dataSeriesTableData.timeframeUnit,
-            displayFormat: dataSeriesTableData.displayFormat
+            displayFormat: dataSeriesTableData.displayFormat,
+            filters: dataSeriesTableData.filters ?? []
         };
 
         return createDataSeries(dataSeriesCreationRequest)
@@ -133,7 +133,7 @@ export const useDataSeriesApi = () => {
         };
         const response = await fetchDataSeries(queryParams);
 
-        return !response.elements.some(e => e.displayName.trim() === name.trim());
+        return !response.elements?.some(e => e.displayName.trim() === name.trim());
     }
 
     /**

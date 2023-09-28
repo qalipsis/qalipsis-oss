@@ -1,4 +1,7 @@
 import { defineStore } from "pinia";
+import { CampaignTableData } from "utils/campaign";
+import { PageQueryParams } from "utils/page";
+import { TableStoreState } from "utils/table";
 
 export const useCampaignsTableStore = defineStore("CampaignsTable", {
     state: (): TableStoreState<CampaignTableData> => {
@@ -34,7 +37,7 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
 
             try {
                 const response = await fetchCampaigns(pageQueryParams);
-                const tableData: CampaignTableData[] = CampaignHelper.toTableData(response.elements);
+                const tableData: CampaignTableData[] = CampaignHelper.toTableData(response.elements ?? []);
                 this.dataSource = tableData;
                 this.totalElements = response.totalElements;
             } catch (error) {

@@ -36,11 +36,7 @@ const handleSearch = () => {
 }
 
 const handleCreateCampaignBtnClick = () => {
-
+    navigateTo('campaigns/new');
 }
 
 </script>
-
-<style scoped lang="scss">
-
-</style>

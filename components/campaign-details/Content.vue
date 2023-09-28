@@ -54,6 +54,8 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
+import { CampaignExecutionDetails } from 'utils/campaign';
+import { DataSeriesOption } from 'utils/series';
 
 defineProps<{
     campaignDetails: CampaignExecutionDetails
@@ -66,7 +68,7 @@ const { chartOptions, chartDataSeries, isLoadingChart }  = storeToRefs(campaignD
 
 const campaignStopModalOpen = ref(false);
 const scenarioReports = computed(() => campaignDetailsStore.selectedScenarioReports);
-const campaignDetailStatus = computed(() => campaignDetailsStore.campaignDetails.status)
+const campaignDetailStatus = computed(() => campaignDetailsStore.campaignDetails!.status)
 const preselectedDataSeriesReferences = computed(() => campaignDetailsStore.selectedDataSeriesReferences);
 const { abortCampaign, fetchCampaignDetails } = useCampaignApi();
 
@@ -89,7 +91,7 @@ watch(campaignDetailStatus, () => {
     polling.value = setInterval(async() => {
         try {
             // Fetches the details of the campaign.
-            const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails.key);
+            const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails!.key);
             campaignDetailsStore.$patch({
               campaignDetails: campaignDetails
             })
@@ -181,8 +183,8 @@ const handleHardStopButtonClick = () => {
  */
 const _stopCampaign = async (isForceAbort: boolean) => {
     try {
-        await abortCampaign(campaignDetailsStore.campaignDetails.key, isForceAbort);
-        const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails.key);
+        await abortCampaign(campaignDetailsStore.campaignDetails!.key, isForceAbort);
+        const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails!.key);
         campaignDetailsStore.$patch({
             campaignDetails: campaignDetails
         })

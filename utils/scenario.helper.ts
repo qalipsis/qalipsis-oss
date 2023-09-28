@@ -1,12 +1,32 @@
 import { ApexOptions } from "apexcharts";
 import { format } from "date-fns";
-import { ReportMessage, ScenarioReport } from "./scenario";
+import { ExecutionProfileStage, ReportMessage, Scenario, ScenarioReport } from "./scenario";
 import { CampaignExecutionDetails } from "./campaign";
 import { Tag } from "./common";
+import { ChartData } from "./chart";
 
 export class ScenarioHelper {
     static SCENARIO_SUMMARY_NAME = 'Campaign Summary';
     static SCENARIO_SUMMARY_ID = 'campaignSummary';
+
+    static getTableColumnConfigs() {
+        return [{
+            title: 'Scenario',
+            dataIndex: 'name',
+            key: 'name',
+            sorter: (next: Scenario, prev: Scenario) => next.name.localeCompare(prev.name)
+        }, {
+            title: 'Minions',
+            dataIndex: 'minionsCount',
+            key: 'minionsCount',
+            sorter: (next: Scenario, prev: Scenario) => next.minionsCount - prev.minionsCount
+        },{
+            title: '',
+            dataIndex: 'actions',
+            key: 'actions',
+        },]
+    }
+
     static getMessageTableColumnConfigs() {
         return [{
             title: 'Step Name',
@@ -23,6 +43,60 @@ export class ScenarioHelper {
             dataIndex: 'message',
             key: 'message',
         }];
+    }
+
+    static SCENARIO_CONFIG_CHART_OPTIONS: ApexOptions = {
+        chart: {
+            type: "area",
+            zoom: {
+                enabled: false
+            },
+            offsetX: -25,
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: "straight",
+            width: 0.5
+        },
+        grid: {
+            row: {
+                colors: ['#fff', 'transparent'],
+                opacity: .5
+            }
+        },
+        xaxis: {
+            decimalsInFloat: 0,
+            type: "numeric",
+            tickAmount: "dataPoints",
+            title: {
+                text: "Duration, s",
+                offsetX: 260,
+                offsetY: -5,
+                style: {
+                    color: "#ddd",
+                    fontSize: '12px',
+                    fontWeight: 400
+                },
+            }
+        },
+        yaxis: {
+            decimalsInFloat: 0,
+            tickAmount: 2,
+            min: 0,
+            max: 10,
+            title: {
+                text: "Minions",
+                offsetX: 0,
+                offsetY: -40,
+                style: {
+                  color: "#ddd",
+                  fontSize: "12px",
+                  fontWeight: 400
+                }
+            },
+        }
     }
 
     static MINION_STACKED_BAR_CHART_OPTIONS: ApexOptions = {
@@ -296,11 +370,69 @@ export class ScenarioHelper {
     }
 
     /**
+     * Gets the chart series to be displayed.
+     * 
+     * @param executionProfileStages the execution profiles from the scenario config.
+     * 
+     * @returns the chart data series to be displayed
+     */
+    static toScenarioConfigChartData(executionProfileStages: ExecutionProfileStage[]): ChartData {
+        const chartOptions = ScenarioHelper.SCENARIO_CONFIG_CHART_OPTIONS;
+        const chartDatSeries: {x: number, y: number}[] = [{ x: 0, y: 0 }];
+        let cumulativeDuration = 0;
+        let cumulativeMinionsCount = 0;
+
+        executionProfileStages.forEach(executionProfileStage => {
+            cumulativeMinionsCount += +executionProfileStage.minionsCount;
+
+            if (executionProfileStage.duration === executionProfileStage.startDuration) {
+                cumulativeDuration += +executionProfileStage.duration;
+                const cumulativeDurationInSeconds = cumulativeDuration / 1000;
+                chartDatSeries.push({ x: cumulativeDurationInSeconds, y: cumulativeMinionsCount })   
+            } else {
+                const cumulativeStartDurationInSeconds = (+executionProfileStage.startDuration + cumulativeDuration) / 1000;
+                const cumulativeDurationInSeconds = (+executionProfileStage.duration + cumulativeDuration) / 1000;
+                cumulativeDuration += +executionProfileStage.duration;
+                chartDatSeries.push({ x: cumulativeStartDurationInSeconds, y: cumulativeMinionsCount })
+                chartDatSeries.push({ x: cumulativeDurationInSeconds, y: cumulativeMinionsCount })
+            }
+        });
+
+        // When the cumulative minion count is more than 10
+        if (cumulativeMinionsCount > 10) {
+            chartOptions.yaxis = {
+                // Sets the max value from the y-axis to be 
+                max: cumulativeMinionsCount > 10 ? +cumulativeMinionsCount + (cumulativeMinionsCount * 0.2) : 10,
+                tickAmount: 2,
+                title: {
+                  text: "Minions",
+                  offsetX: 0,
+                  offsetY: -40,
+                  style: {
+                    color: "#ddd",
+                    fontSize: '12px',
+                    fontWeight: 400
+                  }
+                }
+            }
+        }
+
+        return {
+            chartOptions: chartOptions,
+            chartDataSeries: [{
+                name: "Minions",
+                data: chartDatSeries
+            }]
+        }
+    }
+
+    /**
      * Calculate the minion data series for the stacked bar chart.
      * 
      * @param completedMinions the number of completed minions
      * @param startedMinions the number of started minions
      * @param scheduledMinions the number of scheduled minions
+     * 
      * @returns the data series for the stacked bar chart
      */
     static toMinionBarChartSeries(completedMinions: number, startedMinions: number, scheduledMinions: number): ApexAxisChartSeries {

@@ -9,7 +9,11 @@
             :status="errorStatus"
             :disabled="disabled"
             @input="handleInputChange"
-        />
+        >
+            <template v-if="suffix"  #suffix>
+                <span>{{ suffix }}</span>
+            </template>
+        </a-input>
         <FormErrorMessage :errorMessage="errorMessage"/>
     </div>
 </template>
@@ -22,6 +26,7 @@ const props = defineProps<{
     formControlName: string,
     fieldValidationSchema?: TypedSchema,
     placeholder?: string,
+    suffix?: string,
     disabled?: boolean
 }>();
 const emit = defineEmits<{

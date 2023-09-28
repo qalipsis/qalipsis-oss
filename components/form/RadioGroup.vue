@@ -4,7 +4,14 @@
     v-model:value="value"
     :disabled="disabled"
     @change="emit('change', value)">
-    <a-radio v-for="option in options" :value="option.value">{{ option.label }}</a-radio>
+    <a-radio v-for="option in options" :value="option.value">
+      <div v-if="$slots.customOption">
+            <slot name="customOption"></slot>
+      </div>
+      <span v-else>
+        {{ option.label }}
+      </span>
+    </a-radio>
   </a-radio-group>
   <FormErrorMessage :errorMessage="errorMessage"/>
 </template>

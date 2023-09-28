@@ -23,6 +23,6 @@ export interface SidebarMenuItem extends SidebarMenuBaseItem {
     /**
      * The sub menu items
      */
-    subOptions?: SidebarMenuBaseItem[];
+    subMenuItems?: SidebarMenuBaseItem[];
 }
 

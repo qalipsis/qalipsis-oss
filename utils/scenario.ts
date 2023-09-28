@@ -1,3 +1,5 @@
+import { Tag } from "./common";
+
 /**
  * Details of the execution of a completed or running campaign and its scenario
  */
@@ -16,6 +18,60 @@ export interface Scenario {
      * Number of minions executed in the scenario.
      */
     minionsCount: number;
+}
+
+export interface ScenarioSummary {
+    /**
+     * Display name of the scenario.
+     */
+    name: string;
+
+    /**
+     * Number of minions executed in the scenario.
+     */
+    minionsCount: number;
+
+    /**
+     * List of directed acyclic graphs structuring the workflow of the scenario
+     */
+    directedAcyclicGraphs: DirectedAcyclicGraphSummary[];
+
+    /**
+     * Details of the execution profile to start the minions in the scenario
+     */
+    executionProfileConfiguration: { [key: string]: any };
+}
+
+export interface DirectedAcyclicGraphSummary {
+    /**
+     * The name of the directed acyclic graph, unique in a scenario
+     */
+    name: string;
+
+    /**
+     * Defines whether the DAG executes only singleton steps, such as poll steps for example
+     */
+    isSingleton: boolean;
+
+    /**
+     * Defines whether the DAG is linked to root of the scenario - true, or is following another DAG - false.
+     */
+    isRoot: boolean;
+
+    /**
+     * Defines whether the DAG executes minions under load, implying that its steps can be executed a massive count of times
+     */
+    isUnderLoad: boolean;
+
+    /**
+     * The number of actual - whether declared in the scenario or technically created by QALIPSIS - steps contains in the DAG
+     */
+    numberOfSteps: number;
+
+    /**
+     * Pairs of key/values that additionally describes the DAG
+     */
+    tags: { [key: string]: string };
 }
 
 /**
@@ -237,4 +293,40 @@ export interface ScenarioDrawer {
      * The messages to be displayed in the drawer.
      */
     messages: ReportMessage[];
+}
+
+export interface ScenarioConfigurationForm {
+    executionProfileStages: ExecutionProfileStage[];
+    zones: ZoneForm[];
+}
+
+export interface ExecutionProfileStage {
+    minionsCount: number;
+    duration: number;
+    startDuration: number;
+    resolution: number;
+}
+
+export interface ZoneForm {
+    name: string;
+    share: number;
+}
+
+export interface Zone {
+    /**
+     * A more detailed definition of the zone, generally the region, datacenter and the localization details
+     */
+    description: string;
+    /**
+     * A unique identifier for the zone
+     */
+    key: string;
+    /**
+     * A complete name of the zone, generally the country
+     */
+    title: string;
+    /**
+     * Image URL to display for the zone
+     */
+    image: string;
 }

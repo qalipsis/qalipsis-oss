@@ -1,3 +1,6 @@
+import { Campaign, CampaignExecutionDetails } from "utils/campaign";
+import { Page, PageQueryParams } from "utils/page";
+
 export const useCampaignApi = () => {
     const { get$, post$ } = baseApi();
 
@@ -8,7 +11,7 @@ export const useCampaignApi = () => {
      * @returns The page list of data series
      */
     const fetchCampaigns = async (pageQueryParams: PageQueryParams): Promise<Page<Campaign>> => {
-        return get$<Page<Campaign>>("/campaigns", pageQueryParams);
+        return get$<Page<Campaign>, any>("/campaigns", pageQueryParams);
     }
 
     /**
@@ -25,7 +28,7 @@ export const useCampaignApi = () => {
          * 
          * Thus, this function returns the first item which contains the execution details for the provided campaign reference.
          */
-        const campaigns = await get$<CampaignExecutionDetails>(`/campaigns/${campaignReference}`);
+        const campaigns = await get$<CampaignExecutionDetails[], unknown>(`/campaigns/${campaignReference}`);
 
         return campaigns[0];
     }
@@ -37,7 +40,7 @@ export const useCampaignApi = () => {
      * @returns The list of campaign details
      */
     const fetchMultipleCampaignsDetails = (campaignReferences: string[]): Promise<CampaignExecutionDetails[]> => {
-        return get$<CampaignExecutionDetails>(`/campaigns/${campaignReferences.join(",")}`)
+        return get$<CampaignExecutionDetails[], unknown>(`/campaigns/${campaignReferences.join(",")}`)
     }
 
     /**

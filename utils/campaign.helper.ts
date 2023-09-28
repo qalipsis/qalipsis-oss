@@ -10,7 +10,7 @@ import { ApexOptions } from "apexcharts";
 export class CampaignHelper {
     static TOOLTIP_RENDERER: ((options: any) => any) = ({ seriesIndex, dataPointIndex, w }): string => {
         const dt = w.config.series[seriesIndex].data[dataPointIndex]?.x ||
-            w.globals.initialSeries.filter(serie => !!serie.data[dataPointIndex]?.x)[0].data[dataPointIndex].x;
+            w.globals.initialSeries.filter((serie: any) => !!serie.data[dataPointIndex]?.x)[0].data[dataPointIndex].x;
         const day = format(new Date(dt), 'yy-MM-dd');
         const time = format(new Date(dt), 'HH:mm:ss');
         let seriesContent: string[] = []
@@ -92,7 +92,7 @@ export class CampaignHelper {
             scenarioText: campaign.scenarios.map(scenario => scenario.name).join(','),
             creationTime: TimeframeHelper.toSpecificFormat(new Date(campaign.creation), 'dd/MM/yyyy, HH:mm:ss'),
             elapsedTime: TimeframeHelper.elapsedTime(new Date(campaign.creation), campaign.end ? new Date(campaign.end) : new Date()),
-            statusTag: CampaignHelper.toExecutionStatusTag(campaign.status)
+            statusTag: campaign.status ? CampaignHelper.toExecutionStatusTag(campaign.status) : null
         }))
     }
 
@@ -170,7 +170,7 @@ export class CampaignHelper {
                 title: 'Status',
                 dataIndex: 'result',
                 key: 'result',
-                sorter: (next: CampaignTableData, prev: CampaignTableData) => next.status.localeCompare(prev.status),
+                sorter: (next: CampaignTableData, prev: CampaignTableData) => next.status!.localeCompare(prev.status!),
             },
             {
                 title: 'Created',

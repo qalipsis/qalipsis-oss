@@ -11,21 +11,21 @@
             @click="handleTagClick(report)"/>
         </td>
         <td>
-          <ScenarioElapsedTime :start="report.start" :end="report.end" />
+          <ScenarioElapsedTime :start="report.start!" :end="report.end!" />
         </td>
         <td>
           <ScenarioMinions
             :scenario-name="report.name"
             :scheduled-minions="report.scheduledMinions"
-            :completed-minions="report.completedMinions"
-            :started-minions="report.startedMinions"
+            :completed-minions="report.completedMinions!"
+            :started-minions="report.startedMinions!"
           />
         </td>
         <td>
           <ScenarioExecutionSteps
             :scenario-name="report.name"
-            :successful-executions="report.successfulExecutions"
-            :failed-executions="report.failedExecutions"
+            :successful-executions="report.successfulExecutions!"
+            :failed-executions="report.failedExecutions!"
           />
         </td>
       </tr>
@@ -41,6 +41,8 @@
 </template>
 
 <script setup lang="ts">
+import { ScenarioDrawer, ScenarioReport } from 'utils/scenario';
+
 defineProps<{
     scenarioReports: ScenarioReport[]
 }>();

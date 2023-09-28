@@ -1,4 +1,7 @@
 import { defineStore } from "pinia";
+import { PageQueryParams } from "utils/page";
+import { DataSeriesTableData } from "utils/series";
+import { TableStoreState } from "utils/table";
 
 export const useSeriesTableStore = defineStore("SeriesTable", {
   state: (): TableStoreState<DataSeriesTableData> => {
@@ -35,7 +38,7 @@ export const useSeriesTableStore = defineStore("SeriesTable", {
       }
 
       const response = await fetchDataSeries(pageQueryParams);
-      const tableData: DataSeriesTableData[] = SeriesHelper.toDataSeriesTableData(response.elements, userName);
+      const tableData: DataSeriesTableData[] = SeriesHelper.toDataSeriesTableData(response.elements ?? [], userName);
       this.dataSource = tableData;
       this.totalElements = response.totalElements;
     }

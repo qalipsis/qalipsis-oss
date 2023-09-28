@@ -77,6 +77,7 @@ const props = defineProps<{
   selectedDataSeriesReferences?: string[]
 }>()
 
+
 const seriesTableStore = useSeriesTableStore();
 const { dataSource, totalElements } = storeToRefs(seriesTableStore);
 const userStore = useUserStore();

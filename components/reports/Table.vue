@@ -33,6 +33,7 @@
   
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { ReportTableData } from "utils/report";
 
 const userStore = useUserStore();
 const reportsTableStore = useReportsTableStore();

@@ -130,7 +130,7 @@
                 <a-row>
                     <a-col :span="24">
                         <BaseButton icon="/icons/icon-plus-grey.svg" btn-style="stroke" class="full-width" text="Add new filter"
-                            @click="handleAddNewFilterBtnCLick" :disabled="dataSeries?.disabled" />
+                            @click="handleAddNewFilterBtnClick" :disabled="dataSeries?.disabled" />
                     </a-col>
                 </a-row>
             </template>
@@ -144,6 +144,7 @@ import { FormMenuOption } from "utils/form";
 import { useForm, useFieldArray } from "vee-validate";
 import { toTypedSchema } from '@vee-validate/zod';
 import * as zod from 'zod';
+import { DataField, DataSeriesFilter, DataSeriesForm, DataSeriesTableData } from "utils/series";
 
 type Timer = string | number | NodeJS.Timeout | null | undefined;
 
@@ -300,7 +301,7 @@ const handleColorBtnClick = () => {
     colorPickerOpen.value = true
 }
 
-const handleAddNewFilterBtnCLick = () => {
+const handleAddNewFilterBtnClick = () => {
     push({
         name: '',
         operator: '',

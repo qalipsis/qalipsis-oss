@@ -315,6 +315,14 @@
     }
 }
 
+.ant-input-affix-wrapper-status-error:not(.ant-input-affix-wrapper-disabled):not(.ant-input-affix-wrapper-borderless).ant-input-affix-wrapper {
+    border-color: $pink;
+}
+
+.ant-input-affix-wrapper-lg {
+    padding: 0 .5rem;
+}
+
 .form-label {
     display: block;
     margin-bottom: 0.25rem;
@@ -334,3 +342,14 @@
         }
     }
 }
+
+/* Scenario form delete button */
+.scenario-form-delete-btn-wrapper {
+    height: $item-height;
+    display: flex;
+    align-items: center;
+  
+    img:hover {
+      filter: $primary-color-svg;
+    }
+  }

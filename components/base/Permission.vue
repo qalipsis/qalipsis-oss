@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-    permissions: typeof PermissionEnum[],
+    permissions: PermissionEnum[],
     requiredAll?: boolean
 }>();
 const userStore = useUserStore();

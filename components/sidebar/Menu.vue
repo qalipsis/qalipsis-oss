@@ -38,13 +38,13 @@
                             </span>
                         </div>
                     </template>
-                    <template v-for="subOption in menuItem.subMenuItems" :key="subOption.path">
-                        <BasePermission :permissions="subOption.permissions">
+                    <template v-for="subMenuItem in menuItem.subMenuItems" :key="subMenuItem.path">
+                        <BasePermission :permissions="subMenuItem.permissions">
                             <a-menu-item 
-                                @click="handleMenuItemClick(subOption.path)" style="height: fit-content;">
+                                @click="handleMenuItemClick(subMenuItem.path)" style="height: fit-content;">
                                 <div class="option-container">
                                     <span class="text-wrapper">
-                                        {{ subOption.text }}
+                                        {{ subMenuItem.text }}
                                     </span>
                                 </div>
                             </a-menu-item>
