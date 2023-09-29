@@ -43,6 +43,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
@@ -90,7 +91,10 @@ internal fun testScenario(
     configure: suspend Scenario.() -> Unit = {}
 ): Scenario {
     val scenario = ScenarioImpl(
-        id,
+        name = id,
+        description = null,
+        version = "0.1",
+        builtAt = Instant.now(),
         executionProfile = executionProfile,
         minionsCount = minionsCount,
         factoryChannel = relaxedMockk()

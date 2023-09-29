@@ -236,6 +236,8 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
         val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario = RegistrationScenario(
             name = "new-test-scenario",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )

@@ -41,6 +41,7 @@ import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import kotlinx.coroutines.runBlocking
 import org.slf4j.event.Level
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -48,10 +49,13 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class ScenarioImpl(
     override val name: ScenarioName,
+    override val description: String? = null,
+    override val version: String,
+    override val builtAt: Instant,
     override val executionProfile: ExecutionProfile,
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
-    private val factoryChannel: FactoryChannel
+    private val factoryChannel: FactoryChannel,
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepName, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()

@@ -532,6 +532,8 @@ internal class ClusterFactoryServiceTest {
         val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario = RegistrationScenario(
             name = "new-test-scenario",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )
@@ -595,6 +597,8 @@ internal class ClusterFactoryServiceTest {
         val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
         val newRegistrationScenario = RegistrationScenario(
             name = "test",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )
@@ -669,6 +673,8 @@ internal class ClusterFactoryServiceTest {
         )
         val newRegistrationScenario = RegistrationScenario(
             name = "test",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 1,
             directedAcyclicGraphs = listOf(graphSummary)
         )
@@ -876,8 +882,13 @@ internal class ClusterFactoryServiceTest {
         val selectorValue = "test-selector-value"
 
         val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
-        val newRegistrationScenario =
-            RegistrationScenario(name = "test", minionsCount = 1, directedAcyclicGraphs = listOf(graphSummary))
+        val newRegistrationScenario = RegistrationScenario(
+            name = "test",
+            version = "0.1",
+            builtAt = Instant.now(),
+            minionsCount = 1,
+            directedAcyclicGraphs = listOf(graphSummary)
+        )
         val handshakeRequest = HandshakeRequest(
             nodeId = "testNodeId",
             tags = mapOf(selectorKey to selectorValue),
@@ -960,6 +971,8 @@ internal class ClusterFactoryServiceTest {
                 version = now,
                 factoryId = 1,
                 name = "test",
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
                 defaultMinionsCount = 1,
                 enabled = true,
                 dags = listOf(
@@ -990,6 +1003,8 @@ internal class ClusterFactoryServiceTest {
         assertEquals(scenarioEntities.map { scenario ->
             ScenarioSummary(
                 name = scenario.name,
+                version = "0.1",
+                builtAt = Instant.now(),
                 minionsCount = scenario.defaultMinionsCount,
                 directedAcyclicGraphs = scenario.dags.map { dag ->
                     DirectedAcyclicGraphSummary(
@@ -1018,6 +1033,8 @@ internal class ClusterFactoryServiceTest {
                 version = now,
                 factoryId = 1,
                 name = "test",
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
                 defaultMinionsCount = 1,
                 enabled = true,
                 dags = listOf(
@@ -1033,7 +1050,7 @@ internal class ClusterFactoryServiceTest {
                 )
             )
         )
-        coEvery { scenarioRepository.findAllActiveWithSorting("my-tenant", "name") } returns scenarioEntities
+        coEvery { scenarioRepository.findAllActiveByTenantWithSorting("my-tenant", "name") } returns scenarioEntities
 
 
         //when
@@ -1041,12 +1058,14 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOnce {
-            scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
+            scenarioRepository.findAllActiveByTenantWithSorting("my-tenant", "name")
         }
 
         assertEquals(scenarioEntities.map { scenario ->
             ScenarioSummary(
                 name = scenario.name,
+                version = "0.1",
+                builtAt = Instant.now(),
                 minionsCount = scenario.defaultMinionsCount,
                 directedAcyclicGraphs = scenario.dags.map { dag ->
                     DirectedAcyclicGraphSummary(
@@ -1075,6 +1094,8 @@ internal class ClusterFactoryServiceTest {
                 version = now,
                 factoryId = 1,
                 name = "test",
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
                 defaultMinionsCount = 1,
                 enabled = true,
                 dags = listOf(
@@ -1094,6 +1115,8 @@ internal class ClusterFactoryServiceTest {
                 version = now,
                 factoryId = 2,
                 name = "test2",
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
                 defaultMinionsCount = 2,
                 enabled = true,
                 dags = listOf(
@@ -1109,7 +1132,7 @@ internal class ClusterFactoryServiceTest {
                 )
             )
         )
-        coEvery { scenarioRepository.findAllActiveWithSorting("my-tenant", "name") } returns scenarioEntities
+        coEvery { scenarioRepository.findAllActiveByTenantWithSorting("my-tenant", "name") } returns scenarioEntities
 
 
         //when
@@ -1117,12 +1140,14 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOnce {
-            scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
+            scenarioRepository.findAllActiveByTenantWithSorting("my-tenant", "name")
         }
 
         assertEquals(scenarioEntities.map { scenario ->
             ScenarioSummary(
                 name = scenario.name,
+                version = "0.1",
+                builtAt = Instant.now(),
                 minionsCount = scenario.defaultMinionsCount,
                 directedAcyclicGraphs = scenario.dags.map { dag ->
                     DirectedAcyclicGraphSummary(
@@ -1151,6 +1176,8 @@ internal class ClusterFactoryServiceTest {
                 version = now,
                 factoryId = 1,
                 name = "test",
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
                 defaultMinionsCount = 1,
                 enabled = true,
                 dags = listOf(
@@ -1170,6 +1197,8 @@ internal class ClusterFactoryServiceTest {
                 version = now,
                 factoryId = 2,
                 name = "test2",
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
                 defaultMinionsCount = 2,
                 enabled = true,
                 dags = listOf(
@@ -1185,7 +1214,7 @@ internal class ClusterFactoryServiceTest {
                 )
             )
         )
-        coEvery { scenarioRepository.findAllActiveWithSorting("my-tenant", "name") } returns scenarioEntities
+        coEvery { scenarioRepository.findAllActiveByTenantWithSorting("my-tenant", "name") } returns scenarioEntities
 
 
         //when
@@ -1193,12 +1222,14 @@ internal class ClusterFactoryServiceTest {
 
         //then
         coVerifyOnce {
-            scenarioRepository.findAllActiveWithSorting("my-tenant", "name")
+            scenarioRepository.findAllActiveByTenantWithSorting("my-tenant", "name")
         }
 
         assertEquals(scenarioEntities.map { scenario ->
             ScenarioSummary(
                 name = scenario.name,
+                version = "0.1",
+                builtAt = Instant.now(),
                 minionsCount = scenario.defaultMinionsCount,
                 directedAcyclicGraphs = scenario.dags.map { dag ->
                     DirectedAcyclicGraphSummary(
@@ -1435,6 +1466,8 @@ internal class ClusterFactoryServiceTest {
             version = now,
             factoryId = factoryId,
             name = name,
+            scenarioVersion = "0.1",
+            builtAt = Instant.now(),
             defaultMinionsCount = 1,
             enabled = enabled,
             dags = listOf(

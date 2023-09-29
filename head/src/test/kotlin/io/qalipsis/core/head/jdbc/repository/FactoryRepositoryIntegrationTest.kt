@@ -252,9 +252,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500)
                 )
             ).count()
 
@@ -810,9 +810,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500)
                 )
             ).count()
 
@@ -882,9 +882,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500)
                 )
             ).count()
 
@@ -955,9 +955,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500)
                 )
             ).count()
 
@@ -1038,9 +1038,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500)
                 )
             ).count()
 
@@ -1120,9 +1120,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500, enabled = false)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500, enabled = false)
                 )
             ).count()
 
@@ -1186,9 +1186,9 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).count()
             scenarioRepository.saveAll(
                 listOf(
-                    ScenarioEntity(factory1.id, "scenario-1", 500),
-                    ScenarioEntity(factory1.id, "scenario-2", 100),
-                    ScenarioEntity(factory2.id, "scenario-1", 500)
+                    ScenarioEntity(factory1.id, "scenario-1", null, "0.1", Instant.now(), 500),
+                    ScenarioEntity(factory1.id, "scenario-2", null, "0.1", Instant.now(), 100),
+                    ScenarioEntity(factory2.id, "scenario-1", null, "0.1", Instant.now(), 500)
                 )
             ).count()
 

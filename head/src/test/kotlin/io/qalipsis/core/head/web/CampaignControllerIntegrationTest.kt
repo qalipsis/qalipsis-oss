@@ -241,7 +241,7 @@ internal class CampaignControllerIntegrationTest {
             .header("Accept-Language", "en")
 
         coEvery { clusterFactoryService.getActiveScenarios(Defaults.TENANT, any()) } returns listOf(
-            ScenarioEntity(555, "scenario-1", 500)
+            ScenarioEntity(555, "scenario-1", "my-scenario", "0.1", Instant.now(), 500)
         ).map(ScenarioEntity::toModel)
 
         // when

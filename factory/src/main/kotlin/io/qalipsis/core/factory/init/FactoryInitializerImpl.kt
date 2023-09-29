@@ -151,7 +151,7 @@ internal class FactoryInitializerImpl(
                 scenarioSpecs.forEach { (scenarioName, scenarioSpecification) ->
                     scenarioSpecification as ConfiguredScenarioSpecification
                     require(scenarioSpecification.size <= factoryConfiguration.campaign.maxScenarioStepSpecificationsCount)
-                    { "The maximal number of steps specifications in a step scenario should not exceed ${factoryConfiguration.campaign.maxScenarioStepSpecificationsCount}, but was ${scenarioSpecification.size}" }
+                    { "The maximal number of steps in a scenario should not exceed ${factoryConfiguration.campaign.maxScenarioStepSpecificationsCount}, but was ${scenarioSpecification.size}" }
 
                     log.info { "Converting the scenario specification $scenarioName" }
                     val scenario = convertScenario(scenarioName, scenarioSpecification)
@@ -199,7 +199,10 @@ internal class FactoryInitializerImpl(
         )
         val defaultRetryPolicy = scenarioSpecification.retryPolicy ?: NoRetryPolicy()
         val scenario = ScenarioImpl(
-            scenarioName,
+            name = scenarioName,
+            description = scenarioSpecification.description,
+            version = scenarioSpecification.version,
+            builtAt = scenarioSpecification.builtAt,
             executionProfile = executionProfile,
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,

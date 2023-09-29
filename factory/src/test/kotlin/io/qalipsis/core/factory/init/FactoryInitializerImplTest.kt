@@ -203,7 +203,7 @@ internal class FactoryInitializerImplTest {
         // then
         assertThat(exception.message).isEqualTo(
             "java.lang.IllegalArgumentException: " +
-                    "The maximal number of steps specifications in a step scenario should not exceed 100, but was 1003"
+                    "The maximal number of steps in a scenario should not exceed 100, but was 1003"
         )
 
         verifyOrder {

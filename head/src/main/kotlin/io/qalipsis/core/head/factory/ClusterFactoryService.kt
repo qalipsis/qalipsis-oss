@@ -204,6 +204,9 @@ internal class ClusterFactoryService(
                 ScenarioEntity(
                     factoryId = existingFactory.id,
                     scenarioName = scenario.name,
+                    scenarioDescription = scenario.description,
+                    scenarioVersion = scenario.version,
+                    builtAt = scenario.builtAt,
                     defaultMinionsCount = scenario.minionsCount
                 )
             }).toList()
@@ -357,12 +360,13 @@ internal class ClusterFactoryService(
             val sortProperty = sort.trim().split(":").first()
             val sortOrder = sort.trim().split(":").last()
             if ("desc" == sortOrder) {
-                scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
+                scenarioRepository.findAllActiveByTenantWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
                     .reversed()
             } else {
-                scenarioRepository.findAllActiveWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
+                scenarioRepository.findAllActiveByTenantWithSorting(tenant, sortProperty).map(ScenarioEntity::toModel)
             }
-        } ?: scenarioRepository.findAllActiveWithSorting(tenant, ScenarioEntity::name.name).map(ScenarioEntity::toModel)
+        } ?: scenarioRepository.findAllActiveByTenantWithSorting(tenant, ScenarioEntity::name.name)
+            .map(ScenarioEntity::toModel)
     }
 
     @LogInputAndOutput

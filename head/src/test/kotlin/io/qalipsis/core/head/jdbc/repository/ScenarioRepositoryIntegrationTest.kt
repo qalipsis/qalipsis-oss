@@ -85,7 +85,14 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = savedTenant.id
             )
         )
-        scenario = ScenarioEntity(factory.id, "test", 1)
+        scenario = ScenarioEntity(
+            factoryId = factory.id,
+            scenarioName = "test",
+            scenarioDescription = "my scenario",
+            scenarioVersion = "0.1",
+            builtAt = Instant.now(),
+            defaultMinionsCount = 1
+        )
     }
 
     @AfterEach
@@ -454,7 +461,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val scenario5 = repository.save(scenario.copy(factoryId = factory2.id, name = "another-name"))
 
             // when + then
-            val result2 = repository.findAllActiveWithSorting("new-qalipsis", "name").map { it.id }
+            val result2 = repository.findAllActiveByTenantWithSorting("new-qalipsis", "name").map { it.id }
             assertThat(result2).containsOnly(scenario2.id, scenario5.id)
             assertThat(result2.get(0)).isEqualTo(scenario5.id)
             assertThat(result2.get(1)).isEqualTo(scenario2.id)

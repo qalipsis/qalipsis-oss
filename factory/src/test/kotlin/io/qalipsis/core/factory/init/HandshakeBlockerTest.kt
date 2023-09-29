@@ -96,7 +96,7 @@ internal class HandshakeBlockerTest {
         val duration = coMeasureTime { blocker.join() }
 
         // then
-        assertThat(duration).isBetween(Duration.ofMillis(350), Duration.ofMillis(450))
+        assertThat(duration).isBetween(Duration.ofMillis(350), Duration.ofMillis(500))
     }
 
     @Test

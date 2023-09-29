@@ -50,16 +50,24 @@ internal open class InitializationContext(
     override fun getStartupOrder(): Int = Ordered.HIGHEST_PRECEDENCE
 
     suspend fun startHandshake(scenarios: Collection<Scenario>) {
-        val feedbackScenarios = scenarios.map { scenario ->
-            val feedbackDags = scenario.dags.map {
+        val scenariosToRegister = scenarios.map { scenario ->
+            val scenariosDags = scenario.dags.map {
                 RegistrationDirectedAcyclicGraph(
-                    it.name, it.isSingleton, it.isRoot, it.isUnderLoad, it.stepsCount, it.tags
+                    name = it.name,
+                    isSingleton = it.isSingleton,
+                    isRoot = it.isRoot,
+                    isUnderLoad = it.isUnderLoad,
+                    numberOfSteps = it.stepsCount,
+                    tags = it.tags
                 )
             }
             RegistrationScenario(
-                scenario.name,
-                scenario.minionsCount,
-                feedbackDags
+                name = scenario.name,
+                description = scenario.description,
+                version = scenario.version,
+                builtAt = scenario.builtAt,
+                minionsCount = scenario.minionsCount,
+                directedAcyclicGraphs = scenariosDags
             )
         }
         factoryChannel.subscribeHandshakeResponse(factoryConfiguration.handshake.responseChannel)
@@ -67,7 +75,7 @@ internal open class InitializationContext(
             factoryConfiguration.nodeId,
             factoryConfiguration.tags,
             factoryConfiguration.handshake.responseChannel,
-            feedbackScenarios,
+            scenariosToRegister,
             factoryConfiguration.tenant,
             factoryConfiguration.zone
         )
