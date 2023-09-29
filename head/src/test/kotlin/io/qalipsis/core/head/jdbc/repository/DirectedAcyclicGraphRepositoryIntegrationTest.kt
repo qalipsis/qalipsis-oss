@@ -87,7 +87,16 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
                     tenantId = tenant.id
                 )
             )
-            scenario = scenarioRepository.save(ScenarioEntity(factory.id, "test", 123))
+            scenario = scenarioRepository.save(
+                ScenarioEntity(
+                    factoryId = factory.id,
+                    scenarioName = "test",
+                    scenarioDescription = "my-test",
+                    scenarioVersion = "0.1",
+                    builtAt = Instant.now(),
+                    defaultMinionsCount = 123
+                )
+            )
             dag = DirectedAcyclicGraphEntity(
                 scenarioId = scenario.id,
                 name = "dag-1",

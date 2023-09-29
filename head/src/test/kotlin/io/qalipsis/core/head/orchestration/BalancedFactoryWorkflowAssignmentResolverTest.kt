@@ -43,6 +43,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
 internal class BalancedFactoryWorkflowAssignmentResolverTest {
@@ -70,6 +71,8 @@ internal class BalancedFactoryWorkflowAssignmentResolverTest {
         val scenarios = listOf(
             ScenarioSummary(
                 name = "scenario-1",
+                version = "0.1",
+                builtAt = Instant.now(),
                 minionsCount = 54,
                 directedAcyclicGraphs = listOf(
                     relaxedMockk { every { name } returns "dag-1" },
@@ -79,6 +82,8 @@ internal class BalancedFactoryWorkflowAssignmentResolverTest {
             ),
             ScenarioSummary(
                 name = "scenario-2",
+                version = "0.1",
+                builtAt = Instant.now(),
                 minionsCount = 433,
                 directedAcyclicGraphs = listOf(
                     relaxedMockk { every { name } returns "dag-a" },
@@ -153,6 +158,8 @@ internal class BalancedFactoryWorkflowAssignmentResolverTest {
             val scenarios = listOf(
                 ScenarioSummary(
                     name = "scenario-1",
+                    version = "0.1",
+                    builtAt = Instant.now(),
                     minionsCount = 54,
                     directedAcyclicGraphs = listOf(
                         relaxedMockk { every { name } returns "dag-1" },
@@ -162,6 +169,8 @@ internal class BalancedFactoryWorkflowAssignmentResolverTest {
                 ),
                 ScenarioSummary(
                     name = "scenario-2",
+                    version = "0.1",
+                    builtAt = Instant.now(),
                     minionsCount = 433,
                     directedAcyclicGraphs = listOf(
                         relaxedMockk { every { name } returns "dag-a" },

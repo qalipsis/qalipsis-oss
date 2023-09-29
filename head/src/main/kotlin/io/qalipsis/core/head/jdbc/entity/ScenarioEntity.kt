@@ -48,6 +48,11 @@ internal data class ScenarioEntity(
     @field:NotBlank
     @field:Size(min = 2, max = 255)
     val name: String,
+    val description: String? = null,
+    @field:NotBlank
+    @field:Size(min = 1, max = 255)
+    val scenarioVersion: String,
+    val builtAt: Instant,
     @field:Positive
     @field:Max(1000000)
     val defaultMinionsCount: Int,
@@ -59,14 +64,31 @@ internal data class ScenarioEntity(
     constructor(
         factoryId: Long,
         scenarioName: String,
+        scenarioDescription: String? = null,
+        scenarioVersion: String,
+        builtAt: Instant,
         defaultMinionsCount: Int,
         dags: List<DirectedAcyclicGraphEntity> = emptyList(),
         enabled: Boolean = true
-    ) : this(-1, Instant.now(), factoryId, scenarioName, defaultMinionsCount, dags, enabled)
+    ) : this(
+        id = -1,
+        version = Instant.now(),
+        factoryId = factoryId,
+        name = scenarioName,
+        description = scenarioDescription,
+        scenarioVersion = scenarioVersion,
+        builtAt = builtAt,
+        defaultMinionsCount = defaultMinionsCount,
+        dags = dags,
+        enabled = enabled
+    )
 
     fun toModel(): ScenarioSummary {
         return ScenarioSummary(
             name = name,
+            description = description,
+            version = scenarioVersion,
+            builtAt = builtAt,
             minionsCount = defaultMinionsCount,
             directedAcyclicGraphs = dags.map(DirectedAcyclicGraphEntity::toModel)
         )

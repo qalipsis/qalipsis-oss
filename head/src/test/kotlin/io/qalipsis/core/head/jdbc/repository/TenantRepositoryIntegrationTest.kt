@@ -151,7 +151,16 @@ internal class TenantRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = saved.id
             )
         )
-        scenarioRepository.save(ScenarioEntity(factory.id, "test", 1))
+        scenarioRepository.save(
+            ScenarioEntity(
+                factoryId = factory.id,
+                scenarioName = "test",
+                scenarioDescription = null,
+                scenarioVersion = "0.1",
+                builtAt = Instant.now(),
+                defaultMinionsCount = 1
+            )
+        )
 
         assertThat(tenantRepository.findAll().count()).isEqualTo(1)
         assertThat(scenarioRepository.findAll().count()).isEqualTo(1)

@@ -81,13 +81,17 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
                 (SELECT 1 FROM factory_state fs WHERE fs.factory_id = factory.id AND fs.state = 'IDLE' and fs.health_timestamp > (now() - interval '${HEALTH_QUERY_INTERVAL}')
                 AND NOT EXISTS (SELECT 1 FROM factory_state WHERE factory_id = factory.id AND state <> 'IDLE' and health_timestamp > fs.health_timestamp))
             AND EXISTS (SELECT 1 FROM tenant WHERE reference = :tenant AND id = factory.tenant_id) 
-            ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
+            ORDER BY 
+            CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
             CASE :sort WHEN 'name' THEN scenario.name END, 
+            CASE :sort WHEN 'description' THEN scenario.description END, 
+            CASE :sort WHEN 'version' THEN scenario.scenario_version END, 
+            CASE :sort WHEN 'builtAt' THEN scenario.built_at END, 
             CASE :sort WHEN 'id' THEN scenario.id END 
             """
     )
     @Join(value = "dags", alias = "dag_")
-    suspend fun findAllActiveWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
+    suspend fun findAllActiveByTenantWithSorting(tenant: String, sort: String?): List<ScenarioEntity>
 
     @Query(
         """SELECT *, 
@@ -98,8 +102,12 @@ internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, 
             WHERE enabled = true 
             AND EXISTS (SELECT 1 FROM factory WHERE scenario.factory_id = factory.id  
                 AND EXISTS (SELECT 1 FROM tenant WHERE reference = :tenant AND id = factory.tenant_id))
-            ORDER BY CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
+            ORDER BY 
+            CASE :sort WHEN 'default_minions_count' THEN default_minions_count END, 
             CASE :sort WHEN 'name' THEN scenario.name END, 
+            CASE :sort WHEN 'description' THEN scenario.description END, 
+            CASE :sort WHEN 'version' THEN scenario.scenario_version END, 
+            CASE :sort WHEN 'builtAt' THEN scenario.built_at END, 
             CASE :sort WHEN 'id' THEN scenario.id END 
             """
     )

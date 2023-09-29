@@ -22,11 +22,13 @@ package io.qalipsis.core.campaigns
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.serialization.InstantKotlinSerializer
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.persistence.InMemoryEntity
 import io.swagger.v3.oas.annotations.media.Schema
 import kotlinx.serialization.Serializable
+import java.time.Instant
 
 
 /**
@@ -44,6 +46,13 @@ import kotlinx.serialization.Serializable
 data class ScenarioSummary(
     @field:Schema(description = "Name of the Scenario")
     override var name: ScenarioName,
+    @field:Schema(description = "Description of the Scenario, if any", required = false)
+    val description: String? = null,
+    @field:Schema(description = "Version of the Scenario", required = true)
+    val version: String,
+    @field:Schema(description = "Instant when the scenario was compiled", required = true)
+    @Serializable(with = InstantKotlinSerializer::class)
+    val builtAt: Instant,
     @field:Schema(description = "Default count of minions executing the scenario")
     val minionsCount: Int,
     @field:Schema(description = "List of directed acyclic graphs structuring the workflow of the scenario")

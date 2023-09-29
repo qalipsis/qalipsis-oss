@@ -41,6 +41,7 @@ import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -225,6 +226,8 @@ internal class ScenarioImplTest {
     ): ScenarioImpl {
         val scenarioImpl = ScenarioImpl(
             name = "my-scenario",
+            version = "0.1",
+            builtAt = Instant.now(),
             executionProfile = relaxedMockk(),
             factoryChannel = factoryChannel
         )

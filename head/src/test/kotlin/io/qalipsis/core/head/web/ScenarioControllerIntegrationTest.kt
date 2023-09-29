@@ -47,6 +47,7 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.TRANSIENT, ExecutionEnvironments.SINGLE_HEAD])
@@ -68,11 +69,15 @@ internal class ScenarioControllerIntegrationTest {
         // given
         val scenario = ScenarioSummary(
             name = "qalipsis-test",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 1000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", tags = mapOf("one" to "one")))
         )
         val scenario2 = ScenarioSummary(
             name = "qalipsis-2",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
@@ -107,11 +112,16 @@ internal class ScenarioControllerIntegrationTest {
         // given
         val scenario = ScenarioSummary(
             name = "qalipsis-test",
+            version = "0.1",
+            description = "My scenario",
+            builtAt = Instant.now(),
             minionsCount = 1000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", tags = mapOf("one" to "one")))
         )
         val scenario2 = ScenarioSummary(
             name = "qalipsis-2",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
@@ -149,11 +159,15 @@ internal class ScenarioControllerIntegrationTest {
         // given
         val scenario = ScenarioSummary(
             name = "qalipsis-test-2",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 1000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hi", tags = mapOf("one" to "one")))
         )
         val scenario2 = ScenarioSummary(
             name = "qalipsis-3",
+            version = "0.1",
+            builtAt = Instant.now(),
             minionsCount = 2000,
             directedAcyclicGraphs = listOf(DirectedAcyclicGraphSummary("hello", tags = mapOf("two" to "two")))
         )
