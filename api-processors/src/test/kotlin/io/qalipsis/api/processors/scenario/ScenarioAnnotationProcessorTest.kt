@@ -117,7 +117,7 @@ internal class ScenarioAnnotationProcessorTest {
             assertThat(scenariosProvider).all {
                 prop(ScenarioLoader::name).isNotNull().matches(Regex("^[-0-9a-z]+$"))
                 prop(ScenarioLoader::version).isNotNull().isNotEmpty()
-                prop(ScenarioLoader::buildAt).isLessThan(beforeLoad)
+                prop(ScenarioLoader::builtAt).isLessThan(beforeLoad)
             }
 
             // Trigger the loading of the scenario.

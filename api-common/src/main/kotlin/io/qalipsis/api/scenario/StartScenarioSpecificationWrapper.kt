@@ -17,7 +17,6 @@
 package io.qalipsis.api.scenario
 
 import io.qalipsis.api.context.DirectedAcyclicGraphName
-import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.StepSpecification
 
 /**
@@ -29,28 +28,7 @@ import io.qalipsis.api.steps.StepSpecification
 internal class StartScenarioSpecificationWrapper(
     private val delegated: StepSpecificationRegistry,
     private val dagId: DirectedAcyclicGraphName
-) : StepSpecificationRegistry {
-
-    override val size
-        get() = delegated.size
-
-    override val rootSteps: List<StepSpecification<*, *, *>>
-        get() = delegated.rootSteps
-
-    override val dagsUnderLoad: Collection<DirectedAcyclicGraphName>
-        get() = delegated.dagsUnderLoad
-
-    override suspend fun <O> find(stepName: StepName): StepSpecification<*, O, *>? {
-        return delegated.find(stepName)
-    }
-
-    override fun exists(stepName: StepName): Boolean {
-        return delegated.exists(stepName)
-    }
-
-    override fun buildDagId(parent: DirectedAcyclicGraphName?): DirectedAcyclicGraphName {
-        return delegated.buildDagId(parent)
-    }
+) : StepSpecificationRegistry by delegated {
 
     override fun add(step: StepSpecification<*, *, *>) {
         step.directedAcyclicGraphName = dagId
@@ -60,13 +38,5 @@ internal class StartScenarioSpecificationWrapper(
     override fun insertRoot(newRoot: StepSpecification<*, *, *>, rootToShift: StepSpecification<*, *, *>) {
         newRoot.directedAcyclicGraphName = dagId
         delegated.insertRoot(newRoot, rootToShift)
-    }
-
-    override fun registerNext(previousStep: StepSpecification<*, *, *>, nextStep: StepSpecification<*, *, *>) {
-        delegated.registerNext(previousStep, nextStep)
-    }
-
-    override fun register(step: StepSpecification<*, *, *>) {
-        delegated.register(step)
     }
 }

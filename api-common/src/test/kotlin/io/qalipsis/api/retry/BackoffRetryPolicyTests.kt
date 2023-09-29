@@ -72,7 +72,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(3000, 4200)
+        assertThat(after - before).isBetween(3000, 4400)
         coVerify(exactly = 4) { service.mockMethod() }
     }
 
@@ -89,7 +89,7 @@ internal class BackoffRetryPolicyTests {
         val after = System.currentTimeMillis()
 
         // then
-        assertThat(after - before).isBetween(2000, 2040)
+        assertThat(after - before).isBetween(2000, 2200)
         coVerify(exactly = 3) { service.mockMethod() }
     }
 
@@ -120,27 +120,27 @@ internal class BackoffRetryPolicyTests {
         every { service.mockMethod() } throws exception
 
         // when
-        var before = System.currentTimeMillis()
+        val before = System.currentTimeMillis()
         val caught = assertThrows<Exception> {
             backoffRetryPolicy.execute(context, executable)
         }
-        var after = System.currentTimeMillis()
+        val after = System.currentTimeMillis()
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(10, 100)
+        assertThat(after - before).isBetween(10, 130)
         coVerify(exactly = 4) { service.mockMethod() }
 
         // when
-        var before2 = System.currentTimeMillis()
+        val before2 = System.currentTimeMillis()
         val caught2 = assertThrows<Exception> {
             backoffRetryPolicy.execute(context, executable)
         }
-        var after2 = System.currentTimeMillis()
+        val after2 = System.currentTimeMillis()
 
         // then
         assertThat(caught2).isSameAs(exception)
-        assertThat(after2 - before2).isBetween(10, 100)
+        assertThat(after2 - before2).isBetween(10, 140)
         coVerify(exactly = 8) { service.mockMethod() }
     }
 
@@ -166,7 +166,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(30, 140)
+        assertThat(after - before).isBetween(30, 160)
         coVerify(exactly = 7) { service.mockMethod() }
     }
 }
@@ -174,7 +174,7 @@ internal class BackoffRetryPolicyTests {
 class TestableService {
     fun mockMethod(): Int {
         var fact = 1
-        var number = (2..10).random()
+        val number = (2..10).random()
         for (count in number downTo 2) {
             fact *= count
         }

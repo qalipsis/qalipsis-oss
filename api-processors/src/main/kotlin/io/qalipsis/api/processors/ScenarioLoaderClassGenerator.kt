@@ -206,7 +206,7 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
 
     private fun TypeSpec.Builder.overrideBuildAtProvider(): TypeSpec.Builder {
         val buildTime = Instant.now()
-        val method = MethodSpec.methodBuilder("getBuildAt")
+        val method = MethodSpec.methodBuilder("getBuiltAt")
             .addAnnotation(Override::class.java)
             .addAnnotation(NotNull::class.java)
             .addModifiers(PUBLIC)

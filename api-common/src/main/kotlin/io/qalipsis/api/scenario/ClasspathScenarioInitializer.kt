@@ -56,6 +56,8 @@ class ClasspathScenarioInitializer : ScenarioFactory {
             .asSequence()
             .flatMap { ServicesFiles.readFile(it.openStream()) }
             .map { scenarioMetadata ->
+                // Loading from the TSV form.
+                // TODO Improve it using JSON.
                 val loaderClass = scenarioMetadata.split("\t")[3]
                 Class.forName(loaderClass).getConstructor().newInstance() as ScenarioLoader
             }
@@ -100,6 +102,11 @@ class ClasspathScenarioInitializer : ScenarioFactory {
                 loader.load(injector)
                 val scenarioSpecification = CURRENT_SCENARIO_SPECIFICATION!!
                 LOADING_SEMAPHORE.release()
+
+                scenarioSpecification.description = loader.description?.takeUnless(String::isNullOrBlank)
+                scenarioSpecification.version = loader.version
+                scenarioSpecification.builtAt = loader.builtAt
+
                 scenarioSpecification
             }
 

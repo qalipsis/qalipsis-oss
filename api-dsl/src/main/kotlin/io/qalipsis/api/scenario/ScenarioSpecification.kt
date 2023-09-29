@@ -17,6 +17,7 @@
 package io.qalipsis.api.scenario
 
 import io.qalipsis.api.services.ServicesFiles
+import java.time.Instant
 import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
 
 /**
@@ -32,6 +33,21 @@ interface ScenarioSpecification {
      * The number of steps specifications in a step scenario.
      */
     val size: Long
+
+    /**
+     * Description of the scenario, optional.
+     */
+    var description: String?
+
+    /**
+     * Version of the scenario.
+     */
+    var version: String
+
+    /**
+     * Timestamp when the scenario was built.
+     */
+    var builtAt: Instant
 }
 
 

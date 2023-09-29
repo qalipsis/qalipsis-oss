@@ -22,11 +22,15 @@ import io.qalipsis.api.context.StepName
 import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.Step
+import java.time.Instant
 
 /**
  * A [Scenario] represents a full chain of [DirectedAcyclicGraph]s containing all the steps to perform.
  *
  * @property name name of the scenario
+ * @property description description of the scenario
+ * @property version version of the scenario
+ * @property builtAt instant when the scenario was built
  * @property executionProfile defines how the minions should be started when executing the scenario
  * @property defaultRetryPolicy defines on the steps of the scenario when none is explicitly set
  * @property minionsCount default minions count to run the scenario when runtime factor is 1
@@ -34,6 +38,9 @@ import io.qalipsis.api.steps.Step
  */
 interface Scenario {
     val name: ScenarioName
+    val description: String?
+    val version: String
+    val builtAt: Instant
     val executionProfile: ExecutionProfile
     val defaultRetryPolicy: RetryPolicy
     val minionsCount: Int

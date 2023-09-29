@@ -24,7 +24,8 @@ import java.time.Instant
  *
  * @property name unique identifier of the scenario
  * @property description display name or user-friendly description of the scenario
- * @property name version of the scenario, should be a dot-separated version
+ * @property version version of the scenario, should be a dot-separated version
+ * @property builtAt timestamp when the scenario was compiled
  *
  * @author Eric Jessé
  */
@@ -37,7 +38,7 @@ interface ScenarioLoader {
 
     val version: String
 
-    val buildAt: Instant
+    val builtAt: Instant
 
     /**
      * Returns a creator of scenario, receiving the injector.

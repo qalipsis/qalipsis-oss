@@ -27,6 +27,7 @@ import io.qalipsis.api.steps.SingletonStepSpecification
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.sync.ImmutableSlot
 import kotlinx.coroutines.runBlocking
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -55,6 +56,12 @@ internal class ScenarioSpecificationImplementation(
     override var dagsUnderLoad = concurrentSet<DirectedAcyclicGraphName>()
 
     override var size: Long = 0
+
+    override var description: String? = null
+
+    override lateinit var version: String
+
+    override lateinit var builtAt: Instant
 
     override fun add(step: StepSpecification<*, *, *>) {
         size++
