@@ -22,7 +22,7 @@ package io.qalipsis.core.head.web
 import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
-import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -30,6 +30,7 @@ import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.annotation.Status
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
@@ -73,7 +74,7 @@ internal class CampaignController(
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
     private val campaignReportProvider: CampaignReportProvider,
-    private val campaignScheduler: CampaignScheduler
+    private val campaignScheduler: CampaignScheduler,
 ) {
 
     /**
@@ -102,10 +103,10 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
-        @Body @Valid campaign: CampaignConfiguration
-    ): HttpResponse<Campaign> {
+        @Body @Valid campaign: CampaignConfiguration,
+    ): Campaign {
         val campaignKey = campaignExecutor.start(tenant, authentication.name, campaign).key
-        return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
+        return campaignService.retrieve(tenant, campaignKey)
     }
 
     /**
@@ -126,23 +127,22 @@ internal class CampaignController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-validate")
+    @Status(HttpStatus.NO_CONTENT)
     suspend fun validate(
         @Parameter(
             name = "X-Tenant",
             description = "Contextual tenant",
             required = true,
             `in` = ParameterIn.HEADER
-        ) @NotBlank @Tenant tenant: String, @Body @Valid campaign: CampaignConfiguration
-    ): HttpResponse<String> {
-        return if (clusterFactoryService.getActiveScenarios(
+        ) @NotBlank @Tenant tenant: String,
+        @Body @Valid campaign: CampaignConfiguration,
+    ) {
+        require(
+            clusterFactoryService.getActiveScenarios(
                 tenant,
                 campaign.scenarios.keys
             ).size == campaign.scenarios.keys.size
-        ) {
-            HttpResponse.noContent()
-        } else {
-            HttpResponse.badRequest("Scenarios with names ${campaign.scenarios.keys.joinToString()} are unknown or currently disabled")
-        }
+        ) { "Scenarios with names ${campaign.scenarios.keys.joinToString()} are unknown or currently disabled" }
     }
 
     @Get
@@ -186,9 +186,9 @@ internal class CampaignController(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "20") @Positive size: String
-    ): HttpResponse<Page<Campaign>> {
-        return HttpResponse.ok(campaignService.search(tenant, filter.asFilters(), sort, page.toInt(), size.toInt()))
+        ) @Nullable @QueryValue(defaultValue = "20") @Positive size: String,
+    ): Page<Campaign> {
+        return campaignService.search(tenant, filter.asFilters(), sort, page.toInt(), size.toInt())
     }
 
     /**
@@ -208,6 +208,7 @@ internal class CampaignController(
         ]
     )
     @Timed("campaigns-abort")
+    @Status(HttpStatus.ACCEPTED)
     suspend fun abort(
         @Parameter(
             name = "X-Tenant",
@@ -225,10 +226,9 @@ internal class CampaignController(
             description = "Force the campaign to fail when set to true, defaults to false",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean
-    ): HttpResponse<Unit> {
+        ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean,
+    ) {
         campaignExecutor.abort(tenant, authentication.name, campaignKey, hard)
-        return HttpResponse.accepted()
     }
 
     /**
@@ -260,10 +260,9 @@ internal class CampaignController(
             description = "Comma separated list of keys of the campaigns to retrieve",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotEmpty @PathVariable campaignKeys: List<String>
-    ): HttpResponse<Collection<CampaignExecutionDetails>> {
-        val reports = campaignReportProvider.retrieveCampaignsReports(tenant, campaignKeys)
-        return HttpResponse.ok(reports)
+        ) @NotEmpty @PathVariable campaignKeys: List<String>,
+    ): Collection<CampaignExecutionDetails> {
+        return campaignReportProvider.retrieveCampaignsReports(tenant, campaignKeys)
     }
 
     /**
@@ -296,8 +295,8 @@ internal class CampaignController(
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
-    ): HttpResponse<CampaignConfiguration> {
-        return HttpResponse.ok(campaignService.retrieveConfiguration(tenant, campaignKey))
+    ): CampaignConfiguration {
+        return campaignService.retrieveConfiguration(tenant, campaignKey)
     }
 
     /**
@@ -330,10 +329,10 @@ internal class CampaignController(
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
-        @Parameter(hidden = true) authentication: Authentication
-    ): HttpResponse<Campaign> {
+        @Parameter(hidden = true) authentication: Authentication,
+    ): Campaign {
         val newCampaignKey = campaignExecutor.replay(tenant, authentication.name, campaignKey).key
-        return HttpResponse.ok(campaignService.retrieve(tenant, newCampaignKey))
+        return campaignService.retrieve(tenant, newCampaignKey)
     }
 
     /**
@@ -362,10 +361,10 @@ internal class CampaignController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
-        @Body @Valid configuration: CampaignConfiguration
-    ): HttpResponse<Campaign> {
+        @Body @Valid configuration: CampaignConfiguration,
+    ): Campaign {
         val campaignKey = campaignScheduler.schedule(tenant, authentication.name, configuration).key
-        return HttpResponse.ok(campaignService.retrieve(tenant, campaignKey))
+        return campaignService.retrieve(tenant, campaignKey)
     }
 
     /**
@@ -395,9 +394,9 @@ internal class CampaignController(
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @NotBlank @PathVariable campaignKey: String,
-        @Body @Valid configuration: CampaignConfiguration
-    ): HttpResponse<Campaign> {
+        @Body @Valid configuration: CampaignConfiguration,
+    ): Campaign {
         val updatedCampaignKey = campaignScheduler.update(tenant, authentication.name, campaignKey, configuration).key
-        return HttpResponse.ok(campaignService.retrieve(tenant, updatedCampaignKey))
+        return campaignService.retrieve(tenant, updatedCampaignKey)
     }
 }

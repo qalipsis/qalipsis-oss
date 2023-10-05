@@ -21,7 +21,6 @@ package io.qalipsis.core.head.web
 
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.QueryValue
@@ -122,10 +121,9 @@ internal class TimeSeriesController(
             `in` = ParameterIn.QUERY
         )
         @Nullable @PositiveDuration @QueryValue("timeframe") timeframe: Duration?
-    ): HttpResponse<Map<String, List<TimeSeriesAggregationResult>>> {
+    ): Map<String, List<TimeSeriesAggregationResult>> {
         require(from == null || until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
-        return HttpResponse.ok(
-            timeSeriesDataQueryService.render(
+        return timeSeriesDataQueryService.render(
                 tenant, dataSeriesReferences, AggregationQueryExecutionRequest(
                     tenant = tenant,
                     campaignsReferences = campaigns,
@@ -135,7 +133,6 @@ internal class TimeSeriesController(
                     aggregationTimeframe = timeframe
                 )
             )
-        )
     }
 
 
@@ -205,10 +202,9 @@ internal class TimeSeriesController(
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue("size", defaultValue = "500") @Positive @Max(10_000) size: Int
 
-    ): HttpResponse<Map<String, Page<out TimeSeriesRecord>>> {
+    ): Map<String, Page<out TimeSeriesRecord>> {
         require(from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
-        return HttpResponse.ok(
-            timeSeriesDataQueryService.search(
+        return timeSeriesDataQueryService.search(
                 tenant, dataSeriesReferences, DataRetrievalQueryExecutionRequest(
                     tenant = tenant,
                     campaignsReferences = campaigns,
@@ -220,7 +216,6 @@ internal class TimeSeriesController(
                     size = size
                 )
             )
-        )
     }
 
     @Get("/summary/campaign-status")
@@ -270,10 +265,8 @@ internal class TimeSeriesController(
             `in` = ParameterIn.QUERY
         )
         @Nullable @PositiveDuration @QueryValue("timeframe", defaultValue = "PT24H") timeframe: Duration
-    ): HttpResponse<List<CampaignSummaryResult>> {
+    ): List<CampaignSummaryResult> {
         require(until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
-        return HttpResponse.ok(
-            widgetService.aggregateCampaignResult(tenant, from, until, timeOffset, timeframe)
-        )
+        return widgetService.aggregateCampaignResult(tenant, from, until, timeOffset, timeframe)
     }
 }

@@ -4,7 +4,6 @@ import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.validation.Validated
@@ -58,9 +57,7 @@ internal class FactoryController(
             required = true,
             `in` = ParameterIn.HEADER
         ) @Tenant tenant: String,
-    ): HttpResponse<FactoryState> {
-        return HttpResponse.ok(
-            widgetService.getFactoryStates(tenant)
-        )
+    ): FactoryState {
+        return widgetService.getFactoryStates(tenant)
     }
 }
