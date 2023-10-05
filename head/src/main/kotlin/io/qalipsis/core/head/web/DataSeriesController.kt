@@ -23,7 +23,6 @@ import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
@@ -33,6 +32,7 @@ import io.micronaut.http.annotation.Patch
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.annotation.Status
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
@@ -70,7 +70,7 @@ import javax.validation.constraints.PositiveOrZero
 @Version("1.0")
 internal class DataSeriesController(
     private val dataSeriesService: DataSeriesService,
-    private val dataProvider: DataProvider
+    private val dataProvider: DataProvider,
 ) {
 
     @Post
@@ -96,14 +96,12 @@ internal class DataSeriesController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
-        @Body @Valid dataSeries: DataSeriesCreationRequest
-    ): HttpResponse<DataSeries> {
-        return HttpResponse.ok(
-            dataSeriesService.create(
-                tenant = tenant,
-                creator = authentication.name,
-                dataSeries = dataSeries
-            )
+        @Body @Valid dataSeries: DataSeriesCreationRequest,
+    ): DataSeries {
+        return dataSeriesService.create(
+            tenant = tenant,
+            creator = authentication.name,
+            dataSeries = dataSeries
         )
     }
 
@@ -135,14 +133,12 @@ internal class DataSeriesController(
             description = "Reference of the data series to retrieve",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reference: String
-    ): HttpResponse<DataSeries> {
-        return HttpResponse.ok(
-            dataSeriesService.get(
-                tenant = tenant,
-                username = authentication.name,
-                reference = reference
-            )
+        ) @NotBlank @PathVariable reference: String,
+    ): DataSeries {
+        return dataSeriesService.get(
+            tenant = tenant,
+            username = authentication.name,
+            reference = reference
         )
     }
 
@@ -175,15 +171,13 @@ internal class DataSeriesController(
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable reference: String,
-        @NotEmpty @Body dataSeriesPatches: List<@Valid DataSeriesPatch>
-    ): HttpResponse<DataSeries> {
-        return HttpResponse.ok(
-            dataSeriesService.update(
-                tenant = tenant,
-                username = authentication.name,
-                reference = reference,
-                patches = dataSeriesPatches
-            )
+        @NotEmpty @Body dataSeriesPatches: List<@Valid DataSeriesPatch>,
+    ): DataSeries {
+        return dataSeriesService.update(
+            tenant = tenant,
+            username = authentication.name,
+            reference = reference,
+            patches = dataSeriesPatches
         )
     }
 
@@ -202,6 +196,7 @@ internal class DataSeriesController(
     )
     @Secured(value = [Permissions.WRITE_DATA_SERIES])
     @Timed("data-series-delete")
+    @Status(HttpStatus.ACCEPTED)
     suspend fun delete(
         @Parameter(
             name = "X-Tenant",
@@ -214,10 +209,9 @@ internal class DataSeriesController(
             description = "Reference of the data series to delete",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reference: String
-    ): HttpResponse<Unit> {
+        ) @NotBlank @PathVariable reference: String,
+    ) {
         dataSeriesService.delete(tenant = tenant, username = authentication.name, reference = reference)
-        return HttpResponse.status(HttpStatus.ACCEPTED)
     }
 
     @Get("/{data-type}/names")
@@ -250,7 +244,7 @@ internal class DataSeriesController(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
+        ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int,
     ): Collection<String> {
         return dataProvider.searchNames(tenant, dataType, filter.asFilters(), size)
     }
@@ -313,7 +307,7 @@ internal class DataSeriesController(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int
+        ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int,
     ): Map<String, Collection<String>> {
         return dataProvider.searchTagsAndValues(tenant, dataType, filter.asFilters(), size)
     }
@@ -364,17 +358,15 @@ internal class DataSeriesController(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
-    ): HttpResponse<Page<DataSeries>> {
-        return HttpResponse.ok(
-            dataSeriesService.searchDataSeries(
-                tenant,
-                authentication.name,
-                filter.asFilters(),
-                sort.takeUnless(String::isNullOrBlank),
-                page,
-                size
-            )
+        ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int,
+    ): Page<DataSeries> {
+        return dataSeriesService.searchDataSeries(
+            tenant,
+            authentication.name,
+            filter.asFilters(),
+            sort.takeUnless(String::isNullOrBlank),
+            page,
+            size
         )
     }
 

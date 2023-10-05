@@ -22,7 +22,6 @@ package io.qalipsis.core.head.web
 import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.QueryValue
@@ -76,7 +75,7 @@ internal class ScenarioController(
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue sort: String
-    ): HttpResponse<List<ScenarioSummary>> {
-        return HttpResponse.ok(factoryService.getAllActiveScenarios(tenant, sort).toList())
+    ): List<ScenarioSummary> {
+        return factoryService.getAllActiveScenarios(tenant, sort).toList()
     }
 }

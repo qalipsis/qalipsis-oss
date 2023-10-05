@@ -23,8 +23,8 @@ import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Delete
@@ -34,6 +34,7 @@ import io.micronaut.http.annotation.Post
 import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
+import io.micronaut.http.annotation.Status
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
@@ -69,7 +70,7 @@ import javax.validation.constraints.PositiveOrZero
 )
 @Version("1.0")
 internal class ReportController(
-    private val reportService: ReportService
+    private val reportService: ReportService,
 ) {
 
     @Post
@@ -95,14 +96,12 @@ internal class ReportController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
-        @Body @Valid reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
-    ): HttpResponse<Report> {
-        return HttpResponse.ok(
-            reportService.create(
-                tenant = tenant,
-                creator = authentication.name,
-                reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
-            )
+        @Body @Valid reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest,
+    ): Report {
+        return reportService.create(
+            tenant = tenant,
+            creator = authentication.name,
+            reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
         )
     }
 
@@ -134,14 +133,12 @@ internal class ReportController(
             description = "Reference of the report to retrieve",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reference: String
-    ): HttpResponse<Report> {
-        return HttpResponse.ok(
-            reportService.get(
-                tenant = tenant,
-                username = authentication.name,
-                reference = reference
-            )
+        ) @NotBlank @PathVariable reference: String,
+    ): Report {
+        return reportService.get(
+            tenant = tenant,
+            username = authentication.name,
+            reference = reference
         )
     }
 
@@ -174,15 +171,13 @@ internal class ReportController(
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable reference: String,
-        @Body @Valid reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest
-    ): HttpResponse<Report> {
-        return HttpResponse.ok(
-            reportService.update(
-                tenant = tenant,
-                username = authentication.name,
-                reference = reference,
-                reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
-            )
+        @Body @Valid reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest,
+    ): Report {
+        return reportService.update(
+            tenant = tenant,
+            username = authentication.name,
+            reference = reference,
+            reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
         )
     }
 
@@ -201,6 +196,7 @@ internal class ReportController(
     )
     @Secured(value = [Permissions.WRITE_REPORT])
     @Timed("report-delete")
+    @Status(HttpStatus.ACCEPTED)
     suspend fun delete(
         @Parameter(
             name = "X-Tenant",
@@ -213,10 +209,9 @@ internal class ReportController(
             description = "Reference of the report to delete",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reference: String
-    ): HttpResponse<Unit> {
+        ) @NotBlank @PathVariable reference: String,
+    ) {
         reportService.delete(tenant = tenant, username = authentication.name, reference = reference)
-        return HttpResponse.status(HttpStatus.ACCEPTED)
     }
 
     @Get
@@ -263,17 +258,15 @@ internal class ReportController(
             description = "Size of the page to retrieve",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int
-    ): HttpResponse<Page<Report>> {
-        return HttpResponse.ok(
-            reportService.search(
-                tenant,
-                authentication.name,
-                filter.asFilters(),
-                sort.takeUnless(String::isNullOrBlank),
-                page,
-                size
-            )
+        ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int,
+    ): Page<Report> {
+        return reportService.search(
+            tenant,
+            authentication.name,
+            filter.asFilters(),
+            sort.takeUnless(String::isNullOrBlank),
+            page,
+            size
         )
     }
 
@@ -304,18 +297,16 @@ internal class ReportController(
             description = "Reference of the report to render",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reportReference: String
-    ): HttpResponse<ReportTask> {
-        return HttpResponse.ok(
-            reportService.render(
-                tenant,
-                authentication.name,
-                reportReference
-            )
+        ) @NotBlank @PathVariable reportReference: String,
+    ): ReportTask {
+        return reportService.render(
+            tenant,
+            authentication.name,
+            reportReference
         )
     }
 
-    @Produces("application/pdf;base64")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Get("/file/{taskReference}")
     @Operation(
         summary = "Downloads a report",
@@ -330,6 +321,7 @@ internal class ReportController(
         ]
     )
     @Secured(value = [Permissions.READ_REPORT])
+    @Status(HttpStatus.OK)
     suspend fun download(
         @Parameter(
             name = "X-Tenant",
@@ -342,16 +334,14 @@ internal class ReportController(
             description = "Reference of the task to be downloaded",
             required = true,
             `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable taskReference: String
-    ): HttpResponse<ByteArray> {
+        ) @NotBlank @PathVariable taskReference: String,
+    ): ByteArray {
         val response = reportService.read(
             tenant,
             authentication.name,
             taskReference
         )
-        val (fileName, content) = response
 
-        return HttpResponse.ok(content).header("Content-Disposition", "attachment; filename=\"$fileName\"")
+        return response.content
     }
-
 }
