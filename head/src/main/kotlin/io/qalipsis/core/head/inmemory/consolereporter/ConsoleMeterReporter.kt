@@ -24,8 +24,6 @@ import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.render.RenderScope
-import io.micronaut.context.annotation.Requirements
-import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.concurrentList
@@ -33,16 +31,14 @@ import io.qalipsis.api.lang.tryAndLog
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.reporter.MeterReporter
 import jakarta.inject.Singleton
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Reporter to display the live metrics of a running campaign.
+ */
 @Singleton
-@Requirements(
-    Requires(env = [ExecutionEnvironments.STANDALONE]),
-    Requires(property = "report.export.console-live.enabled", defaultValue = "false", value = "true")
-)
 internal class ConsoleMeterReporter : MeterReporter {
 
     private val meters =
@@ -65,6 +61,7 @@ internal class ConsoleMeterReporter : MeterReporter {
     /**
      * Displays the meters for the provided step in the console.
      */
+    @Suppress("UNCHECKED_CAST")
     fun renderStepMeters(
         renderScope: RenderScope,
         scenarioName: ScenarioName,
@@ -79,7 +76,7 @@ internal class ConsoleMeterReporter : MeterReporter {
                     reportedValue.sorted()
                 }.forEach { (meter, format, severity, toNumber) ->
                     tryAndLog(log) {
-                        val toNumberBlock = toNumber as Meter<*>.() -> Number
+                        val toNumberBlock = toNumber as (Meter<*>.() -> Number)
                         val value = meter.toNumberBlock().toDouble()
                         val text = ((indentation + String.format(format, value)).padEnd(columnSize))
                         when (value.severity()) {
