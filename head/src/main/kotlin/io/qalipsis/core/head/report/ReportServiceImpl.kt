@@ -55,8 +55,8 @@ import io.qalipsis.core.lifetime.ExitStatusException
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import java.time.Instant
 import io.qalipsis.api.query.Page as QalipsisPage
 
@@ -288,7 +288,7 @@ internal class ReportServiceImpl(
                 creator = creator
             )
         )
-        backgroundScope.async {
+        backgroundScope.launch {
             reportGenerator.processTaskGeneration(tenant, creator, reference, report, reportTask)
         }
 

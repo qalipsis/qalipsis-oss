@@ -50,6 +50,7 @@ import kotlin.time.Duration.Companion.seconds
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.STANDALONE]),
+    Requires(env = [ExecutionEnvironments.AUTOSTART]),
     Requires(property = "report.export.console-live.enabled", defaultValue = "false", value = "true")
 )
 internal class ConsoleCampaignProgressionReporter(
@@ -159,12 +160,12 @@ internal class ConsoleCampaignProgressionReporter(
 
     fun recordStartedMinion(scenarioName: ScenarioName, count: Int) {
         campaignState.progressionState.startedMinions.addAndGet(count)
-        campaignState.scenarios[scenarioName]!!.progressionState.startedMinions.addAndGet(count)
+        campaignState.scenarios[scenarioName]?.progressionState?.startedMinions?.addAndGet(count)
     }
 
     fun recordCompletedMinion(scenarioName: ScenarioName, count: Int) {
         campaignState.progressionState.completedMinions.addAndGet(count)
-        campaignState.scenarios[scenarioName]!!.progressionState.completedMinions.addAndGet(count)
+        campaignState.scenarios[scenarioName]?.progressionState?.completedMinions?.addAndGet(count)
     }
 
     suspend fun recordSuccessfulStepInitialization(
@@ -281,7 +282,7 @@ internal class ConsoleCampaignProgressionReporter(
     }
 
     fun complete(scenarioName: ScenarioName) {
-        campaignState.scenarios[scenarioName]!!.end.set(Instant.now())
+        campaignState.scenarios[scenarioName]?.end?.set(Instant.now())
     }
 
     fun stop() {
