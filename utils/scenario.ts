@@ -22,6 +22,11 @@ export interface Scenario {
 
 export interface ScenarioSummary {
     /**
+     * Version of the Scenario.
+     */
+    version: string;
+
+    /**
      * Display name of the scenario.
      */
     name: string;
@@ -40,6 +45,11 @@ export interface ScenarioSummary {
      * Details of the execution profile to start the minions in the scenario
      */
     executionProfileConfiguration: { [key: string]: any };
+
+    /**
+     * Description of the Scenario, if any
+     */
+    description?: string;
 }
 
 export interface DirectedAcyclicGraphSummary {
@@ -275,6 +285,23 @@ export interface ScenarioReport {
     messages: ReportMessage[];
 }
 
+
+export interface ScenarioRequest {
+    /**
+     * Counts of minions that will be assigned to the scenario, when not defined by the execution profile
+     */
+    minionsCount: number;
+    /**
+     * The configuration of the execution profile to execute a scenario
+     */
+    executionProfile: ExternalExecutionProfileConfiguration;
+    /**
+     * Distribution of the execution by zone
+     */
+    zones?: { [key: string]: number };
+}
+
+
 /**
  * The properties related to the scenario drawer.
  */
@@ -300,11 +327,61 @@ export interface ScenarioConfigurationForm {
     zones: ZoneForm[];
 }
 
+export const ExecutionProfileTypeKey = {
+    REGULAR: 'REGULAR',
+    ACCELERATING: 'ACCELERATING',
+    PROGRESSING_VOLUME: 'PROGRESSING_VOLUME',
+    STAGE: 'STAGE',
+    TIME_FRAME: 'TIME_FRAME'
+} as const;
+
+export type ExecutionProfileType = typeof ExecutionProfileTypeKey[keyof typeof ExecutionProfileTypeKey]
+
+export type CompletionMode = 'GRACEFUL' | 'HARD';
+
+export interface ExternalExecutionProfileConfiguration {
+    profile: ExecutionProfileType
+}
+
 export interface ExecutionProfileStage {
     minionsCount: number;
     duration: number;
     startDuration: number;
     resolution: number;
+}
+
+export class StageExternalExecutionProfileConfiguration implements ExternalExecutionProfileConfiguration {
+    profile: ExecutionProfileType;
+    stages: Stage[];
+    completion: CompletionMode;
+    
+    constructor(stages: Stage[], completion: CompletionMode) {
+        this.profile = ExecutionProfileTypeKey.STAGE;
+        this.stages = stages;
+        this.completion = completion;
+    }
+}
+
+export interface Stage {
+    /**
+     * Total number of minions to start in the stage.
+     */
+    minionsCount: number;
+    
+    /**
+     * Minions ramp up duration, in milliseconds.
+     */
+    rampUpDurationMs: number;
+
+    /**
+     * Stage duration, in milliseconds.
+     */
+    totalDurationMs: number;
+    
+    /**
+     * Minimal duration between two triggering of minions start, default to 500 ms.
+     */
+    resolutionMs: number;
 }
 
 export interface ZoneForm {

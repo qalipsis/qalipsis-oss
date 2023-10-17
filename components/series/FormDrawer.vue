@@ -30,8 +30,8 @@
             </a-row>
             <a-row class="form-row">
                 <a-col :span="8">
-                    <label class="form-label mb-4">Time series type</label>
-                    <FormRadioGroup 
+                    <FormRadioGroup
+                        label="Time series type"
                         form-control-name="dataType"
                         :options="dataTypeOptions"
                         :disabled="dataTypeOptionDisabled || dataSeries?.disabled"
@@ -333,7 +333,7 @@ const _updateDataSeries = async (formValues: DataSeriesForm) => {
         emit("dataSeriesUpdated");
         NotificationHelper.success(`${formValues.name} has been updated!`)
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 }
 
@@ -346,7 +346,7 @@ const _createDataSeries = async (formValues: DataSeriesForm) => {
         emit("dataSeriesUpdated");
         NotificationHelper.success(`${formValues.name} has been successfully created!`)
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 }
 
@@ -364,7 +364,7 @@ const _prepareTagMap = async (dataType: DataType) => {
         tagMap.value = await fetchTags(dataType);
         hasTagFetched.value = true;
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 }
 
@@ -379,7 +379,7 @@ const _prepareValueNameFieldOptions = async (dataType: DataType) => {
             }));
         hasValueNameFetched.value = true;
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 
@@ -393,7 +393,7 @@ const _prepareFieldOptions = async (dataType: DataType) => {
         }))
         hasFieldNameFetched.value = true;    
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 

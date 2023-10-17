@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { DefaultCampaignConfiguration } from "utils/configuration";
 import { ScenarioConfigurationForm, ScenarioSummary } from "utils/scenario";
 
 interface ScenarioTableState {
@@ -10,6 +11,7 @@ interface ScenarioTableState {
     selectedRows: ScenarioSummary[],
     selectedRowKeys: string[],
     scenarioConfig:  { [key: string]: ScenarioConfigurationForm }
+    defaultCampaignConfiguration: DefaultCampaignConfiguration | null
 }
 
 export const useScenarioTableStore = defineStore("ScenarioTable", {
@@ -22,7 +24,8 @@ export const useScenarioTableStore = defineStore("ScenarioTable", {
             dataSource: [],
             selectedRows: [],
             selectedRowKeys: [],
-            scenarioConfig: {}
+            scenarioConfig: {},
+            defaultCampaignConfiguration: null,
         }
     },
     getters: {

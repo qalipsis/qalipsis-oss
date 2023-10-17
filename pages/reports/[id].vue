@@ -102,7 +102,7 @@ const _fetchReport = async () => {
         });
         isReady.value = true;
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 

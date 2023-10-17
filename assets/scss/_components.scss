@@ -352,4 +352,23 @@
     img:hover {
       filter: $primary-color-svg;
     }
-  }
+}
+
+/* Date picker */
+:root {
+    .dp__theme_light {
+        --dp-primary-color: #41c9ca;
+        --dp-primary-disabled-color: #939b9d;
+    }
+    
+    .dp__input {
+        --dp-border-radius: 8px;
+        line-height: 25px;
+    }
+
+    .date-time-picker.has-error {
+        .dp__input {
+            border-color: #ff7875;
+        }   
+    }
+}

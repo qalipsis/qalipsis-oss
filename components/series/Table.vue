@@ -142,7 +142,7 @@ onMounted(async () => {
 
     await seriesTableStore.fetchDataSeriesTableDataSource();
   } catch (error) {
-    ErrorHelper.handleHttpRequestError(error)
+    ErrorHelper.handleHttpResponseError(error)
   }
 })
 
@@ -168,7 +168,7 @@ const handlePaginationChange = async (
       })
       await seriesTableStore.fetchDataSeriesTableDataSource();
     } catch (error) {
-      ErrorHelper.handleHttpRequestError(error)
+      ErrorHelper.handleHttpResponseError(error)
     }
 }
 
@@ -183,7 +183,7 @@ const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData)
     await duplicateDataSeries(dataSeriesTableData);
     NotificationHelper.success(`The data series ${dataSeriesTableData.displayName} has been successfully copied`)  
   } catch (error) {
-    ErrorHelper.handleHttpRequestError(error)
+    ErrorHelper.handleHttpResponseError(error)
   }
   await seriesTableStore.fetchDataSeriesTableDataSource();
 }

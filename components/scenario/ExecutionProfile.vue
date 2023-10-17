@@ -15,7 +15,7 @@
         suffix="ms"
         :form-control-name="`executionProfileStages[${index}].duration`"
         :field-validation-schema="executionProfileSchema.duration"
-        @input="handleDurationInputChange($event)"
+        @input="handleDurationInputChange"
       />
     </a-col>
     <a-col :span="6">
@@ -24,7 +24,7 @@
         suffix="ms"
         :form-control-name="`executionProfileStages[${index}].startDuration`"
         :field-validation-schema="executionProfileSchema.startDuration"
-        @input="handleStartDurationInputChange($event)"
+        @input="handleStartDurationInputChange"
       />
     </a-col>
     <a-col :span="6">
@@ -145,31 +145,11 @@ const executionProfileSchema = {
   ),
 };
 
-const handleDurationInputChange = (newDurationValue: string) => {
-  // When the duration or start duration is not a number, return
-  // if (
-  //   isNaN(+newDurationValue) ||
-  //   isNaN(fields.value[props.index].value.startDuration)
-  // )
-  //   return;
-
-  // hasInvalidStartDuration.value =
-  //   +newDurationValue < fields.value[props.index].value.startDuration;
-
+const handleDurationInputChange = () => {
   emit("executionProfileChange", fields.value[props.index].value);
 };
 
-const handleStartDurationInputChange = (newStartDurationValue: string) => {
-  // When the duration or start duration is not a number, return
-  // if (
-  //   isNaN(+newStartDurationValue) ||
-  //   isNaN(fields.value[props.index].value.duration)
-  // )
-  //   return;
-
-  // hasInvalidStartDuration.value =
-  //   +newStartDurationValue > fields.value[props.index].value.duration;
-
+const handleStartDurationInputChange = () => {
   emit("executionProfileChange", fields.value[props.index].value);
 };
 

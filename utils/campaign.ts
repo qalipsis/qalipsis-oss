@@ -1,4 +1,5 @@
-import { ScenarioExecutionDetails, ScenarioReport } from "./scenario";
+import { Tag } from "./common";
+import { ExecutionProfileStage, ExternalExecutionProfileConfiguration, Scenario, ScenarioExecutionDetails, ScenarioReport, ScenarioRequest } from "./scenario";
 
 export interface Campaign {
     /**
@@ -201,4 +202,77 @@ export interface CampaignOption extends CampaignExecutionDetails {
     strokeDashArray: number,
     isActive: boolean,
     enrichedScenarioReports: ScenarioReport[]
+}
+
+export const TimeoutType = {
+    SOFT: 'soft',
+    HARD: 'hard'
+} as const
+
+
+export type TimeoutTypeKeys = typeof TimeoutType[keyof typeof TimeoutType];
+
+export type TimeRange = 'HOURLY' | 'DAILY' | 'MONTHLY';
+
+export interface CampaignConfiguration {
+    /**
+     * Name of the campaign
+     */
+    name: string;
+    /**
+     * Speed factor to apply on the execution profile, each strategy will apply it differently depending on its own implementation
+     */
+    speedFactor: number;
+    /**
+     * Time to wait before the first minion is executed, it should take the latency of the factories into consideration
+     */
+    startOffsetMs: number;
+    /**
+     * Limit duration of the whole campaign before it is aborted
+     */
+    timeout?: number;
+    /**
+     * Limit duration of the whole campaign before it is aborted
+     */
+    hardTimeout?: boolean;
+    /**
+     * The map of the scenarios for the new campaign
+     */
+    scenarios: { [key: string]: ScenarioRequest };
+    /**
+     * The instant of the next execution
+     */
+    scheduledAt?: string;
+
+    scheduling?: Schedule;
+}
+
+export interface Schedule {
+
+    scheduling: TimeRange
+    /**
+     * The time zone ID to use for the scheduling
+     */
+    timeZone: string;
+    /**
+     * It could be different depending on the selected time range
+     * 
+     * HOURLY: a set of 0-23 based
+     * DAILY: a set of 1-7 based
+     * MONTHLY: should be a set of -15 to -1-based or 1 to 31-based
+     */
+    restrictions: number[];
+}
+
+export interface CampaignConfigurationForm {
+    timeoutType: TimeoutTypeKeys;
+    durationValue: string;
+    durationUnit: string;
+    scheduled: boolean;
+    repeatEnabled: boolean;
+    repeatTimeRange: TimeRange;
+    repeatValues: string[];
+    relativeRepeatValues: string[];
+    timezone: string;
+    scheduledTime: Date | null;
 }

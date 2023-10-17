@@ -31,7 +31,7 @@ const handleConfirmButtonClick = async () => {
         emits('update:open', false)
         NotificationHelper.success(`Successfully delete ${props.modalContent}`);
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 
     // When the selected data reference are greater or equal to the current display data

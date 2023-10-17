@@ -66,7 +66,7 @@ onMounted(async () => {
     try {
         await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 })
 
@@ -92,7 +92,7 @@ const handlePaginationChange = async (
         })
         await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 }
 

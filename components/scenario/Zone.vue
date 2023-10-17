@@ -20,7 +20,7 @@
     <a-col :span="1">
       <div
         class="cursor-pointer pt-7 scenario-form-delete-btn-wrapper"
-        @click="remove(index)"
+        @click="handleDeleteBtnClick"
       >
         <BaseIcon icon="/icons/icon-delete-small.svg" />
       </div>
@@ -35,14 +35,14 @@ import { ZoneForm } from "utils/scenario";
 import { useFieldArray } from "vee-validate";
 import * as zod from "zod";
 
-defineProps<{
+const props = defineProps<{
   index: number;
   zoneOptions: FormMenuOption[];
   zoneForm?: ZoneForm;
 }>();
 
 const emit = defineEmits<{
-  (e: "zoneSharedInputChange", v: number): void
+  (e: "zoneSharedInputChange", v: number | null): void
 }>()
 
 const { remove, fields } = useFieldArray<ZoneForm>("zones");
@@ -69,4 +69,10 @@ const zoneSchema = {
       .nullable()
   ),
 };
+
+const handleDeleteBtnClick = () => {
+  remove(props.index);
+  emit('zoneSharedInputChange', null)
+}
+
 </script>

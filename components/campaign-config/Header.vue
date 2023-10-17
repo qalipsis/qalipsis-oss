@@ -1,0 +1,179 @@
+<template>
+  <BaseHeader>
+    <div class="flex space-between items-center full-width">
+      <div class="flex items-center">
+        <BaseIcon
+          icon="/icons/icon-arrow-left-black.svg"
+          class="cursor-pointer icon-link pr-2"
+          @click="navigateTo('/campaigns')"
+        />
+        <BaseTitle v-model:content="campaignName" :editable="true" />
+      </div>
+      <div class="flex items-center">
+        <BaseSwitch
+          @checkedChange="handleCheckedChange"
+          :numberOfSelectedItems="selectedRowKeys.length"
+        />
+        <div class="cursor-pointer pl-2" @click="handleSettingBtnClick">
+          <BaseIcon icon="/icons/icon-setting-grey.svg" />
+        </div>
+        <BaseSearch
+          class="ml-2"
+          v-model="searchQuery"
+          placeholder="Search scenario..."
+          size="large"
+          @search="handleSearch"
+        />
+        <BaseButton
+          class="ml-2"
+          :text="executionText"
+          @click="handleRunBtnClick"
+          :disabled="selectedRowKeys.length === 0"
+        />
+      </div>
+    </div>
+  </BaseHeader>
+  <CampaignConfigDrawer
+    v-if="open"
+    :campaignConfigurationForm="campaignConfigForm"
+    v-model:open="open"
+    @submit="handleCampaignConfigFormSubmit($event)"
+  />
+</template>
+
+<script setup lang="ts">
+import { storeToRefs } from "pinia";
+import { CampaignConfigurationForm } from "utils/campaign";
+import { ScenarioConfigurationForm } from "utils/scenario";
+
+const scenarioTaleStore = useScenarioTableStore();
+const { selectedRowKeys } = storeToRefs(scenarioTaleStore);
+
+const props = defineProps<{
+  campaignKey?: string,
+  campaignName?: string,
+  campaignConfigForm?: CampaignConfigurationForm
+}>()
+
+const { createCampaign, scheduleCampaign, updateCampaignConfig } = useCampaignApi();
+
+const campaignConfigForm = ref<CampaignConfigurationForm>({
+  timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutType.SOFT,
+  durationValue: props.campaignConfigForm?.durationValue ?? "",
+  durationUnit: props.campaignConfigForm?.durationUnit ?? "MS",
+  scheduled: props.campaignConfigForm?.scheduled ?? false,
+  repeatEnabled: props.campaignConfigForm?.repeatEnabled ?? false,
+  repeatTimeRange: props.campaignConfigForm?.repeatTimeRange ?? "DAILY",
+  repeatValues: props.campaignConfigForm?.repeatValues ?? [],
+  relativeRepeatValues: props.campaignConfigForm?.relativeRepeatValues ?? [],
+  timezone: props.campaignConfigForm?.timezone ?? "",
+  scheduledTime: props.campaignConfigForm?.scheduledTime ?? null,
+});
+const campaignName = ref(props.campaignName ?? "New Campaign");
+const searchQuery = ref("");
+const open = ref(false);
+const executionText = computed(() => {
+  return campaignConfigForm.value?.scheduled ? "Schedule" : "Run immediately";
+});
+
+const handleSearch = () => {
+  if (searchQuery.value) {
+    const query = SearchHelper.getSanitizedQuery(searchQuery.value);
+    const filteredScenarioSummary = SearchHelper.performFuzzySearch(
+      query,
+      scenarioTaleStore.allScenarioSummary,
+      ["name"]
+    );
+    scenarioTaleStore.$patch({
+      dataSource: filteredScenarioSummary,
+      totalElements: filteredScenarioSummary.length,
+    });
+  } else {
+    scenarioTaleStore.$patch({
+      dataSource: scenarioTaleStore.allScenarioSummary,
+      totalElements: scenarioTaleStore.allScenarioSummary.length,
+    });
+  }
+};
+
+const handleCheckedChange = (checked: boolean) => {
+  scenarioTaleStore.$patch({
+    dataSource: checked
+      ? scenarioTaleStore.selectedRows
+      : scenarioTaleStore.allScenarioSummary,
+    totalElements: checked
+      ? scenarioTaleStore.selectedRows.length
+      : scenarioTaleStore.allScenarioSummary.length,
+  });
+};
+
+const handleSettingBtnClick = () => {
+  open.value = true;
+};
+
+const handleCampaignConfigFormSubmit = (form: CampaignConfigurationForm) => {
+  campaignConfigForm.value = form;
+};
+
+const handleRunBtnClick = async () => {
+  const selectedScenarioConfigMap: {
+    [key: string]: ScenarioConfigurationForm;
+  } = {};
+  scenarioTaleStore.selectedRows.forEach((scenario) => {
+    if (scenarioTaleStore.scenarioConfig[scenario.name]) {
+      selectedScenarioConfigMap[scenario.name] =
+        scenarioTaleStore.scenarioConfig[scenario.name];
+    } else {
+      const defaultStage =
+        scenarioTaleStore.defaultCampaignConfiguration!.validation.stage;
+      const defaultScenarioForm: ScenarioConfigurationForm = {
+        executionProfileStages: [
+          {
+            minionsCount: defaultStage.minMinionsCount,
+            duration: TimeframeHelper.toMilliseconds(
+              defaultStage.minDuration,
+              TimeframeUnit.SEC
+            ),
+            startDuration: TimeframeHelper.toMilliseconds(
+              defaultStage.minStartDuration,
+              TimeframeUnit.SEC
+            ),
+            resolution: TimeframeHelper.toMilliseconds(
+              defaultStage.minResolution,
+              TimeframeUnit.SEC
+            ),
+          },
+        ],
+        zones: [],
+      };
+      selectedScenarioConfigMap[scenario.name] = defaultScenarioForm;
+    }
+  });
+  
+  const request = CampaignHelper.toCampaignConfiguration(
+    campaignName.value,
+    campaignConfigForm.value!,
+    selectedScenarioConfigMap
+  );
+
+  try {
+    if (campaignConfigForm.value.scheduled) {
+      if (props.campaignKey) {
+        // Updates the existing scheduled campaign
+        await updateCampaignConfig(props.campaignKey, request);
+      } else {
+        // Creates a new scheduled campaign
+        await scheduleCampaign(request);
+      }
+    } else {
+      // Creates a new campaign
+      await createCampaign(request);
+    }
+    
+    navigateTo("/campaigns");
+  } catch (error) {
+    ErrorHelper.handleHttpResponseError(error)  
+  }
+  
+};
+</script>

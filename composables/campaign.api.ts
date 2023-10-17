@@ -1,8 +1,8 @@
-import { Campaign, CampaignExecutionDetails } from "utils/campaign";
+import { Campaign, CampaignConfiguration, CampaignExecutionDetails } from "utils/campaign";
 import { Page, PageQueryParams } from "utils/page";
 
 export const useCampaignApi = () => {
-    const { get$, post$ } = baseApi();
+    const { get$, post$, put$ } = baseApi();
 
     /**
      * Fetches the campaigns
@@ -12,6 +12,47 @@ export const useCampaignApi = () => {
      */
     const fetchCampaigns = async (pageQueryParams: PageQueryParams): Promise<Page<Campaign>> => {
         return get$<Page<Campaign>, any>("/campaigns", pageQueryParams);
+    }
+
+    /**
+     * Fetches the configuration of the campaign
+     * 
+     * @param campaignKey The key of the campaign
+     * @returns The configuration of the campaign
+     */
+    const fetchCampaignConfig = async (campaignKey: string): Promise<CampaignConfiguration> => {
+        return get$<CampaignConfiguration, any>(`/campaigns/${campaignKey}/configuration`);
+    }
+
+    /**
+     * Creates a new campaign.
+     * 
+     * @param params The campaign configuration
+     * @returns The new campaign details
+     */
+    const createCampaign = async (params: CampaignConfiguration): Promise<Campaign> => {
+        return post$<Campaign, CampaignConfiguration>("/campaigns", params);
+    }
+
+    /**
+     * Schedule a campaign 
+     * 
+     * @param params The campaign configuration
+     * @returns The scheduled campaign details
+     */
+    const scheduleCampaign = async (params: CampaignConfiguration): Promise<Campaign> => {
+        return post$<Campaign, CampaignConfiguration>("/campaigns/schedule", params);
+    }
+
+    /**
+     * Updates the configuration of a scheduled campaign
+     * 
+     * @param campaignKey The key of the campaign
+     * @param params The campaign configuration to be updated
+     * @returns The updated campaign configuration 
+     */
+    const updateCampaignConfig = async (campaignKey: string, params: CampaignConfiguration): Promise<Campaign> => {
+        return put$<Campaign, CampaignConfiguration>(`/campaigns/schedule/${campaignKey}`, params);
     }
 
     /**
@@ -55,6 +96,10 @@ export const useCampaignApi = () => {
 
     return {
         fetchCampaigns,
+        fetchCampaignConfig,
+        createCampaign,
+        updateCampaignConfig,
+        scheduleCampaign,
         fetchCampaignDetails,
         fetchMultipleCampaignsDetails,
         abortCampaign

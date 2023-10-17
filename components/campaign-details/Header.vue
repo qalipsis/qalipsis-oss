@@ -59,7 +59,7 @@ const handleScenarioChange = async (scenarioNames: string[]) => {
     try {
         await campaignDetailsStore.updateChart();
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 

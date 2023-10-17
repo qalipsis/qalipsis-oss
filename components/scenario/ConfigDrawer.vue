@@ -60,7 +60,7 @@
         v-for="(_, index) in zoneFields"
         :index="index"
         :zone-options="zoneOptions"
-        @zoneSharedInputChange="handleZoneSharedInputChange"
+        @zoneSharedInputChange="handleZoneSharedInputChange()"
       />
       <template v-if="isConfirmBtnClicked">
         <span
@@ -261,7 +261,7 @@ const _validateZoneSharedSummary = () => {
 
     return acc;
   }, 0);
-  hasValidZoneShareSummary.value = summaryOfZoneShare === 100;
+  hasValidZoneShareSummary.value = (values.zones.length === 0 || summaryOfZoneShare === 100);
 };
 
 const _validateDurationSummary = () => {
@@ -322,6 +322,6 @@ const _setScenarioConfigChartDataSeries = (
     chartDataSeries.value = chartData.chartDataSeries;
     chartOptions.value = chartData.chartOptions;
     isRenderingChart.value = false;
-  }, 50);
+  }, 100);
 };
 </script>

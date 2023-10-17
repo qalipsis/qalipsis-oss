@@ -1,7 +1,37 @@
 import { differenceInCalendarDays, format, intervalToDuration } from "date-fns";
 import { FormMenuOption } from "./form";
+import { FormattedTimeframe } from "./timeframe";
 
 export class TimeframeHelper {
+
+    /**
+     * Returns number with ordinal number suffix.
+     * @param number The number to add suffix.
+     *
+     * @example nthNumber(1) returns 1st, nthNumber(2) returns 2nd
+     */
+    static getOrdinalNumberSuffix = (number: number): string => {
+        if (number > 3 && number < 21) return "th";
+
+        switch (number % 10) {
+            case 1:
+                return "st";
+            case 2:
+                return "nd";
+            case 3:
+                return "rd";
+            default:
+                return "th";
+        }
+    };
+
+    static getTimezoneOptions = (): FormMenuOption[] => {
+        return Intl.supportedValuesOf('timeZone')
+            .map(timezone => ({
+                label: timezone,
+                value: timezone
+            }));
+    }
 
     static getTimeframeUnitOptions = (): FormMenuOption[] => {
         return [

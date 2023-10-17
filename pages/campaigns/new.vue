@@ -1,7 +1,7 @@
 <template>
     <div>
-        <NewCampaignHeader />
-        <NewCampaignContent />
+        <CampaignConfigHeader />
+        <CampaignConfigContent />
     </div>
 </template>
 

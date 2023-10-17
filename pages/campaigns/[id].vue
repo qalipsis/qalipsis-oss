@@ -1,11 +1,13 @@
 <template>
-    <div v-if="isPageReady">
+    <div v-if="isPageReady && campaignDetails">
         <CampaignDetailsHeader :campaignDetails="campaignDetails" />
         <CampaignDetailsContent :campaignDetails="campaignDetails" />
     </div>
 </template>
 
 <script setup lang="ts">
+import { CampaignExecutionDetails } from 'utils/campaign';
+
 const { fetchCampaignDetails } = useCampaignApi();
 const { fetchAllDataSeries } = useDataSeriesApi();
 
@@ -13,7 +15,7 @@ const campaignDetailsStore = useCampaignDetailsStore();
 const userStore = useUserStore();
 
 const route = useRoute();
-const campaignDetails = ref<CampaignExecutionDetails>(null);
+const campaignDetails = ref<CampaignExecutionDetails>();
 const isPageReady = ref(false);
 
 onMounted(async () => {
@@ -21,7 +23,7 @@ onMounted(async () => {
         const campaignKey = route.params.id as string;
         campaignDetails.value = await fetchCampaignDetails(campaignKey);
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 
     // The selected scenario names from the url query params.

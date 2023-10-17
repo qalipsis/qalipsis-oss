@@ -9,6 +9,9 @@
     :rowSelection="rowSelection"
   >
     <template #bodyCell="{ column, record }">
+      <template v-if="column.key === 'description'">
+        <span>{{ record.description ?? '-' }}</span>
+      </template>
       <template v-if="column.key === 'actions'">
         <div class="table-action-item-wrapper">
             <div class="flex items-center cursor-pointer table-action-item" @click="handleConfigureBtnClick(record)">
@@ -90,9 +93,10 @@ onMounted(async () => {
       allScenarioSummary: allScenarioSummary,
       dataSource: allScenarioSummary,
       totalElements: allScenarioSummary.length,
+      defaultCampaignConfiguration: campaignConfiguration
     });
   } catch (error) {
-    ErrorHelper.handleHttpRequestError(error);
+    ErrorHelper.handleHttpResponseError(error);
   }
 });
 

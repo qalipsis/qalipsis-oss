@@ -1,26 +1,88 @@
 import { ApexOptions } from "apexcharts";
 import { format } from "date-fns";
-import { ExecutionProfileStage, ReportMessage, Scenario, ScenarioReport } from "./scenario";
-import { CampaignExecutionDetails } from "./campaign";
-import { Tag } from "./common";
+import { CampaignConfiguration, CampaignExecutionDetails } from "./campaign";
 import { ChartData } from "./chart";
+import { Tag } from "./common";
+import { ExecutionProfileStage, ReportMessage, ScenarioConfigurationForm, ScenarioReport, ScenarioRequest, ScenarioSummary, Stage, StageExternalExecutionProfileConfiguration, ZoneForm } from "./scenario";
 
 export class ScenarioHelper {
     static SCENARIO_SUMMARY_NAME = 'Campaign Summary';
     static SCENARIO_SUMMARY_ID = 'campaignSummary';
+
+    static toScenarioConfigForm(campaignConfiguration: CampaignConfiguration): { [key: string]: ScenarioConfigurationForm } {
+        const scenarioKeyToScenarioRequest = campaignConfiguration.scenarios;
+
+        return Object.keys(campaignConfiguration.scenarios)
+            .reduce<{ [key: string]: ScenarioConfigurationForm }>((acc, cur) => {
+                const executionProfile = scenarioKeyToScenarioRequest[cur].executionProfile as StageExternalExecutionProfileConfiguration;
+                const zones = scenarioKeyToScenarioRequest[cur].zones;
+                const stages = executionProfile.stages.map<ExecutionProfileStage>(stage => ({
+                    resolution: stage.resolutionMs,
+                    minionsCount: stage.minionsCount,
+                    startDuration: stage.totalDurationMs,
+                    duration: stage.rampUpDurationMs
+                }));
+                const zoneForms: ZoneForm[] = zones
+                    ? Object.keys(zones).map(zoneName => ({ name: zoneName, share: zones[zoneName]}))
+                    : [];
+                acc[cur] = {
+                    executionProfileStages: stages,
+                    zones: zoneForms
+                };
+                
+                return acc
+            }, {});
+    }
+
+    static toScenarioRequest(scenarioConfigForm: ScenarioConfigurationForm): ScenarioRequest {
+        const totalMinionsCount = scenarioConfigForm.executionProfileStages.reduce((acc, cur) => {
+            acc += +cur.minionsCount;
+            return acc;
+        }, 0);
+        const stages: Stage[] = scenarioConfigForm.executionProfileStages.map(executionProfileStage => {
+            return {
+                minionsCount: +executionProfileStage.minionsCount,
+                rampUpDurationMs: +executionProfileStage.duration,
+                totalDurationMs: +executionProfileStage.startDuration,
+                resolutionMs: +executionProfileStage.resolution
+            }
+        })
+
+        const scenarioRequest: ScenarioRequest = {
+            minionsCount: totalMinionsCount,
+            executionProfile: new StageExternalExecutionProfileConfiguration(stages, 'GRACEFUL'),
+        }
+
+        if (scenarioConfigForm.zones.length > 0) {
+            const zones = scenarioConfigForm.zones.reduce<{ [key: string]: number }>((acc, cur) => {
+                acc[cur.name] = cur.share;
+                
+                return acc;
+            }, {})
+            scenarioRequest.zones = zones
+        }
+
+
+        return scenarioRequest
+    }
 
     static getTableColumnConfigs() {
         return [{
             title: 'Scenario',
             dataIndex: 'name',
             key: 'name',
-            sorter: (next: Scenario, prev: Scenario) => next.name.localeCompare(prev.name)
+            sorter: (next: ScenarioSummary, prev: ScenarioSummary) => next.name.localeCompare(prev.name)
         }, {
-            title: 'Minions',
-            dataIndex: 'minionsCount',
-            key: 'minionsCount',
-            sorter: (next: Scenario, prev: Scenario) => next.minionsCount - prev.minionsCount
-        },{
+            title: 'Version',
+            dataIndex: 'version',
+            key: 'version',
+            sorter: (next: ScenarioSummary, prev: ScenarioSummary) => next.version.localeCompare(prev.name)
+        }, {
+            title: 'Description',
+            dataIndex: 'description',
+            key: 'description',
+            sorter: (next: ScenarioSummary, prev: ScenarioSummary) => next.description?.localeCompare(prev.description ?? '')
+        }, {
             title: '',
             dataIndex: 'actions',
             key: 'actions',
@@ -377,7 +439,7 @@ export class ScenarioHelper {
      * @returns the chart data series to be displayed
      */
     static toScenarioConfigChartData(executionProfileStages: ExecutionProfileStage[]): ChartData {
-        const chartOptions = ScenarioHelper.SCENARIO_CONFIG_CHART_OPTIONS;
+        const chartOptions = {...ScenarioHelper.SCENARIO_CONFIG_CHART_OPTIONS};
         const chartDatSeries: {x: number, y: number}[] = [{ x: 0, y: 0 }];
         let cumulativeDuration = 0;
         let cumulativeMinionsCount = 0;

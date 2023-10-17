@@ -78,7 +78,7 @@ onMounted(async () => {
             .map(dataSeriesOption => Object.assign({}, dataSeriesOption));
         showMore.value = dataSeriesOptions.value.length > availableDataSeriesOptions.value.length;
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 })
 

@@ -2,7 +2,7 @@
  * The formatted timeframe value and unit
  */
 export interface FormattedTimeframe {
-    value: number,
+    value: number | null,
     unit: TimeframeUnit
 }
 

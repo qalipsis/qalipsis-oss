@@ -1,5 +1,5 @@
 <template>
-  <label v-if="label" class="form-label">{{ label }}</label>
+  <label v-if="label" class="form-label mb-4">{{ label }}</label>
   <a-radio-group 
     v-model:value="value"
     :disabled="disabled"

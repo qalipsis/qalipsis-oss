@@ -75,7 +75,7 @@ const handleCheckedChange = async (checked: boolean) => {
         try {
             await campaignsTableStore.fetchCampaignsTableDataSource()
         } catch (error) {
-            ErrorHelper.handleHttpRequestError(error)
+            ErrorHelper.handleHttpResponseError(error)
         }
     }
 }
@@ -94,7 +94,7 @@ const handleCompareReportBtnClick = async () => {
         const report = await createReport(reportCreationRequest);
         navigateTo(`/reports/${report.reference}`);
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 

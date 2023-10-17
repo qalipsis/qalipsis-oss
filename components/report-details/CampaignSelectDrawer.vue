@@ -68,7 +68,7 @@ const handleCampaignSelectBtnClick = async () => {
         emit("saved");
         NotificationHelper.success(`Report ${reportDetailsStore.reportName} has been successfully updated.`)
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }
 }
 

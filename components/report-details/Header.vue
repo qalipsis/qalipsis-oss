@@ -47,7 +47,7 @@ const handleSaveReportBtnClick = async () => {
         NotificationHelper.success(`Report ${reportDetailsStore.reportName} has been successfully updated.`)
         emit("saved")
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error)
+        ErrorHelper.handleHttpResponseError(error)
     }   
 }
 

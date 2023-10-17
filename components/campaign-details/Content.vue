@@ -81,7 +81,7 @@ onMounted(async () => {
     try {
         await campaignDetailsStore.updateChart();
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 })
 
@@ -99,7 +99,7 @@ watch(campaignDetailStatus, () => {
             // Updates the line chart.
             await campaignDetailsStore.updateChart();
         } catch (error) {
-            ErrorHelper.handleHttpRequestError(error)
+            ErrorHelper.handleHttpResponseError(error)
         }
     }, 10000)
   } else {
@@ -138,7 +138,7 @@ const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSer
     try {
         await campaignDetailsStore.updateChart();
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 
@@ -190,7 +190,7 @@ const _stopCampaign = async (isForceAbort: boolean) => {
         })
         campaignStopModalOpen.value = false;
     } catch (error) {
-        ErrorHelper.handleHttpRequestError(error);
+        ErrorHelper.handleHttpResponseError(error);
     }
 }
 </script>
