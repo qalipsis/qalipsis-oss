@@ -43,6 +43,13 @@ kapt.useBuildCache = false
 
 val apiVersion: String by project
 
+repositories {
+    maven {
+        name = "jitpack-dependencies"
+        setUrl("https://jitpack.io")
+    }
+}
+
 dependencies {
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")

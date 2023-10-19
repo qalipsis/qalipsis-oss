@@ -40,6 +40,13 @@ allOpen {
 
 val apiVersion: String by project
 
+repositories {
+    maven {
+        name = "jitpack-dependencies"
+        setUrl("https://jitpack.io")
+    }
+}
+
 dependencies {
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
@@ -67,6 +74,7 @@ dependencies {
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
+    runtimeOnly("com.github.sokomishalov.lokk:lokk-redis-lettuce:0.0.1")
 
     testFixturesImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin")

@@ -76,10 +76,6 @@ allprojects {
             name = "maven-central-snapshots"
             setUrl("https://oss.sonatype.org/content/repositories/snapshots")
         }
-        maven {
-            name = "jitpack-dependencies"
-            setUrl("https://jitpack.io")
-        }
     }
 
     val signingKeyId = "signing.keyId"
