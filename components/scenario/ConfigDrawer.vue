@@ -97,14 +97,6 @@
 
 <script setup lang="ts">
 import { ApexOptions } from "apexcharts";
-import { DefaultCampaignConfiguration } from "utils/configuration";
-import { FormMenuOption } from "utils/form";
-import {
-  ExecutionProfileStage,
-  ScenarioConfigurationForm,
-  ScenarioSummary,
-  ZoneForm,
-} from "utils/scenario";
 import { useFieldArray, useForm } from "vee-validate";
 
 const props = defineProps<{
@@ -123,7 +115,7 @@ const title = computed(() => `Configuration of ${props.scenario.name}`);
 const maxDurationInMilliSeconds = computed(() =>
   TimeframeHelper.toMilliseconds(
     props.configuration.validation.maxExecutionDuration,
-    TimeframeUnit.SEC
+    TimeframeUnitConstant.SEC
   )
 );
 
@@ -146,15 +138,15 @@ const { handleSubmit, values, meta, validate } =
           minionsCount: props.configuration.validation.stage.minMinionsCount,
           duration: TimeframeHelper.toMilliseconds(
             props.configuration.validation.stage.minDuration,
-            TimeframeUnit.SEC
+            TimeframeUnitConstant.SEC
           ),
           startDuration: TimeframeHelper.toMilliseconds(
             props.configuration.validation.stage.minStartDuration,
-            TimeframeUnit.SEC
+            TimeframeUnitConstant.SEC
           ),
           resolution: TimeframeHelper.toMilliseconds(
             props.configuration.validation.stage.minResolution,
-            TimeframeUnit.SEC
+            TimeframeUnitConstant.SEC
           ),
         },
       ],
@@ -174,15 +166,15 @@ onMounted(() => {
       minionsCount: props.configuration.validation.stage.minMinionsCount,
       duration: TimeframeHelper.toMilliseconds(
         props.configuration.validation.stage.minDuration,
-        TimeframeUnit.SEC
+        TimeframeUnitConstant.SEC
       ),
       startDuration: TimeframeHelper.toMilliseconds(
         props.configuration.validation.stage.minStartDuration,
-        TimeframeUnit.SEC
+        TimeframeUnitConstant.SEC
       ),
       resolution: TimeframeHelper.toMilliseconds(
         props.configuration.validation.stage.minResolution,
-        TimeframeUnit.SEC
+        TimeframeUnitConstant.SEC
       ),
     },
   ];
@@ -224,15 +216,15 @@ const handleAddExecutionProfileBtnClick = () => {
     minionsCount: props.configuration.validation.stage.minMinionsCount,
     duration: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.minDuration,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     startDuration: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.minStartDuration,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     resolution: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.minResolution,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
   });
   _setScenarioConfigChartDataSeries(values.executionProfileStages);

@@ -36,7 +36,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { ReportCreationAndUpdateRequest } from 'utils/report';
 
 const { createReport, updateReport } = useReportApi();
 
@@ -83,7 +82,7 @@ const handleCheckedChange = async (checked: boolean) => {
 const handleCompareReportBtnClick = async () => {
     const reportCreationRequest: ReportCreationAndUpdateRequest = {
         displayName: reportName.value,
-        sharingMode: SharingMode.WRITE,
+        sharingMode: SharingModeConstant.WRITE,
         campaignKeys: campaignsTableStore.selectedRowKeys,
         campaignNamesPatterns: campaignPatterns.value,
         scenarioNamesPatterns: [],

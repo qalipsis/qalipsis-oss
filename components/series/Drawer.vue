@@ -47,6 +47,6 @@ const handleSearch = () => {
         currentPageIndex: 0
     });
     // Fetches the table data without minions count
-    seriesTableStore.fetchDataSeriesTableDataSource(true);
+    seriesTableStore.fetchDataSeriesTableDataSource();
 }
 </script>

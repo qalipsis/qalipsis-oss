@@ -17,10 +17,10 @@
     "@ant-design-vue/nuxt": "1.1.0",
     "@ckpack/vue-color": "1.5.0",
     "@pinia/nuxt": "0.4.11",
-    "@types/luxon": "^3.3.2",
+    "@types/luxon": "3.3.2",
     "@types/tinycolor2": "1.4.3",
     "@vee-validate/zod": "4.11.6",
-    "@vuepic/vue-datepicker": "^6.1.0",
+    "@vuepic/vue-datepicker": "6.1.0",
     "apexcharts": "3.42.0",
     "date-fns": "2.30.0",
     "fuse.js": "6.6.2",
@@ -28,7 +28,7 @@
     "pinia": "2.1.6",
     "sass": "1.66.0",
     "tinycolor2": "1.6.0",
-    "vee-validate": "^4.11.6",
+    "vee-validate": "4.11.6",
     "vue3-apexcharts": "1.4.4",
     "zod": "3.22.2"
   }

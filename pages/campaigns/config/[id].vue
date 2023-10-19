@@ -10,9 +10,6 @@
 </template>
 
 <script setup lang="ts">
-import { CampaignConfigurationForm } from 'utils/campaign';
-import { Scenario } from 'utils/scenario';
-
 
 const { fetchCampaignConfig } = useCampaignApi();
 const scenarioTableStore = useScenarioTableStore();

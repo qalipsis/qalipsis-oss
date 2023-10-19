@@ -17,9 +17,6 @@
 </template>
 
 <script setup lang="ts">
-import { ReportDetailsTableData } from 'utils/report';
-import { DataSeries, DataSeriesOption } from 'utils/series';
-import { TimeSeriesAggregationQueryParam } from 'utils/time-series';
 
 const props = defineProps<{
     componentIndex: number,

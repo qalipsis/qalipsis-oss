@@ -48,7 +48,6 @@
 </template>
 
 <script setup lang="ts">
-import { ScenarioOption } from 'utils/scenario';
 
 const scenarioSummaryId = ScenarioHelper.SCENARIO_SUMMARY_ID
 const scenarioSummaryName = ScenarioHelper.SCENARIO_SUMMARY_NAME;

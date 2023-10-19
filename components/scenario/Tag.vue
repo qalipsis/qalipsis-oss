@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+
 const props = defineProps<{
     status: ExecutionStatus,
     failureReason?: string

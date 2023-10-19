@@ -40,8 +40,6 @@
 import { useFieldArray } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import * as zod from "zod";
-import { DataSeriesFilter } from "utils/series";
-import { FormMenuOption } from "utils/form";
 
 const props = defineProps<{
   /**

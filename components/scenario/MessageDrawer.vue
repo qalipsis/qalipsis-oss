@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+
 const props = defineProps<{
     open: boolean,
     title: string,

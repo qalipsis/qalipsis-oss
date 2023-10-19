@@ -27,11 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import { ReportCreationAndUpdateRequest } from 'utils/report';
-
 const props = defineProps<{
     open: boolean,
-    campaignPatterns: string[],
+    campaignPatterns?: string[],
 }>();
 const emit = defineEmits<{
     (e: "update:open", v: boolean): void,
@@ -43,7 +41,7 @@ const campaignsTableStore = useCampaignsTableStore();
 const reportDetailsStore = useReportDetailsStore();
 
 const searchQuery = ref("");
-const presetCampaignPatterns = computed(() => props.campaignPatterns.length ? props.campaignPatterns.join(",") : "")
+const presetCampaignPatterns = computed(() => props.campaignPatterns?.length ? props.campaignPatterns.join(",") : "")
 
 onMounted(() => {
     campaignsTableStore.$patch({
@@ -54,7 +52,7 @@ onMounted(() => {
 const handleCampaignSelectBtnClick = async () => {
     const request: ReportCreationAndUpdateRequest = {
         displayName: reportDetailsStore.reportName,
-        sharingMode: SharingMode.WRITE,
+        sharingMode: SharingModeConstant.WRITE,
         campaignKeys: campaignsTableStore.selectedRowKeys,
         campaignNamesPatterns: reportDetailsStore.campaignNamesPatterns,
         scenarioNamesPatterns: reportDetailsStore.reportDetails?.scenarioNamesPatterns ?? [],

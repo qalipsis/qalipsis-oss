@@ -140,11 +140,9 @@
 </template>
 
 <script setup lang="ts">
-import { FormMenuOption } from "utils/form";
 import { useForm, useFieldArray } from "vee-validate";
 import { toTypedSchema } from '@vee-validate/zod';
 import * as zod from 'zod';
-import { DataField, DataSeriesFilter, DataSeriesForm, DataSeriesTableData } from "utils/series";
 
 type Timer = string | number | NodeJS.Timeout | null | undefined;
 
@@ -169,12 +167,12 @@ const {
 const initialFormValue: DataSeriesForm = {
     name: props.dataSeries?.displayName ?? "",
     sharingMode: props.dataSeries?.sharingMode ?? null,
-    dataType: props.dataSeries?.dataType ?? DataType.EVENTS,
+    dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
     valueName: props.dataSeries?.valueName ?? "",
     fieldName: props.dataSeries?.fieldName ?? "",
     aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
     timeframeValue: props.dataSeries?.formattedTimeframe.value ?? null,
-    timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnit.MS,
+    timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
     color: props.dataSeries?.color ?? ColorHelper.PRIMARY_COLOR_HEX_CODE,
     colorOpacity: props.dataSeries?.colorOpacity ?? 100,
     filters: props.dataSeries?.filters ?? []
@@ -183,12 +181,12 @@ const { handleSubmit, setFieldValue, values, errors } = useForm<DataSeriesForm>(
     initialValues: {
         name: props.dataSeries?.displayName ?? "",
         sharingMode: props.dataSeries?.sharingMode ?? null,
-        dataType: props.dataSeries?.dataType ?? DataType.EVENTS,
+        dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
         valueName: props.dataSeries?.valueName ?? "",
         fieldName: props.dataSeries?.fieldName ?? "",
         aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
         timeframeValue: props.dataSeries?.formattedTimeframe.value ?? null,
-        timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnit.MS,
+        timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
         color: props.dataSeries?.color ?? ColorHelper.PRIMARY_COLOR_HEX_CODE,
         colorOpacity: props.dataSeries?.colorOpacity ?? 100,
         filters: props.dataSeries?.filters ?? []
@@ -256,10 +254,10 @@ const hasFieldNameFetched = ref(false);
 const title = computed(() => props.dataSeries ? "Update a series" : "Create a series");
 const confirmBtnText = computed(() => props.dataSeries ? "Save changes" : "Create");
 const dataTypeOptionDisabled = computed(() => props.dataSeries ? true : false);
-const valueNameLabel = computed(() => values.dataType === DataType.EVENTS ? "Event name" : "Meter name")
+const valueNameLabel = computed(() => values.dataType === DataTypeConstant.EVENTS ? "Event name" : "Meter name")
 
 onMounted(async () => {
-    const dataType = props.dataSeries?.dataType ?? DataType.EVENTS;
+    const dataType = props.dataSeries?.dataType ?? DataTypeConstant.EVENTS;
     _prepareValueNameFieldOptions(dataType);
     _prepareTagMap(dataType);
     await _prepareFieldOptions(dataType);
@@ -291,7 +289,8 @@ const handleFieldNameChange = (selectedFieldName: string) => {
 };
 
 
-const handleDataTypeChange = (dataType: DataType) => {
+const handleDataTypeChange = (newDataType: string) => {
+    const dataType = newDataType as DataType;
     _prepareValueNameFieldOptions(dataType);
     _prepareFieldOptions(dataType);
     _prepareTagMap(dataType);
@@ -304,7 +303,6 @@ const handleColorBtnClick = () => {
 const handleAddNewFilterBtnClick = () => {
     push({
         name: '',
-        operator: '',
         value: ''
     });
 }

@@ -46,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+
 const props = defineProps<{
     preselectedDataSeriesReferences: string[]
 }>()
@@ -87,7 +88,7 @@ const handleDataSeriesOptionClick = (dataSeriesOption: DataSeriesOption) => {
     dataSeriesOption.isActive = !dataSeriesOption.isActive;
     // Updates the data series option from all data series options active state
     const selectedOption = dataSeriesOptions.value.find(d => d.reference === dataSeriesOption.reference);
-    selectedOption!.isActive = !selectedOption.isActive;
+    selectedOption!.isActive = !selectedOption!.isActive;
 
     // Emits all active data series options
     emit('selectedDataSeriesChange', dataSeriesOptions.value.filter(d => d.isActive));

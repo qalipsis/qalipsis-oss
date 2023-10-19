@@ -14,7 +14,7 @@
       </template>
       <template v-if="column.key === 'actions'">
         <div class="table-action-item-wrapper">
-            <div class="flex items-center cursor-pointer table-action-item" @click="handleConfigureBtnClick(record)">
+            <div class="flex items-center cursor-pointer table-action-item" @click="handleConfigureBtnClick(record as ScenarioSummary)">
                 <BaseIcon icon="/icons/icon-setting-grey.svg" />
                 <span> Configure </span>
             </div>
@@ -34,10 +34,8 @@
 </template>
 
 <script setup lang="ts">
+import { Key, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
-import { DefaultCampaignConfiguration } from "utils/configuration";
-import { FormMenuOption } from "utils/form";
-import { ScenarioConfigurationForm, ScenarioSummary } from "utils/scenario";
 
 const { fetchCampaignConfiguration } = useConfigurationApi();
 const { fetchScenarios } = useScenarioApi();
@@ -58,14 +56,14 @@ const pagination = reactive({
   ...TableHelper.sharedPaginationProperties,
 });
 
-const rowSelection = reactive({
+const rowSelection: TableRowSelection<ScenarioSummary> = reactive({
   hideSelectAll: true,
   preserveSelectedRowKeys: true,
   selectedRowKeys: selectedRowKeys,
-  onChange: (selectedRowKeys: string[], selectedRows: ScenarioSummary[]) => {
+  onChange: (selectedRowKeys: Key[], selectedRows: ScenarioSummary[]) => {
     scenarioTableStore.$patch({
       selectedRows: selectedRows,
-      selectedRowKeys: selectedRowKeys,
+      selectedRowKeys: selectedRowKeys as string[],
     });
   },
   getCheckboxProps: (record: ScenarioSummary) => {

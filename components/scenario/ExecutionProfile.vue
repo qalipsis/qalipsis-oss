@@ -52,8 +52,6 @@
 
 <script setup lang="ts">
 import { toTypedSchema } from "@vee-validate/zod";
-import { DefaultCampaignConfiguration } from "utils/configuration";
-import { ExecutionProfileStage } from "utils/scenario";
 import { useFieldArray } from "vee-validate";
 import * as zod from "zod";
 
@@ -77,27 +75,27 @@ const stageValidation = computed(() => {
     ...props.configuration.validation.stage,
     maxDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.maxDuration,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     minDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.minDuration,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     maxStartDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.maxStartDuration,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     minStartDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.minStartDuration,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     maxResolutionInMilliSeconds: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.maxResolution,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
     minResolutionInMilliSeconds: TimeframeHelper.toMilliseconds(
       props.configuration.validation.stage.minResolution,
-      TimeframeUnit.SEC
+      TimeframeUnitConstant.SEC
     ),
   };
 });

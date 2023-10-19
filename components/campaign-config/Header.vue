@@ -43,8 +43,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { CampaignConfigurationForm } from "utils/campaign";
-import { ScenarioConfigurationForm } from "utils/scenario";
 
 const scenarioTaleStore = useScenarioTableStore();
 const { selectedRowKeys } = storeToRefs(scenarioTaleStore);
@@ -132,15 +130,15 @@ const handleRunBtnClick = async () => {
             minionsCount: defaultStage.minMinionsCount,
             duration: TimeframeHelper.toMilliseconds(
               defaultStage.minDuration,
-              TimeframeUnit.SEC
+              TimeframeUnitConstant.SEC
             ),
             startDuration: TimeframeHelper.toMilliseconds(
               defaultStage.minStartDuration,
-              TimeframeUnit.SEC
+              TimeframeUnitConstant.SEC
             ),
             resolution: TimeframeHelper.toMilliseconds(
               defaultStage.minResolution,
-              TimeframeUnit.SEC
+              TimeframeUnitConstant.SEC
             ),
           },
         ],

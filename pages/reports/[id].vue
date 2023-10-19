@@ -16,9 +16,6 @@
 </template>
 
 <script setup lang="ts">
-import { CampaignExecutionDetails, CampaignOption } from "utils/campaign";
-import { Report } from "../../utils/report";
-import { DataSeries, DataSeriesOption } from "utils/series";
 import { RouteLocationNormalized } from ".nuxt/vue-router";
 
 const { fetchReportDetails } = useReportApi();
@@ -60,11 +57,6 @@ onBeforeRouteLeave((to: RouteLocationNormalized, _: RouteLocationNormalized) => 
 onBeforeUnmount(() => {
     reportDetailsStore.$reset();
 })
-
-const handleWindowUnload = (e?: Event) => {
-    
-}
-
 
 const handleConfirmBtnClick = () => {
     shouldDiscardChanges = true;

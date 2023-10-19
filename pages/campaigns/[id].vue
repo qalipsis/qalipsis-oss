@@ -6,7 +6,6 @@
 </template>
 
 <script setup lang="ts">
-import { CampaignExecutionDetails } from 'utils/campaign';
 
 const { fetchCampaignDetails } = useCampaignApi();
 const { fetchAllDataSeries } = useDataSeriesApi();

@@ -57,7 +57,6 @@
 </template>
 
 <script setup lang="ts">
-import { SidebarMenuItem } from 'utils/sidebar';
 
 const router = useRouter();
 

@@ -9,7 +9,7 @@
     @change="handlePaginationChange">
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div class="flex items-center cursor-pointer table-item-link" @click="handleEditBtnClick(record)">
+        <div class="flex items-center cursor-pointer table-item-link" @click="handleEditBtnClick(record as DataSeriesTableData)">
           <div class="dot" :style="{ backgroundColor: `${record.color || 'transparent'}` }"></div>
           <span>{{ record.displayName }}</span>
         </div>
@@ -18,7 +18,7 @@
         <span>{{ record.sharedText }}</span>
       </template>
       <template v-if="column.key === 'actions' && !tableActionsHidden">
-        <BasePermission :permissions="[PermissionEnum.WRITE_SERIES]">
+        <BasePermission :permissions="[PermissionConstant.WRITE_SERIES]">
           <a-dropdown trigger="click">
             <a @click.prevent class="table-action-item-wrapper">
               <div class="flex items-center">
@@ -28,19 +28,19 @@
             <template #overlay>
               <a-menu>
                 <a-menu-item v-if="!record.disabled">
-                  <div class="flex items-center table-action-item" @click="handleDeleteBtnClick(record)">
+                  <div class="flex items-center table-action-item" @click="handleDeleteBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-delete-small.svg" />
                     <span> Delete </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item v-if="!record.disabled">
-                  <div class="flex items-center table-action-item" @click="handleEditBtnClick(record)">
+                  <div class="flex items-center table-action-item" @click="handleEditBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-edit-small.svg" />
                     <span> Edit </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item>
-                  <div class="flex items-center table-action-item"  @click="handleDuplicateBtnClick(record)">
+                  <div class="flex items-center table-action-item"  @click="handleDuplicateBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-duplicate.svg" />
                     <span> Duplicate </span>
                   </div>
@@ -66,8 +66,9 @@
 </template>
 
 <script setup lang="ts">
+import { TablePaginationConfig } from "ant-design-vue/es/table/Table";
+import { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
-import { DataSeriesTableData } from "utils/series";
 
 const tableColumnConfigs = SeriesHelper.getTableColumnConfigs();
 
@@ -98,15 +99,15 @@ const pagination = reactive({
   ...TableHelper.sharedPaginationProperties
 })
 
-const rowSelection = reactive({
+const rowSelection: TableRowSelection<DataSeriesTableData> | undefined = reactive({
   // Hides the selected all button when the max number of row selection is specified
-  hideSelectAll: props.maxSelectedRows,
+  hideSelectAll: props.maxSelectedRows ? true : false,
   preserveSelectedRowKeys: true,
   selectedRowKeys: selectedRowKeys,
-  onChange: (selectedRowKeys: string[], selectedRows: DataSeriesTableData[]) => {
+  onChange: (selectedRowKeys: Key[], selectedRows: DataSeriesTableData[]) => {
     seriesTableStore.$patch({
       selectedRows: selectedRows,
-      selectedRowKeys: selectedRowKeys
+      selectedRowKeys: selectedRowKeys as string[]
     });
   },
   getCheckboxProps: (record: DataSeriesTableData) => {
@@ -157,10 +158,10 @@ watch(() => userStore.currentTenantReference, async () => {
 
 const handlePaginationChange = async (
   pagination: TablePaginationConfig,
-  _: FilterConfirmProps,
-  sorter: SorterResult) => {
+  _:  Record<string, FilterValue>,
+  sorter: SorterResult<any> | SorterResult<any>[]) => {
     const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
-    const sort = TableHelper.getSort(sorter);
+    const sort = TableHelper.getSort(sorter as SorterResult<any>);
     try {
       seriesTableStore.$patch({
         sort: sort,

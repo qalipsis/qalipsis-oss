@@ -41,7 +41,6 @@
 </template>
 
 <script setup lang="ts">
-import { ScenarioDrawer, ScenarioReport } from 'utils/scenario';
 
 defineProps<{
     scenarioReports: ScenarioReport[]

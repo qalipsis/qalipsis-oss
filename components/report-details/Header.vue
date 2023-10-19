@@ -19,7 +19,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { ReportCreationAndUpdateRequest } from 'utils/report';
 
 const emit = defineEmits<{
     (e: "saved"): void
@@ -35,7 +34,7 @@ const handleSaveReportBtnClick = async () => {
         displayName: reportDetailsStore.reportName,
         campaignKeys: reportDetailsStore.campaignKeys,
         campaignNamesPatterns: reportDetailsStore.campaignNamesPatterns,
-        sharingMode: SharingMode.WRITE,
+        sharingMode: SharingModeConstant.WRITE,
         scenarioNamesPatterns: reportDetailsStore.reportDetails?.scenarioNamesPatterns,
         dataComponents: reportDetailsStore.dataComponents.map(dataComponent => ({
             dataSeriesReferences: dataComponent.datas.map(d => d.reference),

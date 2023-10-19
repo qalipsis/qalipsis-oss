@@ -123,7 +123,6 @@
 
 <script setup lang="ts">
 import { toTypedSchema } from "@vee-validate/zod";
-import { CampaignConfigurationForm } from "utils/campaign";
 import { useForm } from "vee-validate";
 import * as zod from "zod";
 
@@ -139,7 +138,7 @@ const emit = defineEmits<{
 const initialFormValue: CampaignConfigurationForm = {
   timeoutType: props.campaignConfigurationForm?.timeoutType ?? "soft",
   durationValue: props.campaignConfigurationForm?.durationValue ?? "",
-  durationUnit: props.campaignConfigurationForm?.durationUnit ?? TimeframeUnit.MS,
+  durationUnit: props.campaignConfigurationForm?.durationUnit ?? TimeframeUnitConstant.MS,
   scheduled: props.campaignConfigurationForm?.scheduled ?? false,
   repeatEnabled: props.campaignConfigurationForm?.repeatEnabled ?? false,
   repeatTimeRange: props.campaignConfigurationForm?.repeatTimeRange ?? "HOURLY",

@@ -23,7 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import { FormMenuOption } from 'utils/form';
 import { TypedSchema, useField } from 'vee-validate';
 
 const props = defineProps<{

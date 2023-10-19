@@ -87,9 +87,4 @@ const handleRowClick = () => {
     executionStepModalOpen.value = true
 }
 
-
 </script>
-
-<style scoped lang="scss">
-
-</style>

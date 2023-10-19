@@ -51,7 +51,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { CampaignTableData } from "utils/campaign";
 import { TableRowSelection, SorterResult, FilterValue, Key } from "ant-design-vue/es/table/interface";
 import { TablePaginationConfig } from "ant-design-vue/es/table/Table";
 
@@ -64,6 +63,7 @@ const props = defineProps<{
 const userStore = useUserStore();
 const campaignsTableStore = useCampaignsTableStore();
 const { dataSource, totalElements } = storeToRefs(campaignsTableStore);
+const { fetchCampaignConfig, createCampaign } = useCampaignApi();
 
 const tableColumnConfigs = CampaignHelper.getTableColumnConfigs();
 const currentPage = computed(() => campaignsTableStore.currentPageNumber);
@@ -91,11 +91,11 @@ const rowSelection: TableRowSelection<CampaignTableData> | undefined = props.row
       },
       getCheckboxProps: (record: CampaignTableData) => {
         let disabled = false;
-        const selectableStatuses = [
-          ExecutionStatus.SUCCESSFUL,
-          ExecutionStatus.FAILED,
-          ExecutionStatus.ABORTED,
-          ExecutionStatus.WARNING,
+        const selectableStatuses: ExecutionStatus[] = [
+          ExecutionStatusConstant.SUCCESSFUL,
+          ExecutionStatusConstant.FAILED,
+          ExecutionStatusConstant.ABORTED,
+          ExecutionStatusConstant.WARNING,
         ];
         if (record?.status && !selectableStatuses.includes(record.status)) {
           disabled = true;
@@ -153,14 +153,20 @@ const handlePaginationChange = async (
   }
 };
 
-const handleRunNowBtnClick = (
+const handleRunNowBtnClick = async (
   campaignTableData: CampaignTableData
 ) => {
-  // TODO:
-  // Fetches the campaign config
-  // Creates the campaign
-  // navigate to the campaign details
-  navigateTo(`/campaigns/config/${campaignTableData.key}`);
+  try {
+    // Fetches the campaign config
+    const campaignConfig = await fetchCampaignConfig(campaignTableData.key);
+    // Creates the campaign
+    const campaign = await createCampaign(campaignConfig);
+    // navigate to the campaign details
+    navigateTo(`/campaigns/${campaign.key}`);
+  } catch (error) {
+    ErrorHelper.handleHttpResponseError(error)
+  }
+
 };
 
 const handleNameClick = (
@@ -168,7 +174,7 @@ const handleNameClick = (
 ) => {
   if (!props.actionsEnabled) return;
 
-  const pageLink = campaignTableData.status === 'SCHEDULED'
+  const pageLink = campaignTableData.status === ExecutionStatusConstant.SCHEDULED
     ? `/campaigns/config/${campaignTableData.key}`
     : `campaigns/${campaignTableData.key}`;
 

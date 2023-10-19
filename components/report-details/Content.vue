@@ -95,8 +95,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { CampaignOption } from 'utils/campaign';
-import { DataComponent } from 'utils/report';
 
 const emit = defineEmits<{
     (e: "saved"): void
@@ -109,11 +107,11 @@ const activeCampaignOptions = computed(() => campaignOptions.value.filter(campai
 const campaignSelectDrawerOpen = ref(false);
 
 const handleAddChartBtnClick = () => {
-    _addDataComponent(DataComponentType.DIAGRAM);
+    _addDataComponent(DataComponentTypeConstant.DIAGRAM);
 }
 
 const handleAddTableBtnClick = () => {
-    _addDataComponent(DataComponentType.DATA_TABLE);
+    _addDataComponent(DataComponentTypeConstant.DATA_TABLE);
 }
 
 const handleCampaignOptionClick = (campaignOption: CampaignOption) => {

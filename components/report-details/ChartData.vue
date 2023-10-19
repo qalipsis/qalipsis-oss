@@ -20,9 +20,6 @@
 
 <script setup lang="ts">
 import { ApexOptions } from 'apexcharts';
-import { ChartData } from 'utils/chart';
-import { DataSeries, DataSeriesOption } from 'utils/series';
-import { TimeSeriesAggregationQueryParam, TimeSeriesAggregationResult } from 'utils/time-series';
 
 const props = defineProps<{
     componentIndex: number,

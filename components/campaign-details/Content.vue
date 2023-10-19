@@ -5,7 +5,7 @@
                 <ScenarioDetails :scenarioReports="scenarioReports"/>
                 <template v-if="campaignDetails.status === 'IN_PROGRESS'">
                     <BasePermission 
-                        :permissions="[PermissionEnum.WRITE_CAMPAIGN]">
+                        :permissions="[PermissionConstant.WRITE_CAMPAIGN]">
                         <BaseButton
                             text="Stop all"
                             @click="campaignStopModalOpen = true"
@@ -54,8 +54,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { CampaignExecutionDetails } from 'utils/campaign';
-import { DataSeriesOption } from 'utils/series';
 
 defineProps<{
     campaignDetails: CampaignExecutionDetails
@@ -87,7 +85,7 @@ onMounted(async () => {
 
 // When the campaign is still running (in progress status), the data are updated every 10 seconds.
 watch(campaignDetailStatus, () => {
-  if(campaignDetailStatus.value === ExecutionStatus.IN_PROGRESS) {
+  if(campaignDetailStatus.value === ExecutionStatusConstant.IN_PROGRESS) {
     polling.value = setInterval(async() => {
         try {
             // Fetches the details of the campaign.

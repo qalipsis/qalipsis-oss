@@ -30,8 +30,6 @@
 
 <script setup lang="ts">
 import { toTypedSchema } from "@vee-validate/zod";
-import { FormMenuOption } from "utils/form";
-import { ZoneForm } from "utils/scenario";
 import { useFieldArray } from "vee-validate";
 import * as zod from "zod";
 

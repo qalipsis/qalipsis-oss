@@ -10,13 +10,13 @@
         @change="handlePaginationChange">
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'displayName'">
-                <div class="table-item-link" @click="handleReportNameClick(record)">
+                <div class="table-item-link" @click="handleReportNameClick(record as ReportTableData)">
                     <span>{{ record.displayName }}</span>
                 </div>
             </template>
             <template v-if="column.key === 'actions'">
                 <div class="table-action-item-wrapper">
-                    <div class="flex items-center cursor-pointer table-action-item" @click="handleDeleteBtnClick(record)">
+                    <div class="flex items-center cursor-pointer table-action-item" @click="handleDeleteBtnClick(record as ReportTableData)">
                         <BaseIcon icon="/icons/icon-delete-small.svg" />
                         <span> Delete </span>
                     </div>
@@ -32,8 +32,9 @@
 </template>
   
 <script setup lang="ts">
+import { TablePaginationConfig } from "ant-design-vue/es/table/Table";
+import { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
-import { ReportTableData } from "utils/report";
 
 const userStore = useUserStore();
 const reportsTableStore = useReportsTableStore();
@@ -42,13 +43,13 @@ const { dataSource, totalElements } = storeToRefs(reportsTableStore);
 const tableColumnConfigs = ReportHelper.getTableColumnConfigs();
 const currentPage = computed(() => reportsTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => reportsTableStore.selectedRowKeys);
-const rowSelection = reactive({
+const rowSelection: TableRowSelection<ReportTableData> | undefined = reactive({
   preserveSelectedRowKeys: true,
   selectedRowKeys: selectedRowKeys,
-  onChange: (selectedRowKeys: string[], selectedRows: ReportTableData[]) => {
+  onChange: (selectedRowKeys: Key[], selectedRows: ReportTableData[]) => {
     reportsTableStore.$patch({
       selectedRows: selectedRows,
-      selectedRowKeys: selectedRowKeys
+      selectedRowKeys: selectedRowKeys as string[]
     });
   }
 })
@@ -81,10 +82,10 @@ watch(() => userStore.currentTenantReference, async () => {
 
 const handlePaginationChange = async (
     pagination: TablePaginationConfig,
-    _: FilterConfirmProps,
-    sorter: SorterResult) => {
+    _: Record<string, FilterValue>,
+    sorter: SorterResult<any> | SorterResult<any>[]) => {
     const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
-    const sort = TableHelper.getSort(sorter);
+    const sort = TableHelper.getSort(sorter as SorterResult<any>);
     try {
         reportsTableStore.$patch({
             sort: sort,

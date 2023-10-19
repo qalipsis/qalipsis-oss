@@ -1,10 +1,11 @@
-<template>
+ <template>
     <template v-if="canViewContent">
         <slot />
     </template>
 </template>
 
 <script setup lang="ts">
+
 const props = defineProps<{
     permissions: PermissionEnum[],
     requiredAll?: boolean

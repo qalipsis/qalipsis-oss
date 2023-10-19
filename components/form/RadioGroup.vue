@@ -17,7 +17,6 @@
 </template>
 
 <script setup lang="ts">
-import { FormMenuOption } from 'utils/form';
 import { useField } from 'vee-validate';
 
 const props = defineProps<{
