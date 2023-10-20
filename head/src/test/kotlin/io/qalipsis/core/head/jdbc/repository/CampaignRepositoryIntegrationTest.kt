@@ -29,6 +29,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
@@ -42,6 +43,7 @@ import io.qalipsis.api.report.ExecutionStatus.QUEUED
 import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
 import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
 import io.qalipsis.api.report.ExecutionStatus.WARNING
+import io.qalipsis.core.head.campaign.scheduler.DailyScheduling
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
@@ -51,8 +53,13 @@ import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
+import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.report.CampaignData
 import jakarta.inject.Inject
+import java.time.Duration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filterNot
@@ -60,9 +67,6 @@ import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import java.time.Duration
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 
 internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
@@ -2568,4 +2572,49 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             .isNull()
     }
 
+    @Test
+    fun `should retrieve a fully populated campaign entity completely by its key`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        campaignRepository.save(
+            campaignPrototype.copy(
+                key = "key-1",
+                tenantId = tenant.id,
+                failureReason = "First failure",
+                zones = setOf("at", "fr"),
+                name = "This is my new campaign",
+                speedFactor = 123.0,
+                start = Instant.now() - Duration.ofSeconds(173),
+                end = Instant.now(),
+                scheduledMinions = 123,
+                result = SUCCESSFUL,
+                configurer = 1L, // Default user.
+                configuration = CampaignConfiguration(
+                    name = "This Campaign config",
+                    speedFactor = 1.0,
+                    startOffsetMs = 1000,
+                    scenarios = mapOf("sce1" to ScenarioRequest(minionsCount = 1)),
+                    scheduling = DailyScheduling("Asia/Taipei", setOf(3, 5))
+                )
+            )
+        )
+        assertThat(campaignRepository.findAll().count()).isEqualTo(1)
+
+        // when + then
+        assertThat(campaignRepository.findByTenantAndKey("my-tenant", "key-1")).isNotNull()
+            .all {
+                prop(CampaignEntity::name).isEqualTo("This is my new campaign")
+                prop(CampaignEntity::key).isEqualTo("key-1")
+                prop(CampaignEntity::configuration).isNotNull().all {
+                    prop(CampaignConfiguration::name).isEqualTo("This Campaign config")
+                    prop(CampaignConfiguration::speedFactor).isEqualTo(1.0)
+                    prop(CampaignConfiguration::startOffsetMs).isEqualTo(1000)
+                    prop(CampaignConfiguration::scenarios).isEqualTo(mapOf("sce1" to ScenarioRequest(minionsCount = 1)))
+                    prop(CampaignConfiguration::scheduling).isNotNull().isInstanceOf(DailyScheduling::class).all {
+                        prop(DailyScheduling::timeZone).isEqualTo("Asia/Taipei")
+                        prop(DailyScheduling::restrictions).isEqualTo(setOf(3, 5))
+                    }
+                }
+            }
+    }
 }

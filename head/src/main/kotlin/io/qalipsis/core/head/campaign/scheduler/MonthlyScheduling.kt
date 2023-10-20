@@ -21,13 +21,13 @@ internal class MonthlyScheduling(
         example = "Africa/Douala"
     )
     @field:NotBlank
-    private val timeZone: String,
+    override val timeZone: String,
     @field:Schema(
         description = "The set of -15 to 31-based integers that restrict the hours in the day, when the campaign can be executed; for negative values, the restriction is calculated from the 1st of the next month; otherwise, 1 stands for the first day of the month and 31 for the thirty-first day of the month, if there is one",
         required = true,
         example = "[1, 17, 11, 9]"
     )
-    private val restrictions: Set<Int>
+    override val restrictions: Set<Int>
 ) : Scheduling {
 
     init {

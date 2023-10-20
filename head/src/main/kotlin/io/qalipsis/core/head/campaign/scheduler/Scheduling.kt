@@ -27,6 +27,10 @@ import java.time.Instant
 )
 internal interface Scheduling {
 
+    val timeZone: String
+
+    val restrictions: Set<Int>
+
     /**
      * Computes the next instant to execute a scheduled action.
      *
