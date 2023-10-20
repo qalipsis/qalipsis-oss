@@ -21,13 +21,13 @@ internal class DailyScheduling(
         example = "Africa/Douala"
     )
     @field:NotBlank
-    private val timeZone: String,
+    override val timeZone: String,
     @field:Schema(
         description = "The set of 1-7-based integers that restrict the days in the week, when the campaign can be executed; 1 stands for Monday, 7 for Sunday",
         required = true,
         example = "[1, 7, 3]"
     )
-    private val restrictions: Set<Int>
+    override val restrictions: Set<Int>
 ) : Scheduling {
 
     init {

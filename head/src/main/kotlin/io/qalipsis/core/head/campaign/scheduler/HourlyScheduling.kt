@@ -21,13 +21,13 @@ internal class HourlyScheduling(
         example = "Africa/Douala"
     )
     @field:NotBlank
-    private val timeZone: String,
+    override val timeZone: String,
     @field:Schema(
         description = "The set of 0-23-based integers that restrict the hours in the day, when the campaign can be executed; 0 stands for 12AM, 23 for 11PM",
         required = true,
         example = "[0, 17, 11, 9]"
     )
-    private val restrictions: Set<Int>
+    override val restrictions: Set<Int>
 ) : Scheduling {
 
     init {
