@@ -1,6 +1,6 @@
  <template>
     <template v-if="canViewContent">
-        <slot />
+        <slot></slot>
     </template>
 </template>
 

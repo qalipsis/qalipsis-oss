@@ -1,6 +1,6 @@
 <template>
     <footer class="footer">
-        <slot />
+        <slot></slot>
     </footer>
 </template>
 
@@ -19,6 +19,5 @@ footer.footer {
     height: $footer-height;
     padding: 0 $content-padding;
 }
-
 
 </style>

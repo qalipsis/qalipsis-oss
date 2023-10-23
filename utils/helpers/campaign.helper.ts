@@ -51,7 +51,7 @@ export class CampaignHelper {
     campaignConfig: CampaignConfiguration
   ): CampaignConfigurationForm {
     const formattedTimeoutValue: FormattedTimeframe = campaignConfig.timeout
-      ? TimeframeHelper.toFormattedTimeframe(campaignConfig.timeout / 1000)
+      ? TimeframeHelper.toFormattedTimeframe(campaignConfig.timeout)
       : { value: null, unit: TimeframeUnitConstant.MS };
 
     return {

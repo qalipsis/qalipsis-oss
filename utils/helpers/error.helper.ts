@@ -6,9 +6,9 @@ export class ErrorHelper {
                 errorMessage = 'You don\'t have the permission';
                 break;
             case 400:
-                if (error.data.errors?.[0]) {
+                if (error.data?.errors?.[0] && typeof error.data.errors[0] === 'string') {
                     errorMessage = error.data.errors[0]
-                } else if (error.data.errors?.[0]?.message) {
+                } else if (error.data?.errors?.[0]?.message) {
                     errorMessage = error.data.errors[0].message
                 } else {
                     errorMessage = error.data?.message ?? 'Bad Request';
@@ -18,6 +18,7 @@ export class ErrorHelper {
                 errorMessage = 'Unknown Error';
                 break;
         }
-        NotificationHelper.error(errorMessage);
+
+        NotificationHelper.error(JSON.stringify(errorMessage));
     }
 }

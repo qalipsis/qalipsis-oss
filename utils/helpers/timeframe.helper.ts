@@ -131,21 +131,21 @@ export class TimeframeHelper {
   /**
    * Converts the timeframe to the formatted timeframe.
    *
-   * @param timeframeUnitInSeconds The timeframe in seconds.
+   * @param timeframeUnitInMilliSeconds The timeframe in milliseconds.
    * @returns The formatted timeframe.
    * @see FormattedTimeframe
    */
   static toFormattedTimeframe = (
-    timeframeUnitInSeconds: number
+    timeframeUnitInMilliSeconds: number
   ): FormattedTimeframe => {
-    if (timeframeUnitInSeconds === null || timeframeUnitInSeconds === undefined)
+    if (timeframeUnitInMilliSeconds === null || timeframeUnitInMilliSeconds === undefined)
       return {
         value: null,
         unit: TimeframeUnitConstant.MS,
       };
 
     let formattedTimeframeUnit: TimeframeUnit = TimeframeUnitConstant.MS;
-    let formattedTimeframe = timeframeUnitInSeconds * 1000;
+    let formattedTimeframe = timeframeUnitInMilliSeconds;
 
     if (formattedTimeframe % 3600000 === 0) {
       formattedTimeframeUnit = TimeframeUnitConstant.HR;

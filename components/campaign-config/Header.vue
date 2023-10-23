@@ -56,7 +56,7 @@ const props = defineProps<{
 const { createCampaign, scheduleCampaign, updateCampaignConfig } = useCampaignApi();
 
 const campaignConfigForm = ref<CampaignConfigurationForm>({
-  timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutType.SOFT,
+  timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutTypeConstant.SOFT,
   durationValue: props.campaignConfigForm?.durationValue ?? "",
   durationUnit: props.campaignConfigForm?.durationUnit ?? "MS",
   scheduled: props.campaignConfigForm?.scheduled ?? false,
