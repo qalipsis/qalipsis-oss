@@ -176,7 +176,7 @@ internal class CampaignController(
             description = "Field of the campaign to use in order to sort the results",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue(defaultValue = "creation:desc") sort: String,
+        ) @Nullable @QueryValue(defaultValue = "start:desc") sort: String,
         @Parameter(
             description = "0-based number of the page to retrieve",
             required = false,

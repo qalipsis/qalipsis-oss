@@ -22,6 +22,7 @@ package io.qalipsis.core.head.utils
 import io.micronaut.core.beans.BeanIntrospection
 import io.micronaut.data.model.Sort
 import io.qalipsis.core.head.jdbc.entity.Entity
+import java.time.Instant
 import kotlin.reflect.KClass
 
 internal object SortingUtil {
@@ -69,10 +70,11 @@ internal object SortingUtil {
                 it.name == properties.first()
             }
         val sortOrder = properties.last().lowercase()
+        val ignoreCase = sortProperty?.type != Instant::class.java
         return if ("desc" == sortOrder) {
-            Sort.of(Sort.Order.desc(sortProperty?.name, true))
+            Sort.of(Sort.Order.desc(sortProperty?.name, ignoreCase))
         } else {
-            Sort.of(Sort.Order.asc(sortProperty?.name, true))
+            Sort.of(Sort.Order.asc(sortProperty?.name, ignoreCase))
         }
     }
 }
