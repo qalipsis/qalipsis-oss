@@ -325,7 +325,7 @@ internal class CampaignControllerIntegrationTest {
             campaignService.search(
                 Defaults.TENANT,
                 emptyList(),
-                "creation:desc",
+                "start:desc",
                 0,
                 20
             )
@@ -337,7 +337,7 @@ internal class CampaignControllerIntegrationTest {
         )
 
         //then
-        coVerifyOnce { campaignService.search(Defaults.TENANT, emptyList(), "creation:desc", 0, 20) }
+        coVerifyOnce { campaignService.search(Defaults.TENANT, emptyList(), "start:desc", 0, 20) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
@@ -377,7 +377,7 @@ internal class CampaignControllerIntegrationTest {
             campaignService.search(
                 Defaults.TENANT,
                 listOf("an*", "other"),
-                "creation:desc",
+                "start:desc",
                 0,
                 20
             )
@@ -389,7 +389,7 @@ internal class CampaignControllerIntegrationTest {
         )
 
         //then
-        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("an*", "other"), "creation:desc", 0, 20) }
+        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("an*", "other"), "start:desc", 0, 20) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))

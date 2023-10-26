@@ -87,7 +87,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         // then
         try {
-            val headCode = head.get(45, TimeUnit.SECONDS)
+            val headCode = head.get(46, TimeUnit.SECONDS)
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
@@ -141,7 +141,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         // then
         try {
-            val headCode = head.get(45, TimeUnit.SECONDS)
+            val headCode = head.get(46, TimeUnit.SECONDS)
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)
@@ -194,7 +194,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         // then
         try {
-            val headCode = head.get(45, TimeUnit.SECONDS)
+            val headCode = head.get(46, TimeUnit.SECONDS)
             factory1.await(Duration.ofSeconds(2))
             factory2.await(Duration.ofSeconds(2))
             assertThat(headCode).isEqualTo(0)

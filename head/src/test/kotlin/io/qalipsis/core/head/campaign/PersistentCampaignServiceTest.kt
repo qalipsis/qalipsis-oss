@@ -56,11 +56,11 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import java.time.Instant
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Instant
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -759,6 +759,49 @@ internal class PersistentCampaignServiceTest {
 
             // then
             coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                campaignScenarioRepository,
+                campaignConverter,
+                factoryRepository,
+                campaignPreparator
+            )
+        }
+
+    @Test
+    internal fun `should returns the searched campaigns from the repository with sorting property of an instant`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("creation", false)))
+            val page = Page.of(listOf(campaignEntity2, campaignEntity1), Pageable.from(0, 20), 2)
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign2 andThen campaign1
+
+            // when
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "creation:desc", 0, 20)
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign2, campaign1)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable)
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+            }
 
             confirmVerified(
                 userRepository,

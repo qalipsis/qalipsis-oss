@@ -54,12 +54,6 @@ kapt.useBuildCache = false
 
 val apiVersion: String by project
 
-repositories {
-    maven {
-        name = "jitpack-dependencies"
-        setUrl("https://jitpack.io")
-    }
-}
 
 dependencies {
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
@@ -104,7 +98,6 @@ dependencies {
     testImplementation(testFixtures("io.qalipsis:qalipsis-api-common:$apiVersion"))
     testImplementation(testFixtures(project(":qalipsis-runtime")))
     testImplementation("org.testcontainers:testcontainers")
-    testImplementation("com.github.sokomishalov.lokk:lokk-redis-lettuce:0.0.1")
 
     kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
