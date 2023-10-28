@@ -184,3 +184,9 @@ export interface DataComponentCreationAndUpdateRequest {
      */
     type: DataComponentType;
 }
+
+export interface CampaignSummaryResult {
+    start: string;
+    successful: number;
+    failed: number;
+}

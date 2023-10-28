@@ -60,3 +60,22 @@ export interface ComposedAggregationValue {
     formattedValue: string;
     formattedText: string;
 }
+
+export interface CampaignSummaryResultQueryParams {
+    /**
+     * Beginning of the aggregation window
+     */
+    from: string;
+    /**
+     * End of the aggregation window
+     */
+    until?: string;
+    /**
+     * Difference between UTC and the user's time zone
+     */
+    timeOffset?: number;
+    /**
+     * Size of the time-buckets to perform the aggregations
+     */
+    timeframe?: string;
+}

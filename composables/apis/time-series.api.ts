@@ -5,7 +5,12 @@ export const useTimeSeriesApi = () => {
         return get$<{ [key: string]: TimeSeriesAggregationResult[] }, any>("/time-series/aggregate", queryParam);
     }
 
+    const fetchCampaignSummary = (queryParam: CampaignSummaryResultQueryParams): Promise<CampaignSummaryResult[]> => {
+        return get$<CampaignSummaryResult[], any>("/time-series/summary/campaign-status", queryParam);
+    }
+
     return {
-        fetchTimeSeriesAggregation
+        fetchTimeSeriesAggregation,
+        fetchCampaignSummary
     }
 }

@@ -1,5 +1,5 @@
 import { ApexOptions } from "apexcharts";
-import { format } from "date-fns";
+import { eachDayOfInterval, format, isSameDay, sub } from "date-fns";
 import { DateTime } from "luxon";
 import tinycolor from "tinycolor2";
 
@@ -133,6 +133,89 @@ export class CampaignHelper {
     }
 
     return campaignConfiguration;
+  }
+
+  static toCampaignSummaryChartData(campaignSummary: CampaignSummaryResult[]): ChartData {
+    const xAxisEndDate = new Date();
+    const xAxisStartDate = sub(new Date(), { days: 7 });
+    const xAxisDayIntervals = eachDayOfInterval({
+      start: new Date(xAxisStartDate.getFullYear(), xAxisStartDate.getMonth(), xAxisStartDate.getDate()),
+      end: new Date(xAxisEndDate.getFullYear(), xAxisEndDate.getMonth(), xAxisEndDate.getDate()),
+    })
+    /**
+     * This list maps to the week day index from the Date().
+     * 
+     * E.g., 
+     * The current date is on Sunday:
+     * The result from new Date().getDay() will be 0
+     */
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    const xAxisCategories = xAxisDayIntervals.map(date => daysOfWeek[date.getDay()]);
+      
+    const chartOptions: ApexOptions = {
+      chart: {
+        type: "bar",
+        stacked: true,
+        stackType: "100%",
+        toolbar: {
+          show: false,
+        }
+      },
+      colors: [ColorHelper.PRIMARY_COLOR_HEX_CODE, ColorHelper.GREY_2_HEX_CODE],
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          borderRadius: 4
+        }
+      },
+      xaxis: {
+        categories: xAxisCategories,
+      },
+      yaxis: {
+        show: false
+      },
+      dataLabels: {
+        enabled: false
+      },
+      legend: {
+        show: false
+      },
+      grid: {
+        show: false
+      },
+      states: {
+        hover: {
+            filter: {
+                type: 'none',
+            }
+        },
+      }
+    };
+    const successfulDataSeries: number[] = [];
+    const failedDataSeries: number[] = [];
+
+    if (campaignSummary?.length > 0) {
+      // Prepares the successful and failed data series
+      xAxisDayIntervals.forEach(day => {
+        const daySummary = campaignSummary.find(summary => isSameDay(new Date(summary.start), day));
+        successfulDataSeries.push(daySummary?.successful ?? 0);
+        failedDataSeries.push(daySummary?.failed ?? 0);
+      })
+    }
+
+    return {
+      chartOptions: chartOptions,
+      chartDataSeries: [
+        {
+          name: 'successful',
+          data: successfulDataSeries
+        },
+        {
+          name: 'failed',
+          data: failedDataSeries
+        },
+      ],
+    }
   }
 
   static toChartData(

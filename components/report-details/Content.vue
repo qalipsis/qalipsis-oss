@@ -68,13 +68,13 @@
             </div>
             <div class="pt-2 pb-2 pr-4 pl-4">
                 <div v-for="(dataComponent, idx) in dataComponents" :key="dataComponent.id">
-                    <template v-if="dataComponent.type === DataComponentType.DATA_TABLE">
+                    <template v-if="dataComponent.type === DataComponentTypeConstant.DATA_TABLE">
                         <ReportDetailsTableData
                             :dataSeries = "dataComponent.datas"
                             :component-index="idx"
                         />
                     </template>
-                    <template v-if="dataComponent.type === DataComponentType.DIAGRAM">
+                    <template v-if="dataComponent.type === DataComponentTypeConstant.DIAGRAM">
                         <ReportDetailsChartData
                             :dataSeries = "dataComponent.datas"
                             :component-index="idx"
