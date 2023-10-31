@@ -42,7 +42,6 @@ import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
-import io.qalipsis.core.head.lock.InMemoryLockProviderImpl
 import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
@@ -66,7 +65,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val campaignExecutionContext: C,
     private val campaignConstraintsProvider: CampaignConstraintsProvider,
     private val campaignHooks: Collection<CampaignHook>,
-    private val lockProvider: LockProvider = InMemoryLockProviderImpl(),
+    private val lockProvider: LockProvider
 ) : CampaignExecutor, FeedbackListener<Feedback> {
 
     override fun accept(feedback: Feedback): Boolean {

@@ -65,6 +65,7 @@ import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
+import io.qalipsis.core.head.lock.InMemoryLockProviderImpl
 import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
@@ -157,9 +158,10 @@ internal open class RedisCampaignExecutorTest {
 
     @Test
     internal fun `should start a new campaign when all the scenarios are currently supported and release the unused factories`() =
-        testDispatcherProvider.runTest {
+        testDispatcherProvider.run {
             // given
-            val campaignExecutor = redisCampaignExecutor(this)
+            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
+            val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -686,9 +688,10 @@ internal open class RedisCampaignExecutorTest {
         }
 
     @Test
-    internal fun `should abort hard a campaign`() = testDispatcherProvider.runTest {
+    internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
         //given
-        val campaignExecutor = redisCampaignExecutor(this)
+        val spiedLockProvider = spyk(InMemoryLockProviderImpl())
+        val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -766,9 +769,10 @@ internal open class RedisCampaignExecutorTest {
     }
 
     @Test
-    internal fun `should abort soft a campaign`() = testDispatcherProvider.runTest {
+    internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
         //given
-        val campaignExecutor = redisCampaignExecutor(this)
+        val spiedLockProvider = spyk(InMemoryLockProviderImpl())
+        val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -890,7 +894,8 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
         testDispatcherProvider.runTest {
             //given
-            val campaignExecutor = redisCampaignExecutor(this)
+            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
+            val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
             val campaign = RunningCampaign(
                 tenant = "my-tenant",
                 key = "first_campaign",
@@ -981,9 +986,10 @@ internal open class RedisCampaignExecutorTest {
 
     @Test
     internal fun `should abort the campaign hardly when a CampaignTimeoutFeedback with hard equals true is received`() =
-        testDispatcherProvider.runTest {
+        testDispatcherProvider.run {
             //given
-            val campaignExecutor = redisCampaignExecutor(this)
+            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
+            val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
             val campaign = RunningCampaign(
                 tenant = "my-tenant",
                 key = "first_campaign",
@@ -1082,6 +1088,24 @@ internal open class RedisCampaignExecutorTest {
                 scope,
                 campaignExecutionContext,
                 operations,
+                lockProvider
+            ), recordPrivateCalls = true
+        )
+
+    protected open fun redisCampaignExecutor(scope: CoroutineScope, lockProvider: LockProvider) =
+        spyk(
+            RedisCampaignExecutor(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                headConfiguration,
+                campaignConstraintsProvider,
+                listOf(campaignHook1, campaignHook2),
+                scope,
+                campaignExecutionContext,
+                operations,
+                lockProvider = lockProvider
             ), recordPrivateCalls = true
         )
 }
