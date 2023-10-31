@@ -21,9 +21,7 @@ package io.qalipsis.core.head.lock
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.aerisconsulting.catadioptre.KTestable
-import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.hook.CampaignHook
 import jakarta.inject.Singleton
 import java.time.Duration
@@ -36,7 +34,6 @@ import kotlinx.coroutines.sync.withLock
  * @author Francisca Eze
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_HEAD])
 internal class InMemoryLockProviderImpl : LockProvider, CampaignHook {
 
     @KTestable
