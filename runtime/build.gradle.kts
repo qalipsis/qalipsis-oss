@@ -27,6 +27,11 @@ plugins {
 
 description = "QALIPSIS Runtime"
 
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
 allOpen {
     annotations(
         "io.micronaut.aop.Around",

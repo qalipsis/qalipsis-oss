@@ -26,6 +26,11 @@ plugins {
 
 description = "QALIPSIS shared library for the services implied in an advanced cluster"
 
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
 // Configure both compileKotlin and compileTestKotlin.
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {

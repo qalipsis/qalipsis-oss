@@ -26,6 +26,11 @@ plugins {
 
 description = "QALIPSIS Factory microservice"
 
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
 allOpen {
     annotations(
         "io.micronaut.aop.Around",
@@ -37,13 +42,6 @@ allOpen {
     )
 }
 
-val micronautVersion: String by project
-val kotlinCoroutinesVersion: String by project
-val testContainersVersion: String by project
-val jacksonVersion: String by project
-val catadioptreVersion: String by project
-val kotlinSerialization: String by project
-
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
 kapt.useBuildCache = false
 
@@ -52,7 +50,7 @@ val apiVersion: String by project
 dependencies {
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
-    compileOnly("io.aeris-consulting:catadioptre-annotations:")
+    compileOnly("io.aeris-consulting:catadioptre-annotations")
 
     implementation(project(":qalipsis-shared"))
     implementation("io.qalipsis:qalipsis-api-common:$apiVersion")

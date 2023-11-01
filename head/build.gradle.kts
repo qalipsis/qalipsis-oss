@@ -27,6 +27,11 @@ plugins {
 
 description = "QALIPSIS Head microservice"
 
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
 allOpen {
     annotations(
         "io.micronaut.aop.Around",

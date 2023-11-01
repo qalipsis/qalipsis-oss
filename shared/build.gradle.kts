@@ -29,6 +29,11 @@ plugins {
 
 description = "QALIPSIS shared library for head and factories"
 
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
 // Configure both compileKotlin and compileTestKotlin.
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
