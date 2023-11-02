@@ -6,6 +6,7 @@ export const useTimeSeriesApi = () => {
     }
 
     const fetchCampaignSummary = (queryParam: CampaignSummaryResultQueryParams): Promise<CampaignSummaryResult[]> => {
+        console.log(queryParam)
         return get$<CampaignSummaryResult[], any>("/time-series/summary/campaign-status", queryParam);
     }
 

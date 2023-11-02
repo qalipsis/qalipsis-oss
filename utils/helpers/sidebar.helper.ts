@@ -4,7 +4,7 @@ enum PagePath {
     SERIES = "series"
 }
 
-export const pagePathToPermission: { [key in PagePath]: PermissionEnum[] } = {
+export const pagePathToPermission: { [key: string]: PermissionEnum[] } = {
     [PagePath.CAMPAIGNS]: [PermissionConstant.READ_CAMPAIGN],
     [PagePath.REPORTS]: [PermissionConstant.READ_REPORT],
     [PagePath.SERIES]: [PermissionConstant.READ_SERIES]
