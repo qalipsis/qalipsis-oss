@@ -16,9 +16,19 @@
             </template>
             <template v-if="column.key === 'actions'">
                 <div class="table-action-item-wrapper">
-                    <div class="flex items-center cursor-pointer table-action-item" @click="handleDeleteBtnClick(record as ReportTableData)">
-                        <BaseIcon icon="/icons/icon-delete-small.svg" />
-                        <span> Delete </span>
+                    <div class="flex items-center">
+                        <div class="flex items-center mr-4 cursor-pointer table-action-item" @click="handleDownloadBtnClick(record as ReportTableData)">
+                            <a-tooltip>
+                                <template #title>Download</template>
+                                <BaseIcon icon="/icons/icon-document.svg" />
+                            </a-tooltip>
+                        </div>
+                        <div class="flex items-center cursor-pointer table-action-item" @click="handleDeleteBtnClick(record as ReportTableData)">
+                            <a-tooltip>
+                                <template #title>Delete</template>
+                                <BaseIcon icon="/icons/icon-delete-small.svg" />
+                            </a-tooltip>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -38,6 +48,7 @@ import { storeToRefs } from "pinia";
 
 const userStore = useUserStore();
 const reportsTableStore = useReportsTableStore();
+const { downloadReport } = useReportApi();
 const { dataSource, totalElements } = storeToRefs(reportsTableStore);
 
 const tableColumnConfigs = ReportHelper.getTableColumnConfigs();
@@ -105,6 +116,14 @@ const handleDeleteBtnClick = (reportTableData: ReportTableData) => {
     reportReferences.value = [reportTableData.reference];
     deleteModalContent.value = reportTableData.displayName;
     modalOpen.value = true
+}
+
+const handleDownloadBtnClick = async (reportTableData: ReportTableData) => {
+    try {
+        await downloadReport(reportTableData.reference);
+    } catch (error) {
+        ErrorHelper.handleHttpResponseError(error)
+    }
 }
 
 </script>

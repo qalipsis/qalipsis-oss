@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { RouteLocationNormalized } from ".nuxt/vue-router";
+import { Report } from 'utils/types/report';
 
 const { fetchReportDetails } = useReportApi();
 const { fetchMultipleCampaignsDetails } = useCampaignApi();
@@ -32,6 +33,7 @@ let shouldDiscardChanges = false;
 let hasSavedChanges = false;
 
 onMounted(async () => {
+    await _fetchReport();
     window.addEventListener('beforeunload', (e) => {
         if (reportDetailsStore.hasUnsavedChanges && !shouldDiscardChanges && !hasSavedChanges) {
             e.preventDefault();
@@ -39,7 +41,6 @@ onMounted(async () => {
             e.returnValue = ''
         }
     })
-    _fetchReport();
 })
 
 watch(() => userStore.currentTenantReference, () => {

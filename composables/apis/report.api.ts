@@ -1,5 +1,10 @@
+import { format } from "date-fns";
+import { ReportTask } from "utils/types/report";
+import { Report } from "utils/types/report";
+
+
 export const useReportApi = () => {
-    const { get$, delete$, post$, put$ } = baseApi();
+    const { api$, get$, delete$, post$, put$ } = baseApi();
 
     /**
      * Fetches the campaigns
@@ -21,7 +26,7 @@ export const useReportApi = () => {
     const updateReport = (reportReference: string, request: ReportCreationAndUpdateRequest): Promise<Report> => {
         return put$<Report, ReportCreationAndUpdateRequest>(`/reports/${reportReference}`, request);
     }
-
+    
     /**
      * Fetches the details of the report
      * 
@@ -30,8 +35,28 @@ export const useReportApi = () => {
      */
     const fetchReportDetails = async (reference: string): Promise<Report> => {
         const report = await get$<Report, unknown>(`/reports/${reference}`);
-        report.dataComponents = report.dataComponents.map(d => ({...d, id: Date.now()}))
+        report.dataComponents = report.dataComponents ? report.dataComponents.map(d => ({...d, id: Date.now()})) : [];
         return get$<Report, unknown>(`/reports/${reference}`);
+    }
+
+    const downloadReport = async (reference: string): Promise<void> => {
+        // Triggers the report generation
+        const reportTask = await post$<ReportTask, unknown>(`/reports/${reference}/render`, null);
+        // Download the report
+        const blob = await api$<Blob>(`/reports/file/${reportTask.reference}`, {
+            method: 'get',
+            responseType: 'blob',
+            retry: 20, // Retry maximum 20 times
+            retryDelay: 500 // Wait 500 ms for the next retry
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const result = format(new Date(), "yyyy-MM-dd-HH_mm_ss");
+        link.download = `${result}-${reference}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
     }
 
     /**
@@ -62,6 +87,7 @@ export const useReportApi = () => {
         fetchReports,
         fetchReportDetails,
         createReport,
+        downloadReport,
         updateReport,
         deleteReports
     }

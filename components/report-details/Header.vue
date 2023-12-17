@@ -11,6 +11,11 @@
                     text="Save"
                     @click="handleSaveReportBtnClick"
                 />
+                <BaseButton
+                    class="ml-2"
+                    text="Download"
+                    @click="handleDownloadReportBtnClick"
+                />
             </div>
         </div>
     </BaseHeader>
@@ -25,8 +30,17 @@ const emit = defineEmits<{
 }>()
 
 const reportDetailsStore = useReportDetailsStore();
-const { updateReport } = useReportApi();
+const { updateReport, downloadReport } = useReportApi();
 const { reportName } = storeToRefs(reportDetailsStore);
+
+const handleDownloadReportBtnClick = async () => {
+    const reportReference = reportDetailsStore.reportDetails!.reference;
+    try {
+       await downloadReport(reportReference); 
+    } catch (error) {
+        ErrorHelper.handleHttpResponseError(error)
+    }
+}
 
 const handleSaveReportBtnClick = async () => {
     // Calls the API to update the campaigns
@@ -35,7 +49,7 @@ const handleSaveReportBtnClick = async () => {
         campaignKeys: reportDetailsStore.campaignKeys,
         campaignNamesPatterns: reportDetailsStore.campaignNamesPatterns,
         sharingMode: SharingModeConstant.WRITE,
-        scenarioNamesPatterns: reportDetailsStore.reportDetails?.scenarioNamesPatterns,
+        scenarioNamesPatterns: reportDetailsStore.selectedScenarioNames,
         dataComponents: reportDetailsStore.dataComponents.map(dataComponent => ({
             dataSeriesReferences: dataComponent.datas.map(d => d.reference),
             type: dataComponent.type

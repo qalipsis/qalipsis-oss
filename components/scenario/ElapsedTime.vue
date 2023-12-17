@@ -8,7 +8,7 @@
 <script setup lang="ts">
 const props = defineProps<{
     start: string,
-    end: string
+    end?: string
 }>()
 
 /**

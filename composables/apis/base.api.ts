@@ -1,5 +1,16 @@
+import { ofetch } from 'ofetch';
+import type { FetchOptions } from 'ofetch';
+
 export const baseApi = () => {
     const config = useRuntimeConfig();
+
+    const api$ = <T>(url: string, options: FetchOptions): Promise<T> => {
+        const customFetch = ofetch.create({ baseURL: config.public.apiBaseUrl });
+        
+        return customFetch(url, {
+            ...options
+        })
+    }
 
     const get$ = <T, R>(url: string, query?: { [key: string]: R }): Promise<T> => {
         return $fetch(url, {
@@ -7,15 +18,15 @@ export const baseApi = () => {
             method: 'GET',
             query: {
                 ...query
-            }, 
+            }
         })
     }
 
-    const post$ = <T, R>(url: string, requestParams: R): Promise<T> => {
+    const post$ = <T, R>(url: string, requestParams?: R): Promise<T> => {
         return $fetch<T>(url, {
             baseURL: config.public.apiBaseUrl,
             method: 'POST',
-            body: JSON.stringify(requestParams),
+            body: requestParams ? JSON.stringify(requestParams) : null,
         })
     }
 
@@ -43,6 +54,7 @@ export const baseApi = () => {
     } 
 
     return {
+        api$,
         get$,
         post$,
         patch$,

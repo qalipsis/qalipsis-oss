@@ -1,4 +1,5 @@
 import { add, isBefore } from "date-fns";
+import type { FetchOptions } from 'ofetch';
 
 interface CacheItem {
     /**
@@ -19,7 +20,18 @@ const  _cache: {[key: string]: CacheItem} = {};
 
 export const cacheApi = () => {
 
-    const { get$ } = baseApi();
+    const { get$, api$ } = baseApi();
+
+    const apiCache$ =async<T>(url: string, options: FetchOptions, ttl = DEFAULT_TTL): Promise<T> => {
+        const cacheKey = getCacheKey(url, options);
+
+        if (isValidCache(cacheKey)) return Promise.resolve(_cache[cacheKey].response);
+
+        const response = await api$<T>(url, options);
+        storeCache(cacheKey, response, ttl);
+
+        return response;
+    }
 
     const getCache$ = async <T, R>(url: string, query: { [key: string]: R }, ttl = DEFAULT_TTL): Promise<T> => {
 
@@ -88,6 +100,7 @@ export const cacheApi = () => {
     }
 
     return {
+        apiCache$,
         getCache$,
         clearCache
     }

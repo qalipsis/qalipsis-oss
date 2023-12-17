@@ -467,7 +467,7 @@ export class ScenarioHelper {
    * toTimeDisplayText('2023-02-20T19:18:09.482991Z', '2023-02-20T19:18:19.820797Z') -> 02/20/23, 20:18:09 -> 20:18:19(00:00:11)
    * toTimeDisplayText('2023-02-20T19:18:09.482991Z', null) -> 02/20/23, 20:18:09 (00:00:30)
    */
-  static toTimeDisplayText(start: string, end: string): string {
+  static toTimeDisplayText(start: string, end?: string): string {
     const startDate = new Date(start);
     const endDate = end ? new Date(end) : new Date();
 

@@ -185,6 +185,38 @@ export interface DataComponentCreationAndUpdateRequest {
     type: DataComponentType;
 }
 
+export interface ReportTask {
+    /**
+     * Identifier of a report task
+     */
+    reference: string;
+
+    /**
+     * Status of report task generation
+     */
+    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+    /**
+     * The cause of a task generation failure
+     */
+    failureReason?: string;
+
+    /**
+     * Starting time of task generation
+     */
+    creationTimestamp: string;
+
+    /**
+     * Update time of task generation
+     */
+    updateTimestamp?: string;
+
+    /**
+     * Creator of the report task
+     */
+    creator: string;
+}
+
 export interface CampaignSummaryResult {
     start: string;
     successful: number;

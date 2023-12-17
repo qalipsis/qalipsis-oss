@@ -11,7 +11,7 @@
             @click="handleTagClick(report)"/>
         </td>
         <td>
-          <ScenarioElapsedTime :start="report.start!" :end="report.end!" />
+          <ScenarioElapsedTime :start="report.start!" :end="report.end" />
         </td>
         <td>
           <ScenarioMinions

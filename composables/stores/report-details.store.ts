@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { Report } from "utils/types/report";
 
 interface ReportDetailStoreState {
     reportDetails: Report | null;
@@ -29,18 +30,19 @@ export const useReportDetailsStore = defineStore("ReportDetails", {
     getters: {
         activeCampaignOptions: state => state.campaignOptions.filter(c => c.isActive),
         hasUnsavedChanges: state => {
-            const simplifiedNewDataComponents = state.dataComponents.map(d => ({
+            const simplifiedNewDataComponents = state.dataComponents ? state.dataComponents.map(d => ({
                 dataType: d.type,
                 references: d.datas.map((data) => {
                     return data.reference
                 })
-            }));
-            const simplifiedOldDataComponents = state.reportDetails!.dataComponents.map(d => ({
+            })): [];
+            
+            const simplifiedOldDataComponents = state.reportDetails?.dataComponents ? state.reportDetails.dataComponents.map(d => ({
                 dataType: d.type,
                 references: d.datas.map((data) => {
                     return data.reference
                 })
-            }));
+            })) : [];
 
             if (state.reportName !== state.reportDetails?.displayName) return true;
             else if (!arraysEqual(simplifiedNewDataComponents, simplifiedOldDataComponents)) return true;

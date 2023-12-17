@@ -142,8 +142,9 @@ const _addDataComponent = (dataComponentType: DataComponentType) => {
         datas: [],
         type: dataComponentType
     }
+    const existingDataComponents = dataComponents?.value ?? [];
     reportDetailsStore.$patch({
-        dataComponents: [dataComponent, ...dataComponents.value]
+        dataComponents: [dataComponent, ...existingDataComponents]
     })
 }
 
