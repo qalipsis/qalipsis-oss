@@ -16,14 +16,11 @@ const userStore = useUserStore();
 const route = useRoute();
 const campaignDetails = ref<CampaignExecutionDetails>();
 const isPageReady = ref(false);
+let intervalId: number;
 
 onMounted(async () => {
-    try {
-        const campaignKey = route.params.id as string;
-        campaignDetails.value = await fetchCampaignDetails(campaignKey);
-    } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
-    }
+    // Fetches the campaign details.
+    await _fetchCampaignDetails();
 
     // The selected scenario names from the url query params.
     const scenarioNames = route.query?.scenarios?.toString().split(',');
@@ -55,6 +52,11 @@ onMounted(async () => {
         })
     }
 
+    // Triggers the refresh interval when the status is IN_PROGRESS.
+    if (campaignDetails.value?.status === 'IN_PROGRESS') {
+        _triggerRefreshInterval();
+    }
+
     isPageReady.value = true;
 
 })
@@ -66,6 +68,32 @@ watch(() => userStore.currentTenantReference, () => {
 onBeforeUnmount(() => {
     campaignDetailsStore.$reset();
 })
+
+const _triggerRefreshInterval = () => {
+    // Keep refreshing the campaign details every 2 seconds.
+    intervalId = window.setInterval(async () => {
+        await _fetchCampaignDetails();
+        // Updates the campaign details store.
+        campaignDetailsStore.$patch({
+            campaignDetails: campaignDetails.value,
+            selectedScenarioNames: campaignDetails.value?.scenarios ? campaignDetails.value?.scenarios?.map(s => s.name) : []
+        })
+
+        // Remove the interval when the status is not IN_PROGRESS anymore.
+        if (intervalId && campaignDetails.value?.status !== 'IN_PROGRESS') {
+            window.clearInterval(intervalId);
+        }
+    }, 5000);
+}
+
+const _fetchCampaignDetails = async () => {
+    try {
+        const campaignKey = route.params.id as string;
+        campaignDetails.value = await fetchCampaignDetails(campaignKey);
+    } catch (error) {
+        ErrorHelper.handleHttpResponseError(error)
+    }
+}
 
 </script>
 

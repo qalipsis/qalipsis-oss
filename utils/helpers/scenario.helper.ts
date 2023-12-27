@@ -407,7 +407,9 @@ export class ScenarioHelper {
       failedExecutions: campaignExecutionDetails.failedExecutions ?? 0,
       failureReason: campaignExecutionDetails.failureReason,
       messages: reports.reduce<ReportMessage[]>((acc, cur) => {
-        return acc.concat(...cur.messages);
+        const reportMessages = cur.messages?.length ? cur.messages : [];
+
+        return acc.concat(...reportMessages);
       }, []),
     };
 

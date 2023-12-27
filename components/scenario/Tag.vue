@@ -23,6 +23,6 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'click'): void
 }>()
-const tag = CampaignHelper.toExecutionStatusTag(props.status)
+const tag = computed(() => CampaignHelper.toExecutionStatusTag(props.status)); 
 
 </script>

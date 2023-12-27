@@ -8,6 +8,16 @@
     :pagination="pagination"
     @change="handlePaginationChange"
   >
+    <template #headerCell="{ column }">
+      <template v-if="column.key === 'actions'">
+        <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
+          <a-tooltip>
+            <template #title>Refresh</template>
+            <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+          </a-tooltip>
+        </div>
+      </template>
+    </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'name'">
         <div
@@ -115,12 +125,8 @@ const rowSelection: TableRowSelection<CampaignTableData> | undefined = props.row
     })
   : undefined;
 
-onMounted(async () => {
-  try {
-    await campaignsTableStore.fetchCampaignsTableDataSource();
-  } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
-  }
+onMounted(() => {
+  _fetchTableData();
 });
 
 onBeforeUnmount(() => {
@@ -129,9 +135,9 @@ onBeforeUnmount(() => {
 
 watch(
   () => userStore.currentTenantReference,
-  async () => {
+  () => {
     campaignsTableStore.$reset();
-    await campaignsTableStore.fetchCampaignsTableDataSource();
+    _fetchTableData();
   }
 );
 
@@ -142,16 +148,16 @@ const handlePaginationChange = async (
 ) => {
   const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
   const sort = TableHelper.getSort(sorter as SorterResult<any>);
-  try {
-    campaignsTableStore.$patch({
-      sort: sort,
-      currentPageIndex: currentPageIndex,
-    });
-    await campaignsTableStore.fetchCampaignsTableDataSource();
-  } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
-  }
+  campaignsTableStore.$patch({
+    sort: sort,
+    currentPageIndex: currentPageIndex,
+  });
+  _fetchTableData();
 };
+
+const handleRefreshBtnClick = () => {
+  _fetchTableData();
+}
 
 const handleRunNowBtnClick = async (
   campaignTableData: CampaignTableData
@@ -180,4 +186,13 @@ const handleNameClick = (
 
   navigateTo(pageLink);
 };
+
+const _fetchTableData = async () => {
+  try {
+    await campaignsTableStore.fetchCampaignsTableDataSource();
+  } catch (error) {
+    ErrorHelper.handleHttpResponseError(error);
+  }
+}
+
 </script>

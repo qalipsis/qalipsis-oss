@@ -50,10 +50,12 @@ const handleSaveReportBtnClick = async () => {
         campaignNamesPatterns: reportDetailsStore.campaignNamesPatterns,
         sharingMode: SharingModeConstant.WRITE,
         scenarioNamesPatterns: reportDetailsStore.selectedScenarioNames,
-        dataComponents: reportDetailsStore.dataComponents.map(dataComponent => ({
-            dataSeriesReferences: dataComponent.datas.map(d => d.reference),
-            type: dataComponent.type
-        })),
+        dataComponents: reportDetailsStore.dataComponents
+            ? reportDetailsStore.dataComponents.map(dataComponent => ({
+                dataSeriesReferences: dataComponent.datas.map(d => d.reference),
+                type: dataComponent.type
+            }))
+            : [],
     };
     try {
         await updateReport(reportDetailsStore.reportDetails!.reference, request);

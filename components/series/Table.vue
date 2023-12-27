@@ -7,6 +7,16 @@
     :ellipsis="true"
     :pagination="pagination"
     @change="handlePaginationChange">
+    <template #headerCell="{ column }">
+      <template v-if="column.key === 'actions'">
+        <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
+          <a-tooltip>
+            <template #title>Refresh</template>
+            <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+          </a-tooltip>
+        </div>
+      </template>
+    </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
         <div class="flex items-center cursor-pointer table-item-link" @click="handleEditBtnClick(record as DataSeriesTableData)">
@@ -133,49 +143,45 @@ const rowSelection: TableRowSelection<DataSeriesTableData> | undefined = reactiv
   },
 })
 
-onMounted(async () => {
-  try {
-    if (props.selectedDataSeriesReferences) {
-      seriesTableStore.$patch({
-        selectedRowKeys: props.selectedDataSeriesReferences
-      })
-    }
-
-    await seriesTableStore.fetchDataSeriesTableDataSource();
-  } catch (error) {
-    ErrorHelper.handleHttpResponseError(error)
+onMounted(() => {
+  if (props.selectedDataSeriesReferences) {
+    seriesTableStore.$patch({
+      selectedRowKeys: props.selectedDataSeriesReferences
+    })
   }
+  _fetchTableData();
 })
 
 onBeforeUnmount(() => {
   seriesTableStore.$reset();
 })
 
-watch(() => userStore.currentTenantReference, async () => {
+watch(() => userStore.currentTenantReference, () => {
   seriesTableStore.$reset();
-  await seriesTableStore.fetchDataSeriesTableDataSource();
+  _fetchTableData();
 })
 
-const handlePaginationChange = async (
+const handlePaginationChange = (
   pagination: TablePaginationConfig,
   _:  Record<string, FilterValue>,
-  sorter: SorterResult<any> | SorterResult<any>[]) => {
-    const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
-    const sort = TableHelper.getSort(sorter as SorterResult<any>);
-    try {
-      seriesTableStore.$patch({
-        sort: sort,
-        currentPageIndex: currentPageIndex
-      })
-      await seriesTableStore.fetchDataSeriesTableDataSource();
-    } catch (error) {
-      ErrorHelper.handleHttpResponseError(error)
-    }
+  sorter: SorterResult<any> | SorterResult<any>[]
+) => {
+  const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
+  const sort = TableHelper.getSort(sorter as SorterResult<any>);
+  seriesTableStore.$patch({
+    sort: sort,
+    currentPageIndex: currentPageIndex
+  });
+  _fetchTableData();
 }
 
 const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   formDrawerOpen.value = true;
   selectedDataSeries.value = dataSeriesTableData;
+}
+
+const handleRefreshBtnClick = () => {
+  _fetchTableData();
 }
 
 const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData) => {
@@ -186,13 +192,21 @@ const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData)
   } catch (error) {
     ErrorHelper.handleHttpResponseError(error)
   }
-  await seriesTableStore.fetchDataSeriesTableDataSource();
+  _fetchTableData();
 }
 
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   dataSeriesReferences.value = [dataSeriesTableData.key];
   deleteModalContent.value = dataSeriesTableData.displayName;
   modalOpen.value = true
+}
+
+const _fetchTableData = async () => {
+  try {
+    await seriesTableStore.fetchDataSeriesTableDataSource();
+  } catch (error) {
+    ErrorHelper.handleHttpResponseError(error);
+  }
 }
 
 </script>

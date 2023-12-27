@@ -1,6 +1,7 @@
 import { ApexOptions } from "apexcharts";
 import tinycolor from "tinycolor2";
 import { format } from "date-fns";
+import { Report } from "../types/report";
 
 export class ReportHelper {
     static REPORT_CHART_TOOLTIP_RENDERER: ((options: any) => any) = ({ seriesIndex, dataPointIndex, w }): string => {

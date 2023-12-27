@@ -180,6 +180,12 @@
     filter: $grey-svg;
 }
 
+.icon-refresh {
+    &:hover {
+        filter: $primary-color-svg;
+    }
+}
+
 /* Table */
 .table-item-link {
     cursor: pointer;

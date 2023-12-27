@@ -8,6 +8,16 @@
         :pagination="pagination"
         :rowSelection="rowSelection"
         @change="handlePaginationChange">
+        <template #headerCell="{ column }">
+            <template v-if="column.key === 'actions'">
+                <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
+                <a-tooltip>
+                    <template #title>Refresh</template>
+                    <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+                </a-tooltip>
+                </div>
+            </template>
+        </template>
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'displayName'">
                 <div class="table-item-link" @click="handleReportNameClick(record as ReportTableData)">
@@ -75,11 +85,7 @@ const deleteModalContent = ref('');
 const modalOpen = ref(false);
 
 onMounted(async () => {
-    try {
-        await reportsTableStore.fetchReportsTableDataSource();
-    } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
-    }
+    _fetchTableData();
 })
 
 onBeforeUnmount(() => {
@@ -97,25 +103,33 @@ const handlePaginationChange = async (
     sorter: SorterResult<any> | SorterResult<any>[]) => {
     const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
     const sort = TableHelper.getSort(sorter as SorterResult<any>);
-    try {
-        reportsTableStore.$patch({
-            sort: sort,
-            currentPageIndex: currentPageIndex
-        })
-        await reportsTableStore.fetchReportsTableDataSource();
-    } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
-    }
+    reportsTableStore.$patch({
+        sort: sort,
+        currentPageIndex: currentPageIndex
+    });
+    _fetchTableData();
 }
 
 const handleReportNameClick = (reportTableData: ReportTableData) => {
     navigateTo(`/reports/${reportTableData.reference}`)
 }
 
+const handleRefreshBtnClick = () => {
+    _fetchTableData();
+}
+
 const handleDeleteBtnClick = (reportTableData: ReportTableData) => {
     reportReferences.value = [reportTableData.reference];
     deleteModalContent.value = reportTableData.displayName;
     modalOpen.value = true
+}
+
+const _fetchTableData = async () => {
+    try {
+        await reportsTableStore.fetchReportsTableDataSource();
+    } catch (error) {
+        ErrorHelper.handleHttpResponseError(error)
+    }
 }
 
 const handleDownloadBtnClick = async (reportTableData: ReportTableData) => {

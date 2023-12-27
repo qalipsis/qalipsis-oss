@@ -163,12 +163,16 @@ const handleRunBtnClick = async () => {
         // Creates a new scheduled campaign
         await scheduleCampaign(request);
       }
+
+      navigateTo("/campaigns");
     } else {
       // Creates a new campaign
-      await createCampaign(request);
+      const newCampaign = await createCampaign(request);
+      // navigate to the campaign details
+      navigateTo(`/campaigns/${newCampaign.key}`);
     }
     
-    navigateTo("/campaigns");
+
   } catch (error) {
     ErrorHelper.handleHttpResponseError(error)  
   }
