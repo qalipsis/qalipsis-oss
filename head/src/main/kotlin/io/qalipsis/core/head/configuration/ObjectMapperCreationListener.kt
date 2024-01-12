@@ -38,7 +38,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 
 @Singleton
-@Requires(env = [ExecutionEnvironments.HEAD])
+@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 internal class ObjectMapperCreationListener : BeanCreatedEventListener<ObjectMapper> {
 
     override fun onCreated(event: BeanCreatedEvent<ObjectMapper>): ObjectMapper {
