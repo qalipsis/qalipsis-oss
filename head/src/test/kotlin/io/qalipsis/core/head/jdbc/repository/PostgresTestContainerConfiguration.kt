@@ -66,6 +66,7 @@ object PostgresTestContainerConfiguration {
                 withCreateContainerCmdModifier { cmd ->
                     cmd.hostConfig!!.withMemory(50 * 1024.0.pow(2).toLong()).withCpuCount(2)
                 }
+                withStartupAttempts(5)
                 waitingFor(Wait.forListeningPort())
                 withStartupTimeout(Duration.ofSeconds(60))
 
