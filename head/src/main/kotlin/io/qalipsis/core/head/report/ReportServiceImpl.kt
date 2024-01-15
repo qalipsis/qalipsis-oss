@@ -84,20 +84,6 @@ internal class ReportServiceImpl(
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope
 ) : ReportService {
 
-    companion object {
-        const val REPORT_FETCH_DENY =
-            "This report does not exist in your tenant or you do not have the permission to fetch it"
-        const val REPORT_UPDATE_DENY =
-            "This report does not exist in your tenant or you do not have the permission to update it"
-        const val REPORT_DELETE_DENY =
-            "This report does not exist in your tenant or you do not have the permission to delete it"
-        const val REPORT_DATA_SERIES_NOT_ALLOWED =
-            "Some selected data series of your data components cannot be found in your tenant. You can only add data series of your tenant in this report"
-        const val REPORT_CAMPAIGN_KEYS_NOT_ALLOWED = "Not all specified campaign keys belong to the tenant"
-
-        val logger = logger()
-    }
-
     override suspend fun get(tenant: String, username: String, reference: String): Report {
         val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
         val reportEntity = requireNotNull(
@@ -143,6 +129,7 @@ internal class ReportServiceImpl(
                 tenantId = tenantRepository.findIdByReference(tenant),
                 creatorId = requireNotNull(userRepository.findIdByUsername(creator)),
                 displayName = reportCreationAndUpdateRequest.displayName,
+                description = reportCreationAndUpdateRequest.description,
                 sharingMode = reportCreationAndUpdateRequest.sharingMode,
                 campaignKeys = reportCreationAndUpdateRequest.campaignKeys,
                 campaignNamesPatterns = reportCreationAndUpdateRequest.campaignNamesPatterns,
@@ -207,6 +194,7 @@ internal class ReportServiceImpl(
                 reportEntity.copy(
                     tenantId = reportEntity.tenantId,
                     displayName = reportCreationAndUpdateRequest.displayName,
+                    description = reportCreationAndUpdateRequest.description,
                     sharingMode = reportCreationAndUpdateRequest.sharingMode,
                     campaignKeys = reportCreationAndUpdateRequest.campaignKeys,
                     campaignNamesPatterns = reportCreationAndUpdateRequest.campaignNamesPatterns,
@@ -345,6 +333,7 @@ internal class ReportServiceImpl(
     private fun isUpdateRequired(updateRequest: ReportCreationAndUpdateRequest, reportEntity: ReportEntity): Boolean {
         return ReportCreationAndUpdateRequest(
             displayName = reportEntity.displayName,
+            description = reportEntity.description,
             sharingMode = reportEntity.sharingMode,
             campaignKeys = reportEntity.campaignKeys.toList(),
             campaignNamesPatterns = reportEntity.campaignNamesPatterns.toList(),
@@ -352,7 +341,6 @@ internal class ReportServiceImpl(
             dataComponents = reportEntity.dataComponents.map { toUpdateRequest(it) }
         ) != updateRequest
     }
-
 
     /**
      * Converts a data component instance to entity.
@@ -409,4 +397,17 @@ internal class ReportServiceImpl(
         return ReportDataComponentEntity(reportId = reportId, type = type, dataSeries = dataSeriesEntities)
     }
 
+    companion object {
+        const val REPORT_FETCH_DENY =
+            "This report does not exist in your tenant or you do not have the permission to fetch it"
+        const val REPORT_UPDATE_DENY =
+            "This report does not exist in your tenant or you do not have the permission to update it"
+        const val REPORT_DELETE_DENY =
+            "This report does not exist in your tenant or you do not have the permission to delete it"
+        const val REPORT_DATA_SERIES_NOT_ALLOWED =
+            "Some selected data series of your data components cannot be found in your tenant. You can only add data series of your tenant in this report"
+        const val REPORT_CAMPAIGN_KEYS_NOT_ALLOWED = "Not all specified campaign keys belong to the tenant"
+
+        val logger = logger()
+    }
 }

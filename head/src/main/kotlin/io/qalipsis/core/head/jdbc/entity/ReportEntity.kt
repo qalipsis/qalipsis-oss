@@ -73,6 +73,8 @@ internal data class ReportEntity(
     @field:Size(min = 1, max = 200)
     var displayName: String,
 
+    var description: String? = null,
+
     @field:NotBlank
     var sharingMode: SharingMode = SharingMode.READONLY,
 
@@ -96,6 +98,7 @@ internal data class ReportEntity(
         tenantId: Long,
         creatorId: Long,
         displayName: String,
+        description: String? = null,
         sharingMode: SharingMode = SharingMode.READONLY,
         campaignKeys: Collection<String> = emptyList(),
         campaignNamesPatterns: Collection<String> = emptyList(),
@@ -109,6 +112,7 @@ internal data class ReportEntity(
         tenantId = tenantId,
         creatorId = creatorId,
         displayName = displayName,
+        description = description,
         sharingMode = sharingMode,
         campaignKeys = campaignKeys,
         campaignNamesPatterns = campaignNamesPatterns,

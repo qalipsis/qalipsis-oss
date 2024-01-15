@@ -41,6 +41,9 @@ internal data class ReportCreationAndUpdateRequest(
     @field:Size(min = 1, max = 200)
     val displayName: String,
 
+    @field:Schema(description = "Description of the report, e.g. to explain its purpose", required = false)
+    val description: String? = null,
+
     @field:Schema(description = "Sharing mode with the other members of the tenant", required = false)
     val sharingMode: SharingMode = SharingMode.READONLY,
 

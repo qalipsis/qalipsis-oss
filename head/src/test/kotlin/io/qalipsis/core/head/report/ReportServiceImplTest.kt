@@ -28,6 +28,8 @@ import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotSameAs
+import assertk.assertions.isSameAs
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
@@ -41,6 +43,8 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.spyk
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.query.QueryAggregationOperator
@@ -65,7 +69,6 @@ import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.model.DataSeries
-import io.qalipsis.core.head.model.DataTable
 import io.qalipsis.core.head.model.DataTableCreationAndUpdateRequest
 import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.DiagramCreationAndUpdateRequest
@@ -153,7 +156,7 @@ internal class ReportServiceImplTest {
             valueName = "my-meter"
         )
     )
-    private val reportEntity = ReportEntity(
+    private val reportEntityPrototype = ReportEntity(
         tenantId = 42L,
         displayName = "current-report",
         reference = "qoi78wizened",
@@ -205,12 +208,12 @@ internal class ReportServiceImplTest {
         )
     )
     private val now: Instant = Instant.parse("2022-02-22T00:00:00.00Z")
-    private val reportEntity2: ReportEntity = reportEntity.copy(dataComponents = emptyList(), id = 7)
+    private val reportEntityProptotype2: ReportEntity = reportEntityPrototype.copy(dataComponents = emptyList(), id = 7)
     private val reportTaskEntity = ReportTaskEntity(
         creator = "user",
         creationTimestamp = now,
         id = 11,
-        reportId = reportEntity2.id,
+        reportId = reportEntityProptotype2.id,
         reference = "report-task-1",
         tenantReference = "my-tenant",
         status = ReportTaskStatus.PENDING,
@@ -221,32 +224,9 @@ internal class ReportServiceImplTest {
     internal fun `should create the report with the default sharing mode and empty campaign keys and scenario names patterns`() =
         testDispatcherProvider.runTest {
             // given
-            val reportEntity = ReportEntity(
-                reference = "the-reference",
-                tenantId = 123L,
-                creatorId = 456L,
-                displayName = "report-name",
-                sharingMode = SharingMode.READONLY,
-                campaignKeys = listOf(),
-                campaignNamesPatterns = listOf(),
-                scenarioNamesPatterns = listOf(),
-                dataComponents = listOf()
-            )
-            val report = Report(
-                reference = "the-reference",
-                version = Instant.EPOCH,
-                creator = "the-user",
-                displayName = "report-name",
-                sharingMode = SharingMode.READONLY,
-                campaignKeys = listOf(),
-                campaignNamesPatterns = listOf(),
-                resolvedCampaigns = listOf(),
-                scenarioNamesPatterns = listOf(),
-                resolvedScenarioNames = listOf(),
-                dataComponents = listOf()
-            )
             val reportServiceImpl = buildReportService()
-            coEvery { reportRepository.save(any()) } returnsArgument 0
+            val savedEntity = slot<ReportEntity>()
+            coEvery { reportRepository.save(capture(savedEntity)) } answers { firstArg<ReportEntity>().copy(id = 123982) }
             coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
@@ -256,7 +236,9 @@ internal class ReportServiceImplTest {
                     refEq("report-name")
                 )
             } returns false
-            coEvery { reportConverter.convertToModel(reportEntity) } returns report
+            val convertedEntity = slot<ReportEntity>()
+            val convertedReport = mockk<Report>()
+            coEvery { reportConverter.convertToModel(capture(convertedEntity)) } returns convertedReport
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(displayName = "report-name")
 
@@ -268,43 +250,39 @@ internal class ReportServiceImplTest {
             )
 
             // then
-            assertThat(result).all {
-                prop(Report::reference).isEqualTo("the-reference")
-                prop(Report::creator).isEqualTo("the-user")
-                prop(Report::displayName).isEqualTo("report-name")
-                prop(Report::sharingMode).isEqualTo(SharingMode.READONLY)
-                prop(Report::campaignKeys).isEmpty()
-                prop(Report::campaignNamesPatterns).isEmpty()
-                prop(Report::resolvedCampaigns).isEmpty()
-                prop(Report::scenarioNamesPatterns).isEmpty()
-                prop(Report::resolvedScenarioNames).isEmpty()
-                prop(Report::dataComponents).isEmpty()
-            }
-            coVerify {
-                reportRepository.save(
-                    withArg {
-                        assertThat(it).all {
-                            prop(ReportEntity::id).isEqualTo(-1)
-                            prop(ReportEntity::reference).isEqualTo("the-reference")
-                            prop(ReportEntity::tenantId).isEqualTo(123L)
-                            prop(ReportEntity::creatorId).isEqualTo(456L)
-                            prop(ReportEntity::displayName).isEqualTo("report-name")
-                            prop(ReportEntity::sharingMode).isEqualTo(SharingMode.READONLY)
-                            prop(ReportEntity::campaignKeys).isEmpty()
-                            prop(ReportEntity::campaignNamesPatterns).isEmpty()
-                            prop(ReportEntity::scenarioNamesPatterns).isEmpty()
-                            prop(ReportEntity::dataComponents).isEmpty()
-                        }
-                    }
-                )
-            }
+            assertThat(result).isSameAs(convertedReport)
             coVerifyOrder {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
                 idGenerator.short()
                 tenantRepository.findIdByReference(refEq("my-tenant"))
                 userRepository.findIdByUsername(refEq("the-user"))
-                reportRepository.save(any())
-                reportConverter.convertToModel(reportEntity)
+                reportRepository.save(capture(savedEntity))
+                reportConverter.convertToModel(refEq(convertedEntity.captured))
+            }
+            assertThat(savedEntity.captured).all {
+                prop(ReportEntity::id).isEqualTo(-1)
+                prop(ReportEntity::reference).isEqualTo("the-reference")
+                prop(ReportEntity::tenantId).isEqualTo(123L)
+                prop(ReportEntity::creatorId).isEqualTo(456L)
+                prop(ReportEntity::displayName).isEqualTo("report-name")
+                prop(ReportEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                prop(ReportEntity::campaignKeys).isEmpty()
+                prop(ReportEntity::campaignNamesPatterns).isEmpty()
+                prop(ReportEntity::scenarioNamesPatterns).isEmpty()
+                prop(ReportEntity::dataComponents).isEmpty()
+            }
+            assertThat(convertedEntity.captured).all {
+                isNotSameAs(savedEntity.captured)
+                prop(ReportEntity::id).isEqualTo(123982)
+                prop(ReportEntity::reference).isEqualTo("the-reference")
+                prop(ReportEntity::tenantId).isEqualTo(123L)
+                prop(ReportEntity::creatorId).isEqualTo(456L)
+                prop(ReportEntity::displayName).isEqualTo("report-name")
+                prop(ReportEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                prop(ReportEntity::campaignKeys).isEmpty()
+                prop(ReportEntity::campaignNamesPatterns).isEmpty()
+                prop(ReportEntity::scenarioNamesPatterns).isEmpty()
+                prop(ReportEntity::dataComponents).isEmpty()
             }
             confirmVerified(
                 reportRepository,
@@ -322,59 +300,14 @@ internal class ReportServiceImplTest {
     internal fun `should create the report by specifying all fields`() = testDispatcherProvider.runTest {
         // given
         val reportServiceImpl = buildReportService()
-        val reportEntity = ReportEntity(
-            reference = "report-ref",
-            tenantId = 123L,
-            creatorId = 456L,
-            displayName = "report-name",
-            sharingMode = SharingMode.NONE,
-            campaignKeys = listOf("campaign-key1", "campaign-key2"),
-            campaignNamesPatterns = listOf("*", "\\w"),
-            scenarioNamesPatterns = listOf("\\w"),
-            dataComponents = listOf(
-                ReportDataComponentEntity(
-                    id = 1,
-                    reportId = -1,
-                    type = DataComponentType.DIAGRAM,
-                    dataSeries = listOf(dataSeries[0])
-                ),
-                ReportDataComponentEntity(
-                    id = 2,
-                    reportId = -1,
-                    type = DataComponentType.DATA_TABLE,
-                    dataSeries = listOf(dataSeries[1])
-                )
-            )
-        )
-        val dataSeries1 = relaxedMockk<DataSeries>()
-        val dataSeries2 = relaxedMockk<DataSeries>()
-        val report = Report(
-            reference = "report-ref",
-            version = Instant.EPOCH,
-            creator = "the-user",
-            displayName = "report-name",
-            sharingMode = SharingMode.NONE,
-            campaignKeys = listOf("campaign-key1", "campaign-key2"),
-            campaignNamesPatterns = listOf("*", "\\w"),
-            resolvedCampaigns = listOf(
-                CampaignKeyAndName("campaign-key1", "campaign-name1"),
-                CampaignKeyAndName("campaign-key2", "campaign-name2"),
-                CampaignKeyAndName("campaign-key3", "campaign-name3")
-            ),
-            scenarioNamesPatterns = listOf("\\w"),
-            resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
-            dataComponents = listOf(
-                Diagram(listOf(dataSeries1)),
-                DataTable(listOf(dataSeries2))
-            )
-        )
         coEvery {
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                 refEq("my-tenant"),
                 refEq("report-name")
             )
         } returns false
-        coEvery { reportRepository.save(any()) } returnsArgument 0
+        val savedEntity = slot<ReportEntity>()
+        coEvery { reportRepository.save(capture(savedEntity)) } answers { firstArg<ReportEntity>().copy(id = 1782) }
         coEvery { tenantRepository.findIdByReference(refEq("my-tenant")) } returns 123L
         coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
         coEvery {
@@ -398,23 +331,16 @@ internal class ReportServiceImplTest {
         coEvery {
             dataSeriesRepository.findAllByTenantAndReferences(refEq("my-tenant"), listOf("series-ref-2"))
         } returns listOf(dataSeries[1])
-        coEvery { reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>()) } returns flowOf(
-            ReportDataComponentEntity(
-                id = 1,
-                reportId = -1,
-                type = DataComponentType.DIAGRAM,
-                dataSeries = listOf(dataSeries[0])
-            ),
-            ReportDataComponentEntity(
-                id = 2,
-                reportId = -1,
-                type = DataComponentType.DATA_TABLE,
-                dataSeries = listOf(dataSeries[1])
+        coEvery { reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>()) } answers {
+            flowOf(
+                *firstArg<Iterable<ReportDataComponentEntity>>().toList().toTypedArray()
             )
-        )
+        }
         coEvery { idGenerator.short() } returns "report-ref"
         coEvery { userRepository.findUsernameById(456L) } returns "the-user"
-        coEvery { reportConverter.convertToModel(reportEntity) } returns report
+        val convertedEntity = slot<ReportEntity>()
+        val convertedReport = mockk<Report>()
+        coEvery { reportConverter.convertToModel(capture(convertedEntity)) } returns convertedReport
 
         val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
             displayName = "report-name",
@@ -436,44 +362,8 @@ internal class ReportServiceImplTest {
         )
 
         // then
-        assertThat(result).all {
-            prop(Report::reference).isEqualTo("report-ref")
-            prop(Report::creator).isEqualTo("the-user")
-            prop(Report::displayName).isEqualTo("report-name")
-            prop(Report::sharingMode).isEqualTo(SharingMode.NONE)
-            prop(Report::campaignKeys).hasSize(2)
-            prop(Report::campaignNamesPatterns).hasSize(2)
-            prop(Report::resolvedCampaigns).hasSize(3)
-            prop(Report::scenarioNamesPatterns).hasSize(1)
-            prop(Report::resolvedScenarioNames).hasSize(3)
-            prop(Report::dataComponents).hasSize(2)
-        }
-
-        assertThat(result.dataComponents[0] as Diagram).all {
-            prop(Diagram::type).isEqualTo(Diagram.TYPE)
-            prop(Diagram::datas).hasSize(1)
-        }
-        assertThat(result.dataComponents[1] as DataTable).all {
-            prop(DataTable::type).isEqualTo(DataTable.TYPE)
-        }
-        coVerify {
-            reportRepository.save(
-                withArg {
-                    assertThat(it).all {
-                        prop(ReportEntity::id).isEqualTo(-1)
-                        prop(ReportEntity::reference).isEqualTo("report-ref")
-                        prop(ReportEntity::tenantId).isEqualTo(123L)
-                        prop(ReportEntity::creatorId).isEqualTo(456L)
-                        prop(ReportEntity::displayName).isEqualTo("report-name")
-                        prop(ReportEntity::sharingMode).isEqualTo(SharingMode.NONE)
-                        prop(ReportEntity::campaignKeys).hasSize(2)
-                        prop(ReportEntity::campaignNamesPatterns).hasSize(2)
-                        prop(ReportEntity::scenarioNamesPatterns).hasSize(1)
-                        prop(ReportEntity::dataComponents).isEmpty()
-                    }
-                }
-            )
-        }
+        assertThat(result).isSameAs(convertedReport)
+        val savedReportDataComponent = slot<List<ReportDataComponentEntity>>()
         coVerifyOrder {
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
@@ -488,7 +378,7 @@ internal class ReportServiceImplTest {
             idGenerator.short()
             tenantRepository.findIdByReference(refEq("my-tenant"))
             userRepository.findIdByUsername(refEq("the-user"))
-            reportRepository.save(any())
+            reportRepository.save(refEq(savedEntity.captured))
             dataSeriesRepository.findAllByTenantAndReferences(
                 tenant = refEq("my-tenant"),
                 references = listOf("series-ref-1")
@@ -497,8 +387,88 @@ internal class ReportServiceImplTest {
                 tenant = refEq("my-tenant"),
                 references = listOf("series-ref-2")
             )
-            reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-            reportConverter.convertToModel(reportEntity)
+            reportDataComponentRepository.saveAll(capture(savedReportDataComponent))
+            reportConverter.convertToModel(refEq(convertedEntity.captured))
+        }
+        assertThat(savedEntity.captured).all {
+            prop(ReportEntity::id).isEqualTo(-1)
+            prop(ReportEntity::reference).isEqualTo("report-ref")
+            prop(ReportEntity::tenantId).isEqualTo(123L)
+            prop(ReportEntity::creatorId).isEqualTo(456L)
+            prop(ReportEntity::displayName).isEqualTo("report-name")
+            prop(ReportEntity::sharingMode).isEqualTo(SharingMode.NONE)
+            prop(ReportEntity::campaignKeys).all {
+                hasSize(2)
+                containsOnly("campaign-key1", "campaign-key2")
+            }
+            prop(ReportEntity::campaignNamesPatterns).all {
+                hasSize(2)
+                containsOnly("*", "\\w")
+            }
+            prop(ReportEntity::scenarioNamesPatterns).all {
+                hasSize(1)
+                containsOnly("\\w")
+            }
+            prop(ReportEntity::dataComponents).isEmpty()
+        }
+        assertThat(savedReportDataComponent.captured).all {
+            hasSize(2)
+            index(0).isDataClassEqualTo(
+                ReportDataComponentEntity(
+                    -1,
+                    DataComponentType.DIAGRAM,
+                    1782,
+                    listOf(dataSeries[0])
+                )
+            )
+            index(1).isDataClassEqualTo(
+                ReportDataComponentEntity(
+                    -1,
+                    DataComponentType.DATA_TABLE,
+                    1782,
+                    listOf(dataSeries[1])
+                )
+            )
+        }
+        assertThat(convertedEntity.captured).all {
+            isNotSameAs(savedEntity.captured)
+            prop(ReportEntity::id).isEqualTo(1782)
+            prop(ReportEntity::reference).isEqualTo("report-ref")
+            prop(ReportEntity::tenantId).isEqualTo(123L)
+            prop(ReportEntity::creatorId).isEqualTo(456L)
+            prop(ReportEntity::displayName).isEqualTo("report-name")
+            prop(ReportEntity::sharingMode).isEqualTo(SharingMode.NONE)
+            prop(ReportEntity::campaignKeys).all {
+                hasSize(2)
+                containsOnly("campaign-key1", "campaign-key2")
+            }
+            prop(ReportEntity::campaignNamesPatterns).all {
+                hasSize(2)
+                containsOnly("*", "\\w")
+            }
+            prop(ReportEntity::scenarioNamesPatterns).all {
+                hasSize(1)
+                containsOnly("\\w")
+            }
+            prop(ReportEntity::dataComponents).all {
+                hasSize(2)
+                index(0).isDataClassEqualTo(
+                    ReportDataComponentEntity(
+                        -1,
+                        DataComponentType.DIAGRAM,
+                        reportId = 1782,
+                        dataSeries = listOf(dataSeries[0])
+                    )
+                )
+                index(1).isDataClassEqualTo(
+                    ReportDataComponentEntity(
+                        -1,
+                        DataComponentType.DATA_TABLE,
+                        reportId = 1782,
+                        dataSeries = listOf(dataSeries[1])
+                    )
+                )
+            }
         }
         confirmVerified(
             reportRepository,
@@ -852,45 +822,8 @@ internal class ReportServiceImplTest {
                         dataSeries = dataSeries
                     )
                 )
-            )
-            val updatedReport = ReportEntity(
-                reference = "report-ref",
-                tenantId = 123L,
-                creatorId = 456L,
-                displayName = "new-report-name",
-                sharingMode = SharingMode.NONE,
-                campaignKeys = listOf("campaign-key1"),
-                campaignNamesPatterns = listOf("*", "\\w"),
-                scenarioNamesPatterns = listOf("\\w"),
-                dataComponents = listOf(
-                    ReportDataComponentEntity(
-                        id = 1,
-                        reportId = -1,
-                        type = DataComponentType.DATA_TABLE,
-                        dataSeries = listOf(dataSeries[0])
-                    )
-                )
-            )
-            val dataSeries1 = DataSeries(dataSeries[0], "the-user")
-            val report = Report(
-                reference = "report-ref",
-                version = Instant.EPOCH,
-                creator = "the-user",
-                displayName = "new-report-name",
-                sharingMode = SharingMode.NONE,
-                campaignKeys = listOf("campaign-key1"),
-                campaignNamesPatterns = listOf("*", "\\w"),
-                resolvedCampaigns = listOf(
-                    CampaignKeyAndName("campaign-key1", "campaign-name1"),
-                    CampaignKeyAndName("campaign-key2", "campaign-name2"),
-                    CampaignKeyAndName("campaign-key3", "campaign-name3")
-                ),
-                scenarioNamesPatterns = listOf("\\w"),
-                resolvedScenarioNames = listOf("scenario-1", "scenario-2", "scenario-3"),
-                dataComponents = listOf(
-                    DataTable(listOf(dataSeries1))
-                )
-            )
+            ).copy(id = 6165)
+            val convertedReport = mockk<Report>()
             coEvery {
                 reportRepository.getReportIfUpdatable(
                     tenant = refEq("my-tenant"),
@@ -903,7 +836,7 @@ internal class ReportServiceImplTest {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                     refEq("my-tenant"),
                     refEq("new-report-name"),
-                    -1
+                    6165
                 )
             } returns false
             coEvery { userRepository.findIdByUsername(refEq("the-user")) } returns 456L
@@ -923,14 +856,16 @@ internal class ReportServiceImplTest {
             coEvery { reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>()) } returns flowOf(
                 ReportDataComponentEntity(
                     id = 1,
-                    reportId = -1,
+                    reportId = 6165,
                     type = DataComponentType.DATA_TABLE,
                     dataSeries = listOf(dataSeries[0])
                 )
             )
-            coJustRun { reportDataComponentRepository.deleteByReportId(-1L) }
-            coEvery { reportRepository.update(any()) } returnsArgument 0
-            coEvery { reportConverter.convertToModel(updatedReport) } returns report
+            coJustRun { reportDataComponentRepository.deleteByReportId(6165) }
+            val updatedEntity = slot<ReportEntity>()
+            val convertedEntity = slot<ReportEntity>()
+            coEvery { reportRepository.update(capture(updatedEntity)) } returnsArgument 0
+            coEvery { reportConverter.convertToModel(capture(convertedEntity)) } returns convertedReport
 
             val reportCreationAndUpdateRequest = ReportCreationAndUpdateRequest(
                 displayName = "new-report-name",
@@ -950,62 +885,7 @@ internal class ReportServiceImplTest {
             )
 
             // then
-            assertThat(result).all {
-                prop(Report::reference).isEqualTo("report-ref")
-                prop(Report::creator).isEqualTo("the-user")
-                prop(Report::displayName).isEqualTo("new-report-name")
-                prop(Report::sharingMode).isEqualTo(SharingMode.NONE)
-                prop(Report::campaignKeys).all {
-                    hasSize(1)
-                    containsOnly("campaign-key1")
-                }
-                prop(Report::campaignNamesPatterns).all {
-                    hasSize(2)
-                    containsOnly("*", "\\w")
-                }
-                prop(Report::resolvedCampaigns).all {
-                    hasSize(3)
-                    containsOnly(
-                        CampaignKeyAndName("campaign-key1", "campaign-name1"),
-                        CampaignKeyAndName("campaign-key2", "campaign-name2"),
-                        CampaignKeyAndName("campaign-key3", "campaign-name3")
-                    )
-                }
-                prop(Report::scenarioNamesPatterns).all {
-                    hasSize(1)
-                    containsOnly("\\w")
-                }
-                prop(Report::resolvedScenarioNames).all {
-                    hasSize(3)
-                    containsOnly("scenario-1", "scenario-2", "scenario-3")
-                }
-                prop(Report::dataComponents).all {
-                    hasSize(1)
-                    index(0).all {
-                        isEqualTo(
-                            DataTable(datas = listOf(DataSeries(dataSeries[0], "the-user")))
-                        )
-                    }
-                }
-            }
-            coVerify {
-                reportRepository.update(
-                    withArg {
-                        assertThat(it).all {
-                            prop(ReportEntity::id).isEqualTo(-1)
-                            prop(ReportEntity::reference).isEqualTo("report-ref")
-                            prop(ReportEntity::tenantId).isEqualTo(123L)
-                            prop(ReportEntity::creatorId).isEqualTo(456L)
-                            prop(ReportEntity::displayName).isEqualTo("new-report-name")
-                            prop(ReportEntity::sharingMode).isEqualTo(SharingMode.NONE)
-                            prop(ReportEntity::campaignKeys).hasSize(1)
-                            prop(ReportEntity::campaignNamesPatterns).hasSize(2)
-                            prop(ReportEntity::scenarioNamesPatterns).hasSize(1)
-                            prop(ReportEntity::dataComponents).isEmpty()
-                        }
-                    }
-                )
-            }
+            assertThat(result).isSameAs(convertedReport)
             coVerifyOrder {
                 userRepository.findIdByUsername(refEq("the-user"))
                 reportRepository.getReportIfUpdatable(
@@ -1016,21 +896,61 @@ internal class ReportServiceImplTest {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                     refEq("my-tenant"),
                     refEq("new-report-name"),
-                    -1
+                    6165
                 )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
                 dataSeriesRepository.checkExistenceByTenantAndReference(
                     tenant = refEq("my-tenant"),
                     reference = refEq("series-ref-1")
                 )
-                reportDataComponentRepository.deleteByReportId(-1L)
-                reportRepository.update(any())
+                reportDataComponentRepository.deleteByReportId(6165)
+                reportRepository.update(refEq(updatedEntity.captured))
                 dataSeriesRepository.findAllByTenantAndReferences(
                     tenant = refEq("my-tenant"),
                     references = listOf("series-ref-1")
                 )
                 reportDataComponentRepository.saveAll(any<Iterable<ReportDataComponentEntity>>())
-                reportConverter.convertToModel(updatedReport)
+                reportConverter.convertToModel(refEq(convertedEntity.captured))
+            }
+            assertThat(updatedEntity.captured).all {
+                isNotSameAs(reportEntity)
+                isDataClassEqualTo(
+                    ReportEntity(
+                        reference = "report-ref",
+                        tenantId = 123L,
+                        creatorId = 456L,
+                        displayName = "new-report-name",
+                        sharingMode = SharingMode.NONE,
+                        campaignKeys = listOf("campaign-key1"),
+                        campaignNamesPatterns = listOf("*", "\\w"),
+                        scenarioNamesPatterns = listOf("\\w"),
+                        dataComponents = emptyList()
+                    ).copy(id = 6165)
+                )
+            }
+            assertThat(convertedEntity.captured).all {
+                isNotSameAs(reportEntity)
+                isNotSameAs(updatedEntity)
+                isDataClassEqualTo(
+                    ReportEntity(
+                        reference = "report-ref",
+                        tenantId = 123L,
+                        creatorId = 456L,
+                        displayName = "new-report-name",
+                        sharingMode = SharingMode.NONE,
+                        campaignKeys = listOf("campaign-key1"),
+                        campaignNamesPatterns = listOf("*", "\\w"),
+                        scenarioNamesPatterns = listOf("\\w"),
+                        dataComponents = listOf(
+                            ReportDataComponentEntity(
+                                id = 1,
+                                reportId = 6165,
+                                type = DataComponentType.DATA_TABLE,
+                                dataSeries = listOf(dataSeries[0])
+                            )
+                        )
+                    ).copy(id = 6165)
+                )
             }
             confirmVerified(
                 reportRepository,
@@ -1888,10 +1808,16 @@ internal class ReportServiceImplTest {
                 every { id } returns 7
             }
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("campaignKeys", true)))
-            val page = Page.of(listOf(reportEntity4.id, reportEntity2.id, reportEntity1.id, reportEntity7.id), pageable, 2)
+            val page =
+                Page.of(listOf(reportEntity4.id, reportEntity2.id, reportEntity1.id, reportEntity7.id), pageable, 2)
             coEvery { reportRepository.searchReports(refEq("my-tenant"), "user", pageable) } returns page
             coEvery { reportConverter.convertToModel(any()) } returns report4 andThen report2 andThen report1 andThen report7
-            coEvery { reportRepository.findByIdIn(listOf(4, 2, 1, 7)) } returns listOf(reportEntity1, reportEntity2, reportEntity4, reportEntity7)
+            coEvery { reportRepository.findByIdIn(listOf(4, 2, 1, 7)) } returns listOf(
+                reportEntity1,
+                reportEntity2,
+                reportEntity4,
+                reportEntity7
+            )
 
             // when
             val result = reportServiceImpl.search("my-tenant", "user", emptyList(), "campaignKeys:desc", 0, 20)
@@ -2056,7 +1982,7 @@ internal class ReportServiceImplTest {
                     any(),
                     any()
                 )
-            } returns reportEntity2
+            } returns reportEntityProptotype2
             coEvery { idGenerator.short() } returns "report-task-1"
             coEvery { reportTaskRepository.save(any<ReportTaskEntity>()) } returns reportTaskEntity
             val latch = Latch(true)
@@ -2081,7 +2007,7 @@ internal class ReportServiceImplTest {
                     "my-tenant",
                     "user",
                     "qoi78wizened",
-                    refEq(reportEntity2),
+                    refEq(reportEntityProptotype2),
                     refEq(reportTaskEntity)
                 )
             }
@@ -2093,10 +2019,10 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.run {
             //given
             val reportServiceImpl = buildReportService()
-            val file = File.createTempFile(reportEntity.displayName, ".pdf")
+            val file = File.createTempFile(reportEntityPrototype.displayName, ".pdf")
             file.writeText(
                 """
-                    Report of ${reportEntity.displayName}
+                    Report of ${reportEntityPrototype.displayName}
                     Lorem ipsum dolor conot foo bar
                 """.trimIndent()
             )

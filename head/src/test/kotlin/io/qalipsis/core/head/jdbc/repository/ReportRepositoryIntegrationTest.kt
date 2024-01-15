@@ -90,6 +90,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             tenantId = -1,
             creatorId = -1,
             displayName = "my-report-name",
+            description = "The description",
             campaignKeys = listOf("campaign-key1", "campaign-key2"),
             campaignNamesPatterns = listOf("*", "\\w"),
             scenarioNamesPatterns = listOf("\\w"),
@@ -143,6 +144,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(ReportEntity::tenantId).isEqualTo(tenant.id)
             prop(ReportEntity::creatorId).isEqualTo(creator.id)
             prop(ReportEntity::displayName).isEqualTo("my-report-name")
+            prop(ReportEntity::description).isNull()
             prop(ReportEntity::sharingMode).isEqualTo(SharingMode.READONLY)
             prop(ReportEntity::query).isNull()
             prop(ReportEntity::campaignKeys).isEmpty()
@@ -187,6 +189,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenantId = tenant.id,
                 creatorId = creator.id,
                 displayName = "my-report-name",
+                description = "The report",
                 sharingMode = SharingMode.WRITE,
                 query = "This is the query",
                 campaignKeys = listOf("camp-1", "camp-2"),
@@ -230,6 +233,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             prop(ReportEntity::tenantId).isEqualTo(tenant.id)
             prop(ReportEntity::creatorId).isEqualTo(creator.id)
             prop(ReportEntity::displayName).isEqualTo("my-report-name")
+            prop(ReportEntity::description).isEqualTo("The report")
             prop(ReportEntity::sharingMode).isEqualTo(SharingMode.WRITE)
             prop(ReportEntity::query).isEqualTo("This is the query")
             prop(ReportEntity::campaignKeys).containsOnly("camp-1", "camp-2")
@@ -1657,7 +1661,44 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             reportRepository.searchReports(
                 tenant.reference,
                 creator.username,
-                listOf("%e-1"),
+                listOf("%Na_E-%"),
+                Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
+        ).all {
+            hasSize(1)
+            containsExactly(anotherReport)
+        }
+    }
+
+    @Test
+    fun `should find all reports with filter on report description`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val anotherReport = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                description = "my-report-description-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(2)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference,
+                creator.username,
+                listOf("%iON-1"),
                 Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
             ).content.map { reportRepository.findById(it)!! }
         ).all {
@@ -1703,6 +1744,57 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 tenant.reference,
                 creator.username,
                 listOf("%Na_E-%"),
+                Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
+        ).containsExactly(saved1)
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference,
+                creator.username,
+                listOf("%Na_E-%"),
+                Pageable.from(1, 1, Sort.of(Sort.Order("displayName")))
+            ).content.map { reportRepository.findById(it)!! }
+        ).containsExactly(saved2)
+    }
+
+    @Test
+    fun `should find all reports with filter on report description with paging`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(
+            reportPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id
+            )
+        )
+        val saved1 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-1",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-1",
+                description = "my-report-description-1",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        val saved2 = reportRepository.save(
+            reportPrototype.copy(
+                reference = "report-ref-2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name-2",
+                sharingMode = SharingMode.WRITE,
+            )
+        )
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when + then
+        assertThat(
+            reportRepository.searchReports(
+                tenant.reference,
+                creator.username,
+                listOf("%iON-1"),
                 Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
             ).content.map { reportRepository.findById(it)!! }
         ).containsExactly(saved1)

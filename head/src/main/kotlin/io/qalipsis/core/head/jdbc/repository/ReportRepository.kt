@@ -64,6 +64,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
             report_entity_."tenant_id",
             report_entity_."creator_id",
             report_entity_."display_name",
+            report_entity_."description",
             report_entity_."sharing_mode",
             report_entity_."campaign_keys",
             report_entity_."campaign_names_patterns",
@@ -114,6 +115,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
             report_entity_."tenant_id",
             report_entity_."creator_id",
             report_entity_."display_name",
+            report_entity_."description",
             report_entity_."sharing_mode",
             report_entity_."campaign_keys",
             report_entity_."campaign_names_patterns",
@@ -149,6 +151,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
             report_entity_."tenant_id",
             report_entity_."creator_id",
             report_entity_."display_name",
+            report_entity_."description",
             report_entity_."sharing_mode",
             report_entity_."campaign_keys",
             report_entity_."campaign_names_patterns",
@@ -179,6 +182,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
             )
             AND (
                 report_entity_.display_name ILIKE any (array[:filters])
+                OR report_entity_.description ILIKE any (array[:filters])
                 OR EXISTS (
                     SELECT 1 FROM "user" 
                     WHERE report_entity_.creator_id = "user".id 
@@ -212,6 +216,7 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
             )
             AND (
                 report.display_name ILIKE any (array[:filters])
+                OR report.description ILIKE any (array[:filters])
                 OR EXISTS (
                     SELECT 1 FROM "user" 
                     WHERE report.creator_id = "user".id 

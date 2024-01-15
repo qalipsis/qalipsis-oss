@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    timeout-minutes: 30
+    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -37,16 +37,16 @@ jobs:
           key: ${{ runner.os }}-qalipsis-gradle-wrapper-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
 
-      - name: Check licenses
-        run: ./gradlew checkLicense
+      - name: Integration Tests
+        run: ./gradlew integrationTest --continue -i
         if: always()
 
       - name: Unit tests
         run: ./gradlew test --continue -i --refresh-dependencies
         if: always()
 
-      - name: Integration Tests
-        run: ./gradlew integrationTest --continue -i
+      - name: Check licenses
+        run: ./gradlew checkLicense
         if: always()
 
       - name: Publish Test Report
