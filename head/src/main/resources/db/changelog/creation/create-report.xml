@@ -47,6 +47,9 @@
       <column name="display_name" type="VARCHAR(200)">
         <constraints nullable="false"/>
       </column>
+      <column name="description" type="TEXT">
+        <constraints nullable="true"/>
+      </column>
       <column name="sharing_mode" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>

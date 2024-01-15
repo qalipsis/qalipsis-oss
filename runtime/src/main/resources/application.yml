@@ -96,3 +96,5 @@ netty:
   default:
     allocator:
       max-order: 3
+jackson:
+  trim-strings: true

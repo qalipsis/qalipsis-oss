@@ -74,6 +74,7 @@ internal class ReportConverterImpl(
             version = reportEntity.version,
             creator = userRepository.findUsernameById(reportEntity.creatorId) ?: "",
             displayName = reportEntity.displayName,
+            description = reportEntity.description,
             sharingMode = reportEntity.sharingMode,
             campaignKeys = reportEntity.campaignKeys.toList(),
             campaignNamesPatterns = reportEntity.campaignNamesPatterns.toList(),
