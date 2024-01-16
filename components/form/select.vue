@@ -5,6 +5,7 @@
             size="large"
             class="full-width"
             v-model:value="value"
+            :mode="mode"
             :options="options"
             :status="errorStatus"
             :placeholder="placeholder"
@@ -22,6 +23,7 @@ import { TypedSchema, useField } from 'vee-validate';
 const props = defineProps<{
     label: string,
     formControlName: string,
+    mode?: 'multiple' | 'tags',
     /**
      * The options for the dropdown menu.
      */

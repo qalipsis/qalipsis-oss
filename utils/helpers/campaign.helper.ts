@@ -60,7 +60,7 @@ export class CampaignHelper {
         ? formattedTimeoutValue.value.toString()
         : "",
       durationUnit: formattedTimeoutValue.unit,
-      scheduled: campaignConfig.scheduling ? true : false,
+      scheduled: campaignConfig.scheduledAt ? true : false,
       repeatEnabled: campaignConfig.scheduling?.scheduling ? true : false,
       repeatTimeRange: campaignConfig.scheduling?.scheduling ?? "DAILY",
       repeatValues: campaignConfig.scheduling?.restrictions
@@ -296,10 +296,12 @@ export class CampaignHelper {
         new Date(campaign.creation),
         "dd/MM/yyyy, HH:mm:ss"
       ),
-      elapsedTime: TimeframeHelper.elapsedTime(
-        new Date(campaign.creation),
-        campaign.end ? new Date(campaign.end) : new Date()
-      ),
+      elapsedTime: campaign.status === 'SCHEDULED'
+        ? "-"
+        : TimeframeHelper.elapsedTime(
+          new Date(campaign.creation),
+          campaign.end ? new Date(campaign.end) : new Date()
+        ),
       statusTag: campaign.status
         ? CampaignHelper.toExecutionStatusTag(campaign.status)
         : null,

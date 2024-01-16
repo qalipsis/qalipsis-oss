@@ -64,7 +64,8 @@ const campaignConfigForm = ref<CampaignConfigurationForm>({
   repeatTimeRange: props.campaignConfigForm?.repeatTimeRange ?? "DAILY",
   repeatValues: props.campaignConfigForm?.repeatValues ?? [],
   relativeRepeatValues: props.campaignConfigForm?.relativeRepeatValues ?? [],
-  timezone: props.campaignConfigForm?.timezone ?? "",
+  // Uses the default time zone from the user browser as the default value.
+  timezone: props.campaignConfigForm?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
   scheduledTime: props.campaignConfigForm?.scheduledTime ?? null,
 });
 const campaignName = ref(props.campaignName ?? "New Campaign");

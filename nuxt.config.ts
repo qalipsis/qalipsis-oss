@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   ssr: false,
   app: {
     head: {
-      title: 'Qalipsis',
+      title: 'QALIPSIS',
       htmlAttrs: {
         lang: 'en'
       },

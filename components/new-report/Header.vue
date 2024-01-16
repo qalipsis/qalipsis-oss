@@ -19,8 +19,8 @@
                 />
                 <BaseButton
                     class="ml-2"
-                    text="Compare"
-                    @click="handleCompareReportBtnClick"
+                    text="Create"
+                    @click="handleCreateReportBtnClick"
                     :disabled="!(selectedRowKeys.length > 0 || campaignPatterns.length > 0)"
                 />
             </div>
@@ -79,7 +79,7 @@ const handleCheckedChange = async (checked: boolean) => {
     }
 }
 
-const handleCompareReportBtnClick = async () => {
+const handleCreateReportBtnClick = async () => {
     const reportCreationRequest: ReportCreationAndUpdateRequest = {
         displayName: reportName.value,
         sharingMode: SharingModeConstant.WRITE,
