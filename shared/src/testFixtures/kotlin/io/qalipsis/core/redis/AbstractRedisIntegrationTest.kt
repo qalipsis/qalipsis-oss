@@ -42,19 +42,12 @@ abstract class AbstractRedisIntegrationTest : TestPropertyProvider {
 
     protected val redisCoroutinesCommands by lazy { connection.coroutines() }
 
-    override fun getProperties(): Map<String, String> {
-        return mapOf(
-            "redis.uri" to "redis://localhost:${CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
-            "redis.io-thread-pool-size" to "2",
-            "redis.computation-thread-pool-size" to "2",
-            "redis.client-name" to "test"
-        )
-    }
+    override fun getProperties(): Map<String, String> = CONTAINER.testProperties()
 
     companion object {
 
         @JvmStatic
         @Container
-        private val CONTAINER = RedisTestConfiguration.createContainer()
+        private val CONTAINER = RedisRuntimeConfiguration.createContainer()
     }
 }

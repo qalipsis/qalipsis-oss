@@ -16,40 +16,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package io.qalipsis.core.redis
 
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import kotlin.math.pow
 
 /**
  * Configuration of Redis for testing.
  */
-object RedisTestConfiguration {
+object RedisRuntimeConfiguration {
 
     /**
      * Default image name and tag.
      */
-    const val DEFAULT_DOCKER_IMAGE = "redis"
+    const val DEFAULT_DOCKER_IMAGE = "redis:alpine"
 
     /**
      * Default exposed port.
      */
     const val DEFAULT_PORT = 6379
 
-    /**
-     * Default [DockerImageName].
-     */
-    @JvmStatic
-    val DEFAULT_DOCKER_IMAGE_NAME = DockerImageName.parse(DEFAULT_DOCKER_IMAGE)
-
-    @JvmStatic
-    fun createContainer(redisImageNameAndTag: String = DEFAULT_DOCKER_IMAGE): GenericContainer<Nothing> {
-        return GenericContainer<Nothing>(redisImageNameAndTag)
+    fun createContainer(redisImageNameAndTag: String = DEFAULT_DOCKER_IMAGE): RedisContainer {
+        return RedisContainer(redisImageNameAndTag)
             .apply {
+                withStartupAttempts(5)
                 withCreateContainerCmdModifier { cmd ->
                     cmd.hostConfig!!.withMemory(50 * 1024.0.pow(2).toLong()).withCpuCount(2)
                 }
@@ -57,5 +49,17 @@ object RedisTestConfiguration {
                 waitingFor(Wait.forListeningPort())
                 withStartupTimeout(Duration.ofSeconds(60))
             }
+    }
+
+    class RedisContainer(dockerImageName: String) : GenericContainer<Nothing>(dockerImageName) {
+
+        fun testProperties(): Map<String, String> {
+            return mapOf(
+                "redis.uri" to "redis://localhost:${getMappedPort(DEFAULT_PORT)}",
+                "redis.io-thread-pool-size" to "2",
+                "redis.computation-thread-pool-size" to "2",
+                "redis.client-name" to "test"
+            )
+        }
     }
 }

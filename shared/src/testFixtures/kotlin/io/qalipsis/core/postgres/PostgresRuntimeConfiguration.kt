@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2022 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,17 +17,14 @@
  *
  */
 
-package io.qalipsis.core.head.jdbc.repository
+package io.qalipsis.core.postgres
 
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import java.time.Duration
 import kotlin.math.pow
 
-/**
- * @author rklymenko
- */
-object PostgresTestContainerConfiguration {
+object PostgresRuntimeConfiguration {
 
     /**
      * Default image name and tag.
@@ -37,7 +34,7 @@ object PostgresTestContainerConfiguration {
     /**
      * Default db name.
      */
-    private const val DB_NAME = "qalipsis_db"
+    private const val DB_NAME = "qalipsis"
 
     /**
      * Default username.
@@ -49,34 +46,35 @@ object PostgresTestContainerConfiguration {
      */
     private const val PASSWORD = "qalipsis-pwd"
 
-    fun PostgreSQLContainer<*>.testProperties(): Map<String, String> = mapOf(
-        "datasource.port" to "$firstMappedPort",
-        "datasource.database" to DB_NAME,
-        "datasource.username" to USERNAME,
-        "datasource.password" to PASSWORD,
-        "r2dbc.datasources.default.options.initialSize" to "1",
-        "r2dbc.datasources.default.options.maxSize" to "4",
-        "logging.level.io.micronaut.data.query" to "TRACE"
-    )
+    fun PostgreSQLContainer<*>.testProperties(): Map<String, String> {
+        return mapOf(
+            "datasource.host" to "localhost",
+            "datasource.port" to "$firstMappedPort",
+            "datasource.database" to DB_NAME,
+            "datasource.username" to USERNAME,
+            "datasource.password" to PASSWORD,
+            "r2dbc.datasources.default.options.initialSize" to "1",
+            "r2dbc.datasources.default.options.maxSize" to "4",
+            "logging.level.io.micronaut.data.query" to "TRACE"
+        )
+    }
 
-    @JvmStatic
     fun createContainer(imageNameAndTag: String = DEFAULT_DOCKER_IMAGE): PostgreSQLContainer<*> {
-        val result = PostgreSQLContainer<Nothing>(imageNameAndTag)
+        return PostgreSQLContainer<Nothing>(imageNameAndTag)
             .apply {
+                withStartupAttempts(5)
                 withCreateContainerCmdModifier { cmd ->
                     cmd.hostConfig!!.withMemory(50 * 1024.0.pow(2).toLong()).withCpuCount(2)
                 }
-                withStartupAttempts(5)
                 waitingFor(Wait.forListeningPort())
                 withStartupTimeout(Duration.ofSeconds(60))
 
                 withDatabaseName(DB_NAME)
                 withUsername(USERNAME)
                 withPassword(PASSWORD)
-                withInitScript("pgsql-init.sql")
+                withInitScript("sql/pgsql-init.sql")
             }
-        result.start()
-        return result
     }
+
 
 }

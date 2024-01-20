@@ -22,16 +22,17 @@ package io.qalipsis.runtime.deployments
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.redis.RedisRuntimeConfiguration
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
-import java.nio.file.Files
-import java.time.Duration
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.nio.file.Files
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Test class to validate the execution of QALIPSIS as a standalone application.
@@ -50,7 +51,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "--autostart",
             "-c", "campaign.required-factories=2",
             "-c", "campaign.start-offset=200ms",
-            "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+            "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
             "-c", "report.export.console.enabled=false",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
@@ -61,7 +62,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test",
-            "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+            "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
             //"-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
             //"-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
             //"-c", "logging.level.io.qalipsis.core.factory.redis.RedisFactoryChannel=TRACE"
@@ -107,7 +108,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "--autostart",
             "-c", "campaign.required-factories=2",
             "-c", "campaign.start-offset=200ms",
-            "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+            "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
             "-c", "report.export.console.enabled=false",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
@@ -117,7 +118,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test-with-singleton",
-            "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+            "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
             "-c", "logging.level.io.qalipsis.core.factory.orchestration=DEBUG",
         )
@@ -161,7 +162,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "--autostart",
             "-c", "campaign.required-factories=2",
             "-c", "campaign.start-offset=200ms",
-            "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+            "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
             "-c", "report.export.console.enabled=false",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
@@ -171,7 +172,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test-with-repeated-minions-in-stages",
-            "-c", "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+            "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
             "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
         )
         log.info { "Starting the head..." }
@@ -210,7 +211,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         @JvmStatic
         @Container
-        val REDIS_CONTAINER = RedisTestConfiguration.createContainer()
+        val REDIS_CONTAINER = RedisRuntimeConfiguration.createContainer()
 
         val log = logger()
     }
