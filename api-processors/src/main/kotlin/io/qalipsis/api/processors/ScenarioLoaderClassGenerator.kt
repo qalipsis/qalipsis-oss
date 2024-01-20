@@ -91,6 +91,7 @@ ${executableMethod.scenarioClass.qualifiedName}
     .${executableMethod.scenarioMethod.simpleName}(${addParameters(executableMethod.scenarioMethod)})
                                     """.trimIndent()
             }
+
             typeUtils.isAKotlinObject(executableMethod.scenarioClass) -> {
                 // Kotlin objects.
                 """
@@ -98,6 +99,7 @@ ${executableMethod.scenarioClass.qualifiedName}.INSTANCE
     .${executableMethod.scenarioMethod.simpleName}(${addParameters(executableMethod.scenarioMethod)})
                                     """.trimIndent()
             }
+
             else -> {
                 // Normal class.
                 """
@@ -129,9 +131,11 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
                 propertyAnnotations.isNotEmpty() -> {
                     injectionResolutionUtils.buildPropertyResolution(propertyAnnotations.first(), paramType)
                 }
+
                 namedAnnotations.isNotEmpty() -> {
                     injectionResolutionUtils.buildNamedQualifierResolution(namedAnnotations.first(), paramType)
                 }
+
                 else -> injectionResolutionUtils.buildUnqualifiedResolution(paramType)
             }
         }
@@ -160,15 +164,15 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
         val description = scenario.description.trim().takeIf(String::isNotBlank)
         scenarioDescription = description ?: ""
         scenarioVersion =
-            scenario.version.takeIf(String::isNotBlank) ?: "0.${
-                Instant.now().toString().replace(Regex("[^0-9]"), "")
-            }"
+            scenario.version.takeIf(String::isNotBlank) ?: createVersion()
 
         return this.overrideNameProvider(scenarioName)
             .overrideDescriptionProvider(description)
             .overrideVersionProvider(scenarioVersion)
             .overrideBuildAtProvider()
     }
+
+    private fun createVersion() = "0.${(System.currentTimeMillis() / 1000) - QALIPSIS_EPOCH}"
 
     private fun TypeSpec.Builder.overrideNameProvider(scenarioName: String): TypeSpec.Builder {
         val method = MethodSpec.methodBuilder("getName")
@@ -218,10 +222,24 @@ new ${executableMethod.scenarioClass.qualifiedName}(${addConstructorParameters(e
 
     private companion object {
 
+        /**
+         * EPOCH for QALIPSIS, to create new version.
+         */
+        const val QALIPSIS_EPOCH = 1704067200
+
+        /**
+         * Validation rule for kebab-case scenario names.
+         */
         val SCENARIO_NAME_VALIDATION_REGEX = Regex("^[-a-z0-9-]+$")
 
+        /**
+         * Supertype of injector for properties and dependencies.
+         */
         val INJECTOR_TYPE = ClassName.bestGuess("io.qalipsis.api.scenario.Injector")
 
+        /**
+         * Supertype of class to load a scenario.
+         */
         val SCENARIO_LOADER_TYPE = ClassName.bestGuess("io.qalipsis.api.scenario.ScenarioLoader")
     }
 }
