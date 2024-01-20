@@ -123,7 +123,6 @@ dependencies {
     testImplementation(testFixtures(project(":qalipsis-runtime")))
     testImplementation(testFixtures(project(":qalipsis-shared")))
     testImplementation("org.testcontainers:testcontainers")
-    testImplementation("org.testcontainers:postgresql")
 
     kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")

@@ -28,6 +28,7 @@ import assertk.assertions.none
 import assertk.assertions.startsWith
 import io.aerisconsulting.catadioptre.getProperty
 import io.micronaut.context.BeanRegistration
+import io.qalipsis.core.redis.RedisRuntimeConfiguration
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -56,7 +57,7 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
                 arrayOf(
                     "factory",
                     "-c",
-                    "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}"
+                    "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}"
                 )
             )
         }
@@ -94,7 +95,7 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
                 arrayOf(
                     "factory",
                     "-c",
-                    "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+                    "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "factory.handshake.timeout=10ms"
                 )
             )
@@ -114,7 +115,7 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
                 arrayOf(
                     "factory",
                     "-c",
-                    "redis.uri=redis://localhost:${REDIS_CONTAINER.getMappedPort(RedisTestConfiguration.DEFAULT_PORT)}",
+                    "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-s", "no-scenario"
                 )
             )
@@ -129,7 +130,7 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
         @JvmStatic
         @Container
-        val REDIS_CONTAINER = RedisTestConfiguration.createContainer()
+        val REDIS_CONTAINER = RedisRuntimeConfiguration.createContainer()
 
     }
 }

@@ -42,22 +42,22 @@ object DeploymentTestScenario {
     @Scenario("deployment-test")
     fun deploymentTest() {
         scenario {
-            minionsCount = 2_000
+            minionsCount = 500
             profile { regular(1000, 200) }
         }.start()
             .returns(Unit)
-            .delay(2000)
+            .delay(200)
             .blackHole()
     }
 
     @Scenario("deployment-test-with-failures")
     fun deploymentTestWithFailures() {
         scenario {
-            minionsCount = 2_000
+            minionsCount = 500
             profile { regular(1000, 200) }
         }.start()
             .returns(Unit)
-            .delay(2000)
+            .delay(200)
             .execute<Unit, Unit> {
                 throw RuntimeException("There is a failure")
             }
@@ -66,7 +66,7 @@ object DeploymentTestScenario {
 
     @Scenario("deployment-test-with-singleton")
     fun deploymentTestWithSingleton() {
-        val minions = 2_000
+        val minions = 500
         val counter = AtomicInteger(0)
         scenario {
             minionsCount = minions

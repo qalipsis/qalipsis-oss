@@ -3,11 +3,14 @@ name: Java CI - Work in progress
 on:
   pull_request:
     branches:
-      - main
+      - 'main'
+
+env:
+  GITHUB_ACTIONS: true
 
 jobs:
-  build:
-    timeout-minutes: 60
+  pull-request-check:
+    timeout-minutes: 15
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -16,45 +19,44 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up JDK
-        uses: actions/setup-java@v1 # https://github.com/actions/setup-java
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-qalipsis-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-qalipsis-gradle-
-
-      - name: Cache Gradle wrapper
-        uses: actions/cache@v2
-        with:
-          path: ~/.gradle/wrapper
-          key: ${{ runner.os }}-qalipsis-gradle-wrapper-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
       - name: Integration Tests
-        run: ./gradlew integrationTest --continue -i
+        run: ./gradlew integrationTest --continue -PcacheChangingModulesDuration=PT0S
         if: always()
 
       - name: Unit tests
-        run: ./gradlew test --continue -i --refresh-dependencies
+        run: ./gradlew test --continue -PcacheChangingModulesDuration=PT0S
         if: always()
 
       - name: Check licenses
-        run: ./gradlew checkLicense
+        run: ./gradlew checkLicense -PcacheChangingModulesDuration=PT0S
         if: always()
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
-        env:
-          NODE_OPTIONS: '--max_old_space_size=4096'
+        uses: mikepenz/action-junit-report@v4
         if: always()
         with:
           report_paths: '**/build/test-results/*/TEST-*.xml'
           fail_on_failure: true
           summary: true
+
+  dependency-review:
+    needs: pull-request-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Perform dependency review
+        uses: actions/dependency-review-action@v3
+        with:
+          vulnerability-check: false
+          deny-licenses: 'GPL-3.0'

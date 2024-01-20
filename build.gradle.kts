@@ -1,3 +1,5 @@
+import java.time.Duration
+
 /*
  * QALIPSIS
  * Copyright (C) 2022 AERIS IT Solutions GmbH
@@ -62,6 +64,15 @@ tasks.withType<Wrapper> {
 
 val testNumCpuCore: String? by project
 
+// Duration of the cache for the snapshots.
+val cacheChangingModulesDuration: String? by project
+val snapshotCache = cacheChangingModulesDuration?.takeUnless(String::isNullOrBlank)?.let(Duration::parse)
+snapshotCache?.let {
+    project.logger.lifecycle("The cache for snapshots is set to $it")
+} ?: run {
+    project.logger.lifecycle("The cache for snapshots is let to the default")
+}
+
 allprojects {
     group = "io.qalipsis"
     version = File(rootDir, "project.version").readText().trim()
@@ -75,6 +86,15 @@ allprojects {
         maven {
             name = "maven-central-snapshots"
             setUrl("https://oss.sonatype.org/content/repositories/snapshots")
+        }
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            preferProjectModules()
+            snapshotCache?.let {
+                cacheChangingModulesFor(it.toSeconds().toInt(), TimeUnit.SECONDS)
+            }
         }
     }
 
