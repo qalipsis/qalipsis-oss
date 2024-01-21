@@ -58,14 +58,14 @@ internal class PersistentCampaignService(
     private val campaignConverter: CampaignConverter,
     private val factoryRepository: FactoryRepository,
     private val campaignPreparator: CampaignPreparator,
-    private val scheduledCampaignsRegistry: ScheduledCampaignsRegistry
+    private val scheduledCampaignsRegistry: ScheduledCampaignsRegistry,
 ) : CampaignService {
 
     @LogInputAndOutput
     override suspend fun create(
         tenant: String,
         configurer: String,
-        campaignConfiguration: CampaignConfiguration
+        campaignConfiguration: CampaignConfiguration,
     ): RunningCampaign = campaignPreparator.convertAndSaveCampaign(tenant, configurer, campaignConfiguration)
 
     @LogInputAndOutput
@@ -100,7 +100,7 @@ internal class PersistentCampaignService(
         campaignKey: CampaignKey,
         start: Instant,
         softTimeout: Instant?,
-        hardTimeout: Instant?
+        hardTimeout: Instant?,
     ) {
         campaignRepository.start(tenant, campaignKey, start, softTimeout, hardTimeout)
     }
@@ -110,7 +110,7 @@ internal class PersistentCampaignService(
         tenant: String,
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
-        start: Instant
+        start: Instant,
     ) {
         campaignScenarioRepository.start(tenant, campaignKey, scenarioName, start)
     }
@@ -125,7 +125,7 @@ internal class PersistentCampaignService(
         tenant: String,
         campaignKey: CampaignKey,
         result: ExecutionStatus,
-        failureReason: String?
+        failureReason: String?,
     ): Campaign {
         campaignRepository.complete(tenant, campaignKey, result, failureReason)
         return retrieve(tenant, campaignKey)
@@ -133,18 +133,31 @@ internal class PersistentCampaignService(
 
     @LogInput
     override suspend fun search(
-        tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
+        tenant: String,
+        filters: Collection<String>,
+        sort: String?,
+        page: Int,
+        size: Int,
+        excludedStatuses: Collection<ExecutionStatus>,
     ): QalipsisPage<Campaign> {
         // Default sorting for the campaign is done with the start time in reverse order, because it is always not null.
         val sorting = sort?.let { SortingUtil.sort(CampaignEntity::class, it) }
             ?: Sort.of(Sort.Order.desc(CampaignEntity::start.name))
-
         val pageable = Pageable.from(page, size, sorting)
 
         val entitiesPage = if (filters.isNotEmpty()) {
-            campaignRepository.findAll(tenant, filters.formatsFilters(), pageable)
+            campaignRepository.findAll(
+                tenant = tenant,
+                filters = filters.formatsFilters(),
+                pageable = pageable,
+                excludedStatuses = excludedStatuses.takeIf(Collection<ExecutionStatus>::isNotEmpty)
+            )
         } else {
-            campaignRepository.findAll(tenant, pageable)
+            campaignRepository.findAll(
+                tenant = tenant,
+                pageable = pageable,
+                excludedStatuses = excludedStatuses.takeIf(Collection<ExecutionStatus>::isNotEmpty)
+            )
         }
 
         return QalipsisPage(

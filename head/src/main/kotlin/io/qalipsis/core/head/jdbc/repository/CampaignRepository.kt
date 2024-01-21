@@ -144,7 +144,8 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
                     campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters])
                     OR EXISTS (SELECT 1 from campaign_scenario s WHERE campaign_entity_.id = s.campaign_id AND s.name ILIKE any (array[:filters]))
                     OR EXISTS (SELECT 1 from "user" u WHERE campaign_entity_.configurer = u.id AND (u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters])))
-                )""",
+                )
+                AND (campaign_entity_.result IS NULL OR COALESCE(:excludedStatuses) IS NULL OR campaign_entity_.result NOT IN (:excludedStatuses))""",
         countQuery = """SELECT COUNT(*)
             FROM campaign as campaign_entity_
             WHERE EXISTS 
@@ -153,24 +154,28 @@ internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, 
                     campaign_entity_.name ILIKE any (array[:filters]) OR campaign_entity_.key ILIKE any (array[:filters])
                     OR EXISTS (SELECT 1 from campaign_scenario s WHERE campaign_entity_.id = s.campaign_id AND s.name ILIKE any (array[:filters]))
                     OR EXISTS (SELECT 1 from "user" u WHERE campaign_entity_.configurer = u.id AND (u.username ILIKE any (array[:filters]) OR u.display_name ILIKE any (array[:filters])))
-                )""",
+                )
+                AND (campaign_entity_.result IS NULL OR COALESCE(:excludedStatuses) IS NULL OR campaign_entity_.result NOT IN (:excludedStatuses))""",
         nativeQuery = true
     )
-    suspend fun findAll(tenant: String, filters: Collection<String>, pageable: Pageable): Page<CampaignEntity>
+    suspend fun findAll(tenant: String, filters: Collection<String>, pageable: Pageable, excludedStatuses: Collection<ExecutionStatus>?): Page<CampaignEntity>
 
     @Query(
         value =
-        """SELECT *
+        """
+            SELECT *
             FROM campaign as campaign_entity_
             WHERE EXISTS 
-            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)
+            AND (campaign_entity_.result IS NULL OR COALESCE(:excludedStatuses) IS NULL OR campaign_entity_.result NOT IN (:excludedStatuses))""",
         countQuery = """SELECT COUNT(*)
             FROM campaign campaign_entity_
             WHERE EXISTS 
-            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)""",
+            (SELECT * FROM tenant WHERE reference = :tenant AND id = campaign_entity_.tenant_id)
+            AND (campaign_entity_.result IS NULL OR COALESCE(:excludedStatuses) IS NULL OR campaign_entity_.result NOT IN (:excludedStatuses))""",
         nativeQuery = true
     )
-    suspend fun findAll(tenant: String, pageable: Pageable): Page<CampaignEntity>
+    suspend fun findAll(tenant: String, pageable: Pageable, excludedStatuses: Collection<ExecutionStatus>?): Page<CampaignEntity>
 
     @Query(
         """SELECT campaign_entity_.key 

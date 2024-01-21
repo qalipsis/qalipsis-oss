@@ -35,6 +35,7 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.api.query.Page
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -187,8 +188,13 @@ internal class CampaignController(
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "20") @Positive size: String,
+        @Parameter(
+            description = "List of excluded campaign status",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @Nullable @QueryValue(defaultValue = "") excludedStatuses: Collection<ExecutionStatus>,
     ): Page<Campaign> {
-        return campaignService.search(tenant, filter.asFilters(), sort, page.toInt(), size.toInt())
+        return campaignService.search(tenant, filter.asFilters(), sort, page.toInt(), size.toInt(), excludedStatuses)
     }
 
     /**
