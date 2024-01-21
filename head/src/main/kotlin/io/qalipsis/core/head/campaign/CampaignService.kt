@@ -88,9 +88,10 @@ internal interface CampaignService {
     /**
      * Returns list of all campaigns. Filter is a comma-separated list of values to apply
      * as wildcard filters on the campaign, user and scenario names. For example,  “foo,bar” and *foo* or *bar* will
-     * be searched in both the campaign, user and the scenario names
+     * be searched in both the campaign, user and the scenario names. ExcludedStatuses is a comma-separated list of
+     * campaign statuses that should not be included in the search result.
      */
-    suspend fun search(tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int): Page<Campaign>
+    suspend fun search(tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int, excludedStatuses: Collection<ExecutionStatus> = emptyList()): Page<Campaign>
 
     /**
      * Sets the user who aborted the campaign.

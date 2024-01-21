@@ -36,9 +36,9 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import jakarta.inject.Singleton
+import java.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Instant
 
 @Singleton
 @Requirements(
@@ -149,7 +149,7 @@ internal class InMemoryCampaignService(
     }
 
     override suspend fun search(
-        tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int
+        tenant: String, filters: Collection<String>, sort: String?, page: Int, size: Int, excludedStatuses: Collection<ExecutionStatus>
     ): Page<Campaign> {
         // Nothing to do.
         return Page(0, 0, 0, emptyList())

@@ -251,11 +251,11 @@ internal class PersistentCampaignServiceTest {
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+            coEvery { campaignRepository.findAll("my-tenant", pageable, null) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", emptyList(), null, 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), null, 0, 20, emptyList())
 
             // then
             assertThat(result).all {
@@ -268,7 +268,7 @@ internal class PersistentCampaignServiceTest {
                 }
             }
             coVerifyOrder {
-                campaignRepository.findAll("my-tenant", pageable)
+                campaignRepository.findAll("my-tenant", pageable, null)
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
@@ -294,11 +294,11 @@ internal class PersistentCampaignServiceTest {
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+            coEvery { campaignRepository.findAll("my-tenant", pageable, null) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", emptyList(), "name:asc", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "name:asc", 0, 20, emptyList())
 
             // then
             assertThat(result).all {
@@ -311,7 +311,7 @@ internal class PersistentCampaignServiceTest {
                 }
             }
             coVerifyOrder {
-                campaignRepository.findAll("my-tenant", pageable)
+                campaignRepository.findAll("my-tenant", pageable, null)
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
@@ -337,11 +337,11 @@ internal class PersistentCampaignServiceTest {
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+            coEvery { campaignRepository.findAll("my-tenant", pageable, null) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", emptyList(), "name:desc", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "name:desc", 0, 20, emptyList())
 
             // then
             assertThat(result).all {
@@ -354,7 +354,7 @@ internal class PersistentCampaignServiceTest {
                 }
             }
             coVerifyOrder {
-                campaignRepository.findAll("my-tenant", pageable)
+                campaignRepository.findAll("my-tenant", pageable, null)
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
@@ -380,11 +380,11 @@ internal class PersistentCampaignServiceTest {
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+            coEvery { campaignRepository.findAll("my-tenant", pageable, null) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", emptyList(), "name", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "name", 0, 20, emptyList())
 
             // then
             assertThat(result).all {
@@ -397,7 +397,7 @@ internal class PersistentCampaignServiceTest {
                 }
             }
             coVerifyOrder {
-                campaignRepository.findAll("my-tenant", pageable)
+                campaignRepository.findAll("my-tenant", pageable, null)
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
@@ -422,14 +422,22 @@ internal class PersistentCampaignServiceTest {
             val filter2 = "%he%lo%"
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("name", true)))
             val page = Page.of(listOf(campaignEntity1, campaignEntity2), Pageable.from(0, 20), 2)
-            coEvery { campaignRepository.findAll("my-tenant", listOf(filter1, filter2), pageable) } returns page
+            coEvery {
+                campaignRepository.findAll(
+                    "my-tenant",
+                    listOf(filter1, filter2),
+                    pageable,
+                    null
+                )
+            } returns page
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
             coEvery { campaignConverter.convertToModel(any()) } returns campaign1 andThen campaign2
 
             // when
-            val result = persistentCampaignService.search("my-tenant", listOf("test", "he*lo"), "name", 0, 20)
+            val result =
+                persistentCampaignService.search("my-tenant", listOf("test", "he*lo"), "name", 0, 20, emptyList())
 
             // then
             assertThat(result).all {
@@ -442,7 +450,7 @@ internal class PersistentCampaignServiceTest {
                 }
             }
             coVerifyOrder {
-                campaignRepository.findAll("my-tenant", listOf(filter1, filter2), pageable)
+                campaignRepository.findAll("my-tenant", listOf(filter1, filter2), pageable, null)
                 campaignConverter.convertToModel(refEq(campaignEntity1))
                 campaignConverter.convertToModel(refEq(campaignEntity2))
             }
@@ -771,7 +779,7 @@ internal class PersistentCampaignServiceTest {
         }
 
     @Test
-    internal fun `should returns the searched campaigns from the repository with sorting property of an instant`() =
+    internal fun `should return the searched campaigns from the repository with sorting property of an instant`() =
         testDispatcherProvider.run {
             // given
             val campaignEntity1 = relaxedMockk<CampaignEntity>()
@@ -781,11 +789,11 @@ internal class PersistentCampaignServiceTest {
 
             val campaign1 = relaxedMockk<Campaign>()
             val campaign2 = relaxedMockk<Campaign>()
-            coEvery { campaignRepository.findAll("my-tenant", pageable) } returns page
+            coEvery { campaignRepository.findAll("my-tenant", pageable, null) } returns page
             coEvery { campaignConverter.convertToModel(any()) } returns campaign2 andThen campaign1
 
             // when
-            val result = persistentCampaignService.search("my-tenant", emptyList(), "creation:desc", 0, 20)
+            val result = persistentCampaignService.search("my-tenant", emptyList(), "creation:desc", 0, 20, emptyList())
 
             // then
             assertThat(result).all {
@@ -798,7 +806,116 @@ internal class PersistentCampaignServiceTest {
                 }
             }
             coVerifyOrder {
-                campaignRepository.findAll("my-tenant", pageable)
+                campaignRepository.findAll("my-tenant", pageable, null)
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+                campaignConverter.convertToModel(refEq(campaignEntity1))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                campaignScenarioRepository,
+                campaignConverter,
+                factoryRepository,
+                campaignPreparator
+            )
+        }
+
+    @Test
+    internal fun `should return only searched campaigns with statuses not in the exclusion status list`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 10, Sort.of(Sort.Order.desc("start")))
+            val page = Page.of(listOf(campaignEntity2), Pageable.from(0, 10), 1)
+
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery {
+                campaignRepository.findAll(
+                    "my-tenant",
+                    pageable,
+                    listOf(ExecutionStatus.SUCCESSFUL)
+                )
+            } returns page
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign2
+
+            // when
+            val result = persistentCampaignService.search(
+                "my-tenant",
+                emptyList(),
+                null,
+                0,
+                10,
+                listOf(ExecutionStatus.SUCCESSFUL)
+            )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
+                    hasSize(1)
+                    containsExactly(campaign2)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable, listOf(ExecutionStatus.SUCCESSFUL))
+                campaignConverter.convertToModel(refEq(campaignEntity2))
+            }
+
+            confirmVerified(
+                userRepository,
+                campaignRepository,
+                campaignScenarioRepository,
+                campaignConverter,
+                factoryRepository,
+                campaignPreparator
+            )
+        }
+
+    @Test
+    internal fun `should return all the searched campaigns when the excluded status list is null`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignEntity1 = relaxedMockk<CampaignEntity>()
+            val campaignEntity2 = relaxedMockk<CampaignEntity>()
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.desc("start")))
+            val page = Page.of(listOf(campaignEntity2, campaignEntity1), Pageable.from(0, 20), 2)
+
+            val campaign1 = relaxedMockk<Campaign>()
+            val campaign2 = relaxedMockk<Campaign>()
+            coEvery {
+                campaignRepository.findAll(
+                    "my-tenant",
+                    pageable,
+                    null
+                )
+            } returns page
+            coEvery { campaignConverter.convertToModel(any()) } returns campaign2 andThen campaign1
+
+            // when
+            val result = persistentCampaignService.search(
+                "my-tenant",
+                emptyList(),
+                null,
+                0,
+                20,
+                emptyList()
+            )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<Campaign>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<Campaign>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<Campaign>::elements).all {
+                    hasSize(2)
+                    containsExactly(campaign2, campaign1)
+                }
+            }
+            coVerifyOrder {
+                campaignRepository.findAll("my-tenant", pageable, null)
                 campaignConverter.convertToModel(refEq(campaignEntity2))
                 campaignConverter.convertToModel(refEq(campaignEntity1))
             }

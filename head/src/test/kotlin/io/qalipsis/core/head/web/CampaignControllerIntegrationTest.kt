@@ -47,6 +47,8 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.FAILED
 import io.qalipsis.api.report.ExecutionStatus.IN_PROGRESS
 import io.qalipsis.api.report.ExecutionStatus.QUEUED
+import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
+import io.qalipsis.api.report.ExecutionStatus.WARNING
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity.INFO
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -327,7 +329,8 @@ internal class CampaignControllerIntegrationTest {
                 emptyList(),
                 "start:desc",
                 0,
-                20
+                20,
+                emptyList()
             )
         } returns Page(0, 1, 1, listOf(campaign))
 
@@ -337,7 +340,7 @@ internal class CampaignControllerIntegrationTest {
         )
 
         //then
-        coVerifyOnce { campaignService.search(Defaults.TENANT, emptyList(), "start:desc", 0, 20) }
+        coVerifyOnce { campaignService.search(Defaults.TENANT, emptyList(), "start:desc", 0, 20, emptyList()) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
@@ -364,7 +367,7 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
-            status = ExecutionStatus.SUCCESSFUL,
+            status = SUCCESSFUL,
             configurerName = Defaults.USER,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -379,7 +382,8 @@ internal class CampaignControllerIntegrationTest {
                 listOf("an*", "other"),
                 "start:desc",
                 0,
-                20
+                20,
+                emptyList()
             )
         } returns Page(0, 1, 1, listOf(campaign))
 
@@ -389,7 +393,7 @@ internal class CampaignControllerIntegrationTest {
         )
 
         //then
-        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("an*", "other"), "start:desc", 0, 20) }
+        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("an*", "other"), "start:desc", 0, 20, emptyList()) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
@@ -416,7 +420,7 @@ internal class CampaignControllerIntegrationTest {
             scheduledMinions = 123,
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
-            status = ExecutionStatus.SUCCESSFUL,
+            status = SUCCESSFUL,
             configurerName = Defaults.USER,
             aborterName = Defaults.USER,
             scenarios = listOf(
@@ -434,7 +438,8 @@ internal class CampaignControllerIntegrationTest {
                 listOf("campaign"),
                 "name",
                 0,
-                20
+                20,
+                emptyList()
             )
         } returns Page(0, 1, 1, listOf(campaign))
 
@@ -444,7 +449,7 @@ internal class CampaignControllerIntegrationTest {
         )
 
         // then
-        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("campaign"), "name", 0, 20) }
+        coVerifyOnce { campaignService.search(Defaults.TENANT, listOf("campaign"), "name", 0, 20, emptyList()) }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign)))
@@ -1160,4 +1165,72 @@ internal class CampaignControllerIntegrationTest {
         confirmVerified(campaignService)
     }
 
+    @Test
+    fun `should return only campaigns with status not contained in the excluded status list`() {
+        // given
+        val campaign = Campaign(
+            creation = Instant.now(),
+            version = Instant.now(),
+            key = "campaign-1",
+            name = "The campaign",
+            speedFactor = 1.0,
+            scheduledMinions = 123,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            status = SUCCESSFUL,
+            configurerName = Defaults.USER,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
+            )
+        )
+        val campaign2 = Campaign(
+            creation = Instant.now(),
+            version = Instant.now(),
+            key = "campaign-2",
+            name = "The second campaign",
+            speedFactor = 1.0,
+            scheduledMinions = 123,
+            start = Instant.now(),
+            end = Instant.now().plusSeconds(1000),
+            status = WARNING,
+            configurerName = Defaults.USER,
+            scenarios = listOf(
+                Scenario(version = Instant.now().minusSeconds(3), name = "scenario-3", minionsCount = 2534),
+                Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-4", minionsCount = 45645)
+            )
+        )
+        val listsRequest = HttpRequest.GET<Page<Campaign>>("/?excludedStatuses=SUCCESSFUL")
+
+        coEvery {
+            campaignService.search(
+                Defaults.TENANT,
+                emptyList(),
+                "start:desc",
+                0,
+                20,
+                listOf(SUCCESSFUL)
+            )
+        } returns Page(0, 1, 1, listOf(campaign2))
+
+        // when
+        val response = httpClient.toBlocking().exchange(
+            listsRequest, Argument.of(Page::class.java, Campaign::class.java)
+        )
+
+        //then
+        coVerifyOnce { campaignService.search(Defaults.TENANT, emptyList(), "start:desc", 0, 20, listOf(SUCCESSFUL)) }
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 1, listOf(campaign2)))
+        }
+        confirmVerified(
+            campaignService,
+            campaignExecutor,
+            campaignReportProvider,
+            campaignReportStateKeeper,
+            clusterFactoryService,
+            campaignScheduler
+        )
+    }
 }
