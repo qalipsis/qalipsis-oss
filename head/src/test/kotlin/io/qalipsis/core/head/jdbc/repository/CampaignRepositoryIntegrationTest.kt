@@ -532,7 +532,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
-                    Pageable.from(0, 1, Sort.of(Sort.Order("key")))
+                    Pageable.from(0, 1, Sort.of(Sort.Order("key"))),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(2)
@@ -542,7 +543,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             assertThat(
                 campaignRepository.findAll(
                     "my-tenant-2",
-                    Pageable.from(1, 1, Sort.of(Sort.Order("key")))
+                    Pageable.from(1, 1, Sort.of(Sort.Order("key"))),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(2)
@@ -573,7 +575,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
-                    Pageable.from(0, 2, Sort.of(Sort.Order("key")))
+                    Pageable.from(0, 2, Sort.of(Sort.Order("key"))),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(2)
@@ -584,7 +587,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
-                    Pageable.from(0, 2, Sort.of(Sort.Order("key", Sort.Order.Direction.DESC, true)))
+                    Pageable.from(0, 2, Sort.of(Sort.Order("key", Sort.Order.Direction.DESC, true))),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(2)
@@ -595,7 +599,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
-                    Pageable.from(0, 1, Sort.of(Sort.Order("key")))
+                    Pageable.from(0, 1, Sort.of(Sort.Order("key"))),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(2)
@@ -606,7 +611,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%NyO%", "%NoNe%"),
-                    Pageable.from(1, 1, Sort.of(Sort.Order("key")))
+                    Pageable.from(1, 1, Sort.of(Sort.Order("key"))),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(2)
@@ -615,7 +621,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             }
 
             assertThat(
-                campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
+                campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1), emptyList())
             ).isEmpty()
         }
 
@@ -636,14 +642,14 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             // when + then
             assertThat(
-                campaignRepository.findAll("my-tenant-2", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
+                campaignRepository.findAll("my-tenant-2", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1), emptyList())
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(1)
                 prop(Page<*>::getTotalPages).isEqualTo(1)
                 prop(Page<*>::getContent).containsOnly(saved2)
             }
             assertThat(
-                campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1))
+                campaignRepository.findAll("other-tenant", listOf("%NyO%", "%NoNe%"), Pageable.from(0, 1), emptyList())
             ).isEmpty()
         }
 
@@ -673,7 +679,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%OtH%", "%NoNe%"),
-                    Pageable.from(0, 1)
+                    Pageable.from(0, 1),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(1)
@@ -684,7 +691,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "other-tenant",
                     listOf("%OtH%", "%NoNe%"),
-                    Pageable.from(0, 1)
+                    Pageable.from(0, 1),
+                    emptyList()
                 )
             ).isEmpty()
         }
@@ -717,7 +725,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%HN%", "%NoNe%"),
-                    Pageable.from(0, 1)
+                    Pageable.from(0, 1),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(1)
@@ -728,7 +737,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "other-tenant",
                     listOf("%HN%", "%NoNe%"),
-                    Pageable.from(0, 1)
+                    Pageable.from(0, 1),
+                    emptyList()
                 )
             ).isEmpty()
         }
@@ -761,7 +771,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "my-tenant-2",
                     listOf("%HN%", "%NoNe%"),
-                    Pageable.from(0, 1)
+                    Pageable.from(0, 1),
+                    emptyList()
                 )
             ).all {
                 prop(Page<*>::getTotalSize).isEqualTo(1)
@@ -772,7 +783,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 campaignRepository.findAll(
                     "other-tenant",
                     listOf("%HN%", "%NoNe%"),
-                    Pageable.from(0, 1)
+                    Pageable.from(0, 1),
+                    emptyList()
                 )
             ).isEmpty()
         }
@@ -2617,4 +2629,158 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 }
             }
     }
+
+    @Test
+    fun `should search campaigns in tenant by given status`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val user = userRepository.save(UserEntity(username = "John Doe"))
+            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id, name = "The other name 1"))
+            val saved2 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key",
+                    name = "The other name 2",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id,
+                    result = SCHEDULED
+                )
+            )
+            val saved3 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key3",
+                    name = "The other name 3",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id,
+                    result = WARNING
+                )
+            )
+            val saved4 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key4",
+                    name = "The other name 4",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id,
+                    result = ABORTED
+                )
+            )
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved.id, name = "scenario 1", minionsCount = 2),
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2),
+                    CampaignScenarioEntity(saved3.id, name = "scenario 3", minionsCount = 2),
+                    CampaignScenarioEntity(saved4.id, name = "scenario 4", minionsCount = 2)
+                )
+            )
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    Pageable.from(0, 2),
+                    listOf(SCHEDULED, WARNING)
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsExactlyInAnyOrder(saved, saved4)
+            }
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%OtH%", "%NoNe%"),
+                    Pageable.from(0, 2),
+                    listOf(SUCCESSFUL, ABORTED)
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsExactlyInAnyOrder(saved2, saved3)
+            }
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    Pageable.from(0, 4),
+                    null
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(4)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsExactlyInAnyOrder(saved, saved2, saved3, saved4)
+            }
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%OtH%", "%NoNe%"),
+                    Pageable.from(0, 4),
+                    null
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(4)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsExactlyInAnyOrder(saved, saved2, saved3, saved4)
+            }
+        }
+
+    @Test
+    fun `should not exclude campaigns in tenant with a status of null`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
+            val user = userRepository.save(UserEntity(username = "John Doe"))
+            val saved2 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key",
+                    name = "The other name 2",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id,
+                    result = null
+                )
+            )
+            val saved3 = campaignRepository.save(
+                campaignPrototype.copy(
+                    key = "the-key3",
+                    name = "The other name 3",
+                    end = null,
+                    tenantId = tenant.id,
+                    configurer = user.id,
+                    result = null
+                )
+            )
+            campaignScenarioRepository.saveAll(
+                listOf(
+                    CampaignScenarioEntity(saved2.id, name = "scenario 2", minionsCount = 2),
+                    CampaignScenarioEntity(saved3.id, name = "scenario 3", minionsCount = 2),
+                )
+            )
+
+            // when + then
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    listOf("%OtH%", "%NoNe%"),
+                    Pageable.from(0, 2),
+                    listOf(SCHEDULED, WARNING)
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsExactlyInAnyOrder(saved2, saved3)
+            }
+            assertThat(
+                campaignRepository.findAll(
+                    "my-tenant-2",
+                    Pageable.from(0, 2),
+                    listOf(SCHEDULED, WARNING)
+                )
+            ).all {
+                prop(Page<*>::getTotalSize).isEqualTo(2)
+                prop(Page<*>::getTotalPages).isEqualTo(1)
+                prop(Page<*>::getContent).containsExactlyInAnyOrder(saved2, saved3)
+            }
+        }
 }
