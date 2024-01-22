@@ -6,7 +6,7 @@
         </div>
         <a-table 
             :data-source="tableData"
-            :columns="messageTableColumnConfigs"
+            :columns="tableColumns"
             :pagination="paginationOptions">
             <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'severity'">
@@ -56,7 +56,7 @@ const tableData = computed(() => {
     return props.messages;
 });
 
-const messageTableColumnConfigs = ScenarioHelper.getMessageTableColumnConfigs();
+const tableColumns = ScenarioDetailsConfig.MESSAGE_TABLE_COLUMNS;
 
 const paginationOptions = reactive({
     ...TableHelper.sharedPaginationProperties,

@@ -28,7 +28,7 @@ const emits = defineEmits<{
     (e: 'click'): void
 }>()
 
-const color = computed(() => props.color ?? ColorHelper.PRIMARY_COLOR_HEX_CODE);
+const color = computed(() => props.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE);
 const dataTypeText = computed(() => props.dataType.toLowerCase())
 
 </script>

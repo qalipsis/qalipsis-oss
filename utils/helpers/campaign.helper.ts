@@ -3,50 +3,50 @@ import { eachDayOfInterval, format, isSameDay, sub } from "date-fns";
 import { DateTime } from "luxon";
 import tinycolor from "tinycolor2";
 
-export class CampaignHelper {
-  static TOOLTIP_RENDERER: (options: any) => any = ({
-    seriesIndex,
-    dataPointIndex,
-    w,
-  }): string => {
-    const dt =
-      w.config.series[seriesIndex].data[dataPointIndex]?.x ||
-      w.globals.initialSeries.filter(
-        (serie: any) => !!serie.data[dataPointIndex]?.x
-      )[0].data[dataPointIndex].x;
-    const day = format(new Date(dt), "yy-MM-dd");
-    const time = format(new Date(dt), "HH:mm:ss");
-    let seriesContent: string[] = [];
-    w.globals.initialSeries.forEach(
-      (series: { data: any[]; color: any; name: any }) =>
-        series.data.forEach((point) => {
-          if (point?.x === dt) {
-            seriesContent.push(
-              `<div class="custom-tooltip__content">
-                <div class="custom-tooltip__marker" style="background-color:${series.color}"></div>
-                <div class="custom-tooltip__text">
-                  <div class="custom-tooltip__text-name">
-                    ${series.name}:
-                  </div>
-                  <div class="custom-tooltip__text-y">
-                    ${point.y}
-                  </div>
+const renderCampaignDetailsChartTooltip: (options: any) => any = ({
+  seriesIndex,
+  dataPointIndex,
+  w,
+}): string => {
+  const dt =
+    w.config.series[seriesIndex].data[dataPointIndex]?.x ||
+    w.globals.initialSeries.filter(
+      (serie: any) => !!serie.data[dataPointIndex]?.x
+    )[0].data[dataPointIndex].x;
+  const day = format(new Date(dt), "yy-MM-dd");
+  const time = format(new Date(dt), "HH:mm:ss");
+  let seriesContent: string[] = [];
+  w.globals.initialSeries.forEach(
+    (series: { data: any[]; color: any; name: any }) =>
+      series.data.forEach((point) => {
+        if (point?.x === dt) {
+          seriesContent.push(
+            `<div class="custom-tooltip__content">
+              <div class="custom-tooltip__marker" style="background-color:${series.color}"></div>
+              <div class="custom-tooltip__text">
+                <div class="custom-tooltip__text-name">
+                  ${series.name}:
                 </div>
-              </div>`
-            );
-          }
-        })
-    );
+                <div class="custom-tooltip__text-y">
+                  ${point.y}
+                </div>
+              </div>
+            </div>`
+          );
+        }
+      })
+  );
 
-    return `<div class="custom-tooltip">
-          <div class="custom-tooltip__title">
-            <div class="custom-tooltip__title-day">${day}</div>
-            <div class="custom-tooltip__title-time">${time}</div>
-          </div>
-          ${seriesContent.join("")}
-        </div>`;
-  };
+  return `<div class="custom-tooltip">
+        <div class="custom-tooltip__title">
+          <div class="custom-tooltip__title-day">${day}</div>
+          <div class="custom-tooltip__title-time">${time}</div>
+        </div>
+        ${seriesContent.join("")}
+      </div>`;
+};
 
+export class CampaignHelper {
   static toCampaignConfigForm(
     campaignConfig: CampaignConfiguration
   ): CampaignConfigurationForm {
@@ -69,9 +69,9 @@ export class CampaignHelper {
       relativeRepeatValues:
         campaignConfig.scheduling?.scheduling === "MONTHLY" &&
         campaignConfig.scheduling?.restrictions
-          ? campaignConfig.scheduling?.restrictions.filter(
-              (restriction) => restriction < 0
-            ).map(r => r.toString())
+          ? campaignConfig.scheduling?.restrictions
+              .filter((restriction) => restriction < 0)
+              .map((r) => r.toString())
           : [],
       timezone: campaignConfig.scheduling?.timeZone ?? "",
       scheduledTime: campaignConfig.scheduledAt
@@ -135,23 +135,35 @@ export class CampaignHelper {
     return campaignConfiguration;
   }
 
-  static toCampaignSummaryChartData(campaignSummary: CampaignSummaryResult[]): ChartData {
+  static toCampaignSummaryChartData(
+    campaignSummary: CampaignSummaryResult[]
+  ): ChartData {
     const xAxisEndDate = new Date();
     const xAxisStartDate = sub(new Date(), { days: 7 });
     const xAxisDayIntervals = eachDayOfInterval({
-      start: new Date(xAxisStartDate.getFullYear(), xAxisStartDate.getMonth(), xAxisStartDate.getDate()),
-      end: new Date(xAxisEndDate.getFullYear(), xAxisEndDate.getMonth(), xAxisEndDate.getDate()),
-    })
+      start: new Date(
+        xAxisStartDate.getFullYear(),
+        xAxisStartDate.getMonth(),
+        xAxisStartDate.getDate()
+      ),
+      end: new Date(
+        xAxisEndDate.getFullYear(),
+        xAxisEndDate.getMonth(),
+        xAxisEndDate.getDate()
+      ),
+    });
     /**
      * This list maps to the week day index from the Date().
-     * 
-     * E.g., 
+     *
+     * E.g.,
      * The current date is on Sunday:
      * The result from new Date().getDay() will be 0
      */
-    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    const xAxisCategories = xAxisDayIntervals.map(date => daysOfWeek[date.getDay()]);
-      
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const xAxisCategories = xAxisDayIntervals.map(
+      (date) => daysOfWeek[date.getDay()]
+    );
+
     const chartOptions: ApexOptions = {
       chart: {
         type: "bar",
@@ -159,63 +171,65 @@ export class CampaignHelper {
         stackType: "100%",
         toolbar: {
           show: false,
-        }
+        },
       },
-      colors: [ColorHelper.PRIMARY_COLOR_HEX_CODE, ColorHelper.GREY_2_HEX_CODE],
+      colors: [ColorsConfig.PRIMARY_COLOR_HEX_CODE, ColorsConfig.GREY_2_HEX_CODE],
       plotOptions: {
         bar: {
           horizontal: false,
-          borderRadius: 4
-        }
+          borderRadius: 4,
+        },
       },
       xaxis: {
         categories: xAxisCategories,
       },
       yaxis: {
-        show: false
+        show: false,
       },
       dataLabels: {
-        enabled: false
+        enabled: false,
       },
       legend: {
-        show: false
+        show: false,
       },
       grid: {
-        show: false
+        show: false,
       },
       states: {
         hover: {
-            filter: {
-                type: 'none',
-            }
+          filter: {
+            type: "none",
+          },
         },
-      }
+      },
     };
     const successfulDataSeries: number[] = [];
     const failedDataSeries: number[] = [];
 
     if (campaignSummary?.length > 0) {
       // Prepares the successful and failed data series
-      xAxisDayIntervals.forEach(day => {
-        const daySummary = campaignSummary.find(summary => isSameDay(new Date(summary.start), day));
+      xAxisDayIntervals.forEach((day) => {
+        const daySummary = campaignSummary.find((summary) =>
+          isSameDay(new Date(summary.start), day)
+        );
         successfulDataSeries.push(daySummary?.successful ?? 0);
         failedDataSeries.push(daySummary?.failed ?? 0);
-      })
+      });
     }
 
     return {
       chartOptions: chartOptions,
       chartDataSeries: [
         {
-          name: 'successful',
-          data: successfulDataSeries
+          name: "successful",
+          data: successfulDataSeries,
         },
         {
-          name: 'failed',
-          data: failedDataSeries
+          name: "failed",
+          data: failedDataSeries,
         },
       ],
-    }
+    };
   }
 
   static toChartData(
@@ -227,9 +241,9 @@ export class CampaignHelper {
       ([_, value]) => value.length
     );
     const chartDataSeries: ApexAxisChartSeries = [];
-    const chartOptions: ApexOptions = ChartHelper.DEFAULT_CHART_OPTIONS;
+    const chartOptions: ApexOptions = ChartsConfig.DEFAULT_CHART_OPTIONS;
     const yAxisConfigs: ApexYAxis[] = [];
-    chartOptions.tooltip!.custom = CampaignHelper.TOOLTIP_RENDERER;
+    chartOptions.tooltip!.custom = renderCampaignDetailsChartTooltip;
 
     // No aggregation result, returns an empty chart with the scheduled minions of the campaigns.
     if (!aggregations || aggregations?.length === 0) {
@@ -252,18 +266,18 @@ export class CampaignHelper {
           seriesDefinition?.color &&
           tinycolor(seriesDefinition?.color).isValid()
             ? seriesDefinition?.color
-            : `${ColorHelper.BLACK_HEX_CODE}`,
+            : `${ColorsConfig.BLACK_HEX_CODE}`,
         isDurationNanoField:
-          seriesDefinition?.fieldName === SeriesHelper.DURATION_NANO_FIELD_NAME,
+          seriesDefinition?.fieldName === SeriesDetailsConfig.DURATION_NANO_FIELD_NAME,
         isMinionsCountSeries:
           seriesDefinition?.reference ===
-          SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+          SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
         decimal:
           seriesDefinition?.reference ===
-          SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE
+          SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
             ? 0
             : seriesDefinition?.reference ===
-              SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE
+              SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
             ? 6
             : 2,
       };
@@ -296,12 +310,18 @@ export class CampaignHelper {
         new Date(campaign.creation),
         "dd/MM/yyyy, HH:mm:ss"
       ),
-      elapsedTime: campaign.status === 'SCHEDULED'
-        ? "-"
-        : TimeframeHelper.elapsedTime(
-          new Date(campaign.creation),
-          campaign.end ? new Date(campaign.end) : new Date()
-        ),
+      /**
+       * Only shows the elapsed time when the status is scheduled,
+       * or the status is aborted and there is no end time for the campaign.
+       */
+      elapsedTime:
+        campaign.status === "SCHEDULED" || 
+        (campaign.status === "ABORTED" && !campaign.end)
+          ? "-"
+          : TimeframeHelper.elapsedTime(
+              new Date(campaign.creation),
+              campaign.end ? new Date(campaign.end) : new Date()
+            ),
       statusTag: campaign.status
         ? CampaignHelper.toExecutionStatusTag(campaign.status)
         : null,
@@ -359,117 +379,5 @@ export class CampaignHelper {
           backgroundCssClass: "bg-grey-4",
         };
     }
-  }
-
-  static getRelativeDayOfMonthOptions(): FormMenuOption[] {
-    // Create array [-7, -6, ..., -1]
-    return Array.from({ length: 7 }, (_, i) => i - 7).map((num) => ({
-      label: num.toString(),
-      value: num.toString(),
-    }));
-  }
-
-  static getMonthlyRepeatOptions(): FormMenuOption[] {
-    // Create array [1, 2, ..., 31]
-    return Array.from({ length: 31 }, (_, i) => i + 1).map((num) => ({
-      label: num.toString(),
-      value: num.toString(),
-    }));
-  }
-
-  static getDailyRepeatOptions(): FormMenuOption[] {
-    const weekMap = {
-      Mo: 0,
-      Tu: 1,
-      We: 2,
-      Th: 3,
-      Fr: 4,
-      Sa: 5,
-      Su: 6,
-    };
-
-    return Object.entries(weekMap).map(([key, value]) => ({
-      label: key,
-      value: value.toString(),
-    }));
-  }
-
-  static getHourlyRepeatOptions(): FormMenuOption[] {
-    // Create array [1, 2, ..., 24]
-    return Array.from({ length: 24 }, (_, i) => i + 1).map((num) => ({
-      label: num.toString(),
-      value: num.toString(),
-    }));
-  }
-
-  static getRepeatTimeRangeOptions(): FormMenuOption[] {
-    return [
-      {
-        label: "Day",
-        value: "HOURLY",
-      },
-      {
-        label: "Week",
-        value: "DAILY",
-      },
-      {
-        label: "Month",
-        value: "MONTHLY",
-      },
-    ];
-  }
-
-  static getCampaignTimeoutOptions(): FormMenuOption[] {
-    return [
-      {
-        label: "Soft Timeout",
-        value: TimeoutTypeConstant.SOFT,
-      },
-      {
-        label: "Hard Timeout",
-        value: TimeoutTypeConstant.HARD,
-      },
-    ];
-  }
-
-  static getTableColumnConfigs() {
-    return [
-      {
-        title: "Campaign",
-        dataIndex: "name",
-        key: "name",
-        sorter: (next: CampaignTableData, prev: CampaignTableData) =>
-          next.name.localeCompare(prev.name),
-      },
-      {
-        title: "Scenario",
-        dataIndex: "scenarioText",
-        key: "scenarioText",
-      },
-      {
-        title: "Status",
-        dataIndex: "result",
-        key: "result",
-        sorter: (next: CampaignTableData, prev: CampaignTableData) =>
-          next.status!.localeCompare(prev.status!),
-      },
-      {
-        title: "Created",
-        dataIndex: "creation",
-        key: "creation",
-        sorter: (next: CampaignTableData, prev: CampaignTableData) =>
-          next.creation.localeCompare(prev.creation),
-      },
-      {
-        title: "Elapsed time",
-        dataIndex: "elapsedTime",
-        key: "elapsedTime",
-      },
-      {
-        title: "",
-        dataIndex: "actions",
-        key: "actions",
-      },
-    ];
   }
 }

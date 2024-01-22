@@ -75,20 +75,20 @@ const props = defineProps<{
 /**
  * The color of the scheduled minions
  */
-const scheduledMinionsColor = ColorHelper.GREY_2_HEX_CODE;
+const scheduledMinionsColor = ColorsConfig.GREY_2_HEX_CODE;
 
 /**
  * The color of the started minions.
  */
-const startedMinionsColor = ColorHelper.PURPLE_COLOR_HEX_CODE;
+const startedMinionsColor = ColorsConfig.PURPLE_COLOR_HEX_CODE;
 
 /**
  * The color of the completed minions.
  */
-const completedMinionsColor = ColorHelper.PRIMARY_COLOR_HEX_CODE;
+const completedMinionsColor = ColorsConfig.PRIMARY_COLOR_HEX_CODE;
 
 
-const chartOptions = ScenarioHelper.MINION_STACKED_BAR_CHART_OPTIONS
+const chartOptions = ScenarioDetailsConfig.MINION_STACKED_BAR_CHART_OPTIONS
 
 const minionBarChartDataSeries = computed(() => ScenarioHelper.toMinionBarChartSeries(props.completedMinions, props.startedMinions, props.scheduledMinions))
 

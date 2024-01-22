@@ -1,7 +1,7 @@
 <template>
   <a-table 
     :data-source="dataSource"
-    :columns="tableColumnConfigs"
+    :columns="tableColumns"
     :rowSelection="rowSelection"
     :show-sorter-tooltip="false"
     :ellipsis="true"
@@ -80,7 +80,7 @@ import { TablePaginationConfig } from "ant-design-vue/es/table/Table";
 import { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
 
-const tableColumnConfigs = SeriesHelper.getTableColumnConfigs();
+const tableColumns = SeriesTableConfig.TABLE_COLUMNS;
 
 const props = defineProps<{
   tableActionsHidden?: boolean,
@@ -127,7 +127,7 @@ const rowSelection: TableRowSelection<DataSeriesTableData> | undefined = reactiv
      * 2. The max number of row selection is specified and the selected row is more than the max number.
      * 3. The row is disabled
      */
-    const isMinionCount = record.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE;
+    const isMinionCount = record.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
     let disabled = false;
     if (isMinionCount) {
       disabled = true

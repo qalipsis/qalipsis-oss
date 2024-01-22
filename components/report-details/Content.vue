@@ -1,6 +1,12 @@
 <template>
     <div class="page-content-container">
         <div class="layout-shadow pt-2 pb-2 pr-4 pl-4 mb-2">
+            <div class="my-4">
+                <ReportDetailsDescription
+                    :presetDescription="description"
+                    @change="handleDescriptionValueChange($event)"
+                />
+            </div>
             <div class="flex items-center space-between mb-4">
                 <div class="flex items-center wrap">
                     <template v-for="campaignOption in campaignOptions" :key="campaignOption.key">
@@ -87,6 +93,7 @@
             v-if="campaignSelectDrawerOpen"
             v-model:open="campaignSelectDrawerOpen"
             :campaignPatterns="reportDetails?.campaignNamesPatterns"
+            :description="reportDetails?.description"
             :report="reportDetails"
             @afterUpdated="handleReportUpdated"
         />
@@ -101,10 +108,16 @@ const emit = defineEmits<{
 }>()
 
 const reportDetailsStore = useReportDetailsStore();
-const { campaignOptions, scenarioNames, selectedScenarioNames, dataComponents, reportDetails } = storeToRefs(reportDetailsStore);
+const { campaignOptions, scenarioNames, selectedScenarioNames, dataComponents, reportDetails, description } = storeToRefs(reportDetailsStore);
 
 const activeCampaignOptions = computed(() => campaignOptions.value.filter(campaignOption => campaignOption.isActive))
 const campaignSelectDrawerOpen = ref(false);
+
+const handleDescriptionValueChange = (description: string) => {
+    reportDetailsStore.$patch({
+        description: description
+    })
+}
 
 const handleAddChartBtnClick = () => {
     _addDataComponent(DataComponentTypeConstant.DIAGRAM);

@@ -1,62 +1,91 @@
 <template>
-  <a-table
-    :data-source="dataSource"
-    :columns="tableColumnConfigs"
-    :rowSelection="rowSelection"
-    :show-sorter-tooltip="false"
-    :ellipsis="true"
-    :pagination="pagination"
-    @change="handlePaginationChange"
-  >
-    <template #headerCell="{ column }">
-      <template v-if="column.key === 'actions'">
-        <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
-          <a-tooltip>
-            <template #title>Refresh</template>
-            <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
-          </a-tooltip>
-        </div>
-      </template>
-    </template>
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'name'">
-        <div
-          :class="{ 'cursor-pointer table-item-link': actionsEnabled }"
-          class="flex items-center"
-          @click="handleNameClick(record as CampaignTableData)"
-        >
-          <span>{{ record.name }}</span>
-        </div>
-      </template>
-      <template v-if="column.key === 'creation'">
-        <span>{{ record.creationTime }}</span>
-      </template>
-      <template v-if="column.key === 'result'">
-        <BaseTag
-          :text="record.statusTag.text"
-          :text-css-class="record.statusTag.textCssClass"
-          :background-css-class="record.statusTag.backgroundCssClass"
-        />
-      </template>
-      <template
-        v-if="
-          column.key === 'actions' &&
-          actionsEnabled &&
-          record.status === 'SCHEDULED'
-        "
-      >
-        <div class="table-action-item-wrapper">
-          <div
-            class="flex items-center cursor-pointer table-action-item"
-            @click="handleRunNowBtnClick(record as CampaignTableData)"
-          >
-            <BaseIcon icon="/icons/icon-time.svg" />
-            <span> Run now </span>
+  <div>
+    <a-table
+      :data-source="dataSource"
+      :columns="tableColumns"
+      :rowSelection="rowSelection"
+      :show-sorter-tooltip="false"
+      :ellipsis="true"
+      :pagination="pagination"
+      @change="handlePaginationChange"
+    >
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'actions'">
+          <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
+            <a-tooltip>
+              <template #title>Refresh</template>
+              <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+            </a-tooltip>
           </div>
-        </div>
+        </template>
       </template>
-    </template>
-  </a-table>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <div
+            :class="{ 'cursor-pointer table-item-link': actionsEnabled }"
+            class="flex items-center"
+            @click="handleNameClick(record as CampaignTableData)"
+          >
+            <span>{{ record.name }}</span>
+          </div>
+        </template>
+        <template v-if="column.key === 'creation'">
+          <span>{{ record.creationTime }}</span>
+        </template>
+        <template v-if="column.key === 'result'">
+          <BaseTag
+            :text="record.statusTag.text"
+            :text-css-class="record.statusTag.textCssClass"
+            :background-css-class="record.statusTag.backgroundCssClass"
+          />
+        </template>
+        <template
+          v-if="
+            column.key === 'actions' &&
+            actionsEnabled &&
+            record.status === 'SCHEDULED'
+          "
+        >
+          <a-dropdown trigger="click">
+            <a @click.prevent class="table-action-item-wrapper">
+              <div class="flex items-center">
+                <BaseIcon icon="/icons/icon-menu.svg" />
+              </div>
+            </a>
+            <template #overlay>
+              <a-menu>
+                <a-menu-item>
+                  <div
+                    class="flex items-center cursor-pointer table-action-item"
+                    @click="handleRunNowBtnClick(record as CampaignTableData)"
+                  >
+                    <BaseIcon icon="/icons/icon-time.svg" />
+                    <span> Run now </span>
+                  </div>
+                </a-menu-item>
+                <a-menu-item>
+                  <div 
+                    class="flex items-center table-action-item" 
+                    @click="handleAbortBtnClick(record as CampaignTableData)">
+                    <BaseIcon icon="/icons/icon-delete-small.svg" />
+                    <span> Abort </span>
+                  </div>
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </template>
+      </template>
+    </a-table>
+    <BaseModal 
+      title="Abort campaign"
+      confirmBtnText="Abort"
+      v-model:open="campaignAbortModalOpen"
+      :closable="true"
+      @confirmBtnClick="handleConfirmAbortBtnClick">
+      <span>{{ campaignAbortModalContent }}</span>
+    </BaseModal>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -73,11 +102,14 @@ const props = defineProps<{
 const userStore = useUserStore();
 const campaignsTableStore = useCampaignsTableStore();
 const { dataSource, totalElements } = storeToRefs(campaignsTableStore);
-const { fetchCampaignConfig, createCampaign } = useCampaignApi();
+const { fetchCampaignConfig, createCampaign, abortCampaign } = useCampaignApi();
 
-const tableColumnConfigs = CampaignHelper.getTableColumnConfigs();
+const tableColumns = CampaignsTableConfig.TABLE_COLUMNS;
 const currentPage = computed(() => campaignsTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys);
+const campaignAbortModalOpen = ref(false);
+const campaignAbortModalContent = ref("");
+let selectedCampaignTableData: CampaignTableData;
 const pagination: TablePaginationConfig = reactive({
   current: currentPage,
   pageSize: campaignsTableStore.pageSize,
@@ -157,6 +189,23 @@ const handlePaginationChange = async (
 
 const handleRefreshBtnClick = () => {
   _fetchTableData();
+}
+
+const handleAbortBtnClick = (campaignTableData: CampaignTableData) => {
+  selectedCampaignTableData = campaignTableData;
+  campaignAbortModalContent.value = `Do you want to abort the scheduled campaign "${campaignTableData.name}"?`;
+  campaignAbortModalOpen.value = true;
+}
+
+const handleConfirmAbortBtnClick = async () => {
+  try {
+    await abortCampaign(selectedCampaignTableData.key, true);
+    await _fetchTableData();
+    campaignAbortModalOpen.value = false;
+    NotificationHelper.success(`The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted`);
+  } catch (error) {
+    ErrorHelper.handleHttpResponseError(error);
+  }
 }
 
 const handleRunNowBtnClick = async (

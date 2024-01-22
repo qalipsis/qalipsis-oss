@@ -63,7 +63,7 @@ const handleSelectedDataSeriesChange = (dataSeriesOptions: DataSeriesOption[]) =
 const _updateChartData = async (dataSeriesOptions: DataSeriesOption[]) => {
     const selectedDataSeriesReferences = dataSeriesOptions.map(dataSeriesOption => dataSeriesOption.reference);
     // Note: always add the minions count data series reference for querying the time series data
-    const seriesReferences = [SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...selectedDataSeriesReferences].join(",")
+    const seriesReferences = [SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...selectedDataSeriesReferences].join(",")
     const queryParam: TimeSeriesAggregationQueryParam = {
         series: seriesReferences,
         scenarios: reportDetailsStore.selectedScenarioNames.join(','),

@@ -204,7 +204,7 @@ const initialFormValue: DataSeriesForm = {
   timeframeValue: props.dataSeries?.formattedTimeframe.value ?? null,
   timeframeUnit:
     props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
-  color: props.dataSeries?.color ?? ColorHelper.PRIMARY_COLOR_HEX_CODE,
+  color: props.dataSeries?.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
   colorOpacity: props.dataSeries?.colorOpacity ?? 100,
   filters: props.dataSeries?.filters ?? [],
 };
@@ -220,7 +220,7 @@ const { handleSubmit, setFieldValue, values, errors } = useForm<DataSeriesForm>(
       timeframeValue: props.dataSeries?.formattedTimeframe.value ?? null,
       timeframeUnit:
         props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
-      color: props.dataSeries?.color ?? ColorHelper.PRIMARY_COLOR_HEX_CODE,
+      color: props.dataSeries?.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
       colorOpacity: props.dataSeries?.colorOpacity ?? 100,
       filters: props.dataSeries?.filters ?? [],
     },

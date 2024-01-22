@@ -6,23 +6,27 @@
         @close="handleDrawerCloseEvent"
         :width="1200"
         @confirm-btn-click="handleCampaignSelectBtnClick"
-    >   
-        <div class="flex content-end">
-            <BaseSearch
-                v-model="searchQuery"
-                placeholder="Search campaigns..."
-                @search="handleSearch"
+    > 
+        <section class="pl-2 pr-2 pt-2 pb-2">
+            <div class="mt-2">
+                <CampaignsPatternInput
+                    :preset-campaign-patterns="presetCampaignPatterns"
+                    @campaign-patterns-change="handleCampaignPatternsChange($event)"
+                />
+            </div>
+            <div class="flex content-end mt-4 mb-4">
+                <BaseSearch
+                    v-model="searchQuery"
+                    placeholder="Search campaigns..."
+                    @search="handleSearch"
+                />
+            </div>
+            <CampaignsTable 
+                :rowSelectionEnabled="true"
+                :name-clickable="false"
+                :maxSelectedRows="10"
             />
-        </div>
-        <CampaignsPatternInput
-            :preset-campaign-patterns="presetCampaignPatterns"
-            @campaign-patterns-change="handleCampaignPatternsChange($event)"
-        />
-        <CampaignsTable 
-            :rowSelectionEnabled="true"
-            :name-clickable="false"
-            :maxSelectedRows="10"
-        />
+        </section>
     </BaseDrawer>
 </template>
 
@@ -54,6 +58,7 @@ const handleCampaignSelectBtnClick = async () => {
         displayName: reportDetailsStore.reportName,
         sharingMode: SharingModeConstant.WRITE,
         campaignKeys: campaignsTableStore.selectedRowKeys,
+        description: reportDetailsStore.description,
         campaignNamesPatterns: reportDetailsStore.campaignNamesPatterns,
         scenarioNamesPatterns: reportDetailsStore.reportDetails?.scenarioNamesPatterns ?? [],
         dataComponents: reportDetailsStore.dataComponents ? reportDetailsStore.dataComponents.map(dataComponent => ({
@@ -87,6 +92,5 @@ const handleSearch = () => {
     });
     campaignsTableStore.fetchCampaignsTableDataSource();
 }
-
 
 </script>

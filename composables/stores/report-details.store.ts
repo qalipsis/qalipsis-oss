@@ -9,6 +9,7 @@ interface ReportDetailStoreState {
     scenarioNames: string[];
     selectedScenarioNames: string[];
     campaignNamesPatterns: string[];
+    description: string;
     campaignKeys: string[];
     allDataSeriesOptions: DataSeriesOption[];
 }
@@ -18,6 +19,7 @@ export const useReportDetailsStore = defineStore("ReportDetails", {
         return {
             reportDetails: null,
             reportName: '',
+            description: '',
             dataComponents: [],
             campaignOptions: [],
             scenarioNames: [],

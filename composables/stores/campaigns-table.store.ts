@@ -33,9 +33,8 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
             }
 
             try {
-                const response = await fetchCampaigns(pageQueryParams);
-                const tableData: CampaignTableData[] = CampaignHelper.toTableData(response.elements ?? []);
-                this.dataSource = tableData;
+                const response: Page<Campaign> = await fetchCampaigns(pageQueryParams);
+                this.dataSource = CampaignHelper.toTableData(response.elements ?? []);
                 this.totalElements = response.totalElements;
             } catch (error) {
                 throw error

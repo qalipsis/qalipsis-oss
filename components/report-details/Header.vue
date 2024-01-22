@@ -48,6 +48,7 @@ const handleSaveReportBtnClick = async () => {
         displayName: reportDetailsStore.reportName,
         campaignKeys: reportDetailsStore.campaignKeys,
         campaignNamesPatterns: reportDetailsStore.campaignNamesPatterns,
+        description: reportDetailsStore.description,
         sharingMode: SharingModeConstant.WRITE,
         scenarioNamesPatterns: reportDetailsStore.selectedScenarioNames,
         dataComponents: reportDetailsStore.dataComponents

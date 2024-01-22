@@ -35,6 +35,11 @@ export interface Report {
     campaignNamesPatterns?: string[];
 
     /**
+     * Description of the report, e.g. to explain its purpose
+     */
+    description?: string;
+
+    /**
      * List of campaign keys to be included in the report and obtained based on campaign name pattern
      */
     resolvedCampaigns?: CampaignKeyAndName[];
@@ -147,6 +152,11 @@ export interface ReportCreationAndUpdateRequest {
      * Display name of the report, should be unique into a tenant
      */
     displayName: string;
+
+    /**
+     * Description of the report, e.g. to explain its purpose
+     */
+    description?: string;
 
     /**
      * Sharing mode with the other members of the tenant

@@ -8,8 +8,8 @@ export class TimeSeriesHelper {
      * @returns the value with formatted value and text
      */
     static toComposedValue(dataSeries: DataSeries, value: number): ComposedAggregationValue {
-        const isDurationNanoField = dataSeries?.fieldName === SeriesHelper.DURATION_NANO_FIELD_NAME;
-        const isMinionsCountSeries = dataSeries?.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE;
+        const isDurationNanoField = dataSeries?.fieldName === SeriesDetailsConfig.DURATION_NANO_FIELD_NAME;
+        const isMinionsCountSeries = dataSeries?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
         const decimal = isMinionsCountSeries ? 0 : (isDurationNanoField ? 6 : 2);
         const formattedValue = isDurationNanoField ? (value / 1_000_000).toFixed(6) : (value).toFixed(decimal);
 

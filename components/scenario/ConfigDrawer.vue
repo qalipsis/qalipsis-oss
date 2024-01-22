@@ -121,7 +121,7 @@ const maxDurationInMilliSeconds = computed(() =>
 
 const isRenderingChart = ref(false);
 const chartOptions = ref<ApexOptions>({
-  ...ScenarioHelper.SCENARIO_CONFIG_CHART_OPTIONS,
+  ...ScenarioDetailsConfig.CHART_OPTIONS,
 });
 const chartDataSeries = ref<ApexAxisChartSeries>([]);
 const invalidExecutionProfileIndexes = ref<number[]>([]);

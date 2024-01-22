@@ -73,9 +73,9 @@ const selectedDataSeriesReferences = ref<string[]>([]);
 onMounted(async () => {
     try {
         // Inits all data series options
-        const allDataSeries = (await fetchAllDataSeries()).filter(ds => ds.reference !== SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE);
+        const allDataSeries = (await fetchAllDataSeries()).filter(ds => ds.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE);
         dataSeriesOptions.value = SeriesHelper.toDataSeriesOptions(allDataSeries, props.preselectedDataSeriesReferences);
-        availableDataSeriesOptions.value = dataSeriesOptions.value.slice(0, SeriesHelper.MAX_DATA_SERIES_TO_BE_DISPLAYED)
+        availableDataSeriesOptions.value = dataSeriesOptions.value.slice(0, SeriesDetailsConfig.MAX_DATA_SERIES_TO_BE_DISPLAYED)
             .map(dataSeriesOption => Object.assign({}, dataSeriesOption));
         showMore.value = dataSeriesOptions.value.length > availableDataSeriesOptions.value.length;
     } catch (error) {
@@ -97,7 +97,7 @@ const handleDataSeriesOptionClick = (dataSeriesOption: DataSeriesOption) => {
 const handleSearch = () => {
     const searchKeys = ["reference", "displayName", "dataType", "valueName"]
     const searchedResult = SearchHelper.performFuzzySearch<DataSeriesOption>(seriesQuery.value, dataSeriesOptions.value, searchKeys);
-    availableDataSeriesOptions.value = SeriesHelper.toDataSeriesOptions(searchedResult.slice(0, SeriesHelper.MAX_DATA_SERIES_TO_BE_DISPLAYED + 1), props.preselectedDataSeriesReferences);
+    availableDataSeriesOptions.value = SeriesHelper.toDataSeriesOptions(searchedResult.slice(0, SeriesDetailsConfig.MAX_DATA_SERIES_TO_BE_DISPLAYED + 1), props.preselectedDataSeriesReferences);
 }
 
 const handleShowMoreBtnClick = () => {

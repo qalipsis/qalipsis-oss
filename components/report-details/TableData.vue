@@ -9,7 +9,7 @@
         <a-table 
             :data-source="tableData"
             :pagination="pagination"
-            :columns="columnConfigs"
+            :columns="tableColumns"
             :show-sorter-tooltip="false"
             :ellipsis="true">
         </a-table>
@@ -26,7 +26,7 @@ const props = defineProps<{
 const reportDetailsStore = useReportDetailsStore();
 const { fetchTimeSeriesAggregation } = useTimeSeriesApi();
 
-const columnConfigs = ReportHelper.getReportDetailTableDataColumnConfigs();
+const tableColumns = ReportDetailsConfig.TABLE_COLUMNS;
 const tableData = ref<ReportDetailsTableData[]>([]);
 const preselectedDataSeriesReferences = ref<string[]>([]);
 const pagination = reactive({
@@ -64,7 +64,7 @@ const handleSelectedDataSeriesChange = (dataSeriesOptions: DataSeriesOption[]) =
 const _updateTableData = async (dataSeriesOptions: DataSeriesOption[]) => {
     const selectedDataSeriesReferences = dataSeriesOptions.map(dataSeriesOption => dataSeriesOption.reference);
     // Note: always add the minions count data series reference for querying the time series data
-    const seriesReferences = [SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...selectedDataSeriesReferences].join(",");
+    const seriesReferences = [SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...selectedDataSeriesReferences].join(",");
     const queryParam: TimeSeriesAggregationQueryParam = {
         series: seriesReferences,
         scenarios: reportDetailsStore.selectedScenarioNames.join(','),

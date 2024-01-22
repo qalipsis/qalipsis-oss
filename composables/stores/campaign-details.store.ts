@@ -41,7 +41,7 @@ export const useCampaignDetailsStore = defineStore("CampaignDetails", {
       const queryParams: TimeSeriesAggregationQueryParam = {
         campaigns: this.campaignDetails.key,
         // Note: always add the minions count reference in the query params.
-        series: [SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...this.selectedDataSeriesReferences].join(','),
+        series: [SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...this.selectedDataSeriesReferences].join(','),
         scenarios: this.selectedScenarioNames.join(','),
         from: this.campaignDetails.start,
       }

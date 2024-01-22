@@ -81,7 +81,6 @@ const _fetchReport = async () => {
             strokeDashArray: index + 1,
             isActive: true
         })): [];
-
         reportDetailsStore.$patch({
             reportDetails: reportDetails,
             reportName: reportDetails.displayName,
@@ -90,6 +89,7 @@ const _fetchReport = async () => {
             scenarioNames: reportDetails.resolvedScenarioNames ? [...reportDetails.resolvedScenarioNames] : [],
             selectedScenarioNames: reportDetails.resolvedScenarioNames ? [...reportDetails.resolvedScenarioNames] : [],
             campaignNamesPatterns: reportDetails.campaignNamesPatterns ?? [],
+            description: reportDetails.description ?? '',
             campaignKeys: reportDetails.resolvedCampaigns?.map(c => c.key),
             allDataSeriesOptions: allDataSeriesOptions
         });

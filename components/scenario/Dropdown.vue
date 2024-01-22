@@ -49,8 +49,8 @@
 
 <script setup lang="ts">
 
-const scenarioSummaryId = ScenarioHelper.SCENARIO_SUMMARY_ID
-const scenarioSummaryName = ScenarioHelper.SCENARIO_SUMMARY_NAME;
+const scenarioSummaryId = ScenarioDetailsConfig.SCENARIO_SUMMARY_ID
+const scenarioSummaryName = ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME;
 
 const props = defineProps<{
     scenarioNames: string[],

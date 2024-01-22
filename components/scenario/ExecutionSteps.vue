@@ -66,10 +66,10 @@ const props = defineProps<{
   scenarioName: string
 }>();
 
-const executionStepDonutChartOptions = ScenarioHelper.EXECUTION_STEP_DONUT_CHART_OPTIONS;
+const executionStepDonutChartOptions = ScenarioDetailsConfig.EXECUTION_STEP_DONUT_CHART_OPTIONS;
 
-const successfulExecutionsColor = ColorHelper.PRIMARY_COLOR_HEX_CODE;
-const failedExecutionsColor = ColorHelper.PINK_HEX_CODE;
+const successfulExecutionsColor = ColorsConfig.PRIMARY_COLOR_HEX_CODE;
+const failedExecutionsColor = ColorsConfig.PINK_HEX_CODE;
 
 /**
  * The number of total executions.

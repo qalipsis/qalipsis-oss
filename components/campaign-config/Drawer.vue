@@ -199,14 +199,14 @@ const fieldValidationSchema = {
       )
   ),
 };
-const timeoutOptions = CampaignHelper.getCampaignTimeoutOptions();
+const timeoutOptions = CampaignDetailsConfig.CAMPAIGN_TIMEOUT_OPTIONS;
 const durationUnitOptions = TimeframeHelper.getTimeframeUnitOptions();
 const timezoneOptions = TimeframeHelper.getTimezoneOptions();
-const repeatTimeRangeOptions = CampaignHelper.getRepeatTimeRangeOptions();
-const hourlyOptions = CampaignHelper.getHourlyRepeatOptions();
-const dailyOptions = CampaignHelper.getDailyRepeatOptions();
-const monthlyOptions = CampaignHelper.getMonthlyRepeatOptions();
-const relativeDayOfMonthOptions = CampaignHelper.getRelativeDayOfMonthOptions();
+const repeatTimeRangeOptions = CampaignDetailsConfig.REPEAT_TIME_RANGE_OPTIONS;
+const hourlyOptions = CampaignDetailsConfig.HOURLY_REPEAT_OPTIONS;
+const dailyOptions = CampaignDetailsConfig.DAILY_REPEAT_OPTIONS;
+const monthlyOptions = CampaignDetailsConfig.MONTHLY_REPEAT_OPTIONS;
+const relativeDayOfMonthOptions = CampaignDetailsConfig.RELATIVE_DAY_OF_MONTH_OPTIONS;
 
 const DAY_OF_WEEK_MAP: { [key: string]: string } = {
   0: "Monday",

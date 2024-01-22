@@ -1,7 +1,7 @@
 <template>
     <a-table 
         :data-source="dataSource"
-        :columns="tableColumnConfigs"
+        :columns="tableColumns"
         :show-sorter-tooltip="false"
         :ellipsis="true"
         rowKey="reference"
@@ -61,7 +61,7 @@ const reportsTableStore = useReportsTableStore();
 const { downloadReport } = useReportApi();
 const { dataSource, totalElements } = storeToRefs(reportsTableStore);
 
-const tableColumnConfigs = ReportHelper.getTableColumnConfigs();
+const tableColumns = ReportsTableConfig.TABLE_COLUMNS;
 const currentPage = computed(() => reportsTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => reportsTableStore.selectedRowKeys);
 const rowSelection: TableRowSelection<ReportTableData> | undefined = reactive({

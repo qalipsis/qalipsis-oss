@@ -45,7 +45,7 @@ onMounted(async () => {
     const dataSeriesReferences = route.query?.series?.toString().split(',');
 
     if (dataSeriesReferences && dataSeriesReferences.length > 0) {
-        const allDataSeries = (await fetchAllDataSeries()).filter(d => d.reference !== SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE);
+        const allDataSeries = (await fetchAllDataSeries()).filter(d => d.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE);
         const selectedDataSeries = allDataSeries.filter(d => dataSeriesReferences.includes(d.reference));
         campaignDetailsStore.$patch({
             selectedDataSeries: selectedDataSeries

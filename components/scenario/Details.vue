@@ -36,7 +36,6 @@
       :title="scenarioDrawer.title"
       :messages="scenarioDrawer.messages"
     >
-
     </ScenarioMessageDrawer>
 </template>
 

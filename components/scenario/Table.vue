@@ -1,7 +1,7 @@
 <template>
   <a-table
     :data-source="dataSource"
-    :columns="tableColumnConfigs"
+    :columns="tableColumns"
     :show-sorter-tooltip="false"
     :ellipsis="true"
     rowKey="name"
@@ -44,7 +44,7 @@ const scenarioTableStore = useScenarioTableStore();
 const { selectedRowKeys, dataSource, totalElements } =
   storeToRefs(scenarioTableStore);
 
-const tableColumnConfigs = ScenarioHelper.getTableColumnConfigs();
+const tableColumns = ScenariosTableConfig.TABLE_COLUMNS;
 let campaignConfiguration: DefaultCampaignConfiguration;
 let selectedScenarioSummary: ScenarioSummary;
 const zoneOptions = ref<FormMenuOption[]>([]);

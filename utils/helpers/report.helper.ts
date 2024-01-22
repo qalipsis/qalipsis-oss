@@ -3,47 +3,47 @@ import tinycolor from "tinycolor2";
 import { format } from "date-fns";
 import { Report } from "../types/report";
 
-export class ReportHelper {
-    static REPORT_CHART_TOOLTIP_RENDERER: ((options: any) => any) = ({ seriesIndex, dataPointIndex, w }): string => {
-        const elapsedTime = w.config.series[seriesIndex].data[dataPointIndex]?.x;
-        let seriesContent: string[] = []
-        w.globals.initialSeries.forEach((series: { data: any[]; name: string; color: any; }) => series.data.forEach(point => {
-            if (point?.x === elapsedTime) {
-                const day = format(new Date(point.meta), 'yy-MM-dd');
-                const time = format(new Date(point.meta), 'HH:mm:ss');
-                const campaignName = series.name.substring(
-                    series.name.indexOf('{') + 1, 
-                    series.name.lastIndexOf('}')
-                );
-                const seriesName = series.name.replace(`{${campaignName}}`, '');
-                seriesContent.push(
-                    `<div class="custom-tooltip__content">
-                <div class="custom-tooltip__marker" style="background-color:${series.color}"></div>
-                <div class="custom-tooltip__text">
-                  <div>
-                    <div class="custom-tooltip__text-name text-xs text-grey-1">
-                        ${day}, ${time}:
-                    </div>
-                    <div class="custom-tooltip__text-name">
-                        ${campaignName} - ${seriesName}
-                    </div>
-                  </div>
-                  <div class="custom-tooltip__text-y ml-2">
-                    ${point.y}
-                  </div>
+const renderReportChartTooltip: ((options: any) => any) = ({ seriesIndex, dataPointIndex, w }): string => {
+    const elapsedTime = w.config.series[seriesIndex].data[dataPointIndex]?.x;
+    let seriesContent: string[] = []
+    w.globals.initialSeries.forEach((series: { data: any[]; name: string; color: any; }) => series.data.forEach(point => {
+        if (point?.x === elapsedTime) {
+            const day = format(new Date(point.meta), 'yy-MM-dd');
+            const time = format(new Date(point.meta), 'HH:mm:ss');
+            const campaignName = series.name.substring(
+                series.name.indexOf('{') + 1, 
+                series.name.lastIndexOf('}')
+            );
+            const seriesName = series.name.replace(`{${campaignName}}`, '');
+            seriesContent.push(
+                `<div class="custom-tooltip__content">
+            <div class="custom-tooltip__marker" style="background-color:${series.color}"></div>
+            <div class="custom-tooltip__text">
+              <div>
+                <div class="custom-tooltip__text-name text-xs text-grey-1">
+                    ${day}, ${time}:
                 </div>
-              </div>`)
-            }
-        }));
-    
-        return `<div class="custom-tooltip">
-          <div class="custom-tooltip__title">
-            <span>Elapsed time: ${elapsedTime} s</span>
-          </div>
-          ${seriesContent.join('')}
-        </div>`
-    }
+                <div class="custom-tooltip__text-name">
+                    ${campaignName} - ${seriesName}
+                </div>
+              </div>
+              <div class="custom-tooltip__text-y ml-2">
+                ${point.y}
+              </div>
+            </div>
+          </div>`)
+        }
+    }));
 
+    return `<div class="custom-tooltip">
+      <div class="custom-tooltip__title">
+        <span>Elapsed time: ${elapsedTime} s</span>
+      </div>
+      ${seriesContent.join('')}
+    </div>`
+}
+
+export class ReportHelper {
     static toReportTableData(reports: Report[]): ReportTableData[] {
         return reports.map(report => ({
             ...report,
@@ -59,7 +59,7 @@ export class ReportHelper {
 
             return acc
         }, {})
-        const chartOptions: ApexOptions = ChartHelper.DEFAULT_CHART_OPTIONS;
+        const chartOptions: ApexOptions = ChartsConfig.DEFAULT_CHART_OPTIONS;
         const aggregations = Object.entries(timeSeriesAggregationResult)?.filter(([_, value]) => value.length);
         const chartDataSeries: ApexAxisChartSeries = [];
         const yAxisConfigs: ApexYAxis[] = [];
@@ -94,11 +94,11 @@ export class ReportHelper {
             const seriesDefinition = dataSeries.find(s => s.reference === key);
             const chartOptionData: ChartOptionData = {
                 dataSeriesName: seriesDefinition?.displayName ?? key,
-                dataSeriesColor: seriesDefinition?.color && tinycolor(seriesDefinition?.color).isValid() ? seriesDefinition?.color : `${ColorHelper.BLACK_HEX_CODE}`,
-                isDurationNanoField: seriesDefinition?.fieldName === SeriesHelper.DURATION_NANO_FIELD_NAME,
-                isMinionsCountSeries: seriesDefinition?.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE,
-                decimal: seriesDefinition?.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE
-                    ? 0 : (seriesDefinition?.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE ? 6 : 2)
+                dataSeriesColor: seriesDefinition?.color && tinycolor(seriesDefinition?.color).isValid() ? seriesDefinition?.color : `${ColorsConfig.BLACK_HEX_CODE}`,
+                isDurationNanoField: seriesDefinition?.fieldName === SeriesDetailsConfig.DURATION_NANO_FIELD_NAME,
+                isMinionsCountSeries: seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+                decimal: seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
+                    ? 0 : (seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE ? 6 : 2)
             }
             
             const campaignChartSeriesMap: { [key: string]: TimeSeriesAggregationResult[]} = values.reduce<{[key: string]: TimeSeriesAggregationResult[]}>((acc, cur) => {
@@ -137,7 +137,7 @@ export class ReportHelper {
         });
 
         chartOptions.yaxis = yAxisConfigs;
-        chartOptions.tooltip!.custom = ReportHelper.REPORT_CHART_TOOLTIP_RENDERER;
+        chartOptions.tooltip!.custom = renderReportChartTooltip;
         chartOptions.stroke!.dashArray = chartDataSeriesStrokeArrayList;
 
         return {
@@ -180,62 +180,5 @@ export class ReportHelper {
 
                 return acc
             }, []);
-    }
-
-    static getReportDetailTableDataColumnConfigs() {
-        return [
-            {
-                title: 'Series name',
-                dataIndex: 'seriesName',
-                key: 'seriesName',
-            },
-            {
-                title: 'Campaign name',
-                dataIndex: 'campaignName',
-                key: 'campaignName',
-            },
-            {
-                title: 'Start time',
-                dataIndex: 'startTimeText',
-                key: 'startTimeText',
-            },
-            {
-                title: 'Elapsed',
-                dataIndex: 'elapsedText',
-                key: 'elapsedText',
-            },
-            {
-                title: 'Value',
-                dataIndex: 'valueDisplayText',
-                key: 'valueDisplayText',
-            },
-        ];        
-    }
-
-    static getTableColumnConfigs() {
-        return [
-            {
-                title: 'Name',
-                dataIndex: 'displayName',
-                key: 'displayName',
-                sorter: (next: Report, prev: Report) => next.displayName.localeCompare(prev.displayName),
-            },
-            {
-                title: 'Campaigns',
-                dataIndex: 'concatenatedCampaignNames',
-                key: 'concatenatedCampaignNames',
-            },
-            {
-                title: 'Author',
-                dataIndex: 'creator',
-                key: 'creator',
-                sorter: (next: Report, prev: Report) => next.creator.localeCompare(prev.creator),
-            },
-            {
-                title: '',
-                dataIndex: 'actions',
-                key: 'actions',
-            },
-        ];
     }
 }

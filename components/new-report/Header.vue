@@ -6,17 +6,6 @@
                 <BaseTitle v-model:content="reportName" :editable="true" />
             </div>
             <div class="flex items-center">
-                <BaseSwitch
-                    @checkedChange="handleCheckedChange"
-                    :numberOfSelectedItems="selectedRowKeys.length"
-                />
-                <BaseSearch
-                    class="ml-2"
-                    v-model="searchQuery"
-                    placeholder="Search campaigns..."
-                    size="large"
-                    @search="handleSearch"
-                />
                 <BaseButton
                     class="ml-2"
                     text="Create"
@@ -27,26 +16,48 @@
         </div>
     </BaseHeader>
     <div class="page-content-container">
+        <ReportDetailsDescription
+            :presetDescription="reportDescription"
+            @change="handleDescriptionValueChange($event)"
+        />
         <CampaignsPatternInput
             :preset-campaign-patterns="presetCampaignPatterns"
             @campaignPatternsChange="handleCampaignPatternsChange($event)"
         />
+        <div class="mt-4 flex items-center content-end full-width">
+            <BaseSwitch
+                @checkedChange="handleCheckedChange"
+                :numberOfSelectedItems="selectedRowKeys.length"
+            />
+            <BaseSearch
+                class="ml-2"
+                v-model="searchQuery"
+                placeholder="Search campaigns..."
+                size="large"
+                @search="handleSearch"
+            />
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 
-const { createReport, updateReport } = useReportApi();
+const { createReport } = useReportApi();
 
 const campaignsTableStore = useCampaignsTableStore();
 const { selectedRowKeys } = storeToRefs(campaignsTableStore);
 
 const searchQuery = ref("");
 const reportName = ref("New Report");
+const reportDescription = ref("");
 const campaignPatterns = ref<string[]>([]);
 const presetCampaignPatterns = ref("");
 
+
+const handleDescriptionValueChange = (description: string) => {
+    reportDescription.value = description;
+}
 
 const handleCampaignPatternsChange = (patterns: string[]) => {
     campaignPatterns.value = patterns;
@@ -82,6 +93,7 @@ const handleCheckedChange = async (checked: boolean) => {
 const handleCreateReportBtnClick = async () => {
     const reportCreationRequest: ReportCreationAndUpdateRequest = {
         displayName: reportName.value,
+        description: reportDescription.value,
         sharingMode: SharingModeConstant.WRITE,
         campaignKeys: campaignsTableStore.selectedRowKeys,
         campaignNamesPatterns: campaignPatterns.value,

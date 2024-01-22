@@ -5,10 +5,6 @@ export class SeriesHelper {
     [SharingModeConstant.WRITE]: "Write",
   };
 
-  static MAX_DATA_SERIES_TO_BE_DISPLAYED = 10;
-
-  static DURATION_NANO_FIELD_NAME = "duration_nano";
-
   static MINIONS_COUNT_DATA_SERIES_REFERENCE = "minions.count";
 
   static toDataSeriesCreationRequest(
@@ -71,7 +67,7 @@ export class SeriesHelper {
   ): DataSeriesOption[] {
     return dataSeries.map((el) => ({
       ...el,
-      display: el.color ?? ColorHelper.PRIMARY_COLOR_HEX_CODE,
+      display: el.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
       isActive: selectedDataSeriesReferences.includes(el.reference),
     }));
   }
@@ -91,7 +87,7 @@ export class SeriesHelper {
       disabled:
         (el.creator !== userName &&
           el.sharingMode === SharingModeConstant.READONLY) ||
-        el.reference === SeriesHelper.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+        el.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
     }));
   }
 
@@ -207,51 +203,6 @@ export class SeriesHelper {
       {
         label: "Write",
         value: SharingModeConstant.WRITE,
-      },
-    ];
-  }
-
-  static getTableColumnConfigs() {
-    return [
-      {
-        title: "Name",
-        dataIndex: "displayName",
-        key: "displayName",
-        sorter: (next: DataSeriesTableData, prev: DataSeriesTableData) =>
-          next.displayName.localeCompare(prev.displayName),
-      },
-      {
-        title: "Time-series type",
-        dataIndex: "dataType",
-        key: "dataType",
-        sorter: (next: DataSeriesTableData, prev: DataSeriesTableData) =>
-          next.dataType.localeCompare(prev.dataType),
-      },
-      {
-        title: "Field name",
-        dataIndex: "fieldName",
-        key: "fieldName",
-      },
-      {
-        title: "Value",
-        dataIndex: "valueName",
-        key: "valueName",
-      },
-      {
-        title: "Shared",
-        dataIndex: "sharingMode",
-        key: "sharingMode",
-        sorter: (next: DataSeriesTableData, prev: DataSeriesTableData) => {
-          const nextSharingMode = next?.sharingMode ?? "";
-          const prevSharingMode = prev?.sharingMode ?? "";
-
-          return nextSharingMode.localeCompare(prevSharingMode);
-        },
-      },
-      {
-        title: "",
-        dataIndex: "actions",
-        key: "actions",
       },
     ];
   }

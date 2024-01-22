@@ -1,24 +1,19 @@
-import { ApexOptions } from "apexcharts";
 import { format } from "date-fns";
 
 import {
-    ExecutionProfileStage,
-    ReportMessage,
-    ReportMessageSeverity,
-    ReportMessageSeverityConstant,
-    ScenarioConfigurationForm,
-    ScenarioReport,
-    ScenarioRequest,
-    ScenarioSummary,
-    Stage,
-    StageExternalExecutionProfileConfiguration,
-    ZoneForm,
+  ExecutionProfileStage,
+  ReportMessage,
+  ReportMessageSeverity,
+  ReportMessageSeverityConstant,
+  ScenarioConfigurationForm,
+  ScenarioReport,
+  ScenarioRequest,
+  Stage,
+  StageExternalExecutionProfileConfiguration,
+  ZoneForm
 } from "../types/scenario";
 
 export class ScenarioHelper {
-  static SCENARIO_SUMMARY_NAME = "Campaign Summary";
-  static SCENARIO_SUMMARY_ID = "campaignSummary";
-
   static toScenarioConfigForm(campaignConfiguration: CampaignConfiguration): {
     [key: string]: ScenarioConfigurationForm;
   } {
@@ -97,259 +92,6 @@ export class ScenarioHelper {
     return scenarioRequest;
   }
 
-  static getTableColumnConfigs() {
-    return [
-      {
-        title: "Scenario",
-        dataIndex: "name",
-        key: "name",
-        sorter: (next: ScenarioSummary, prev: ScenarioSummary) =>
-          next.name.localeCompare(prev.name),
-      },
-      {
-        title: "Version",
-        dataIndex: "version",
-        key: "version",
-        sorter: (next: ScenarioSummary, prev: ScenarioSummary) =>
-          next.version.localeCompare(prev.name),
-      },
-      {
-        title: "Description",
-        dataIndex: "description",
-        key: "description",
-        sorter: (next: ScenarioSummary, prev: ScenarioSummary) => {
-          const nextDescription = next.description ?? "";
-          const prevDescription = prev.description ?? "";
-          return nextDescription.localeCompare(prevDescription);
-        },
-      },
-      {
-        title: "",
-        dataIndex: "actions",
-        key: "actions",
-      },
-    ];
-  }
-
-  static getMessageTableColumnConfigs() {
-    return [
-      {
-        title: "Step Name",
-        dataIndex: "stepName",
-        key: "displayName",
-      },
-      {
-        title: "Severity",
-        dataIndex: "severity",
-        key: "severity",
-      },
-      {
-        title: "Message",
-        dataIndex: "message",
-        key: "message",
-      },
-    ];
-  }
-
-  static SCENARIO_CONFIG_CHART_OPTIONS: ApexOptions = {
-    chart: {
-      type: "area",
-      zoom: {
-        enabled: false,
-      },
-      offsetX: -25,
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      curve: "straight",
-      width: 0.5,
-    },
-    grid: {
-      row: {
-        colors: ["#fff", "transparent"],
-        opacity: 0.5,
-      },
-    },
-    xaxis: {
-      decimalsInFloat: 0,
-      type: "numeric",
-      tickAmount: "dataPoints",
-      title: {
-        text: "Duration, s",
-        offsetX: 260,
-        offsetY: -5,
-        style: {
-          color: "#ddd",
-          fontSize: "12px",
-          fontWeight: 400,
-        },
-      },
-    },
-    yaxis: {
-      decimalsInFloat: 0,
-      tickAmount: 2,
-      min: 0,
-      max: 10,
-      title: {
-        text: "Minions",
-        offsetX: 0,
-        offsetY: -40,
-        style: {
-          color: "#ddd",
-          fontSize: "12px",
-          fontWeight: 400,
-        },
-      },
-    },
-  };
-
-  static MINION_STACKED_BAR_CHART_OPTIONS: ApexOptions = {
-    colors: [
-      ColorHelper.PRIMARY_COLOR_HEX_CODE,
-      ColorHelper.PURPLE_COLOR_HEX_CODE,
-      ColorHelper.GREY_2_HEX_CODE,
-    ],
-    chart: {
-      type: "bar",
-      stacked: true,
-      stackType: "100%",
-      toolbar: {
-        show: false,
-      },
-      zoom: {
-        enabled: false,
-      },
-    },
-    grid: {
-      show: false,
-      xaxis: {
-        lines: {
-          show: false,
-        },
-      },
-      yaxis: {
-        lines: {
-          show: false,
-        },
-      },
-      // Note: this is a workaround to remove unneeded paddings from the apex chart
-      padding: {
-        top: -18,
-        right: 0,
-        bottom: -72,
-        left: -12,
-      },
-    },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-      },
-    },
-    yaxis: {
-      show: false,
-      labels: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
-      axisBorder: {
-        show: false,
-      },
-      crosshairs: {
-        show: false,
-      },
-    },
-    xaxis: {
-      labels: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
-      axisBorder: {
-        show: false,
-      },
-    },
-    legend: {
-      show: false,
-    },
-    fill: {
-      opacity: 1,
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    tooltip: {
-      enabled: false,
-    },
-    states: {
-      hover: {
-        filter: {
-          type: "none",
-        },
-      },
-      active: {
-        filter: {
-          type: "none",
-        },
-      },
-    },
-  };
-
-  static EXECUTION_STEP_DONUT_CHART_OPTIONS: ApexOptions = {
-    colors: [ColorHelper.PRIMARY_COLOR_HEX_CODE, ColorHelper.PINK_HEX_CODE],
-    chart: {
-      type: "donut",
-    },
-    stroke: {
-      width: 0,
-    },
-    plotOptions: {
-      pie: {
-        expandOnClick: false,
-        donut: {
-          size: "65%",
-        },
-      },
-    },
-    grid: {
-      // Note: this is a workaround to remove unneeded paddings from the apex chart
-      padding: {
-        top: -2,
-        right: -2,
-        bottom: -8,
-        left: -2,
-      },
-    },
-    legend: {
-      show: false,
-    },
-    fill: {
-      opacity: 1,
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    tooltip: {
-      enabled: false,
-    },
-    states: {
-      hover: {
-        filter: {
-          type: "none",
-        },
-      },
-      active: {
-        filter: {
-          type: "none",
-        },
-      },
-    },
-  };
-
   /**
    * Gets the scenario reports for the UI.
    *
@@ -395,8 +137,8 @@ export class ScenarioHelper {
      * The summary report for all scenarios.
      */
     const scenarioSummaryReport: ScenarioReport = {
-      id: ScenarioHelper.SCENARIO_SUMMARY_ID,
-      name: ScenarioHelper.SCENARIO_SUMMARY_NAME,
+      id: ScenarioDetailsConfig.SCENARIO_SUMMARY_ID,
+      name: ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME,
       start: campaignExecutionDetails.start,
       end: campaignExecutionDetails.end,
       status: campaignExecutionDetails.status,
@@ -507,7 +249,7 @@ export class ScenarioHelper {
   static toScenarioConfigChartData(
     executionProfileStages: ExecutionProfileStage[]
   ): ChartData {
-    const chartOptions = { ...ScenarioHelper.SCENARIO_CONFIG_CHART_OPTIONS };
+    const chartOptions = { ...ScenarioDetailsConfig.CHART_OPTIONS };
     const chartDatSeries: { x: number; y: number }[] = [{ x: 0, y: 0 }];
     let cumulativeDuration = 0;
     let cumulativeMinionsCount = 0;
