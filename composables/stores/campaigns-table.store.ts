@@ -17,11 +17,11 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
         currentPageNumber: state => state.currentPageIndex + 1,
     },
     actions: {
-        async fetchCampaignsTableDataSource(pageSize?: number): Promise<void> {
+        async fetchCampaignsTableDataSource(extraQueryParams?: { [key: string]: string }): Promise<void> {
             const { fetchCampaigns } = useCampaignApi();
-            const pageQueryParams: PageQueryParams = {
+            let pageQueryParams: PageQueryParams = {
                 page: this.currentPageIndex,
-                size: pageSize ?? TableHelper.defaultPageSize,
+                size: TableHelper.defaultPageSize,
             }
 
             if (this.filter) {
@@ -30,6 +30,13 @@ export const useCampaignsTableStore = defineStore("CampaignsTable", {
 
             if (this.sort) {
                 pageQueryParams.sort = this.sort;
+            }
+
+            if (extraQueryParams) {
+                pageQueryParams = {
+                    ...pageQueryParams,
+                    ...extraQueryParams
+                }
             }
 
             try {

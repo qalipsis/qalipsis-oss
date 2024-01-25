@@ -97,6 +97,7 @@ const props = defineProps<{
   actionsEnabled?: boolean;
   rowSelectionEnabled?: boolean;
   maxSelectedRows?: number;
+  extraQueryParams?: { [key: string]: string }
 }>();
 
 const userStore = useUserStore();
@@ -238,7 +239,7 @@ const handleNameClick = (
 
 const _fetchTableData = async () => {
   try {
-    await campaignsTableStore.fetchCampaignsTableDataSource();
+    await campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams);
   } catch (error) {
     ErrorHelper.handleHttpResponseError(error);
   }

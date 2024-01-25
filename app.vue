@@ -6,6 +6,15 @@
       },
     }"
   >
+    <section v-if="!canViewPage" class="loading-section flex items-center content-center" >
+      <div class="flex items-center">
+        <BaseIcon icon="/icons/icon-logo.svg" width="80" />
+        <h1 class="text-primary-color mr-4">QALIPSIS</h1>
+        <div class="mt-2">
+          <a-spin size="large" />
+        </div>
+      </div>
+    </section>
     <a-layout>
       <a-layout-content v-if="canViewPage">
         <a-layout>
@@ -22,6 +31,7 @@
 <script setup lang="ts">
 const { fetchProfile, fetchPermissions } = useUserApi();
 const userStore = useUserStore();
+
 
 /**
  * A flag to indicate the if the page can be displayed.
@@ -57,5 +67,15 @@ const _showPage = async () => {
 <style scoped lang="scss">
 :deep(.ant-layout) {
   background: white;
+}
+
+.loading-section {
+  width: 100vw;
+  height: 100vh;
+
+  .spinner-wrapper {
+    width: 4rem;
+    height: 4rem;
+  }
 }
 </style>

@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
+  spaLoadingTemplate: false,
   app: {
     head: {
       title: 'QALIPSIS',

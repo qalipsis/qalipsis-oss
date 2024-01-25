@@ -1,3 +1,6 @@
+.idea
+.vscode
+
 # Nuxt dev/build outputs
 .output
 .data
@@ -5,6 +8,12 @@
 .nitro
 .cache
 dist
+
+# Gradle
+gradle
+.gradle
+gradlew
+gradlew.bat
 
 # Node dependencies
 node_modules
