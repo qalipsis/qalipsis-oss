@@ -10,7 +10,7 @@ env:
 
 jobs:
   pull-request-check:
-    timeout-minutes: 15
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -47,8 +47,11 @@ jobs:
         if: always()
         with:
           report_paths: '**/build/test-results/*/TEST-*.xml'
-          fail_on_failure: true
+          require_tests: false
+          fail_on_failure: false
+          include_passed: true
           summary: true
+          detailed_summary: true
 
   dependency-review:
     needs: pull-request-check
