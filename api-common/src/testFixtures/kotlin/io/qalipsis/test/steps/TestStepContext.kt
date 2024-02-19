@@ -16,7 +16,6 @@
 
 package io.qalipsis.test.steps
 
-import io.micrometer.core.instrument.Tags
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
@@ -62,7 +61,7 @@ class TestStepContext<IN, OUT>(
 
     private var immutableEventTags: Map<String, String>? = null
 
-    private var immutableMetersTags: Tags? = null
+    private var immutableMetersTags: Map<String, String>? = null
 
     override val startedAt: Long = System.currentTimeMillis()
 
@@ -191,14 +190,14 @@ class TestStepContext<IN, OUT>(
         )
     }
 
-    override fun toMetersTags(): Tags {
+    override fun toMetersTags(): Map<String, String> {
         if (immutableMetersTags == null) {
-            var tags = Tags.of(
-                "campaign", campaignKey,
-                "scenario", scenarioName,
-                "step", stepName
+            val tags = mutableMapOf(
+                "campaign" to campaignKey,
+                "scenario" to scenarioName,
+                "step" to stepName
             )
-            previousStepName?.let { tags = tags.and("parent-step", it) }
+            previousStepName?.let { tags["parent-step"] = it }
             immutableMetersTags = tags
         }
         return immutableMetersTags!!

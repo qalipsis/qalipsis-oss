@@ -19,7 +19,6 @@ package io.qalipsis.api.pool
 import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.io.Closeable
 import io.qalipsis.api.lang.concurrentList
-import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -46,19 +45,27 @@ import kotlin.coroutines.CoroutineContext
  * @property healthCheck action to perform to verify the health of the items of type [T], defaults to always healthy
  * @property cleaner action to perform before releasing the item to the pool and before the health check, in order to make it reusable, defaults to no operation
  * @property factory creator for a new item for the pool
+ * @property retries number of retries to initialize the items
  */
 class FixedPool<T : Closeable>(
     size: Int,
     private val coroutineContext: CoroutineContext = Dispatchers.Default,
     private val checkOnAcquire: Boolean = false,
     private val checkOnRelease: Boolean = false,
+    private val retries: Int = 10,
     private val healthCheck: suspend (T) -> Boolean = { true },
     private val cleaner: suspend (T) -> Unit = { },
-    private val factory: suspend () -> T
+    private val factory: suspend () -> T,
 ) : Pool<T> {
 
+    /**
+     * Available items for next acquisition.
+     */
     private val itemPool: Channel<T>
 
+    /**
+     * All the items existing into the pool.
+     */
     private val items = concurrentList<T>()
 
     private var open = true
@@ -79,36 +86,50 @@ class FixedPool<T : Closeable>(
      */
     internal suspend fun init() {
         if (!initialized) {
-            repeat(actualSize) {
+            runCatching {
                 withContext(coroutineContext) {
-                    launch {
-                        val item = createItem()
-                        if (open) {
-                            itemPool.send(item)
+                    (1..actualSize).map {
+                        launch {
+                            val item = createItem()
+                            if (open) {
+                                itemPool.send(item)
+                            }
+                            readinessLatch.decrement()
                         }
-                        readinessLatch.decrement()
-                    }
+                    }.forEach { it.join() }
                 }
+            }
+            if (readinessLatch.isSuspended()) {
+                throw PoolInitializationException()
             }
             initialized = true
         }
+    }
+
+    private suspend fun createItem(): T {
+        var attempts = retries + 1
+        var item: T? = null
+        var failure: Exception? = null
+        while (item == null && attempts > 0) {
+            try {
+                item = factory()
+                items.add(item)
+            } catch (e: Exception) {
+                attempts--
+                if (attempts == 0) {
+                    failure = e
+                } else {
+                    log.warn(e) { "The item could not be created, but a new attempt will occur: ${e.message}" }
+                }
+            }
+        }
+        return item ?: throw PoolItemInitializationException(failure!!)
     }
 
     override suspend fun awaitReadiness(): FixedPool<T> {
         init()
         readinessLatch.await()
         return this
-    }
-
-    private suspend fun createItem(): T {
-        log.trace { "Creating a new item for the poll" }
-        var item: T? = null
-        while (item == null) {
-            item = tryAndLogOrNull(log) { factory() }
-        }
-        items.add(item)
-        log.trace { "A new item was created for the pool" }
-        return item
     }
 
     override suspend fun acquire(): T {

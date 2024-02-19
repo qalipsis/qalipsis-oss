@@ -32,11 +32,11 @@ internal class RegularExecutionProfileTest {
     internal fun `should define the strategy on the scenario`() {
         val scenario = TestScenarioFactory.scenario {
             profile {
-                regular(1, 2)
+                regular(periodMs = 500, minionsCountProLaunch = 20)
             }
         }
 
-        assertThat(scenario).prop("executionProfile").isEqualTo(RegularExecutionProfile(1, 2))
+        assertThat(scenario).prop("executionProfile").isEqualTo(RegularExecutionProfile(500, 20))
     }
 
     @Test

@@ -23,6 +23,8 @@ import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isLessThan
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
 import io.aerisconsulting.catadioptre.getProperty
@@ -31,6 +33,7 @@ import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.spyk
 import io.qalipsis.api.io.Closeable
+import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.assertk.typedProp
@@ -38,12 +41,15 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import io.qalipsis.test.time.coMeasureTime
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class FixedPoolTest {
@@ -75,6 +81,43 @@ internal class FixedPoolTest {
 
         pool.close()
     }
+
+    @Test
+    @Timeout(2)
+    internal fun `should concurrently create a pool with 100 items requiring 100 ms each`() =
+        testCoroutineDispatcher.run {
+            // given
+            val pool = FixedPool(100, this.coroutineContext) {
+                delay(100)
+                relaxedMockk<MyTestObject>()
+            }
+
+            // when
+            val initDelay = coMeasureTime {
+                pool.awaitReadiness()
+            }
+
+            // then
+            assertThat(initDelay).isLessThan(Duration.ofMillis(200))
+            assertThat((1..100).map { pool.acquire() }).isNotNull()
+
+            pool.close()
+        }
+
+    @Test
+    @Timeout(1)
+    internal fun `should generate an exception when the pool items cannot be initialized`() =
+        testCoroutineDispatcher.run {
+            // given
+            val pool = FixedPool(5, this.coroutineContext, retries = 1) {
+                throw RuntimeException("Item could not be created")
+            }
+
+            // then
+            assertThrows<PoolInitializationException> {
+                pool.init()
+            }
+        }
 
     @Test
     @Timeout(5)
@@ -423,7 +466,7 @@ internal class FixedPoolTest {
     @Timeout(3)
     internal fun `should close all the items when closing the pool`(): Unit = testCoroutineDispatcher.run {
         // given
-        val mocks = mutableListOf<MyTestObject>()
+        val mocks = concurrentList<MyTestObject>()
         val pool =
             FixedPool(5, this.coroutineContext) { relaxedMockk<MyTestObject>().also { mocks.add(it) } }.awaitReadiness()
 

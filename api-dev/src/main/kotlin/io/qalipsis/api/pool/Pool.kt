@@ -63,6 +63,7 @@ interface Pool<T : io.qalipsis.api.io.Closeable> {
             coroutineContext: CoroutineContext = Dispatchers.Default,
             checkOnAcquire: Boolean = false,
             checkOnRelease: Boolean = false,
+            retries: Int = 10,
             healthCheck: suspend (T) -> Boolean = { true },
             cleaner: suspend (T) -> Unit = { },
             factory: suspend () -> T
@@ -71,6 +72,7 @@ interface Pool<T : io.qalipsis.api.io.Closeable> {
             coroutineContext,
             checkOnAcquire,
             checkOnRelease,
+            retries,
             healthCheck,
             cleaner,
             factory

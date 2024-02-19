@@ -32,7 +32,7 @@ internal class ProgressiveVolumeExecutionProfileTest {
     internal fun `should define the strategy on the scenario`() {
         val scenario = TestScenarioFactory.scenario {
             profile {
-                more(1, 2, 3.0, 4)
+                more(periodMs = 1, minionsCountProLaunchAtStart = 2, multiplier = 3.0, maxMinionsCountProLaunch = 4)
             }
         }
 

@@ -32,7 +32,7 @@ internal class AcceleratingExecutionProfileTest {
     internal fun `should define the strategy on the scenario`() {
         val scenario = TestScenarioFactory.scenario {
             profile {
-                faster(1, 2.0, 3, 4)
+                faster(startPeriodMs = 1, accelerator = 2.0, minPeriodMs = 3, minionsCountProLaunch = 4)
             }
         }
 

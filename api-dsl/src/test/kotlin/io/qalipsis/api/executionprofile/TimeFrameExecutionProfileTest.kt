@@ -32,7 +32,7 @@ internal class TimeFrameExecutionProfileTest {
     internal fun `should define the strategy on the scenario`() {
         val scenario = TestScenarioFactory.scenario {
             profile {
-                timeframe(1, 20)
+                timeframe(periodInMs = 1, timeFrameInMs = 20)
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 AERIS IT Solutions GmbH
+ * Copyright 2024 AERIS IT Solutions GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,10 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.context
+package io.qalipsis.api.pool
 
-interface MonitoringTags {
-
-    /**
-     * Converts the context to a map that can be used as tags for logged events.
-     */
-    fun toEventTags(): Map<String, String>
-
-    /**
-     * Converts the context to a map that can be used as tags for meters. The tags should not contain
-     * any detail about the minion, but remains at the level of step, scenario and campaign.
-     */
-    fun toMetersTags(): Map<String, String>
-}
+/**
+ * Exception to throw when the pool could not have been initialized.
+ */
+class PoolItemInitializationException(cause: Throwable) :
+    RuntimeException("The pool item could not be created", cause)

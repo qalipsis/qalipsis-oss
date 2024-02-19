@@ -16,8 +16,6 @@
 
 package io.qalipsis.api.context
 
-import io.micrometer.core.instrument.Tags
-
 /**
  * Default implementation of [CompletionContext].
  *
@@ -39,9 +37,9 @@ data class DefaultCompletionContext(
         "last-executed-step" to lastExecutedStepName,
     )
 
-    private var metersTag = Tags.of(
-        "campaign", campaignKey,
-        "scenario", scenarioName
+    private var metersTag = mapOf(
+        "campaign" to campaignKey,
+        "scenario" to scenarioName
     )
 
     override fun toEventTags() = eventTags
