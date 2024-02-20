@@ -77,7 +77,7 @@ internal class VerificationStepTest {
     @BeforeEach
     internal fun setUp() {
         val meterTags = mapOf<String, String>()
-        every { stepStartStopContext.toEventTags() } returns meterTags
+        every { stepStartStopContext.toMetersTags() } returns meterTags
         every { stepStartStopContext.scenarioName } returns "my-scenario"
         every { stepStartStopContext.stepName } returns "my-step"
         every {

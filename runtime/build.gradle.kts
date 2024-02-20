@@ -29,7 +29,7 @@ description = "QALIPSIS Runtime"
 
 kapt {
     correctErrorTypes = true
-    useBuildCache = true
+    useBuildCache = false
 }
 
 allOpen {
@@ -46,15 +46,18 @@ allOpen {
 val apiVersion: String by project
 
 dependencies {
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
+    compileOnly(project(":qalipsis-factory"))
+    compileOnly(project(":qalipsis-head"))
 
     api("io.qalipsis:qalipsis-api-common:$apiVersion")
     api("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     api("io.qalipsis:qalipsis-api-processors:$apiVersion")
     api(project(":qalipsis-shared"))
-    compileOnly(project(":qalipsis-factory"))
-    compileOnly(project(":qalipsis-head"))
+
+    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
     api("ch.qos.logback:logback-classic")
     api("info.picocli:picocli")
@@ -65,8 +68,6 @@ dependencies {
     api("io.micronaut:micronaut-validation")
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
-    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")

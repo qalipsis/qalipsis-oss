@@ -58,7 +58,7 @@ internal class VerificationStep<I, O>(
     private var started = AtomicBoolean()
 
     override suspend fun start(context: StepStartStopContext) {
-        val tags = context.toEventTags()
+        val tags = context.toMetersTags()
         successMeter = meterRegistry.counter(context.scenarioName, name, "assertion", tags + ("status" to "success"))
         failureMeter = meterRegistry.counter(context.scenarioName, name, "assertion", tags + ("status" to "failure"))
         errorMeter = meterRegistry.counter(context.scenarioName, name, "assertion", tags + ("status" to "error"))

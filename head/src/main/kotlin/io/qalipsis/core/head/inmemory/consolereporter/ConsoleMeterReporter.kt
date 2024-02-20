@@ -65,9 +65,22 @@ internal class ConsoleMeterReporter : MeterReporter {
         toNumber: T.() -> Number
     ) {
         meters.computeIfAbsent(meter.id.scenarioName) { ConcurrentHashMap() }
-            .computeIfAbsent(meter.id.stepName) { ConcurrentHashMap() }
-            .computeIfAbsent(row) { ConcurrentHashMap() }
-            .computeIfAbsent(column) { concurrentList() } += ReportedValue(meter, format, severity, toNumber)
+            .computeIfAbsent(meter.id.stepName) { ConcurrentHashMap() }.apply {
+                if (size > 10) {
+                    throw RuntimeException("The step ${meter.id.stepName} has too many rows: $size")
+                }
+            }
+            .computeIfAbsent(row) { ConcurrentHashMap() }.apply {
+                if (size > 10) {
+                    throw RuntimeException("The step ${meter.id.stepName} has too many columns for row $row: $size")
+                }
+            }
+            .computeIfAbsent(column) { concurrentList() }.apply {
+                if (size > 5) {
+                    throw RuntimeException("The step ${meter.id.stepName} has too many values at console position ${row}:${column}. Meters: ${map { it.meter.id }}")
+                }
+                add(ReportedValue(meter, format, severity, toNumber))
+            }
     }
 
     /**

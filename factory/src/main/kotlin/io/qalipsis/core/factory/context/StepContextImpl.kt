@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.context
 
-import io.micrometer.core.instrument.Tags
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
@@ -65,7 +64,7 @@ internal class StepContextImpl<IN, OUT>(
      */
     private var latch: Latch? = null
     private var immutableEventTags: Map<String, String>? = null
-    private var immutableMetersTags: Tags? = null
+    private var immutableMetersTags: Map<String, String>? = null
 
     private val bufferedOutputRecords = SuspendedCountLatch()
 
@@ -220,14 +219,14 @@ internal class StepContextImpl<IN, OUT>(
         )
     }
 
-    override fun toMetersTags(): Tags {
+    override fun toMetersTags(): Map<String, String> {
         if (immutableMetersTags == null) {
-            var tags = Tags.of(
-                "campaign", campaignKey,
-                "scenario", scenarioName,
-                "step", stepName
+            val tags = mutableMapOf(
+                "campaign" to campaignKey,
+                "scenario" to scenarioName,
+                "step" to stepName
             )
-            previousStepName?.let { tags = tags.and("previous-step", it) }
+            previousStepName?.let { tags["previous-step"] = it }
             immutableMetersTags = tags
         }
         return immutableMetersTags!!

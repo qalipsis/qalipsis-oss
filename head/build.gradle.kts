@@ -27,11 +27,6 @@ plugins {
 
 description = "QALIPSIS Head microservice"
 
-kapt {
-    correctErrorTypes = true
-    useBuildCache = true
-}
-
 allOpen {
     annotations(
         "io.micronaut.aop.Around",
@@ -44,16 +39,21 @@ allOpen {
 }
 
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
-kapt.useBuildCache = false
+
+kapt {
+    correctErrorTypes = true
+    useBuildCache = false
+}
 
 val apiVersion: String by project
 
 dependencies {
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
+    compileOnly("io.micronaut.data:micronaut-data-jdbc")
 
+    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     implementation(project(":qalipsis-shared"))
     implementation(project(":qalipsis-cluster"))
     implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
@@ -67,13 +67,7 @@ dependencies {
     implementation("cool.graph:cuid-java")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
-    compileOnly("io.micronaut.data:micronaut-data-jdbc")
     implementation("io.micronaut.data:micronaut-data-r2dbc")
-    runtimeOnly("io.r2dbc:r2dbc-pool")
-    runtimeOnly("org.postgresql:r2dbc-postgresql")
-    runtimeOnly("io.micronaut.liquibase:micronaut-liquibase")
-    runtimeOnly("io.micronaut.sql:micronaut-jdbc-hikari")
-    runtimeOnly("org.postgresql:postgresql")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
@@ -101,6 +95,12 @@ dependencies {
     implementation("org.thymeleaf.extras:thymeleaf-extras-java8time")
     implementation("org.jfree:jfreechart:1.0.19")
     implementation("org.jfree:org.jfree.svg:5.0.5")
+
+    runtimeOnly("io.r2dbc:r2dbc-pool")
+    runtimeOnly("org.postgresql:r2dbc-postgresql")
+    runtimeOnly("io.micronaut.liquibase:micronaut-liquibase")
+    runtimeOnly("io.micronaut.sql:micronaut-jdbc-hikari")
+    runtimeOnly("org.postgresql:postgresql")
 
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")

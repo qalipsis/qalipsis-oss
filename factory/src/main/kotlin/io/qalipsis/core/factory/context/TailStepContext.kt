@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.context
 
-import io.micrometer.core.instrument.Tags
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
@@ -66,7 +65,7 @@ internal data class TailStepContext(
 
     private var immutableEventTags: Map<String, String>? = null
 
-    private var immutableMetersTags: Tags? = null
+    private var immutableMetersTags: Map<String, String>? = null
 
     override val equivalentCompletionContext: CompletionContext
         get() = DefaultCompletionContext(
@@ -120,11 +119,13 @@ internal data class TailStepContext(
         latch?.release()
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T : Any?> next(input: Any, stepName: StepName): StepContext<Any, T> = copy(
         previousStepName = this.stepName,
         stepName = stepName
     ) as StepContext<Any, T>
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T : Any?> next(stepName: StepName): StepContext<Any, T> = copy(
         previousStepName = this.stepName,
         stepName = stepName
@@ -156,14 +157,14 @@ internal data class TailStepContext(
         )
     }
 
-    override fun toMetersTags(): Tags {
+    override fun toMetersTags(): Map<String, String> {
         if (immutableMetersTags == null) {
-            var tags = Tags.of(
-                "campaign", campaignKey,
-                "scenario", scenarioName,
-                "step", stepName
+            val tags = mutableMapOf(
+                "campaign" to campaignKey,
+                "scenario" to scenarioName,
+                "step" to stepName
             )
-            previousStepName?.let { tags = tags.and("previous-step", it) }
+            previousStepName?.let { tags["previous-step"] = it }
             immutableMetersTags = tags
         }
         return immutableMetersTags!!

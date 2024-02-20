@@ -28,7 +28,7 @@ description = "QALIPSIS shared library for the services implied in an advanced c
 
 kapt {
     correctErrorTypes = true
-    useBuildCache = true
+    useBuildCache = false
 }
 
 // Configure both compileKotlin and compileTestKotlin.
@@ -41,12 +41,17 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
-kapt.useBuildCache = false
+kapt {
+    correctErrorTypes = true
+    useBuildCache = false
+}
 
 val apiVersion: String by project
 
 dependencies {
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    implementation("io.qalipsis:qalipsis-api-dev:$apiVersion")
+
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("io.micronaut:micronaut-core")
     compileOnly("io.micronaut:micronaut-inject-java")
@@ -57,6 +62,5 @@ dependencies {
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    implementation("io.qalipsis:qalipsis-api-dev:$apiVersion")
 }
 

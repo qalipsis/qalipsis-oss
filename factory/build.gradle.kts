@@ -26,11 +26,6 @@ plugins {
 
 description = "QALIPSIS Factory microservice"
 
-kapt {
-    correctErrorTypes = true
-    useBuildCache = true
-}
-
 allOpen {
     annotations(
         "io.micronaut.aop.Around",
@@ -43,12 +38,15 @@ allOpen {
 }
 
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
-kapt.useBuildCache = false
+
+kapt {
+    correctErrorTypes = true
+    useBuildCache = false
+}
 
 val apiVersion: String by project
 
 dependencies {
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 
@@ -57,6 +55,7 @@ dependencies {
     implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
 
+    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     implementation("com.google.guava:guava")
     implementation("com.github.ben-manes.caffeine:caffeine")
     implementation("cool.graph:cuid-java:0.1.1")

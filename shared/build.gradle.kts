@@ -31,7 +31,7 @@ description = "QALIPSIS shared library for head and factories"
 
 kapt {
     correctErrorTypes = true
-    useBuildCache = true
+    useBuildCache = false
 }
 
 // Configure both compileKotlin and compileTestKotlin.
@@ -55,21 +55,23 @@ allOpen {
 }
 
 kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catadioptre")
-kapt.useBuildCache = false
+kapt {
+    correctErrorTypes = true
+    useBuildCache = false
+}
 
 val apiVersion: String by project
 
 
 dependencies {
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     api("io.micronaut.redis:micronaut-redis-lettuce")
     api("org.apache.commons:commons-lang3:3.+")
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
 
+    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
-
     implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
     implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
