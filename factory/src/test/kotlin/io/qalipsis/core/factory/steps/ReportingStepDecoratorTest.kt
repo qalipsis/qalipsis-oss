@@ -23,7 +23,6 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
-import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -36,6 +35,7 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Minion
@@ -44,12 +44,11 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import java.time.Duration
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
 
 @WithMockk
 internal class ReportingStepDecoratorTest {
@@ -84,7 +83,7 @@ internal class ReportingStepDecoratorTest {
     private lateinit var reportingStepDecorator: ReportingStepDecorator<Any, Int>
 
     @RelaxedMockK
-    private lateinit var runningStepsGauge: AtomicInteger
+    private lateinit var runningStepsGauge: Gauge
 
     @RelaxedMockK
     private lateinit var executedStepCounter: Counter
@@ -103,25 +102,24 @@ internal class ReportingStepDecoratorTest {
         every { startStopContext.campaignKey } returns "my-campaign"
         every { startStopContext.scenarioName } returns "my-scenario"
 
-        every { meterRegistry.gauge("running-steps", any<List<Tag>>(), any<AtomicInteger>()) } returns runningStepsGauge
-        every { meterRegistry.counter("executed-steps", "scenario", "my-scenario") } returns executedStepCounter
+        every { meterRegistry.gauge(any() , any(), any(), any<Map<String, String>>()) } returns runningStepsGauge
+
+        every { meterRegistry.counter("my-scenario", "", "executed-steps", mapOf("scenario" to "my-scenario")) } returns executedStepCounter
 
         every {
             meterRegistry.timer(
+                "my-scenario",
+                "",
                 "step-execution",
-                "step",
-                "the decorated",
-                "status",
-                "completed"
+                tags = mapOf("status" to "completed", "step" to "the decorated")
             )
         } returns completionTimer
         every {
             meterRegistry.timer(
+                "my-scenario",
+                "",
                 "step-execution",
-                "step",
-                "the decorated",
-                "status",
-                "failed"
+                tags = mapOf("status" to "failed", "step" to "the decorated")
             )
         } returns failureTimer
     }
@@ -164,10 +162,10 @@ internal class ReportingStepDecoratorTest {
         // then
         coVerify {
             decorated.start(refEq(startStopContext))
-            meterRegistry.gauge("running-steps", any<List<Tag>>(), any<AtomicInteger>())
-            meterRegistry.counter("executed-steps", "scenario", "my-scenario")
-            meterRegistry.timer("step-execution", "step", "the decorated", "status", "completed")
-            meterRegistry.timer("step-execution", "step", "the decorated", "status", "failed")
+            meterRegistry.gauge("my-scenario", any(), any(), any<Map<String, String>>())
+            meterRegistry.counter("my-scenario", "", "executed-steps", mapOf("scenario" to "my-scenario"))
+            meterRegistry.timer("my-scenario", "", "step-execution", mapOf("status" to "completed", "step" to "the decorated"))
+            meterRegistry.timer("my-scenario", "", "step-execution", mapOf("status" to "failed", "step" to "the decorated"))
             reportLiveStateRegistry.recordSuccessfulStepInitialization(
                 campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
@@ -263,7 +261,7 @@ internal class ReportingStepDecoratorTest {
                 stepName = "the decorated"
             )
             eventsLogger.debug("step.execution.started", timestamp = any(), tagsSupplier = any())
-            runningStepsGauge.incrementAndGet()
+            runningStepsGauge.increment()
             decorated.execute(refEq(minion), refEq(context))
             eventsLogger.debug("step.execution.complete", timestamp = any(), tagsSupplier = any())
             completionTimer.record(any<Duration>())
@@ -272,7 +270,7 @@ internal class ReportingStepDecoratorTest {
                 scenarioName = "my-scenario",
                 stepName = "the decorated"
             )
-            runningStepsGauge.decrementAndGet()
+            runningStepsGauge.decrement()
             executedStepCounter.increment()
         }
         confirmVerified(
@@ -346,7 +344,7 @@ internal class ReportingStepDecoratorTest {
                     stepName = "the decorated"
                 )
                 eventsLogger.debug("step.execution.started", timestamp = any(), tagsSupplier = any())
-                runningStepsGauge.incrementAndGet()
+                runningStepsGauge.increment()
                 decorated.execute(refEq(minion), refEq(context))
                 eventsLogger.warn("step.execution.failed", refEq(error), timestamp = any(), tagsSupplier = any())
                 failureTimer.record(any<Duration>())
@@ -356,7 +354,7 @@ internal class ReportingStepDecoratorTest {
                     stepName = "the decorated",
                     cause = refEq(error)
                 )
-                runningStepsGauge.decrementAndGet()
+                runningStepsGauge.decrement()
                 executedStepCounter.increment()
             }
             confirmVerified(
@@ -395,7 +393,7 @@ internal class ReportingStepDecoratorTest {
                     stepName = "the decorated"
                 )
                 eventsLogger.debug("step.execution.started", timestamp = any(), tagsSupplier = any())
-                runningStepsGauge.incrementAndGet()
+                runningStepsGauge.increment()
                 decorated.execute(refEq(minion), refEq(context))
                 eventsLogger.warn("step.execution.failed", refEq(error), timestamp = any(), tagsSupplier = any())
                 failureTimer.record(any<Duration>())
@@ -405,7 +403,7 @@ internal class ReportingStepDecoratorTest {
                     stepName = "the decorated",
                     cause = null
                 )
-                runningStepsGauge.decrementAndGet()
+                runningStepsGauge.decrement()
                 executedStepCounter.increment()
             }
             confirmVerified(
