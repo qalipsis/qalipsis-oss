@@ -20,16 +20,23 @@
 package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.Gauge
+import io.qalipsis.api.meters.Measurement
+import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.reporter.MeterReporter
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Supplier
 
+/**
+ * Implementation of gauge meter to record instantaneous values.
+ */
 internal class GaugeImpl(
-    val micrometer: io.micrometer.core.instrument.Gauge,
     override val id: Meter.Id,
-    private val meterReporter: MeterReporter
-) : Gauge(), Meter.ReportingConfiguration<Gauge>, io.micrometer.core.instrument.Gauge by micrometer {
+    private val meterReporter: MeterReporter,
+    private val valueSupplier: Supplier<Number>,
+) : Gauge(), Meter.ReportingConfiguration<Gauge> {
 
     private var reportingConfigured = AtomicBoolean()
 
@@ -37,6 +44,7 @@ internal class GaugeImpl(
         if (!reportingConfigured.compareAndExchange(false, true)) {
             this.configure()
         }
+
         return this
     }
 
@@ -45,24 +53,15 @@ internal class GaugeImpl(
         severity: Number.() -> ReportMessageSeverity,
         row: Short,
         column: Short,
-        toNumber: Gauge.() -> Number
+        toNumber: Gauge.() -> Number,
     ) {
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
 
-    override fun toByte() = micrometer.value().toInt().toByte()
+    override suspend fun measure(): Collection<Measurement> = listOf(MeasurementMetric(value(), Statistic.VALUE))
 
-    override fun toChar(): Char = micrometer.value().toInt().toChar()
+    override fun value() = valueSupplier.get().toDouble()
 
-    override fun toDouble() = micrometer.value()
-
-    override fun toFloat() = micrometer.value().toFloat()
-
-    override fun toInt() = micrometer.value().toInt()
-
-    override fun toLong() = micrometer.value().toLong()
-
-    override fun toShort() = micrometer.value().toInt().toShort()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

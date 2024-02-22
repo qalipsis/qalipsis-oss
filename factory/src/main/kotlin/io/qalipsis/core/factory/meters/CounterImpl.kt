@@ -19,19 +19,32 @@
 
 package io.qalipsis.core.factory.meters
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.reporter.MeterReporter
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Implementation of meter to record monotonically increasing values.
+ *
+ */
 internal class CounterImpl(
-    val micrometer: io.micrometer.core.instrument.Counter,
     override val id: Meter.Id,
-    private val meterReporter: MeterReporter
-) : Counter, Meter.ReportingConfiguration<Counter>, io.micrometer.core.instrument.Counter by micrometer {
+    private val meterReporter: MeterReporter,
+) : Counter, Meter.ReportingConfiguration<Counter> {
 
     private var reportingConfigured = AtomicBoolean()
+
+    @KTestable
+    private var value: StepDouble? = null
+
+    init {
+        value = StepDouble()
+    }
 
     override fun report(configure: Meter.ReportingConfiguration<Counter>.() -> Unit): Counter {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -45,10 +58,22 @@ internal class CounterImpl(
         severity: Number.() -> ReportMessageSeverity,
         row: Short,
         column: Short,
-        toNumber: Counter.() -> Number
+        toNumber: Counter.() -> Number,
     ) {
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
+
+    override fun count(): Double = value?.count() ?: 0.0
+
+    override fun increment() {
+        increment(1.0)
+    }
+
+    override fun increment(amount: Double) {
+        value?.current?.add(amount)
+    }
+
+    override suspend fun measure(): List<MeasurementMetric> = listOf(MeasurementMetric(count(), Statistic.COUNT))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -61,5 +86,4 @@ internal class CounterImpl(
     override fun hashCode(): Int {
         return id.hashCode()
     }
-
 }

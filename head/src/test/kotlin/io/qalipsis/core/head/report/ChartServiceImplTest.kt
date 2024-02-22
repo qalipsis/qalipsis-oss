@@ -27,6 +27,7 @@ import assertk.assertions.prop
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.TimeSeriesAggregationResult
@@ -67,6 +68,7 @@ internal class ChartServiceImplTest {
     @AfterEach
     fun cleanup() {
         File("test").deleteRecursively()
+        unmockkStatic(Color::class)
     }
 
     private val aggregationResult = mapOf(

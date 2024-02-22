@@ -20,7 +20,6 @@
 package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.Counter
-import io.micrometer.core.instrument.Counter as MicrometerCounter
 
 /**
  * Composite class to encapsulate the [Counter]s at the scenario and campaign
@@ -36,10 +35,10 @@ import io.micrometer.core.instrument.Counter as MicrometerCounter
  */
 internal class CompositeCounter(
     private val scenarioLevelCounter: Counter,
-    private val campaignLevelCounter: MicrometerCounter
+    private val campaignLevelCounter: Counter
 ) : Counter by scenarioLevelCounter {
 
-    override fun increment(amount: Double) {
+    override suspend fun increment(amount: Double) {
         scenarioLevelCounter.increment(amount)
         campaignLevelCounter.increment(amount)
     }

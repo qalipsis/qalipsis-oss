@@ -32,8 +32,8 @@ import io.qalipsis.api.steps.Step
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
-import io.qalipsis.test.mockk.verifyOnce
 import io.qalipsis.test.steps.StepTestHelper
+import java.time.Duration
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -44,7 +44,6 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
 
 /**
  * @author Eric Jessé
@@ -112,7 +111,7 @@ internal class TimeoutStepDecoratorTest {
         Assertions.assertTrue(ctx.isExhausted)
         Assertions.assertFalse((ctx.output as Channel).isClosedForReceive)
 
-        verifyOnce {
+        coVerifyOnce {
             meterRegistry.counter(
                 scenarioName = "my-scenario",
                 stepName = "my-step",
