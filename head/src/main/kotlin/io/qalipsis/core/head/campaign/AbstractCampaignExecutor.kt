@@ -65,7 +65,8 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val campaignExecutionContext: C,
     private val campaignConstraintsProvider: CampaignConstraintsProvider,
     private val campaignHooks: Collection<CampaignHook>,
-    private val lockProvider: LockProvider
+    private val lockProvider: LockProvider,
+    private val channelNameFactory: ChannelNameFactory
 ) : CampaignExecutor, FeedbackListener<Feedback> {
 
     override fun accept(feedback: Feedback): Boolean {
@@ -140,8 +141,8 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         scenarios: List<ScenarioSummary>,
     ) {
         campaignService.prepare(tenant, runningCampaign.key)
-        runningCampaign.broadcastChannel = getBroadcastChannelName(runningCampaign)
-        runningCampaign.feedbackChannel = getFeedbackChannelName(runningCampaign)
+        runningCampaign.broadcastChannel = channelNameFactory.getBroadcastChannelName(campaign = runningCampaign)
+        runningCampaign.feedbackChannel = channelNameFactory.getFeedbackChannelName(campaign = runningCampaign)
         headChannel.subscribeFeedback(runningCampaign.feedbackChannel)
 
         val start = Instant.now()
@@ -217,14 +218,6 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     @LogInput
     abstract suspend fun set(state: CampaignExecutionState<C>)
 
-    @LogInput
-    protected open suspend fun getBroadcastChannelName(campaign: RunningCampaign): String =
-        BROADCAST_CONTEXTS_CHANNEL
-
-    @LogInput
-    protected open suspend fun getFeedbackChannelName(campaign: RunningCampaign): String =
-        FEEDBACK_CONTEXTS_CHANNEL
-
     /**
      * Custom abort function to abort a campaign softly or hardly when a
      * [CampaignTimeoutFeedback] is published.
@@ -252,10 +245,6 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     }
 
     companion object {
-
-        const val BROADCAST_CONTEXTS_CHANNEL = "directives-broadcast"
-
-        const val FEEDBACK_CONTEXTS_CHANNEL = "feedbacks"
 
         private val log = logger()
 

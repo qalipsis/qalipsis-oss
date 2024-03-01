@@ -25,10 +25,10 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.head.campaign.ChannelNameFactory
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
@@ -48,13 +48,13 @@ internal class HandshakeManagerTest {
     private lateinit var headChannel: HeadChannel
 
     @RelaxedMockK
-    private lateinit var idGenerator: IdGenerator
-
-    @RelaxedMockK
     private lateinit var factoryService: FactoryService
 
     @RelaxedMockK
     private lateinit var headConfiguration: HeadConfiguration
+
+    @RelaxedMockK
+    private lateinit var channelNameFactory: ChannelNameFactory
 
     @InjectMockKs
     private lateinit var handshakeManager: HandshakeManager
@@ -82,14 +82,15 @@ internal class HandshakeManagerTest {
                 replyTo = "reply-channel",
                 scenarios = listOf(
                     relaxedMockk { every { name } returns "scen-1" },
-                    relaxedMockk { every { name } returns "scen-2" })
+                    relaxedMockk { every { name } returns "scen-2" }),
+                tenant = "my-tenant"
             )
-            every { idGenerator.short() } returns "this-id-the-actual-id"
+            coEvery { channelNameFactory.getUnicastChannelName(tenant = any(), nodeId = any()) } returns "this-id-the-actual-id"
             val latch = Latch(true)
-            coEvery { headChannel.publishHandshakeResponse(any(), any()) } coAnswers { latch.release() }
+            coEvery { headChannel.publishHandshakeResponse(channelName = any(), handshakeResponse = any()) } coAnswers { latch.release() }
 
             // when
-            handshakeManager.notify(handshakeRequest)
+            handshakeManager.notify(handshakeRequest = handshakeRequest)
             latch.await()
 
             // then
@@ -101,8 +102,16 @@ internal class HandshakeManagerTest {
                 heartbeatPeriod = Duration.ofSeconds(123)
             )
             coVerifyOrder {
-                factoryService.register(eq("this-id-the-actual-id"), refEq(handshakeRequest), expectedResponse)
-                headChannel.publishHandshakeResponse("reply-channel", expectedResponse)
+                channelNameFactory.getUnicastChannelName(tenant = "my-tenant", nodeId = "_temporary-node-id")
+                factoryService.register(
+                    actualNodeId = eq("this-id-the-actual-id"),
+                    handshakeRequest = refEq(handshakeRequest),
+                    handshakeResponse = expectedResponse
+                )
+                headChannel.publishHandshakeResponse(
+                    channelName = "reply-channel",
+                    handshakeResponse = expectedResponse
+                )
             }
 
             confirmVerified(factoryService, headChannel)
@@ -120,11 +129,13 @@ internal class HandshakeManagerTest {
                     scenarios = listOf(
                         relaxedMockk { every { name } returns "scen-1" },
                         relaxedMockk { every { name } returns "scen-2" }),
+                    tenant = "my-tenant",
                     zone = "en"
                 )
+                coEvery { channelNameFactory.getUnicastChannelName(tenant = any(), nodeId = any()) } returns "a-real-id"
 
                 // when
-                handshakeManager.notify(handshakeRequest)
+                handshakeManager.notify(handshakeRequest = handshakeRequest)
 
                 // then
                 val expectedResponse = HandshakeResponse(
@@ -135,8 +146,16 @@ internal class HandshakeManagerTest {
                     heartbeatPeriod = Duration.ofSeconds(123)
                 )
                 coVerifyOrder {
-                    factoryService.register(eq("a-real-id"), refEq(handshakeRequest), expectedResponse)
-                    headChannel.publishHandshakeResponse("reply-channel", expectedResponse)
+                    channelNameFactory.getUnicastChannelName(tenant = "my-tenant", nodeId = "a-real-id")
+                    factoryService.register(
+                        actualNodeId = eq("a-real-id"),
+                        handshakeRequest = refEq(handshakeRequest),
+                        handshakeResponse = expectedResponse
+                    )
+                    headChannel.publishHandshakeResponse(
+                        channelName = "reply-channel",
+                        handshakeResponse = expectedResponse
+                    )
                 }
 
                 confirmVerified(factoryService, headChannel)

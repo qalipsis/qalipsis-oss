@@ -58,6 +58,7 @@ import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.ChannelNameFactory
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
@@ -130,6 +131,9 @@ internal open class RedisCampaignExecutorTest {
 
     @RelaxedMockK
     private lateinit var lockProvider: LockProvider
+
+    @RelaxedMockK
+    private lateinit var channelNameFactory: ChannelNameFactory
 
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
@@ -205,6 +209,7 @@ internal open class RedisCampaignExecutorTest {
 
             val countDown = SuspendedCountLatch(2)
             coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
+            coEvery { channelNameFactory.getFeedbackChannelName(campaign = any()) } returns "feedbacks"
 
             // when
             val result = campaignExecutor.start("my-tenant", "my-user", campaign)
@@ -1078,34 +1083,36 @@ internal open class RedisCampaignExecutorTest {
     protected open fun redisCampaignExecutor(scope: CoroutineScope) =
         spyk(
             RedisCampaignExecutor(
-                headChannel,
-                factoryService,
-                campaignService,
-                campaignReportStateKeeper,
-                headConfiguration,
-                campaignConstraintsProvider,
-                listOf(campaignHook1, campaignHook2),
-                scope,
-                campaignExecutionContext,
-                operations,
-                lockProvider
+                headChannel = headChannel,
+                factoryService = factoryService,
+                campaignService = campaignService,
+                campaignReportStateKeeper = campaignReportStateKeeper,
+                headConfiguration = headConfiguration,
+                campaignConstraintsProvider = campaignConstraintsProvider,
+                campaignHooks = listOf(campaignHook1, campaignHook2),
+                coroutineScope = scope,
+                campaignExecutionContext = campaignExecutionContext,
+                redisOperations = operations,
+                lockProvider = lockProvider,
+                channelNameFactory = channelNameFactory
             ), recordPrivateCalls = true
         )
 
     protected open fun redisCampaignExecutor(scope: CoroutineScope, lockProvider: LockProvider) =
         spyk(
             RedisCampaignExecutor(
-                headChannel,
-                factoryService,
-                campaignService,
-                campaignReportStateKeeper,
-                headConfiguration,
-                campaignConstraintsProvider,
-                listOf(campaignHook1, campaignHook2),
-                scope,
-                campaignExecutionContext,
-                operations,
-                lockProvider = lockProvider
+                headChannel = headChannel,
+                factoryService = factoryService,
+                campaignService = campaignService,
+                campaignReportStateKeeper = campaignReportStateKeeper,
+                headConfiguration = headConfiguration,
+                campaignConstraintsProvider = campaignConstraintsProvider,
+                campaignHooks = listOf(campaignHook1, campaignHook2),
+                coroutineScope = scope,
+                campaignExecutionContext = campaignExecutionContext,
+                redisOperations = operations,
+                lockProvider = lockProvider,
+                channelNameFactory = channelNameFactory
             ), recordPrivateCalls = true
         )
 }

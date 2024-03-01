@@ -17,29 +17,36 @@
  *
  */
 
-package io.qalipsis.core.head.inmemory
+package io.qalipsis.core.head.campaign
 
-import io.micronaut.context.annotation.Replaces
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.context.NodeId
+import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.campaign.ChannelNameFactory
-import io.qalipsis.core.head.communication.HeadChannel
-import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.handshake.HandshakeManager
 import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE])
-@Replaces(HandshakeManager::class)
-internal class StandaloneHandshakeManager(
-    headChannel: HeadChannel,
-    factoryService: FactoryService,
-    headConfiguration: HeadConfiguration,
-    channelNameFactory: ChannelNameFactory
-) : HandshakeManager(
-    headChannel,
-    factoryService,
-    headConfiguration,
-    channelNameFactory
-)
+internal class StandaloneChannelNameFactory : ChannelNameFactory {
+
+    override suspend fun getBroadcastChannelName(campaign: RunningCampaign): String {
+        return BROADCAST_CONTEXTS_CHANNEL
+    }
+
+    override suspend fun getFeedbackChannelName(campaign: RunningCampaign): String {
+        return FEEDBACK_CONTEXTS_CHANNEL
+    }
+
+    override suspend fun getUnicastChannelName(tenant: String, nodeId: NodeId): String {
+        return STANDALONE_FACTORY_NAME
+    }
+
+    companion object {
+
+        const val BROADCAST_CONTEXTS_CHANNEL = "directives-broadcast"
+
+        const val FEEDBACK_CONTEXTS_CHANNEL = "feedbacks"
+
+        const val STANDALONE_FACTORY_NAME = "_embedded_"
+    }
+}

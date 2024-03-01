@@ -55,6 +55,7 @@ import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.ChannelNameFactory
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
@@ -126,6 +127,9 @@ internal class StandaloneCampaignExecutorTest {
     @RelaxedMockK
     private lateinit var lockProvider: LockProvider
 
+    @RelaxedMockK
+    private lateinit var channelNameFactory: ChannelNameFactory
+
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
         val campaignExecutor = standaloneCampaignExecutor(relaxedMockk())
@@ -174,6 +178,7 @@ internal class StandaloneCampaignExecutorTest {
                 every { maxExecutionDuration } returns Duration.ofMinutes(7)
                 every { maxMinionsCount } returns 9000
             }
+            coEvery { channelNameFactory.getFeedbackChannelName(campaign = any()) } returns "feedbacks"
             every { defaultCampaignConfiguration.validation } returns validation
             coEvery { campaignConstraintsProvider.supply(any()) } returns defaultCampaignConfiguration
             val scenario1 = relaxedMockk<ScenarioSummary> { every { name } returns "scenario-1" }
@@ -706,32 +711,34 @@ internal class StandaloneCampaignExecutorTest {
     private fun standaloneCampaignExecutor(scope: CoroutineScope) =
         spyk(
             StandaloneCampaignExecutor(
-                headChannel,
-                factoryService,
-                campaignService,
-                campaignReportStateKeeper,
-                headConfiguration,
-                campaignConstraintsProvider,
-                scope,
-                campaignExecutionContext,
-                listOf(campaignHook1, campaignHook2),
-                lockProvider
+                headChannel = headChannel,
+                factoryService = factoryService,
+                campaignService = campaignService,
+                campaignReportStateKeeper = campaignReportStateKeeper,
+                headConfiguration = headConfiguration,
+                campaignConstraintsProvider = campaignConstraintsProvider,
+                coroutineScope = scope,
+                campaignExecutionContext = campaignExecutionContext,
+                campaignHooks = listOf(campaignHook1, campaignHook2),
+                lockProvider = lockProvider,
+                channelNameFactory = channelNameFactory
             ), recordPrivateCalls = true
         )
 
     private fun standaloneCampaignExecutor(scope: CoroutineScope, spiedLockProvider: LockProvider) =
         spyk(
             StandaloneCampaignExecutor(
-                headChannel,
-                factoryService,
-                campaignService,
-                campaignReportStateKeeper,
-                headConfiguration,
-                campaignConstraintsProvider,
-                scope,
-                campaignExecutionContext,
-                listOf(campaignHook1, campaignHook2),
-                spiedLockProvider
+                headChannel = headChannel,
+                factoryService = factoryService,
+                campaignService = campaignService,
+                campaignReportStateKeeper = campaignReportStateKeeper,
+                headConfiguration = headConfiguration,
+                campaignConstraintsProvider = campaignConstraintsProvider,
+                coroutineScope = scope,
+                campaignExecutionContext = campaignExecutionContext,
+                campaignHooks = listOf(campaignHook1, campaignHook2),
+                lockProvider = spiedLockProvider,
+                channelNameFactory = channelNameFactory
             ), recordPrivateCalls = true
         )
 }

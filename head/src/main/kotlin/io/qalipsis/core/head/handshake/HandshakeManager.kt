@@ -20,12 +20,12 @@
 package io.qalipsis.core.head.handshake
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.head.campaign.ChannelNameFactory
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
@@ -43,9 +43,9 @@ import org.slf4j.event.Level
 @Requires(env = [ExecutionEnvironments.HEAD])
 internal class HandshakeManager(
     private val headChannel: HeadChannel,
-    private val idGenerator: IdGenerator,
     private val factoryService: FactoryService,
-    private val headConfiguration: HeadConfiguration
+    private val headConfiguration: HeadConfiguration,
+    private val channelNameFactory: ChannelNameFactory
 ) : HeadStartupComponent, HandshakeRequestListener {
 
     override fun getStartupOrder() = Int.MIN_VALUE
@@ -53,7 +53,10 @@ internal class HandshakeManager(
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(handshakeRequest: HandshakeRequest) {
         val nodeRegistrationId = handshakeRequest.nodeId
-        val actualNodeId = giveNodeIdToFactory(nodeRegistrationId)
+        val actualNodeId = channelNameFactory.getUnicastChannelName(
+            tenant = handshakeRequest.tenant,
+            nodeId = nodeRegistrationId
+        )
 
         val response = HandshakeResponse(
             handshakeNodeId = handshakeRequest.nodeId,
@@ -68,13 +71,6 @@ internal class HandshakeManager(
         log.debug { "Sending handshake response $response to ${handshakeRequest.replyTo}" }
         headChannel.publishHandshakeResponse(handshakeRequest.replyTo, response)
     }
-
-    protected fun giveNodeIdToFactory(nodeRegistrationId: String) =
-        if (nodeRegistrationId.isBlank() || nodeRegistrationId.startsWith("_")) {
-            idGenerator.short()
-        } else {
-            nodeRegistrationId
-        }
 
     companion object {
 

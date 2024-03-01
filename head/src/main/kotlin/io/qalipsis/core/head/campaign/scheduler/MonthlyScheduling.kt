@@ -31,7 +31,7 @@ internal class MonthlyScheduling(
 ) : Scheduling {
 
     init {
-        require(restrictions.all { it in MONTH_DAYS_NEGATIVE_VALUES  || it in MONTH_DAYS_POSITIVE_VALUES}) {
+        require(restrictions.all { it in MONTH_DAYS_NEGATIVE_VALUES || it in MONTH_DAYS_POSITIVE_VALUES}) {
             "Monthly restrictions should be a set of -15 to -1-based or 1 to 31-based"
         }
     }

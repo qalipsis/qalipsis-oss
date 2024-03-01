@@ -34,6 +34,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.AbstractCampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.campaign.ChannelNameFactory
 import io.qalipsis.core.head.campaign.states.AbstractCampaignExecutionState
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
@@ -70,7 +71,8 @@ internal class RedisCampaignExecutor(
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     private val campaignExecutionContext: CampaignExecutionContext,
     private val redisOperations: CampaignRedisOperations,
-    lockProvider: LockProvider
+    lockProvider: LockProvider,
+    channelNameFactory: ChannelNameFactory
 ) : AbstractCampaignExecutor<CampaignExecutionContext>(
     headChannel,
     factoryService,
@@ -81,7 +83,8 @@ internal class RedisCampaignExecutor(
     campaignExecutionContext,
     campaignConstraintsProvider,
     campaignHooks,
-    lockProvider
+    lockProvider,
+    channelNameFactory
 ) {
 
     @LogInputAndOutput
@@ -133,7 +136,7 @@ internal class RedisCampaignExecutor(
             CampaignRedisState.COMPLETION_STATE -> RedisCompletionState(currentState.first, redisOperations)
             CampaignRedisState.FAILURE_STATE -> RedisFailureState(currentState.first, redisOperations)
             CampaignRedisState.ABORTING_STATE -> RedisAbortingState(currentState.first, redisOperations)
-            else -> throw IllegalStateException("The state of the campaign $campaignKey of tenant $tenant is unidentified: $currentState")
+            else -> error("The state of the campaign $campaignKey of tenant $tenant is unidentified: $currentState")
         }
 
         return executionState
