@@ -3,7 +3,13 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "local": "npx nuxi dev --dotenv .env.local",
+    "dev": "npx nuxi dev --dotenv .env.dev",
+    "sprint": "npx nuxi dev --dotenv .env.sprint",
+    "prod": "npx nuxi dev --dotenv .env.prod",
+    "generate-dev": "npx nuxi generate --dotenv .env.dev",
+    "generate-sprint": "npx nuxi generate --dotenv .env.sprint",
+    "generate-prod": "npx nuxi generate --dotenv .env.prod",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
