@@ -7,6 +7,7 @@
             v-model:value="value"
             :placeholder="placeholder"
             :status="errorStatus"
+            :type="type ?? 'text'"
             :disabled="disabled"
             @input="handleInputChange"
         >
@@ -19,10 +20,12 @@
 </template>
 
 <script setup lang="ts">
+import { FormInputType } from 'utils/types/form';
 import { TypedSchema, useField } from 'vee-validate';
 
 const props = defineProps<{
     label: string,
+    type?: FormInputType,
     formControlName: string,
     fieldValidationSchema?: TypedSchema,
     placeholder?: string,
