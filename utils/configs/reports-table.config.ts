@@ -19,7 +19,7 @@ export class ReportsTableConfig {
       dataIndex: "description",
       key: "description",
       sorter: (next: Report, prev: Report) =>
-        next.creator.localeCompare(prev.creator),
+        next.description?.localeCompare(prev.description ?? ''),
     },
     {
       title: "",

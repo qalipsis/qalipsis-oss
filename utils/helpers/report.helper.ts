@@ -47,6 +47,8 @@ export class ReportHelper {
     static toReportTableData(reports: Report[]): ReportTableData[] {
         return reports.map(report => ({
             ...report,
+            description: report.description ?? '-',
+            creator: report.creator ?? '-',
             concatenatedCampaignNames: report.resolvedCampaigns?.map(campaign => campaign.name)?.join(',')
         }))
     }
