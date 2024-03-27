@@ -1,5 +1,5 @@
-import { SorterResult } from "ant-design-vue/es/table/interface";
-import { TablePaginationConfig } from 'ant-design-vue/es/table/Table';
+import type { SorterResult } from "ant-design-vue/es/table/interface";
+import type { TablePaginationConfig } from 'ant-design-vue/es/table/Table';
 
 export class TableHelper {
     static defaultPageSize = 10;

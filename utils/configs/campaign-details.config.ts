@@ -1,3 +1,5 @@
+import { TimeoutTypeConstant } from '../types/campaign';
+
 export class CampaignDetailsConfig {
   static CAMPAIGN_TIMEOUT_OPTIONS = [
     {

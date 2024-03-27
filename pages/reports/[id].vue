@@ -16,8 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { RouteLocationNormalized } from ".nuxt/vue-router";
-import { Report } from 'utils/types/report';
+import type { RouteLocationNormalized } from '#vue-router';
 
 const { fetchReportDetails } = useReportApi();
 const { fetchMultipleCampaignsDetails } = useCampaignApi();
@@ -68,7 +67,7 @@ const _fetchReport = async () => {
     try {
         isReady.value = false;
         const reportReference = route.params.id as string;
-        const reportDetails: Report = await fetchReportDetails(reportReference);
+        const reportDetails: DataReport = await fetchReportDetails(reportReference);
         let campaignOptions: CampaignOption[] = [];
         const campaignKeys = reportDetails.resolvedCampaigns ? reportDetails.resolvedCampaigns.map(campaign => campaign.key) : [];
         const campaigns: CampaignExecutionDetails[] = reportDetails.resolvedCampaigns ? await fetchMultipleCampaignsDetails(campaignKeys): [];

@@ -1,8 +1,7 @@
 import { defineStore } from "pinia";
-import { Report } from "utils/types/report";
 
 interface ReportDetailStoreState {
-    reportDetails: Report | null;
+    reportDetails: DataReport | null;
     reportName: string;
     dataComponents: DataComponent[];
     campaignOptions: CampaignOption[];

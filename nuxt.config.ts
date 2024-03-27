@@ -22,6 +22,7 @@ export default defineNuxtConfig({
     }
   },
   modules: [
+    "@vueuse/nuxt",
     "@pinia/nuxt",
     "@ant-design-vue/nuxt"
   ],
@@ -30,12 +31,6 @@ export default defineNuxtConfig({
     public: {
       apiBaseUrl: process.env.API_BASE_URL || 'localhost:3000',
     }
-  },
-  imports: {
-    dirs: [
-      "composables/**",
-      "utils/**",
-    ]
   },
   css: [
     '@/assets/scss/main.scss'

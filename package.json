@@ -15,9 +15,9 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
-    "@nuxt/devtools": "latest",
+    "@nuxt/devtools": "1.1.3",
     "@types/node": "18.17.3",
-    "nuxt": "3.6.5"
+    "nuxt": "3.11.1"
   },
   "dependencies": {
     "@ant-design-vue/nuxt": "1.1.0",
@@ -27,6 +27,8 @@
     "@types/tinycolor2": "1.4.3",
     "@vee-validate/zod": "4.11.6",
     "@vuepic/vue-datepicker": "6.1.0",
+    "@vueuse/core": "10.9.0",
+    "@vueuse/nuxt": "10.9.0",
     "apexcharts": "3.42.0",
     "date-fns": "2.30.0",
     "fuse.js": "6.6.2",
@@ -36,6 +38,6 @@
     "tinycolor2": "1.6.0",
     "vee-validate": "4.11.6",
     "vue3-apexcharts": "1.4.4",
-    "zod": "3.22.2"
+    "zod": "3.22.4"
   }
 }

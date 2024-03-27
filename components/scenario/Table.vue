@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { Key, TableRowSelection } from "ant-design-vue/es/table/interface";
+import type { Key, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
 
 const { fetchCampaignConfiguration } = useConfigurationApi();

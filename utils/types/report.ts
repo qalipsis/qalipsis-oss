@@ -1,4 +1,4 @@
-export interface Report {
+export interface DataReport {
     /**
      * Identifier of the report
      */
@@ -57,7 +57,7 @@ export interface Report {
     dataComponents: DataComponent[];
 }
 
-export interface ReportTableData extends Report {
+export interface ReportTableData extends DataReport {
     /**
      * The concatenation of the campaign names.
      */

@@ -90,8 +90,8 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { TableRowSelection, SorterResult, FilterValue, Key } from "ant-design-vue/es/table/interface";
-import { TablePaginationConfig } from "ant-design-vue/es/table/Table";
+import type { TableRowSelection, SorterResult, FilterValue, Key } from "ant-design-vue/es/table/interface";
+import type { TablePaginationConfig } from "ant-design-vue/es/table/Table";
 
 const props = defineProps<{
   actionsEnabled?: boolean;
@@ -127,6 +127,9 @@ const rowSelection: TableRowSelection<CampaignTableData> | undefined = props.row
         selectedRowKeys: Key[],
         selectedRows: CampaignTableData[]
       ) => {
+        console.log(campaignsTableStore)
+        console.log(selectedRowKeys)
+        console.log(selectedRows)
         campaignsTableStore.$patch({
           selectedRowKeys: selectedRowKeys as string[],
           selectedRows: selectedRows,

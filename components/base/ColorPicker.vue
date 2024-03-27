@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { Payload, Sketch } from '@ckpack/vue-color';
+import { type Payload, Sketch } from '@ckpack/vue-color';
 
 defineProps<{
     open: boolean

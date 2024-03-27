@@ -1,12 +1,12 @@
-import { Report } from "../types/report";
+import type { ColumnType } from "ant-design-vue/es/table/interface";
 
 export class ReportsTableConfig {
-  static TABLE_COLUMNS = [
+  static TABLE_COLUMNS: ColumnType<any>[] = [
     {
       title: "Name",
       dataIndex: "displayName",
       key: "displayName",
-      sorter: (next: Report, prev: Report) =>
+      sorter: (next: DataReport, prev: DataReport) =>
         next.displayName.localeCompare(prev.displayName),
     },
     {
@@ -18,8 +18,8 @@ export class ReportsTableConfig {
       title: "Description",
       dataIndex: "description",
       key: "description",
-      sorter: (next: Report, prev: Report) =>
-        next.description?.localeCompare(prev.description ?? ''),
+      sorter: (next: DataReport, prev: DataReport) =>
+        next.description ? next.description.localeCompare(prev.description ?? '') : 0,
     },
     {
       title: "",

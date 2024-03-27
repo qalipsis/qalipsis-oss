@@ -1,4 +1,4 @@
-import { ApexOptions } from "apexcharts";
+import type { ApexOptions } from "apexcharts";
 import { eachDayOfInterval, format, isSameDay, sub } from "date-fns";
 import { DateTime } from "luxon";
 import tinycolor from "tinycolor2";

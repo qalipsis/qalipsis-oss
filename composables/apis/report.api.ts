@@ -1,7 +1,4 @@
 import { format } from "date-fns";
-import { ReportTask } from "utils/types/report";
-import { Report } from "utils/types/report";
-
 
 export const useReportApi = () => {
     const { api$, get$, delete$, post$, put$ } = baseApi();
@@ -12,8 +9,8 @@ export const useReportApi = () => {
      * @param pageQueryParams The query parameters
      * @returns The page list of data series
      */
-    const fetchReports = async (pageQueryParams: PageQueryParams): Promise<Page<Report>> => {
-        return get$<Page<Report>, any>("/reports", pageQueryParams);
+    const fetchReports = async (pageQueryParams: PageQueryParams): Promise<Page<DataReport>> => {
+        return get$<Page<DataReport>, any>("/reports", pageQueryParams);
     }
 
     /**
@@ -23,8 +20,8 @@ export const useReportApi = () => {
      * @param request The request for updating a report.
      * @returns The updated report.
      */
-    const updateReport = (reportReference: string, request: ReportCreationAndUpdateRequest): Promise<Report> => {
-        return put$<Report, ReportCreationAndUpdateRequest>(`/reports/${reportReference}`, request);
+    const updateReport = (reportReference: string, request: ReportCreationAndUpdateRequest): Promise<DataReport> => {
+        return put$<DataReport, ReportCreationAndUpdateRequest>(`/reports/${reportReference}`, request);
     }
     
     /**
@@ -33,10 +30,10 @@ export const useReportApi = () => {
      * @param reference The identifier of the report
      * @returns The details of the report
      */
-    const fetchReportDetails = async (reference: string): Promise<Report> => {
-        const report = await get$<Report, unknown>(`/reports/${reference}`);
+    const fetchReportDetails = async (reference: string): Promise<DataReport> => {
+        const report = await get$<DataReport, unknown>(`/reports/${reference}`);
         report.dataComponents = report.dataComponents ? report.dataComponents.map(d => ({...d, id: Date.now()})) : [];
-        return get$<Report, unknown>(`/reports/${reference}`);
+        return get$<DataReport, unknown>(`/reports/${reference}`);
     }
 
     const downloadReport = async (reference: string): Promise<void> => {
@@ -65,8 +62,8 @@ export const useReportApi = () => {
      * @param request The request for creating a report
      * @returns The created report.
      */
-    const createReport = async (reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Promise<Report> => {
-        return post$<Report, ReportCreationAndUpdateRequest>("/reports", reportCreationAndUpdateRequest);
+    const createReport = async (reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Promise<DataReport> => {
+        return post$<DataReport, ReportCreationAndUpdateRequest>("/reports", reportCreationAndUpdateRequest);
     }
 
     /**

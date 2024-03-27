@@ -1,3 +1,5 @@
+import { SharingModeConstant } from "../types/series"
+
 export class SeriesHelper {
   static sharingModeToText = {
     [SharingModeConstant.READONLY]: "Read Only",

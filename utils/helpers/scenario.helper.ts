@@ -1,16 +1,15 @@
 import { format } from "date-fns";
-
 import {
-  ExecutionProfileStage,
-  ReportMessage,
-  ReportMessageSeverity,
   ReportMessageSeverityConstant,
-  ScenarioConfigurationForm,
-  ScenarioReport,
-  ScenarioRequest,
-  Stage,
   StageExternalExecutionProfileConfiguration,
-  ZoneForm
+  type ExecutionProfileStage,
+  type ReportMessage,
+  type ReportMessageSeverity,
+  type ScenarioConfigurationForm,
+  type ScenarioReport,
+  type ScenarioRequest,
+  type Stage,
+  type ZoneForm,
 } from "../types/scenario";
 
 export class ScenarioHelper {

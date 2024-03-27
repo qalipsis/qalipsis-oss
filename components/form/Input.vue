@@ -20,8 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { FormInputType } from 'utils/types/form';
-import { TypedSchema, useField } from 'vee-validate';
+import { type TypedSchema, useField } from 'vee-validate';
 
 const props = defineProps<{
     label: string,

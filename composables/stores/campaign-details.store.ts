@@ -1,4 +1,4 @@
-import { ApexOptions } from "apexcharts";
+import type { ApexOptions } from "apexcharts";
 import { defineStore } from "pinia";
 
 interface CampaignDetailsStoreState {

@@ -1,7 +1,7 @@
 export class ErrorHelper {
     static handleHttpResponseError(error: any): void {
         let errorMessage = '';
-        switch (error.response.status) {
+        switch (error?.response?.status) {
             case 403:
                 errorMessage = 'You don\'t have the permission';
                 break;

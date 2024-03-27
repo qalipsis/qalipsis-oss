@@ -1,3 +1,5 @@
+import { PermissionConstant } from "../types/permission";
+
 enum PagePath {
     CAMPAIGNS = "campaigns",
     REPORTS = "reports",

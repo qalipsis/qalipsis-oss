@@ -52,8 +52,8 @@
 </template>
   
 <script setup lang="ts">
-import { TablePaginationConfig } from "ant-design-vue/es/table/Table";
-import { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
+import type { TablePaginationConfig } from "ant-design-vue/es/table/Table";
+import type { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
 
 const userStore = useUserStore();

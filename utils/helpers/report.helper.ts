@@ -1,7 +1,6 @@
-import { ApexOptions } from "apexcharts";
+import type { ApexOptions } from "apexcharts";
 import tinycolor from "tinycolor2";
 import { format } from "date-fns";
-import { Report } from "../types/report";
 
 const renderReportChartTooltip: ((options: any) => any) = ({ seriesIndex, dataPointIndex, w }): string => {
     const elapsedTime = w.config.series[seriesIndex].data[dataPointIndex]?.x;
@@ -44,7 +43,7 @@ const renderReportChartTooltip: ((options: any) => any) = ({ seriesIndex, dataPo
 }
 
 export class ReportHelper {
-    static toReportTableData(reports: Report[]): ReportTableData[] {
+    static toReportTableData(reports: DataReport[]): ReportTableData[] {
         return reports.map(report => ({
             ...report,
             description: report.description ?? '-',
