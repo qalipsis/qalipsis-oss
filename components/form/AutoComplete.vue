@@ -3,7 +3,7 @@
         <label class="form-label">{{ label }}</label>
         <a-auto-complete
             size="large"
-            class="full-width"
+            class="w-full"
             v-model:value="value"
             :options="options"
             :status="errorStatus"

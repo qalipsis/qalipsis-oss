@@ -1,14 +1,14 @@
 <template>
-    <div class="page-content-container">
-        <div class="layout-shadow pt-2 pb-2 pr-4 pl-4 mb-2">
+    <BaseContentWrapper>
+        <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
             <div class="my-4">
                 <ReportDetailsDescription
                     :presetDescription="description"
                     @change="handleDescriptionValueChange($event)"
                 />
             </div>
-            <div class="flex items-center space-between mb-4">
-                <div class="flex items-center wrap">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center flex-wrap">
                     <template v-for="campaignOption in campaignOptions" :key="campaignOption.key">
                         <div 
                             :class="{ 'campaign-option--active': campaignOption.isActive }"
@@ -56,7 +56,7 @@
                 </div>
             </template>
         </div>
-        <div class="layout-shadow pt-2 pb-2 pr-4 pl-4">
+        <div class="shadow-md pt-2 pb-2 pr-4 pl-4">
             <div class="flex items-center">
                 <BaseButton
                     text="Add chart"
@@ -97,7 +97,7 @@
             :report="reportDetails"
             @afterUpdated="handleReportUpdated"
         />
-    </div>
+    </BaseContentWrapper>
 </template>
 
 <script setup lang="ts">

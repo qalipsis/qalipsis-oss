@@ -4,7 +4,7 @@
             <div class="icon-wrapper">
                 <BaseIcon icon="/icons/icon-logo.svg" />
             </div>
-            <div v-if="!collapsed" class="text-wrapper text-xl text-bold">
+            <div v-if="!collapsed" class="text-wrapper text-xl font-medium">
                 QALIPSIS
             </div>
         </div>

@@ -1,6 +1,6 @@
 <template>
     <section>
-        <div class="full-width flex items-center series-search-wrapper mb-2">
+        <div class="w-full flex items-center series-search-wrapper mb-2">
             <BaseSearch v-model="seriesQuery" placeholder="Search series..." @search="handleSearch"/>
         </div>
         <a-row :gutter="[8, 8]" class="mb-1">

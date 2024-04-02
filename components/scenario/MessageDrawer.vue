@@ -1,7 +1,7 @@
 <template>
     <BaseDrawer :open="open" :title="title" :maskClosable="true" :footer-hidden="true" :width="920"
         @close="emit('update:open', false)">
-        <div class="flex content-end full-width mb-3">
+        <div class="flex justify-end w-full mb-3">
             <BaseSearch v-model="query" :collapsable="false" placeholder="Search message..."/>
         </div>
         <a-table 

@@ -1,6 +1,6 @@
 <template>
     <BaseHeader>
-        <div class="flex items-center full-width space-between">
+        <div class="flex items-center w-full justify-between">
             <BaseTitle content="Reports" />
             <div class="flex items-center">
                 <BaseSearch 

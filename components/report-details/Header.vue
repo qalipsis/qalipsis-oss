@@ -1,6 +1,6 @@
 <template>
     <BaseHeader>
-        <div class="flex space-between items-center full-width">
+        <div class="flex justify-between items-center w-full">
             <div class="flex items-center">
                 <BaseIcon icon="/icons/icon-arrow-left-black.svg" class="cursor-pointer icon-link pr-2" @click="navigateTo('/reports')" />
                 <BaseTitle v-model:content="reportName" :editable="true" />

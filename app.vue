@@ -8,7 +8,7 @@
   >
     <section
       v-if="!canViewPage"
-      class="loading-section flex items-center content-center"
+      class="flex items-center justify-center w-screen h-screen"
     >
       <div class="flex items-center">
         <BaseIcon icon="/icons/icon-logo.svg" width="80" />
@@ -22,7 +22,7 @@
       <a-layout-content v-if="canViewPage">
         <a-layout>
           <Sidebar />
-          <a-layout-content style="max-height: 100vh; overflow-y: auto">
+          <a-layout-content style="max-height: 100vh; overflow-y: auto" class="bg-white">
             <NuxtLayout>
               <NuxtPage />
             </NuxtLayout>
@@ -69,19 +69,3 @@ const _showPage = async () => {
   canViewPage.value = true;
 };
 </script>
-
-<style scoped lang="scss">
-:deep(.ant-layout) {
-  background: white;
-}
-
-.loading-section {
-  width: 100vw;
-  height: 100vh;
-
-  .spinner-wrapper {
-    width: 4rem;
-    height: 4rem;
-  }
-}
-</style>

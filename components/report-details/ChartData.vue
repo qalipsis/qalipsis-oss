@@ -1,6 +1,6 @@
 <template>
     <section class="report-details-data-component mb-4">
-        <div class="flex content-end mb-2 delete-btn-wrapper">
+        <div class="flex justify-end mb-2 delete-btn-wrapper">
             <BaseButton icon="/icons/icon-delete-small.svg" text="Delete" btnStyle="stroke" @click="handleDeleteBtnClick"/>
         </div>
         <SeriesMenu 
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { ApexOptions } from 'apexcharts';
+import type { ApexOptions } from 'apexcharts';
 
 const props = defineProps<{
     componentIndex: number,

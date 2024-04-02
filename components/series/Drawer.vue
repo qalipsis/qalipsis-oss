@@ -6,7 +6,7 @@
         @close="emit('update:open', false)"
         @confirm-btn-click="handleConfirmButtonClick"
     >
-        <div class="flex content-end full-width mt-2 mb-2">
+        <div class="flex justify-end w-full mt-2 mb-2">
             <BaseSearch 
                 v-model="seriesSearchQuery" 
                 placeholder="Search series..."

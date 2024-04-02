@@ -1,5 +1,5 @@
 <template>
-    <div class="page-content-container">
+    <BaseContentWrapper>
         <CampaignsTable 
             :rowSelectionEnabled="true"
             :name-clickable="false"
@@ -8,5 +8,5 @@
                 'excluded-status': 'SCHEDULED'
             }"
         />
-    </div>
+    </BaseContentWrapper>
 </template>

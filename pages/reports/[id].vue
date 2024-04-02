@@ -69,7 +69,9 @@ const _fetchReport = async () => {
         const reportReference = route.params.id as string;
         const reportDetails: DataReport = await fetchReportDetails(reportReference);
         let campaignOptions: CampaignOption[] = [];
-        const campaignKeys = reportDetails.resolvedCampaigns ? reportDetails.resolvedCampaigns.map(campaign => campaign.key) : [];
+        const campaignKeys = reportDetails.resolvedCampaigns?.length
+            ? reportDetails.resolvedCampaigns.map(campaign => campaign.key)
+            : [];
         const campaigns: CampaignExecutionDetails[] = reportDetails.resolvedCampaigns ? await fetchMultipleCampaignsDetails(campaignKeys): [];
         const allDataSeries: DataSeries[] = await fetchAllDataSeries();
         const allDataSeriesOptions: DataSeriesOption[] = SeriesHelper.toDataSeriesOptions(allDataSeries, []);
@@ -94,6 +96,7 @@ const _fetchReport = async () => {
         });
         isReady.value = true;
     } catch (error) {
+        console.log(error)
         ErrorHelper.handleHttpResponseError(error);
     }
 }

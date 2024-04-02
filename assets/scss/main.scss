@@ -1,6 +1,13 @@
 @import "./color";
 @import "./components";
 @import "./fonts";
-@import "./global";
 @import "./variables";
-@import "./utils";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    font-family: 'Outfit', sans-serif;
+  }
+}

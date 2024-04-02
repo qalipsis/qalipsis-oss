@@ -23,7 +23,7 @@
                 <div class="button-groups">
                     <div class="button-wrapper">
                         <BaseButton
-                            class="full-width"
+                            class="w-full"
                             :btn-style="'stroke'"
                             :text="cancelBtnText"
                             @click="handleCancelBtnClick"
@@ -31,7 +31,7 @@
                     </div>
                     <div class="button-wrapper">
                         <BaseButton 
-                            class="full-width"
+                            class="w-full"
                             :text="confirmBtnText"
                             :disabled="confirmBtnDisabled"
                             @click="emit('confirmBtnClick')"

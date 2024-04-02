@@ -3,7 +3,7 @@
         <label class="form-label">{{ label }}</label>
         <a-input
             size="large"
-            class="full-width"
+            class="w-full"
             v-model:value="value"
             :placeholder="placeholder"
             :status="errorStatus"

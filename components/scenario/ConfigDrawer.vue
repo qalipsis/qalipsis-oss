@@ -42,7 +42,7 @@
           <BaseButton
             icon="/icons/icon-plus-grey.svg"
             btn-style="stroke"
-            class="full-width"
+            class="w-full"
             text="Add new"
             @click="handleAddExecutionProfileBtnClick"
           />
@@ -75,7 +75,7 @@
           <BaseButton
             icon="/icons/icon-plus-grey.svg"
             btn-style="stroke"
-            class="full-width"
+            class="w-full"
             text="Add new"
             @click="handleAddZoneBtnClick"
           />

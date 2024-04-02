@@ -334,49 +334,49 @@ export class CampaignHelper {
         return {
           text: "Successful",
           textCssClass: "text-green",
-          backgroundCssClass: "bg-light-green",
+          backgroundCssClass: "bg-primary-green-100",
         };
       case ExecutionStatusConstant.FAILED:
         return {
           text: "Failed",
           textCssClass: "text-pink",
-          backgroundCssClass: "bg-light-pink",
+          backgroundCssClass: "bg-red-100",
         };
       case ExecutionStatusConstant.IN_PROGRESS:
         return {
           text: "In progress",
           textCssClass: "text-purple",
-          backgroundCssClass: "bg-light-purple",
+          backgroundCssClass: "bg-purple-100",
         };
       case ExecutionStatusConstant.SCHEDULED:
         return {
           text: "Scheduled",
           textCssClass: "text-green",
-          backgroundCssClass: "bg-grey-4",
+          backgroundCssClass: "bg-gray-100",
         };
       case ExecutionStatusConstant.WARNING:
         return {
           text: "Warning",
-          textCssClass: "text-yellow",
-          backgroundCssClass: "bg-yellow",
+          textCssClass: "text-yellow-400",
+          backgroundCssClass: "bg-yellow-200",
         };
       case ExecutionStatusConstant.ABORTED:
         return {
           text: "Aborted",
           textCssClass: "text-pink",
-          backgroundCssClass: "bg-light-pink",
+          backgroundCssClass: "bg-red-100",
         };
       case ExecutionStatusConstant.QUEUED:
         return {
           text: "Queued",
           textCssClass: "text-purple",
-          backgroundCssClass: "bg-light-purple",
+          backgroundCssClass: "bg-purple-100",
         };
       default:
         return {
           text: executionStatus,
           textCssClass: "text-grey",
-          backgroundCssClass: "bg-grey-4",
+          backgroundCssClass: "bg-gray-100",
         };
     }
   }

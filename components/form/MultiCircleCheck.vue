@@ -1,5 +1,5 @@
 <template>
-  <div class="flex wrap">
+  <div class="flex flex-wrap">
     <div
       v-for="option in options"
       :key="option.label"

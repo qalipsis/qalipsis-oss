@@ -1,6 +1,6 @@
 <template>
     <div 
-        class="flex space-between cursor-pointer series-option"
+        class="flex justify-between cursor-pointer series-option"
         :class="{ 'series-option--active': isActive }"
         @click="emits('click')">
         <div class="flex name-wrapper">
@@ -9,7 +9,7 @@
         </div>
         <BaseTag
             :text="dataTypeText"
-            :background-css-class="'bg-grey-9'"
+            :background-css-class="'bg-gray-100'"
             :text-css-class="'text-black capitalize'"
         />
     </div>

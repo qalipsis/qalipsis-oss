@@ -1,6 +1,6 @@
 <template>
     <section v-if="open" class="color-picker">
-        <header class="flex space-between">
+        <header class="flex justify-between">
             <label class="text-grey-1">Color picker</label>
             <div class="cursor-pointer close-btn" @click="handleCloseBtnClick">
                 <img src="/icons/icon-close-black.svg" alt="">

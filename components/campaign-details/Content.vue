@@ -1,7 +1,7 @@
 <template>
-    <div class="page-content-container">
-        <div class="layout-shadow pt-2 pb-2 pr-4 pl-4 mb-2">
-            <div class="flex space-between">
+    <BaseContentWrapper>
+        <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
+            <div class="flex justify-between">
                 <ScenarioDetails :scenarioReports="scenarioReports"/>
                 <template v-if="campaignDetails.status === 'IN_PROGRESS'">
                     <BasePermission 
@@ -14,7 +14,7 @@
                 </template>
             </div>
         </div>
-        <div class="layout-shadow pt-2 pb-2 pr-4 pl-4 mb-2">
+        <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
             <SeriesMenu 
                 :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
                 @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
@@ -29,27 +29,27 @@
                 />
             </div>
         </div>
-        <BaseModal 
-            title="Stop campaign"
-            :open="campaignStopModalOpen"
-            :closable="true"
-            @close="campaignStopModalOpen = false">
-            <span>How do you want to interrupt the running campaign?</span>
-            <template #customFooter>
-                <div class="flex items-center space-around">
-                    <BaseButton
-                        :btn-style="'stroke'"
-                        text="Soft"
-                        @click="handleSoftStopButtonClick"
-                    />
-                    <BaseButton
-                        text="Hard"
-                        @click="handleHardStopButtonClick"
-                    />
-                </div>
-            </template>
-        </BaseModal>
-    </div>
+    </BaseContentWrapper>
+    <BaseModal 
+        title="Stop campaign"
+        :open="campaignStopModalOpen"
+        :closable="true"
+        @close="campaignStopModalOpen = false">
+        <span>How do you want to interrupt the running campaign?</span>
+        <template #customFooter>
+            <div class="flex items-center justify-around">
+                <BaseButton
+                    :btn-style="'stroke'"
+                    text="Soft"
+                    @click="handleSoftStopButtonClick"
+                />
+                <BaseButton
+                    text="Hard"
+                    @click="handleHardStopButtonClick"
+                />
+            </div>
+        </template>
+    </BaseModal>
 </template>
 
 <script setup lang="ts">

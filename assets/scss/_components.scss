@@ -1,115 +1,6 @@
 @import './color';
 @import './variables';
 
-/* Background colors */
-.bg-black {
-    background-color: $black !important;
-}
-
-.bg-grey-1 {
-    background-color: $grey-1 !important;
-}
-
-.bg-grey-2 {
-    background-color: $grey-2 !important;
-}
-
-.bg-grey-3 {
-    background-color: $grey-3 !important;
-}
-
-.bg-grey-4 {
-    background-color: $grey-4 !important;
-}
-
-.bg-grey-5 {
-    background-color: $grey-5 !important;
-}
-
-.bg-grey-6 {
-    background-color: $grey-6 !important;
-}
-
-.bg-grey-7 {
-    background-color: $grey-7 !important;
-}
-
-.bg-grey-8 {
-    background-color: $grey-8 !important;
-}
-
-.bg-grey-9 {
-    background-color: $grey-9 !important;
-}
-
-.bg-grey-10 {
-    background-color: $grey-10 !important;
-}
-
-.bg-green {
-    background-color: $green !important;
-}
-
-.bg-pale-green {
-    background-color: $pale-green !important;
-}
-
-.bg-pink {
-    background-color: $pink !important;
-}
-
-.bg-pink-highlight {
-    background-color: $pink-highlight !important;
-}
-
-.bg-purple {
-    background-color: $purple !important;
-}
-
-.bg-yellow {
-    background-color: $yellow !important;
-}
-
-.bg-white {
-    background-color: $white !important;
-}
-
-.bg-primary-color {
-    background-color: $primary-color !important;
-}
-
-.bg-primary-color-medium {
-    background-color: $primary-color-medium !important;
-}
-
-.bg-primary-color-darkened {
-    background-color: $primary-color-darkened !important;
-}
-
-.bg-light-grey-highlight {
-    background-color: $light-grey-highlight !important;
-}
-
-.bg-light-grey {
-    background-color: $light-grey !important;
-}
-
-.bg-light-green {
-    background-color: $light-green !important;
-}
-
-.bg-light-pink {
-    background-color: $light-pink !important;
-}
-
-.bg-light-purple {
-    background-color: $light-purple !important;
-}
-
-.bg-light-yellow {
-    background-color: $light-yellow !important;
-}
-
 /* Divide line */
 .divide-line {
     margin: 1.25rem 0;
@@ -121,11 +12,6 @@
 /* Button */
 .ant-btn-default:disabled {
     color: $grey-1;
-}
-
-/* Shared page content container */
-.page-content-container {
-    padding: 0 $content-padding;
 }
 
 /* Overrides the table css */

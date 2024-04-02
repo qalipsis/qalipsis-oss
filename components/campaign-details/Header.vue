@@ -1,6 +1,6 @@
 <template>
     <BaseHeader>
-        <div class="flex items-center full-width space-between">
+        <div class="flex items-center w-full justify-between">
             <div class="flex items-center">
                 <BaseIcon 
                     icon="/icons/icon-arrow-left-black.svg"

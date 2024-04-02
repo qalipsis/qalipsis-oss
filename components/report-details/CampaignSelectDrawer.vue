@@ -14,7 +14,7 @@
                     @campaign-patterns-change="handleCampaignPatternsChange($event)"
                 />
             </div>
-            <div class="flex content-end mt-4 mb-4">
+            <div class="flex justify-end mt-4 mb-4">
                 <BaseSearch
                     v-model="searchQuery"
                     placeholder="Search campaigns..."

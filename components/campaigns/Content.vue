@@ -1,5 +1,5 @@
 <template>
-    <div class="page-content-container">
+    <BaseContentWrapper>
         <CampaignsTable :actionsEnabled="true" />
-    </div>
+    </BaseContentWrapper>
 </template>

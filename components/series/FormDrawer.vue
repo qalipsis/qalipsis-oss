@@ -108,7 +108,7 @@
             >
               <div
                 class="color-btn"
-                :class="{ 'pointer-event-none': dataSeries?.disabled }"
+                :class="{ 'pointer-events-none': dataSeries?.disabled }"
                 :style="{ backgroundColor: enrichedColorHexCode }"
                 @click="handleColorBtnClick"
               ></div>
@@ -156,7 +156,7 @@
             <BaseButton
               icon="/icons/icon-plus-grey.svg"
               btn-style="stroke"
-              class="full-width"
+              class="w-full"
               text="Add new filter"
               @click="handleAddNewFilterBtnClick"
               :disabled="dataSeries?.disabled"

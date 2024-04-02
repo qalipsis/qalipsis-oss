@@ -1,23 +1,5 @@
 <template>
-    <header class="header">
+    <header class="flex items-center w-full h-28 px-8">
         <slot></slot>
     </header>
 </template>
-
-<script setup lang="ts">
-
-</script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/variables";
-
-header.header {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: $header-height;
-    padding: 0 $content-padding;
-}
-
-
-</style>

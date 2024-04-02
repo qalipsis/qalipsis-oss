@@ -1,6 +1,6 @@
 <template>
     <BaseHeader>
-        <div class="flex space-between items-center full-width">
+        <div class="flex justify-between items-center w-full">
             <div class="flex items-center">
                 <BaseIcon icon="/icons/icon-arrow-left-black.svg" class="cursor-pointer icon-link pr-2" @click="navigateTo('/reports')" />
                 <BaseTitle v-model:content="reportName" :editable="true" />
@@ -15,7 +15,7 @@
             </div>
         </div>
     </BaseHeader>
-    <div class="page-content-container">
+    <BaseContentWrapper>
         <ReportDetailsDescription
             :presetDescription="reportDescription"
             @change="handleDescriptionValueChange($event)"
@@ -24,7 +24,7 @@
             :preset-campaign-patterns="presetCampaignPatterns"
             @campaignPatternsChange="handleCampaignPatternsChange($event)"
         />
-        <div class="mt-4 flex items-center content-end full-width">
+        <div class="mt-4 flex items-center justify-end w-full">
             <BaseSwitch
                 @checkedChange="handleCheckedChange"
                 :numberOfSelectedItems="selectedRowKeys.length"
@@ -37,7 +37,7 @@
                 @search="handleSearch"
             />
         </div>
-    </div>
+    </BaseContentWrapper>
 </template>
 
 <script setup lang="ts">

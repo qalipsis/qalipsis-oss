@@ -3,7 +3,7 @@
         <label class="form-label">{{ label }}</label>
         <a-select
             size="large"
-            class="full-width"
+            class="w-full"
             v-model:value="value"
             :mode="mode"
             :options="options"
