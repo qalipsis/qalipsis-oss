@@ -21,6 +21,7 @@ module.exports = {
       'primary-green-100': '#e1f7f7',
       'primary-green-200': '#a5e5e6',
       'primary-green-300': '#69d4d5',
+      'primary-green-400': '#41c9ca',
       'primary-green-500': '#35bcbd',
       'primary-green-600': '#2a9495',
       'primary-green-700': '#1e6c6d',

@@ -1,7 +1,7 @@
 <template>
-    <a-tag class="base-tag" :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
+    <div class="px-3 py-1 rounded-xl w-fit text-xs" :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
         {{ text }}
-    </a-tag>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -23,12 +23,3 @@ const emit = defineEmits<{
     (e: 'click'): void
 }>();
 </script>
-
-<style scoped lang="scss">
-.base-tag {
-    border: none;
-    padding: 0 .75rem;
-    border-radius: 10px;
-    margin: 0;
-}
-</style>
