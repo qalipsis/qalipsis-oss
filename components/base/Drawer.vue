@@ -24,7 +24,7 @@
                     <div class="button-wrapper">
                         <BaseButton
                             class="w-full"
-                            :btn-style="'stroke'"
+                            btn-style="outlined"
                             :text="cancelBtnText"
                             @click="handleCancelBtnClick"
                         />

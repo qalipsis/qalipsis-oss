@@ -13,7 +13,7 @@
                 <BaseButton 
                     class="ml-2"
                     text="New campaign" 
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     :icon="'/icons/icon-plus-grey.svg'"
                     @click="handleCreateCampaignBtnClick" 
                 />

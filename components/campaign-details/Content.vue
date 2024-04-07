@@ -39,7 +39,7 @@
         <template #customFooter>
             <div class="flex items-center justify-around">
                 <BaseButton
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     text="Soft"
                     @click="handleSoftStopButtonClick"
                 />

@@ -17,7 +17,7 @@
         <div v-else>
             <footer v-if="!footerHidden" class="footer-section">
                 <BaseButton
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     :text="cancelBtnText"
                     @click="handleCancelBtnClick"
                 />

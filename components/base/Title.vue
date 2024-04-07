@@ -4,7 +4,8 @@
             <h1 class="font-medium text-2xl">{{ content }}</h1>
             <div 
                 v-if="editable" 
-                class="cursor-pointer px-1 py-1 hover:[filter:brightness(0%)_saturate(100%)_invert(61%)_sepia(38%)_saturate(657%)_hue-rotate(132deg)_brightness(89%)_contrast(91%)]"
+                class="cursor-pointer px-1 pt-1"
+                :class="TailwindClassHelper.primaryColorFilterHoverClass"
                 @click="isEditing = true"
             >
                 <BaseIcon icon="/icons/icon-edit.svg"/>
@@ -16,23 +17,13 @@
             <input 
                 type="text"
                 v-model="editingText"
-                class="border border-solid border-primary-green-400 rounded-md outline-none p-2"
+                class="border border-solid text-xl border-primary-green-400 rounded-md outline-none p-2"
                 @keydown.esc="handleEscKeyDown()"
                 @keydown.enter="handleEnterKeyDown()"
             >
             <div class="text-lg text-gray-300 absolute bottom-0 right-2">↵</div>
         </div>
     </template>
-    <!-- <a-typography-paragraph :editable="editable" class="editable-title">
-        <template #editableIcon>
-            <div>
-                <BaseIcon
-                    icon="/icons/icon-edit.svg"
-                    class="cursor-pointer"
-                />
-            </div>
-        </template>
-    </a-typography-paragraph> -->
 </template>
 
 <script setup lang="ts">

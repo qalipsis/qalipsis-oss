@@ -41,7 +41,7 @@
         <a-col :span="23">
           <BaseButton
             icon="/icons/icon-plus-grey.svg"
-            btn-style="stroke"
+            btn-style="outlined"
             class="w-full"
             text="Add new"
             @click="handleAddExecutionProfileBtnClick"
@@ -74,7 +74,7 @@
         <a-col :span="23">
           <BaseButton
             icon="/icons/icon-plus-grey.svg"
-            btn-style="stroke"
+            btn-style="outlined"
             class="w-full"
             text="Add new"
             @click="handleAddZoneBtnClick"
@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ApexOptions } from "apexcharts";
+import { type ApexOptions } from "apexcharts";
 import { useFieldArray, useForm } from "vee-validate";
 
 const props = defineProps<{

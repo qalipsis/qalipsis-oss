@@ -1,9 +1,9 @@
 <template>
-    <section v-if="open" class="color-picker">
+    <section v-if="open" class=" px-1 py-2 rounded-md border border-solid border-gray-300 bg-white shadow-md">
         <header class="flex justify-between">
-            <label class="text-grey-1">Color picker</label>
-            <div class="cursor-pointer close-btn" @click="handleCloseBtnClick">
-                <img src="/icons/icon-close-black.svg" alt="">
+            <label class="text-gray-500">Color picker</label>
+            <div class="cursor-pointer" @click="handleCloseBtnClick">
+                <img src="/icons/icon-close-black.svg" alt="close-button" class="w-4 h-4">
             </div>
         </header>
         <Sketch :model-value="hexCodeValue" @update:model-value="handleColorChange($event)"/>
@@ -53,24 +53,6 @@ const handleColorChange = (color: Payload) => {
 </script>
 
 <style scoped lang="scss">
-@import "../../assets/scss/variables";
-@import "../../assets/scss/color";
-
-.color-picker {
-    padding: .25rem .5rem;
-    border-radius: $default-radius;
-    border: 1px solid $grey-3;
-    background: #fff;
-    box-shadow: 0 0 0 1px rgba(0,0,0,.15), 0 8px 16px rgba(0,0,0,.15);
-}
-
-.close-btn {
-    img {
-        width: 1rem;
-        height: 1rem;
-    }
-}
-
 :deep(.vc-sketch) {
     padding: 0;
     box-shadow: none;

@@ -1,8 +1,7 @@
 <template>
   <div
     @click="handleBtnClick"
-    class="circle-check-box"
-    :class="{ 'circle-check-box--active': active }"
+    :class="[active ? 'text-white bg-primary-green-500': 'text-primary-green-900', TailwindClassHelper.circleCheckBoxBaseClass]"
   >
     <span>{{ text }}</span>
   </div>
@@ -21,26 +20,3 @@ const handleBtnClick = () => {
   emit("update:active", !props.active);
 };
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/_color.scss";
-
-.circle-check-box {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  border: 1px solid $primary-color;
-  color: $black;
-  background-color: #ffffff;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-
-  &--active {
-    background-color: $primary-color;
-    color: #ffffff;
-  }
-}
-</style>

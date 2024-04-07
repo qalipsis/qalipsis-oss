@@ -125,3 +125,4 @@ export {
 } from "./types/timeframe";
 export type { TimeframeUnit, FormattedTimeframe } from "./types/timeframe";
 export type { User } from "./types/user";
+export { TailwindClassHelper } from "./helpers/tailwind-class.helper";

@@ -14,14 +14,14 @@
                     class="ml-2"
                     text="Delete all"
                     :disabled="deleteAllBtnDisabled"
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     :icon="'/icons/icon-delete-small.svg'"
                     @click="handleDeleteSelectedSeriesBtnClick" 
                 />
                 <BaseButton 
                     class="ml-2"
                     text="Add Series" 
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     :icon="'/icons/icon-plus-grey.svg'"
                     @click="handleCreateSeriesBtnClick" 
                 />

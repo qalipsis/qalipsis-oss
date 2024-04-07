@@ -30,7 +30,7 @@
             >
                 <BaseButton 
                     text="Select more series" 
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     :icon="'/icons/icon-plus-grey.svg'"
                     @click="handleShowMoreBtnClick" 
                 />

@@ -1,5 +1,5 @@
 <template>
-    <div class="px-3 py-1 rounded-xl w-fit text-xs" :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
+    <div class="px-3 py-0.5 rounded-xl w-fit text-xs" :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
         {{ text }}
     </div>
 </template>

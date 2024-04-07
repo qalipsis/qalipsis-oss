@@ -1,77 +1,37 @@
 <template>
-    <a-button 
-        :class="defaultBtnClass"
+    <button 
+        type="button"
+        :class="[
+            defaultBtnClass,
+            TailwindClassHelper.baseButtonClass
+        ]"
         :disabled="disabled"
         @click="emit('click')">
-        <BaseIcon v-if="icon" :icon="icon" :class="{ 'icon-disabled': disabled }">
+        <BaseIcon 
+            v-if="icon"
+            class="w-6 h-6 pr-2"
+            :icon="icon"
+            :class="disabled ? TailwindClassHelper.grayColorFilterClass : ''"
+        >
         </BaseIcon>
-        <span :class="{ 'text-grey-1': disabled }">
+        <span>
             {{ text }}
         </span>
-    </a-button>
+    </button>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
     text: string,
-    btnStyle?: "stroke" | "default",
+    btnStyle?: "outlined" | "filled",
     icon?: string,
     disabled?: boolean
 }>();
 const emit = defineEmits<{
     (e: "click"): void
 }>()
-const defaultBtnClass = computed(() => props.btnStyle === "stroke" ?
-    "base-stroke-btn" :
-    "base-btn"
+const defaultBtnClass = computed(() => props.btnStyle === "outlined" ?
+    TailwindClassHelper.outlineButtonClass :
+    TailwindClassHelper.filledButtonClass
 )
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/color";
-@import "../../assets/scss/mixins";
-
-.base-btn {
-    @include button;
-
-    &:not([disabled]) {
-        background-color: $primary-color;
-        color: $white;
-        border: none;
-        transition: background-color .2s ease-in-out;
-        
-        img {
-            filter: $white-svg;
-        }
-
-        &:hover {
-            background-color: $primary-color-medium !important;
-            color: $white !important;
-        }
-
-    }
-}
-
-.base-stroke-btn {
-    @include button;
-    border: 1px solid $grey-2;
-    color: $black;
-    transition: border-color .2s ease-in-out;
-
-    &:not([disabled]) {
-        img {
-            filter: $black-svg;
-        }
-        
-        &:hover {
-            color: $primary-color-medium;
-            border-color: $primary-color-medium;
-            
-            img {
-                filter: $primary-color-svg;
-            }
-        }
-    }
-}
-
-</style>

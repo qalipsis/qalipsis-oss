@@ -155,7 +155,7 @@
           <a-col :span="24">
             <BaseButton
               icon="/icons/icon-plus-grey.svg"
-              btn-style="stroke"
+              btn-style="outlined"
               class="w-full"
               text="Add new filter"
               @click="handleAddNewFilterBtnClick"

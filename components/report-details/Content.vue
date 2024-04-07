@@ -28,7 +28,7 @@
                     </template>
                     <BaseButton
                         text="Select campaigns"
-                        btn-style="stroke"
+                        btn-style="outlined"
                         icon="/icons/icon-edit.svg"
                         class="mr-2 mb-1"
                         @click="handleCampaignSelectBtnClick"
@@ -61,14 +61,14 @@
                 <BaseButton
                     text="Add chart"
                     icon="/icons/icon-plus-black.svg"
-                    btn-style="stroke"
+                    btn-style="outlined"
                     @click="handleAddChartBtnClick"
                 />
                 <BaseButton
                     text="Add table"
                     class="ml-4"
                     icon="/icons/icon-plus-black.svg"
-                    btn-style="stroke"
+                    btn-style="outlined"
                     @click="handleAddTableBtnClick"
                 />
             </div>

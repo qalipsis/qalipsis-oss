@@ -1,7 +1,7 @@
 <template>
     <section class="report-details-data-component mb-4">
         <div class="flex justify-end mb-2 delete-btn-wrapper">
-            <BaseButton icon="/icons/icon-delete-small.svg" text="Delete" btnStyle="stroke" @click="handleDeleteBtnClick"/>
+            <BaseButton icon="/icons/icon-delete-small.svg" text="Delete" btn-style="outlined" @click="handleDeleteBtnClick"/>
         </div>
         <SeriesMenu 
             :preselectedDataSeriesReferences="preselectedDataSeriesReferences"

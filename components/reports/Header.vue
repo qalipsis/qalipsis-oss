@@ -13,15 +13,15 @@
                 <BaseButton 
                     class="ml-2"
                     text="Delete all"
+                    btn-style="outlined"
                     :disabled="deleteAllBtnDisabled"
-                    :btn-style="'stroke'"
                     :icon="'/icons/icon-delete-small.svg'"
                     @click="handleDeleteSelectedReportsBtnClick" 
                 />
                 <BaseButton 
                     class="ml-2"
                     text="Create report" 
-                    :btn-style="'stroke'"
+                    btn-style="outlined"
                     :icon="'/icons/icon-plus-grey.svg'"
                     @click="handleCreateReportBtnClick" 
                 />

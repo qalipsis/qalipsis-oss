@@ -13,6 +13,9 @@ module.exports = {
     extend: {
       fontFamily: {
         'sans': ['Outfit', 'sans-serif']
+      },
+      transitionProperty: {
+        'width': 'width',
       }
     },
     colors: {
@@ -30,7 +33,8 @@ module.exports = {
       'gray-50': '#f1f2f2',
       'gray-100': '#f1f2f2',
       'gray-200': '#d6d9da',
-      'gray-300': '#bbc0c1',
+      'gray-300': '#dae1e1',
+      'gray-400': '#bbc0c1',
       'gray-500': '#939b9d',
       'gray-600': '#788285',
       'gray-700': '#60686a',

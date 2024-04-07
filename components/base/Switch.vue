@@ -1,13 +1,16 @@
 <template>
     <div class="flex items-center">
-        <div class="flex items-center cursor-pointer" @click="handleClick">
+        <div 
+            class="flex items-center cursor-pointer hover:text-primary-green-500" 
+            :class="[showChecked ? 'text-primary-green-500' : 'text-gray-500', TailwindClassHelper.primaryColorFilterHoverClass]"
+            @click="handleClick"
+        >
             <BaseIcon
                 icon="/icons/icon-check-grey.svg"
-                :class="{ 'icon--active': showChecked}"
+                :class="showChecked ? TailwindClassHelper.primaryColorFilterClass : ''"
             />
             <span 
-                :class="{ 'text-primary-color':  showChecked}"
-                class="text-grey-1 text-sm"
+                class="text-sm"
             >Show {{ numberOfSelectedItems }} selected items</span>
         </div>
     </div>
