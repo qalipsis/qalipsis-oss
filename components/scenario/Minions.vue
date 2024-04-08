@@ -13,7 +13,7 @@
                 :options="chartOptions"
                 :series="minionBarChartDataSeries"
             />
-            <span class="text-grey-1 pl-1">
+            <span class="text-gray-500 pl-1">
                 {{ completedMinions }} / {{ startedMinions }} / {{ scheduledMinions }}
             </span>
         </div>

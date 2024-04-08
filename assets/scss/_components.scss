@@ -9,11 +9,6 @@
     border: none;
 }
 
-/* Button */
-.ant-btn-default:disabled {
-    color: $grey-1;
-}
-
 /* Overrides the table css */
 .ant-table-wrapper .ant-table-thead>tr>th {
     background: white;
@@ -168,29 +163,6 @@
           font-size: 14px;  
           padding-right: .25rem;
         }
-    }
-}
-
-/* Title */
-.editable-title {
-    font-size: 1.75rem;
-    font-weight: 500;
-    margin-bottom: 0px;
-    padding-left: .5rem;
-
-    &.ant-typography {
-        margin-bottom: 0;
-    }
-
-    .ant-input {
-      font-weight: 500;
-      font-size: 1.75rem;
-      padding: 0 .5rem;
-      border-right: solid 1px $grey-8;
-  
-      &:hover, &:focus {
-        border-right: solid 1px $primary-color;
-      }
     }
 }
 

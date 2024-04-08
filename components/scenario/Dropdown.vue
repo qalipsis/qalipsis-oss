@@ -17,7 +17,7 @@
                 </div>
               </a-menu-item>
               <hr class="divide-line" />
-              <span class="text-grey-1 text-sm pr-3 pl-3">Scenarios</span>
+              <span class="text-gray-500 text-sm pr-3 pl-3">Scenarios</span>
               <a-menu-item 
                 v-for="scenario in scenarioOptions"
                 :key="scenario.value"
@@ -34,7 +34,7 @@
           <a-button
             class="dropdown-menu-btn flex items-center"
             :disabled="hasOnlyOneScenarioOption">
-            <div class="pr-2" :class="{ 'text-grey-1': hasOnlyOneScenarioOption }">
+            <div class="pr-2" :class="{ 'text-gray-500': hasOnlyOneScenarioOption }">
                 {{ selectedScenarioNamesLabel }}
             </div>
             <BaseIcon

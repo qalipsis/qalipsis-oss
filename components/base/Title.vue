@@ -17,7 +17,7 @@
             <input 
                 type="text"
                 v-model="editingText"
-                class="border border-solid text-xl border-primary-green-400 rounded-md outline-none p-2"
+                class="border border-solid text-xl border-primary-400 rounded-md outline-none p-2"
                 @keydown.esc="handleEscKeyDown()"
                 @keydown.enter="handleEnterKeyDown()"
             >
@@ -46,7 +46,6 @@ const handleEscKeyDown = () => {
 
 const handleEnterKeyDown = () => {
     isEditing.value = false;
-    console.log(editingText.value)
     emit('update:content', editingText.value);
 }
 

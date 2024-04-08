@@ -1,8 +1,8 @@
 <template>
     <div class="flex items-center">
         <div 
-            class="flex items-center cursor-pointer hover:text-primary-green-500" 
-            :class="[showChecked ? 'text-primary-green-500' : 'text-gray-500', TailwindClassHelper.primaryColorFilterHoverClass]"
+            class="flex items-center cursor-pointer hover:text-primary-500" 
+            :class="[showChecked ? 'text-primary-500' : 'text-gray-500', TailwindClassHelper.primaryColorFilterHoverClass]"
             @click="handleClick"
         >
             <BaseIcon

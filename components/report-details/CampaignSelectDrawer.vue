@@ -68,6 +68,7 @@ const handleCampaignSelectBtnClick = async () => {
     };
     try {
         await updateReport(reportDetailsStore.reportDetails!.reference, request);
+        emit("update:open", false);
         emit("saved");
         NotificationHelper.success(`Report ${reportDetailsStore.reportName} has been successfully updated.`)
     } catch (error) {

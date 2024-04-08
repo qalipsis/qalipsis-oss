@@ -10,7 +10,7 @@
         <BaseTag
             :text="dataTypeText"
             :background-css-class="'bg-gray-100'"
-            :text-css-class="'text-black capitalize'"
+            :text-css-class="'capitalize'"
         />
     </div>
 </template>

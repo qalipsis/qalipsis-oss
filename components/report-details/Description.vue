@@ -2,6 +2,7 @@
     <div class="mb-3">
         <label class="label" for="reportDescription">Description:</label>
         <a-input
+            id="reportDescription"
             v-model:value="description"
             placeholder="Add the description about the report..."
             @change="handleDescriptionValueChange"

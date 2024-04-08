@@ -11,15 +11,18 @@
                 <div class="flex items-center flex-wrap">
                     <template v-for="campaignOption in campaignOptions" :key="campaignOption.key">
                         <div 
-                            :class="{ 'campaign-option--active': campaignOption.isActive }"
-                            class="campaign-option cursor-pointer mr-2 mb-1"
+                            :class="{ 
+                                'border-purple-600': campaignOption.isActive,
+                                'border-gray-300': !campaignOption.isActive,
+                            }"
+                            class="h-10 px-3 py-2 text-base rounded-md min-w-32 flex items-center justify-center border border-solid cursor-pointer mr-2 mb-1"
                             @click="handleCampaignOptionClick(campaignOption)"
                         >
                             <svg height="24" width="40">
                                 <polyline 
-                                    :class="{ 'line-sample--active': campaignOption.isActive }"
+                                    :class="{ 'stroke-gray-400': !campaignOption.isActive, 'stroke-purple-600': campaignOption.isActive }"
                                     :stroke-dasharray="campaignOption.strokeDashArray"
-                                    class="line-sample"
+                                    class="fill-none stroke-2"
                                     points="0,12 8,0 16,24 24,0 32,24 40,0"
                                 />
                             </svg>
@@ -43,10 +46,13 @@
                     />
                 </div>
             </div>
-            <template v-for="activeCampaignOption in activeCampaignOptions" :key="activeCampaignOption.key" class="campaign-scenario-wrapper">
-                <div v-if="activeCampaignOption.isActive && activeCampaignOption.enrichedScenarioReports.length > 0" class="campaign-scenario-wrapper">
-                    <div class="flex items-center campaign-name-wrapper">
-                        <h3>{{ activeCampaignOption.name }}</h3>
+            <template v-for="activeCampaignOption in activeCampaignOptions" :key="activeCampaignOption.key">
+                <div 
+                    v-if="activeCampaignOption.isActive && activeCampaignOption.enrichedScenarioReports.length > 0"
+                    class="px-6 py-2 bg-gray-100 rounded-md mb-4"
+                >
+                    <div class="flex items-center h-8 text-xl font-medium">
+                        <span>{{ activeCampaignOption.name }}</span>
                     </div>
                     <div class="flex items-center">
                         <ScenarioDetails
@@ -95,7 +101,7 @@
             :campaignPatterns="reportDetails?.campaignNamesPatterns"
             :description="reportDetails?.description"
             :report="reportDetails"
-            @afterUpdated="handleReportUpdated"
+            @saved="handleReportUpdated"
         />
     </BaseContentWrapper>
 </template>
@@ -162,39 +168,3 @@ const _addDataComponent = (dataComponentType: DataComponentType) => {
 }
 
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/color";
-@import "../../assets/scss/variables";
-@import "../../assets/scss/mixins";
-
-.campaign-scenario-wrapper {
-    padding: .5rem 1.5rem;
-    background-color: $grey-4;
-    border-radius: $default-radius;
-    margin-bottom: 1rem;
-}
-
-.campaign-option {
-    @include button;
-    border: 1px solid $grey-3;
-
-    &--active {
-        border-color: $purple;
-    }
-
-    .line-sample {
-        fill: none;
-        stroke: $grey-2;
-        stroke-width:2;
-
-        &--active {
-            stroke: $purple;
-        }
-    }
-}
-.campaign-name-wrapper {
-    height: 2rem;
-}
-
-</style>

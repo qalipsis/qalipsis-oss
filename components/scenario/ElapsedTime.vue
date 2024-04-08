@@ -1,7 +1,7 @@
 <template>
     <div class="flex items-center">
         <BaseIcon icon="/icons/icon-time.svg" />
-        <span class="text-grey-1 pl-1">{{ displayTimeText }}</span>
+        <span class="text-gray-500 pl-1">{{ displayTimeText }}</span>
     </div>
 </template>
 

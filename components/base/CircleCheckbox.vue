@@ -1,7 +1,7 @@
 <template>
   <div
     @click="handleBtnClick"
-    :class="[active ? 'text-white bg-primary-green-500': 'text-primary-green-900', TailwindClassHelper.circleCheckBoxBaseClass]"
+    :class="[active ? 'text-white bg-primary-500' : 'text-primary-900', TailwindClassHelper.circleCheckBoxBaseClass]"
   >
     <span>{{ text }}</span>
   </div>

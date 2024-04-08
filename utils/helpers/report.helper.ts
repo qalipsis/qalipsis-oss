@@ -19,7 +19,7 @@ const renderReportChartTooltip: ((options: any) => any) = ({ seriesIndex, dataPo
             <div class="custom-tooltip__marker" style="background-color:${series.color}"></div>
             <div class="custom-tooltip__text">
               <div>
-                <div class="custom-tooltip__text-name text-xs text-grey-1">
+                <div class="custom-tooltip__text-name text-xs text-gray-500">
                     ${day}, ${time}:
                 </div>
                 <div class="custom-tooltip__text-name">

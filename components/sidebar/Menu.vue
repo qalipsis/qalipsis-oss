@@ -1,17 +1,17 @@
 <template>
-    <section class="sidebar-section">
+    <section class="sidebar-section text-primary-950">
         <div class="brand-container" @click="handleMenuItemClick('')">
             <div class="icon-wrapper">
                 <BaseIcon icon="/icons/icon-logo.svg" />
             </div>
-            <div v-if="!collapsed" class="text-wrapper text-xl font-medium">
+            <div v-if="!collapsed" class="text-wrapper text-xl font-semibold">
                 QALIPSIS
             </div>
         </div>
         <a-menu>
             <div 
                 v-for="menuItem in menuItems"
-                class="menu-container"
+                class="menu-container text-primary-950"
                 :key="menuItem.path"
                 :class="{ 'menu-container--active': menuItem.path === activePath || menuItem.subMenuItems?.some(o => o.path === activePath) }">
                 <BasePermission :permissions="menuItem.permissions">

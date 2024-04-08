@@ -333,25 +333,25 @@ export class CampaignHelper {
       case ExecutionStatusConstant.SUCCESSFUL:
         return {
           text: "Successful",
-          textCssClass: "text-green",
-          backgroundCssClass: "bg-primary-green-100",
+          textCssClass: "text-green-600",
+          backgroundCssClass: "bg-primary-100",
         };
       case ExecutionStatusConstant.FAILED:
         return {
           text: "Failed",
-          textCssClass: "text-pink",
+          textCssClass: "text-red-600",
           backgroundCssClass: "bg-red-100",
         };
       case ExecutionStatusConstant.IN_PROGRESS:
         return {
           text: "In progress",
-          textCssClass: "text-purple",
+          textCssClass: "text-purple-600",
           backgroundCssClass: "bg-purple-100",
         };
       case ExecutionStatusConstant.SCHEDULED:
         return {
           text: "Scheduled",
-          textCssClass: "text-green",
+          textCssClass: "text-green-600",
           backgroundCssClass: "bg-gray-100",
         };
       case ExecutionStatusConstant.WARNING:
@@ -363,13 +363,13 @@ export class CampaignHelper {
       case ExecutionStatusConstant.ABORTED:
         return {
           text: "Aborted",
-          textCssClass: "text-pink",
+          textCssClass: "text-red-600",
           backgroundCssClass: "bg-red-100",
         };
       case ExecutionStatusConstant.QUEUED:
         return {
           text: "Queued",
-          textCssClass: "text-purple",
+          textCssClass: "text-purple-600",
           backgroundCssClass: "bg-purple-100",
         };
       default:

@@ -45,9 +45,6 @@
       </div>
     </a-col>
   </a-row>
-  <!-- <span v-if="hasInvalidStartDuration" class="text-pink"
-    >The start duration value should be less or equal than the duration value!
-  </span> -->
 </template>
 
 <script setup lang="ts">

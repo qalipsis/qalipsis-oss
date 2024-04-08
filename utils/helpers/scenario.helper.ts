@@ -174,19 +174,19 @@ export class ScenarioHelper {
         return {
           text: severity,
           backgroundCssClass: "bg-purple-100",
-          textCssClass: "text-purple",
+          textCssClass: "text-purple-600",
         };
       case ReportMessageSeverityConstant.ERROR:
       case ReportMessageSeverityConstant.ABORT:
         return {
           text: severity,
-          textCssClass: "text-pink",
+          textCssClass: "text-red-600",
           backgroundCssClass: "bg-red-100",
         };
       case ReportMessageSeverityConstant.WARN:
         return {
           text: severity,
-          textCssClass: "text-yellow",
+          textCssClass: "text-yellow-400",
           backgroundCssClass: "bg-yellow-100",
         };
       default:

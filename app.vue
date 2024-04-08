@@ -12,7 +12,7 @@
     >
       <div class="flex items-center">
         <BaseIcon icon="/icons/icon-logo.svg" width="80" />
-        <h1 class="text-primary-color mr-4">QALIPSIS</h1>
+        <h1 class="text-primary-500 mr-4 text-2xl font-semibold">QALIPSIS</h1>
         <div class="mt-2">
           <a-spin size="large" />
         </div>
@@ -22,7 +22,7 @@
       <a-layout-content v-if="canViewPage">
         <a-layout>
           <Sidebar />
-          <a-layout-content style="max-height: 100vh; overflow-y: auto" class="bg-white">
+          <a-layout-content style="max-height: 100vh; overflow-y: auto" class="bg-white text-primary-950">
             <NuxtLayout>
               <NuxtPage />
             </NuxtLayout>

@@ -25,7 +25,6 @@ onMounted(async () => {
         const campaignConfig = await fetchCampaignConfig(campaignKey.value);
         campaignName.value = campaignConfig.name;
         campaignConfigForm.value = CampaignHelper.toCampaignConfigForm(campaignConfig);
-        console.log(campaignConfigForm.value)
         const selectedScenarios: Scenario[] = Object.entries(campaignConfig.scenarios).map(([key, value]) => ({
             name: key,
             minionsCount: value.minionsCount,

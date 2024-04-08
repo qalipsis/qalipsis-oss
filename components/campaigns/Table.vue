@@ -127,9 +127,6 @@ const rowSelection: TableRowSelection<CampaignTableData> | undefined = props.row
         selectedRowKeys: Key[],
         selectedRows: CampaignTableData[]
       ) => {
-        console.log(campaignsTableStore)
-        console.log(selectedRowKeys)
-        console.log(selectedRows)
         campaignsTableStore.$patch({
           selectedRowKeys: selectedRowKeys as string[],
           selectedRows: selectedRows,

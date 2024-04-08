@@ -4,7 +4,7 @@
             @saved="handleReportSaved"
         />
         <ReportDetailsContent
-            @afterUpdated="handleReportContentUpdated"
+            @saved="handleReportContentUpdated"
         />
         <BaseModal
             title="Changes are not yet saved"
@@ -96,7 +96,6 @@ const _fetchReport = async () => {
         });
         isReady.value = true;
     } catch (error) {
-        console.log(error)
         ErrorHelper.handleHttpResponseError(error);
     }
 }

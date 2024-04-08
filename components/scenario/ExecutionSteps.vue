@@ -13,7 +13,7 @@
                 :width="24"
                 :height="24"
             />
-            <span class="text-grey-1">
+            <span class="text-gray-500">
                 {{ successfulExecutions }}/{{ failedExecutions }}/{{ totalExecutions }}
             </span>
         </div>
