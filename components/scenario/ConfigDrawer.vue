@@ -48,8 +48,8 @@
           />
         </a-col>
       </a-row>
-      <div class="pr-6">
-        <hr class="divide-line" />
+      <div class="pr-6 my-5">
+        <BaseDivideLine />
       </div>
       <a-row class="pt-2 pb-4">
         <a-col>
@@ -81,8 +81,8 @@
           />
         </a-col>
       </a-row>
-      <div class="pr-6">
-        <hr class="divide-line" />
+      <div class="pr-6 my-5">
+        <BaseDivideLine />
       </div>
     </a-form>
     <div class="pr-6" v-if="!isRenderingChart">

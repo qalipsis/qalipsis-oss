@@ -11,7 +11,7 @@
     @confirm-btn-click="handleConfirmBtnClick"
   >
     <a-form class="pl-2 pr-2 pt-2 pb-2">
-      <a-row class="form-row">
+      <a-row class="h-24">
         <a-col :span="24">
           <FormInput
             label="Name"
@@ -21,7 +21,7 @@
           />
         </a-col>
       </a-row>
-      <a-row class="form-row">
+      <a-row class="h-24">
         <a-col :span="24">
           <FormSelect
             label="Sharing node"
@@ -32,7 +32,7 @@
           />
         </a-col>
       </a-row>
-      <a-row class="form-row">
+      <a-row class="h-24">
         <a-col :span="8">
           <FormRadioGroup
             label="Time series type"
@@ -54,7 +54,7 @@
           <a-spin v-else></a-spin>
         </a-col>
       </a-row>
-      <a-row class="form-row" :gutter="8">
+      <a-row class="h-24" :gutter="8">
         <a-col :span="8">
           <FormSelect
             v-if="hasFieldNameFetched"
@@ -100,20 +100,20 @@
       <a-row :gutter="8">
         <a-col :span="4">
           <label class="form-label">Color</label>
-          <div style="position: relative">
+          <div class="relative">
             <div
               :class="
                 dataSeries?.disabled ? 'cursor-not-allowed' : 'cursor-pointer'
               "
             >
               <div
-                class="color-btn"
+                class="h-10 rounded-md"
                 :class="{ 'pointer-events-none': dataSeries?.disabled }"
                 :style="{ backgroundColor: enrichedColorHexCode }"
                 @click="handleColorBtnClick"
               ></div>
             </div>
-            <div class="color-picker-wrapper">
+            <div class="absolute z-10">
               <BaseColorPicker
                 v-model:open="colorPickerOpen"
                 v-model:hexCodeValue="enrichedColorHexCode"
@@ -142,7 +142,9 @@
           />
         </a-col>
       </a-row>
-      <hr class="divide-line" />
+      <div class="my-5">
+        <BaseDivideLine />
+      </div>
       <template v-if="hasTagFetched">
         <SeriesFormFilter
           v-for="(field, index) in fields"
@@ -503,21 +505,3 @@ const _prepareFieldOptions = async (dataType: DataType) => {
   }
 };
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/variables";
-
-.color-btn {
-  height: $item-height;
-  border-radius: $default-radius;
-}
-
-.color-picker-wrapper {
-  position: absolute;
-  z-index: 1;
-}
-
-.form-row {
-  height: 6rem;
-}
-</style>

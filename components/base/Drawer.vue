@@ -19,7 +19,9 @@
                 <slot></slot>
             </div>
             <footer class="drawer-footer-section" v-if="!footerHidden">
-                <hr class="divide-line">
+                <div class="my-5">
+                    <BaseDivideLine />
+                </div>
                 <div class="button-groups">
                     <div class="button-wrapper">
                         <BaseButton
@@ -154,10 +156,6 @@ const handleCancelBtnClick = () => {
 
     .drawer-footer-section {
         width: 100%;
-
-        .divide-line {
-            margin: 1.25rem 0;
-        }
 
         .button-groups {
             display: flex;

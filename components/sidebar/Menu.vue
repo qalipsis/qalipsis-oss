@@ -1,27 +1,30 @@
 <template>
     <section class="sidebar-section text-primary-950">
-        <div class="brand-container" @click="handleMenuItemClick('')">
-            <div class="icon-wrapper">
-                <BaseIcon icon="/icons/icon-logo.svg" />
+        <div 
+            class="flex items-center pl-3 h-28 cursor-pointer w-full" 
+            @click="handleMenuItemClick('')"
+        >
+            <div class="w-12 h-12 flex items-center pl-2">
+                <BaseIcon icon="/icons/icon-logo.svg"/>
             </div>
-            <div v-if="!collapsed" class="text-wrapper text-xl font-semibold">
+            <div v-if="!collapsed" class="px-3 text-2xl font-semibold">
                 QALIPSIS
             </div>
         </div>
         <a-menu>
             <div 
                 v-for="menuItem in menuItems"
-                class="menu-container text-primary-950"
+                class="flex items-center relative text-primary-950"
                 :key="menuItem.path"
                 :class="{ 'menu-container--active': menuItem.path === activePath || menuItem.subMenuItems?.some(o => o.path === activePath) }">
                 <BasePermission :permissions="menuItem.permissions">
                     <div class="item-indicator"></div>
                     <a-menu-item v-if="!menuItem.subMenuItems" @click="handleMenuItemClick(menuItem.path)" :key="menuItem.path">
-                        <div class="option-container">
-                            <div class="icon-wrapper">
-                                <BaseIcon :icon="menuItem.icon" />
+                        <div class="flex items-center pl-3 w-full h-16">
+                            <div class="flex items-center w-12 h-12 justify-center flex-shrink-0">
+                                <BaseIcon class="w-7 h-7" :icon="menuItem.icon" />
                             </div>
-                            <span class="text-wrapper">
+                            <span class="px-3 text-base">
                                 {{ menuItem.text }}
                             </span>
                         </div>
@@ -29,11 +32,11 @@
                 </BasePermission>
                 <a-sub-menu v-if="menuItem.subMenuItems && menuItem.subMenuItems.length > 0">
                     <template #title>
-                        <div class="option-container">
-                            <div class="icon-wrapper">
-                                <BaseIcon :icon="menuItem.icon" />
+                        <div class="flex items-center pl-3 w-full h-16">
+                            <div class="flex items-center w-12 h-12 justify-center flex-shrink-0">
+                                <BaseIcon class="w-7 h-7" :icon="menuItem.icon" />
                             </div>
-                            <span class="text-wrapper">
+                            <span class="px-3 text-base">
                                 {{ menuItem.text }}
                             </span>
                         </div>
@@ -41,9 +44,11 @@
                     <template v-for="subMenuItem in menuItem.subMenuItems" :key="subMenuItem.path">
                         <BasePermission :permissions="subMenuItem.permissions">
                             <a-menu-item 
-                                @click="handleMenuItemClick(subMenuItem.path)" style="height: fit-content;">
-                                <div class="option-container">
-                                    <span class="text-wrapper">
+                                class="h-fit"
+                                @click="handleSubMenuItemClick(menuItem.path, subMenuItem.path)"
+                            >
+                                <div class="flex items-center pl-3 w-full h-16">
+                                    <span class="px-3 text-base">
                                         {{ subMenuItem.text }}
                                     </span>
                                 </div>
@@ -74,20 +79,29 @@ defineProps<{
 
 const activePath = computed(() => router.currentRoute.value.name);
 
+const activeMenuItemPath = ref('campaigns');
+const activeSubMenuItemPath = ref('');
+
 /**
  * Navigates to the page when clicking the button.
  *  
  * @param path The path url to be navigated
  */
 const handleMenuItemClick = (path: string) => {
+    activeMenuItemPath.value = path;
     navigateTo(`/${path}`);
+}
+
+const handleSubMenuItemClick = (menuItemPath: string, subMenuItemPath: string) => {
+    activeMenuItemPath.value = menuItemPath;
+    activeSubMenuItemPath.value = subMenuItemPath;
+    navigateTo(`/${subMenuItemPath}`);
 }
 
 </script>
 
 <style scoped lang="scss">
 @import "../../assets/scss/color";
-@import "../../assets/scss/variables";
 
 $menu-item-height: 3.75rem;
 
@@ -96,10 +110,6 @@ $menu-item-height: 3.75rem;
     align-items: center;
 }
 @mixin highlight {
-    span.text-wrapper {
-        color: $primary-color !important;
-    }
-
     .icon-wrapper img {
         filter: $primary-color-svg;
     }
@@ -110,7 +120,6 @@ $menu-item-height: 3.75rem;
 
 /** Overrides the ant-design menu styles */
 .sidebar-section {
-
     :deep(.ant-menu-vertical .ant-menu-item),
     :deep(.ant-menu-vertical .ant-menu-submenu-title) {
         height: $menu-item-height;
@@ -158,59 +167,11 @@ $menu-item-height: 3.75rem;
     visibility: hidden;
 }
 
-.brand-container {
-    @include flexLayout;
-    @include menu-padding;
-    height: $header-height;
-    cursor: pointer;
-    width: 100%;
-
-    .icon-wrapper {
-        img {
-            width: 3rem;
-            height: 3rem
-        }
+.menu-container--active {
+    @include highlight;
+    .item-indicator {
+        visibility: visible;
     }
 }
 
-.menu-container {
-    @include flexLayout;
-    position: relative;
-
-    &--active {
-        @include highlight;
-        .item-indicator {
-            visibility: visible;
-        }
-    }
-
-}
-
-.option-container {
-    @include flexLayout;
-    @include menu-padding;
-    width: 100%;
-    height: $menu-item-height;
-
-    .text-wrapper {
-        font-size: 1rem;
-    }
-}
-
-.icon-wrapper {
-    @include flexLayout;
-    width: 3rem;
-    height: 3rem;
-    justify-content: center;
-    flex-shrink: 0;
-
-    img {
-        width: 1.75rem;
-        height: 1.75rem;
-    }
-}
-
-.text-wrapper {
-    padding: 0 .75rem;
-}
 </style>

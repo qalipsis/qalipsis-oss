@@ -5,18 +5,23 @@
           placement="bottomRight"
         >
           <template #overlay>
-            <a-menu class="scenario-menu">
+            <a-menu>
               <a-menu-item 
                 v-if="!hasOnlyOneScenarioOption"
                 @click="handleSummaryOptionClick()"
                 style="padding: 0"
                 :key="scenarioSummaryId"
               >
-                <div class="scenario-option flex items-center" :class="{ 'scenario-option--active': isScenarioSummarySelected }">
+                <div 
+                  class="flex items-center"
+                  :class="[ isScenarioSummarySelected ? TailwindClassHelper.scenarioDropdownItemActiveClass : '', TailwindClassHelper.scenarioDropdownItemClass]"
+                >
                   {{ scenarioSummaryName }}
                 </div>
               </a-menu-item>
-              <hr class="divide-line" />
+              <div class="my-1">
+                <BaseDivideLine />
+              </div>
               <span class="text-gray-500 text-sm pr-3 pl-3">Scenarios</span>
               <a-menu-item 
                 v-for="scenario in scenarioOptions"
@@ -25,14 +30,16 @@
                 style="padding: 0"
                 @click="handleScenarioOptionClick(scenario)"
               >
-                <div class="scenario-option flex items-center" :class="{ 'scenario-option--active': scenario.isActive}">
+                <div 
+                  class="flex items-center"
+                  :class="[scenario.isActive ? TailwindClassHelper.scenarioDropdownItemActiveClass : '', TailwindClassHelper.scenarioDropdownItemClass]">
                   {{ scenario.label }}
                 </div>
               </a-menu-item>
             </a-menu>
           </template>
           <a-button
-            class="dropdown-menu-btn flex items-center"
+            class="h-10 flex items-center"
             :disabled="hasOnlyOneScenarioOption">
             <div class="pr-2" :class="{ 'text-gray-500': hasOnlyOneScenarioOption }">
                 {{ selectedScenarioNamesLabel }}
@@ -121,38 +128,3 @@ const handleScenarioOptionClick = (scenarioOption: ScenarioOption) => {
     emit('scenarioChange', activeScenarioNames)
 }   
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/color";
-@import "../../assets/scss/variables";
-.divide-line {
-  margin: .25rem 0;
-}
-.dropdown-menu-btn {
-  height: $item-height;
-}
-
-.scenario-option {
-  height: 2rem;
-  min-width: 14rem;
-  position: relative;
-  padding: .5rem .75rem;
-  border-radius: $default-radius;
-
-  &--active {
-    background-color: rgba(0, 0, 0, 0.06);
-    
-    &:after {
-      position: absolute;
-      content: '';
-      width: .5rem;
-      height: .5rem;
-      border-radius: 50%;
-      right: 10px;
-      top: auto;
-      background-color: $primary-color;
-    }
-  }
-}
-
-</style>

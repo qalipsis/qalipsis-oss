@@ -49,7 +49,7 @@
             <template v-for="activeCampaignOption in activeCampaignOptions" :key="activeCampaignOption.key">
                 <div 
                     v-if="activeCampaignOption.isActive && activeCampaignOption.enrichedScenarioReports.length > 0"
-                    class="px-6 py-2 bg-gray-100 rounded-md mb-4"
+                    class="px-6 py-2 bg-gray-50 rounded-md mb-4"
                 >
                     <div class="flex items-center h-8 text-xl font-medium">
                         <span>{{ activeCampaignOption.name }}</span>
