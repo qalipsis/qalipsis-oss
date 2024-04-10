@@ -12,14 +12,17 @@
         <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
           <a-tooltip>
             <template #title>Refresh</template>
-            <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+            <BaseIcon 
+              icon="/icons/icon-refresh.svg"
+              :class="TailwindClassHelper.primaryColorFilterHoverClass"
+            />
           </a-tooltip>
         </div>
       </template>
     </template>
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div class="flex items-center cursor-pointer table-item-link" @click="handleEditBtnClick(record as DataSeriesTableData)">
+        <div class="flex items-center cursor-pointer hover:text-primary-500" @click="handleEditBtnClick(record as DataSeriesTableData)">
           <div class="dot" :style="{ backgroundColor: `${record.color || 'transparent'}` }"></div>
           <span>{{ record.displayName }}</span>
         </div>
@@ -38,19 +41,28 @@
             <template #overlay>
               <a-menu>
                 <a-menu-item v-if="!record.disabled">
-                  <div class="flex items-center table-action-item" @click="handleDeleteBtnClick(record as DataSeriesTableData)">
+                  <div 
+                    class="flex items-center h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="handleDeleteBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-delete-small.svg" />
                     <span> Delete </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item v-if="!record.disabled">
-                  <div class="flex items-center table-action-item" @click="handleEditBtnClick(record as DataSeriesTableData)">
+                  <div 
+                    class="flex items-center h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="handleEditBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-edit-small.svg" />
                     <span> Edit </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item>
-                  <div class="flex items-center table-action-item"  @click="handleDuplicateBtnClick(record as DataSeriesTableData)">
+                  <div 
+                    class="flex items-center h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="handleDuplicateBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-duplicate.svg" />
                     <span> Duplicate </span>
                   </div>

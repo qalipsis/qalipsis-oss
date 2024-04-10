@@ -1,5 +1,5 @@
 <template>
-    <label class="form-label">{{ label }}</label>
+    <FormLabel :text="label" />
     <a-input 
         v-model:value="inputValue"
         :disabled="inputDisabled"

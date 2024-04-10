@@ -13,21 +13,24 @@ export const pagePathToPermission: { [key: string]: PermissionEnum[] } = {
 };
 
 export class SidebarHelper {
-    static getMenuItems() {
+    static getMenuItems(): SidebarMenuItem[] {
         return [
             {
+                id: "campaigns",
                 icon: "/icons/icon-work-grey.svg",
                 text: "Campaigns",
                 path: "campaigns",
                 permissions: pagePathToPermission[PagePath.CAMPAIGNS]
             },
             {
+                id: "reports",
                 icon: "/icons/icon-chart-light-grey.svg",
                 text: "Reports",
                 path: "reports",
                 permissions: pagePathToPermission[PagePath.REPORTS]
             },
             {
+                id: "series",
                 icon: "/icons/icon-category-grey.svg",
                 text: "Series",
                 path: "series",

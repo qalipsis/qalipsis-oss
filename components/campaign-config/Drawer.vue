@@ -6,7 +6,7 @@
     @confirm-btn-click="handleConfirmBtnClick"
   >
     <a-form class="pl-2 pr-2 pt-2 pb-2">
-      <a-row :gutter="8" class="mt-3 form-row">
+      <a-row :gutter="8" class="mt-3 h-24">
         <a-col :span="12">
           <FormRadioGroup
             label="Timeout Campaign"
@@ -25,13 +25,13 @@
           />
         </a-col>
       </a-row>
-      <a-row class="form-short-row">
+      <a-row class="h-12">
         <a-col>
           <FormCheckbox label="Schedule" form-control-name="scheduled" />
         </a-col>
       </a-row>
       <template v-if="values.scheduled">
-        <a-row :gutter="8" class="form-row">
+        <a-row :gutter="8" class="h-24">
           <a-col :span="12">
             <FormDateTimePicker
               label="Date time"
@@ -52,7 +52,7 @@
             </FormAutoComplete>
           </a-col>
         </a-row>
-        <a-row class="form-short-row">
+        <a-row class="h-12">
           <a-col>
             <FormCheckbox
               label="Repeat"
@@ -72,9 +72,9 @@
               />
             </a-col>
           </a-row>
-          <a-row :class="{ none: values.repeatTimeRange !== 'HOURLY' }">
+          <a-row :class="{ 'hidden': values.repeatTimeRange !== 'HOURLY' }">
             <a-col>
-              <div class="repeat-value-container">
+              <div class="w-80">
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="hourlyOptions"
@@ -82,9 +82,9 @@
               </div>
             </a-col>
           </a-row>
-          <a-row :class="{ none: values.repeatTimeRange !== 'DAILY' }">
+          <a-row :class="{ 'hidden': values.repeatTimeRange !== 'DAILY' }">
             <a-col>
-              <div class="repeat-value-container">
+              <div class="w-80">
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="dailyOptions"
@@ -92,15 +92,15 @@
               </div>
             </a-col>
           </a-row>
-          <a-row :class="{ none: values.repeatTimeRange !== 'MONTHLY' }">
+          <a-row :class="{ 'hidden': values.repeatTimeRange !== 'MONTHLY' }">
             <a-col>
-              <div class="repeat-value-container">
+              <div class="w-80">
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="monthlyOptions"
                 />
               </div>
-              <div class="repeat-value-container">
+              <div class="w-80">
                 <div class="mt-2 mb-2">Relative before the end of month</div>
                 <FormMultiCircleCheck
                   form-control-name="relativeRepeatValues"
@@ -295,21 +295,3 @@ const handleConfirmBtnClick = handleSubmit(
   }
 );
 </script>
-
-<style scoped lang="scss">
-.form-row {
-  height: 6rem;
-}
-
-.form-short-row {
-  height: 3rem;
-}
-
-.repeat-value-container {
-  width: 20rem;
-}
-
-.none {
-  display: none;
-}
-</style>

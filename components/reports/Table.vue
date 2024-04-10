@@ -13,27 +13,38 @@
                 <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
                 <a-tooltip>
                     <template #title>Refresh</template>
-                    <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+                    <BaseIcon 
+                        icon="/icons/icon-refresh.svg"
+                        :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    />
                 </a-tooltip>
                 </div>
             </template>
         </template>
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'displayName'">
-                <div class="table-item-link" @click="handleReportNameClick(record as ReportTableData)">
+                <div class="cursor-pointer hover:text-primary-500" @click="handleReportNameClick(record as ReportTableData)">
                     <span>{{ record.displayName }}</span>
                 </div>
             </template>
             <template v-if="column.key === 'actions'">
                 <div class="table-action-item-wrapper">
                     <div class="flex items-center">
-                        <div class="flex items-center mr-4 cursor-pointer table-action-item" @click="handleDownloadBtnClick(record as ReportTableData)">
+                        <div 
+                            class="flex items-center mr-4 cursor-pointer h-8"
+                            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                            @click="handleDownloadBtnClick(record as ReportTableData)"
+                        >
                             <a-tooltip>
                                 <template #title>Download</template>
                                 <BaseIcon icon="/icons/icon-document.svg" />
                             </a-tooltip>
                         </div>
-                        <div class="flex items-center cursor-pointer table-action-item" @click="handleDeleteBtnClick(record as ReportTableData)">
+                        <div 
+                            class="flex items-center cursor-pointer h-8"
+                            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                            @click="handleDeleteBtnClick(record as ReportTableData)"
+                        >
                             <a-tooltip>
                                 <template #title>Delete</template>
                                 <BaseIcon icon="/icons/icon-delete-small.svg" />
@@ -141,20 +152,3 @@ const handleDownloadBtnClick = async (reportTableData: ReportTableData) => {
 }
 
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/color";
-
-.table-action-item {
-
-    &:hover {
-        span {
-            color: $primary-color;
-        }
-
-        img {
-            filter: $primary-color-svg
-        }
-    }
-}
-</style>

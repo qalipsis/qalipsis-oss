@@ -26,15 +26,15 @@
         :closable="true">
         <section class="mt-5">
             <div class="flex items-center pb-2">
-                <div :style="{ backgroundColor: scheduledMinionsColor}" class="color-legend mr-2"></div>
+                <div :style="{ backgroundColor: scheduledMinionsColor}" class="w-6 h-6 mr-2"></div>
                 <div>Scheduled minions: {{ scheduledMinions }}</div>
             </div>
             <div class="flex items-center pb-2">
-                <div :style="{ backgroundColor: startedMinionsColor}" class="color-legend mr-2"></div>
+                <div :style="{ backgroundColor: startedMinionsColor}" class="w-6 h-6 mr-2"></div>
                 <div>Started minions: {{ startedMinions }}</div>
             </div>
             <div class="flex items-center">
-                <div :style="{ backgroundColor: completedMinionsColor}" class="color-legend mr-2"></div>
+                <div :style="{ backgroundColor: completedMinionsColor}" class="w-6 h-6 mr-2"></div>
                 <div>Completed minions: {{ completedMinions }}</div>
             </div>
             <div class="mr-2">

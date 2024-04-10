@@ -14,7 +14,11 @@
       </template>
       <template v-if="column.key === 'actions'">
         <div class="table-action-item-wrapper">
-            <div class="flex items-center cursor-pointer table-action-item" @click="handleConfigureBtnClick(record as ScenarioSummary)">
+            <div 
+              class="flex items-center cursor-pointer h-8"
+              :class="TailwindClassHelper.primaryColorFilterHoverClass"
+              @click="handleConfigureBtnClick(record as ScenarioSummary)"
+            >
                 <BaseIcon icon="/icons/icon-setting-grey.svg" />
                 <span> Configure </span>
             </div>

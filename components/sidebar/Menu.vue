@@ -2,7 +2,7 @@
     <section class="sidebar-section text-primary-950">
         <div 
             class="flex items-center pl-3 h-28 cursor-pointer w-full" 
-            @click="handleMenuItemClick('')"
+            @click="handleMenuItemClick('', '')"
         >
             <div class="w-12 h-12 flex items-center pl-2">
                 <BaseIcon icon="/icons/icon-logo.svg"/>
@@ -16,13 +16,24 @@
                 v-for="menuItem in menuItems"
                 class="flex items-center relative text-primary-950"
                 :key="menuItem.path"
-                :class="{ 'menu-container--active': menuItem.path === activePath || menuItem.subMenuItems?.some(o => o.path === activePath) }">
+            >
                 <BasePermission :permissions="menuItem.permissions">
-                    <div class="item-indicator"></div>
-                    <a-menu-item v-if="!menuItem.subMenuItems" @click="handleMenuItemClick(menuItem.path)" :key="menuItem.path">
-                        <div class="flex items-center pl-3 w-full h-16">
+                    <div 
+                        class="absolute h-14 w-2 rounded-md bg-primary-500"
+                        :class="{
+                            'invisible': activeMenuItemId !== menuItem.id,
+                            'visible': activeMenuItemId === menuItem.id
+                        }">
+                    </div>
+                    <a-menu-item v-if="!menuItem.subMenuItems" @click="handleMenuItemClick(menuItem.id, menuItem.path)" :key="menuItem.path">
+                        <div 
+                            class="flex items-center pl-3 w-full h-16"
+                            :class="activeMenuItemId === menuItem.id ? TailwindClassHelper.primaryColorFilterClass : ''">
                             <div class="flex items-center w-12 h-12 justify-center flex-shrink-0">
-                                <BaseIcon class="w-7 h-7" :icon="menuItem.icon" />
+                                <BaseIcon 
+                                    class="w-7 h-7"
+                                    :icon="menuItem.icon"
+                                />
                             </div>
                             <span class="px-3 text-base">
                                 {{ menuItem.text }}
@@ -32,9 +43,15 @@
                 </BasePermission>
                 <a-sub-menu v-if="menuItem.subMenuItems && menuItem.subMenuItems.length > 0">
                     <template #title>
-                        <div class="flex items-center pl-3 w-full h-16">
+                        <div 
+                            class="flex items-center pl-3 w-full h-16"
+                            :class="activeMenuItemId === menuItem.id ? TailwindClassHelper.primaryColorFilterClass : ''"
+                        >
                             <div class="flex items-center w-12 h-12 justify-center flex-shrink-0">
-                                <BaseIcon class="w-7 h-7" :icon="menuItem.icon" />
+                                <BaseIcon 
+                                    class="w-7 h-7"
+                                    :icon="menuItem.icon"
+                                />
                             </div>
                             <span class="px-3 text-base">
                                 {{ menuItem.text }}
@@ -45,7 +62,7 @@
                         <BasePermission :permissions="subMenuItem.permissions">
                             <a-menu-item 
                                 class="h-fit"
-                                @click="handleSubMenuItemClick(menuItem.path, subMenuItem.path)"
+                                @click="handleMenuItemClick(menuItem.id, subMenuItem.path)"
                             >
                                 <div class="flex items-center pl-3 w-full h-16">
                                     <span class="px-3 text-base">
@@ -65,7 +82,7 @@
 
 const router = useRouter();
 
-defineProps<{
+const props = defineProps<{
     /**
      * The menu items to be displayed
      */
@@ -77,52 +94,34 @@ defineProps<{
     collapsed: boolean
 }>();
 
-const activePath = computed(() => router.currentRoute.value.name);
+const activeMenuItemId = ref('');
 
-const activeMenuItemPath = ref('campaigns');
-const activeSubMenuItemPath = ref('');
+onMounted(() => {
+    const activeMenuItem = props.menuItems.find(menuItem => router.currentRoute.value.fullPath.includes(menuItem.path));
+
+    if (activeMenuItem) {
+        activeMenuItemId.value = activeMenuItem.id;
+    }
+})
 
 /**
  * Navigates to the page when clicking the button.
  *  
  * @param path The path url to be navigated
  */
-const handleMenuItemClick = (path: string) => {
-    activeMenuItemPath.value = path;
+const handleMenuItemClick = (menuItemId: string, path: string) => {
+    activeMenuItemId.value = menuItemId;
     navigateTo(`/${path}`);
-}
-
-const handleSubMenuItemClick = (menuItemPath: string, subMenuItemPath: string) => {
-    activeMenuItemPath.value = menuItemPath;
-    activeSubMenuItemPath.value = subMenuItemPath;
-    navigateTo(`/${subMenuItemPath}`);
 }
 
 </script>
 
 <style scoped lang="scss">
-@import "../../assets/scss/color";
-
-$menu-item-height: 3.75rem;
-
-@mixin flexLayout {
-    display: flex;
-    align-items: center;
-}
-@mixin highlight {
-    .icon-wrapper img {
-        filter: $primary-color-svg;
-    }
-}
-@mixin menu-padding {
-    padding-left: .75rem;
-}
-
 /** Overrides the ant-design menu styles */
 .sidebar-section {
     :deep(.ant-menu-vertical .ant-menu-item),
     :deep(.ant-menu-vertical .ant-menu-submenu-title) {
-        height: $menu-item-height;
+        height: 3.75rem;
         padding-inline: 0;
     }
 
@@ -147,31 +146,6 @@ $menu-item-height: 3.75rem;
         display: none;
     }
 
-    :deep(.ant-menu-light .ant-menu-submenu-selected >.ant-menu-submenu-title) {
-        @include highlight;
-        color: $primary-color;
-    }
-}
-
-:global(.ant-menu-light .ant-menu-item-selected) {
-    background-color: transparent;
-    color: $primary-color;
-}
-
-.item-indicator {
-    position: absolute;
-    height: $menu-item-height;
-    width: .5rem;
-    border-radius: 5px;
-    background-color: $primary-color;
-    visibility: hidden;
-}
-
-.menu-container--active {
-    @include highlight;
-    .item-indicator {
-        visibility: visible;
-    }
 }
 
 </style>

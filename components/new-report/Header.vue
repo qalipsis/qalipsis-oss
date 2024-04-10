@@ -2,7 +2,12 @@
     <BaseHeader>
         <div class="flex justify-between items-center w-full">
             <div class="flex items-center">
-                <BaseIcon icon="/icons/icon-arrow-left-black.svg" class="cursor-pointer icon-link pr-2" @click="navigateTo('/reports')" />
+                <BaseIcon 
+                    icon="/icons/icon-arrow-left-black.svg"
+                    class="cursor-pointer pr-2"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="navigateTo('/reports')"
+                />
                 <BaseTitle v-model:content="reportName" :editable="true" />
             </div>
             <div class="flex items-center">

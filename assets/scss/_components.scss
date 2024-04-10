@@ -1,5 +1,3 @@
-@import './color';
-
 /* Overrides the table css */
 .ant-table-wrapper .ant-table-thead>tr>th {
     background: white;
@@ -16,8 +14,8 @@
     width: 23.75rem;
     padding: 2rem 1rem;
     border-radius: .75rem;
-    border: solid 2px $grey-10;
-    background-color: $light-grey-highlight;
+    border: solid 2px #e2e8e8;
+    background-color: #f2f5f5;
     box-shadow: 0 1rem 1.25rem 0 rgba(153, 147, 163, 0.19);
 
     .ant-notification-notice-icon {
@@ -41,32 +39,6 @@
     margin-inline-start: 5rem;
 }
 
-/* Icon */
-.icon-link {
-    &:hover {
-        filter: $primary-color-svg;
-    }
-}
-
-.icon-disabled {
-    filter: $grey-svg;
-}
-
-.icon-refresh {
-    &:hover {
-        filter: $primary-color-svg;
-    }
-}
-
-/* Table */
-.table-item-link {
-    cursor: pointer;
-
-    &:hover {
-        color: $primary-color;
-    }
-}
-
 .table-action-item-wrapper {
     visibility: hidden;
 }
@@ -75,30 +47,6 @@
     .table-action-item-wrapper {
       visibility: visible;
     }
-}
-
-.table-action-item {
-    height: 2rem;
-    
-    span {
-        padding-left: .5rem
-    }
-
-    &:hover {
-        span {
-            color: $primary-color;
-        }
-
-        img {
-            filter: $primary-color-svg
-        }
-    }
-}
-
-/* Color legends */
-.color-legend {
-    width: 1.5rem;
-    height: 1.5rem;
 }
 
 /* Tooltip */
@@ -157,32 +105,21 @@
     }
 }
 
-/* Icon */
-.icon--active {
-    filter: $primary-color-svg;
-}
-
 /* Input */
 .ant-input, .ant-select-single.ant-select-lg:not(.ant-select-customize-input) .ant-select-selector {
     height: 2.5rem;
 
     &::placeholder {
-        color: $grey-1;
+        color: #939b9d;
     }
 }
 
 .ant-input-affix-wrapper-status-error:not(.ant-input-affix-wrapper-disabled):not(.ant-input-affix-wrapper-borderless).ant-input-affix-wrapper {
-    border-color: $pink;
+    border-color: #f33278;
 }
 
 .ant-input-affix-wrapper-lg {
     padding: 0 .5rem;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 0.25rem;
-    font-weight: 500;
 }
 
 /* Report details component */
@@ -196,17 +133,6 @@
         .delete-btn-wrapper {
             visibility: visible;
         }
-    }
-}
-
-/* Scenario form delete button */
-.scenario-form-delete-btn-wrapper {
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-  
-    img:hover {
-      filter: $primary-color-svg;
     }
 }
 

@@ -1,5 +1,9 @@
 interface SidebarMenuBaseItem {
     /**
+     * The identifier of item
+     */
+    id: string;
+    /**
      * The text for the item.
      */
     text: string;

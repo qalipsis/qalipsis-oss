@@ -1,5 +1,7 @@
 <template>
-  <label v-if="label" class="form-label mb-4">{{ label }}</label>
+  <div v-if="label" class="mb-4">
+    <FormLabel :text="label" />
+  </div>
   <a-radio-group 
     v-model:value="value"
     :disabled="disabled"

@@ -1,6 +1,6 @@
 <template>
   <div class="date-time-picker" :class="{ 'has-error': errorMessage }">
-    <label class="form-label">{{ label }}</label>
+    <FormLabel :text="label" />
     <VueDatePicker
       v-model="value"
       ref="dp"

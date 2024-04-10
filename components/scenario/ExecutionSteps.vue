@@ -36,11 +36,11 @@
                     <div>Total Steps: {{ totalExecutions }}</div>
                 </div>
                 <div class="flex items-center mb-2">
-                    <div :style="{ backgroundColor: successfulExecutionsColor}" class="color-legend mr-2"></div>
+                    <div :style="{ backgroundColor: successfulExecutionsColor}" class="w-6 h-6 mr-2"></div>
                     <div>Successful steps: {{ successfulExecutions }}</div>
                 </div>
                 <div class="flex items-center">
-                    <div :style="{ backgroundColor: failedExecutionsColor}" class="color-legend mr-2"></div>
+                    <div :style="{ backgroundColor: failedExecutionsColor}" class="w-6 h-6 mr-2"></div>
                     <div>Failed steps: {{ failedExecutions }}</div>
                 </div>
             </div>

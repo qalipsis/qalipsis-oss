@@ -1,5 +1,5 @@
 <template>
-  <a-row :gutter="8" class="filter-row">
+  <a-row :gutter="8" class="h-24">
     <a-col :span="6">
       <FormAutoComplete
         label="Tag"
@@ -29,8 +29,12 @@
       />
     </a-col>
     <a-col :span="1">
-      <div class="delete-btn-wrapper cursor-pointer" @click="remove(index)">
-        <BaseIcon icon="/icons/icon-delete-small.svg" />
+      <div class="pt-9 cursor-pointer" @click="remove(index)">
+        <BaseIcon 
+          class="w-4 h-4"
+          :class="TailwindClassHelper.primaryColorFilterHoverClass"
+          icon="/icons/icon-delete-small.svg"
+        />
       </div>
     </a-col>
   </a-row>
@@ -103,24 +107,3 @@ const _prepareTagValueOptions = (tagName: string) => {
     : [];
 };
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/color";
-
-.delete-btn-wrapper {
-  padding-top: 2.25rem;
-
-  img {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  img:hover {
-    filter: $primary-color-svg;
-  }
-}
-
-.filter-row {
-  height: 5.5rem;
-}
-</style>

@@ -8,37 +8,37 @@
         :width="width"
         @close="handleCancelBtnClick"
         :destroy-on-close="true">
-        <section class="base-drawer-section">
-            <header class="drawer-header-section">
+        <section class="flex flex-col h-full">
+            <header class="flex justify-between mb-2">
                 <BaseTitle :content="title"  />
-                <div class="close-btn" @click="handleCancelBtnClick">
+                <div 
+                    class="w-10 h-10 cursor-pointer flex items-center justify-center"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="handleCancelBtnClick"
+                >
                     <img src="/icons/icon-close-black.svg" alt="">
                 </div>
             </header>
-            <div class="drawer-content-section">
+            <div class="flex-grow h-full overflow-auto">
                 <slot></slot>
             </div>
-            <footer class="drawer-footer-section" v-if="!footerHidden">
+            <footer class="w-full" v-if="!footerHidden">
                 <div class="my-5">
                     <BaseDivideLine />
                 </div>
-                <div class="button-groups">
-                    <div class="button-wrapper">
-                        <BaseButton
-                            class="w-full"
-                            btn-style="outlined"
-                            :text="cancelBtnText"
-                            @click="handleCancelBtnClick"
-                        />
-                    </div>
-                    <div class="button-wrapper">
-                        <BaseButton 
-                            class="w-full"
-                            :text="confirmBtnText"
-                            :disabled="confirmBtnDisabled"
-                            @click="emit('confirmBtnClick')"
-                        />
-                    </div>
+                <div class="grid grid-cols-2 gap-x-3">
+                    <BaseButton
+                        class="w-full"
+                        btn-style="outlined"
+                        :text="cancelBtnText"
+                        @click="handleCancelBtnClick"
+                    />
+                    <BaseButton 
+                        class="w-full"
+                        :text="confirmBtnText"
+                        :disabled="confirmBtnDisabled"
+                        @click="emit('confirmBtnClick')"
+                    />
                 </div>
             </footer>
         </section>
@@ -118,55 +118,3 @@ const handleCancelBtnClick = () => {
 }
 
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/color";
-
-.base-drawer-section {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-
-    .drawer-header-section {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: .5rem;
-
-        .close-btn {
-            width: 2.5rem;
-            height: 2.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            &:hover {
-                img {
-                    filter: $primary-color-svg;
-                }
-            }
-        }
-    }
-
-    .drawer-content-section {
-        flex-grow: 1;
-        height: 100%;
-        overflow: auto;
-    }
-
-    .drawer-footer-section {
-        width: 100%;
-
-        .button-groups {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            .button-wrapper {
-                width: 45%;
-            }
-        }
-    }
-}
-
-</style>

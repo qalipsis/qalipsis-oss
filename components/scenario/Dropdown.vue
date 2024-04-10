@@ -46,7 +46,7 @@
             </div>
             <BaseIcon
               icon="/icons/icon-arrow-down-light-black.svg"
-              :class="{ 'icon-disabled': hasOnlyOneScenarioOption }"
+              :class="hasOnlyOneScenarioOption ? TailwindClassHelper.grayColorFilterClass : ''"
               :width="18"
               :height="18"
             />

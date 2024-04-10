@@ -1,6 +1,6 @@
 <template>
     <div>
-        <label class="form-label">{{ label }}</label>
+        <FormLabel :text="label" />
         <a-select
             size="large"
             class="w-full"

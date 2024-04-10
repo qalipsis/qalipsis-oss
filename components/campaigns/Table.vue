@@ -14,7 +14,10 @@
           <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
             <a-tooltip>
               <template #title>Refresh</template>
-              <img class="icon-refresh" src="/icons/icon-refresh.svg"  alt="refresh-icon">
+              <BaseIcon 
+                    icon="/icons/icon-refresh.svg"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+              />
             </a-tooltip>
           </div>
         </template>
@@ -22,7 +25,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <div
-            :class="{ 'cursor-pointer table-item-link': actionsEnabled }"
+            :class="{ 'cursor-pointer hover:text-primary-500': actionsEnabled }"
             class="flex items-center"
             @click="handleNameClick(record as CampaignTableData)"
           >
@@ -56,19 +59,21 @@
               <a-menu>
                 <a-menu-item>
                   <div
-                    class="flex items-center cursor-pointer table-action-item"
+                    class="flex items-center cursor-pointer h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="handleRunNowBtnClick(record as CampaignTableData)"
                   >
                     <BaseIcon icon="/icons/icon-time.svg" />
-                    <span> Run now </span>
+                    <span class="pl-2"> Run now </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item>
                   <div 
-                    class="flex items-center table-action-item" 
+                    class="flex items-center h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="handleAbortBtnClick(record as CampaignTableData)">
                     <BaseIcon icon="/icons/icon-delete-small.svg" />
-                    <span> Abort </span>
+                    <span class="pl-2"> Abort </span>
                   </div>
                 </a-menu-item>
               </a-menu>

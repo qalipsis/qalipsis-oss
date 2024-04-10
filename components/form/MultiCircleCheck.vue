@@ -3,8 +3,11 @@
     <div
       v-for="option in options"
       :key="option.label"
-      class="circle-check-box"
-      :class="{ 'circle-check-box--active': selectedValues?.includes(option.value) }"
+      class="w-7 h-7 rounded-full border solid border-primary-400 text-center flex items-center justify-center mr-1 mb-1 cursor-pointer"
+      :class="{ 
+        'text-primary-950 bg-white': !selectedValues?.includes(option.value),
+        'bg-primary-500 text-white': selectedValues?.includes(option.value) }
+      "
       @click="handleBtnClick(option.value)"
     >
       <span> {{ option.label }} </span>
@@ -38,28 +41,3 @@ const handleBtnClick = (selectedValue: string) => {
   emit("change", selectedValues.value)
 };
 </script>
-
-<style scoped lang="scss">
-@import "../../assets/scss/_color.scss";
-
-.circle-check-box {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  border: 1px solid $primary-color;
-  color: $black;
-  background-color: #ffffff;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 .25rem .25rem 0;
-
-  cursor: pointer;
-
-  &--active {
-    background-color: $primary-color;
-    color: #ffffff;
-  }
-}
-</style>

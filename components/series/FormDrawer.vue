@@ -99,7 +99,7 @@
       </a-row>
       <a-row :gutter="8">
         <a-col :span="4">
-          <label class="form-label">Color</label>
+          <FormLabel text="Color" />
           <div class="relative">
             <div
               :class="

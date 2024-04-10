@@ -4,7 +4,8 @@
             <div class="flex items-center">
                 <BaseIcon 
                     icon="/icons/icon-arrow-left-black.svg"
-                    class="cursor-pointer icon-link pr-2"
+                    class="cursor-pointer pr-2"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="navigateTo('/campaigns')"
                 />
                 <BaseTitle v-model:content="name" />

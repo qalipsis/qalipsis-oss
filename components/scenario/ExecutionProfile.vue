@@ -38,10 +38,13 @@
     </a-col>
     <a-col :span="1" v-if="!deleteHidden">
       <div
-        class="cursor-pointer pt-7 scenario-form-delete-btn-wrapper"
+        class="cursor-pointer pt-12 flex items-center h-10"
         @click="handleDeleteBtnClick"
       >
-        <BaseIcon icon="/icons/icon-delete-small.svg" />
+        <BaseIcon
+          :class="TailwindClassHelper.primaryColorFilterHoverClass"
+          icon="/icons/icon-delete-small.svg"
+        />
       </div>
     </a-col>
   </a-row>
