@@ -1,7 +1,7 @@
 <template>
     <section class="vertical-bar-chart-section">
         <div class="vertical-bar-chart-header">
-            <BaseIcon icon="/icons/icon-chart-bold-purple.svg" />
+            <BaseIcon icon="/icons/icon-chart-bold-pink.svg" />
             <span class="pl-2">Number of tests per day</span>
         </div>
         <div class="chart-wrapper">
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ApexOptions } from 'apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import { sub } from 'date-fns';
 
 const { fetchCampaignSummary } = useTimeSeriesApi();

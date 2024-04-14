@@ -2,7 +2,7 @@
     <button 
         type="button"
         :class="[
-            defaultBtnClass,
+            btnBaseClass,
             TailwindClassHelper.baseButtonClass
         ]"
         :disabled="disabled"
@@ -11,10 +11,13 @@
             v-if="icon"
             class="w-6 h-6 pr-2"
             :icon="icon"
-            :class="disabled ? TailwindClassHelper.grayColorFilterClass : ''"
+            :class="[
+                disabled ? TailwindClassHelper.grayColorFilterClass : '',
+                btnIconClass
+            ]"
         >
         </BaseIcon>
-        <span>
+        <span :class="btnTextClass">
             {{ text }}
         </span>
     </button>
@@ -30,8 +33,18 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "click"): void
 }>()
-const defaultBtnClass = computed(() => props.btnStyle === "outlined" ?
-    TailwindClassHelper.outlineButtonClass :
-    TailwindClassHelper.filledButtonClass
+const btnBaseClass = computed(() => props.btnStyle === "outlined" ?
+    TailwindClassHelper.outlineButtonBaseClass :
+    TailwindClassHelper.filledButtonBaseClass
+)
+
+const btnIconClass = computed(() => props.btnStyle === "outlined" ?
+    TailwindClassHelper.outlineButtonIconClass :
+    TailwindClassHelper.filledButtonIconClass
+)
+
+const btnTextClass = computed(() => props.btnStyle === "outlined" ?
+    TailwindClassHelper.outlineButtonTextClass :
+    TailwindClassHelper.filledButtonTextClass
 )
 </script>

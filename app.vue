@@ -18,18 +18,14 @@
         </div>
       </div>
     </section>
-    <a-layout>
-      <a-layout-content v-if="canViewPage">
-        <a-layout>
-          <Sidebar />
-          <a-layout-content style="max-height: 100vh; overflow-y: auto" class="bg-white text-primary-950">
-            <NuxtLayout>
-              <NuxtPage />
-            </NuxtLayout>
-          </a-layout-content>
-        </a-layout>
-      </a-layout-content>
-    </a-layout>
+    <section v-if="canViewPage" class="flex w-screen h-screen">
+      <Sidebar />
+      <div class="max-h-screen overflow-y-auto bg-white text-primary-950 flex-grow" >
+        <NuxtLayout>
+          <NuxtPage />
+        </NuxtLayout>
+      </div>
+    </section>
   </a-config-provider>
 </template>
 
