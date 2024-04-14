@@ -46,7 +46,7 @@
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="handleDeleteBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-delete-small.svg" />
-                    <span> Delete </span>
+                    <span class="pl-2"> Delete </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item v-if="!record.disabled">
@@ -55,7 +55,7 @@
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="handleEditBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-edit-small.svg" />
-                    <span> Edit </span>
+                    <span class="pl-2"> Edit </span>
                   </div>
                 </a-menu-item>
                 <a-menu-item>
@@ -64,7 +64,7 @@
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="handleDuplicateBtnClick(record as DataSeriesTableData)">
                     <BaseIcon icon="/icons/icon-duplicate.svg" />
-                    <span> Duplicate </span>
+                    <span class="pl-2"> Duplicate </span>
                   </div>
                 </a-menu-item>
               </a-menu>

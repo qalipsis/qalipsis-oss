@@ -4,7 +4,6 @@
             <BaseTitle content="Series" />
             <div class="flex items-center">
                 <BaseSearch 
-                    v-model="seriesSearchQuery" 
                     placeholder="Search series..."
                     size="large"
                     :collapsable="true"
@@ -42,7 +41,6 @@
 
 <script setup lang="ts">
 const seriesTableStore = useSeriesTableStore();
-const seriesSearchQuery = ref('');
 const deleteAllBtnDisabled = computed(() => seriesTableStore.selectedRows?.length === 0);
 const dataSeriesReferences = computed(() => seriesTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${seriesTableStore.selectedRows.map(r => r.displayName).join(',')}`)
@@ -61,9 +59,9 @@ const handleDataSeriesUpdated = () => {
     seriesTableStore.fetchDataSeriesTableDataSource();
 }
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     seriesTableStore.$patch({
-        filter: TableHelper.getSanitizedQuery(seriesSearchQuery.value),
+        filter: TableHelper.getSanitizedQuery(searchTerm),
         currentPageIndex: 0
     });
     seriesTableStore.fetchDataSeriesTableDataSource();

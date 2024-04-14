@@ -4,7 +4,7 @@
             class="h-9 border-none outline-none transition-width duration-300 rounded-md"
             :class="active ? 'w-40 px-2' : 'p-0 w-0'"
             type="text"
-            v-model="value"
+            v-model="searchTerm"
             :placeholder="placeholder"
             @input="handleTextInputChange">
         <div class="w-9 h-10 flex items-center justify-center cursor-pointer" @click="handleSearchIconClick">
@@ -21,20 +21,20 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "search", v: string): void,
 }>()
-const value = ref('');
+const searchTerm = ref('');
 const active = ref(props.collapsable === false);
 
 const debouncedSearch = debounce(() => {
-    if (props.collapsable && !value.value) {
+    if (props.collapsable && !searchTerm.value) {
         active.value = false;
     }
 
-    emit('search', value.value);
+    emit('search', searchTerm.value);
 }, 300);
 
 const handleSearchIconClick = () => {
     if (active.value) {
-        emit('search', value.value);
+        emit('search', searchTerm.value);
     } else {
         active.value = true;
     }

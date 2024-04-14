@@ -139,6 +139,7 @@ const _fetchTableData = async () => {
     try {
         await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
+        console.log(error)
         ErrorHelper.handleHttpResponseError(error)
     }
 }

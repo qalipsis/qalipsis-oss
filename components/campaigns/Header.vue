@@ -4,7 +4,6 @@
             <BaseTitle content="Campaigns" />
             <div class="flex items-center">
                 <BaseSearch 
-                    v-model="campaignSearchQuery" 
                     placeholder="Search campaigns..."
                     size="large"
                     :collapsable="true"
@@ -25,11 +24,10 @@
 <script setup lang="ts">
 
 const campaignsTableStore = useCampaignsTableStore();
-const campaignSearchQuery = ref('');
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     campaignsTableStore.$patch({
-        filter: TableHelper.getSanitizedQuery(campaignSearchQuery.value),
+        filter: TableHelper.getSanitizedQuery(searchTerm),
         currentPageIndex: 0
     });
     campaignsTableStore.fetchCampaignsTableDataSource();

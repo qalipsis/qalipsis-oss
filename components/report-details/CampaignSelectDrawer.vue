@@ -16,7 +16,6 @@
             </div>
             <div class="flex justify-end mt-4 mb-4">
                 <BaseSearch
-                    v-model="searchQuery"
                     placeholder="Search campaigns..."
                     @search="handleSearch"
                 />
@@ -44,7 +43,6 @@ const { updateReport } = useReportApi();
 const campaignsTableStore = useCampaignsTableStore();
 const reportDetailsStore = useReportDetailsStore();
 
-const searchQuery = ref("");
 const presetCampaignPatterns = computed(() => props.campaignPatterns?.length ? props.campaignPatterns.join(",") : "")
 
 onMounted(() => {
@@ -86,9 +84,9 @@ const handleCampaignPatternsChange = (campaignNamesPatterns: string[]) => {
     })
 }
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     campaignsTableStore.$patch({
-        filter: TableHelper.getSanitizedQuery(searchQuery.value),
+        filter: TableHelper.getSanitizedQuery(searchTerm),
         currentPageIndex: 0
     });
     campaignsTableStore.fetchCampaignsTableDataSource();

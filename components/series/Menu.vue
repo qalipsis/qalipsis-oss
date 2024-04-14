@@ -1,7 +1,10 @@
 <template>
     <section>
         <div class="w-full flex items-center series-search-wrapper mb-2">
-            <BaseSearch v-model="seriesQuery" placeholder="Search series..." @search="handleSearch"/>
+            <BaseSearch 
+                placeholder="Search series..."
+                @search="handleSearch"
+            />
         </div>
         <a-row :gutter="[8, 8]" class="mb-1">
             <a-col 
@@ -56,7 +59,6 @@ const emit = defineEmits<{
 
 const { fetchAllDataSeries } = useDataSeriesApi();
 
-const seriesQuery = ref('');
 /**
  * All data series options
  */
@@ -94,9 +96,9 @@ const handleDataSeriesOptionClick = (dataSeriesOption: DataSeriesOption) => {
     emit('selectedDataSeriesChange', dataSeriesOptions.value.filter(d => d.isActive));
 }
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     const searchKeys = ["reference", "displayName", "dataType", "valueName"]
-    const searchedResult = SearchHelper.performFuzzySearch<DataSeriesOption>(seriesQuery.value, dataSeriesOptions.value, searchKeys);
+    const searchedResult = SearchHelper.performFuzzySearch<DataSeriesOption>(searchTerm, dataSeriesOptions.value, searchKeys);
     availableDataSeriesOptions.value = SeriesHelper.toDataSeriesOptions(searchedResult.slice(0, SeriesDetailsConfig.MAX_DATA_SERIES_TO_BE_DISPLAYED + 1), props.preselectedDataSeriesReferences);
 }
 

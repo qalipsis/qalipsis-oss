@@ -36,7 +36,6 @@
             />
             <BaseSearch
                 class="ml-2"
-                v-model="searchQuery"
                 placeholder="Search campaigns..."
                 size="large"
                 @search="handleSearch"
@@ -53,7 +52,6 @@ const { createReport } = useReportApi();
 const campaignsTableStore = useCampaignsTableStore();
 const { selectedRowKeys } = storeToRefs(campaignsTableStore);
 
-const searchQuery = ref("");
 const reportName = ref("New Report");
 const reportDescription = ref("");
 const campaignPatterns = ref<string[]>([]);
@@ -68,9 +66,9 @@ const handleCampaignPatternsChange = (patterns: string[]) => {
     campaignPatterns.value = patterns;
 }
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     campaignsTableStore.$patch({
-        filter: TableHelper.getSanitizedQuery(searchQuery.value),
+        filter: TableHelper.getSanitizedQuery(searchTerm),
         currentPageIndex: 0
     });
     campaignsTableStore.fetchCampaignsTableDataSource();

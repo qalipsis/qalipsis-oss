@@ -1,7 +1,7 @@
 <template>
     <template v-if="!isEditing">
         <div class="flex items-center">
-            <h1 class="font-medium text-2xl">{{ content }}</h1>
+            <h1 class="font-medium text-2xl text-primary-950">{{ content }}</h1>
             <div 
                 v-if="editable" 
                 class="cursor-pointer px-1 pt-1"

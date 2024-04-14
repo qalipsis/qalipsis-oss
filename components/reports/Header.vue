@@ -4,7 +4,6 @@
             <BaseTitle content="Reports" />
             <div class="flex items-center">
                 <BaseSearch 
-                    v-model="reportSearchQuery" 
                     placeholder="Search reports..."
                     size="large"
                     :collapsable="true"
@@ -38,7 +37,6 @@
 <script setup lang="ts">
 
 const reportsTableStore = useReportsTableStore();
-const reportSearchQuery = ref('');
 const deleteAllBtnDisabled = computed(() => reportsTableStore.selectedRows?.length === 0);
 const reportReferences = computed(() => reportsTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${reportsTableStore.selectedRows.map(r => r.displayName).join(',')}`)
@@ -52,9 +50,9 @@ const handleDeleteSelectedReportsBtnClick = () => {
     modalOpen.value = true;
 }
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     reportsTableStore.$patch({
-        filter: TableHelper.getSanitizedQuery(reportSearchQuery.value),
+        filter: TableHelper.getSanitizedQuery(searchTerm),
         currentPageIndex: 0
     });
     reportsTableStore.fetchReportsTableDataSource();

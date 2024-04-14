@@ -63,8 +63,9 @@
                             <a-menu-item 
                                 class="h-fit"
                                 @click="handleMenuItemClick(menuItem.id, subMenuItem.path)"
+                                :key="subMenuItem.path"
                             >
-                                <div class="flex items-center pl-3 w-full h-16">
+                                <div class="flex items-center pl-3 w-full h-10">
                                     <span class="px-3 text-base">
                                         {{ subMenuItem.text }}
                                     </span>

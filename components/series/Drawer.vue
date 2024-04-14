@@ -8,7 +8,6 @@
     >
         <div class="flex justify-end w-full mt-2 mb-2">
             <BaseSearch 
-                v-model="seriesSearchQuery" 
                 placeholder="Search series..."
                 :collapsable="true"
                 @search="handleSearch"
@@ -34,16 +33,14 @@ const emit = defineEmits<{
 
 const seriesTableStore = useSeriesTableStore();
 
-const seriesSearchQuery = ref("");
-
 const handleConfirmButtonClick = () => {
     emit("selectedDataSeriesChange", seriesTableStore.selectedRowKeys);
     emit("update:open", false);
 }
 
-const handleSearch = () => {
+const handleSearch = (searchTerm: string) => {
     seriesTableStore.$patch({
-        filter: TableHelper.getSanitizedQuery(seriesSearchQuery.value),
+        filter: TableHelper.getSanitizedQuery(searchTerm),
         currentPageIndex: 0
     });
     // Fetches the table data without minions count

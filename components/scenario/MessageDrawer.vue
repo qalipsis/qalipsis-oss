@@ -2,7 +2,11 @@
     <BaseDrawer :open="open" :title="title" :maskClosable="true" :footer-hidden="true" :width="920"
         @close="emit('update:open', false)">
         <div class="flex justify-end w-full mb-3">
-            <BaseSearch v-model="query" :collapsable="false" placeholder="Search message..."/>
+            <BaseSearch 
+                :collapsable="false"
+                placeholder="Search message..."
+                @search="handleSearch"
+            />
         </div>
         <a-table 
             :data-source="tableData"
@@ -41,20 +45,10 @@ const emit = defineEmits<{
     (e: "update:open", v: boolean): void
 }>()
 
-const query = ref("");
-
 /**
  * The table data to be displayed
  */
-const tableData = computed(() => {
-    if (query.value) {
-        currentPage.value = 1
-        return SearchHelper.performFuzzySearch(
-            query.value, props.messages, ["stepName", "severity", "message"])
-    }
-
-    return props.messages;
-});
+const tableData = ref<ReportMessage[]>([]);
 
 const tableColumns = ScenarioDetailsConfig.MESSAGE_TABLE_COLUMNS;
 
@@ -67,5 +61,19 @@ const paginationOptions = reactive({
         currentPage.value = page;
     }
 });
+
+onMounted(() => {
+    tableData.value = [...props.messages];
+})
+
+const handleSearch = (searchTerm: string) => {
+    if (searchTerm) {
+        currentPage.value = 1
+        tableData.value = SearchHelper.performFuzzySearch(
+            searchTerm, props.messages, ["stepName", "severity", "message"])
+    } else {
+        tableData.value = [...props.messages];
+    }
+}
 
 </script>

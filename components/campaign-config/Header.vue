@@ -20,7 +20,6 @@
         </div>
         <BaseSearch
           class="ml-2"
-          v-model="searchQuery"
           placeholder="Search scenario..."
           size="large"
           @search="handleSearch"
@@ -70,15 +69,14 @@ const campaignConfigForm = ref<CampaignConfigurationForm>({
   scheduledTime: props.campaignConfigForm?.scheduledTime ?? null,
 });
 const campaignName = ref(props.campaignName ?? "New Campaign");
-const searchQuery = ref("");
 const open = ref(false);
 const executionText = computed(() => {
   return campaignConfigForm.value?.scheduled ? "Schedule" : "Run immediately";
 });
 
-const handleSearch = () => {
-  if (searchQuery.value) {
-    const query = SearchHelper.getSanitizedQuery(searchQuery.value);
+const handleSearch = (searchTerm: string) => {
+  if (searchTerm) {
+    const query = SearchHelper.getSanitizedQuery(searchTerm);
     const filteredScenarioSummary = SearchHelper.performFuzzySearch(
       query,
       scenarioTaleStore.allScenarioSummary,
