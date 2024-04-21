@@ -1,60 +1,51 @@
 <template>
-    <a-table 
+    <BaseTable
         :data-source="dataSource"
-        :columns="tableColumns"
-        :show-sorter-tooltip="false"
-        :ellipsis="true"
-        rowKey="reference"
-        :pagination="pagination"
-        :rowSelection="rowSelection"
-        @change="handlePaginationChange">
-        <template #headerCell="{ column }">
-            <template v-if="column.key === 'actions'">
-                <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
-                <a-tooltip>
-                    <template #title>Refresh</template>
-                    <BaseIcon 
-                        icon="/icons/icon-refresh.svg"
-                        :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    />
-                </a-tooltip>
-                </div>
-            </template>
-        </template>
+        :table-column-configs="ReportsTableConfig.TABLE_COLUMNS"
+        :total-elements="totalElements"
+        :page-size="pageSize"
+        :row-selection-enabled="true"
+        :row-all-selection-enabled="true"
+        :current-page-index="currentPageIndex"
+        row-key="reference"
+        row-class="group"
+        @sorter-change="handleSorterChange"
+        @page-change="handlePaginationChange"
+        @selectionChange="handleSelectionChange"
+        @refresh="handleRefreshBtnClick"
+    >
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'displayName'">
                 <div class="cursor-pointer hover:text-primary-500" @click="handleReportNameClick(record as ReportTableData)">
                     <span>{{ record.displayName }}</span>
                 </div>
             </template>
-            <template v-if="column.key === 'actions'">
-                <div class="table-action-item-wrapper">
-                    <div class="flex items-center">
-                        <div 
-                            class="flex items-center mr-4 cursor-pointer h-8"
-                            :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                            @click="handleDownloadBtnClick(record as ReportTableData)"
-                        >
-                            <a-tooltip>
-                                <template #title>Download</template>
-                                <BaseIcon icon="/icons/icon-document.svg" />
-                            </a-tooltip>
-                        </div>
-                        <div 
-                            class="flex items-center cursor-pointer h-8"
-                            :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                            @click="handleDeleteBtnClick(record as ReportTableData)"
-                        >
-                            <a-tooltip>
-                                <template #title>Delete</template>
-                                <BaseIcon icon="/icons/icon-delete-small.svg" />
-                            </a-tooltip>
-                        </div>
-                    </div>
-                </div>
-            </template>
         </template>
-    </a-table>
+        <template #actionCell="{ record }">
+            <div class="flex items-center invisible group-hover:visible">
+                <div 
+                    class="flex items-center mr-4 cursor-pointer h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="handleDownloadBtnClick(record as ReportTableData)"
+                >
+                    <a-tooltip>
+                        <template #title>Download</template>
+                        <BaseIcon icon="/icons/icon-document.svg" />
+                    </a-tooltip>
+                </div>
+                <div 
+                    class="flex items-center cursor-pointer h-8"
+                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    @click="handleDeleteBtnClick(record as ReportTableData)"
+                >
+                    <a-tooltip>
+                        <template #title>Delete</template>
+                        <BaseIcon icon="/icons/icon-delete-small.svg" />
+                    </a-tooltip>
+                </div>
+            </div>
+        </template>
+    </BaseTable>
     <ReportsDeleteConfirmationModal
         v-model:open="modalOpen"
         :reportReferences="reportReferences"
@@ -63,34 +54,13 @@
 </template>
   
 <script setup lang="ts">
-import type { TablePaginationConfig } from "ant-design-vue/es/table/Table";
-import type { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
 
 const userStore = useUserStore();
 const reportsTableStore = useReportsTableStore();
 const { downloadReport } = useReportApi();
-const { dataSource, totalElements } = storeToRefs(reportsTableStore);
+const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(reportsTableStore);
 
-const tableColumns = ReportsTableConfig.TABLE_COLUMNS;
-const currentPage = computed(() => reportsTableStore.currentPageNumber);
-const selectedRowKeys = computed(() => reportsTableStore.selectedRowKeys);
-const rowSelection: TableRowSelection<ReportTableData> | undefined = reactive({
-  preserveSelectedRowKeys: true,
-  selectedRowKeys: selectedRowKeys,
-  onChange: (selectedRowKeys: Key[], selectedRows: ReportTableData[]) => {
-    reportsTableStore.$patch({
-      selectedRows: selectedRows,
-      selectedRowKeys: selectedRowKeys as string[]
-    });
-  }
-})
-const pagination = reactive({
-    current: currentPage,
-    pageSize: reportsTableStore.pageSize,
-    total: totalElements,
-    ...TableHelper.sharedPaginationProperties
-});
 const reportReferences = ref<string[]>([]);
 const deleteModalContent = ref('');
 const modalOpen = ref(false);
@@ -108,17 +78,28 @@ watch(() => userStore.currentTenantReference, async () => {
     await reportsTableStore.fetchReportsTableDataSource();
 })
 
-const handlePaginationChange = async (
-    pagination: TablePaginationConfig,
-    _: Record<string, FilterValue>,
-    sorter: SorterResult<any> | SorterResult<any>[]) => {
-    const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
-    const sort = TableHelper.getSort(sorter as SorterResult<any>);
+const handleSorterChange = (tableSorter: TableSorter | null) => {
+  const sort = tableSorter
+    ? `${tableSorter.key}:${tableSorter.direction}`
+    : '';
+  reportsTableStore.$patch({
+    sort: sort
+  });
+  _fetchTableData();
+}
+
+const handleSelectionChange = (tableSelection: TableSelection) => {
     reportsTableStore.$patch({
-        sort: sort,
-        currentPageIndex: currentPageIndex
-    });
-    _fetchTableData();
+    selectedRows: tableSelection.selectedRows,
+    selectedRowKeys: tableSelection.selectedRowKeys
+  });
+}
+
+const handlePaginationChange = (pageIndex: number) => {
+  reportsTableStore.$patch({
+    currentPageIndex: pageIndex,
+  });
+  _fetchTableData();
 }
 
 const handleReportNameClick = (reportTableData: ReportTableData) => {

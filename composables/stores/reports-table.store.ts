@@ -13,9 +13,6 @@ export const useReportsTableStore = defineStore("ReportsTable", {
       selectedRowKeys: []
     }
   },
-  getters: {
-    currentPageNumber: state => state.currentPageIndex + 1,
-  },
   actions: {
     async fetchReportsTableDataSource(): Promise<void> {
       const { fetchReports } = useReportApi();

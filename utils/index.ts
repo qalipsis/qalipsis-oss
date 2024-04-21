@@ -43,6 +43,7 @@ export type {
 } from "./types/campaign";
 export type { ChartData, ChartOptionData, ApexDataSeries } from "./types/chart";
 export type { Tag } from "./types/common";
+export type { CheckBoxExposeType } from "./types/checkbox";
 export type {
   DefaultCampaignConfiguration,
   Validation,
@@ -112,7 +113,7 @@ export type {
   DataType, SharingMode, QueryAggregationOperator, QueryClauseOperator
 } from "./types/series";
 export type { SidebarMenuItem } from "./types/sidebar";
-export type { TableStoreState } from "./types/table";
+export type { TableStoreState, TableColumnConfig, TableSorter, SortingDirection, TableSelection } from "./types/table";
 export type { Tenant } from "./types/tenant";
 export type {
   TimeSeriesAggregationQueryParam,

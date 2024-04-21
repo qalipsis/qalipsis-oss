@@ -1,4 +1,5 @@
-import { ApexOptions } from "apexcharts";
+import type { ApexOptions } from "apexcharts";
+import type { TableColumnConfig } from "../types/table";
 
 export class ScenarioDetailsConfig {
   /**
@@ -10,6 +11,21 @@ export class ScenarioDetailsConfig {
    * The identifier for the scenario summary.
    */
   static SCENARIO_SUMMARY_ID = "campaignSummary";
+
+  static NEW_MESSAGE_TABLE_COLUMNS: TableColumnConfig[] = [
+    {
+      title: "Step Name",
+      key: "stepName",
+    },
+    {
+      title: "Severity",
+      key: "severity",
+    },
+    {
+      title: "Message",
+      key: "message",
+    },
+  ];
 
   static MESSAGE_TABLE_COLUMNS = [
     {

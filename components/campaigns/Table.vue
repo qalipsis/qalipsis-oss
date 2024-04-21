@@ -1,27 +1,22 @@
 <template>
   <div>
-    <a-table
+    <BaseTable
       :data-source="dataSource"
-      :columns="tableColumns"
-      :rowSelection="rowSelection"
-      :show-sorter-tooltip="false"
-      :ellipsis="true"
-      :pagination="pagination"
-      @change="handlePaginationChange"
+      :table-column-configs="CampaignsTableConfig.TABLE_COLUMNS"
+      :totalElements="totalElements"
+      :pageSize="pageSize"
+      :selected-row-keys="selectedRowKeys"
+      :currentPageIndex="currentPageIndex"
+      :row-all-selection-enabled="true"
+      :row-selection-enabled="rowSelectionEnabled"
+      :disable-row="disableRow"
+      row-class="group"
+      rowKey="key"
+      @sorter-change="handleSorterChange"
+      @page-change="handlePaginationChange"
+      @selectionChange="handleSelectionChange"
+      @refresh="handleRefreshBtnClick"
     >
-      <template #headerCell="{ column }">
-        <template v-if="column.key === 'actions'">
-          <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
-            <a-tooltip>
-              <template #title>Refresh</template>
-              <BaseIcon 
-                    icon="/icons/icon-refresh.svg"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-              />
-            </a-tooltip>
-          </div>
-        </template>
-      </template>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <div
@@ -42,15 +37,17 @@
             :background-css-class="record.statusTag.backgroundCssClass"
           />
         </template>
-        <template
+      </template>
+      <template #actionCell="{ record }">
+        <div 
           v-if="
-            column.key === 'actions' &&
             actionsEnabled &&
             record.status === 'SCHEDULED'
           "
+          class="cursor-pointer"
         >
           <a-dropdown trigger="click">
-            <a @click.prevent class="table-action-item-wrapper">
+            <a @click.prevent class="invisible group-hover:visible">
               <div class="flex items-center">
                 <BaseIcon icon="/icons/icon-menu.svg" />
               </div>
@@ -61,7 +58,7 @@
                   <div
                     class="flex items-center cursor-pointer h-8"
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleRunNowBtnClick(record as CampaignTableData)"
+                    @click="handleRunNowBtnClick(record)"
                   >
                     <BaseIcon icon="/icons/icon-time.svg" />
                     <span class="pl-2"> Run now </span>
@@ -79,9 +76,9 @@
               </a-menu>
             </template>
           </a-dropdown>
-        </template>
+        </div>
       </template>
-    </a-table>
+    </BaseTable>
     <BaseModal 
       title="Abort campaign"
       confirmBtnText="Abort"
@@ -95,8 +92,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { TableRowSelection, SorterResult, FilterValue, Key } from "ant-design-vue/es/table/interface";
-import type { TablePaginationConfig } from "ant-design-vue/es/table/Table";
 
 const props = defineProps<{
   actionsEnabled?: boolean;
@@ -107,61 +102,13 @@ const props = defineProps<{
 
 const userStore = useUserStore();
 const campaignsTableStore = useCampaignsTableStore();
-const { dataSource, totalElements } = storeToRefs(campaignsTableStore);
+const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(campaignsTableStore);
 const { fetchCampaignConfig, createCampaign, abortCampaign } = useCampaignApi();
 
-const tableColumns = CampaignsTableConfig.TABLE_COLUMNS;
-const currentPage = computed(() => campaignsTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys);
 const campaignAbortModalOpen = ref(false);
 const campaignAbortModalContent = ref("");
 let selectedCampaignTableData: CampaignTableData;
-const pagination: TablePaginationConfig = reactive({
-  current: currentPage,
-  pageSize: campaignsTableStore.pageSize,
-  total: totalElements,
-  ...TableHelper.sharedPaginationProperties,
-});
-const rowSelection: TableRowSelection<CampaignTableData> | undefined = props.rowSelectionEnabled
-  ? reactive({
-      // Hides the selected all button when the max number of row selection is specified
-      hideSelectAll: props.maxSelectedRows ? true : false,
-      preserveSelectedRowKeys: true,
-      selectedRowKeys: selectedRowKeys,
-      onChange: (
-        selectedRowKeys: Key[],
-        selectedRows: CampaignTableData[]
-      ) => {
-        campaignsTableStore.$patch({
-          selectedRowKeys: selectedRowKeys as string[],
-          selectedRows: selectedRows,
-        });
-      },
-      getCheckboxProps: (record: CampaignTableData) => {
-        let disabled = false;
-        const selectableStatuses: ExecutionStatus[] = [
-          ExecutionStatusConstant.SUCCESSFUL,
-          ExecutionStatusConstant.FAILED,
-          ExecutionStatusConstant.ABORTED,
-          ExecutionStatusConstant.WARNING,
-        ];
-        if (record?.status && !selectableStatuses.includes(record.status)) {
-          disabled = true;
-        } else if (props.maxSelectedRows && selectedRowKeys.value) {
-          // When the max number of row selection is specified, the row is disabled when it is not yet selected.
-          disabled =
-            selectedRowKeys.value.length >= props.maxSelectedRows &&
-            !selectedRowKeys.value.includes(record?.key);
-        } else {
-          disabled = record?.disabled ?? false;
-        }
-
-        return {
-          disabled: disabled,
-        };
-      },
-    })
-  : undefined;
 
 onMounted(() => {
   _fetchTableData();
@@ -179,19 +126,52 @@ watch(
   }
 );
 
-const handlePaginationChange = async (
-  pagination: TablePaginationConfig,
-  _: Record<string, FilterValue>,
-  sorter: SorterResult<any> | SorterResult<any>[]
-) => {
-  const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
-  const sort = TableHelper.getSort(sorter as SorterResult<any>);
+const handlePaginationChange = (pageIndex: number) => {
   campaignsTableStore.$patch({
-    sort: sort,
-    currentPageIndex: currentPageIndex,
+    currentPageIndex: pageIndex,
   });
   _fetchTableData();
-};
+}
+
+const handleSelectionChange = (tableSelection: TableSelection) => {
+  campaignsTableStore.$patch({
+    selectedRows: tableSelection.selectedRows,
+    selectedRowKeys: tableSelection.selectedRowKeys
+  });
+}
+
+const disableRow = (campaign: CampaignTableData): boolean => {
+  let disabled = false;
+  const selectableStatuses: ExecutionStatus[] = [
+    ExecutionStatusConstant.SUCCESSFUL,
+    ExecutionStatusConstant.FAILED,
+    ExecutionStatusConstant.ABORTED,
+    ExecutionStatusConstant.WARNING,
+  ];
+
+  if (campaign.status && !selectableStatuses.includes(campaign.status)) {
+    disabled = true;
+  } else if (props.maxSelectedRows && selectedRowKeys.value) {
+    // When the max number of row selection is specified, the row is disabled when it is not yet selected.
+    disabled =
+      selectedRowKeys.value.length >= props.maxSelectedRows &&
+      !selectedRowKeys.value.includes(campaign.key);
+  } else {
+    disabled = campaign.disabled ?? false;
+  }
+
+  return disabled;
+}
+
+const handleSorterChange = (tableSorter: TableSorter | null) => {
+  const sort = tableSorter
+    ? `${tableSorter.key}:${tableSorter.direction}`
+    : '';
+  campaignsTableStore.$patch({
+    sort: sort,
+  });
+  _fetchTableData();
+}
 
 const handleRefreshBtnClick = () => {
   _fetchTableData();
@@ -227,7 +207,6 @@ const handleRunNowBtnClick = async (
   } catch (error) {
     ErrorHelper.handleHttpResponseError(error)
   }
-
 };
 
 const handleNameClick = (

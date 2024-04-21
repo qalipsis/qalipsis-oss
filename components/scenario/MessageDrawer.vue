@@ -8,10 +8,17 @@
                 @search="handleSearch"
             />
         </div>
-        <a-table 
+        <BaseTable
             :data-source="tableData"
-            :columns="tableColumns"
-            :pagination="paginationOptions">
+            :table-column-configs="ScenarioDetailsConfig.NEW_MESSAGE_TABLE_COLUMNS"
+            :page-size="TableHelper.defaultPageSize"
+            :current-page-index="currentPageIndex"
+            :total-elements="tableData.length"
+            :all-data-source-included="true"
+            :refresh-hidden="true"
+            row-key="messageId"
+            @page-change="handlePaginationPage"
+        >
             <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'severity'">
                     <BaseTag
@@ -21,7 +28,7 @@
                         :background-css-class="record.severityTag.backgroundCssClass" />
                 </template>
             </template>
-        </a-table>
+        </BaseTable>
     </BaseDrawer>
 </template>
 
@@ -33,14 +40,6 @@ const props = defineProps<{
     messages: ReportMessage[];
 }>()
 
-/**
- * The current page index for the the pagination.
- * 
- * @remarks
- * The start page index for the pagination is 1.
- */
-const currentPage = ref(1);
-
 const emit = defineEmits<{
     (e: "update:open", v: boolean): void
 }>()
@@ -50,17 +49,11 @@ const emit = defineEmits<{
  */
 const tableData = ref<ReportMessage[]>([]);
 
-const tableColumns = ScenarioDetailsConfig.MESSAGE_TABLE_COLUMNS;
+const currentPageIndex = ref<number>(0);
 
-const paginationOptions = reactive({
-    ...TableHelper.sharedPaginationProperties,
-    current: currentPage,
-    pageSize: TableHelper.defaultPageSize,
-    total: tableData.value.length,
-    onChange: function (page: number, _: number): void {
-        currentPage.value = page;
-    }
-});
+const handlePaginationPage = (pageIndex: number) => {
+    currentPageIndex.value = pageIndex;
+}
 
 onMounted(() => {
     tableData.value = [...props.messages];
@@ -68,7 +61,7 @@ onMounted(() => {
 
 const handleSearch = (searchTerm: string) => {
     if (searchTerm) {
-        currentPage.value = 1
+        currentPageIndex.value = 0;
         tableData.value = SearchHelper.performFuzzySearch(
             searchTerm, props.messages, ["stepName", "severity", "message"])
     } else {

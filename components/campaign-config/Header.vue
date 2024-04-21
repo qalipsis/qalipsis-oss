@@ -83,11 +83,13 @@ const handleSearch = (searchTerm: string) => {
       ["name"]
     );
     scenarioTaleStore.$patch({
+      currentPageIndex: 0,
       dataSource: filteredScenarioSummary,
       totalElements: filteredScenarioSummary.length,
     });
   } else {
     scenarioTaleStore.$patch({
+      currentPageIndex: 0,
       dataSource: scenarioTaleStore.allScenarioSummary,
       totalElements: scenarioTaleStore.allScenarioSummary.length,
     });

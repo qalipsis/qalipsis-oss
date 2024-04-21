@@ -164,6 +164,7 @@ export class ReportHelper {
                     .map<ReportDetailsTableData>(res => {
                         const formattedAggregatedValue = TimeSeriesHelper.toComposedValue(dataSeriesReferenceToDataSeries[cur], res.value);
                         const reportTableData: ReportDetailsTableData = {
+                            id: `${res.campaign}_${cur}`,
                             seriesReference: cur,
                             seriesName: dataSeriesReferenceToDataSeries[cur].displayName,
                             campaignKey: res.campaign,
@@ -175,6 +176,7 @@ export class ReportHelper {
                             startTimeText: TimeframeHelper.toSpecificFormat(new Date(res.start), 'dd/MM/yyyy, HH:mm:ss'),
                             valueDisplayText: formattedAggregatedValue.formattedText
                         }
+
                         return reportTableData
                     })
                 acc.push(...reportTableDataComponents);

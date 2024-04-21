@@ -1,39 +1,45 @@
 <template>
-  <a-table 
+  <BaseTable
     :data-source="dataSource"
-    :columns="tableColumns"
-    :rowSelection="rowSelection"
-    :show-sorter-tooltip="false"
-    :ellipsis="true"
-    :pagination="pagination"
-    @change="handlePaginationChange">
-    <template #headerCell="{ column }">
-      <template v-if="column.key === 'actions'">
-        <div class="flex items-center cursor-pointer" @click="handleRefreshBtnClick()">
-          <a-tooltip>
-            <template #title>Refresh</template>
-            <BaseIcon 
-              icon="/icons/icon-refresh.svg"
-              :class="TailwindClassHelper.primaryColorFilterHoverClass"
-            />
-          </a-tooltip>
-        </div>
-      </template>
-    </template>
+    :table-column-configs="SeriesTableConfig.TABLE_COLUMNS"
+    :totalElements="totalElements"
+    :current-page-index="currentPageIndex"
+    :page-size="pageSize"
+    :disable-row="disableRow"
+    :row-selection-enabled="true"
+    :row-all-selection-enabled="true"
+    row-key="reference"
+    row-class="group"
+    @sorter-change="handleSorterChange"
+    @page-change="handlePaginationChange"
+    @selectionChange="handleSelectionChange"
+    @refresh="handleRefreshBtnClick"
+  >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div class="flex items-center cursor-pointer hover:text-primary-500" @click="handleEditBtnClick(record as DataSeriesTableData)">
-          <div class="dot" :style="{ backgroundColor: `${record.color || 'transparent'}` }"></div>
+        <div 
+          class="flex items-center cursor-pointer hover:text-primary-500"
+          @click="handleEditBtnClick(record as DataSeriesTableData)"
+        >
+          <div 
+            class="w-2 h-2 rounded-full mr-2"
+            :style="{ backgroundColor: `${record.color || 'transparent'}` }">
+          </div>
           <span>{{ record.displayName }}</span>
         </div>
       </template>
       <template v-if="column.key === 'sharingMode'">
         <span>{{ record.sharedText }}</span>
       </template>
-      <template v-if="column.key === 'actions' && !tableActionsHidden">
+    </template>
+    <template #actionCell="{ record }">
+      <div 
+        v-if="!tableActionsHidden"
+        class="cursor-pointer"
+      >
         <BasePermission :permissions="[PermissionConstant.WRITE_SERIES]">
           <a-dropdown trigger="click">
-            <a @click.prevent class="table-action-item-wrapper">
+            <a @click.prevent class="invisible group-hover:visible">
               <div class="flex items-center">
                 <BaseIcon icon="/icons/icon-menu.svg" />
               </div>
@@ -71,9 +77,9 @@
             </template>
           </a-dropdown>
         </BasePermission>
-      </template>
+      </div>
     </template>
-  </a-table>
+  </BaseTable>
   <SeriesDeleteConfirmationModal
     v-model:open="modalOpen"
     :dataSeriesReferences="dataSeriesReferences"
@@ -88,11 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TablePaginationConfig } from "ant-design-vue/es/table/Table";
-import type { FilterValue, Key, SorterResult, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
-
-const tableColumns = SeriesTableConfig.TABLE_COLUMNS;
 
 const props = defineProps<{
   tableActionsHidden?: boolean,
@@ -102,7 +104,7 @@ const props = defineProps<{
 
 
 const seriesTableStore = useSeriesTableStore();
-const { dataSource, totalElements } = storeToRefs(seriesTableStore);
+const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(seriesTableStore);
 const userStore = useUserStore();
 
 const currentPage = computed(() => seriesTableStore.currentPageNumber);
@@ -113,47 +115,6 @@ const formDrawerOpen = ref(false);
 const dataSeriesReferences = ref<string[]>([]);
 const deleteModalContent = ref('');
 const modalOpen = ref(false);
-
-const pagination = reactive({
-  current: currentPage,
-  pageSize: seriesTableStore.pageSize,
-  total: totalElements,
-  ...TableHelper.sharedPaginationProperties
-})
-
-const rowSelection: TableRowSelection<DataSeriesTableData> | undefined = reactive({
-  // Hides the selected all button when the max number of row selection is specified
-  hideSelectAll: props.maxSelectedRows ? true : false,
-  preserveSelectedRowKeys: true,
-  selectedRowKeys: selectedRowKeys,
-  onChange: (selectedRowKeys: Key[], selectedRows: DataSeriesTableData[]) => {
-    seriesTableStore.$patch({
-      selectedRows: selectedRows,
-      selectedRowKeys: selectedRowKeys as string[]
-    });
-  },
-  getCheckboxProps: (record: DataSeriesTableData) => {
-    /**
-     * Disable the row select when
-     * 1. The data series is minion count
-     * 2. The max number of row selection is specified and the selected row is more than the max number.
-     * 3. The row is disabled
-     */
-    const isMinionCount = record.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
-    let disabled = false;
-    if (isMinionCount) {
-      disabled = true
-    } else if (props.maxSelectedRows) {
-      // When the max number of row selection is specified, the row is disabled when it is not yet selected.
-      disabled = selectedRowKeys.value.length > props.maxSelectedRows && !selectedRowKeys.value.includes(record.reference);
-    } else {
-      disabled = record.disabled
-    }
-    return {
-      disabled: disabled
-    }
-  },
-})
 
 onMounted(() => {
   if (props.selectedDataSeriesReferences) {
@@ -173,18 +134,50 @@ watch(() => userStore.currentTenantReference, () => {
   _fetchTableData();
 })
 
-const handlePaginationChange = (
-  pagination: TablePaginationConfig,
-  _:  Record<string, FilterValue>,
-  sorter: SorterResult<any> | SorterResult<any>[]
-) => {
-  const currentPageIndex = TableHelper.getCurrentPageIndex(pagination);
-  const sort = TableHelper.getSort(sorter as SorterResult<any>);
+const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
+  /**
+   * Disable the row select when
+   * 1. The data series is minion count
+   * 2. The max number of row selection is specified and the selected row is more than the max number.
+   * 3. The row is disabled
+   */
+  const isMinionCount = dataSeriesTableData.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
+  let disabled = false;
+
+  if (isMinionCount) {
+    disabled = true
+  } else if (props.maxSelectedRows) {
+    // When the max number of row selection is specified, the row is disabled when it is not yet selected.
+    disabled = selectedRowKeys.value.length > props.maxSelectedRows && !selectedRowKeys.value.includes(dataSeriesTableData.reference);
+  } else {
+    disabled = dataSeriesTableData.disabled
+  }
+
+  return disabled;
+}
+
+const handleSorterChange = (tableSorter: TableSorter | null) => {
+  const sort = tableSorter
+    ? `${tableSorter.key}:${tableSorter.direction}`
+    : '';
   seriesTableStore.$patch({
-    sort: sort,
-    currentPageIndex: currentPageIndex
+    sort: sort
   });
   _fetchTableData();
+}
+
+const handlePaginationChange = (pageIndex: number) => {
+  seriesTableStore.$patch({
+    currentPageIndex: pageIndex,
+  });
+  _fetchTableData();
+}
+
+const handleSelectionChange = (tableSelection: TableSelection) => {
+  seriesTableStore.$patch({
+    selectedRows: tableSelection.selectedRows,
+    selectedRowKeys: tableSelection.selectedRowKeys
+  });
 }
 
 const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
@@ -222,12 +215,3 @@ const _fetchTableData = async () => {
 }
 
 </script>
-
-<style scoped lang="scss">
-.dot {
-  width: .5rem;
-  height: .5rem;
-  border-radius: 50%;
-  margin-right: .5rem
-}
-</style>

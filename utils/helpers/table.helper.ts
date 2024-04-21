@@ -34,6 +34,10 @@ export class TableHelper {
         locale: { jump_to: "Go to page" }
     }
 
+    static getRowsFromDataSource = <T>(pageSize: number, pageIndex: number, dataSources: T[]) => {
+        return []
+    }
+
     static getCurrentPageIndex = (pagination: TablePaginationConfig): number => {
         return pagination.current! - 1;
     }

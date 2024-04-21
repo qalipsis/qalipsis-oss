@@ -1,33 +1,21 @@
+import type { TableColumnConfig } from "../types/table";
+
 export class ScenariosTableConfig {
-  static TABLE_COLUMNS = [
+  static TABLE_COLUMNS: TableColumnConfig[] = [
     {
       title: "Scenario",
-      dataIndex: "name",
       key: "name",
-      sorter: (next: ScenarioSummary, prev: ScenarioSummary) =>
-        next.name.localeCompare(prev.name),
+      sortingEnabled: true
     },
     {
       title: "Version",
-      dataIndex: "version",
       key: "version",
-      sorter: (next: ScenarioSummary, prev: ScenarioSummary) =>
-        next.version.localeCompare(prev.name),
+      sortingEnabled: true
     },
     {
       title: "Description",
-      dataIndex: "description",
       key: "description",
-      sorter: (next: ScenarioSummary, prev: ScenarioSummary) => {
-        const nextDescription = next.description ?? "";
-        const prevDescription = prev.description ?? "";
-        return nextDescription.localeCompare(prevDescription);
-      },
-    },
-    {
-      title: "",
-      dataIndex: "actions",
-      key: "actions",
-    },
+      sortingEnabled: true
+    }
   ];
 }

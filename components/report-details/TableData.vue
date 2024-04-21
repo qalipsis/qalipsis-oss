@@ -6,13 +6,17 @@
         <SeriesMenu 
             :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
             @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)" />
-        <a-table 
+        <BaseTable
             :data-source="tableData"
-            :pagination="pagination"
-            :columns="tableColumns"
-            :show-sorter-tooltip="false"
-            :ellipsis="true">
-        </a-table>
+            :total-elements="tableData.length"
+            :table-column-configs="ReportDetailsConfig.TABLE_COLUMNS"
+            :page-size="TableHelper.defaultPageSize"
+            :current-page-index="currentPageIndex"
+            :all-data-source-included="true"
+            :refresh-hidden="true"
+            @page-change="handlePaginationChange"
+            row-key="id"
+        ></BaseTable>
     </section>
 </template>
 
@@ -26,14 +30,9 @@ const props = defineProps<{
 const reportDetailsStore = useReportDetailsStore();
 const { fetchTimeSeriesAggregation } = useTimeSeriesApi();
 
-const tableColumns = ReportDetailsConfig.TABLE_COLUMNS;
 const tableData = ref<ReportDetailsTableData[]>([]);
 const preselectedDataSeriesReferences = ref<string[]>([]);
-const pagination = reactive({
-    pageSize: TableHelper.defaultPageSize,
-    total: tableData.value.length,
-    ...TableHelper.sharedPaginationProperties
-});
+const currentPageIndex = ref<number>(0);
 
 let selectedDataSeriesOptions: DataSeriesOption[] = [];
 
@@ -46,6 +45,10 @@ onMounted(() => {
 watch(() => [reportDetailsStore.activeCampaignOptions, reportDetailsStore.selectedScenarioNames], () => {
     _updateTableData(selectedDataSeriesOptions);
 })
+
+const handlePaginationChange = (pageIndex: number) => {
+    currentPageIndex.value = pageIndex
+}
 
 const handleDeleteBtnClick = () => {
     reportDetailsStore.deleteDataComponent(props.componentIndex);

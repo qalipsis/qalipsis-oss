@@ -66,6 +66,10 @@ export interface ReportTableData extends DataReport {
 
 export interface ReportDetailsTableData {
     /**
+     * The unique identifier for the report details table data.
+     */
+    id: string;
+    /**
      * The reference of the data series
      */
     seriesReference: string; 

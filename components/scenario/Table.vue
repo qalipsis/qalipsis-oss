@@ -1,31 +1,35 @@
 <template>
-  <a-table
+  <BaseTable
     :data-source="dataSource"
-    :columns="tableColumns"
-    :show-sorter-tooltip="false"
-    :ellipsis="true"
+    :table-column-configs="ScenariosTableConfig.TABLE_COLUMNS"
+    :total-elements="totalElements"
+    :page-size="pageSize"
+    :current-page-index="currentPageIndex"
+    :disable-row="disableRow"
+    :row-selection-enabled="true"
+    :selected-row-keys="selectedRowKeys"
+    :all-data-source-included="true"
     rowKey="name"
-    :pagination="pagination"
-    :rowSelection="rowSelection"
+    row-class="group"
+    @page-change="handlePaginationChange"
+    @selection-change="handleSelectionChange"
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'description'">
         <span>{{ record.description ?? '-' }}</span>
       </template>
-      <template v-if="column.key === 'actions'">
-        <div class="table-action-item-wrapper">
-            <div 
-              class="flex items-center cursor-pointer h-8"
-              :class="TailwindClassHelper.primaryColorFilterHoverClass"
-              @click="handleConfigureBtnClick(record as ScenarioSummary)"
-            >
-                <BaseIcon icon="/icons/icon-setting-grey.svg" />
-                <span> Configure </span>
-            </div>
-        </div>
-      </template>
     </template>
-  </a-table>
+    <template #actionCell="{ record }">
+      <div 
+        class="flex items-center cursor-pointer h-8 invisible group-hover:visible"
+        :class="TailwindClassHelper.primaryColorFilterHoverClass"
+        @click="handleConfigureBtnClick(record as ScenarioSummary)"
+      >
+          <BaseIcon icon="/icons/icon-setting-grey.svg" />
+          <span> Configure </span>
+      </div>
+    </template>
+  </BaseTable> 
   <ScenarioConfigDrawer
     v-if="configDrawerOpen"
     v-model:open="configDrawerOpen"
@@ -38,47 +42,19 @@
 </template>
 
 <script setup lang="ts">
-import type { Key, TableRowSelection } from "ant-design-vue/es/table/interface";
 import { storeToRefs } from "pinia";
 
 const { fetchCampaignConfiguration } = useConfigurationApi();
 const { fetchScenarios } = useScenarioApi();
 const { fetchZones } = useZonesApi();
 const scenarioTableStore = useScenarioTableStore();
-const { selectedRowKeys, dataSource, totalElements } =
-  storeToRefs(scenarioTableStore);
 
-const tableColumns = ScenariosTableConfig.TABLE_COLUMNS;
+const { selectedRowKeys, dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(scenarioTableStore);
+
 let campaignConfiguration: DefaultCampaignConfiguration;
 let selectedScenarioSummary: ScenarioSummary;
 const zoneOptions = ref<FormMenuOption[]>([]);
 const selectedScenarioConfigForm = ref<ScenarioConfigurationForm>();
-
-const pagination = reactive({
-  pageSize: 10,
-  total: totalElements,
-  ...TableHelper.sharedPaginationProperties,
-});
-
-const rowSelection: TableRowSelection<ScenarioSummary> = reactive({
-  hideSelectAll: true,
-  preserveSelectedRowKeys: true,
-  selectedRowKeys: selectedRowKeys,
-  onChange: (selectedRowKeys: Key[], selectedRows: ScenarioSummary[]) => {
-    scenarioTableStore.$patch({
-      selectedRows: selectedRows,
-      selectedRowKeys: selectedRowKeys as string[],
-    });
-  },
-  getCheckboxProps: (record: ScenarioSummary) => {
-    return {
-      disabled:
-        !selectedRowKeys.value.includes(record.name) &&
-        selectedRowKeys.value.length >=
-          campaignConfiguration.validation.maxScenariosCount,
-    };
-  },
-});
 
 const configDrawerOpen = ref(false);
 
@@ -105,6 +81,26 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   scenarioTableStore.$reset();
 });
+
+const disableRow = (record: ScenarioSummary) => {
+  if (!campaignConfiguration) return false;
+
+  return !selectedRowKeys.value.includes(record.name)
+    && selectedRowKeys.value.length >= campaignConfiguration.validation.maxScenariosCount;
+}
+
+const handlePaginationChange = (pageIndex: number) => {
+  scenarioTableStore.$patch({
+    currentPageIndex: pageIndex
+  });
+}
+
+const handleSelectionChange = (tableSelection: TableSelection) => {
+  scenarioTableStore.$patch({
+    selectedRows: tableSelection.selectedRows,
+    selectedRowKeys: tableSelection.selectedRowKeys
+  });
+}
 
 const handleConfigureBtnClick = (scenarioSummary: ScenarioSummary) => {
   selectedScenarioSummary = scenarioSummary;
