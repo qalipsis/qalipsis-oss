@@ -5,16 +5,16 @@
     @close="emit('update:open', false)"
     @confirm-btn-click="handleConfirmBtnClick"
   >
-    <a-form class="pl-2 pr-2 pt-2 pb-2">
-      <a-row :gutter="8" class="mt-3 h-24">
-        <a-col :span="12">
+    <form>
+      <div class="grid grid-cols-12 gap-2">
+        <div class="col-span-6">
           <FormRadioGroup
             label="Timeout Campaign"
             form-control-name="timeoutType"
             :options="timeoutOptions"
           />
-        </a-col>
-        <a-col :span="12">
+        </div>
+        <div class="col-span-6">
           <FormInputSelect
             label="Duration"
             form-input-control-name="durationValue"
@@ -23,16 +23,12 @@
             :select-field-validation-schema="fieldValidationSchema.durationUnit"
             :options="durationUnitOptions"
           />
-        </a-col>
-      </a-row>
-      <a-row class="h-12">
-        <a-col>
+        </div>
+        <div class="col-span-12">
           <FormCheckbox label="Schedule" form-control-name="scheduled" />
-        </a-col>
-      </a-row>
-      <template v-if="values.scheduled">
-        <a-row :gutter="8" class="h-24">
-          <a-col :span="12">
+        </div>
+        <template v-if="values.scheduled">
+          <div class="col-span-6">
             <FormDateTimePicker
               label="Date time"
               form-control-name="scheduledTime"
@@ -40,8 +36,8 @@
               :min-date="new Date()"
               :field-validation-schema="fieldValidationSchema.scheduledTime"
             />
-          </a-col>
-          <a-col :span="12">
+          </div>
+          <div class="col-span-6">
             <FormAutoComplete
               label="Timezone"
               style="min-width: 15.5rem"
@@ -50,50 +46,49 @@
               :field-validation-schema="fieldValidationSchema.timezone"
             >
             </FormAutoComplete>
-          </a-col>
-        </a-row>
-        <a-row class="h-12">
-          <a-col>
+          </div>
+          <div class="col-span-12">
             <FormCheckbox
               label="Repeat"
               form-control-name="repeatEnabled"
               :disabled="!values.repeatTimeRange || !values.timezone"
             />
-          </a-col>
-        </a-row>
-        <template v-if="values.repeatEnabled">
-          <a-row class="mb-4">
-            <a-col>
+          </div>
+          <template v-if="values.repeatEnabled">
+            <div class="col-span-12">
               <FormRadioGroup
                 label="Repeat every"
                 form-control-name="repeatTimeRange"
                 :options="repeatTimeRangeOptions"
                 @change="handleRepeatTimeRangeOptionChange"
               />
-            </a-col>
-          </a-row>
-          <a-row :class="{ 'hidden': values.repeatTimeRange !== 'HOURLY' }">
-            <a-col>
+            </div>
+            <div 
+              class="col-span-12"
+              :class="{ 'hidden': values.repeatTimeRange !== 'HOURLY' }"
+            >
               <div class="w-80">
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="hourlyOptions"
                 />
               </div>
-            </a-col>
-          </a-row>
-          <a-row :class="{ 'hidden': values.repeatTimeRange !== 'DAILY' }">
-            <a-col>
+            </div>
+            <div 
+              class="col-span-12"
+              :class="{ 'hidden': values.repeatTimeRange !== 'DAILY' }"
+            >
               <div class="w-80">
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="dailyOptions"
                 />
               </div>
-            </a-col>
-          </a-row>
-          <a-row :class="{ 'hidden': values.repeatTimeRange !== 'MONTHLY' }">
-            <a-col>
+            </div>
+            <div 
+              class="col-span-12"
+              :class="{ 'hidden': values.repeatTimeRange !== 'MONTHLY' }"
+            >
               <div class="w-80">
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
@@ -107,17 +102,15 @@
                   :options="relativeDayOfMonthOptions"
                 />
               </div>
-            </a-col>
-          </a-row>
-          <a-row>
-            <a-col>
+            </div>
+            <div class="col-span-12">
               <label>Repeats:</label>
               <span>{{ repeatText }}</span>
-            </a-col>
-          </a-row>
+            </div>
+          </template>
         </template>
-      </template>
-    </a-form>
+      </div>
+    </form>
   </BaseDrawer>
 </template>
 

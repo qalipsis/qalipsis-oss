@@ -235,16 +235,12 @@ const rowAllSelectionChecked = ref(false);
 const activeSorterKey = ref("");
 const activeSorterDirection = ref<"" | SortingDirection>("");
 
-onMounted(() => {
-  allSelectedRowKeys.value = props.selectedRowKeys ? [...props.selectedRowKeys] : [];
-  cachedRows.value = new Array(props.totalElements);
-});
-
 watch(() => props.dataSource, () => {
   currentPageSelectedRowKeys.value = props.dataSource
     .map(rowKey => rowKey[props.rowKey])
     .filter(rowKey => allSelectedRowKeys.value.includes(rowKey) || props.selectedRowKeys?.includes(rowKey));
   rowAllSelectionChecked.value = currentPageSelectedRowKeys.value.length === props.dataSource.length;
+  allSelectedRowKeys.value = props.selectedRowKeys ? [...props.selectedRowKeys] : [];
   _updateDisplayRows();
   _updateCachedRows();
 })
@@ -295,6 +291,8 @@ const handleRowSelectionChange = (rowKey: string) => {
   } else {
     allSelectedRowKeys.value.push(rowKey)
   }
+
+  console.log(allSelectedRowKeys.value)
 
   emit('selectionChange', {
     selectedRowKeys: allSelectedRowKeys.value,

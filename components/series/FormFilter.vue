@@ -1,6 +1,6 @@
 <template>
-  <a-row :gutter="8" class="h-24">
-    <a-col :span="6">
+  <div class="grid grid-cols-12 gap-2">
+    <div class="col-span-3 h-24">
       <FormAutoComplete
         label="Tag"
         :form-control-name="`filters[${index}].name`"
@@ -9,8 +9,8 @@
         :field-validation-schema="tagSchema.name"
         @select="handleTagSelect($event)"
       />
-    </a-col>
-    <a-col :span="7">
+    </div>
+    <div class="col-span-3 h-24">
       <FormSelect
         label="Operations"
         :options="operatorOptions"
@@ -18,26 +18,28 @@
         :field-validation-schema="tagSchema.operator"
         :disabled="disabled"
       />
-    </a-col>
-    <a-col :span="10">
-      <FormAutoComplete
-        label="Tag value"
-        :options="tagValueOptions"
-        :form-control-name="`filters[${index}].value`"
-        :field-validation-schema="tagSchema.value"
-        :disabled="disabled"
-      />
-    </a-col>
-    <a-col :span="1">
-      <div class="pt-9 cursor-pointer" @click="remove(index)">
-        <BaseIcon 
-          class="w-4 h-4"
-          :class="TailwindClassHelper.primaryColorFilterHoverClass"
-          icon="/icons/icon-delete-small.svg"
-        />
+    </div>
+    <div class="col-span-6 h-24">
+      <div class="flex items-center">
+        <div class="flex-grow h-24">
+          <FormAutoComplete
+            label="Tag value"
+            :options="tagValueOptions"
+            :form-control-name="`filters[${index}].value`"
+            :field-validation-schema="tagSchema.value"
+            :disabled="disabled"
+          />
+        </div>
+        <div v-if="!disabled" class="flex-shrink-0 pt-11 pl-2 cursor-pointer h-24" @click="remove(index)">
+          <BaseIcon 
+            class="w-4 h-4"
+            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+            icon="/icons/icon-delete-small.svg"
+          />
+        </div>
       </div>
-    </a-col>
-  </a-row>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">

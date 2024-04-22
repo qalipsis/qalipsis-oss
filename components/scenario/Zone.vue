@@ -1,34 +1,36 @@
 <template>
-  <a-row :gutter="8" class="mb-2">
-    <a-col :span="16">
+  <div class="grid grid-cols-3 gap-2 mb-2">
+    <div class="col-span-2">
       <FormSelect
         label="Name"
         :form-control-name="`zones[${index}].name`"
         :options="zoneOptions"
         :field-validation-schema="zoneSchema.name"
       />
-    </a-col>
-    <a-col :span="7">
-      <FormInput
-        label="Share"
-        suffix="%"
-        :form-control-name="`zones[${index}].share`"
-        :field-validation-schema="zoneSchema.share"
-        @input="emit('zoneSharedInputChange', fields[index].value.share)"
-      />
-    </a-col>
-    <a-col :span="1">
-      <div
-        class="cursor-pointer pt-12 flex items-center h-10"
-        @click="handleDeleteBtnClick"
-      >
-        <BaseIcon
-          :class="TailwindClassHelper.primaryColorFilterHoverClass"
-          icon="/icons/icon-delete-small.svg"
-        />
+    </div>
+    <div class="col-span-1">
+      <div class="flex items-center">
+        <div class="flex-grow">
+          <FormInput
+            label="Share"
+            suffix="%"
+            :form-control-name="`zones[${index}].share`"
+            :field-validation-schema="zoneSchema.share"
+            @input="emit('zoneSharedInputChange', fields[index].value.share)"
+          />
+        </div>
+        <div
+          class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer"
+          @click="handleDeleteBtnClick"
+        >
+          <BaseIcon
+            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+            icon="/icons/icon-delete-small.svg"
+          />
+        </div>
       </div>
-    </a-col>
-  </a-row>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">

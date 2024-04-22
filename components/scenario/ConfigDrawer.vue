@@ -6,39 +6,39 @@
     confirm-btn-text="Apply"
     @confirm-btn-click="handleConfirmBtnClick"
   >
-    <a-form class="pl-2 pr-2 pt-2 pb-2">
-      <a-row class="pt-2 pb-4">
-        <a-col>
+    <form class="p-2">
+      <div class="grid grid-cols-12 gap-2">
+        <div class="col-span-12 mt-2 mb-4">
           <span class="text-gray-500 text-base">Execution profile</span>
-        </a-col>
-      </a-row>
-      <template v-for="(_, index) in executionProfileFields">
-        <ScenarioExecutionProfile
-          :index="index"
-          :configuration="configuration"
-          :deleteHidden="index === 0"
-          @executionProfileChange="handleExecutionProfileChange($event, index)"
-        />
-        <span
-          v-if="invalidExecutionProfileIndexes.includes(index)"
-          class="text-red-600"
-        >
-          The start duration value should be less or equal than the duration
-          value!
-        </span>
-      </template>
-      <template v-if="isConfirmBtnClicked">
-        <span v-if="!hasValidMinionsSummary" class="text-red-600 pt-2">
-          The summary of the minions count should not exceed
-          {{ configuration.validation.maxMinionsCount }}
-        </span>
-        <span v-if="!hasValidDurationSummary" class="text-red-600 pt-2">
-          The summary of the duration should not exceed
-          {{ maxDurationInMilliSeconds }} ms
-        </span>
-      </template>
-      <a-row>
-        <a-col :span="23">
+        </div>
+        <div class="col-span-12">
+          <template v-for="(_, index) in executionProfileFields">
+            <ScenarioExecutionProfile
+              :index="index"
+              :configuration="configuration"
+              :deleteHidden="index === 0"
+              @executionProfileChange="handleExecutionProfileChange($event, index)"
+            />
+            <span
+              v-if="invalidExecutionProfileIndexes.includes(index)"
+              class="text-red-600"
+            >
+              The start duration value should be less or equal than the duration
+              value!
+            </span>
+          </template>
+          <template v-if="isConfirmBtnClicked">
+            <span v-if="!hasValidMinionsSummary" class="text-red-600 pt-2">
+              The summary of the minions count should not exceed
+              {{ configuration.validation.maxMinionsCount }}
+            </span>
+            <span v-if="!hasValidDurationSummary" class="text-red-600 pt-2">
+              The summary of the duration should not exceed
+              {{ maxDurationInMilliSeconds }} ms
+            </span>
+          </template>
+        </div>
+        <div class="col-span-12">
           <BaseButton
             icon="/icons/icon-plus-grey.svg"
             btn-style="outlined"
@@ -46,32 +46,30 @@
             text="Add new"
             @click="handleAddExecutionProfileBtnClick"
           />
-        </a-col>
-      </a-row>
-      <div class="pr-6 my-5">
-        <BaseDivideLine />
-      </div>
-      <a-row class="pt-2 pb-4">
-        <a-col>
+        </div>
+        <div class="col-span-12 my-5">
+          <BaseDivideLine />
+        </div>
+        <div class="col-span-12">
           <span class="text-gray-500">Zone</span>
-        </a-col>
-      </a-row>
-      <ScenarioZone
-        v-for="(_, index) in zoneFields"
-        :index="index"
-        :zone-options="zoneOptions"
-        @zoneSharedInputChange="handleZoneSharedInputChange()"
-      />
-      <template v-if="isConfirmBtnClicked">
-        <span
-          v-if="!hasValidZoneShareSummary && values.zones.length > 0"
-          class="text-red-600 pt-2"
-        >
-          The sum of the share zones should be equal 100%
-        </span>
-      </template>
-      <a-row>
-        <a-col :span="23">
+        </div>
+        <div class="col-span-12">
+          <ScenarioZone
+            v-for="(_, index) in zoneFields"
+            :index="index"
+            :zone-options="zoneOptions"
+            @zoneSharedInputChange="handleZoneSharedInputChange()"
+          />
+          <template v-if="isConfirmBtnClicked">
+            <span
+              v-if="!hasValidZoneShareSummary && values.zones.length > 0"
+              class="text-red-600 pt-2"
+            >
+              The sum of the share zones should be equal 100%
+            </span>
+          </template>
+        </div>
+        <div class="col-span-12">
           <BaseButton
             icon="/icons/icon-plus-grey.svg"
             btn-style="outlined"
@@ -79,13 +77,13 @@
             text="Add new"
             @click="handleAddZoneBtnClick"
           />
-        </a-col>
-      </a-row>
-      <div class="pr-6 my-5">
-        <BaseDivideLine />
+        </div>
+        <div class="col-span-12 my-5">
+          <BaseDivideLine />
+        </div>
       </div>
-    </a-form>
-    <div class="pr-6" v-if="!isRenderingChart">
+    </form>
+    <div class="pr-1" v-if="!isRenderingChart">
       <apexchart
         :options="chartOptions"
         :height="250"

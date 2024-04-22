@@ -10,19 +10,17 @@
     @close="emit('update:open', false)"
     @confirm-btn-click="handleConfirmBtnClick"
   >
-    <a-form class="pl-2 pr-2 pt-2 pb-2">
-      <a-row class="h-24">
-        <a-col :span="24">
+    <form class="p-2">
+      <div class="grid grid-cols-12 gap-2">
+        <div class="col-span-12">
           <FormInput
             label="Name"
             form-control-name="name"
             :field-validation-schema="fieldValidationSchema.name"
             :disabled="dataSeries?.disabled"
           />
-        </a-col>
-      </a-row>
-      <a-row class="h-24">
-        <a-col :span="24">
+        </div>
+        <div class="col-span-12">
           <FormSelect
             label="Sharing node"
             form-control-name="sharingMode"
@@ -30,10 +28,8 @@
             :options="sharingModeOptions"
             :disabled="dataSeries?.disabled"
           />
-        </a-col>
-      </a-row>
-      <a-row class="h-24">
-        <a-col :span="8">
+        </div>
+        <div class="col-span-4">
           <FormRadioGroup
             label="Time series type"
             form-control-name="dataType"
@@ -41,8 +37,8 @@
             :disabled="dataTypeOptionDisabled || dataSeries?.disabled"
             @change="handleDataTypeChange"
           />
-        </a-col>
-        <a-col :span="16">
+        </div>
+        <div class="col-span-8">
           <FormAutoComplete
             v-if="hasValueNameFetched"
             form-control-name="valueName"
@@ -52,10 +48,8 @@
             :field-validation-schema="fieldValidationSchema.valueName"
           />
           <a-spin v-else></a-spin>
-        </a-col>
-      </a-row>
-      <a-row class="h-24" :gutter="8">
-        <a-col :span="8">
+        </div>
+        <div class="col-span-4">
           <FormSelect
             v-if="hasFieldNameFetched"
             label="Field"
@@ -66,8 +60,8 @@
             @change="handleFieldNameChange($event)"
           />
           <a-spin v-else></a-spin>
-        </a-col>
-        <a-col :span="8">
+        </div>
+        <div class="col-span-4">
           <FormSelect
             label="Aggregation"
             form-control-name="aggregationOperation"
@@ -79,8 +73,8 @@
               fieldValidationSchema.aggregationOperation
             "
           />
-        </a-col>
-        <a-col :span="8">
+        </div>
+        <div class="col-span-4">
           <FormInputSelect
             label="Timeframe"
             form-input-control-name="timeframeValue"
@@ -95,10 +89,8 @@
             :input-disabled="dataSeries?.disabled"
             :select-disabled="dataSeries?.disabled"
           />
-        </a-col>
-      </a-row>
-      <a-row :gutter="8">
-        <a-col :span="4">
+        </div>
+        <div class="col-span-2">
           <FormLabel text="Color" />
           <div class="relative">
             <div
@@ -122,8 +114,8 @@
               />
             </div>
           </div>
-        </a-col>
-        <a-col :span="4">
+        </div>
+        <div class="col-span-2">
           <FormInput
             label="Hex"
             form-control-name="color"
@@ -131,8 +123,8 @@
             :field-validation-schema="fieldValidationSchema.color"
             @input="handleColorInput"
           />
-        </a-col>
-        <a-col :span="4">
+        </div>
+        <div class="col-span-2">
           <FormInput
             label="Opacity"
             form-control-name="colorOpacity"
@@ -140,34 +132,34 @@
             :field-validation-schema="fieldValidationSchema.colorOpacity"
             @input="handleColorInput"
           />
-        </a-col>
-      </a-row>
-      <div class="my-5">
-        <BaseDivideLine />
-      </div>
-      <template v-if="hasTagFetched">
-        <SeriesFormFilter
-          v-for="(field, index) in fields"
-          :key="field.key"
-          :index="index"
-          :tagMap="tagMap"
-          :disabled="dataSeries?.disabled"
-        />
-        <a-row>
-          <a-col :span="24">
-            <BaseButton
-              icon="/icons/icon-plus-grey.svg"
-              btn-style="outlined"
-              class="w-full"
-              text="Add new filter"
-              @click="handleAddNewFilterBtnClick"
+        </div>
+        <div class="col-span-12 my-2">
+          <BaseDivideLine />
+        </div>
+        <div class="col-span-12">
+          <template v-if="hasTagFetched">
+            <SeriesFormFilter
+              v-for="(field, index) in fields"
+              :key="field.key"
+              :index="index"
+              :tagMap="tagMap"
               :disabled="dataSeries?.disabled"
             />
-          </a-col>
-        </a-row>
-      </template>
-      <a-spin v-else></a-spin>
-    </a-form>
+          </template>
+          <a-spin v-else></a-spin>
+        </div>
+        <div class="col-span-12 mt-2">
+          <BaseButton
+            icon="/icons/icon-plus-grey.svg"
+            btn-style="outlined"
+            class="w-full"
+            text="Add new filter"
+            @click="handleAddNewFilterBtnClick"
+            :disabled="dataSeries?.disabled"
+          />
+        </div>
+      </div>
+    </form>
   </BaseDrawer>
 </template>
 

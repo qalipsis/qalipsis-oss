@@ -1,6 +1,6 @@
 <template>
-  <a-row :gutter="8" class="mb-2">
-    <a-col :span="5">
+  <div class="grid grid-cols-12 gap-2 mb-2">
+    <div class="col-span-2">
       <FormInput
         label="Minions"
         suffix="qty"
@@ -8,8 +8,8 @@
         :field-validation-schema="executionProfileSchema.minionsCount"
         @input="emit('executionProfileChange', fields[index].value)"
       />
-    </a-col>
-    <a-col :span="6">
+    </div>
+    <div class="col-span-3">
       <FormInput
         label="Duration"
         suffix="ms"
@@ -17,8 +17,8 @@
         :field-validation-schema="executionProfileSchema.duration"
         @input="handleDurationInputChange"
       />
-    </a-col>
-    <a-col :span="6">
+    </div>
+    <div class="col-span-3">
       <FormInput
         label="Start"
         suffix="ms"
@@ -26,28 +26,31 @@
         :field-validation-schema="executionProfileSchema.startDuration"
         @input="handleStartDurationInputChange"
       />
-    </a-col>
-    <a-col :span="6">
-      <FormInput
-        label="Start resolution"
-        suffix="ms"
-        :form-control-name="`executionProfileStages[${index}].resolution`"
-        :field-validation-schema="executionProfileSchema.resolution"
-        @input="emit('executionProfileChange', fields[index].value)"
-      />
-    </a-col>
-    <a-col :span="1" v-if="!deleteHidden">
-      <div
-        class="cursor-pointer pt-12 flex items-center h-10"
-        @click="handleDeleteBtnClick"
-      >
-        <BaseIcon
-          :class="TailwindClassHelper.primaryColorFilterHoverClass"
-          icon="/icons/icon-delete-small.svg"
-        />
+    </div>
+    <div class="col-span-4">
+      <div class="flex items-center">
+        <div class="flex-grow">
+          <FormInput
+            label="Start resolution"
+            suffix="ms"
+            :form-control-name="`executionProfileStages[${index}].resolution`"
+            :field-validation-schema="executionProfileSchema.resolution"
+            @input="emit('executionProfileChange', fields[index].value)"
+          />
+        </div>
+        <div
+          v-if="!deleteHidden"
+          class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer"
+          @click="handleDeleteBtnClick"
+        >
+          <BaseIcon
+            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+            icon="/icons/icon-delete-small.svg"
+          />
+        </div>
       </div>
-    </a-col>
-  </a-row>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -67,8 +70,6 @@ const emit = defineEmits<{
 const invalidNumberErrorMessage = "You must specify a number";
 
 const { remove, fields } = useFieldArray<ExecutionProfileStage>("executionProfileStages");
-
-const hasInvalidStartDuration = ref(false);
 
 const stageValidation = computed(() => {
   return {

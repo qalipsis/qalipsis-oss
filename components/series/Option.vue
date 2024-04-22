@@ -5,11 +5,11 @@
         :style="{ borderColor: isActive ? color : undefined }"
         @click="emits('click')">
         <div class="flex items-baseline">
-            <div 
-                class="w-2 h-2 rounded-full"
+            <div
+                class="w-2 h-2 rounded-full flex-shrink-0"
                 :style="{ backgroundColor: color}">
             </div>
-            <span class="pl-1"> {{ displayName }} </span>
+            <span class="pl-1 line-clamp-2 text-ellipsis"> {{ displayName }} </span>
         </div>
         <BaseTag
             :text="dataTypeText"

@@ -50,8 +50,7 @@ export class ScenarioDetailsConfig {
       type: "area",
       zoom: {
         enabled: false,
-      },
-      offsetX: -25,
+      }
     },
     dataLabels: {
       enabled: false,

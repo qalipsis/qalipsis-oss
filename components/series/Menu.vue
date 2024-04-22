@@ -6,15 +6,8 @@
                 @search="handleSearch"
             />
         </div>
-        <a-row :gutter="[8, 8]" class="mb-1">
-            <a-col 
-                v-for="dataSeriesOption in availableDataSeriesOptions" :key="dataSeriesOption.reference"
-                :sm="{ span: 24 }"
-                :md="{ span: 12}"
-                :lg="{span: 8}"
-                :xl="{span: 6}"
-                :xxl="{ span: 4 }"
-            >
+        <div class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+            <template v-for="dataSeriesOption in availableDataSeriesOptions" :key="dataSeriesOption.reference">
                 <SeriesOption            
                     :reference="dataSeriesOption.reference"
                     :displayName="dataSeriesOption.displayName"
@@ -23,22 +16,16 @@
                     :color="dataSeriesOption.color"
                     @click="handleDataSeriesOptionClick(dataSeriesOption)"
                 />
-            </a-col>
-            <a-col v-if="showMore"
-                :sm="{ span: 24 }"
-                :md="{ span: 12}"
-                :lg="{span: 8}"
-                :xl="{span: 6}"
-                :xxl="{ span: 4 }"
-            >
+            </template>
+            <template v-if="showMore">
                 <BaseButton 
                     text="Select more series" 
                     btn-style="outlined"
                     :icon="'/icons/icon-plus-grey.svg'"
                     @click="handleShowMoreBtnClick" 
                 />
-            </a-col>
-        </a-row>
+            </template>
+        </div>
         <SeriesDrawer
             v-if="seriesDrawerOpen"
             v-model:open="seriesDrawerOpen"
