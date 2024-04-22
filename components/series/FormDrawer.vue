@@ -47,7 +47,7 @@
             :disabled="dataSeries?.disabled"
             :field-validation-schema="fieldValidationSchema.valueName"
           />
-          <a-spin v-else></a-spin>
+          <BaseSpinner v-else></BaseSpinner>
         </div>
         <div class="col-span-4">
           <FormSelect
@@ -59,7 +59,7 @@
             :field-validation-schema="fieldValidationSchema.fieldName"
             @change="handleFieldNameChange($event)"
           />
-          <a-spin v-else></a-spin>
+          <BaseSpinner v-else></BaseSpinner>
         </div>
         <div class="col-span-4">
           <FormSelect
@@ -146,7 +146,7 @@
               :disabled="dataSeries?.disabled"
             />
           </template>
-          <a-spin v-else></a-spin>
+          <BaseSpinner v-else></BaseSpinner>
         </div>
         <div class="col-span-12 mt-2">
           <BaseButton

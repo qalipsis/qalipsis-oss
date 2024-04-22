@@ -12,10 +12,8 @@
     >
       <div class="flex items-center">
         <BaseIcon icon="/icons/icon-logo.svg" width="80" />
-        <h1 class="text-primary-500 mr-4 text-2xl font-semibold">QALIPSIS</h1>
-        <div class="mt-2">
-          <a-spin size="large" />
-        </div>
+        <h1 class="text-primary-500 mr-2 text-2xl font-semibold">QALIPSIS</h1>
+        <BaseSpinner size="md" />
       </div>
     </section>
     <section v-if="canViewPage" class="flex w-screen h-screen">
