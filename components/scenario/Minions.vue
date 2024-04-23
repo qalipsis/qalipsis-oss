@@ -18,12 +18,13 @@
             </span>
         </div>
     </a-tooltip>
-    <a-modal
+    <BaseModal
         v-if="minionsModalOpen"
         v-model:open="minionsModalOpen"
         :title="scenarioName"
-        :footer="null"
-        :closable="true">
+        :footer-hidden="true"
+        :closable="true"
+    >
         <section class="mt-5">
             <div class="flex items-center pb-2">
                 <div :style="{ backgroundColor: scheduledMinionsColor}" class="w-6 h-6 mr-2"></div>
@@ -46,7 +47,7 @@
                 />
             </div>
         </section>
-    </a-modal>
+    </BaseModal>
 </template>
 
 <script setup lang="ts">

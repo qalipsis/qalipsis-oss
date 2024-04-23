@@ -1,34 +1,60 @@
 <template>
-    <a-modal
-        :open="open"
-        :footer="null"
-        :closable="closable"
-        :maskClosable="maskClosable"
-        @cancel="handleCancelBtnClick">
-        <header class="header-section">
-            <BaseTitle :content="title" />
-        </header>
-        <div class="content-section">
-            <slot></slot>
-        </div>
-        <div v-if="$slots.customFooter">
-            <slot name="customFooter"></slot>
-        </div>
-        <div v-else>
-            <footer v-if="!footerHidden" class="footer-section">
-                <BaseButton
-                    btn-style="outlined"
-                    :text="cancelBtnText"
-                    @click="handleCancelBtnClick"
-                />
-                <BaseButton
-                    :text="confirmBtnText"
-                    @click="emit('confirmBtnClick')"
-                />
-            </footer>
-        </div>
-
-    </a-modal>
+    <div>
+        <transition
+            enter-active-class="transition-opacity ease-in-out duration-200"
+            leave-active-class="transition-opacity ease-in-out duration-200"
+            enter-from-class="opacity-0"
+            leave-to-class="opacity-0"
+        >
+            <div
+                v-if="open"
+                class="fixed inset-0 bg-gray-950 bg-opacity-60 flex justify-center p-6"
+                @click="maskClosable && closeModal"
+            >
+            </div>
+        </transition>
+        <transition
+            enter-active-class="transition-opacity ease-in-out duration-300"
+            leave-active-class="transition-opacity ease-in-out duration-300"
+            enter-from-class="opacity-0"
+            leave-to-class="opacity-0"
+        >
+            <div
+                v-if="open" 
+                class="fixed top-20 left-0 right-0 bottom-0 z-10 w-fit max-w-[520px] transform-none bg-white rounded-md shadow-lg px-6 py-5 h-fit mx-auto">
+                <header class="relative w-full flex items-center justify-center p-5">
+                    <BaseTitle :content="title" />
+                    <div 
+                        v-if="closable"
+                        class="absolute right-0 cursor-pointer"
+                        :class="[
+                            TailwindClassHelper.grayColorFilterClass,
+                            TailwindClassHelper.primaryColorFilterHoverClass
+                        ]"
+                        @click="closeModal"
+                    >
+                        <BaseIcon icon="/icons/icon-close-black.svg" />
+                    </div>
+                </header>
+                <div class="flex center p-4">
+                    <slot></slot>
+                </div>
+                <slot name="customFooter">
+                    <footer v-if="!footerHidden" class="flex items-center justify-around mt-8">
+                        <BaseButton
+                            btn-style="outlined"
+                            :text="cancelBtnText"
+                            @click="closeModal"
+                        />
+                        <BaseButton
+                            :text="confirmBtnText"
+                            @click="emit('confirmBtnClick')"
+                        />
+                    </footer>
+                </slot>
+            </div>
+        </transition>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -84,38 +110,12 @@ const emit = defineEmits<{
 
 }>();
 
-const confirmBtnText = props.confirmBtnText ?? "Confirm";
-const cancelBtnText = props.cancelBtnText ?? "Cancel";
+const confirmBtnText = computed(() => props.confirmBtnText ?? "Confirm");
+const cancelBtnText = computed(() => props.cancelBtnText ?? "Cancel");
 
-const handleCancelBtnClick = () => {
+const closeModal = () => {
     emit("update:open", false);
     emit("close")
 }
 
 </script>
-
-<style scoped lang="scss">
-
-@mixin default-section {
-    display: flex;
-    align-items: center;
-}
-
-.header-section {
-    @include default-section;
-    padding: 1.25rem 0;
-    justify-content: center;
-}
-
-.content-section {
-    @include default-section;
-    justify-content: center;
-    padding: 1rem 1rem 2rem 1rem;
-}
-
-.footer-section {
-    @include default-section;
-    justify-content: space-around;
-}
-
-</style>

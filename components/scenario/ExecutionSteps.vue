@@ -18,12 +18,13 @@
             </span>
         </div>
     </a-tooltip>
-    <a-modal
+    <BaseModal
         v-if="executionStepModalOpen"
         v-model:open="executionStepModalOpen"
         :title="scenarioName"
-        :footer="null"
-        :closable="true">
+        :footer-hidden="true"
+        :closable="true"
+    >
         <section class="flex items-center mt-5">
             <apexchart
                 :options="executionStepDonutChartOptions"
@@ -45,7 +46,7 @@
                 </div>
             </div>
         </section>
-    </a-modal>
+    </BaseModal>
 </template>
 
 <script setup lang="ts">

@@ -7,7 +7,7 @@
         }"
     >
         <div 
-            class="absolute top-10 w-8 h-8 flex items-center justify-center cursor-pointer border border-solid border-gray-100 rounded-full z-10 bg-white"
+            class="absolute top-10 w-8 h-8 flex items-center justify-center cursor-pointer border border-solid border-gray-100 rounded-full bg-white"
             :class="{
                 'left-56': !collapsed,
                 'left-16': collapsed
