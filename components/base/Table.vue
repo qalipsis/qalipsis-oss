@@ -292,8 +292,6 @@ const handleRowSelectionChange = (rowKey: string) => {
     allSelectedRowKeys.value.push(rowKey)
   }
 
-  console.log(allSelectedRowKeys.value)
-
   emit('selectionChange', {
     selectedRowKeys: allSelectedRowKeys.value,
     selectedRows: getAllSelectedRows()

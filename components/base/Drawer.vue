@@ -1,48 +1,66 @@
 <template>
-    <a-drawer 
-        placement="right"
-        :open="open"
-        :size="drawerSize"
-        :closable="false"
-        :mask-closable="maskClosable"
-        :width="width"
-        @close="handleCancelBtnClick"
-        :destroy-on-close="true">
-        <section class="flex flex-col h-full">
-            <header class="flex justify-between mb-2">
-                <BaseTitle :content="title"  />
-                <div 
-                    class="w-10 h-10 cursor-pointer flex items-center justify-center"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleCancelBtnClick"
-                >
-                    <img src="/icons/icon-close-black.svg" alt="">
-                </div>
-            </header>
-            <div class="flex-grow h-full overflow-auto">
-                <slot></slot>
-            </div>
-            <footer class="w-full" v-if="!footerHidden">
-                <div class="my-5">
-                    <BaseDivideLine />
-                </div>
-                <div class="grid grid-cols-2 gap-x-3">
-                    <BaseButton
-                        class="w-full"
-                        btn-style="outlined"
-                        :text="cancelBtnText"
+    <transition
+        appear
+        enter-active-class="transition-opacity ease-in-out duration-200"
+        leave-active-class="transition-opacity ease-in-out duration-200"
+        enter-from-class="opacity-0"
+        leave-to-class="opacity-0"
+    >
+        <div
+            v-if="open"
+            class="fixed inset-0 z-10 bg-gray-950 bg-opacity-60 flex justify-center p-6"
+            @click="maskClosable && handleCancelBtnClick"
+        >
+        </div>
+    </transition>
+    <transition
+        appear
+        enter-active-class="transition-all ease-in-out duration-300"
+        leave-active-class="transition-all ease-in-out duration-300"
+        enter-from-class="translate-x-full"
+        leave-to-class="translate-x-full"
+    >
+        <div
+            v-if="open"
+            class="fixed top-0 right-0 z-10 p-6 h-full bg-white shadow-lg translate-none"
+            :style="{ width: drawerWidth }"
+        >
+            <section class="flex flex-col h-full">
+                <header class="flex justify-between mb-2">
+                    <BaseTitle :content="title"  />
+                    <div 
+                        class="w-10 h-10 cursor-pointer flex items-center justify-center"
+                        :class="TailwindClassHelper.primaryColorFilterHoverClass"
                         @click="handleCancelBtnClick"
-                    />
-                    <BaseButton 
-                        class="w-full"
-                        :text="confirmBtnText"
-                        :disabled="confirmBtnDisabled"
-                        @click="emit('confirmBtnClick')"
-                    />
+                    >
+                        <img src="/icons/icon-close-black.svg" alt="">
+                    </div>
+                </header>
+                <div class="flex-grow h-full overflow-auto">
+                    <slot></slot>
                 </div>
-            </footer>
-        </section>
-    </a-drawer>
+                <footer class="w-full" v-if="!footerHidden">
+                    <div class="my-5">
+                        <BaseDivideLine />
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-3">
+                        <BaseButton
+                            class="w-full"
+                            btn-style="outlined"
+                            :text="cancelBtnText"
+                            @click="handleCancelBtnClick"
+                        />
+                        <BaseButton 
+                            class="w-full"
+                            :text="confirmBtnText"
+                            :disabled="confirmBtnDisabled"
+                            @click="emit('confirmBtnClick')"
+                        />
+                    </div>
+                </footer>
+            </section>
+        </div>
+    </transition>
 </template>
 
 <script setup lang="ts">
@@ -110,7 +128,8 @@ const emit = defineEmits<{
 
 const confirmBtnText = computed(() => props.confirmBtnText ?? "Confirm");
 const cancelBtnText = computed(() => props.cancelBtnText ?? "Cancel");
-const drawerSize = props.size ?? "large";
+
+const drawerWidth = computed(() => props.width ? `${props.width}px`: '600px');
 
 const handleCancelBtnClick = () => {
     emit("update:open", false);

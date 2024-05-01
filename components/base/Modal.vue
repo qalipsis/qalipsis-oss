@@ -8,7 +8,7 @@
         >
             <div
                 v-if="open"
-                class="fixed inset-0 bg-gray-950 bg-opacity-60 flex justify-center p-6"
+                class="fixed inset-0 z-10 bg-gray-950 bg-opacity-60 flex justify-center p-6"
                 @click="maskClosable && closeModal"
             >
             </div>

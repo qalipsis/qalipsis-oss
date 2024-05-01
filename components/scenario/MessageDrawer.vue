@@ -1,6 +1,12 @@
 <template>
-    <BaseDrawer :open="open" :title="title" :maskClosable="true" :footer-hidden="true" :width="920"
-        @close="emit('update:open', false)">
+    <BaseDrawer 
+        :open="open"
+        :title="title"
+        :maskClosable="true"
+        :footer-hidden="true"
+        :width="920"
+        @close="emit('update:open', false)"
+    >
         <div class="flex justify-end w-full mb-3">
             <BaseSearch 
                 :collapsable="false"
