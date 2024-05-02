@@ -1,6 +1,6 @@
 <template>
-    <a-tooltip>
-        <template #title>
+    <BaseTooltip>
+        <template #tooltipContent>
             <div>Total Steps: {{ totalExecutions }}</div>
             <div>Successful steps: {{ successfulExecutions }}</div>
             <div>Failed steps: {{ failedExecutions }}</div>
@@ -17,7 +17,7 @@
                 {{ successfulExecutions }}/{{ failedExecutions }}/{{ totalExecutions }}
             </span>
         </div>
-    </a-tooltip>
+    </BaseTooltip>
     <BaseModal
         v-if="executionStepModalOpen"
         v-model:open="executionStepModalOpen"

@@ -1,6 +1,6 @@
 <template>
-    <a-tooltip>
-        <template #title>
+    <BaseTooltip>
+        <template #tooltipContent>
             <div>Scheduled minions: {{ scheduledMinions }}</div>
             <div>Started minions: {{ startedMinions }}</div>
             <div>Completed minions: {{ completedMinions }}</div>
@@ -17,7 +17,7 @@
                 {{ completedMinions }} / {{ startedMinions }} / {{ scheduledMinions }}
             </span>
         </div>
-    </a-tooltip>
+    </BaseTooltip>
     <BaseModal
         v-if="minionsModalOpen"
         v-model:open="minionsModalOpen"

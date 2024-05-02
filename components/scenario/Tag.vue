@@ -1,8 +1,5 @@
 <template>
-    <a-tooltip>
-        <template v-if="failureReason" #title>
-            {{ failureReason }}                    
-        </template>
+    <BaseTooltip :text="failureReason">
         <div class="cursor-pointer">
             <BaseTag 
                 :text="tag.text"
@@ -11,7 +8,7 @@
                 @click="emit('click')"
             />
         </div>
-    </a-tooltip>
+    </BaseTooltip>
 </template>
 
 <script setup lang="ts">

@@ -31,6 +31,7 @@
     "pinia": "2.1.7",
     "sass": "1.76.0",
     "tinycolor2": "1.6.0",
+    "tippy.js": "6.3.7",
     "vee-validate": "4.12.6",
     "vue": "3.4.21",
     "vue-router": "4.3.0",

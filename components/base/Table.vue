@@ -53,13 +53,12 @@
               class="flex items-center cursor-pointer"
               @click="emit('refresh')"
             >
-              <a-tooltip>
-                <template #title>Refresh</template>
+              <BaseTooltip text="Refresh">
                 <BaseIcon
                   icon="/icons/icon-refresh.svg"
                   :class="TailwindClassHelper.primaryColorFilterHoverClass"
                 />
-              </a-tooltip>
+              </BaseTooltip>
             </div>
           </th>
         </tr>
