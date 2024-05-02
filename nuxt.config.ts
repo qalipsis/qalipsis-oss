@@ -24,7 +24,7 @@ export default defineNuxtConfig({
   modules: [
     "@vueuse/nuxt",
     "@pinia/nuxt",
-    "@ant-design-vue/nuxt"
+    'nuxt-headlessui'
   ],
   runtimeConfig: {
     // Public keys that are exposed to the client

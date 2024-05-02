@@ -17,14 +17,14 @@
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div 
+        <div
           class="flex items-center cursor-pointer hover:text-primary-500"
           @click="handleEditBtnClick(record as DataSeriesTableData)"
         >
-          <div 
+          <div
             class="w-2 h-2 rounded-full mr-2"
-            :style="{ backgroundColor: `${record.color || 'transparent'}` }">
-          </div>
+            :style="{ backgroundColor: `${record.color || 'transparent'}` }"
+          ></div>
           <span>{{ record.displayName }}</span>
         </div>
       </template>
@@ -33,49 +33,59 @@
       </template>
     </template>
     <template #actionCell="{ record }">
-      <div 
-        v-if="!tableActionsHidden"
-        class="cursor-pointer"
-      >
+      <div v-if="!tableActionsHidden" class="cursor-pointer">
         <BasePermission :permissions="[PermissionConstant.WRITE_SERIES]">
-          <a-dropdown trigger="click">
-            <a @click.prevent class="invisible group-hover:visible">
-              <div class="flex items-center">
+          <Popover class="relative">
+            <PopoverButton class="outline-none">
+              <div class="flex items-center invisible group-hover:visible">
                 <BaseIcon icon="/icons/icon-menu.svg" />
               </div>
-            </a>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item v-if="!record.disabled">
-                  <div 
-                    class="flex items-center h-8"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleDeleteBtnClick(record as DataSeriesTableData)">
-                    <BaseIcon icon="/icons/icon-delete-small.svg" />
-                    <span class="pl-2"> Delete </span>
-                  </div>
-                </a-menu-item>
-                <a-menu-item v-if="!record.disabled">
-                  <div 
-                    class="flex items-center h-8"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleEditBtnClick(record as DataSeriesTableData)">
-                    <BaseIcon icon="/icons/icon-edit-small.svg" />
-                    <span class="pl-2"> Edit </span>
-                  </div>
-                </a-menu-item>
-                <a-menu-item>
-                  <div 
-                    class="flex items-center h-8"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleDuplicateBtnClick(record as DataSeriesTableData)">
-                    <BaseIcon icon="/icons/icon-duplicate.svg" />
-                    <span class="pl-2"> Duplicate </span>
-                  </div>
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
+            </PopoverButton>
+            <PopoverPanel
+              class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md"
+            >
+              <div
+                v-if="!record.disabled"
+                class="flex items-center cursor-pointer hover:bg-primary-50"
+              >
+                <div
+                  class="flex items-center h-full w-32 px-4 py-3"
+                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  @click="handleDeleteBtnClick(record as DataSeriesTableData)"
+                >
+                  <BaseIcon icon="/icons/icon-delete-small.svg" />
+                  <span class="pl-2"> Delete </span>
+                </div>
+              </div>
+              <div
+                v-if="!record.disabled"
+                class="flex items-center cursor-pointer hover:bg-primary-50"
+              >
+                <div
+                  class="flex items-center h-full w-32 px-4 py-3"
+                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  @click="handleEditBtnClick(record as DataSeriesTableData)"
+                >
+                  <BaseIcon icon="/icons/icon-edit-small.svg" />
+                  <span class="pl-2"> Edit </span>
+                </div>
+              </div>
+              <div
+                class="flex items-center cursor-pointer hover:bg-primary-50"
+              >
+                <div
+                  class="flex items-center h-full w-32 px-4 py-3"
+                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  @click="
+                    handleDuplicateBtnClick(record as DataSeriesTableData)
+                  "
+                >
+                  <BaseIcon icon="/icons/icon-duplicate.svg" />
+                  <span class="pl-2"> Duplicate </span>
+                </div>
+              </div>
+            </PopoverPanel>
+          </Popover>
         </BasePermission>
       </div>
     </template>
@@ -94,17 +104,18 @@
 </template>
 
 <script setup lang="ts">
+import { Popover, PopoverButton, PopoverPanel } from "@headlessui/vue";
 import { storeToRefs } from "pinia";
 
 const props = defineProps<{
-  tableActionsHidden?: boolean,
-  maxSelectedRows?: number,
-  selectedDataSeriesReferences?: string[]
-}>()
-
+  tableActionsHidden?: boolean;
+  maxSelectedRows?: number;
+  selectedDataSeriesReferences?: string[];
+}>();
 
 const seriesTableStore = useSeriesTableStore();
-const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(seriesTableStore);
+const { dataSource, totalElements, currentPageIndex, pageSize } =
+  storeToRefs(seriesTableStore);
 const userStore = useUserStore();
 
 const currentPage = computed(() => seriesTableStore.currentPageNumber);
@@ -113,26 +124,29 @@ const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
 const selectedDataSeries = ref<DataSeriesTableData>();
 const formDrawerOpen = ref(false);
 const dataSeriesReferences = ref<string[]>([]);
-const deleteModalContent = ref('');
+const deleteModalContent = ref("");
 const modalOpen = ref(false);
 
 onMounted(() => {
   if (props.selectedDataSeriesReferences) {
     seriesTableStore.$patch({
-      selectedRowKeys: props.selectedDataSeriesReferences
-    })
+      selectedRowKeys: props.selectedDataSeriesReferences,
+    });
   }
   _fetchTableData();
-})
+});
 
 onBeforeUnmount(() => {
   seriesTableStore.$reset();
-})
+});
 
-watch(() => userStore.currentTenantReference, () => {
-  seriesTableStore.$reset();
-  _fetchTableData();
-})
+watch(
+  () => userStore.currentTenantReference,
+  () => {
+    seriesTableStore.$reset();
+    _fetchTableData();
+  }
+);
 
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
@@ -141,70 +155,76 @@ const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
    * 2. The max number of row selection is specified and the selected row is more than the max number.
    * 3. The row is disabled
    */
-  const isMinionCount = dataSeriesTableData.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
+  const isMinionCount =
+    dataSeriesTableData.reference ===
+    SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
   let disabled = false;
 
   if (isMinionCount) {
-    disabled = true
+    disabled = true;
   } else if (props.maxSelectedRows) {
     // When the max number of row selection is specified, the row is disabled when it is not yet selected.
-    disabled = selectedRowKeys.value.length > props.maxSelectedRows && !selectedRowKeys.value.includes(dataSeriesTableData.reference);
+    disabled =
+      selectedRowKeys.value.length > props.maxSelectedRows &&
+      !selectedRowKeys.value.includes(dataSeriesTableData.reference);
   } else {
-    disabled = dataSeriesTableData.disabled
+    disabled = dataSeriesTableData.disabled;
   }
 
   return disabled;
-}
+};
 
 const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter
-    ? `${tableSorter.key}:${tableSorter.direction}`
-    : '';
+  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : "";
   seriesTableStore.$patch({
-    sort: sort
+    sort: sort,
   });
   _fetchTableData();
-}
+};
 
 const handlePaginationChange = (pageIndex: number) => {
   seriesTableStore.$patch({
     currentPageIndex: pageIndex,
   });
   _fetchTableData();
-}
+};
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   seriesTableStore.$patch({
     selectedRows: tableSelection.selectedRows,
-    selectedRowKeys: tableSelection.selectedRowKeys
+    selectedRowKeys: tableSelection.selectedRowKeys,
   });
-}
+};
 
 const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   formDrawerOpen.value = true;
   selectedDataSeries.value = dataSeriesTableData;
-}
+};
 
 const handleRefreshBtnClick = () => {
   _fetchTableData();
-}
+};
 
-const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData) => {
+const handleDuplicateBtnClick = async (
+  dataSeriesTableData: DataSeriesTableData
+) => {
   try {
     const { duplicateDataSeries } = useDataSeriesApi();
     await duplicateDataSeries(dataSeriesTableData);
-    NotificationHelper.success(`The data series ${dataSeriesTableData.displayName} has been successfully copied`)  
+    NotificationHelper.success(
+      `The data series ${dataSeriesTableData.displayName} has been successfully copied`
+    );
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error)
+    ErrorHelper.handleHttpResponseError(error);
   }
   _fetchTableData();
-}
+};
 
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   dataSeriesReferences.value = [dataSeriesTableData.key];
   deleteModalContent.value = dataSeriesTableData.displayName;
-  modalOpen.value = true
-}
+  modalOpen.value = true;
+};
 
 const _fetchTableData = async () => {
   try {
@@ -212,6 +232,5 @@ const _fetchTableData = async () => {
   } catch (error) {
     ErrorHelper.handleHttpResponseError(error);
   }
-}
-
+};
 </script>

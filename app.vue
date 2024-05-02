@@ -1,11 +1,5 @@
 <template>
-  <a-config-provider
-    :theme="{
-      token: {
-        colorPrimary: '#41c9ca',
-      },
-    }"
-  >
+  <div>
     <section
       v-if="!canViewPage"
       class="flex items-center justify-center w-screen h-screen"
@@ -24,7 +18,7 @@
         </NuxtLayout>
       </div>
     </section>
-  </a-config-provider>
+  </div>
 </template>
 
 <script setup lang="ts">

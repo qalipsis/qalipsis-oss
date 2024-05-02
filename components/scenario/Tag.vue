@@ -1,16 +1,16 @@
 <template>
     <a-tooltip>
-            <template v-if="failureReason" #title>
-                {{ failureReason }}                    
-            </template>
-            <div class="cursor-pointer">
-                <BaseTag 
-                    :text="tag.text"
-                    :backgroundCssClass="tag.backgroundCssClass"
-                    :textCssClass="tag.textCssClass"
-                    @click="emit('click')"
-                />
-            </div>
+        <template v-if="failureReason" #title>
+            {{ failureReason }}                    
+        </template>
+        <div class="cursor-pointer">
+            <BaseTag 
+                :text="tag.text"
+                :backgroundCssClass="tag.backgroundCssClass"
+                :textCssClass="tag.textCssClass"
+                @click="emit('click')"
+            />
+        </div>
     </a-tooltip>
 </template>
 

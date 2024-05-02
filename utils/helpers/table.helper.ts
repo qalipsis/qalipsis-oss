@@ -1,6 +1,3 @@
-import type { SorterResult } from "ant-design-vue/es/table/interface";
-import type { TablePaginationConfig } from 'ant-design-vue/es/table/Table';
-
 export class TableHelper {
     static defaultPageSize = 10;
 
@@ -23,29 +20,5 @@ export class TableHelper {
             .map(text => text.trim())
             .filter(text => text)
             .join(',')
-    }
-
-    static sharedPaginationProperties: TablePaginationConfig = {
-        showQuickJumper: true,
-        position: ['bottomLeft'],
-        showTotal(total: number, range: [number, number]): string {
-            return `Showing ${range[0]} - ${range[1]} of ${total}`;
-        },
-        locale: { jump_to: "Go to page" }
-    }
-
-    static getRowsFromDataSource = <T>(pageSize: number, pageIndex: number, dataSources: T[]) => {
-        return []
-    }
-
-    static getCurrentPageIndex = (pagination: TablePaginationConfig): number => {
-        return pagination.current! - 1;
-    }
-
-    static getSort = (sorter: SorterResult): string => {
-        const sortKey = sorter.column ? sorter.column.key : "";
-        const direction = sorter.order === "ascend" ? "asc" : "desc";
-
-        return sortKey ? `${sortKey}:${direction}` : "";
     }
 }

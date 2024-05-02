@@ -22,28 +22,38 @@
             </template>
         </template>
         <template #actionCell="{ record }">
-            <div class="flex items-center invisible group-hover:visible">
-                <div 
-                    class="flex items-center mr-4 cursor-pointer h-8"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleDownloadBtnClick(record as ReportTableData)"
-                >
-                    <a-tooltip>
-                        <template #title>Download</template>
-                        <BaseIcon icon="/icons/icon-document.svg" />
-                    </a-tooltip>
+            <Popover class="relative">
+                <PopoverButton class="outline-none">
+                <div class="flex items-center invisible group-hover:visible">
+                    <BaseIcon icon="/icons/icon-menu.svg" />
                 </div>
-                <div 
-                    class="flex items-center cursor-pointer h-8"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleDeleteBtnClick(record as ReportTableData)"
-                >
-                    <a-tooltip>
-                        <template #title>Delete</template>
-                        <BaseIcon icon="/icons/icon-delete-small.svg" />
-                    </a-tooltip>
-                </div>
-            </div>
+                </PopoverButton>
+                <PopoverPanel class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md">
+                    <PopoverButton class="outline-none">
+                        <div class="flex items-center cursor-pointer hover:bg-primary-50">   
+                            <div
+                            class="flex items-center h-full w-32 px-4 py-3"
+                            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                            @click="handleDownloadBtnClick(record)"
+                            >
+                            <BaseIcon icon="/icons/icon-document.svg" />
+                            <span class="pl-2"> Download </span>
+                            </div>
+                        </div>
+                    </PopoverButton>
+                    <PopoverButton class="outline-none">
+                        <div class="flex items-center cursor-pointer hover:bg-primary-50">
+                            <div 
+                            class="flex items-center h-full w-32 px-4 py-3"
+                            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                            @click="handleDeleteBtnClick(record as ReportTableData)">
+                            <BaseIcon icon="/icons/icon-delete-small.svg" />
+                            <span class="pl-2"> Delete </span>
+                            </div>
+                        </div>
+                    </PopoverButton>
+                </PopoverPanel>
+            </Popover>
         </template>
     </BaseTable>
     <ReportsDeleteConfirmationModal
@@ -54,6 +64,7 @@
 </template>
   
 <script setup lang="ts">
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { storeToRefs } from "pinia";
 
 const userStore = useUserStore();

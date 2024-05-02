@@ -46,36 +46,41 @@
           "
           class="cursor-pointer"
         >
-          <a-dropdown trigger="click">
-            <a @click.prevent class="invisible group-hover:visible">
-              <div class="flex items-center">
+          <Popover class="relative">
+            <PopoverButton class="outline-none">
+              <div class="flex items-center invisible group-hover:visible">
                 <BaseIcon icon="/icons/icon-menu.svg" />
               </div>
-            </a>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item>
+            </PopoverButton>
+            <PopoverPanel
+              v-slot="{ close }"
+              class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md"
+            >
+              <PopoverButton class="outline-none">
+                <div class="flex items-center cursor-pointer hover:bg-primary-50">   
                   <div
-                    class="flex items-center cursor-pointer h-8"
+                    class="flex items-center h-full w-32 px-4 py-3"
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
                     @click="handleRunNowBtnClick(record)"
                   >
                     <BaseIcon icon="/icons/icon-time.svg" />
                     <span class="pl-2"> Run now </span>
                   </div>
-                </a-menu-item>
-                <a-menu-item>
+                </div>
+              </PopoverButton>
+              <PopoverButton class="outline-none">
+                <div class="flex items-center cursor-pointer hover:bg-primary-50">
                   <div 
-                    class="flex items-center h-8"
+                    class="flex items-center h-full w-32 px-4 py-3"
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="handleAbortBtnClick(record as CampaignTableData)">
+                    @click="handleAbortBtnClick(record)">
                     <BaseIcon icon="/icons/icon-delete-small.svg" />
                     <span class="pl-2"> Abort </span>
                   </div>
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
+                </div>
+              </PopoverButton>
+            </PopoverPanel>
+          </Popover>
         </div>
       </template>
     </BaseTable>
@@ -91,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { storeToRefs } from "pinia";
 
 const props = defineProps<{
@@ -106,8 +112,10 @@ const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(ca
 const { fetchCampaignConfig, createCampaign, abortCampaign } = useCampaignApi();
 
 const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys);
+
 const campaignAbortModalOpen = ref(false);
 const campaignAbortModalContent = ref("");
+
 let selectedCampaignTableData: CampaignTableData;
 
 onMounted(() => {
@@ -195,7 +203,7 @@ const handleConfirmAbortBtnClick = async () => {
 }
 
 const handleRunNowBtnClick = async (
-  campaignTableData: CampaignTableData
+  campaignTableData: CampaignTableData,
 ) => {
   try {
     // Fetches the campaign config
