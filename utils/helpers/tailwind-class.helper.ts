@@ -16,6 +16,18 @@ export class TailwindClassHelper {
     static outlineButtonIconClass = 'group-enabled:group-hover:[filter:brightness(0%)_saturate(100%)_invert(61%)_sepia(38%)_saturate(657%)_hue-rotate(132deg)_brightness(89%)_contrast(91%)]';
     static outlineButtonTextClass = 'group-enabled:group-hover:text-primary-500';
     static seriesOptionItemClass = 'border border-solid align-baseline border-gray-200 rounded-md h-14 py-1 px-2 w-full cursor-pointer hover:bg-gray-50';
-    static scenarioDropdownItemClass = 'min-w-56 relative py-2 px-3 rounded-md mb-1';
-    static scenarioDropdownItemActiveClass = "bg-gray-100 after:content-[''] after:absolute after:w-2 after:h-2 after:rounded-full after:right-2 after:top-auto after:bg-primary-500";
+    static formInputWrapperClass = 'border px-2 py-1 h-10 border-solid w-full rounded-md flex items-center justify-between has-[:disabled]:bg-gray-50 has-[:disabled]:text-gray-400';
+    static formInputWrapperActiveClass = 'border-gray-200 has-[:focus]:border-primary-500 has-[:enabled]:hover:border-primary-500 has-[:enabled]:hover:bg-primary-50';
+    static formInputWrapperErrorClass = 'border-red-600';
+    static formInputClass = 'outline-none w-full bg-transparent disabled:cursor-not-allowed';
+    static formDropdownClass = 'relative inline-block text-left';
+    static formDropdownPanelClass = 'absolute right-0 rounded-md bg-white shadow-xl focus:outline-none p-2 z-10 max-h-60 overflow-y-auto';
+    static formDropdownTransitionEnterActiveClass = 'transition duration-100 ease-out';
+    static formDropdownTransitionEnterFromClass = 'transform scale-95 opacity-0';
+    static formDropdownTransitionEnterToClass = 'transform scale-100 opacity-100';
+    static formDropdownTransitionLeaveActiveClass = 'transition duration-75 ease-in';
+    static formDropdownTransitionLeaveFromClass = 'transform scale-100 opacity-100';
+    static formDropdownTransitionLeaveToClass = "transform scale-95 opacity-0";
+    static formDropdownOptionClass = 'w-full relative py-2 px-3 rounded-md mb-1 hover:bg-primary-50';
+    static formDropdownOptionActiveClass = "bg-gray-100 after:content-[''] after:absolute after:w-2 after:h-2 after:rounded-full after:right-2 after:top-auto after:bg-primary-500";
 }

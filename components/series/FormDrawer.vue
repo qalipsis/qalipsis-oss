@@ -22,7 +22,7 @@
         </div>
         <div class="col-span-12">
           <FormSelect
-            label="Sharing node"
+            label="Sharing mode"
             form-control-name="sharingMode"
             :field-validation-schema="fieldValidationSchema.sharingMode"
             :options="sharingModeOptions"

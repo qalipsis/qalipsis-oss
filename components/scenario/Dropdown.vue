@@ -1,86 +1,86 @@
 <template>
-  <Menu as="div" class="relative inline-block text-left">
-    <MenuButton :disabled="hasOnlyOneScenarioOption" class="outline-none">
-      <div 
-        class="h-10 flex items-center"
-        :class="{
-          'cursor-not-allowed': hasOnlyOneScenarioOption
-        }">
-        <div class="pr-2" :class="{ 'text-gray-500': hasOnlyOneScenarioOption }">
-          {{ selectedScenarioNamesLabel }}
+  <Menu>
+    <div :class="TailwindClassHelper.formDropdownClass">
+      <MenuButton :disabled="hasOnlyOneScenarioOption" class="outline-none">
+        <div 
+          class="h-10 flex items-center"
+          :class="{
+            'cursor-not-allowed': hasOnlyOneScenarioOption
+          }">
+          <div class="pr-2" :class="{ 'text-gray-500': hasOnlyOneScenarioOption }">
+            {{ selectedScenarioNamesLabel }}
+          </div>
+          <BaseIcon
+            icon="/icons/icon-arrow-down-light-black.svg"
+            :class="
+              hasOnlyOneScenarioOption
+                ? TailwindClassHelper.grayColorFilterClass
+                : ''
+            "
+            :width="20"
+            :height="20"
+          />
         </div>
-        <BaseIcon
-          icon="/icons/icon-arrow-down-light-black.svg"
-          :class="
-            hasOnlyOneScenarioOption
-              ? TailwindClassHelper.grayColorFilterClass
-              : ''
-          "
-          :width="18"
-          :height="18"
-        />
-      </div>
-    </MenuButton>
-    <transition
-      enter-active-class="transition duration-100 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
-      leave-active-class="transition duration-75 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
-    >
-      <MenuItems
-        class="absolute right-0 w-72 rounded-md bg-white shadow-xl focus:outline-none p-2 z-10"
+      </MenuButton>
+      <transition
+        :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
+        :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
+        :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
+        :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
+        :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
+        :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
       >
-        <MenuItem
-          v-if="!hasOnlyOneScenarioOption"
-          as="template"
+        <MenuItems
+          class="w-72"
+          :class="TailwindClassHelper.formDropdownPanelClass"
         >
-          <div
-            @click="handleSummaryOptionClick()"
-            class="flex items-center cursor-pointer"
-            :class="[
-              isScenarioSummarySelected
-                ? TailwindClassHelper.scenarioDropdownItemActiveClass
-                : '',
-              TailwindClassHelper.scenarioDropdownItemClass,
-            ]"
+          <MenuItem
+            v-if="!hasOnlyOneScenarioOption"
+            as="template"
           >
-            {{ scenarioSummaryName }}
+            <div
+              @click="handleSummaryOptionClick()"
+              class="flex items-center cursor-pointer"
+              :class="[
+                isScenarioSummarySelected
+                  ? TailwindClassHelper.formDropdownOptionActiveClass
+                  : '',
+                TailwindClassHelper.formDropdownOptionClass,
+              ]"
+            >
+              {{ ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME }}
+            </div>
+          </MenuItem>
+          <div class="my-1">
+            <BaseDivideLine />
           </div>
-        </MenuItem>
-        <div class="my-1">
-          <BaseDivideLine />
-        </div>
-        <span class="text-gray-500 text-sm pl-2">Scenarios</span>
-        <MenuItem
-          v-for="scenario in scenarioOptions"
-          :key="scenario.value"
-          as="template"
-        >
-          <div
-            class="flex items-center mb-1 cursor-pointer"
-            :class="[
-              scenario.isActive
-                ? TailwindClassHelper.scenarioDropdownItemActiveClass
-                : '',
-              TailwindClassHelper.scenarioDropdownItemClass,
-            ]"
-            @click="handleScenarioOptionClick(scenario)"
+          <span class="text-gray-500 text-sm pl-2">Scenarios</span>
+          <MenuItem
+            v-for="scenario in scenarioOptions"
+            :key="scenario.value"
+            as="template"
           >
-            {{ scenario.label }}
-          </div>
-        </MenuItem>
-      </MenuItems>
-    </transition>
+            <div
+              class="flex items-center mb-1 cursor-pointer"
+              :class="[
+                scenario.isActive
+                  ? TailwindClassHelper.formDropdownOptionActiveClass
+                  : '',
+                TailwindClassHelper.formDropdownOptionClass,
+              ]"
+              @click="handleScenarioOptionClick(scenario)"
+            >
+              {{ scenario.label }}
+            </div>
+          </MenuItem>
+        </MenuItems>
+      </transition>
+    </div>
   </Menu>
 </template>
 
 <script setup lang="ts">
- import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue';
-
-const scenarioSummaryId = ScenarioDetailsConfig.SCENARIO_SUMMARY_ID;
-const scenarioSummaryName = ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME;
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue';
 
 const props = defineProps<{
   scenarioNames: string[];
@@ -119,7 +119,7 @@ onMounted(() => {
 
   // Sets the selected scenario names text
   selectedScenarioNamesLabel.value = isScenarioSummarySelected.value
-    ? scenarioSummaryName
+    ? ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME
     : props.selectedScenarioNames.join(",");
 });
 
@@ -129,7 +129,7 @@ const handleSummaryOptionClick = () => {
 
   isScenarioSummarySelected.value = true;
   selectedScenarioNames.value = props.scenarioNames;
-  selectedScenarioNamesLabel.value = scenarioSummaryName;
+  selectedScenarioNamesLabel.value = ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME;
   scenarioOptions.value.forEach(
     (scenarioOption) => (scenarioOption.isActive = true)
   );
@@ -153,7 +153,7 @@ const handleScenarioOptionClick = (scenarioOption: ScenarioOption) => {
 
   selectedScenarioNames.value = activeScenarioNames;
   selectedScenarioNamesLabel.value = isScenarioSummarySelected.value
-    ? scenarioSummaryName
+    ? ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME
     : activeScenarioNames.join(",");
 
   emit("scenarioChange", activeScenarioNames);
