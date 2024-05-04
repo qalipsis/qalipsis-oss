@@ -1,13 +1,12 @@
 
 <template>
-    <div>
-        <label class="label" for="campaignPatternInput">Campaign patterns:</label>
-        <a-input 
-            v-model:value="campaignPatternInput"
-            placeholder="Type your patterns here, separated by commas..."
-            @change="handlePatternsValueChange"
-        />
-    </div>
+    <FormInput
+        form-control-name="patternText"
+        label="Campaign patterns"
+        placeholder="Type your patterns here, separated by commas..."
+        v-model="campaignPatternInput"
+        @input="handlePatternsValueChange"
+    ></FormInput>
 </template>
 
 <script setup lang="ts">

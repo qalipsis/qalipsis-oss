@@ -1,12 +1,12 @@
 <template>
     <div class="mb-3">
-        <label class="label" for="reportDescription">Description:</label>
-        <a-input
-            id="reportDescription"
-            v-model:value="description"
+        <FormInput
+            form-control-name="description"
+            label="Description"
             placeholder="Add the description about the report..."
-            @change="handleDescriptionValueChange"
-        />
+            v-model="description"
+            @input="handleDescriptionValueChange"
+        ></FormInput>
     </div>
 </template>
 
