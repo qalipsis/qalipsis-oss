@@ -16,6 +16,6 @@ export class TailwindClassHelper {
     static outlineButtonIconClass = 'group-enabled:group-hover:[filter:brightness(0%)_saturate(100%)_invert(61%)_sepia(38%)_saturate(657%)_hue-rotate(132deg)_brightness(89%)_contrast(91%)]';
     static outlineButtonTextClass = 'group-enabled:group-hover:text-primary-500';
     static seriesOptionItemClass = 'border border-solid align-baseline border-gray-200 rounded-md h-14 py-1 px-2 w-full cursor-pointer hover:bg-gray-50';
-    static scenarioDropdownItemClass = 'h-8 min-w-56 relative py-2 px-3 rounded-md mb-1';
+    static scenarioDropdownItemClass = 'min-w-56 relative py-2 px-3 rounded-md mb-1';
     static scenarioDropdownItemActiveClass = "bg-gray-100 after:content-[''] after:absolute after:w-2 after:h-2 after:rounded-full after:right-2 after:top-auto after:bg-primary-500";
 }

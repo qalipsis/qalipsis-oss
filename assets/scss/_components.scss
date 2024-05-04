@@ -1,14 +1,3 @@
-/* Overrides the table css */
-.ant-table-wrapper .ant-table-thead>tr>th {
-    background: white;
-}
-
-.ant-pagination-total-text {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-}
-
 /* Notification */
 .notification {
     width: 23.75rem;
@@ -39,15 +28,6 @@
     margin-inline-start: 5rem;
 }
 
-.table-action-item-wrapper {
-    visibility: hidden;
-}
-
-.ant-table-row:hover {
-    .table-action-item-wrapper {
-      visibility: visible;
-    }
-}
 
 /* Tooltip */
 .custom-tooltip {
@@ -120,20 +100,6 @@
 
 .ant-input-affix-wrapper-lg {
     padding: 0 .5rem;
-}
-
-/* Report details component */
-.report-details-data-component {
-    .delete-btn-wrapper {
-        visibility: hidden;
-        transition: all .3s ease-in-out;
-    }
-
-    &:hover {
-        .delete-btn-wrapper {
-            visibility: visible;
-        }
-    }
 }
 
 /* Date picker */

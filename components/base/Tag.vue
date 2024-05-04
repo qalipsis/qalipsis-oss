@@ -1,5 +1,5 @@
 <template>
-    <div class="px-3 rounded-xl flex items-center justify-center min-h-5 w-fit text-xs" :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
+    <div class="px-3 rounded-xl flex items-center justify-center h-5 w-fit text-xs" :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
         <span>{{ text }}</span> 
     </div>
 </template>
