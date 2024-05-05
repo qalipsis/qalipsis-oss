@@ -5,14 +5,14 @@
         <tr>
           <th v-if="rowSelectionEnabled" class="w-9">
             <div class="p-2">
-              <BaseCheckbox
+              <BaseTableCheckbox
                 v-if="rowAllSelectionEnabled"
                 value="selectAll"
                 v-model="rowAllSelectionChecked"
                 @update:model-value="handleRowAllSelectionChange"
                 :disabled="disabledRowAllSelection()"
                 :indeterminate="!rowAllSelectionChecked && currentPageSelectedRowKeys.length > 0"
-              ></BaseCheckbox>
+              ></BaseTableCheckbox>
             </div>
           </th>
           <template
@@ -75,13 +75,13 @@
         >
           <td v-if="rowSelectionEnabled">
             <div class="p-2">
-              <BaseCheckbox
+              <BaseTableCheckbox
                 ref="tableRowCheckboxes"
                 v-model="currentPageSelectedRowKeys"
                 :value="record[rowKey]"
                 :disabled="disableRowSelection(record)"
                 @update:model-value="handleRowSelectionChange(record[rowKey])"
-              ></BaseCheckbox>
+              ></BaseTableCheckbox>
             </div>
           </td>
           <td

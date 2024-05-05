@@ -129,7 +129,7 @@ const emit = defineEmits<{
 const confirmBtnText = computed(() => props.confirmBtnText ?? "Confirm");
 const cancelBtnText = computed(() => props.cancelBtnText ?? "Cancel");
 
-const drawerWidth = computed(() => props.width ? `${props.width}px`: '600px');
+const drawerWidth = computed(() => props.width ? `${props.width}px`: '660px');
 
 const handleCancelBtnClick = () => {
     emit("update:open", false);

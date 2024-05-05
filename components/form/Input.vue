@@ -11,6 +11,7 @@
         >
             <input
                 :class="TailwindClassHelper.formInputClass"
+                :id="formControlName"
                 :value="inputValue"
                 :type="inputFormControlType"
                 :placeholder="placeholder"

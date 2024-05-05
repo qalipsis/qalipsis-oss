@@ -8,7 +8,7 @@
     <form>
       <div class="grid grid-cols-12 gap-2">
         <div class="col-span-6">
-          <FormRadioGroup
+          <FormRadioButtonGroup
             label="Timeout Campaign"
             form-control-name="timeoutType"
             :options="timeoutOptions"
@@ -25,7 +25,10 @@
           />
         </div>
         <div class="col-span-12">
-          <FormCheckbox label="Schedule" form-control-name="scheduled" />
+          <FormCheckbox 
+            label="Schedule"
+            form-control-name="scheduled"
+          />
         </div>
         <template v-if="values.scheduled">
           <div class="col-span-6">
@@ -40,7 +43,6 @@
           <div class="col-span-6">
             <FormAutoComplete
               label="Timezone"
-              style="min-width: 15.5rem"
               form-control-name="timezone"
               :options="timezoneOptions"
               :field-validation-schema="fieldValidationSchema.timezone"
@@ -56,7 +58,7 @@
           </div>
           <template v-if="values.repeatEnabled">
             <div class="col-span-12">
-              <FormRadioGroup
+              <FormRadioButtonGroup
                 label="Repeat every"
                 form-control-name="repeatTimeRange"
                 :options="repeatTimeRangeOptions"

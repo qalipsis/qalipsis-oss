@@ -1,8 +1,17 @@
 <template>
-  <div>
-    <a-checkbox v-model:checked="value" @change="emit('change', value)" :disabled="disabled">
-      {{ label }}
-    </a-checkbox>
+  <div class="flex items-center">
+    <input
+      type="checkbox"
+      :class="[
+        TailwindClassHelper.checkBoxClass,
+        TailwindClassHelper.checkBoxMarkerClass
+      ]"
+      :checked="checkboxValue"
+      v-model="checkboxValue"
+      :disabled="disabled"
+      @change="emit('change', checkboxValue)"
+    />
+    <label class="ml-2">{{ label }}</label>
     <FormErrorMessage :errorMessage="errorMessage" />
   </div>
 </template>
@@ -20,8 +29,9 @@ const emit = defineEmits<{
   (e: "change", v: boolean): void;
 }>();
 
-const { value, errorMessage } = useField<boolean>(
+const { value: checkboxValue, errorMessage } = useField<boolean>(
   () => props.formControlName,
   props.fieldValidationSchema
 );
+
 </script>

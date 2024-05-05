@@ -10,7 +10,7 @@
         @select="handleTagSelect($event)"
       />
     </div>
-    <div class="col-span-3 h-24">
+    <div class="col-span-4 h-24">
       <FormSelect
         label="Operations"
         :options="operatorOptions"
@@ -19,7 +19,7 @@
         :disabled="disabled"
       />
     </div>
-    <div class="col-span-6 h-24">
+    <div class="col-span-5 h-24">
       <div class="flex items-center">
         <div class="flex-grow h-24">
           <FormAutoComplete

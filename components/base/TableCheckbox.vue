@@ -64,6 +64,5 @@ const handleChange = (event: Event) => {
 };
 
 defineExpose({ disabled: props.disabled, checked: isChecked.value })
-</script>
 
-<style scoped></style>
+</script>

@@ -6,6 +6,13 @@
         <ListboxButton :disabled="disabled" class="outline-none w-full">
           <template v-if="multipleEnabled">
             <!-- TODO: -->
+            <div
+              v-for="selectedOption in selectedOptions"
+              :key="selectedOption[optionValueKey]"
+              :value="selectedOption[optionValueKey]"
+            >
+
+            </div>
           </template>
           <template v-else>
             <div
@@ -58,11 +65,13 @@
         >
           <ListboxOptions
             class="w-full"
-            :class="TailwindClassHelper.formDropdownPanelClass"
+            :class="[
+              TailwindClassHelper.formDropdownPanelClass,
+              !options.length
+                    ? 'invisible'
+                    : 'visible'
+            ]"
           >
-            <div v-if="!options?.length" class="text-gray-500">
-              No available options.
-            </div>
             <ListboxOption
               v-for="option in options"
               :key="option[optionValueKey]"
@@ -145,9 +154,12 @@ const selectedOptions = computed(() =>
 );
 
 const selectedOptionLabel = computed(
-  () =>
-    props.options.find(
+  () => {
+    console.log(selectedFormControlValue.value)
+
+    return props.options.find(
       (option) => option.value === selectedFormControlValue.value
     )?.label
+  }
 );
 </script>

@@ -30,7 +30,7 @@
           />
         </div>
         <div class="col-span-4">
-          <FormRadioGroup
+          <FormRadioButtonGroup
             label="Time series type"
             form-control-name="dataType"
             :options="dataTypeOptions"
