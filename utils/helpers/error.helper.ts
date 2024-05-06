@@ -1,5 +1,5 @@
 export class ErrorHelper {
-    static handleHttpResponseError(error: any): void {
+    static getErrorMessage(error: any): string {
         let errorMessage = '';
         switch (error?.response?.status) {
             case 403:
@@ -19,6 +19,6 @@ export class ErrorHelper {
                 break;
         }
 
-        NotificationHelper.error(JSON.stringify(errorMessage));
+        return errorMessage;
     }
 }

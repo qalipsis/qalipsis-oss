@@ -9,13 +9,13 @@ export { ScenarioDetailsConfig } from "./configs/scenario-details.config";
 export { ScenariosTableConfig } from "./configs/scenarios-table.config";
 export { SeriesDetailsConfig } from "./configs/series-details.config";
 export { SeriesTableConfig } from "./configs/series-table.config";
+export { ToastConfig } from "./configs/toast.config";
 
 // Helpers
 export { CampaignHelper } from "./helpers/campaign.helper";
 export { ChartHelper } from "./helpers/chart.helper";
 export { ColorHelper } from "./helpers/color.helper";
 export { ErrorHelper } from "./helpers/error.helper";
-export { NotificationHelper } from "./helpers/notification.helper";
 export { ReportHelper } from "./helpers/report.helper";
 export { ScenarioHelper } from "./helpers/scenario.helper";
 export { SearchHelper } from "./helpers/search.helper";
@@ -126,4 +126,6 @@ export {
 } from "./types/timeframe";
 export type { TimeframeUnit, FormattedTimeframe } from "./types/timeframe";
 export type { User } from "./types/user";
+export type { Toast, ToastPayload, ToastStatus } from './types/toast';
+
 export { TailwindClassHelper } from "./helpers/tailwind-class.helper";

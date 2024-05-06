@@ -23,15 +23,16 @@ const emits = defineEmits<{
     (e: 'update:open', v: boolean): void
 }>()
 const reportsTableStore = useReportsTableStore();
+const toastStore = useToastStore();
 
 const handleConfirmButtonClick = async () => {
     try {
         const { deleteReports } = useReportApi();
         await deleteReports(props.reportReferences);
         emits('update:open', false)
-        NotificationHelper.success(`Successfully delete ${props.modalContent}`);
+        toastStore.success({ text: `Successfully delete ${props.modalContent}` });
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 
     // When the selected data reference are greater or equal to the current display data

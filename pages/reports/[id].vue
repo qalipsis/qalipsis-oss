@@ -24,6 +24,7 @@ const { fetchAllDataSeries } = useDataSeriesApi();
 
 const route = useRoute();
 const userStore = useUserStore();
+const toastStore = useToastStore();
 const reportDetailsStore = useReportDetailsStore();
 const isReady = ref(false);
 const modalOpen = ref(false);
@@ -96,7 +97,7 @@ const _fetchReport = async () => {
         });
         isReady.value = true;
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error);
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 

@@ -42,6 +42,7 @@ const emit = defineEmits<{
 const { updateReport } = useReportApi();
 const campaignsTableStore = useCampaignsTableStore();
 const reportDetailsStore = useReportDetailsStore();
+const toastStore = useToastStore();
 
 const presetCampaignPatterns = computed(() => props.campaignPatterns?.length ? props.campaignPatterns.join(",") : "")
 
@@ -68,9 +69,9 @@ const handleCampaignSelectBtnClick = async () => {
         await updateReport(reportDetailsStore.reportDetails!.reference, request);
         emit("update:open", false);
         emit("saved");
-        NotificationHelper.success(`Report ${reportDetailsStore.reportName} has been successfully updated.`)
+        toastStore.success({ text: `Report ${reportDetailsStore.reportName} has been successfully updated.` })
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 

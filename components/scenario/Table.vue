@@ -47,6 +47,7 @@ import { storeToRefs } from "pinia";
 const { fetchCampaignConfiguration } = useConfigurationApi();
 const { fetchScenarios } = useScenarioApi();
 const { fetchZones } = useZonesApi();
+const toastStore = useToastStore();
 const scenarioTableStore = useScenarioTableStore();
 
 const { selectedRowKeys, dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(scenarioTableStore);
@@ -74,7 +75,7 @@ onMounted(async () => {
       defaultCampaignConfiguration: campaignConfiguration
     });
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 });
 

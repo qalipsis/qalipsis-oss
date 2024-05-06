@@ -114,11 +114,12 @@ const props = defineProps<{
 }>();
 
 const seriesTableStore = useSeriesTableStore();
+const toastStore = useToastStore();
+
 const { dataSource, totalElements, currentPageIndex, pageSize } =
   storeToRefs(seriesTableStore);
 const userStore = useUserStore();
 
-const currentPage = computed(() => seriesTableStore.currentPageNumber);
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
 
 const selectedDataSeries = ref<DataSeriesTableData>();
@@ -211,11 +212,9 @@ const handleDuplicateBtnClick = async (
   try {
     const { duplicateDataSeries } = useDataSeriesApi();
     await duplicateDataSeries(dataSeriesTableData);
-    NotificationHelper.success(
-      `The data series ${dataSeriesTableData.displayName} has been successfully copied`
-    );
+    toastStore.success({ text: `The data series ${dataSeriesTableData.displayName} has been successfully copied` });
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
   _fetchTableData();
 };
@@ -230,7 +229,7 @@ const _fetchTableData = async () => {
   try {
     await seriesTableStore.fetchDataSeriesTableDataSource();
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 </script>

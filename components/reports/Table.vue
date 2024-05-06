@@ -68,6 +68,7 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
 import { storeToRefs } from "pinia";
 
 const userStore = useUserStore();
+const toastStore = useToastStore();
 const reportsTableStore = useReportsTableStore();
 const { downloadReport } = useReportApi();
 const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(reportsTableStore);
@@ -131,8 +132,7 @@ const _fetchTableData = async () => {
     try {
         await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
-        console.log(error)
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 
@@ -140,7 +140,7 @@ const handleDownloadBtnClick = async (reportTableData: ReportTableData) => {
     try {
         await downloadReport(reportTableData.reference);
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 

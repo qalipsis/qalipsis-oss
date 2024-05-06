@@ -35,6 +35,7 @@ const emit = defineEmits<{
 }>()
 
 const reportDetailsStore = useReportDetailsStore();
+const toastStore = useToastStore();
 const { updateReport, downloadReport } = useReportApi();
 const { reportName } = storeToRefs(reportDetailsStore);
 
@@ -43,7 +44,7 @@ const handleDownloadReportBtnClick = async () => {
     try {
        await downloadReport(reportReference); 
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 
@@ -65,10 +66,10 @@ const handleSaveReportBtnClick = async () => {
     };
     try {
         await updateReport(reportDetailsStore.reportDetails!.reference, request);
-        NotificationHelper.success(`Report ${reportDetailsStore.reportName} has been successfully updated.`)
+        toastStore.success({ text: `Report ${reportDetailsStore.reportName} has been successfully updated.`})
         emit("saved")
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }   
 }
 

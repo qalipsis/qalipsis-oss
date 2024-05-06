@@ -13,6 +13,7 @@
 
 const { fetchCampaignConfig } = useCampaignApi();
 const scenarioTableStore = useScenarioTableStore();
+const toastStore = useToastStore();
 const route = useRoute();
 
 const campaignConfigForm = ref<CampaignConfigurationForm>();
@@ -38,7 +39,7 @@ onMounted(async () => {
             scenarioConfig: scenarioKeyToScenarioForm
         });
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        ErrorHelper.getErrorMessage(error)
     }
 
 })

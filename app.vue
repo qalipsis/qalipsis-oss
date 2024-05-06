@@ -18,12 +18,14 @@
         </NuxtLayout>
       </div>
     </section>
+    <BaseToaster></BaseToaster>
   </div>
 </template>
 
 <script setup lang="ts">
 const { fetchProfile, fetchPermissions } = useUserApi();
 const userStore = useUserStore();
+const toastStore = useToastStore();
 
 /**
  * A flag to indicate the if the page can be displayed.
@@ -42,7 +44,7 @@ onMounted(async () => {
 
     _showPage();
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error)
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 });
 

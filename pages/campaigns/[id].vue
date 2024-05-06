@@ -12,6 +12,7 @@ const { fetchAllDataSeries } = useDataSeriesApi();
 
 const campaignDetailsStore = useCampaignDetailsStore();
 const userStore = useUserStore();
+const toastStore = useToastStore();
 
 const route = useRoute();
 const campaignDetails = ref<CampaignExecutionDetails>();
@@ -91,7 +92,7 @@ const _fetchCampaignDetails = async () => {
         const campaignKey = route.params.id as string;
         campaignDetails.value = await fetchCampaignDetails(campaignKey);
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 

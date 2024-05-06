@@ -44,6 +44,8 @@ const emit = defineEmits<{
     (e: "selectedDataSeriesChange", v: DataSeriesOption[]): void
 }>()
 
+const toastStore = useToastStore();
+
 const { fetchAllDataSeries } = useDataSeriesApi();
 
 /**
@@ -68,7 +70,7 @@ onMounted(async () => {
             .map(dataSeriesOption => Object.assign({}, dataSeriesOption));
         showMore.value = dataSeriesOptions.value.length > availableDataSeriesOptions.value.length;
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 })
 

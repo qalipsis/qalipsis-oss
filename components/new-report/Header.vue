@@ -50,6 +50,8 @@ import { storeToRefs } from 'pinia';
 const { createReport } = useReportApi();
 
 const campaignsTableStore = useCampaignsTableStore();
+const toastStore = useToastStore();
+
 const { selectedRowKeys } = storeToRefs(campaignsTableStore);
 
 const reportName = ref("New Report");
@@ -88,7 +90,7 @@ const handleCheckedChange = async (checked: boolean) => {
         try {
             await campaignsTableStore.fetchCampaignsTableDataSource()
         } catch (error) {
-            ErrorHelper.handleHttpResponseError(error)
+            toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
         }
     }
 }
@@ -108,7 +110,7 @@ const handleCreateReportBtnClick = async () => {
         const report = await createReport(reportCreationRequest);
         navigateTo(`/reports/${report.reference}`);
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error);
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 

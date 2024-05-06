@@ -31,6 +31,7 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
+const toastStore = useToastStore();
 const campaignDetailsStore = useCampaignDetailsStore();
 const { selectedScenarioNames } = storeToRefs(campaignDetailsStore);
 
@@ -60,7 +61,7 @@ const handleScenarioChange = async (scenarioNames: string[]) => {
     try {
         await campaignDetailsStore.updateChart();
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error);
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 

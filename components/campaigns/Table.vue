@@ -108,6 +108,8 @@ const props = defineProps<{
 
 const userStore = useUserStore();
 const campaignsTableStore = useCampaignsTableStore();
+const toastStore = useToastStore();
+
 const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(campaignsTableStore);
 const { fetchCampaignConfig, createCampaign, abortCampaign } = useCampaignApi();
 
@@ -196,9 +198,9 @@ const handleConfirmAbortBtnClick = async () => {
     await abortCampaign(selectedCampaignTableData.key, true);
     await _fetchTableData();
     campaignAbortModalOpen.value = false;
-    NotificationHelper.success(`The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted`);
+    toastStore.success({ text: `The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted` });
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 }
 
@@ -213,7 +215,7 @@ const handleRunNowBtnClick = async (
     // navigate to the campaign details
     navigateTo(`/campaigns/${campaign.key}`);
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error)
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 
@@ -233,7 +235,7 @@ const _fetchTableData = async () => {
   try {
     await campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams);
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 }
 

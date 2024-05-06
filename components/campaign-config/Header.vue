@@ -45,6 +45,8 @@
 import { storeToRefs } from "pinia";
 
 const scenarioTaleStore = useScenarioTableStore();
+const toastStore = useToastStore();
+
 const { selectedRowKeys } = storeToRefs(scenarioTaleStore);
 
 const props = defineProps<{
@@ -176,7 +178,7 @@ const handleRunBtnClick = async () => {
     
 
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error)  
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
   
 };

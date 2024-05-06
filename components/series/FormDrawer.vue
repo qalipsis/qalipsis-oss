@@ -188,6 +188,8 @@ const {
   createDataSeries,
 } = useDataSeriesApi();
 
+const toastStore = useToastStore();
+
 const initialFormValue: DataSeriesForm = {
   name: props.dataSeries?.displayName ?? "",
   sharingMode: props.dataSeries?.sharingMode ?? null,
@@ -414,7 +416,7 @@ const _updateDataSeries = async (formValues: DataSeriesForm) => {
   );
 
   if (dataSeriesPatchRequests.length === 0) {
-    NotificationHelper.info("No changes detected");
+    toastStore.info({ text: 'No changes detected' });
     return;
   }
 
@@ -425,9 +427,9 @@ const _updateDataSeries = async (formValues: DataSeriesForm) => {
     );
     emit("update:open", false);
     emit("dataSeriesUpdated");
-    NotificationHelper.success(`${formValues.name} has been updated!`);
+    toastStore.success({ text: `${formValues.name} has been updated!` });
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 
@@ -439,11 +441,9 @@ const _createDataSeries = async (formValues: DataSeriesForm) => {
     await createDataSeries(dataSeriesPatchRequests);
     emit("update:open", false);
     emit("dataSeriesUpdated");
-    NotificationHelper.success(
-      `${formValues.name} has been successfully created!`
-    );
+    toastStore.success({ text: `${formValues.name} has been successfully created!` });
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 
@@ -465,7 +465,7 @@ const _prepareTagMap = async (dataType: DataType) => {
     tagMap.value = await fetchTags(dataType);
     hasTagFetched.value = true;
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 
@@ -479,7 +479,7 @@ const _prepareValueNameFieldOptions = async (dataType: DataType) => {
     }));
     hasValueNameFetched.value = true;
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 
@@ -493,7 +493,7 @@ const _prepareFieldOptions = async (dataType: DataType) => {
     }));
     hasFieldNameFetched.value = true;
   } catch (error) {
-    ErrorHelper.handleHttpResponseError(error);
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 </script>

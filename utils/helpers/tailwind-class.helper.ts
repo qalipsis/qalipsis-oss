@@ -21,7 +21,7 @@ export class TailwindClassHelper {
     static formInputWrapperClass = 'border px-2 py-1 h-10 border-solid w-full rounded-md flex items-center justify-between has-[:disabled]:bg-gray-50 has-[:disabled]:text-gray-400';
     static formInputWrapperActiveClass = 'border-gray-200 has-[:focus]:border-primary-500 has-[:enabled]:hover:border-primary-500 has-[:enabled]:hover:bg-primary-50';
     static formInputWrapperErrorClass = 'border-red-600';
-    static formInputClass = 'outline-none w-full bg-transparent disabled:cursor-not-allowed';
+    static formInputClass = 'outline-none w-full bg-transparent enabled:autofill:bg-transparent disabled:cursor-not-allowed';
     static formDropdownClass = 'relative inline-block text-left';
     static formDropdownPanelClass = 'absolute right-0 rounded-md bg-white shadow-xl focus:outline-none p-2 z-10 max-h-60 overflow-y-auto';
     static formDropdownTransitionEnterActiveClass = 'transition duration-100 ease-out';
@@ -32,4 +32,5 @@ export class TailwindClassHelper {
     static formDropdownTransitionLeaveToClass = "transform scale-95 opacity-0";
     static formDropdownOptionClass = 'w-full relative py-2 px-3 rounded-md mb-1 hover:bg-primary-50';
     static formDropdownOptionActiveClass = "bg-gray-100 after:content-[''] after:absolute after:w-2 after:h-2 after:rounded-full after:right-2 after:top-auto after:bg-primary-500";
+    static toastBaseClass = 'w-56 h-32 rounded-md shadow-lg';
 }

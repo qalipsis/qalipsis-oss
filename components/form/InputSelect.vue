@@ -56,7 +56,7 @@
                         v-slot="{ active, selected }"
                         as="template"
                     >
-                        <div @click="emit('change', option[optionValueKey])">
+                        <div @click="handleSelectChange(option)">
                             <slot name="optionContent" :option="option">
                                 <div
                                     class="flex items-center mb-1 cursor-pointer"
@@ -113,8 +113,8 @@ const props = defineProps<{
     selectFieldValidationSchema?: TypedSchema;
 }>();
 const emit = defineEmits<{
-    (e: "change", v: string): void;
     (e: "update:formInputModelValue", v: string): void;
+    (e: "update:formSelectModelValue", v: string): void;
 }>()
 
 const { value: inputValue, errorMessage: inputErrorMessage } = useField<string>(
@@ -145,7 +145,7 @@ const selectedOptionLabel = computed(
 );
 
 const debouncedInputChange = debounce((newValue: string) => {
-    // inputValue.value = newValue;
+    inputValue.value = newValue;
     emit("update:formInputModelValue", newValue);
 }, 300);
 
@@ -153,5 +153,9 @@ const handleInputChange = (newValue: string) => {
     debouncedInputChange(newValue);
 }
 
+const handleSelectChange = (option: FormMenuOption | any) => {
+    selectValue.value = option[optionValueKey.value];
+    emit("update:formSelectModelValue", option.value);
+}
 
 </script>

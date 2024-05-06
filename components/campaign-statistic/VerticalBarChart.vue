@@ -21,6 +21,8 @@ import { sub } from 'date-fns';
 
 const { fetchCampaignSummary } = useTimeSeriesApi();
 
+const toastStore = useToastStore();
+
 const chartOptions = ref<ApexOptions>();
 const chartDataSeries = ref<ApexAxisChartSeries>();
 
@@ -37,7 +39,7 @@ onMounted(async () => {
         }
         campaignSummary = await fetchCampaignSummary(queryParam);
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error)
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
     
     const campaignSummaryChartData: ChartData = CampaignHelper.toCampaignSummaryChartData(campaignSummary);

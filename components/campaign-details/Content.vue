@@ -61,7 +61,9 @@ defineProps<{
 const route = useRoute();
 const router = useRouter();
 const campaignDetailsStore = useCampaignDetailsStore();
-const { chartOptions, chartDataSeries, isLoadingChart }  = storeToRefs(campaignDetailsStore);
+const toastStore = useToastStore();
+
+const { chartOptions, chartDataSeries }  = storeToRefs(campaignDetailsStore);
 
 const campaignStopModalOpen = ref(false);
 const scenarioReports = computed(() => campaignDetailsStore.selectedScenarioReports);
@@ -78,7 +80,7 @@ onMounted(async () => {
     try {
         await campaignDetailsStore.updateChart();
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error);
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 })
 
@@ -96,7 +98,7 @@ watch(campaignDetailStatus, () => {
             // Updates the line chart.
             await campaignDetailsStore.updateChart();
         } catch (error) {
-            ErrorHelper.handleHttpResponseError(error)
+            toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
         }
     }, 10000)
   } else {
@@ -135,7 +137,7 @@ const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSer
     try {
         await campaignDetailsStore.updateChart();
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error);
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 
@@ -187,7 +189,7 @@ const _stopCampaign = async (isForceAbort: boolean) => {
         })
         campaignStopModalOpen.value = false;
     } catch (error) {
-        ErrorHelper.handleHttpResponseError(error);
+        toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }
 </script>
