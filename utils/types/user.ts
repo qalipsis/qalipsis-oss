@@ -7,7 +7,7 @@ export interface User {
     /**
      * Unique identifier of the user
      */
-    username: String;
+    username: string;
 
     /**
      * A flag to indicate if the user is blocked

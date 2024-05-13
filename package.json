@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ckpack/vue-color": "1.5.0",
+    "@headlessui/vue": "1.7.22",
     "@pinia/nuxt": "0.5.1",
     "@types/luxon": "3.4.2",
     "@types/tinycolor2": "1.4.6",

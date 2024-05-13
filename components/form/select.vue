@@ -155,8 +155,6 @@ const selectedOptions = computed(() =>
 
 const selectedOptionLabel = computed(
   () => {
-    console.log(selectedFormControlValue.value)
-
     return props.options.find(
       (option) => option.value === selectedFormControlValue.value
     )?.label

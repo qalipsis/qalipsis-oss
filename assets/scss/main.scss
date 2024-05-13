@@ -8,6 +8,26 @@
   * {
     font-family: "Outfit", sans-serif;
   }
+
+  /* width */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #ECEEEE; 
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #939B9D;
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #5F6668;
+  }
   
   @font-face {
     font-family: "Outfit";

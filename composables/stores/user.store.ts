@@ -4,7 +4,7 @@ interface UserStoreState {
   user: User | null;
   tenants: Tenant[];
   currentTenantReference: string;
-  permissions: PermissionEnum[];
+  permissions: string[];
 }
 
 export const useUserStore = defineStore("User", {
@@ -23,11 +23,11 @@ export const useUserStore = defineStore("User", {
       storeTenant(tenantReference: string): void {
           localStorage.setItem(TenantHelper.TENANT_LOCAL_STORAGE_PROPERTY_KEY, tenantReference);
       },
-      hasAnyPermission(requiredPermissions: PermissionEnum[]): boolean {
+      hasAnyPermission(requiredPermissions: string[]): boolean {
           return requiredPermissions.length === 0 ?
               true : requiredPermissions.some(requiredPermission => this.permissions.includes(requiredPermission))
       },
-      hasAllPermission(requiredPermissions: PermissionEnum[]): boolean {
+      hasAllPermission(requiredPermissions: string[]): boolean {
           return requiredPermissions.length === 0 ?
               true : requiredPermissions.every(requiredPermission => this.permissions.includes(requiredPermission))
       }

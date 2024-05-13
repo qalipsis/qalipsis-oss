@@ -1,61 +1,45 @@
 <template>
   <div>
-    <section
-      v-if="!canViewPage"
-      class="flex items-center justify-center w-screen h-screen"
-    >
-      <div class="flex items-center">
-        <BaseIcon icon="/icons/icon-logo.svg" width="80" />
-        <h1 class="text-primary-500 mr-2 text-2xl font-semibold">QALIPSIS</h1>
-        <BaseSpinner size="md" />
-      </div>
-    </section>
-    <section v-if="canViewPage" class="flex w-screen h-screen">
-      <Sidebar />
-      <div class="max-h-screen overflow-y-auto bg-white text-primary-950 flex-grow" >
-        <NuxtLayout>
-          <NuxtPage />
-        </NuxtLayout>
-      </div>
-    </section>
+    <template v-if="!canBeInitialized">
+      <PageLoader />
+    </template>
+    <template v-else>
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </template>
     <BaseToaster></BaseToaster>
   </div>
 </template>
 
 <script setup lang="ts">
 const { fetchProfile, fetchPermissions } = useUserApi();
+
 const userStore = useUserStore();
 const toastStore = useToastStore();
 
 /**
- * A flag to indicate the if the page can be displayed.
+ * A flag to indicate if the page can be rendered.
  */
-const canViewPage = ref(false);
+const canBeInitialized = ref(false);
 
 onMounted(async () => {
   try {
     // Initializes the profile info
     const profile = await fetchProfile();
+    const permissions = await fetchPermissions();
 
     // Updates the profile store info
     userStore.$patch({
       user: profile.user,
+      permissions: permissions,
     });
 
-    _showPage();
+    // Enabled the page to be initialized.
+    canBeInitialized.value = true;
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 });
 
-const _showPage = async () => {
-  // Updates the user permissions
-  const permissions = await fetchPermissions();
-  userStore.$patch({
-    permissions: permissions,
-  });
-
-  // Displays the page
-  canViewPage.value = true;
-};
 </script>
