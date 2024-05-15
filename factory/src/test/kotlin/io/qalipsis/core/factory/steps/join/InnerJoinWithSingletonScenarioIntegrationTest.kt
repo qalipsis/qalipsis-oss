@@ -99,22 +99,18 @@ object InnerJoinStepScenario {
             .returns<Int> { counter1.getAndIncrement() }.configure {
                 name = "left-return"
             }
-            .innerJoin(
-                using = {
-                    it.value
-                },
-                on = {
-                    // The root step is not a singleton, hence should be repeated as much as required.
-                    it.returns<Int> { counter2.getAndIncrement() }
-                        .configure {
-                            iterate(minionsNumber.toLong())
-                            name = "right-return"
-                        }
-                },
-                having = {
-                    it.value
-                }
-            ).configure {
+            .innerJoin()
+            .using { it.value }
+            .on {
+                // The root step is not a singleton, hence should be repeated as much as required.
+                it.returns { counter2.getAndIncrement() }
+                    .configure {
+                        iterate(minionsNumber.toLong())
+                        name = "right-return"
+                    }
+            }.having {
+                it.value
+            }.configure {
                 name = "inner-join"
             }
             .filterNotNull()
@@ -135,22 +131,22 @@ object InnerJoinStepScenario {
             .returns<Int> { counter1.getAndIncrement() }.configure {
                 name = "left-return"
             }
-            .innerJoin(
-                using = {
-                    it.value
-                },
-                on = {
-                    // The root step is not a singleton, hence should be repeated as much as required.
-                    it.returns<Int> { counter2.getAndIncrement() }
-                        .configure {
-                            iterate(minionsNumber.toLong())
-                            name = "right-return"
-                        }
-                },
-                having = {
-                    it.value
-                }
-            ).configure {
+            .innerJoin()
+            .using {
+                it.value
+            }
+            .on {
+                // The root step is not a singleton, hence should be repeated as much as required.
+                it.returns { counter2.getAndIncrement() }
+                    .configure {
+                        iterate(minionsNumber.toLong())
+                        name = "right-return"
+                    }
+            }
+            .having {
+                it.value
+            }
+            .configure {
                 name = "inner-join"
             }
             .filterNotNull()
