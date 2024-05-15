@@ -72,16 +72,15 @@ object DeploymentTestScenario {
             minionsCount = minions
             profile { regular(1000, 2000) }
         }.start()
-            .returns<Int> { counter.incrementAndGet() }
+            .returns { counter.incrementAndGet() }
             .pipe()
-            .innerJoin(
-                using = { "${it.value}" },
-                on = {
-                    it.returns<List<Int>> { (1..minions).toList() }
-                        .flatten()
-                },
-                having = { "${it.value}" }
-            )
+            .innerJoin()
+            .using { "${it.value}" }
+            .on {
+                it.returns { (1..minions).toList() }
+                    .flatten()
+            }
+            .having { "${it.value}" }
             .filterNotNull()
             .verify {
                 assertThat(it.first).isEqualTo(it.second)
