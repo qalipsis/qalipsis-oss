@@ -41,7 +41,7 @@ internal class InnerJoinStepSpecificationTest {
             }
         }
         val secondaryKeyExtractor: (CorrelationRecord<Long>) -> Any? = { it.value.toInt() * 3 }
-        previousStep.innerJoin(using = primaryKeyExtractor, on = specification, having = secondaryKeyExtractor)
+        previousStep.innerJoin().using(primaryKeyExtractor).on(specification).having(secondaryKeyExtractor)
             .configure {
                 cacheTimeout = Duration.ofMillis(Long.MAX_VALUE)
             }
@@ -63,7 +63,7 @@ internal class InnerJoinStepSpecificationTest {
             it.returns(123)
         }
         val secondaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { it.value * 3 }
-        previousStep.innerJoin(using = primaryKeyExtractor, on = specification, having = secondaryKeyExtractor)
+        previousStep.innerJoin().using(primaryKeyExtractor).on(specification).having(secondaryKeyExtractor)
             .configure {
                 cacheTimeout = Duration.ofMillis(Long.MAX_VALUE)
             }
@@ -87,7 +87,8 @@ internal class InnerJoinStepSpecificationTest {
         val previousStep = DummyStepSpecification()
         val primaryKeyExtractor: (CorrelationRecord<Int>) -> Any? = { it.value * 2 }
         val secondaryKeyExtractor: (CorrelationRecord<Long>) -> Any? = { it.value.toInt() * 3 }
-        previousStep.innerJoin(using = primaryKeyExtractor, on = "my-other-step", having = secondaryKeyExtractor)
+        previousStep.innerJoin().using(primaryKeyExtractor).on<Long>("my-other-step")
+            .having(secondaryKeyExtractor)
             .configure {
                 cacheTimeout = Duration.ofMillis(Long.MAX_VALUE)
             }
