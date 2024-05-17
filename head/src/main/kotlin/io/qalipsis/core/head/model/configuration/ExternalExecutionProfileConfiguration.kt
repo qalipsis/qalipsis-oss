@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.executionprofile.CompletionMode
+import io.qalipsis.core.executionprofile.PercentageStage
 import io.qalipsis.core.executionprofile.Stage
 import io.swagger.v3.oas.annotations.media.Schema
 import javax.validation.Valid
@@ -21,10 +22,12 @@ import javax.validation.constraints.Positive
     title = "Details of the ExecutionProfileConfiguration to choose the execution profile",
     allOf = [
         AcceleratingExternalExecutionProfileConfiguration::class,
+        ImmediatelyExternalExecutionProfileConfiguration::class,
         RegularExternalExecutionProfileConfiguration::class,
         ProgressiveVolumeExternalExecutionProfileConfiguration::class,
         StageExternalExecutionProfileConfiguration::class,
-        TimeFrameExternalExecutionProfileConfiguration::class
+        PercentageStageExternalExecutionProfileConfiguration::class,
+        TimeFrameExternalExecutionProfileConfiguration::class,
     ]
 )
 @JsonTypeInfo(
@@ -34,11 +37,13 @@ import javax.validation.constraints.Positive
 )
 @JsonSubTypes(
     JsonSubTypes.Type(value = RegularExternalExecutionProfileConfiguration::class, name = "REGULAR"),
+    JsonSubTypes.Type(value = ImmediatelyExternalExecutionProfileConfiguration::class, name = "IMMEDIATELY"),
     JsonSubTypes.Type(value = AcceleratingExternalExecutionProfileConfiguration::class, name = "ACCELERATING"),
     JsonSubTypes.Type(
         value = ProgressiveVolumeExternalExecutionProfileConfiguration::class,
         name = "PROGRESSING_VOLUME"
     ),
+    JsonSubTypes.Type(value = PercentageStageExternalExecutionProfileConfiguration::class, name = "PERCENTAGE_STAGE"),
     JsonSubTypes.Type(value = StageExternalExecutionProfileConfiguration::class, name = "STAGE"),
     JsonSubTypes.Type(value = TimeFrameExternalExecutionProfileConfiguration::class, name = "TIME_FRAME")
 )
@@ -94,6 +99,21 @@ internal class AcceleratingExternalExecutionProfileConfiguration(
     }
 }
 
+
+@Introspected
+@Schema(
+    name = "ImmediatelyExternalExecutionProfileConfiguration",
+    title = "Details of the ImmediatelyExternalExecutionProfileConfiguration to create the execution profile"
+)
+internal class ImmediatelyExternalExecutionProfileConfiguration() : ExternalExecutionProfileConfiguration {
+
+    override val type: ExecutionProfileType = TYPE
+
+    companion object {
+        val TYPE = ExecutionProfileType.IMMEDIATELY
+    }
+}
+
 @Introspected
 @Schema(
     name = "ProgressiveVolumeExternalExecutionProfileConfiguration",
@@ -118,6 +138,31 @@ internal class ProgressiveVolumeExternalExecutionProfileConfiguration(
 
     companion object {
         val TYPE = ExecutionProfileType.PROGRESSING_VOLUME
+    }
+}
+
+@Introspected
+@Schema(
+    name = "PercentageStageExternalExecutionProfileConfiguration",
+    title = "Details of the PercentageStageExternalExecutionProfileConfiguration to create the execution profile"
+)
+internal class PercentageStageExternalExecutionProfileConfiguration(
+    @field:Schema(description = "Phase of the scenario execution", required = true)
+    @field:NotEmpty
+    @field:Valid
+    val stages: List<@Valid PercentageStage>,
+    @field:Schema(
+        description = "Indicator to determine how to end the scenario",
+        required = true,
+        defaultValue = "GRACEFUL"
+    )
+    val completion: CompletionMode
+) : ExternalExecutionProfileConfiguration {
+
+    override val type: ExecutionProfileType = TYPE
+
+    companion object {
+        val TYPE = ExecutionProfileType.PERCENTAGE_STAGE
     }
 }
 
@@ -174,5 +219,5 @@ internal class TimeFrameExternalExecutionProfileConfiguration(
  */
 @Introspected
 internal enum class ExecutionProfileType {
-    REGULAR, ACCELERATING, PROGRESSING_VOLUME, STAGE, TIME_FRAME
+    REGULAR, ACCELERATING, PROGRESSING_VOLUME, STAGE, TIME_FRAME, PERCENTAGE_STAGE, IMMEDIATELY
 }

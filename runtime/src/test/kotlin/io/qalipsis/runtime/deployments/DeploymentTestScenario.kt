@@ -23,7 +23,6 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
-import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.executionprofile.stages
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
@@ -43,7 +42,6 @@ object DeploymentTestScenario {
     fun deploymentTest() {
         scenario {
             minionsCount = 500
-            profile { regular(1000, 200) }
         }.start()
             .returns(Unit)
             .delay(200)
@@ -54,7 +52,6 @@ object DeploymentTestScenario {
     fun deploymentTestWithFailures() {
         scenario {
             minionsCount = 500
-            profile { regular(1000, 200) }
         }.start()
             .returns(Unit)
             .delay(200)
@@ -70,7 +67,6 @@ object DeploymentTestScenario {
         val counter = AtomicInteger(0)
         scenario {
             minionsCount = minions
-            profile { regular(1000, 2000) }
         }.start()
             .returns { counter.incrementAndGet() }
             .pipe()
@@ -95,19 +91,19 @@ object DeploymentTestScenario {
             profile {
                 stages(GRACEFUL) {
                     stage(
-                        minionsCount = (minions * 0.5).toInt(),
+                        minionsPercentage = 50.0,
                         rampUpDurationMs = 1000,
                         totalDurationMs = 2000,
                         resolutionMs = 100
                     )
                     stage(
-                        minionsCount = (minions * 0.2).toInt(),
+                        minionsPercentage = 20.0,
                         rampUpDurationMs = 500,
                         totalDurationMs = 800,
                         resolutionMs = 50
                     )
                     stage(
-                        minionsCount = (minions * 0.3).toInt(),
+                        minionsPercentage = 30.0,
                         rampUpDurationMs = 1000,
                         totalDurationMs = 2000,
                         resolutionMs = 100

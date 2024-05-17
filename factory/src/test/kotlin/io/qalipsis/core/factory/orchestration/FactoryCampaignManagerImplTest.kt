@@ -23,9 +23,12 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isEqualToIgnoringGivenProperties
 import assertk.assertions.isFalse
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isLessThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isNotSameAs
@@ -41,18 +44,33 @@ import io.mockk.excludeRecords
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
+import io.qalipsis.api.executionprofile.AcceleratingExecutionProfile
+import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
 import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfileIterator
+import io.qalipsis.api.executionprofile.ImmediatelyExecutionProfile
 import io.qalipsis.api.executionprofile.MinionsStartingLine
+import io.qalipsis.api.executionprofile.PercentageStageExecutionProfile
+import io.qalipsis.api.executionprofile.ProgressiveVolumeExecutionProfile
 import io.qalipsis.api.executionprofile.RegularExecutionProfile
+import io.qalipsis.api.executionprofile.StageExecutionProfile
+import io.qalipsis.api.executionprofile.TimeFrameExecutionProfile
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.api.runtime.ScenarioStartStopConfiguration
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.PercentageStage
+import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.Stage
+import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.catadioptre.assignableScenariosExecutionProfiles
@@ -89,7 +107,7 @@ internal class FactoryCampaignManagerImplTest {
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var executionProfile: ExecutionProfile
+    private lateinit var defaultExecutionProfile: ExecutionProfile
 
     @RelaxedMockK
     private lateinit var minionsKeeper: MinionsKeeper
@@ -193,7 +211,13 @@ internal class FactoryCampaignManagerImplTest {
                 )
                 typedProp<String>("runningCampaign").isSameAs(campaign)
             }
-            confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
+            confirmVerified(
+                factoryChannel,
+                defaultExecutionProfile,
+                minionAssignmentKeeper,
+                minionsKeeper,
+                scenarioRegistry
+            )
 
             // when + then
             assertThat(factoryCampaignManager.isLocallyExecuted("my-campaign", "scenario-1")).isTrue()
@@ -238,7 +262,13 @@ internal class FactoryCampaignManagerImplTest {
             typedProp<Map<*, *>>("assignableScenariosExecutionProfiles").isEmpty()
             typedProp<String>("runningCampaign").isNotSameAs(campaign)
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
+        confirmVerified(
+            factoryChannel,
+            defaultExecutionProfile,
+            minionAssignmentKeeper,
+            minionsKeeper,
+            scenarioRegistry
+        )
 
         // when + then
         assertThat(factoryCampaignManager.isLocallyExecuted("my-campaign", "scenario-1")).isFalse()
@@ -274,7 +304,13 @@ internal class FactoryCampaignManagerImplTest {
             })
             contextConsumer.start()
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
+        confirmVerified(
+            factoryChannel,
+            defaultExecutionProfile,
+            minionAssignmentKeeper,
+            minionsKeeper,
+            scenarioRegistry
+        )
     }
 
     @Test
@@ -290,7 +326,13 @@ internal class FactoryCampaignManagerImplTest {
             factoryCampaignManager.warmUpCampaignScenario("my-campaign", "my-scenario")
 
             // then
-            confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
+            confirmVerified(
+                factoryChannel,
+                defaultExecutionProfile,
+                minionAssignmentKeeper,
+                minionsKeeper,
+                scenarioRegistry
+            )
         }
 
     @Test
@@ -305,7 +347,13 @@ internal class FactoryCampaignManagerImplTest {
         factoryCampaignManager.warmUpCampaignScenario("my-campaign", "my-scenario")
 
         // then
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
+        confirmVerified(
+            factoryChannel,
+            defaultExecutionProfile,
+            minionAssignmentKeeper,
+            minionsKeeper,
+            scenarioRegistry
+        )
     }
 
     @Test
@@ -340,7 +388,13 @@ internal class FactoryCampaignManagerImplTest {
                 }
             })
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, scenarioRegistry)
+        confirmVerified(
+            factoryChannel,
+            defaultExecutionProfile,
+            minionAssignmentKeeper,
+            minionsKeeper,
+            scenarioRegistry
+        )
     }
 
     @Test
@@ -357,14 +411,14 @@ internal class FactoryCampaignManagerImplTest {
                 every { speedFactor } returns 3.0
                 every { startOffsetMs } returns 3000
             })
-            factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = executionProfile
+            factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = defaultExecutionProfile
 
             coEvery { minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario") } returns 28
-            every { executionProfile.iterator(28, 3.0) } returns relaxedMockk {
+            every { defaultExecutionProfile.iterator(28, 3.0) } returns relaxedMockk {
                 every { hasNext() } returns true
                 every { next() } returns MinionsStartingLine(-1, 500)
             }
-            excludeRecords { executionProfile.toString() }
+            excludeRecords { defaultExecutionProfile.toString() }
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
@@ -379,10 +433,10 @@ internal class FactoryCampaignManagerImplTest {
             assertThat(exception.message).isEqualTo("The number of minions to start at next starting line cannot be negative, but was -1")
             coVerifyOrder {
                 minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario")
-                executionProfile.iterator(28, 3.0)
-                executionProfile.notifyStart(3.0)
+                defaultExecutionProfile.iterator(28, 3.0)
+                defaultExecutionProfile.notifyStart(3.0)
             }
-            confirmVerified(minionAssignmentKeeper, executionProfile)
+            confirmVerified(minionAssignmentKeeper, defaultExecutionProfile)
         }
 
     @Test
@@ -399,14 +453,14 @@ internal class FactoryCampaignManagerImplTest {
             every { speedFactor } returns 2.0
             every { startOffsetMs } returns campaignStartOffsetMs
         })
-        factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = executionProfile
+        factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = defaultExecutionProfile
 
         coEvery { minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario") } returns 28
-        every { executionProfile.iterator(28, 2.0) } returns relaxedMockk {
+        every { defaultExecutionProfile.iterator(28, 2.0) } returns relaxedMockk {
             every { hasNext() } returns true
             every { next() } returns MinionsStartingLine(100, -1 - campaignStartOffsetMs)
         }
-        excludeRecords { executionProfile.toString() }
+        excludeRecords { defaultExecutionProfile.toString() }
 
         // when
         val exception = assertThrows<IllegalArgumentException> {
@@ -422,10 +476,10 @@ internal class FactoryCampaignManagerImplTest {
             .matches(Regex("The next starting line should not be in the past, but was planned [0-9]+ ms ago"))
         coVerifyOrder {
             minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario")
-            executionProfile.iterator(28, 2.0)
-            executionProfile.notifyStart(2.0)
+            defaultExecutionProfile.iterator(28, 2.0)
+            defaultExecutionProfile.notifyStart(2.0)
         }
-        confirmVerified(minionAssignmentKeeper, executionProfile)
+        confirmVerified(minionAssignmentKeeper, defaultExecutionProfile)
     }
 
     @Test
@@ -438,7 +492,7 @@ internal class FactoryCampaignManagerImplTest {
             every { speedFactor } returns 2.0
             every { startOffsetMs } returns 2000
         })
-        factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = executionProfile
+        factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = defaultExecutionProfile
         coEvery { minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario") } returns 28
 
         val minionsStartingLines = listOf(
@@ -450,8 +504,8 @@ internal class FactoryCampaignManagerImplTest {
             every { hasNext() } returns true
             every { next() } returnsMany minionsStartingLines
         }
-        every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
-        excludeRecords { executionProfile.toString() }
+        every { defaultExecutionProfile.iterator(28, 2.0) } returns executionProfileIterator
+        excludeRecords { defaultExecutionProfile.toString() }
 
         // when
         val minionsStartDefinitions =
@@ -473,8 +527,8 @@ internal class FactoryCampaignManagerImplTest {
 
         coVerifyOrder {
             minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario")
-            executionProfile.iterator(28, 2.0)
-            executionProfile.notifyStart(2.0)
+            defaultExecutionProfile.iterator(28, 2.0)
+            defaultExecutionProfile.notifyStart(2.0)
             executionProfileIterator.hasNext()
             executionProfileIterator.next()
             executionProfileIterator.hasNext()
@@ -482,7 +536,7 @@ internal class FactoryCampaignManagerImplTest {
             executionProfileIterator.hasNext()
             executionProfileIterator.next()
         }
-        confirmVerified(minionAssignmentKeeper, executionProfile, executionProfileIterator)
+        confirmVerified(minionAssignmentKeeper, defaultExecutionProfile, executionProfileIterator)
     }
 
     @Test
@@ -492,7 +546,7 @@ internal class FactoryCampaignManagerImplTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
             val campaignStartOffsetMs = 2000L
-            factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = executionProfile
+            factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = defaultExecutionProfile
             factoryCampaignManager.runningCampaign(mockk {
                 every { speedFactor } returns 2.0
                 every { startOffsetMs } returns campaignStartOffsetMs
@@ -508,8 +562,8 @@ internal class FactoryCampaignManagerImplTest {
                 every { hasNext() } returns true
                 every { next() } returnsMany minionsStartingLines
             }
-            every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
-            excludeRecords { executionProfile.toString() }
+            every { defaultExecutionProfile.iterator(28, 2.0) } returns executionProfileIterator
+            excludeRecords { defaultExecutionProfile.toString() }
 
             // when
             val minionsStartDefinitions =
@@ -530,14 +584,14 @@ internal class FactoryCampaignManagerImplTest {
 
             coVerifyOrder {
                 minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario")
-                executionProfile.iterator(28, 2.0)
-                executionProfile.notifyStart(2.0)
+                defaultExecutionProfile.iterator(28, 2.0)
+                defaultExecutionProfile.notifyStart(2.0)
                 executionProfileIterator.hasNext()
                 executionProfileIterator.next()
                 executionProfileIterator.hasNext()
                 executionProfileIterator.next()
             }
-            confirmVerified(minionAssignmentKeeper, executionProfile, executionProfileIterator)
+            confirmVerified(minionAssignmentKeeper, defaultExecutionProfile, executionProfileIterator)
         }
 
     @Test
@@ -551,14 +605,14 @@ internal class FactoryCampaignManagerImplTest {
                 every { speedFactor } returns 2.0
                 every { startOffsetMs } returns 2000
             })
-            factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = executionProfile
+            factoryCampaignManager.assignableScenariosExecutionProfiles()["my-scenario"] = defaultExecutionProfile
             coEvery { minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario") } returns 28
 
             val executionProfileIterator = relaxedMockk<ExecutionProfileIterator> {
                 every { hasNext() } returns false
             }
-            every { executionProfile.iterator(28, 2.0) } returns executionProfileIterator
-            excludeRecords { executionProfile.toString() }
+            every { defaultExecutionProfile.iterator(28, 2.0) } returns executionProfileIterator
+            excludeRecords { defaultExecutionProfile.toString() }
 
             // when
             val exception = assertThrows<AssertionError> {
@@ -574,11 +628,11 @@ internal class FactoryCampaignManagerImplTest {
 
             coVerifyOrder {
                 minionAssignmentKeeper.countMinionsUnderLoad("my-campaign", "my-scenario")
-                executionProfile.iterator(28, 2.0)
-                executionProfile.notifyStart(2.0)
+                defaultExecutionProfile.iterator(28, 2.0)
+                defaultExecutionProfile.notifyStart(2.0)
                 executionProfileIterator.hasNext()
             }
-            confirmVerified(minionAssignmentKeeper, executionProfile, executionProfileIterator)
+            confirmVerified(minionAssignmentKeeper, defaultExecutionProfile, executionProfileIterator)
         }
 
     @Test
@@ -597,8 +651,8 @@ internal class FactoryCampaignManagerImplTest {
                 false
             )
         } returns CampaignCompletionState()
-        factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
-        every { executionProfile.canReplay(any()) } returns true
+        factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
+        every { defaultExecutionProfile.canReplay(any()) } returns true
         val minionStart = Instant.now().minusSeconds(12)
 
         // when
@@ -613,7 +667,7 @@ internal class FactoryCampaignManagerImplTest {
         // then
         coVerifyOnce {
             minionsKeeper.get("my-minion")
-            executionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
+            defaultExecutionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
             minionAssignmentKeeper.executionComplete(
                 "my-campaign",
                 "my-scenario",
@@ -622,7 +676,7 @@ internal class FactoryCampaignManagerImplTest {
                 true
             )
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -643,8 +697,8 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
             } returns CampaignCompletionState(minionComplete = true)
-            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
-            every { executionProfile.canReplay(any()) } returns false
+            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
+            every { defaultExecutionProfile.canReplay(any()) } returns false
             val minionStart = Instant.now().minusSeconds(12)
 
             // when
@@ -670,7 +724,7 @@ internal class FactoryCampaignManagerImplTest {
             }
             confirmVerified(
                 factoryChannel,
-                executionProfile,
+                defaultExecutionProfile,
                 minionAssignmentKeeper,
                 minionsKeeper
             )
@@ -694,8 +748,8 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
             } returns CampaignCompletionState(minionComplete = true)
-            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
-            every { executionProfile.canReplay(any()) } returns false
+            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
+            every { defaultExecutionProfile.canReplay(any()) } returns false
             val minionStart = Instant.now().minusSeconds(12)
 
             // when
@@ -710,7 +764,7 @@ internal class FactoryCampaignManagerImplTest {
             // then
             coVerifyOrder {
                 minionsKeeper["my-minion"]
-                executionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
+                defaultExecutionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
                 minionAssignmentKeeper.executionComplete(
                     "my-campaign",
                     "my-scenario",
@@ -722,7 +776,7 @@ internal class FactoryCampaignManagerImplTest {
             }
             confirmVerified(
                 factoryChannel,
-                executionProfile,
+                defaultExecutionProfile,
                 minionAssignmentKeeper,
                 minionsKeeper
             )
@@ -745,8 +799,8 @@ internal class FactoryCampaignManagerImplTest {
                     true
                 )
             } returns CampaignCompletionState(minionComplete = true)
-            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
-            every { executionProfile.canReplay(any()) } returns true
+            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
+            every { defaultExecutionProfile.canReplay(any()) } returns true
             val minionStart = Instant.now().minusSeconds(12)
 
             // when
@@ -761,7 +815,7 @@ internal class FactoryCampaignManagerImplTest {
             // then
             coVerifyOrder {
                 minionsKeeper.get("my-minion")
-                executionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
+                defaultExecutionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
                 minionAssignmentKeeper.executionComplete(
                     "my-campaign",
                     "my-scenario",
@@ -771,7 +825,7 @@ internal class FactoryCampaignManagerImplTest {
                 )
                 minionsKeeper.restartMinion("my-minion")
             }
-            confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
         }
 
 
@@ -793,8 +847,8 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
             } returns CampaignCompletionState(minionComplete = true)
-            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
-            every { executionProfile.canReplay(any()) } returns true
+            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
+            every { defaultExecutionProfile.canReplay(any()) } returns true
             val minionStart = Instant.now().minusSeconds(12)
 
             // when
@@ -818,7 +872,7 @@ internal class FactoryCampaignManagerImplTest {
                 )
                 minionsKeeper.shutdownMinion("my-minion")
             }
-            confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -839,8 +893,8 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
             } returns CampaignCompletionState(minionComplete = true, scenarioComplete = true)
-            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
-            every { executionProfile.canReplay(any()) } returns false
+            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
+            every { defaultExecutionProfile.canReplay(any()) } returns false
             val minionStart = Instant.now().minusSeconds(12)
 
             // when
@@ -855,7 +909,7 @@ internal class FactoryCampaignManagerImplTest {
             // then
             coVerifyOrder {
                 minionsKeeper.get("my-minion")
-                executionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
+                defaultExecutionProfile.canReplay(withArg { assertThat(it).isLessThan(Duration.ofSeconds(13)) })
                 minionAssignmentKeeper.executionComplete(
                     "my-campaign",
                     "my-scenario",
@@ -874,7 +928,7 @@ internal class FactoryCampaignManagerImplTest {
             }
             confirmVerified(
                 factoryChannel,
-                executionProfile,
+                defaultExecutionProfile,
                 minionAssignmentKeeper,
                 minionsKeeper
             )
@@ -895,7 +949,7 @@ internal class FactoryCampaignManagerImplTest {
                     false
                 )
             } returns CampaignCompletionState(minionComplete = true, scenarioComplete = true, campaignComplete = true)
-            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to executionProfile))
+            factoryCampaignManager.assignableScenariosExecutionProfiles(mutableMapOf("my-scenario" to defaultExecutionProfile))
             val minionStart = Instant.now().minusSeconds(12)
 
             // when
@@ -926,7 +980,7 @@ internal class FactoryCampaignManagerImplTest {
                     )
                 )
             }
-            confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -1038,7 +1092,7 @@ internal class FactoryCampaignManagerImplTest {
                     }
                 })
             }
-            confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+            confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
         }
 
     @Test
@@ -1064,7 +1118,7 @@ internal class FactoryCampaignManagerImplTest {
                 }
             })
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -1106,7 +1160,7 @@ internal class FactoryCampaignManagerImplTest {
                 }
             })
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -1146,7 +1200,7 @@ internal class FactoryCampaignManagerImplTest {
                 }
             })
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -1159,7 +1213,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
         // then
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -1208,7 +1262,13 @@ internal class FactoryCampaignManagerImplTest {
             typedProp<Map<*, *>>("assignableScenariosExecutionProfiles").isEmpty()
             typedProp<String>("runningCampaign").isNotSameAs(campaign)
         }
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper, sharedStateRegistry)
+        confirmVerified(
+            factoryChannel,
+            defaultExecutionProfile,
+            minionAssignmentKeeper,
+            minionsKeeper,
+            sharedStateRegistry
+        )
     }
 
     @Test
@@ -1226,7 +1286,7 @@ internal class FactoryCampaignManagerImplTest {
         }
 
         // then
-        confirmVerified(factoryChannel, executionProfile, minionAssignmentKeeper, minionsKeeper)
+        confirmVerified(factoryChannel, defaultExecutionProfile, minionAssignmentKeeper, minionsKeeper)
     }
 
     @Test
@@ -1235,23 +1295,143 @@ internal class FactoryCampaignManagerImplTest {
         testCoroutineDispatcher.runTest {
             // given
             val factoryCampaignManager = buildCampaignManager()
-            val executionProfileConfiguration = RegularExecutionProfileConfiguration(
-                periodInMs = 1000,
-                minionsCountProLaunch = 10
-            )
-            val expectedExecutionProfile = RegularExecutionProfile(
-                executionProfileConfiguration.periodInMs,
-                executionProfileConfiguration.minionsCountProLaunch
-            )
 
             // when
-            val executionProfile = factoryCampaignManager.convertExecutionProfile(
-                executionProfileConfiguration,
-                executionProfile
+            var executionProfile = factoryCampaignManager.convertExecutionProfile(
+                RegularExecutionProfileConfiguration(
+                    periodInMs = 1000,
+                    minionsCountProLaunch = 10
+                ),
+                defaultExecutionProfile
             )
 
             // then
-            assertThat(executionProfile).isEqualTo(expectedExecutionProfile)
+            assertThat(executionProfile).isDataClassEqualTo(
+                RegularExecutionProfile(
+                    periodInMs = 1000,
+                    minionsCountProLaunch = 10
+                )
+            )
+
+            // when
+            executionProfile = factoryCampaignManager.convertExecutionProfile(
+                ImmediatelyExecutionProfileConfiguration(),
+                defaultExecutionProfile
+            )
+
+            // then
+            assertThat(executionProfile).isInstanceOf<ImmediatelyExecutionProfile>()
+
+            // when
+            executionProfile = factoryCampaignManager.convertExecutionProfile(
+                AcceleratingExecutionProfileConfiguration(
+                    startPeriodMs = 764,
+                    accelerator = 123.5,
+                    minPeriodMs = 234,
+                    minionsCountProLaunch = 2365
+                ),
+                defaultExecutionProfile
+            )
+
+            // then
+            assertThat(executionProfile).isEqualToIgnoringGivenProperties(
+                AcceleratingExecutionProfile(
+                    startPeriodMs = 764,
+                    accelerator = 123.5,
+                    minPeriodMs = 234,
+                    minionsCountProLaunch = 2365
+                )
+            )
+
+            // when
+            executionProfile = factoryCampaignManager.convertExecutionProfile(
+                ProgressiveVolumeExecutionProfileConfiguration(
+                    periodMs = 764,
+                    minionsCountProLaunchAtStart = 123,
+                    multiplier = 234.5,
+                    maxMinionsCountProLaunch = 2365
+                ),
+                defaultExecutionProfile
+            )
+
+            // then
+            assertThat(executionProfile).isEqualToIgnoringGivenProperties(
+                ProgressiveVolumeExecutionProfile(
+                    periodMs = 764,
+                    minionsCountProLaunchAtStart = 123,
+                    multiplier = 234.5,
+                    maxMinionsCountProLaunch = 2365
+                )
+            )
+
+            // when
+            executionProfile = factoryCampaignManager.convertExecutionProfile(
+                TimeFrameExecutionProfileConfiguration(periodInMs = 764, timeFrameInMs = 564),
+                defaultExecutionProfile
+            )
+
+            // then
+            assertThat(executionProfile).isEqualToIgnoringGivenProperties(
+                TimeFrameExecutionProfile(periodInMs = 764, timeFrameInMs = 564),
+            )
+
+            // when
+            executionProfile = factoryCampaignManager.convertExecutionProfile(
+                StageExecutionProfileConfiguration(GRACEFUL, Stage(12, 234, 75464, 12), Stage(75, 4433, 46456, 343)),
+                defaultExecutionProfile
+            )
+
+            // then
+            assertThat(executionProfile).isEqualToIgnoringGivenProperties(
+                StageExecutionProfile(
+                    GRACEFUL,
+                    listOf(
+                        io.qalipsis.api.executionprofile.Stage(
+                            minionsCount = 12,
+                            rampUpDurationMs = 234,
+                            totalDurationMs = 75464,
+                            resolutionMs = 12
+                        ),
+                        io.qalipsis.api.executionprofile.Stage(
+                            minionsCount = 75,
+                            rampUpDurationMs = 4433,
+                            totalDurationMs = 46456,
+                            resolutionMs = 343
+                        )
+                    )
+                ),
+            )
+
+            // when
+            executionProfile = factoryCampaignManager.convertExecutionProfile(
+                PercentageStageExecutionProfileConfiguration(
+                    GRACEFUL,
+                    PercentageStage(12.0, 234, 75464, 12),
+                    PercentageStage(75.3, 4433, 46456, 343)
+                ),
+                defaultExecutionProfile
+            )
+
+            // then
+            assertThat(executionProfile).isEqualToIgnoringGivenProperties(
+                PercentageStageExecutionProfile(
+                    GRACEFUL,
+                    listOf(
+                        io.qalipsis.api.executionprofile.PercentageStage(
+                            minionsPercentage = 12.0,
+                            rampUpDurationMs = 234,
+                            totalDurationMs = 75464,
+                            resolutionMs = 12
+                        ),
+                        io.qalipsis.api.executionprofile.PercentageStage(
+                            minionsPercentage = 75.3,
+                            rampUpDurationMs = 4433,
+                            totalDurationMs = 46456,
+                            resolutionMs = 343
+                        )
+                    )
+                ),
+            )
         }
 
     @Test
@@ -1265,11 +1445,11 @@ internal class FactoryCampaignManagerImplTest {
             // when
             val executionProfile = factoryCampaignManager.convertExecutionProfile(
                 executionProfileConfiguration,
-                executionProfile
+                defaultExecutionProfile
             )
 
             // then
-            assertThat(executionProfile).isEqualTo(this@FactoryCampaignManagerImplTest.executionProfile)
+            assertThat(executionProfile).isEqualTo(this@FactoryCampaignManagerImplTest.defaultExecutionProfile)
         }
 
 }
