@@ -25,7 +25,6 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.annotations.Scenario
-import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.filter
@@ -92,7 +91,6 @@ object ZipLastStepScenario {
 
         scenario {
             minionsCount = minionsNumber
-            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns<Int> { counter1.getAndIncrement() }.configure {
@@ -121,7 +119,6 @@ object ZipLastStepScenario {
 
         scenario {
             minionsCount = minionsNumber
-            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns<Int> { counter1.getAndIncrement() }.configure {

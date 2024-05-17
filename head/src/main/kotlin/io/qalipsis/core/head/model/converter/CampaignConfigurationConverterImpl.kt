@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.model.converter
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -26,6 +27,9 @@ import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.PercentageStage
+import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
@@ -34,6 +38,8 @@ import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.configuration.AcceleratingExternalExecutionProfileConfiguration
+import io.qalipsis.core.head.model.configuration.ImmediatelyExternalExecutionProfileConfiguration
+import io.qalipsis.core.head.model.configuration.PercentageStageExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.ProgressiveVolumeExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.RegularExternalExecutionProfileConfiguration
 import io.qalipsis.core.head.model.configuration.StageExternalExecutionProfileConfiguration
@@ -79,6 +85,7 @@ internal class CampaignConfigurationConverterImpl(
     /**
      * Converts the requested execution profile to the internal format and the total minions count for the scenario.
      */
+    @KTestable
     private fun defineExecutionProfileConfiguration(
         scenario: ScenarioRequest
     ): Pair<ExecutionProfileConfiguration, Int> {
@@ -102,6 +109,20 @@ internal class CampaignConfigurationConverterImpl(
                 config.maxMinionsCountProLaunch
             ) to scenario.minionsCount
 
+            is PercentageStageExternalExecutionProfileConfiguration -> {
+                PercentageStageExecutionProfileConfiguration(
+                    config.completion,
+                    config.stages.map {
+                        PercentageStage(
+                            minionsPercentage = it.minionsPercentage,
+                            rampUpDurationMs = it.rampUpDurationMs,
+                            totalDurationMs = it.totalDurationMs,
+                            resolutionMs = it.resolutionMs
+                        )
+                    }
+                ) to scenario.minionsCount
+            }
+
             is StageExternalExecutionProfileConfiguration -> {
                 val totalMinionsCount = config.stages.sumOf { it.minionsCount }
                 StageExecutionProfileConfiguration(
@@ -121,6 +142,8 @@ internal class CampaignConfigurationConverterImpl(
                 config.periodInMs,
                 config.timeFrameInMs
             ) to scenario.minionsCount
+
+            is ImmediatelyExternalExecutionProfileConfiguration -> ImmediatelyExecutionProfileConfiguration() to scenario.minionsCount
 
             else -> DefaultExecutionProfileConfiguration() to scenario.minionsCount
         }

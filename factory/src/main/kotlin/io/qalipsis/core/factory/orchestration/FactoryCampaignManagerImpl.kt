@@ -29,7 +29,10 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.executionprofile.AcceleratingExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfile
+import io.qalipsis.api.executionprofile.ImmediatelyExecutionProfile
 import io.qalipsis.api.executionprofile.MinionsStartingLine
+import io.qalipsis.api.executionprofile.PercentageStage
+import io.qalipsis.api.executionprofile.PercentageStageExecutionProfile
 import io.qalipsis.api.executionprofile.ProgressiveVolumeExecutionProfile
 import io.qalipsis.api.executionprofile.RegularExecutionProfile
 import io.qalipsis.api.executionprofile.Stage
@@ -46,6 +49,8 @@ import io.qalipsis.core.annotations.LogOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
@@ -140,6 +145,8 @@ internal class FactoryCampaignManagerImpl(
                 configuration.minionsCountProLaunch
             )
 
+            is ImmediatelyExecutionProfileConfiguration -> ImmediatelyExecutionProfile()
+
             is RegularExecutionProfileConfiguration -> RegularExecutionProfile(
                 configuration.periodInMs,
                 configuration.minionsCountProLaunch
@@ -150,6 +157,18 @@ internal class FactoryCampaignManagerImpl(
                 configuration.minionsCountProLaunchAtStart,
                 configuration.multiplier,
                 configuration.maxMinionsCountProLaunch
+            )
+
+            is PercentageStageExecutionProfileConfiguration -> PercentageStageExecutionProfile(
+                configuration.completion,
+                configuration.stages.map {
+                    PercentageStage(
+                        it.minionsPercentage,
+                        it.rampUpDurationMs,
+                        it.totalDurationMs,
+                        it.resolutionMs
+                    )
+                }
             )
 
             is StageExecutionProfileConfiguration -> StageExecutionProfile(

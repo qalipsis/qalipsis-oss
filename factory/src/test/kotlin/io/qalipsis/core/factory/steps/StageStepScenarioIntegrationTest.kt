@@ -26,7 +26,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import io.qalipsis.api.annotations.Scenario
 import io.qalipsis.api.context.MinionId
-import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.scenario.scenario
@@ -118,7 +117,6 @@ object StageStepScenario {
     fun stageStepScenario() {
         scenario {
             minionsCount = minionsNumber
-            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns(initialCounter.getAndIncrement())
@@ -135,7 +133,6 @@ object StageStepScenario {
     fun stageStepScenarioWithoutOutput() {
         scenario {
             minionsCount = minionsNumber
-            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns(initialCounter.getAndIncrement())
@@ -155,7 +152,6 @@ object StageStepScenario {
 
         scenario {
             minionsCount = minionsNumber
-            profile { regular(100, minionsNumber) }
         }
             .start()
             .returns(initialCounter.getAndIncrement())

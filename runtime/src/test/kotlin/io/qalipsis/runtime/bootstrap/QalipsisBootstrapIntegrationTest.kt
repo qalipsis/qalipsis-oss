@@ -27,7 +27,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import io.qalipsis.api.annotations.Scenario
-import io.qalipsis.api.executionprofile.regular
 import io.qalipsis.api.scenario.scenario
 import io.qalipsis.api.steps.blackHole
 import io.qalipsis.api.steps.delay
@@ -225,20 +224,14 @@ internal class QalipsisBootstrapIntegrationTest {
 
     @Scenario("do-nothing-scenario")
     fun doNothingScenario() {
-        scenario {
-            minionsCount = 1
-            profile { regular(1000, 1) }
-        }.start()
+        scenario { }.start()
             .returns(Unit)
             .blackHole()
     }
 
     @Scenario("failing-scenario")
     fun failingScenario() {
-        scenario {
-            minionsCount = 1
-            profile { regular(1000, 1) }
-        }.start()
+        scenario {}.start()
             .pipe<Unit>()
             .verify { assertThat(true).isFalse() }
             .blackHole()
@@ -246,10 +239,7 @@ internal class QalipsisBootstrapIntegrationTest {
 
     @Scenario("long-running-scenario")
     fun longRunningScenario() {
-        scenario {
-            minionsCount = 1
-            profile { regular(1000, 1) }
-        }.start()
+        scenario {}.start()
             .pipe<Unit>()
             .delay(Duration.ofSeconds(30))
             .blackHole()

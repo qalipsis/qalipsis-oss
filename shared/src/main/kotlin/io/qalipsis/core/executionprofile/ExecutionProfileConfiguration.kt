@@ -42,7 +42,9 @@ import javax.validation.constraints.Positive
 @JsonSubTypes(
     JsonSubTypes.Type(value = RegularExecutionProfileConfiguration::class, name = "REGULAR"),
     JsonSubTypes.Type(value = AcceleratingExecutionProfileConfiguration::class, name = "ACCELERATING"),
+    JsonSubTypes.Type(value = ImmediatelyExecutionProfileConfiguration::class, name = "IMMEDIATELY"),
     JsonSubTypes.Type(value = ProgressiveVolumeExecutionProfileConfiguration::class, name = "PROGRESSING_VOLUME"),
+    JsonSubTypes.Type(value = PercentageStageExecutionProfileConfiguration::class, name = "PERCENTAGE_STAGE"),
     JsonSubTypes.Type(value = StageExecutionProfileConfiguration::class, name = "STAGE"),
     JsonSubTypes.Type(value = TimeFrameExecutionProfileConfiguration::class, name = "TIME_FRAME")
 )
@@ -77,6 +79,27 @@ data class AcceleratingExecutionProfileConfiguration(
 }
 
 @Serializable
+@SerialName("imm")
+class ImmediatelyExecutionProfileConfiguration : ExecutionProfileConfiguration {
+
+    override fun clone(): ImmediatelyExecutionProfileConfiguration {
+        return this
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+
+}
+
+@Serializable
 @SerialName("prog")
 data class ProgressiveVolumeExecutionProfileConfiguration(
     val periodMs: Long,
@@ -86,6 +109,20 @@ data class ProgressiveVolumeExecutionProfileConfiguration(
 ) : ExecutionProfileConfiguration {
 
     override fun clone(): ProgressiveVolumeExecutionProfileConfiguration {
+        return copy()
+    }
+}
+
+@Serializable
+@SerialName("percstg")
+data class PercentageStageExecutionProfileConfiguration(
+    val completion: CompletionMode,
+    val stages: List<PercentageStage>
+) : ExecutionProfileConfiguration {
+
+    constructor(completion: CompletionMode, vararg stages: PercentageStage) : this(completion, stages.toList())
+
+    override fun clone(): PercentageStageExecutionProfileConfiguration {
         return copy()
     }
 }
@@ -150,6 +187,36 @@ data class Stage(
      */
     @field:Positive
     val minionsCount: Int,
+
+    /**
+     * Minions ramp up duration, in milliseconds.
+     */
+    @field:Positive
+    val rampUpDurationMs: Long,
+
+    /**
+     * Stage duration, in milliseconds.
+     */
+    @field:Positive
+    val totalDurationMs: Long,
+
+    /**
+     * Minimal duration between two triggering of minions start, default to 500 ms.
+     */
+    @field:Positive
+    val resolutionMs: Long = 500
+)
+
+
+@Serializable
+@Introspected
+data class PercentageStage(
+
+    /**
+     * Percentage of minions to start in that stage.
+     */
+    @field:Positive
+    val minionsPercentage: Double,
 
     /**
      * Minions ramp up duration, in milliseconds.
