@@ -16,18 +16,18 @@
 
 package io.qalipsis.api.meters
 
-import java.time.Duration
-
 /**
- * Specific configuration of a [io.micrometer.core.instrument.MeterRegistry] to create from scratch.
+ * A measurement sampled from any given meter. It contains an enum representing the value measured and a corresponding
+ * value parameter to hold the measurement.
  *
- * @author Eric Jessé
+ * @property value the value returned by the measurement
+ * @property statistic describe the possibilities of options that can be measured
+ *
+ * @author Francisca Eze
  */
-interface MeterRegistryConfiguration {
+interface Measurement {
 
-    /**
-     * Overrides the default step configured for the meter registry.
-     */
-    val step: Duration?
+    val value: Double
 
+    val statistic: Statistic
 }

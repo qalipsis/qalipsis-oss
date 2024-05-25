@@ -17,25 +17,24 @@
 package io.qalipsis.api.meters
 
 /**
- * Custom interface with methods adopted from the java micrometer-core library.
- * Used to track monotonically increasing values.
+ * Handles publishing of meter snapshots to different databases and monitoring systems.
  *
  * @author Francisca Eze
  */
-interface Counter : Meter<Counter> {
-    /**
-     * Update the counter by one.
-     */
-    fun increment()
+interface MeasurementPublisher {
 
     /**
-     * Update the counter by `amount`.
-     * @param amount amount to add to the counter.
+     * Handles setup and initialization of registered measurement publishers.
      */
-    fun increment(amount: Double)
+    suspend fun init() = Unit
 
     /**
-     * Returns the cumulative count since this counter was created.
+     * Saves/publishes received meters to their corresponding publishing strategies.
      */
-    fun count(): Double
+    suspend fun publish(meters: Collection<MeterSnapshot<*>>)
+
+    /**
+     * Shuts down all running publishers.
+     */
+    suspend fun stop() = Unit
 }

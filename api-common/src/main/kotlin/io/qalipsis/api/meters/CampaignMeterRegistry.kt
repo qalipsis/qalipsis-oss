@@ -16,109 +16,226 @@
 
 package io.qalipsis.api.meters
 
-import io.micrometer.core.instrument.Tag
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
-import java.util.function.ToDoubleFunction
 
 /**
  * Campaign lifecycle relevant meter registry.
- *
- * For the documentation, consult [MeterRegistry]
  *
  * @author Eric Jessé
  *
  */
 interface CampaignMeterRegistry {
 
+    /**
+     * Creates a new [Counter] metric to be added to the registry. This metric measures the
+     * count of specific events collected over time.
+     *
+     * @param scenarioName the name of the scenario under which the count is collected
+     * @param stepName the name of a step within the scenario
+     * @param name the name of the counter metric
+     * @param tags additional key-value pairs to associate with the counter metric
+     *
+     * @sample counterExample
+     */
     fun counter(
         scenarioName: ScenarioName = "",
         stepName: StepName = "",
         name: String,
-        tags: Map<String, String> = emptyMap()
+        tags: Map<String, String> = emptyMap(),
     ): Counter
 
-    fun summary(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
-        name: String,
-        tags: Map<String, String> = emptyMap()
-    ): DistributionSummary
-
+    /**
+     * Creates a new [Timer] metric to be added to the registry. This metric measures the duration of an operation or a task.
+     *
+     * @param scenarioName the name of the scenario under which the timer is recorded
+     * @param stepName the name of a step within the scenario
+     * @param name the name of the timer metric
+     * @param tags additional key-value pairs to associate with the timer metric
+     * @param percentiles a list of values within the range of 1.0-100.0, representing specific points of observation, defaults to an empty list
+     *
+     * @sample timerExample
+     */
     fun timer(
         scenarioName: ScenarioName = "",
         stepName: StepName = "",
         name: String,
-        tags: Map<String, String> = emptyMap()
+        tags: Map<String, String> = emptyMap(),
+        percentiles: Collection<Double> = emptyList()
     ): Timer
 
-    fun <T> gauge(
+    /**
+     * Creates a new [Gauge] metric to be added to the registry. This metric tracks instantaneous values
+     * change over time.
+     *
+     * @param scenarioName the name of the scenario under which the gauge is collected
+     * @param stepName the name of a step within the scenario
+     * @param name the name of the gauge metric
+     * @param tags additional key-value pairs to associate with the gauge metric
+     *
+     * @sample gaugeExample
+     */
+    fun gauge(
         scenarioName: ScenarioName = "",
         stepName: StepName = "",
         name: String,
         tags: Map<String, String> = emptyMap(),
-        stateObject: T,
-        valueFunction: ToDoubleFunction<T>
     ): Gauge
 
-    fun <T : Number> gauge(
+    /**
+     * Creates a new [DistributionSummary] metric to be added to the registry. This metric
+     * provides statistical data about the values observed/collected from an operation.
+     *
+     * @param scenarioName the name of the scenario under which the summary is collected
+     * @param stepName the name of a step within the scenario
+     * @param name the name of the summary metric
+     * @param tags additional key-value pairs to associate with the summary metric
+     * @param percentiles a list of values within the range of 1.0-100.0, representing specific points of observation, defaults to an empty list
+     *
+     * @sample summaryExample
+     */
+    fun summary(
         scenarioName: ScenarioName = "",
         stepName: StepName = "",
         name: String,
         tags: Map<String, String> = emptyMap(),
-        number: T
-    ): Gauge
+        percentiles: Collection<Double> = emptyList()
+    ): DistributionSummary
 
-    fun <T : Collection<*>> gaugeCollectionSize(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
-        name: String,
-        tags: Map<String, String> = emptyMap(),
-        collection: T
-    ): Gauge
+    /**
+     * Creates a new [Gauge] metric to be added to the registry. This metric tracks instantaneous values
+     * change over time.
+     *
+     * @param name the name of the gauge metric
+     * @param tags additional key-value pairs to associate with the gauge metric
+     *
+     * @sample gaugeExampleWithVarargTags
+     */
+    fun gauge(name: String, vararg tags: String): Gauge
 
-    fun <T : Map<*, *>> gaugeMapSize(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
-        name: String,
-        tags: Map<String, String> = emptyMap(),
-        map: T
-    ): Gauge
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun counter(name: String, tags: Iterable<Tag>): Counter
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
+    /**
+     * Creates a new [Counter] metric to be added to the registry. This metric measures the
+     * count of specific events collected over time.
+     *
+     * @param name the name of the counter metric
+     * @param tags additional key-value pairs to associate with the counter metric
+     *
+     * @sample counterExampleWithVarargTags
+     */
     fun counter(name: String, vararg tags: String): Counter
 
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun summary(name: String, tags: Iterable<Tag>): DistributionSummary
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
+    /**
+     * Creates a new [DistributionSummary] metric to be added to the registry. This metric
+     * provides statistical data about the values observed/collected from an operation.
+     *
+     * @param name the name of the summary metric
+     * @param tags additional key-value pairs to associate with the summary metric
+     *
+     * @sample summaryExampleWithVarargTags
+     */
     fun summary(name: String, vararg tags: String): DistributionSummary
 
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun timer(name: String, tags: Iterable<Tag>): Timer
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
+    /**
+     * Creates a new [Timer] metric to be added to the registry. This metric measures the duration of an operation or a task.
+     *
+     * @param name the name of the timer metric
+     * @param tags additional key-value pairs to associate with the timer metric
+     *
+     * @sample timerExampleWithVarargTags
+     */
     fun timer(name: String, vararg tags: String): Timer
 
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun <T> gauge(
-        name: String,
-        tags: Iterable<Tag>,
-        stateObject: T,
-        valueFunction: ToDoubleFunction<T>
-    ): T
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun <T : Collection<*>> gaugeCollectionSize(name: String, tags: Iterable<Tag>, collection: T): T
-
-    @Deprecated(message = "Use the function with the scenario and step as argument")
-    fun <T : Map<*, *>> gaugeMapSize(name: String, tags: Iterable<Tag>, map: T): T
-
     fun clear()
+
+    /**
+     * Example usage of the `counter` function with tags as a [Map].
+     */
+    private fun counterExample() {
+        counter(
+            scenarioName = "scenario 1",
+            stepName = "step 1",
+            name = "counter name",
+            tags = mapOf("foo" to "bar")
+        )
+    }
+
+    /**
+     * Example usage of the `counter` function with vararg tags.
+     */
+    private fun counterExampleWithVarargTags() {
+        counter(
+            name = "counter name",
+            tags = arrayOf("scenario", "scenario-1", "foo", "bar", "hello", "world", "step", "test-step")
+        )
+    }
+
+    /**
+     * Example usage of the `gauge` function with tags as a [Map].
+     */
+    private fun gaugeExample() {
+        gauge(
+            scenarioName = "scenario 1",
+            stepName = "step 1",
+            name = "gauge name",
+            tags = mapOf("tag-1" to "value-1", "tag-2" to "value-2"),
+        )
+    }
+
+
+    /**
+     * Example usage of the `gauge` function with vararg tags.
+     */
+    private fun gaugeExampleWithVarargTags() {
+        gauge(
+            name = "gauge name",
+            tags = arrayOf("tag-1", "value-1", "tag-2", "value-2"),
+        )
+    }
+
+    /**
+     * Example usage of the `timer` function with tags as a [Map].
+     */
+    private fun timerExample() {
+        timer(
+            scenarioName = "scenario 1",
+            stepName = "step 1",
+            name = "http-requests duration",
+            tags = mapOf("environment" to "production", "region" to "us-west"),
+            percentiles = emptyList(),
+        )
+    }
+
+    /**
+     * Example usage of the `timer` function with vararg tags.
+     */
+    private fun timerExampleWithVarargTags() {
+        timer(
+            name = "http-requests duration",
+            tags = arrayOf("environment", "production", "region", "us-west", "stepName", "step-2"),
+        )
+    }
+
+    /**
+     * Example usage of the `summary` function with tags as a [Map].
+     */
+    private fun summaryExample() {
+        summary(
+            scenarioName = "scenario 1",
+            stepName = "step 1",
+            name = "requests spread",
+            tags = mapOf("foo" to "bar", "region" to "us-east"),
+            percentiles = emptyList()
+        )
+    }
+
+    /**
+     * Example usage of the `summary` function with vararg tags.
+     */
+    private fun summaryExampleWithVarargTags() {
+        summary(
+            name = "requests spread",
+            tags = arrayOf("foo", "bar", "region", "us-east", "hello", "world", "scenario", "scenario-2"),
+        )
+    }
+
 }

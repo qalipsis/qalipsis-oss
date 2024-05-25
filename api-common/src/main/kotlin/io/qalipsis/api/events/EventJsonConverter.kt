@@ -17,7 +17,6 @@
 package io.qalipsis.api.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.micrometer.core.instrument.util.StringEscapeUtils
 import jakarta.inject.Singleton
 import java.io.IOException
 import java.io.PrintWriter
@@ -30,6 +29,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAccessor
+import org.apache.commons.text.StringEscapeUtils
 import kotlin.reflect.KClass
 
 /**

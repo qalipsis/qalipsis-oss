@@ -16,6 +16,40 @@
 
 package io.qalipsis.api.meters
 
-import io.micrometer.core.instrument.Gauge as MicrometerGauge
+/**
+ * Tracks values that go up and down. Publishes an instantaneous sample of the gauge at publishing time.
+ *
+ * @author Francisca Eze
+ */
+interface Gauge : Meter<Gauge> {
+    /**
+     * Triggers sampling of the underlying number or user-defined function that defines the value for the gauge.
+     *
+     * @return The current value.
+     */
+    fun value(): Double {
+        return Double.NaN
+    }
 
-abstract class Gauge : Number(), Meter<Gauge>, MicrometerGauge
+    /**
+     * Update the gauge by one.
+     */
+    fun increment(): Double
+
+    /**
+     * Decrease the value of the gauge by one.
+     */
+    fun decrement(): Double
+
+    /**
+     * Decrease the value of the gauge by the amount.
+     * @param amount amount to subtract from the gauge value.
+     */
+    fun decrement(amount: Double): Double
+
+    /**
+     * Increase the gauge value by the `amount`.
+     * @param amount amount to add to the gauge value.
+     */
+    fun increment(amount: Double): Double
+}

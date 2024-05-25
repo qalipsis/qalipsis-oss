@@ -20,12 +20,12 @@ import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.micrometer.core.instrument.Meter as MicrometerMeter
+import java.time.Instant
 
 /**
  * Representation of a meter from [CampaignMeterRegistry].
  */
-interface Meter<SELF : Meter<SELF>> : MicrometerMeter {
+interface Meter<SELF : Meter<SELF>> {
 
     val id: Id
 
@@ -34,6 +34,16 @@ interface Meter<SELF : Meter<SELF>> : MicrometerMeter {
      * Only the first call is taken into account, further ones are ignored.
      */
     fun report(configure: ReportingConfiguration<SELF>.() -> Unit): SELF
+
+    /**
+     * Get a set of measurements. Should always return the same number of measurements and
+     * in the same order, regardless of the level of activity or the lack thereof.
+     * @return The set of measurements that represents the instantaneous value of this
+     * meter.
+     */
+    suspend fun measure(): Collection<Measurement>
+
+    suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*>
 
     interface ReportingConfiguration<T : Meter<*>> {
 
@@ -52,7 +62,7 @@ interface Meter<SELF : Meter<SELF>> : MicrometerMeter {
             severity: ReportMessageSeverity = ReportMessageSeverity.INFO,
             row: Short = 0,
             column: Short = 0,
-            toNumber: T.() -> Number
+            toNumber: T.() -> Number,
         ) = display(
             format,
             SEVERITY_MAPPERS[severity] ?: error("Unsupported value $severity"),
@@ -77,7 +87,7 @@ interface Meter<SELF : Meter<SELF>> : MicrometerMeter {
             severity: Number.() -> ReportMessageSeverity = { ReportMessageSeverity.INFO },
             row: Short = 0,
             column: Short = 0,
-            toNumber: T.() -> Number
+            toNumber: T.() -> Number,
         )
 
         companion object {
@@ -100,7 +110,7 @@ interface Meter<SELF : Meter<SELF>> : MicrometerMeter {
         val scenarioName: ScenarioName,
         val stepName: StepName,
         val meterName: String,
-        val tags: Map<String, String>
+        val tags: Map<String, String>,
+        val type: MeterType
     )
-
 }

@@ -16,26 +16,21 @@
 
 package io.qalipsis.api.meters
 
+import java.time.Instant
+
 /**
- * Custom interface with methods adopted from the java micrometer-core library.
- * Used to track monotonically increasing values.
+ * Holds a snapshot of collected measurements over a given period for any given meter.
  *
- * @author Francisca Eze
+ * @property meter meter that is being measured
+ * @property measurements list of measurements belonging to the meter sampled over a given time
+ * @property timestamp represent the time instant in epoch seconds that the snapshot was taken
+ *
+ *  @author Francisca Eze
  */
-interface Counter : Meter<Counter> {
-    /**
-     * Update the counter by one.
-     */
-    fun increment()
+interface MeterSnapshot<T: Meter<T>> {
+    val timestamp: Instant
 
-    /**
-     * Update the counter by `amount`.
-     * @param amount amount to add to the counter.
-     */
-    fun increment(amount: Double)
+    val meter: T
 
-    /**
-     * Returns the cumulative count since this counter was created.
-     */
-    fun count(): Double
+    val measurements: Collection<Measurement>
 }

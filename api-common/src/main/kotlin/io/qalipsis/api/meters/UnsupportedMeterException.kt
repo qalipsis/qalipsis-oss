@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 AERIS IT Solutions GmbH
+ * Copyright 2024 AERIS IT Solutions GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,11 @@
  * permissions and limitations under the License.
  */
 
-package io.qalipsis.api.meters
-
-import io.micrometer.core.instrument.MeterRegistry
+package io.qalipsis.api.meters;
 
 /**
- * Service in charge of providing [io.micrometer.core.instrument.MeterRegistry] on demand.
+ * Exception generated for an unknown meter.
  *
- * @author Eric Jessé
+ * @author Francisca Eze
  */
-interface MeterRegistryFactory {
-
-    /**
-     * Return a [MeterRegistry] that matches the default configuration for the implementation
-     * amended by [configuration].
-     */
-    fun getRegistry(configuration: MeterRegistryConfiguration): MeterRegistry
-
-}
+class UnsupportedMeterException(message: String) : RuntimeException(message)

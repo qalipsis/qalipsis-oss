@@ -17,25 +17,18 @@
 package io.qalipsis.api.meters
 
 /**
- * Custom interface with methods adopted from the java micrometer-core library.
- * Used to track monotonically increasing values.
+ * Possibilities of [io.qalipsis.api.meters] that are available.
+ *
+ * @property COUNTER tracks monotonically increasing values
+ * @property GAUGE tracks values that go up and down
+ * @property TIMER track a large number of short running events
+ * @property DISTRIBUTION_SUMMARY tracks the statistical distribution of events
  *
  * @author Francisca Eze
  */
-interface Counter : Meter<Counter> {
-    /**
-     * Update the counter by one.
-     */
-    fun increment()
-
-    /**
-     * Update the counter by `amount`.
-     * @param amount amount to add to the counter.
-     */
-    fun increment(amount: Double)
-
-    /**
-     * Returns the cumulative count since this counter was created.
-     */
-    fun count(): Double
+enum class MeterType(val value: String) {
+    COUNTER("counter"),
+    GAUGE("gauge"),
+    TIMER("timer"),
+    DISTRIBUTION_SUMMARY("summary")
 }

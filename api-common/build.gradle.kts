@@ -47,7 +47,6 @@ dependencies {
     api(project(":qalipsis-api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     api("io.micronaut:micronaut-inject-java")
-    api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("javax.annotation:javax.annotation-api")
     api("io.micronaut:micronaut-validation")
 
@@ -57,9 +56,9 @@ dependencies {
     kapt("io.micronaut:micronaut-graal")
     kapt("io.aeris-consulting:catadioptre-annotations")
 
-    implementation("io.micrometer:micrometer-core")
     implementation("com.google.guava:guava")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
+    implementation("org.apache.commons:commons-text:1.11.0")
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
 
     testImplementation(project(":qalipsis-test"))

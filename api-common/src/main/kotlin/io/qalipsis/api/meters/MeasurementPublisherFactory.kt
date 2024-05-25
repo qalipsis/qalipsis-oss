@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 AERIS IT Solutions GmbH
+ * Copyright 2022 AERIS IT Solutions GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,18 @@
 
 package io.qalipsis.api.meters
 
+
 /**
- * Custom interface with methods adopted from the java micrometer-core library.
- * Used to track monotonically increasing values.
+ * Service in charge of providing a measurement publisher on demand.
  *
- * @author Francisca Eze
+ * @author Eric Jessé
  */
-interface Counter : Meter<Counter> {
-    /**
-     * Update the counter by one.
-     */
-    fun increment()
+interface MeasurementPublisherFactory {
 
     /**
-     * Update the counter by `amount`.
-     * @param amount amount to add to the counter.
+     *  Returns a [MeasurementPublisher] that matches the default configuration for the implementation
+     *  amended by [configuration].
      */
-    fun increment(amount: Double)
+    fun getPublisher(): MeasurementPublisher
 
-    /**
-     * Returns the cumulative count since this counter was created.
-     */
-    fun count(): Double
 }
