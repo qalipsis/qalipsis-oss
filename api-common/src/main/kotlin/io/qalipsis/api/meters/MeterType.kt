@@ -17,12 +17,13 @@
 package io.qalipsis.api.meters
 
 /**
- * Possibilities of [io.qalipsis.api.meters] that are available.
+ * Possibilities of [io.qalipsis.api.meters.Meter] that are available.
  *
  * @property COUNTER tracks monotonically increasing values
  * @property GAUGE tracks values that go up and down
  * @property TIMER track a large number of short running events
  * @property DISTRIBUTION_SUMMARY tracks the statistical distribution of events
+ * @property STATISTICS tracks the sum total statistical distribution of events across the application
  *
  * @author Francisca Eze
  */
@@ -30,5 +31,6 @@ enum class MeterType(val value: String) {
     COUNTER("counter"),
     GAUGE("gauge"),
     TIMER("timer"),
-    DISTRIBUTION_SUMMARY("summary")
+    DISTRIBUTION_SUMMARY("summary"),
+    STATISTICS("statistics")
 }

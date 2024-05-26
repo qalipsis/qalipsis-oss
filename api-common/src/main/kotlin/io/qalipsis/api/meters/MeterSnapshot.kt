@@ -21,16 +21,25 @@ import java.time.Instant
 /**
  * Holds a snapshot of collected measurements over a given period for any given meter.
  *
- * @property meter meter that is being measured
+ * @property meterId meter that is being measured
  * @property measurements list of measurements belonging to the meter sampled over a given time
  * @property timestamp represent the time instant in epoch seconds that the snapshot was taken
  *
  *  @author Francisca Eze
  */
-interface MeterSnapshot<T: Meter<T>> {
+interface MeterSnapshot {
+
+    val meterId: Meter.Id
+
     val timestamp: Instant
 
-    val meter: T
-
     val measurements: Collection<Measurement>
+
+    /**
+     * Duplicates the [MeterSnapshot] with a different [meterId].
+     */
+    fun duplicate(
+        meterId: Meter.Id = this.meterId
+    ): MeterSnapshot
+
 }

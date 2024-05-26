@@ -16,15 +16,18 @@
 
 package io.qalipsis.api.meters
 
-import java.math.RoundingMode
-import java.text.DecimalFormat
-
 /**
- * Tracks the statistical distribution of events.
+ * Tracks the statistical distribution of observations recorded for a given campaign.
  *
  * @author Francisca Eze
  */
 interface DistributionSummary : Meter<DistributionSummary> {
+
+    /**
+     * The configured percentiles to generate in snapshots.
+     */
+    val percentiles: Collection<Double>
+
     /**
      * Updates the statistics kept by the summary with the specified amount.
      *
@@ -33,7 +36,7 @@ interface DistributionSummary : Meter<DistributionSummary> {
     fun record(amount: Double)
 
     /**
-     * Returns the number of times that record has been called since this timer was
+     * Returns the number of times that record has been called since this meter was
      * created.
      */
     fun count(): Long
@@ -44,17 +47,12 @@ interface DistributionSummary : Meter<DistributionSummary> {
     fun totalAmount(): Double
 
     /**
-     * Returns the distribution average, rounded to three decimal places for all recorded events.
+     * Returns the distribution average for all recorded events.
      */
-    fun mean(): Double {
-        val count = count()
-        val decimalFormat = DecimalFormat("#.###")
-        decimalFormat.roundingMode = RoundingMode.CEILING
-        return if (count == 0L) 0.0 else decimalFormat.format(totalAmount() / count).toDouble()
-    }
+    fun mean(): Double
 
     /**
-     * Returns the maximum time of a single event.
+     * Returns the maximum observation recorded for a single event.
      */
     fun max(): Double
 

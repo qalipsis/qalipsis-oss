@@ -87,4 +87,4 @@ jobs:
           echo "ossrhPassword=$OSSRH_PASSWORD" >> $HOME/.gradle/gradle.properties ;
 
       - name: Publish artifacts
-        run: ./gradlew publish --no-daemon
+        run: ./gradlew publish publishQalipsisDevPlatformPublicationToSonatypeRepository --no-daemon

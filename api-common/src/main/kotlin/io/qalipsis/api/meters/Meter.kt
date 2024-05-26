@@ -16,9 +16,6 @@
 
 package io.qalipsis.api.meters
 
-import io.qalipsis.api.context.CampaignKey
-import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.context.StepName
 import io.qalipsis.api.report.ReportMessageSeverity
 import java.time.Instant
 
@@ -36,14 +33,19 @@ interface Meter<SELF : Meter<SELF>> {
     fun report(configure: ReportingConfiguration<SELF>.() -> Unit): SELF
 
     /**
-     * Get a set of measurements. Should always return the same number of measurements and
-     * in the same order, regardless of the level of activity or the lack thereof.
-     * @return The set of measurements that represents the instantaneous value of this
-     * meter.
+     * Generates a snapshot representing the instantaneous state of the meter. Generating a snapshot
+     * resets the instantaneous states.
+     *
+     * @return The snapshot that represents the instantaneous values of this meter.
      */
-    suspend fun measure(): Collection<Measurement>
+    suspend fun snapshot(timestamp: Instant): MeterSnapshot
 
-    suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*>
+    /**
+     * Generates a snapshot representing the total state of the meter.
+     *
+     * @return The snapshot that represents the overall values of this meter.
+     */
+    suspend fun summarize(timestamp: Instant): MeterSnapshot
 
     interface ReportingConfiguration<T : Meter<*>> {
 
@@ -70,7 +72,6 @@ interface Meter<SELF : Meter<SELF>> {
             column,
             toNumber
         )
-
 
         /**
          * Configures the meter to be displayed in the report of the related scenario or step.
@@ -106,11 +107,8 @@ interface Meter<SELF : Meter<SELF>> {
      * Representation of the identifier of a [io.qalipsis.api.meters.Meter].
      */
     data class Id(
-        val campaignKey: CampaignKey,
-        val scenarioName: ScenarioName,
-        val stepName: StepName,
         val meterName: String,
+        val type: MeterType,
         val tags: Map<String, String>,
-        val type: MeterType
     )
 }

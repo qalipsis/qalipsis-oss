@@ -23,7 +23,6 @@ import io.qalipsis.api.context.StepName
  * Campaign lifecycle relevant meter registry.
  *
  * @author Eric Jessé
- *
  */
 interface CampaignMeterRegistry {
 
@@ -39,8 +38,8 @@ interface CampaignMeterRegistry {
      * @sample counterExample
      */
     fun counter(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
+        scenarioName: ScenarioName,
+        stepName: StepName,
         name: String,
         tags: Map<String, String> = emptyMap(),
     ): Counter
@@ -57,8 +56,8 @@ interface CampaignMeterRegistry {
      * @sample timerExample
      */
     fun timer(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
+        scenarioName: ScenarioName,
+        stepName: StepName,
         name: String,
         tags: Map<String, String> = emptyMap(),
         percentiles: Collection<Double> = emptyList()
@@ -76,8 +75,8 @@ interface CampaignMeterRegistry {
      * @sample gaugeExample
      */
     fun gauge(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
+        scenarioName: ScenarioName,
+        stepName: StepName,
         name: String,
         tags: Map<String, String> = emptyMap(),
     ): Gauge
@@ -95,8 +94,8 @@ interface CampaignMeterRegistry {
      * @sample summaryExample
      */
     fun summary(
-        scenarioName: ScenarioName = "",
-        stepName: StepName = "",
+        scenarioName: ScenarioName,
+        stepName: StepName,
         name: String,
         tags: Map<String, String> = emptyMap(),
         percentiles: Collection<Double> = emptyList()
@@ -144,8 +143,6 @@ interface CampaignMeterRegistry {
      * @sample timerExampleWithVarargTags
      */
     fun timer(name: String, vararg tags: String): Timer
-
-    fun clear()
 
     /**
      * Example usage of the `counter` function with tags as a [Map].

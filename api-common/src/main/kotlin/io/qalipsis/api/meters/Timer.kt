@@ -16,8 +16,6 @@
 
 package io.qalipsis.api.meters
 
-import java.math.RoundingMode
-import java.text.DecimalFormat
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
@@ -28,6 +26,12 @@ import java.util.function.Supplier
  * @author Francisca Eze
  */
 interface Timer : Meter<Timer> {
+
+    /**
+     * The configured percentiles to generate in snapshots.
+     */
+    val percentiles: Collection<Double>
+
     /**
      * Updates the statistics kept by the timer with the specified amount.
      *
@@ -66,16 +70,11 @@ interface Timer : Meter<Timer> {
     fun totalTime(unit: TimeUnit?): Double
 
     /**
-     * Calculates the distribution average, rounded to three decimal places for all recorded events.
+     * Calculates the average for all recorded duration.
      *
      * @param unit The base unit of time to scale the mean to.
      */
-    fun mean(unit: TimeUnit?): Double {
-        val count = count()
-        val decimalFormat = DecimalFormat("#.###")
-        decimalFormat.roundingMode = RoundingMode.CEILING
-        return if (count == 0L) 0.0 else decimalFormat.format(totalTime(unit) / count).toDouble()
-    }
+    fun mean(unit: TimeUnit?): Double
 
     /**
      * The maximum time recorded for of a single event.

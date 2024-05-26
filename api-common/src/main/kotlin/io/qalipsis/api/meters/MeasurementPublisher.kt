@@ -31,7 +31,7 @@ interface MeasurementPublisher {
     /**
      * Saves/publishes received meters to their corresponding publishing strategies.
      */
-    suspend fun publish(meters: Collection<MeterSnapshot<*>>)
+    suspend fun publish(meters: Collection<MeterSnapshot>)
 
     /**
      * Shuts down all running publishers.
