@@ -29,7 +29,7 @@ import io.qalipsis.api.meters.DistributionSummary
  * The meter registries are the only one aware of the existence of the [campaignLevelSummary]
  * and will ask for its publication when required.
  *
- * This instance of [DistributionSummary] is not known by the instances of [io.micrometer.core.instrument.MeterRegistry].
+ * This instance of [DistributionSummary] is not known by the instances of QALIPSIS measurement publisher.
  *
  * @author Joël Valère
  */

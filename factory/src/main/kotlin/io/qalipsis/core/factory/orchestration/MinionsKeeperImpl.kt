@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.orchestration
 
-import io.micrometer.core.instrument.Tag
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
@@ -40,13 +39,12 @@ import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
-import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Registry to keep the minions of the current factory.
@@ -61,7 +59,7 @@ internal class MinionsKeeperImpl(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
-    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
+    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
 ) : MinionsKeeper, CampaignLifeCycleAware {
 
     private val minions: MutableMap<MinionId, MinionImpl> = ConcurrentHashMap()
@@ -75,10 +73,10 @@ internal class MinionsKeeperImpl(
     private val dagIdsBySingletonMinionId = ConcurrentHashMap<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val idleMinionsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
+    private val idleMinionsGauges = ConcurrentHashMap<ScenarioName, Double>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningMinionsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
+    private val runningMinionsGauges = ConcurrentHashMap<ScenarioName, Double>()
 
     override suspend fun close(campaign: Campaign) {
         log.debug { "Not completed minions: $minions" }
@@ -97,7 +95,7 @@ internal class MinionsKeeperImpl(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         dagIds: Collection<DirectedAcyclicGraphName>,
-        minionId: MinionId
+        minionId: MinionId,
     ) {
         scenarioRegistry[scenarioName]?.let { scenario ->
             // Extracts the DAG being the entry to the scenario for the minion.
@@ -127,12 +125,13 @@ internal class MinionsKeeperImpl(
 
             if (rootDag != null) {
                 idleMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
-                    meterRegistry.gauge(
-                        "idle-minions",
-                        listOf(Tag.of("scenario", scenario)),
-                        AtomicInteger()
-                    )
-                }.incrementAndGet()
+                    return@computeIfAbsent meterRegistry.gauge(
+                            scenarioName = scenario,
+                            stepName = "",
+                            name = "idle-minions",
+                            tags = mapOf("scenario" to scenario),
+                        ).increment()
+                }
 
                 rootDagsOfMinions[minionId] = rootDag.name
                 eventsLogger.debug(
@@ -186,18 +185,20 @@ internal class MinionsKeeperImpl(
             )
             idleMinionsGauges.computeIfAbsent(refMinion.scenarioName) { scenario ->
                 meterRegistry.gauge(
-                    "idle-minions",
-                    listOf(Tag.of("scenario", scenario)),
-                    AtomicInteger()
-                )
-            }.addAndGet(-minionsToStart.size)
+                    scenarioName = scenario,
+                    stepName = "",
+                    name = "idle-minions",
+                    tags = mapOf("scenario" to scenario),
+                ).decrement(minionsToStart.size.toDouble())
+            }
             runningMinionsGauges.computeIfAbsent(refMinion.scenarioName) { scenario ->
                 meterRegistry.gauge(
-                    "running-minions",
-                    listOf(Tag.of("scenario", scenario)),
-                    AtomicInteger()
-                )
-            }.addAndGet(minionsToStart.size)
+                    scenarioName = scenario,
+                    stepName = "",
+                    name = "running-minions",
+                    tags = mapOf("scenario" to scenario),
+                ).increment(minionsToStart.size.toDouble())
+            }
         }
     }
 

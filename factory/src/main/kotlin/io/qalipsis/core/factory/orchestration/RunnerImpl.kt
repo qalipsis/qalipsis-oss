@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.orchestration
 
-import io.micrometer.core.instrument.Counter
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CompletionContext
@@ -28,6 +27,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.Counter
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.ErrorProcessingStep
@@ -44,12 +44,12 @@ import io.qalipsis.core.factory.context.StepContextImpl
 import io.qalipsis.core.factory.context.TailStepContext
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.MDC
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * The Runner is the masterpiece of the factory and drives the minions to execute directed acyclic graphs (aka DAGs)

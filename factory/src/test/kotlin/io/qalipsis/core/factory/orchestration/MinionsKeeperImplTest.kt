@@ -32,7 +32,6 @@ import assertk.assertions.isTrue
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.getProperty
-import io.micrometer.core.instrument.Tag
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -45,6 +44,7 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -59,6 +59,10 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -66,10 +70,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * @author Eric Jessé
@@ -94,10 +94,10 @@ internal class MinionsKeeperImplTest {
     private lateinit var campaignMeterRegistry: CampaignMeterRegistry
 
     @RelaxedMockK("idleMinionsGauge")
-    private lateinit var idleMinionsGauge: AtomicInteger
+    private lateinit var idleMinionsGauge: Gauge
 
     @RelaxedMockK("runningMinionsGauge")
-    private lateinit var runningMinionsGauge: AtomicInteger
+    private lateinit var runningMinionsGauge: Gauge
 
     @RelaxedMockK
     private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
@@ -106,16 +106,18 @@ internal class MinionsKeeperImplTest {
     internal fun setUp() {
         every {
             campaignMeterRegistry.gauge(
+                any(),
+                any(),
                 "idle-minions",
-                listOf(Tag.of("scenario", "my-scenario")),
-                any<AtomicInteger>()
+                mapOf("scenario" to "my-scenario"),
             )
         } returns idleMinionsGauge
         every {
             campaignMeterRegistry.gauge(
+                any(),
+                any(),
                 "running-minions",
-                listOf(Tag.of("scenario", "my-scenario")),
-                any<AtomicInteger>()
+                mapOf("scenario" to "my-scenario"),
             )
         } returns runningMinionsGauge
     }
@@ -150,9 +152,10 @@ internal class MinionsKeeperImplTest {
             // then
             coVerifyOnce {
                 campaignMeterRegistry.gauge(
+                    "my-scenario",
+                    "",
                     "idle-minions",
-                    listOf(Tag.of("scenario", "my-scenario")),
-                    any<AtomicInteger>()
+                    mapOf("scenario" to "my-scenario"),
                 )
                 eventsLogger.debug(
                     "minion.created", timestamp = any(),
@@ -255,8 +258,11 @@ internal class MinionsKeeperImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion")
             )
             runner.run(any(), refEq(dag))
-            campaignMeterRegistry.gauge("idle-minions", listOf(Tag.of("scenario", "my-scenario")), any<AtomicInteger>())
-            idleMinionsGauge.incrementAndGet()
+            campaignMeterRegistry.gauge(
+                "my-scenario",
+                "", "idle-minions", mapOf("scenario" to "my-scenario")
+            )
+            idleMinionsGauge.increment()
         }
 
         confirmVerified(runner, eventsLogger, campaignMeterRegistry, reportLiveStateRegistry)
@@ -428,14 +434,16 @@ internal class MinionsKeeperImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion-2")
             )
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 2)
-            campaignMeterRegistry.gauge("idle-minions", listOf(Tag.of("scenario", "my-scenario")), any<AtomicInteger>())
-            idleMinionsGauge.addAndGet(-2)
+            campaignMeterRegistry.gauge(  "my-scenario",
+                "","idle-minions", mapOf("scenario" to "my-scenario"))
+            idleMinionsGauge.decrement(2.0)
             campaignMeterRegistry.gauge(
+                "my-scenario",
+                "",
                 "running-minions",
-                listOf(Tag.of("scenario", "my-scenario")),
-                any<AtomicInteger>()
+                mapOf("scenario" to "my-scenario")
             )
-            runningMinionsGauge.addAndGet(2)
+            runningMinionsGauge.increment(2.0)
         }
         QalipsisTimeAssertions.assertShorterOrEqualTo(Duration.ofMillis(200), duration)
         confirmVerified(eventsLogger, campaignMeterRegistry, reportLiveStateRegistry, minionToIgnore)
@@ -490,14 +498,16 @@ internal class MinionsKeeperImplTest {
                 tags = mapOf("campaign" to "my-campaign", "scenario" to "my-scenario", "minion" to "my-minion-2")
             )
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 2)
-            campaignMeterRegistry.gauge("idle-minions", listOf(Tag.of("scenario", "my-scenario")), any<AtomicInteger>())
-            idleMinionsGauge.addAndGet(-2)
+            campaignMeterRegistry.gauge(  "my-scenario",
+                "", "idle-minions", mapOf("scenario" to "my-scenario"))
+            idleMinionsGauge.decrement(2.0)
             campaignMeterRegistry.gauge(
+                "my-scenario",
+                "",
                 "running-minions",
-                listOf(Tag.of("scenario", "my-scenario")),
-                any<AtomicInteger>()
+                mapOf("scenario" to "my-scenario")
             )
-            runningMinionsGauge.addAndGet(2)
+            runningMinionsGauge.increment(2.0)
         }
         QalipsisTimeAssertions.assertLongerOrEqualTo(Duration.ofMillis(350), duration)
         confirmVerified(eventsLogger, campaignMeterRegistry, reportLiveStateRegistry, minionToIgnore)

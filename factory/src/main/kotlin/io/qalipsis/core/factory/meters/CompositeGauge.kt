@@ -2,7 +2,6 @@ package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.Meter
-import io.micrometer.core.instrument.Gauge as MicrometerGauge
 
 /**
  * Composite class to encapsulate the [Gauge]s at the scenario and campaign
@@ -12,14 +11,14 @@ import io.micrometer.core.instrument.Gauge as MicrometerGauge
  * The meter registries are the only one aware of the existence of the [campaignLevelGauge]
  * and will ask for its publication when required.
  *
- * This instance of [Gauge] is not known by the instances of [io.scenarioLevelGauge.core.instrument.MeterRegistry].
+ * This instance of [Gauge] is not known by the instances of Qalipsis measurement publisher.
  *
  * @author Joël Valère
  */
 internal data class CompositeGauge(
     private val scenarioLevelGauge: Gauge,
-    private val campaignLevelGauge: MicrometerGauge
-) : Gauge(), io.micrometer.core.instrument.Gauge by scenarioLevelGauge {
+    private val campaignLevelGauge: Gauge
+) : Gauge by scenarioLevelGauge {
 
     override val id: Meter.Id
         get() = scenarioLevelGauge.id
@@ -27,18 +26,18 @@ internal data class CompositeGauge(
     override fun report(configure: Meter.ReportingConfiguration<Gauge>.() -> Unit): Gauge =
         scenarioLevelGauge.report(configure)
 
-    override fun toByte() = scenarioLevelGauge.toByte()
+    fun toByte() = scenarioLevelGauge.value().toInt().toByte()
 
-    override fun toChar(): Char = scenarioLevelGauge.toChar()
+    fun toChar(): Char = scenarioLevelGauge.value().toInt().toChar()
 
-    override fun toDouble() = scenarioLevelGauge.value()
+    fun toDouble() = scenarioLevelGauge.value()
 
-    override fun toFloat() = scenarioLevelGauge.toFloat()
+    fun toFloat() = scenarioLevelGauge.value().toFloat()
 
-    override fun toInt() = scenarioLevelGauge.toInt()
+    fun toInt() = scenarioLevelGauge.value().toInt()
 
-    override fun toLong() = scenarioLevelGauge.toLong()
+    fun toLong() = scenarioLevelGauge.value().toLong()
 
-    override fun toShort() = scenarioLevelGauge.toShort()
+    fun toShort() = scenarioLevelGauge.value().toInt().toShort()
 
 }

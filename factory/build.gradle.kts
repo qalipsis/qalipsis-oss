@@ -65,6 +65,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    implementation("com.tdunning:t-digest:3.3")
 
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")

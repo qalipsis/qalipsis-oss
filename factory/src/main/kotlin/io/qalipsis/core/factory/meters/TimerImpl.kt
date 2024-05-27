@@ -19,19 +19,43 @@
 
 package io.qalipsis.core.factory.meters
 
+import com.tdunning.math.stats.TDigest
+import io.aerisconsulting.catadioptre.KTestable
+import io.qalipsis.api.meters.DistributionMeasurementMetric
+import io.qalipsis.api.meters.Measurement
+import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.reporter.MeterReporter
+import java.time.Instant
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.LongAdder
 
+/**
+ * Implementation of [Timer] to track large number of short running events.
+ *
+ * @author Francisca Eze
+ */
 internal class TimerImpl(
-    val micrometer: io.micrometer.core.instrument.Timer,
     override val id: Meter.Id,
-    private val meterReporter: MeterReporter
-) : Timer, Meter.ReportingConfiguration<Timer>, io.micrometer.core.instrument.Timer by micrometer {
+    private val meterReporter: MeterReporter,
+    private val percentiles: Collection<Double>
+) : Timer, Meter.ReportingConfiguration<Timer> {
 
     private var reportingConfigured = AtomicBoolean()
+
+    @KTestable
+    private val counter = LongAdder()
+
+    @KTestable
+    private val total = LongAdder()
+
+    @KTestable
+    private var tDigestBucket = TDigest.createAvlTreeDigest(100.0)
 
     override fun report(configure: Meter.ReportingConfiguration<Timer>.() -> Unit): Timer {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -45,9 +69,73 @@ internal class TimerImpl(
         severity: Number.() -> ReportMessageSeverity,
         row: Short,
         column: Short,
-        toNumber: Timer.() -> Number
+        toNumber: Timer.() -> Number,
     ) {
         meterReporter.report(this, format, severity, row, column, toNumber)
+    }
+
+    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
+        MeterSnapshotImpl(timestamp, this, this.measure())
+
+    override fun count() = tDigestBucket.centroidCount().toLong()
+
+    override fun totalTime(unit: TimeUnit?) = nanosToUnitConverter(total.toDouble(), unit)
+
+    override fun max(unit: TimeUnit?) = nanosToUnitConverter(tDigestBucket.max, unit)
+
+    override fun record(amount: Long, unit: TimeUnit?) {
+        if (amount >= 0) {
+            val amountInNanos = TimeUnit.NANOSECONDS.convert(amount, unit)
+            counter.add(1)
+            total.add(amountInNanos)
+            tDigestBucket.add(amountInNanos.toDouble())
+        }
+    }
+
+    override suspend fun <T> record(block: suspend () -> T): T {
+        val preExecutionTimeInNanos = System.nanoTime()
+        return try {
+            block()
+        } finally {
+            val postExecutionTimeInNanos = System.nanoTime()
+            record(postExecutionTimeInNanos - preExecutionTimeInNanos, TimeUnit.NANOSECONDS)
+        }
+    }
+
+    override fun percentile(percentile: Double, unit: TimeUnit?): Double {
+        return nanosToUnitConverter(tDigestBucket.quantile(percentile / 100), unit)
+    }
+
+    override suspend fun measure(): Collection<Measurement> =
+        listOf(
+            MeasurementMetric(count().toDouble(), Statistic.COUNT),
+            MeasurementMetric(totalTime(BASE_TIME_UNIT), Statistic.TOTAL_TIME),
+            MeasurementMetric(max(BASE_TIME_UNIT), Statistic.MAX),
+            MeasurementMetric(mean(BASE_TIME_UNIT), Statistic.MEAN),
+        ) + (percentiles.map {
+            DistributionMeasurementMetric(percentile(it, BASE_TIME_UNIT), Statistic.PERCENTILE, it)
+        })
+
+
+    /**
+     * Converts the total time to the specified format. Defaults to nanoseconds when not specified
+     */
+    private fun nanosToUnitConverter(totalTimeInNanos: Double, unit: TimeUnit?): Double {
+        return when (unit) {
+            TimeUnit.MICROSECONDS -> totalTimeInNanos / (NANOSECONDS_IN_MICROSECONDS)
+            TimeUnit.MILLISECONDS -> totalTimeInNanos / (NANOSECONDS_IN_MILLISECONDS)
+            TimeUnit.SECONDS -> totalTimeInNanos / (NANOSECONDS_IN_SECONDS)
+            TimeUnit.MINUTES -> totalTimeInNanos / (NANOSECONDS_IN_MINUTES)
+            TimeUnit.HOURS -> totalTimeInNanos / (NANOSECONDS_IN_HOURS)
+            TimeUnit.DAYS -> totalTimeInNanos / (NANOSECONDS_IN_DAYS)
+            TimeUnit.NANOSECONDS,
+            null,
+            -> totalTimeInNanos
+
+            else -> {
+                throw Exception("Unsupported time unit format $unit")
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -60,5 +148,22 @@ internal class TimerImpl(
 
     override fun hashCode(): Int {
         return id.hashCode()
+    }
+
+    companion object {
+
+        private const val NANOSECONDS_IN_MICROSECONDS = 1000L
+
+        private const val NANOSECONDS_IN_MILLISECONDS = NANOSECONDS_IN_MICROSECONDS * 1000L
+
+        private const val NANOSECONDS_IN_SECONDS = NANOSECONDS_IN_MILLISECONDS * 1000L
+
+        private const val NANOSECONDS_IN_MINUTES = NANOSECONDS_IN_SECONDS * 60L
+
+        private const val NANOSECONDS_IN_HOURS = NANOSECONDS_IN_MINUTES * 60L
+
+        private const val NANOSECONDS_IN_DAYS = NANOSECONDS_IN_HOURS * 24L
+
+        private val BASE_TIME_UNIT = TimeUnit.NANOSECONDS
     }
 }

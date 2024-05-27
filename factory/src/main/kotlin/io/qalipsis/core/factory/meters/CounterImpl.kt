@@ -19,19 +19,34 @@
 
 package io.qalipsis.core.factory.meters
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.reporter.MeterReporter
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.DoubleAdder
+import java.util.function.Supplier
 
+/**
+ * Implementation of meter to record monotonically increasing values.
+ *
+ * @author Francisca Eze
+ */
 internal class CounterImpl(
-    val micrometer: io.micrometer.core.instrument.Counter,
     override val id: Meter.Id,
-    private val meterReporter: MeterReporter
-) : Counter, Meter.ReportingConfiguration<Counter>, io.micrometer.core.instrument.Counter by micrometer {
+    private val meterReporter: MeterReporter,
+) : Counter, Meter.ReportingConfiguration<Counter> {
 
     private var reportingConfigured = AtomicBoolean()
+
+    @KTestable
+    private val current = DoubleAdder()
+    private fun valueSupplier(): Supplier<Double> = Supplier { current.sumThenReset() }
 
     override fun report(configure: Meter.ReportingConfiguration<Counter>.() -> Unit): Counter {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -45,10 +60,25 @@ internal class CounterImpl(
         severity: Number.() -> ReportMessageSeverity,
         row: Short,
         column: Short,
-        toNumber: Counter.() -> Number
+        toNumber: Counter.() -> Number,
     ) {
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
+
+    override fun count(): Double = valueSupplier().get()
+
+    override fun increment() {
+        increment(1.0)
+    }
+
+    override fun increment(amount: Double) {
+        current.add(amount)
+    }
+
+    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
+        MeterSnapshotImpl(timestamp, this, this.measure())
+
+    override suspend fun measure(): Collection<MeasurementMetric> = listOf(MeasurementMetric(count(), Statistic.COUNT))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -61,5 +91,4 @@ internal class CounterImpl(
     override fun hashCode(): Int {
         return id.hashCode()
     }
-
 }

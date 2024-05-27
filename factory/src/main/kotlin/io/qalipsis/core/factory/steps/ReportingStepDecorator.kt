@@ -19,9 +19,6 @@
 
 package io.qalipsis.core.factory.steps
 
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.Timer
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
@@ -30,6 +27,9 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.Gauge
+import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
@@ -40,7 +40,6 @@ import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.orchestration.StepUtils.isHidden
 import io.qalipsis.core.factory.orchestration.StepUtils.type
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Decorator of a step, that records the successes and errors of the [decorated] step and reports the state
@@ -68,7 +67,7 @@ internal class ReportingStepDecorator<I, O>(
     /**
      * Meter storing the number of running steps.
      */
-    private lateinit var runningStepsGauge: AtomicInteger
+    private lateinit var runningStepsGauge: Gauge
 
     /**
      * Cumulative counter of the executed steps.
@@ -109,13 +108,26 @@ internal class ReportingStepDecorator<I, O>(
         }
 
         runningStepsGauge = meterRegistry.gauge(
-            "running-steps",
-            listOf(Tag.of("scenario", context.scenarioName)),
-            AtomicInteger()
+            scenarioName = context.scenarioName,
+            stepName = context.stepName,
+            name = "running-steps",
+            tags = mapOf("scenario" to context.scenarioName)
         )
-        executedStepCounter = meterRegistry.counter("executed-steps", "scenario", context.scenarioName)
-        completionTimer = meterRegistry.timer("step-execution", "step", decorated.name, "status", "completed")
-        failureTimer = meterRegistry.timer("step-execution", "step", decorated.name, "status", "failed")
+        executedStepCounter = meterRegistry.counter(
+            scenarioName = context.scenarioName,
+            stepName = context.stepName,
+            name = "executed-steps",
+            tags = mapOf("scenario" to context.scenarioName))
+        completionTimer = meterRegistry.timer(
+            scenarioName = context.scenarioName,
+            stepName = context.stepName,
+            name = "step-execution",
+            tags = mapOf("step" to decorated.name, "status" to "completed"))
+        failureTimer = meterRegistry.timer(
+            scenarioName = context.scenarioName,
+            stepName = context.stepName,
+            name = "step-execution",
+            tags = mapOf("step" to decorated.name, "status" to "failed"))
         super<StepDecorator>.start(context)
     }
 
@@ -129,7 +141,7 @@ internal class ReportingStepDecorator<I, O>(
 
         val runningStepsGauge = if (isDecoratedVisible) {
             eventsLogger.debug("step.execution.started", tagsSupplier = { context.toEventTags() })
-            runningStepsGauge.apply { incrementAndGet() }
+            runningStepsGauge.apply { increment() }
         } else null
 
         val start = System.nanoTime()
@@ -194,7 +206,7 @@ internal class ReportingStepDecorator<I, O>(
             throw t
         } finally {
             if (isDecoratedVisible) {
-                runningStepsGauge?.decrementAndGet()
+                runningStepsGauge?.decrement()
                 executedStepCounter.increment()
             }
         }
