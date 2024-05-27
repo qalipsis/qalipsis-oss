@@ -8,7 +8,7 @@
     >
         <div
             v-if="open"
-            class="fixed inset-0 z-10 bg-gray-950 bg-opacity-60 flex justify-center p-6"
+            class="fixed inset-0 z-20 bg-gray-950 bg-opacity-60 flex justify-center p-6"
             @click="maskClosable && handleCancelBtnClick"
         >
         </div>
@@ -22,7 +22,7 @@
     >
         <div
             v-if="open"
-            class="fixed top-0 right-0 z-10 p-6 h-full bg-white shadow-lg translate-none"
+            class="fixed top-0 right-0 z-20 p-6 h-full bg-white shadow-lg translate-none"
             :style="{ width: drawerWidth }"
         >
             <section class="flex flex-col h-full">

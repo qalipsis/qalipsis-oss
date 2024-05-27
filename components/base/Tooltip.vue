@@ -1,5 +1,5 @@
 <template>
-    <div ref="tooltipRef">
+    <div ref="tooltipRef" :class="ellipsisClass">
         <slot></slot>
     </div>
     <div v-if="$slots.tooltipContent" ref="contentRef" class="hidden">
@@ -15,12 +15,16 @@ import 'tippy.js/dist/tippy.css';
 const props = defineProps<{
     text?: string;
     position?: string;
+    showTooltipIfTruncated?: boolean;
 }>()
 
 const tooltipRef = ref<HTMLDivElement>();
 const contentRef = ref<HTMLDivElement>();
 const tooltipInstance = ref<Instance>();
-const slots = useSlots()
+
+const ellipsisClass = computed(() => props.showTooltipIfTruncated 
+    ? 'text-ellipsis overflow-hidden whitespace-nowrap'
+    : '')
 
 const _destroyTooltip = () => {
     if (tooltipInstance.value) {
@@ -32,17 +36,29 @@ const _initTooltip = () => {
     _destroyTooltip();
     let content = props.text;
     let allowHTML = false;
+
     if (contentRef.value) {
         content = contentRef.value.innerHTML;
         allowHTML = true;
     }
 
-    if (content) {
-        tooltipInstance.value = tippy(tooltipRef.value as HTMLElement, {
-            content: content,
-            allowHTML: allowHTML
-        });
+    if (props.showTooltipIfTruncated) {
+        if (tooltipRef.value && tooltipRef.value.scrollWidth > tooltipRef.value.clientWidth) {
+            _renderTooltip(content, allowHTML);    
+        }
+    } else {
+        _renderTooltip(content, allowHTML);
     }
+
+}
+
+const _renderTooltip = (content: string | undefined, allowHTML: boolean) => {
+    if (!content) return;
+
+    tooltipInstance.value = tippy(tooltipRef.value as HTMLElement, {
+        content: content,
+        allowHTML: allowHTML
+    });
 }
 
 onMounted(_initTooltip)

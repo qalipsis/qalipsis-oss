@@ -31,7 +31,7 @@
                     >
                         <div 
                             class="peer relative hover:bg-primary-50"
-                            @click="handleMenuItemClick(menuItem.id, menuItem.path)"
+                            @click="!menuItem.subMenuItems && handleMenuItemClick(menuItem.id, menuItem.path)"
                         >
                             <div
                                 class="flex items-center h-16 cursor-pointer pl-4 text-primary-950"
@@ -114,7 +114,11 @@ const activeSubMenuItemId = ref('');
 const hoveredMenuItemId = ref('');
 
 onMounted(() => {
-    const activeMenuItem = props.menuItems.find(menuItem => router.currentRoute.value.fullPath.includes(menuItem.path));
+    const activeMenuItem = props.menuItems.find(menuItem => {
+        const routePath = router.currentRoute.value.fullPath
+        return routePath.includes(menuItem.path)
+            || menuItem.subMenuItems?.some(subMenuItem => routePath.includes(subMenuItem.path))
+    });
 
     if (activeMenuItem) {
         activeMenuItemId.value = activeMenuItem.id;

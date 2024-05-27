@@ -2,7 +2,7 @@ export interface FormMenuOption {
   /**
    * The label text of the option
    */
-  label: string;
+  label: string | number;
   /**
    * The value of the option
    */

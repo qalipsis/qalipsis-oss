@@ -1,12 +1,12 @@
 <template>
   <div>
-    <template v-if="!canBeInitialized">
-      <PageLoader />
-    </template>
-    <template v-else>
+    <template v-if="canBeInitialized">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>
+    </template>
+    <template v-else>
+      <PageLoader />
     </template>
     <BaseToaster></BaseToaster>
   </div>

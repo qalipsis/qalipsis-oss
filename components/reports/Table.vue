@@ -24,9 +24,9 @@
         <template #actionCell="{ record }">
             <Popover class="relative">
                 <PopoverButton class="outline-none">
-                <div class="flex items-center invisible group-hover:visible">
-                    <BaseIcon icon="/icons/icon-menu.svg" />
-                </div>
+                    <div class="flex items-center invisible group-hover:visible">
+                        <BaseIcon icon="/icons/icon-menu.svg" />
+                    </div>
                 </PopoverButton>
                 <PopoverPanel class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md">
                     <PopoverButton class="outline-none">
@@ -36,8 +36,8 @@
                             :class="TailwindClassHelper.primaryColorFilterHoverClass"
                             @click="handleDownloadBtnClick(record)"
                             >
-                            <BaseIcon icon="/icons/icon-document.svg" />
-                            <span class="pl-2"> Download </span>
+                                <BaseIcon icon="/icons/icon-document.svg" />
+                                <span class="pl-2"> Download </span>
                             </div>
                         </div>
                     </PopoverButton>
@@ -132,6 +132,7 @@ const _fetchTableData = async () => {
     try {
         await reportsTableStore.fetchReportsTableDataSource();
     } catch (error) {
+        console.log(error)
         toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
 }

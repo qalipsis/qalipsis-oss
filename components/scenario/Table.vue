@@ -25,8 +25,12 @@
         :class="TailwindClassHelper.primaryColorFilterHoverClass"
         @click="handleConfigureBtnClick(record as ScenarioSummary)"
       >
-          <BaseIcon icon="/icons/icon-setting-grey.svg" />
-          <span> Configure </span>
+        <BaseTooltip text="Configure">
+            <BaseIcon 
+              icon="/icons/icon-setting-grey.svg"
+              ::class="TailwindClassHelper.primaryColorFilterHoverClass"
+            />
+        </BaseTooltip>
       </div>
     </template>
   </BaseTable> 

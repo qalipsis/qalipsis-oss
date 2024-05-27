@@ -1,17 +1,35 @@
 <template>
   <div>
     <FormLabel :text="label" />
-    <Listbox v-model="selectedFormControlValue" :multiple="multipleEnabled">
+    <Listbox v-model="selectedFormControlValue" @update:model-value="handleValueUpdate" :multiple="multipleEnabled">
       <div class="w-full" :class="TailwindClassHelper.formDropdownClass">
         <ListboxButton :disabled="disabled" class="outline-none w-full">
           <template v-if="multipleEnabled">
-            <!-- TODO: -->
             <div
-              v-for="selectedOption in selectedOptions"
-              :key="selectedOption[optionValueKey]"
-              :value="selectedOption[optionValueKey]"
+              :class="[
+                TailwindClassHelper.formInputWrapperClass,
+                hasError
+                  ? TailwindClassHelper.formInputWrapperErrorClass
+                  : TailwindClassHelper.formInputWrapperActiveClass,
+              ]"
             >
-
+              <div class="flex items-center">
+                <div
+                  v-for="selectedOption in selectedOptions"
+                  :key="selectedOption[optionValueKey]"
+                  :value="selectedOption[optionValueKey]"
+                  class="flex items-center px-2 py-1 rounded-lg text-sm bg-gray-100 mr-2 last:mr-0"
+                >
+                  <span class="pr-2">{{ selectedOption[optionLabelKey] }}</span>
+                  <div @click="handleDeleteButtonClick(selectedOption)">
+                    <BaseIcon
+                      class="w-3 h-3"
+                      icon="/icons/icon-close-black.svg"
+                      :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    ></BaseIcon>
+                  </div>
+                </div>
+              </div>
             </div>
           </template>
           <template v-else>
@@ -133,7 +151,8 @@ const props = defineProps<{
   disabled?: boolean;
 }>();
 const emit = defineEmits<{
-  (e: "change", v: string): void;
+  (e: "change", v: string): void,
+  (e: "update:modelValue", v: string | string[]): void
 }>();
 
 const { value: selectedFormControlValue, errorMessage } = useField<
@@ -149,15 +168,25 @@ const hasError = computed(() => (errorMessage.value ? true : false));
 
 const selectedOptions = computed(() =>
   props.options.filter((option) =>
-    (selectedFormControlValue.value as string[]).includes(option.value)
+    (selectedFormControlValue.value as string[])?.includes(option[optionValueKey.value])
   )
 );
 
 const selectedOptionLabel = computed(
   () => {
     return props.options.find(
-      (option) => option.value === selectedFormControlValue.value
-    )?.label
+      (option) => option[optionValueKey.value] === selectedFormControlValue.value
+    )?.[optionLabelKey.value]
   }
 );
+
+const handleDeleteButtonClick = (option: any | FormMenuOption) => {
+  selectedFormControlValue.value = (selectedFormControlValue.value as string[])
+    .filter(value => value !== option[optionValueKey.value]);
+}
+
+const handleValueUpdate = () => {
+  emit('update:modelValue', selectedFormControlValue.value)
+}
+
 </script>

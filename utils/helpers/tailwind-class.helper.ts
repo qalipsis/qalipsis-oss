@@ -17,7 +17,6 @@ export class TailwindClassHelper {
     static outlineButtonBaseClass = 'border border-solid border-gray-300 enabled:text-gray-800 enabled:hover:border-primary-500 enabled:hover:bg-primary-50 group';
     static outlineButtonIconClass = 'group-enabled:group-hover:[filter:brightness(0%)_saturate(100%)_invert(61%)_sepia(38%)_saturate(657%)_hue-rotate(132deg)_brightness(89%)_contrast(91%)]';
     static outlineButtonTextClass = 'group-enabled:group-hover:text-primary-500';
-    static seriesOptionItemClass = 'border border-solid align-baseline border-gray-200 rounded-md h-14 py-1 px-2 w-full cursor-pointer hover:bg-gray-50';
     static formInputWrapperClass = 'border px-2 py-1 h-10 border-solid w-full rounded-md flex items-center justify-between has-[:disabled]:bg-gray-50 has-[:disabled]:text-gray-400';
     static formInputWrapperActiveClass = 'border-gray-200 has-[:focus]:border-primary-500 has-[:enabled]:hover:border-primary-500 has-[:enabled]:hover:bg-primary-50';
     static formInputWrapperErrorClass = 'border-red-600';

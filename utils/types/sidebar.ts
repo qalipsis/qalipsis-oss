@@ -14,7 +14,7 @@ interface SidebarMenuBaseItem {
     /**
      * Required permissions to view the page
      */
-    permissions: PermissionEnum[];
+    permissions: string[];
 }
 
 export interface SidebarMenuItem extends SidebarMenuBaseItem {

@@ -1,15 +1,22 @@
 <template>
     <div 
-        class="flex justify-between"
-        :class="TailwindClassHelper.seriesOptionItemClass"
+        class="flex justify-between items-center border border-solid align-baseline border-gray-200 rounded-md h-10 py-1 px-2 w-full cursor-pointer hover:bg-gray-50"
         :style="{ borderColor: isActive ? color : undefined }"
-        @click="emits('click')">
-        <div class="flex items-baseline">
+        @click="emits('click')"
+    >
+        <div class="flex items-center w-full overflow-hidden">
             <div
                 class="w-2 h-2 rounded-full flex-shrink-0"
                 :style="{ backgroundColor: color}">
             </div>
-            <span class="pl-1 line-clamp-2 text-ellipsis"> {{ displayName }} </span>
+            <div class="pl-1 w-full overflow-hidden">
+                <BaseTooltip
+                    :text="displayName"
+                    :show-tooltip-if-truncated="true"
+                >
+                    <span class="text-sm"> {{ displayName }} </span>
+                </BaseTooltip>
+            </div>
         </div>
         <BaseTag
             :text="dataTypeText"

@@ -266,12 +266,11 @@ export class CampaignHelper {
           seriesDefinition?.color &&
           tinycolor(seriesDefinition?.color).isValid()
             ? seriesDefinition?.color
-            : `${ColorsConfig.BLACK_HEX_CODE}`,
+            : `${ColorsConfig.PURPLE_COLOR_HEX_CODE}`,
         isDurationNanoField:
           seriesDefinition?.fieldName === SeriesDetailsConfig.DURATION_NANO_FIELD_NAME,
         isMinionsCountSeries:
-          seriesDefinition?.reference ===
-          SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+          key === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
         decimal:
           seriesDefinition?.reference ===
           SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE

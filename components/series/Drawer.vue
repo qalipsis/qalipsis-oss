@@ -2,7 +2,7 @@
     <BaseDrawer 
         title="Series"
         :open="open"
-        :width="920"
+        :width="960"
         @close="emit('update:open', false)"
         @confirm-btn-click="handleConfirmButtonClick"
     >

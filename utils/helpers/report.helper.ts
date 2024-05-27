@@ -95,9 +95,9 @@ export class ReportHelper {
             const seriesDefinition = dataSeries.find(s => s.reference === key);
             const chartOptionData: ChartOptionData = {
                 dataSeriesName: seriesDefinition?.displayName ?? key,
-                dataSeriesColor: seriesDefinition?.color && tinycolor(seriesDefinition?.color).isValid() ? seriesDefinition?.color : `${ColorsConfig.BLACK_HEX_CODE}`,
+                dataSeriesColor: seriesDefinition?.color && tinycolor(seriesDefinition?.color).isValid() ? seriesDefinition?.color : `${ColorsConfig.PURPLE_COLOR_HEX_CODE}`,
                 isDurationNanoField: seriesDefinition?.fieldName === SeriesDetailsConfig.DURATION_NANO_FIELD_NAME,
-                isMinionsCountSeries: seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+                isMinionsCountSeries: key === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
                 decimal: seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
                     ? 0 : (seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE ? 6 : 2)
             }

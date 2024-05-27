@@ -8,6 +8,7 @@
     :disable-row="disableRow"
     :row-selection-enabled="true"
     :row-all-selection-enabled="true"
+    :selected-row-keys="selectedRowKeys"
     row-key="reference"
     row-class="group"
     @sorter-change="handleSorterChange"

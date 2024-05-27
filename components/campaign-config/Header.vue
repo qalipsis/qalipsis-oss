@@ -15,8 +15,14 @@
           @checkedChange="handleCheckedChange"
           :numberOfSelectedItems="selectedRowKeys.length"
         />
-        <div class="cursor-pointer pl-2" @click="handleSettingBtnClick">
-          <BaseIcon icon="/icons/icon-setting-grey.svg" />
+        <div 
+          class="cursor-pointer pl-2"
+          @click="handleSettingBtnClick"
+        >
+          <BaseIcon 
+            icon="/icons/icon-setting-grey.svg"
+            :class="TailwindClassHelper.primaryColorFilterHoverClass"
+          />
         </div>
         <BaseSearch
           class="ml-2"

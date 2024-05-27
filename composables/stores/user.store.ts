@@ -20,7 +20,7 @@ export const useUserStore = defineStore("User", {
       currentTenant: state => state.tenants.find(tenant => tenant.reference === state.currentTenantReference),
   },
   actions: {
-      storeTenant(tenantReference: string): void {
+      storeTenantToLocalStorage(tenantReference: string): void {
           localStorage.setItem(TenantHelper.TENANT_LOCAL_STORAGE_PROPERTY_KEY, tenantReference);
       },
       hasAnyPermission(requiredPermissions: string[]): boolean {

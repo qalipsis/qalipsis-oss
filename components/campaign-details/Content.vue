@@ -21,11 +21,14 @@
             />
             <div class="mt-10">
                 <apexchart
+                    v-if="!isUpdatingChart"
                     :options="chartOptions"
                     :series="chartDataSeries"
                     :height="460"
                     @zoomed="handleZoom"
                 />
+                <div v-if="isUpdatingChart" class="h-[460px] bg-gray-200">
+                </div>
             </div>
         </div>
     </BaseContentWrapper>
@@ -71,6 +74,8 @@ const campaignDetailStatus = computed(() => campaignDetailsStore.campaignDetails
 const preselectedDataSeriesReferences = computed(() => campaignDetailsStore.selectedDataSeriesReferences);
 const { abortCampaign, fetchCampaignDetails } = useCampaignApi();
 
+const isUpdatingChart = ref(false);
+
 /**
  * The polling for keep updating the details of the campaign when the status is in progress. 
  */
@@ -78,9 +83,12 @@ const polling = ref();
 
 onMounted(async () => {
     try {
+        isUpdatingChart.value = true;
         await campaignDetailsStore.updateChart();
+        isUpdatingChart.value = false;
     } catch (error) {
         toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+        isUpdatingChart.value = false;
     }
 })
 
@@ -96,9 +104,12 @@ watch(campaignDetailStatus, () => {
             })
       
             // Updates the line chart.
+            isUpdatingChart.value = true;
             await campaignDetailsStore.updateChart();
+            isUpdatingChart.value = false;
         } catch (error) {
             toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+            isUpdatingChart.value = false;
         }
     }, 10000)
   } else {
@@ -135,9 +146,12 @@ const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSer
 
     // Updates the chart
     try {
+        isUpdatingChart.value = true;
         await campaignDetailsStore.updateChart();
+        isUpdatingChart.value = false;
     } catch (error) {
         toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+        isUpdatingChart.value = false;
     }
 }
 

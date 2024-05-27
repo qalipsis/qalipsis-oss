@@ -2,6 +2,9 @@ export class ErrorHelper {
     static getErrorMessage(error: any): string {
         let errorMessage = '';
         switch (error?.response?.status) {
+            case 401:
+                errorMessage = error.data.message;
+                break;
             case 403:
                 errorMessage = 'You don\'t have the permission';
                 break;
