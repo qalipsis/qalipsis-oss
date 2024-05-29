@@ -23,11 +23,11 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.index
+import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.meters.DistributionMeasurementMetric
@@ -46,9 +46,9 @@ import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-@MicronautTest
 @WithMockk
-class TimerImplTest {
+internal class TimerImplTest {
+
     @JvmField
     @RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
@@ -57,240 +57,259 @@ class TimerImplTest {
     lateinit var meterReporter: MeterReporter
 
     @Test
-    fun `should increment the counter by 1 when record is called`() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, emptyList())
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
+    internal fun `should increment the counter by 1 when record is called`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, emptyList())
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
 
-            //when
-            val result = timer.count()
+        //when
+        val result = timer.count()
 
-            //then
-            assertThat(result).isEqualTo(5)
-        }
-
-    @Test
-    fun `should return the total of the collected observations`() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, emptyList())
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
-
-            //when
-            val timerInMillis = timer.totalTime(TimeUnit.MILLISECONDS)
-            val timerInNanos = timer.totalTime(TimeUnit.NANOSECONDS)
-            val timerInMicros = timer.totalTime(TimeUnit.MICROSECONDS)
-            val timerInSeconds = timer.totalTime(TimeUnit.SECONDS)
-            val timerInMinutes = timer.totalTime(TimeUnit.MINUTES)
-            val timerInHours = timer.totalTime(TimeUnit.HOURS)
-            val timerInDays = timer.totalTime(TimeUnit.DAYS)
-
-            //then
-            assertThat(timerInMillis).isEqualTo(3668531.11)
-            assertThat(timerInNanos).isEqualTo(3.66853111E12)
-            assertThat(timerInMicros).isEqualTo(3.66853111E9)
-            assertThat(timerInSeconds).isEqualTo(3668.53111)
-            assertThat(timerInMinutes).isEqualTo(61.142185166666664)
-            assertThat(timerInHours).isEqualTo(1.0190364194444443)
-            assertThat(timerInDays).isEqualTo(0.04245985081018518)
-        }
+        //then
+        assertThat(result).isEqualTo(5)
+    }
 
     @Test
-    fun `should return the max of the collected observations`() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, emptyList())
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
+    internal fun `should return the total of the collected observations`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, emptyList())
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
 
-            //when
-            val maxInSeconds = timer.max(TimeUnit.SECONDS)
-            val maxInMillis = timer.max(TimeUnit.MILLISECONDS)
+        //when
+        val timerInMillis = timer.totalTime(TimeUnit.MILLISECONDS)
+        val timerInNanos = timer.totalTime(TimeUnit.NANOSECONDS)
+        val timerInMicros = timer.totalTime(TimeUnit.MICROSECONDS)
+        val timerInSeconds = timer.totalTime(TimeUnit.SECONDS)
+        val timerInMinutes = timer.totalTime(TimeUnit.MINUTES)
+        val timerInHours = timer.totalTime(TimeUnit.HOURS)
+        val timerInDays = timer.totalTime(TimeUnit.DAYS)
 
-            //then
-            assertThat(maxInSeconds).isEqualTo(2005.66)
-            assertThat(maxInMillis).isEqualTo(2005660.0)
-        }
-
-    @Test
-    fun `should return the mean of the collected observations`() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, emptyList())
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
-
-            //when
-            val meanInNanos = timer.mean(TimeUnit.NANOSECONDS)
-            val meanInMicros = timer.mean(TimeUnit.MICROSECONDS)
-
-            //then
-            assertThat(meanInNanos).isEqualTo(7.33706222E11)
-            assertThat(meanInMicros).isEqualTo(7.33706222E8)
-        }
+        //then
+        assertThat(timerInMillis).isEqualTo(3668531.11)
+        assertThat(timerInNanos).isEqualTo(3.66853111E12)
+        assertThat(timerInMicros).isEqualTo(3.66853111E9)
+        assertThat(timerInSeconds).isEqualTo(3668.53111)
+        assertThat(timerInMinutes).isEqualTo(61.142185166666664)
+        assertThat(timerInHours).isEqualTo(1.0190364194444443)
+        assertThat(timerInDays).isEqualTo(0.04245985081018518)
+    }
 
     @Test
-    fun `should record collected observations`() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+    internal fun `should return the max of the collected observations`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, emptyList())
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
 
-            // when
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
+        //when
+        val maxInSeconds = timer.max(TimeUnit.SECONDS)
+        val maxInMillis = timer.max(TimeUnit.MILLISECONDS)
 
-            //then
-            assertThat(timer.counter()).transform { it.toDouble() }.isEqualTo(8.0)
-            assertThat(timer.total()).transform { it.toDouble() }.isEqualTo(4971402220000.0)
-        }
-
-    @Test
-    fun `should return the percentile of the collected observations`() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, emptyList())
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
-
-            //when
-            val fiftiethPercentileInMillis = timer.percentile(50.0, TimeUnit.MILLISECONDS)
-            val twentyFifthPercentileInMinutes = timer.percentile(25.0, TimeUnit.MILLISECONDS)
-
-            //then
-            assertThat(fiftiethPercentileInMillis).isEqualTo(600311.11)
-            assertThat(twentyFifthPercentileInMinutes).isNotNull()
-        }
-
+        //then
+        assertThat(maxInSeconds).isEqualTo(2005.66)
+        assertThat(maxInMillis).isEqualTo(2005660.0)
+    }
 
     @Test
-    fun measure() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, listOf(25.0, 99.0))
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
+    internal fun `should return the mean of the collected observations`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, emptyList())
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
 
-            // when
-            val result = timer.measure().toList()
+        //when
+        val meanInNanos = timer.mean(TimeUnit.NANOSECONDS)
+        val meanInMicros = timer.mean(TimeUnit.MICROSECONDS)
 
-            //then
-            assertThat(result).isNotNull().all {
+        //then
+        assertThat(meanInNanos).isEqualTo(7.33706222E11)
+        assertThat(meanInMicros).isEqualTo(7.33706222E8)
+    }
+
+    @Test
+    internal fun `should record collected observations`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+
+        // when
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+
+        //then
+        assertThat(timer.counter()).transform { it.toDouble() }.isEqualTo(8.0)
+        assertThat(timer.total()).transform { it.toDouble() }.isEqualTo(4971402220.0)
+    }
+
+    @Test
+    internal fun `should return the percentile of the collected observations`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, listOf(25.0))
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+
+        //when
+        val fiftiethPercentileInMillis = timer.percentile(50.0, TimeUnit.MILLISECONDS)
+
+        //then
+        assertThat(fiftiethPercentileInMillis).isBetween(600311.10, 600311.12)
+    }
+
+    @Test
+    internal fun `should not return the percentile of the collected observations if no percentile value was supplied`() {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, emptyList())
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+
+        //when
+        val fiftiethPercentileInMillis = timer.percentile(50.0, TimeUnit.MILLISECONDS)
+
+        //then
+        assertThat(fiftiethPercentileInMillis).isEqualTo(0.0)
+    }
+
+
+    @Test
+    internal fun `should generate the correct measures`() = testDispatcherProvider.run {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, listOf(25.0, 99.0))
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+
+        // when
+        val result = timer.measure().toList()
+
+        //then
+        assertThat(result).isNotNull().all {
+            hasSize(6)
+            index(0).all {
+                prop(Measurement::value).isEqualTo(5.0)
+                prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
+            }
+            index(1).all {
+                prop(Measurement::value).isEqualTo(3.66853111E9)
+                prop(Measurement::statistic).isEqualTo(Statistic.TOTAL_TIME)
+            }
+            index(2).all {
+                prop(Measurement::value).isEqualTo(2.00566E9)
+                prop(Measurement::statistic).isEqualTo(Statistic.MAX)
+            }
+            index(3).all {
+                prop(Measurement::value).isEqualTo(7.33706222E8)
+                prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
+            }
+            index(4).all {
+                isInstanceOf(DistributionMeasurementMetric::class).all {
+                    prop(DistributionMeasurementMetric::value).isEqualTo(3.6E8)
+                    prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
+                    prop(DistributionMeasurementMetric::observationPoint).isEqualTo(25.0)
+                }
+            }
+            index(5).all {
+                isInstanceOf(DistributionMeasurementMetric::class).all {
+                    prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E9)
+                    prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
+                    prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
+                }
+            }
+        }
+    }
+
+    @Test
+    internal fun `should build snapshot`() = testDispatcherProvider.run {
+        //given
+        val id = mockk<Meter.Id>()
+        val timer = TimerImpl(id, meterReporter, listOf(25.0, 99.0))
+        timer.record(Duration.of(2560, ChronoUnit.MILLIS))
+        timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
+        timer.record(Duration.of(600311110, ChronoUnit.MICROS))
+        timer.record(Duration.of(6, ChronoUnit.MINUTES))
+        timer.record(Duration.of(700, ChronoUnit.SECONDS))
+
+        // when
+        val now = Instant.now()
+        val result = timer.buildSnapshot(now)
+
+        //then
+        assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
+            prop(MeterSnapshotImpl<*>::meter).isEqualTo(timer)
+            prop(MeterSnapshotImpl<*>::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl<*>::measurements).transform { it.toList() }.all {
                 hasSize(6)
                 index(0).all {
                     prop(Measurement::value).isEqualTo(5.0)
                     prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
                 }
                 index(1).all {
-                    prop(Measurement::value).isEqualTo(3.66853111E12)
+                    prop(Measurement::value).isEqualTo(3.66853111E9)
                     prop(Measurement::statistic).isEqualTo(Statistic.TOTAL_TIME)
                 }
                 index(2).all {
-                    prop(Measurement::value).isEqualTo(2.00566E12)
+                    prop(Measurement::value).isEqualTo(2.00566E9)
                     prop(Measurement::statistic).isEqualTo(Statistic.MAX)
                 }
                 index(3).all {
-                    prop(Measurement::value).isEqualTo(7.33706222E11)
+                    prop(Measurement::value).isEqualTo(7.33706222E8)
                     prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
                 }
                 index(4).all {
                     isInstanceOf(DistributionMeasurementMetric::class).all {
-                        prop(DistributionMeasurementMetric::value).isEqualTo(3.6E11)
+                        prop(DistributionMeasurementMetric::value).isEqualTo(3.6E8)
                         prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                         prop(DistributionMeasurementMetric::observationPoint).isEqualTo(25.0)
                     }
                 }
                 index(5).all {
                     isInstanceOf(DistributionMeasurementMetric::class).all {
-                        prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E12)
+                        prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E9)
                         prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                         prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
                     }
                 }
             }
         }
-
-    @Test
-    fun buildSnapshot() = testDispatcherProvider.run {
-            //given
-            val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, listOf(25.0, 99.0))
-            timer.record(Duration.of(2560, ChronoUnit.MILLIS))
-            timer.record(Duration.of(2005660, ChronoUnit.MILLIS))
-            timer.record(Duration.of(600311110, ChronoUnit.MICROS))
-            timer.record(Duration.of(6, ChronoUnit.MINUTES))
-            timer.record(Duration.of(700, ChronoUnit.SECONDS))
-
-            // when
-            val now = Instant.now()
-            val result = timer.buildSnapshot(now)
-
-            //then
-            assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
-                prop(MeterSnapshotImpl<*>::meter).isEqualTo(timer)
-                prop(MeterSnapshotImpl<*>::timestamp).isEqualTo(now)
-                prop(MeterSnapshotImpl<*>::measurements).transform { it.toList() }.all {
-                    hasSize(6)
-                    index(0).all {
-                        prop(Measurement::value).isEqualTo(5.0)
-                        prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
-                    }
-                    index(1).all {
-                        prop(Measurement::value).isEqualTo(3.66853111E12)
-                        prop(Measurement::statistic).isEqualTo(Statistic.TOTAL_TIME)
-                    }
-                    index(2).all {
-                        prop(Measurement::value).isEqualTo(2.00566E12)
-                        prop(Measurement::statistic).isEqualTo(Statistic.MAX)
-                    }
-                    index(3).all {
-                        prop(Measurement::value).isEqualTo(7.33706222E11)
-                        prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
-                    }
-                    index(4).all {
-                        isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(3.6E11)
-                            prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
-                            prop(DistributionMeasurementMetric::observationPoint).isEqualTo(25.0)
-                        }
-                    }
-                    index(5).all {
-                        isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E12)
-                            prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
-                            prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
-                        }
-                    }
-                }
-            }
-        }
+    }
 }

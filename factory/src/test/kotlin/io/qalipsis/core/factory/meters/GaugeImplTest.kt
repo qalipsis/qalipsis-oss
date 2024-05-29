@@ -26,7 +26,6 @@ import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.meters.Measurement
@@ -40,7 +39,6 @@ import java.time.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-@MicronautTest
 @WithMockk
 internal class GaugeImplTest {
 
@@ -52,7 +50,7 @@ internal class GaugeImplTest {
     lateinit var meterReporter: MeterReporter
 
     @Test
-    fun `should increment the tracked value of a measurement`() = testDispatcherProvider.run {
+    internal fun `should increment the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()
         val gauge = GaugeImpl(id, meterReporter)
@@ -68,7 +66,7 @@ internal class GaugeImplTest {
     }
 
     @Test
-    fun `should decrement the tracked value of a measurement`() = testDispatcherProvider.run {
+    internal fun `should decrement the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()
         val gauge = GaugeImpl(id, meterReporter)
@@ -84,7 +82,7 @@ internal class GaugeImplTest {
     }
 
     @Test
-    fun `should increment and decrement the tracked value of a measurement`() = testDispatcherProvider.run {
+    internal fun `should increment and decrement the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()
         val gauge = GaugeImpl(id, meterReporter)
@@ -103,7 +101,7 @@ internal class GaugeImplTest {
 
 
     @Test
-    fun measure() = testDispatcherProvider.run {
+    internal fun measure() = testDispatcherProvider.run {
         // given
         val id = mockk<Meter.Id>()
         val gauge = GaugeImpl(id, meterReporter)
@@ -122,7 +120,7 @@ internal class GaugeImplTest {
     }
 
     @Test
-    fun buildSnapshot() = testDispatcherProvider.run {
+    internal fun buildSnapshot() = testDispatcherProvider.run {
         // given
         val id = mockk<Meter.Id>()
         val gauge = GaugeImpl(id, meterReporter)

@@ -19,8 +19,10 @@
 
 package io.qalipsis.core.factory.meters
 
+import com.google.common.util.concurrent.AtomicDouble
 import com.tdunning.math.stats.TDigest
 import io.aerisconsulting.catadioptre.KTestable
+import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.meters.DistributionMeasurementMetric
 import io.qalipsis.api.meters.DistributionSummary
 import io.qalipsis.api.meters.Measurement
@@ -43,7 +45,7 @@ import java.util.concurrent.atomic.LongAdder
 internal class DistributionSummaryImpl(
     override val id: Meter.Id,
     private val meterReporter: MeterReporter,
-    private val percentiles: Collection<Double>
+    private val percentiles: Collection<Double>,
 ) : DistributionSummary, Meter.ReportingConfiguration<DistributionSummary> {
 
     private var reportingConfigured = AtomicBoolean()
@@ -55,7 +57,9 @@ internal class DistributionSummaryImpl(
     private val total = DoubleAdder()
 
     @KTestable
-    private var tDigestBucket = TDigest.createAvlTreeDigest(100.0)
+    private val tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+
+    private val max = AtomicDouble(0.0)
 
     override fun report(configure: Meter.ReportingConfiguration<DistributionSummary>.() -> Unit): DistributionSummary {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -77,22 +81,36 @@ internal class DistributionSummaryImpl(
     override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
         MeterSnapshotImpl(timestamp, this, this.measure())
 
-    override fun count(): Long = tDigestBucket.centroidCount().toLong()
+    override fun count(): Long = observationCount.toLong()
 
     override fun totalAmount(): Double = total.toDouble()
 
-    override fun max(): Double = tDigestBucket.max
+    override fun max(): Double = max.get()
 
     override fun record(amount: Double) {
         if (amount > 0) {
-            observationCount.add(1)
+            var curMax: Double
+            do {
+                curMax = max.get()
+                // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
+            } while (curMax < amount && !max.compareAndSet(curMax, amount))
             total.add(amount)
-            tDigestBucket.add(amount)
+            observationCount.add(1)
+            tDigestBucket?.let {
+                synchronized(tDigestBucket) {
+                    it.add(amount)
+                }
+            }
         }
     }
 
+    override fun mean(): Double {
+        val count = count()
+        return if (count == 0L) 0.0 else (totalAmount() / count)
+    }
+
     override fun percentile(percentile: Double): Double {
-        return tDigestBucket.quantile(percentile / 100)
+        return tDigestBucket?.let { tDigestBucket.quantile(percentile / 100) } ?: 0.0
     }
 
     override suspend fun measure(): Collection<Measurement> {

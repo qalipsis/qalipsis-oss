@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.meters
 
 import com.tdunning.math.stats.TDigest
 import io.aerisconsulting.catadioptre.KTestable
+import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.meters.DistributionMeasurementMetric
 import io.qalipsis.api.meters.Measurement
 import io.qalipsis.api.meters.MeasurementMetric
@@ -33,6 +34,7 @@ import io.qalipsis.core.reporter.MeterReporter
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.LongAdder
 
 /**
@@ -43,7 +45,7 @@ import java.util.concurrent.atomic.LongAdder
 internal class TimerImpl(
     override val id: Meter.Id,
     private val meterReporter: MeterReporter,
-    private val percentiles: Collection<Double>
+    private val percentiles: Collection<Double>,
 ) : Timer, Meter.ReportingConfiguration<Timer> {
 
     private var reportingConfigured = AtomicBoolean()
@@ -55,7 +57,9 @@ internal class TimerImpl(
     private val total = LongAdder()
 
     @KTestable
-    private var tDigestBucket = TDigest.createAvlTreeDigest(100.0)
+    private val tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+
+    private val max = AtomicLong(0)
 
     override fun report(configure: Meter.ReportingConfiguration<Timer>.() -> Unit): Timer {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -77,18 +81,32 @@ internal class TimerImpl(
     override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
         MeterSnapshotImpl(timestamp, this, this.measure())
 
-    override fun count() = tDigestBucket.centroidCount().toLong()
+    override fun count() = counter.toLong()
 
-    override fun totalTime(unit: TimeUnit?) = nanosToUnitConverter(total.toDouble(), unit)
+    override fun totalTime(unit: TimeUnit?) = microsToUnitConverter(total.toDouble(), unit)
 
-    override fun max(unit: TimeUnit?) = nanosToUnitConverter(tDigestBucket.max, unit)
+    override fun max(unit: TimeUnit?) = microsToUnitConverter(max.get().toDouble(), unit)
+
+    override fun mean(unit: TimeUnit?): Double {
+        val count = count()
+        return if (count == 0L) 0.0 else totalTime(unit) / count
+    }
 
     override fun record(amount: Long, unit: TimeUnit?) {
         if (amount >= 0) {
-            val amountInNanos = TimeUnit.NANOSECONDS.convert(amount, unit)
+            val amountInMicros = TimeUnit.MICROSECONDS.convert(amount, unit)
+            var curMax: Long
+            do {
+                curMax = max.get()
+                // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
+            } while (curMax < amountInMicros && !max.compareAndSet(curMax, amountInMicros))
+            total.add(amountInMicros)
             counter.add(1)
-            total.add(amountInNanos)
-            tDigestBucket.add(amountInNanos.toDouble())
+            tDigestBucket?.let {
+                synchronized(tDigestBucket) {
+                    it.add(amountInMicros.toDouble())
+                }
+            }
         }
     }
 
@@ -103,7 +121,7 @@ internal class TimerImpl(
     }
 
     override fun percentile(percentile: Double, unit: TimeUnit?): Double {
-        return nanosToUnitConverter(tDigestBucket.quantile(percentile / 100), unit)
+        return tDigestBucket?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
     }
 
     override suspend fun measure(): Collection<Measurement> =
@@ -120,18 +138,16 @@ internal class TimerImpl(
     /**
      * Converts the total time to the specified format. Defaults to nanoseconds when not specified
      */
-    private fun nanosToUnitConverter(totalTimeInNanos: Double, unit: TimeUnit?): Double {
+    private fun microsToUnitConverter(totalTimeInMicros: Double, unit: TimeUnit?): Double {
         return when (unit) {
-            TimeUnit.MICROSECONDS -> totalTimeInNanos / (NANOSECONDS_IN_MICROSECONDS)
-            TimeUnit.MILLISECONDS -> totalTimeInNanos / (NANOSECONDS_IN_MILLISECONDS)
-            TimeUnit.SECONDS -> totalTimeInNanos / (NANOSECONDS_IN_SECONDS)
-            TimeUnit.MINUTES -> totalTimeInNanos / (NANOSECONDS_IN_MINUTES)
-            TimeUnit.HOURS -> totalTimeInNanos / (NANOSECONDS_IN_HOURS)
-            TimeUnit.DAYS -> totalTimeInNanos / (NANOSECONDS_IN_DAYS)
-            TimeUnit.NANOSECONDS,
-            null,
-            -> totalTimeInNanos
-
+            TimeUnit.NANOSECONDS -> totalTimeInMicros / (MICROSECONDS_IN_NANOSECONDS)
+            TimeUnit.MICROSECONDS -> totalTimeInMicros
+            TimeUnit.MILLISECONDS -> totalTimeInMicros / (MICROSECONDS_IN_MILLISECONDS)
+            TimeUnit.SECONDS -> totalTimeInMicros / (MICROSECONDS_IN_SECONDS)
+            TimeUnit.MINUTES -> totalTimeInMicros / (MICROSECONDS_IN_MINUTES)
+            TimeUnit.HOURS -> totalTimeInMicros / (MICROSECONDS_IN_HOURS)
+            TimeUnit.DAYS -> totalTimeInMicros / (MICROSECONDS_IN_DAYS)
+            null -> totalTimeInMicros
             else -> {
                 throw Exception("Unsupported time unit format $unit")
             }
@@ -152,18 +168,18 @@ internal class TimerImpl(
 
     companion object {
 
-        private const val NANOSECONDS_IN_MICROSECONDS = 1000L
+        private const val MICROSECONDS_IN_NANOSECONDS = 1 / 1000.0
 
-        private const val NANOSECONDS_IN_MILLISECONDS = NANOSECONDS_IN_MICROSECONDS * 1000L
+        private const val MICROSECONDS_IN_MILLISECONDS = 1000.0
 
-        private const val NANOSECONDS_IN_SECONDS = NANOSECONDS_IN_MILLISECONDS * 1000L
+        private const val MICROSECONDS_IN_SECONDS = MICROSECONDS_IN_MILLISECONDS * 1000.0
 
-        private const val NANOSECONDS_IN_MINUTES = NANOSECONDS_IN_SECONDS * 60L
+        private const val MICROSECONDS_IN_MINUTES = MICROSECONDS_IN_SECONDS * 60L
 
-        private const val NANOSECONDS_IN_HOURS = NANOSECONDS_IN_MINUTES * 60L
+        private const val MICROSECONDS_IN_HOURS = MICROSECONDS_IN_MINUTES * 60L
 
-        private const val NANOSECONDS_IN_DAYS = NANOSECONDS_IN_HOURS * 24L
+        private const val MICROSECONDS_IN_DAYS = MICROSECONDS_IN_HOURS * 24L
 
-        private val BASE_TIME_UNIT = TimeUnit.NANOSECONDS
+        private val BASE_TIME_UNIT = TimeUnit.MICROSECONDS
     }
 }

@@ -27,7 +27,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.meters.Measurement
@@ -42,7 +41,6 @@ import java.util.concurrent.atomic.DoubleAdder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
-@MicronautTest
 @WithMockk
 internal class CounterImplTest {
 
@@ -54,7 +52,7 @@ internal class CounterImplTest {
     lateinit var meterReporter: MeterReporter
 
     @Test
-    fun `should increment the counter by 1 when increment is called without an argument`() = testDispatcherProvider.run {
+    internal fun `should increment the counter by 1 when increment is called without an argument`() {
             //given
             val id = mockk<Meter.Id>()
             val counter = CounterImpl(id, meterReporter)
@@ -69,7 +67,7 @@ internal class CounterImplTest {
         }
 
     @Test
-    fun `should increment the counter by the argument passed in when increment is called`() = testDispatcherProvider.run {
+    internal fun `should increment the counter by the argument passed in when increment is called`() {
             //given
             val id = mockk<Meter.Id>()
             val counter = CounterImpl(id, meterReporter)
@@ -84,7 +82,7 @@ internal class CounterImplTest {
         }
 
     @Test
-    fun `should return the cumulative count and reset value to zero`() = testDispatcherProvider.run {
+    internal fun `should return the cumulative count and reset value to zero`() {
             //given
             val id = mockk<Meter.Id>()
             val counter = CounterImpl(id, meterReporter)
@@ -107,7 +105,7 @@ internal class CounterImplTest {
         }
 
     @Test
-    fun measure() = testDispatcherProvider.run {
+    internal fun measure() = testDispatcherProvider.run {
             //given
             val id = mockk<Meter.Id>()
             val counter = CounterImpl(id, meterReporter)
@@ -130,7 +128,7 @@ internal class CounterImplTest {
         }
 
     @Test
-    fun `should build the snapshot`() = testDispatcherProvider.run {
+    internal fun `should build the snapshot`() = testDispatcherProvider.run {
             //given
             val id = mockk<Meter.Id>()
             val counter = CounterImpl(id, meterReporter)

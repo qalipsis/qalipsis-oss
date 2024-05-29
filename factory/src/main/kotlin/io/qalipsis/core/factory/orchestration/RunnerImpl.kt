@@ -28,6 +28,7 @@ import io.qalipsis.api.context.StepError
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.ErrorProcessingStep
@@ -45,7 +46,6 @@ import io.qalipsis.core.factory.context.TailStepContext
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -69,7 +69,7 @@ internal class RunnerImpl(
 ) : StepExecutor, Runner, CampaignLifeCycleAware {
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningStepsGauges = ConcurrentHashMap<ScenarioName, AtomicInteger>()
+    private val runningStepsGauges = ConcurrentHashMap<ScenarioName, Gauge>()
 
     private val executedStepCounters = ConcurrentHashMap<ScenarioName, Counter>()
 

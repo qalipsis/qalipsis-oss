@@ -43,14 +43,14 @@ internal interface MeasurementConfiguration {
     @ConfigurationProperties("summary")
     interface Summary {
 
-        @get:Bindable(defaultValue = "50.0, 75.0, 99.9")
+        @get:Bindable(defaultValue = "")
         val percentiles: List<Double>?
     }
 
     @ConfigurationProperties("timer")
     interface Timer {
 
-        @get:Bindable(defaultValue = "50.0, 75.0, 99.9")
+        @get:Bindable(defaultValue = "")
         val percentiles: List<Double>?
 
     }

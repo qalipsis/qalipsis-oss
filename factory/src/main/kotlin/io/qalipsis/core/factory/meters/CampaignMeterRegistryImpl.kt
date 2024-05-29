@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.factory.meters
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Value
 import io.qalipsis.api.Executors
 import io.qalipsis.api.config.MetersConfig
@@ -36,7 +37,6 @@ import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.MeterType
 import io.qalipsis.api.meters.Timer
-import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
@@ -46,7 +46,6 @@ import jakarta.inject.Singleton
 import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.concurrent.fixedRateTimer
 
@@ -65,20 +64,23 @@ internal class CampaignMeterRegistryImpl(
 
     private val additionalTags = mutableMapOf<String, String>()
 
+    @KTestable
     private lateinit var currentCampaignKey: CampaignKey
 
-    private var publishingJob: Job? = null
+    @KTestable
+    private var publishingTimer: java.util.Timer? = null
 
+    @KTestable
     private var snapshots = listOf<MeterSnapshot<*>>()
 
+    @KTestable
     private var publishers = listOf<MeasurementPublisher>()
-
-    private val latch = Latch(true)
 
     /**
      * Contains all the unique meters.
      */
-    val meters = HashMap<Meter.Id, Meter<*>>()
+    @KTestable
+    private val meters = HashMap<Meter.Id, Meter<*>>()
 
     init {
         additionalTags.putAll(factoryConfiguration.tags)
@@ -101,29 +103,27 @@ internal class CampaignMeterRegistryImpl(
 
     suspend fun startPublishingJob() {
         logger.debug { "Starting publishing job" }
-        require(publishingJob == null) { "Previous job has not yet completed" }
-        publishingJob = coroutineScope.launch {
-            latch.release()
-            val stepMillis = step.toMillis()
-            val initialDelayMillis: Long = stepMillis - System.currentTimeMillis() % stepMillis + 1
-            fixedRateTimer(
-                name = "meter-publishing",
-                daemon = false,
-                initialDelay = initialDelayMillis,
-                period = stepMillis
-            ) {
-                launch {
-                    snapshots = takeSnapshots(Instant.now(), meters).toList()
-                    publishers.forEach {
-                        logger.trace { "Publishing ${snapshots.size} snapshots with $it publisher." }
-                        it.publish(snapshots)
-                    }
+        require(publishingTimer == null) { "Previous job has not yet completed" }
+
+        val stepMillis = step.toMillis()
+        val initialDelayMillis: Long = stepMillis - System.currentTimeMillis() % stepMillis + 1
+        publishingTimer = fixedRateTimer(
+            name = "meter-publishing",
+            daemon = true,
+            initialDelay = initialDelayMillis,
+            period = stepMillis
+        ) {
+            coroutineScope.launch {
+                snapshots = takeSnapshots(Instant.now(), meters).toList()
+                publishers.forEach {
+                    logger.trace { "Publishing ${snapshots.size} snapshots with $it publisher." }
+                    it.publish(snapshots)
                 }
             }
         }
-        latch.await()
     }
 
+    @KTestable
     private suspend fun takeSnapshots(
         timestamp: Instant,
         meters: Map<Meter.Id, Meter<*>>,
@@ -132,8 +132,7 @@ internal class CampaignMeterRegistryImpl(
 
     override suspend fun close(campaign: Campaign) {
         clear()
-        latch.cancel()
-        publishingJob?.cancel()
+        publishingTimer?.cancel()
         publishers.forEach { it.stop() }
     }
 
