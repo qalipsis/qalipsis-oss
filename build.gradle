@@ -8,6 +8,7 @@ description = 'QALIPSIS-WEB-OSS'
 node {
   version = "20.11.0"
   yarnVersion = "1.22.19"
+  download = true
 }
 
 tasks.register("clearCache", Delete) {
@@ -16,7 +17,7 @@ tasks.register("clearCache", Delete) {
 
 tasks.register("build", YarnTask) {
   dependsOn clearCache
-  args = ["generate"]
+  args = ["generate-prod"]
 }
 
 tasks.register("buildDockerImage", Exec) {
