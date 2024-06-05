@@ -19,19 +19,47 @@
 
 package io.qalipsis.core.factory.meters
 
+import com.tdunning.math.stats.TDigest
+import io.aerisconsulting.catadioptre.KTestable
+import io.qalipsis.api.lang.supplyIf
+import io.qalipsis.api.meters.DistributionMeasurementMetric
+import io.qalipsis.api.meters.Measurement
+import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.reporter.MeterReporter
+import java.time.Instant
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.LongAdder
 
+/**
+ * Implementation of [Timer] to track large number of short running events.
+ *
+ * @author Francisca Eze
+ */
 internal class TimerImpl(
-    val micrometer: io.micrometer.core.instrument.Timer,
     override val id: Meter.Id,
-    private val meterReporter: MeterReporter
-) : Timer, Meter.ReportingConfiguration<Timer>, io.micrometer.core.instrument.Timer by micrometer {
+    private val meterReporter: MeterReporter,
+    private val percentiles: Collection<Double>,
+) : Timer, Meter.ReportingConfiguration<Timer> {
 
     private var reportingConfigured = AtomicBoolean()
+
+    @KTestable
+    private val counter = LongAdder()
+
+    @KTestable
+    private val total = LongAdder()
+
+    @KTestable
+    private val tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+
+    private val max = AtomicLong(0)
 
     override fun report(configure: Meter.ReportingConfiguration<Timer>.() -> Unit): Timer {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -45,9 +73,85 @@ internal class TimerImpl(
         severity: Number.() -> ReportMessageSeverity,
         row: Short,
         column: Short,
-        toNumber: Timer.() -> Number
+        toNumber: Timer.() -> Number,
     ) {
         meterReporter.report(this, format, severity, row, column, toNumber)
+    }
+
+    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
+        MeterSnapshotImpl(timestamp, this, this.measure())
+
+    override fun count() = counter.toLong()
+
+    override fun totalTime(unit: TimeUnit?) = microsToUnitConverter(total.toDouble(), unit)
+
+    override fun max(unit: TimeUnit?) = microsToUnitConverter(max.get().toDouble(), unit)
+
+    override fun mean(unit: TimeUnit?): Double {
+        val count = count()
+        return if (count == 0L) 0.0 else totalTime(unit) / count
+    }
+
+    override fun record(amount: Long, unit: TimeUnit?) {
+        if (amount >= 0) {
+            val amountInMicros = TimeUnit.MICROSECONDS.convert(amount, unit)
+            var curMax: Long
+            do {
+                curMax = max.get()
+                // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
+            } while (curMax < amountInMicros && !max.compareAndSet(curMax, amountInMicros))
+            total.add(amountInMicros)
+            counter.add(1)
+            tDigestBucket?.let {
+                synchronized(tDigestBucket) {
+                    it.add(amountInMicros.toDouble())
+                }
+            }
+        }
+    }
+
+    override suspend fun <T> record(block: suspend () -> T): T {
+        val preExecutionTimeInNanos = System.nanoTime()
+        return try {
+            block()
+        } finally {
+            val postExecutionTimeInNanos = System.nanoTime()
+            record(postExecutionTimeInNanos - preExecutionTimeInNanos, TimeUnit.NANOSECONDS)
+        }
+    }
+
+    override fun percentile(percentile: Double, unit: TimeUnit?): Double {
+        return tDigestBucket?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+    }
+
+    override suspend fun measure(): Collection<Measurement> =
+        listOf(
+            MeasurementMetric(count().toDouble(), Statistic.COUNT),
+            MeasurementMetric(totalTime(BASE_TIME_UNIT), Statistic.TOTAL_TIME),
+            MeasurementMetric(max(BASE_TIME_UNIT), Statistic.MAX),
+            MeasurementMetric(mean(BASE_TIME_UNIT), Statistic.MEAN),
+        ) + (percentiles.map {
+            DistributionMeasurementMetric(percentile(it, BASE_TIME_UNIT), Statistic.PERCENTILE, it)
+        })
+
+
+    /**
+     * Converts the total time to the specified format. Defaults to nanoseconds when not specified
+     */
+    private fun microsToUnitConverter(totalTimeInMicros: Double, unit: TimeUnit?): Double {
+        return when (unit) {
+            TimeUnit.NANOSECONDS -> totalTimeInMicros / (MICROSECONDS_IN_NANOSECONDS)
+            TimeUnit.MICROSECONDS -> totalTimeInMicros
+            TimeUnit.MILLISECONDS -> totalTimeInMicros / (MICROSECONDS_IN_MILLISECONDS)
+            TimeUnit.SECONDS -> totalTimeInMicros / (MICROSECONDS_IN_SECONDS)
+            TimeUnit.MINUTES -> totalTimeInMicros / (MICROSECONDS_IN_MINUTES)
+            TimeUnit.HOURS -> totalTimeInMicros / (MICROSECONDS_IN_HOURS)
+            TimeUnit.DAYS -> totalTimeInMicros / (MICROSECONDS_IN_DAYS)
+            null -> totalTimeInMicros
+            else -> {
+                throw Exception("Unsupported time unit format $unit")
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -60,5 +164,22 @@ internal class TimerImpl(
 
     override fun hashCode(): Int {
         return id.hashCode()
+    }
+
+    companion object {
+
+        private const val MICROSECONDS_IN_NANOSECONDS = 1 / 1000.0
+
+        private const val MICROSECONDS_IN_MILLISECONDS = 1000.0
+
+        private const val MICROSECONDS_IN_SECONDS = MICROSECONDS_IN_MILLISECONDS * 1000.0
+
+        private const val MICROSECONDS_IN_MINUTES = MICROSECONDS_IN_SECONDS * 60L
+
+        private const val MICROSECONDS_IN_HOURS = MICROSECONDS_IN_MINUTES * 60L
+
+        private const val MICROSECONDS_IN_DAYS = MICROSECONDS_IN_HOURS * 24L
+
+        private val BASE_TIME_UNIT = TimeUnit.MICROSECONDS
     }
 }

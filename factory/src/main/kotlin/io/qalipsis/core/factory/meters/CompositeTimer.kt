@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.meters
 
-import io.micrometer.core.instrument.Clock
 import io.qalipsis.api.meters.Timer
 import java.time.Duration
 import java.util.concurrent.Callable
@@ -35,17 +34,16 @@ import java.util.function.Supplier
  * The meter registries are the only one aware of the existence of the [campaignLevelTimer]
  * and will ask for its publication when required.
  *
- * This instance of [Timer] is not known by the instances of [io.micrometer.core.instrument.MeterRegistry].
+ * This instance of [Timer] is not known by the instances of QALIPSIS measurement publisher.
  *
  * @author Joël Valère
  */
 internal data class CompositeTimer(
-    private val clock: Clock,
     private val scenarioLevelTimer: Timer,
-    private val campaignLevelTimer: Timer
+    private val campaignLevelTimer: Timer,
 ) : Timer by scenarioLevelTimer {
 
-    override fun record(amount: Long, unit: TimeUnit) {
+    override fun record(amount: Long, unit: TimeUnit?) {
         scenarioLevelTimer.record(amount, unit)
         campaignLevelTimer.record(amount, unit)
     }
@@ -55,32 +53,32 @@ internal data class CompositeTimer(
         campaignLevelTimer.record(duration)
     }
 
-    override fun <T : Any?> record(f: Supplier<T>): T? {
-        val s: Long = clock.monotonicTime()
+     fun <T : Any?> record(f: Supplier<T>): T? {
+        val s: Long = System.nanoTime()
         return try {
             f.get()
         } finally {
-            val e: Long = clock.monotonicTime()
+            val e: Long = System.nanoTime()
             record(e - s, NANOSECONDS)
         }
     }
 
-    override fun record(f: Runnable) {
-        val s = clock.monotonicTime()
+    fun record(f: Runnable) {
+        val s = System.nanoTime()
         try {
             f.run()
         } finally {
-            val e = clock.monotonicTime()
+            val e = System.nanoTime()
             record(e - s, NANOSECONDS)
         }
     }
 
-    override fun <T : Any?> recordCallable(f: Callable<T>): T? {
-        val s = clock.monotonicTime()
+    fun <T : Any?> recordCallable(f: Callable<T>): T? {
+        val s = System.nanoTime()
         return try {
             f.call()
         } finally {
-            val e = clock.monotonicTime()
+            val e = System.nanoTime()
             record(e - s, NANOSECONDS)
         }
     }

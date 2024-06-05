@@ -19,20 +19,47 @@
 
 package io.qalipsis.core.factory.meters
 
+import com.google.common.util.concurrent.AtomicDouble
+import com.tdunning.math.stats.TDigest
+import io.aerisconsulting.catadioptre.KTestable
+import io.qalipsis.api.lang.supplyIf
+import io.qalipsis.api.meters.DistributionMeasurementMetric
 import io.qalipsis.api.meters.DistributionSummary
+import io.qalipsis.api.meters.Measurement
+import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.reporter.MeterReporter
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.DoubleAdder
+import java.util.concurrent.atomic.LongAdder
 
+/**
+ * Implementation of distribution summary to determine the statistical distribution of events.
+ *
+ * @author Francisca Eze
+ */
 internal class DistributionSummaryImpl(
-    val micrometer: io.micrometer.core.instrument.DistributionSummary,
     override val id: Meter.Id,
-    private val meterReporter: MeterReporter
-) : DistributionSummary, Meter.ReportingConfiguration<DistributionSummary>,
-    io.micrometer.core.instrument.DistributionSummary by micrometer {
+    private val meterReporter: MeterReporter,
+    private val percentiles: Collection<Double>,
+) : DistributionSummary, Meter.ReportingConfiguration<DistributionSummary> {
 
     private var reportingConfigured = AtomicBoolean()
+
+    @KTestable
+    private val observationCount = LongAdder()
+
+    @KTestable
+    private val total = DoubleAdder()
+
+    @KTestable
+    private val tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+
+    private val max = AtomicDouble(0.0)
 
     override fun report(configure: Meter.ReportingConfiguration<DistributionSummary>.() -> Unit): DistributionSummary {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -46,10 +73,57 @@ internal class DistributionSummaryImpl(
         severity: Number.() -> ReportMessageSeverity,
         row: Short,
         column: Short,
-        toNumber: DistributionSummary.() -> Number
+        toNumber: DistributionSummary.() -> Number,
     ) {
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
+
+    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
+        MeterSnapshotImpl(timestamp, this, this.measure())
+
+    override fun count(): Long = observationCount.toLong()
+
+    override fun totalAmount(): Double = total.toDouble()
+
+    override fun max(): Double = max.get()
+
+    override fun record(amount: Double) {
+        if (amount > 0) {
+            var curMax: Double
+            do {
+                curMax = max.get()
+                // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
+            } while (curMax < amount && !max.compareAndSet(curMax, amount))
+            total.add(amount)
+            observationCount.add(1)
+            tDigestBucket?.let {
+                synchronized(tDigestBucket) {
+                    it.add(amount)
+                }
+            }
+        }
+    }
+
+    override fun mean(): Double {
+        val count = count()
+        return if (count == 0L) 0.0 else (totalAmount() / count)
+    }
+
+    override fun percentile(percentile: Double): Double {
+        return tDigestBucket?.let { tDigestBucket.quantile(percentile / 100) } ?: 0.0
+    }
+
+    override suspend fun measure(): Collection<Measurement> {
+        return listOf(
+            MeasurementMetric(count().toDouble(), Statistic.COUNT),
+            MeasurementMetric(totalAmount(), Statistic.TOTAL),
+            MeasurementMetric(max(), Statistic.MAX),
+            MeasurementMetric(mean(), Statistic.MEAN)
+        ) + (percentiles.map {
+            DistributionMeasurementMetric(percentile(it), Statistic.PERCENTILE, it)
+        })
+    }
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

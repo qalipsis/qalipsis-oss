@@ -1,6 +1,6 @@
 package io.qalipsis.core.factory.meters
 
-import io.micrometer.core.instrument.Meter
+import io.qalipsis.api.meters.Meter
 import java.util.concurrent.ConcurrentHashMap
 
 /**

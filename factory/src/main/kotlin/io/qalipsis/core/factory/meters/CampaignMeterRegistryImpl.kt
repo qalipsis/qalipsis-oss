@@ -19,106 +19,136 @@
 
 package io.qalipsis.core.factory.meters
 
-import io.micrometer.core.instrument.Clock
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Value
+import io.qalipsis.api.Executors
 import io.qalipsis.api.config.MetersConfig
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Counter
 import io.qalipsis.api.meters.DistributionSummary
 import io.qalipsis.api.meters.Gauge
+import io.qalipsis.api.meters.MeasurementPublisher
+import io.qalipsis.api.meters.MeasurementPublisherFactory
 import io.qalipsis.api.meters.Meter
-import io.qalipsis.api.meters.MeterRegistryConfiguration
-import io.qalipsis.api.meters.MeterRegistryFactory
+import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.MeterType
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.meters.NoopMeterRegistry
 import io.qalipsis.core.reporter.MeterReporter
+import jakarta.inject.Named
 import jakarta.inject.Singleton
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
-import java.util.function.ToDoubleFunction
-import io.micrometer.core.instrument.DistributionSummary as MicrometerDistributionSummary
-import io.micrometer.core.instrument.Gauge as MicrometerGauge
-import io.micrometer.core.instrument.Timer as MicrometerTimer
+import java.time.Instant
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlin.concurrent.fixedRateTimer
 
 /**
  * Implementation of meter registry.
  */
 @Singleton
 internal class CampaignMeterRegistryImpl(
-    private val factories: Collection<MeterRegistryFactory>,
-    private val factoryConfiguration: FactoryConfiguration,
+    private val publisherFactories: Collection<MeasurementPublisherFactory>,
+    factoryConfiguration: FactoryConfiguration,
     private val meterReporter: MeterReporter,
-    @Value("\${${MetersConfig.EXPORT_CONFIGURATION}.campaign-step:PT5S}") private val step: Duration
+    @Value("\${${MetersConfig.EXPORT_CONFIGURATION}.campaign-step:PT5S}") private val step: Duration,
+    private val measurementConfiguration: MeasurementConfiguration,
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
 ) : CampaignMeterRegistry, CampaignLifeCycleAware {
 
-    private var meterRegistry: MeterRegistry = NoopMeterRegistry()
+    private val additionalTags = mutableMapOf<String, String>()
 
-    private val additionalTags = mutableListOf<Tag>()
-
-    private val clock = Clock.SYSTEM
-
+    @KTestable
     private lateinit var currentCampaignKey: CampaignKey
+
+    @KTestable
+    private var publishingTimer: java.util.Timer? = null
+
+    @KTestable
+    private var snapshots = listOf<MeterSnapshot<*>>()
+
+    @KTestable
+    private var publishers = listOf<MeasurementPublisher>()
 
     /**
      * Contains all the unique meters.
      */
-    private val meters = ConcurrentHashMap<Meter.Id, Meter<*>>()
+    @KTestable
+    private val meters = HashMap<Meter.Id, Meter<*>>()
 
-    override suspend fun init(campaign: Campaign) {
-        meters.clear()
-
-        currentCampaignKey = campaign.campaignKey
-        if (factories.isNotEmpty()) {
+    init {
+        additionalTags.putAll(factoryConfiguration.tags)
+        if (publisherFactories.isNotEmpty()) {
             // Additional tags to force to all the created meters.
+            additionalTags.putAll(factoryConfiguration.tags)
             factoryConfiguration.zone?.takeIf { it.isNotBlank() }?.let { zone ->
-                additionalTags += Tag.of("zone", zone)
+                additionalTags["zone"] = zone
             }
-            additionalTags += Tag.of("tenant", factoryConfiguration.tenant)
-            additionalTags += Tag.of("campaign", campaign.campaignKey)
-
-            val configuration = object : MeterRegistryConfiguration {
-                override val step: Duration = this@CampaignMeterRegistryImpl.step
-            }
-            val meterRegistries = factories.map { it.getRegistry(configuration) }
-            meterRegistry = CompositeMeterRegistry(clock, meterRegistries)
         }
     }
 
+    override suspend fun init(campaign: Campaign) {
+        meters.clear()
+        currentCampaignKey = campaign.campaignKey
+        publishers = publisherFactories.map { it.getPublisher() }
+        publishers.forEach { it.init() }
+        startPublishingJob()
+    }
+
+    suspend fun startPublishingJob() {
+        logger.debug { "Starting publishing job" }
+        require(publishingTimer == null) { "Previous job has not yet completed" }
+
+        val stepMillis = step.toMillis()
+        val initialDelayMillis: Long = stepMillis - System.currentTimeMillis() % stepMillis + 1
+        publishingTimer = fixedRateTimer(
+            name = "meter-publishing",
+            daemon = true,
+            initialDelay = initialDelayMillis,
+            period = stepMillis
+        ) {
+            coroutineScope.launch {
+                snapshots = takeSnapshots(Instant.now(), meters).toList()
+                publishers.forEach {
+                    logger.trace { "Publishing ${snapshots.size} snapshots with $it publisher." }
+                    it.publish(snapshots)
+                }
+            }
+        }
+    }
+
+    @KTestable
+    private suspend fun takeSnapshots(
+        timestamp: Instant,
+        meters: Map<Meter.Id, Meter<*>>,
+    ): Collection<MeterSnapshot<*>> =
+        meters.values.map { it.buildSnapshot(timestamp) }
+
     override suspend fun close(campaign: Campaign) {
         clear()
-        if (meterRegistry !is NoopMeterRegistry) {
-            meterRegistry.close()
-            meterRegistry = NoopMeterRegistry()
-        }
+        publishingTimer?.cancel()
+        publishers.forEach { it.stop() }
     }
 
     override fun clear() {
         meters.clear()
-        meterRegistry.clear()
     }
 
     override fun counter(name: String, vararg tags: String): Counter {
-        return counter(name, tagsAsList(tags))
-    }
-
-    override fun counter(name: String, tags: Iterable<Tag>): Counter {
-        return counter(asId(name, tags))
+        return counter(asId(name, tagsAsMap(tags), MeterType.COUNTER))
     }
 
     override fun counter(
         scenarioName: ScenarioName,
         stepName: StepName,
         name: String,
-        tags: Map<String, String>
+        tags: Map<String, String>,
     ): Counter {
         return counter(
             Meter.Id(
@@ -126,7 +156,8 @@ internal class CampaignMeterRegistryImpl(
                 scenarioName = scenarioName,
                 stepName = stepName,
                 meterName = name,
-                tags = tags
+                tags = tags + additionalTags,
+                type = MeterType.COUNTER
             )
         )
     }
@@ -134,7 +165,6 @@ internal class CampaignMeterRegistryImpl(
     private fun counter(meterId: Meter.Id): Counter {
         return meters.computeIfAbsent(meterId) {
             CounterImpl(
-                meterRegistry.counter(meterId.meterName, meterId.tags.forMicrometer()),
                 meterId,
                 meterReporter
             )
@@ -142,32 +172,15 @@ internal class CampaignMeterRegistryImpl(
     }
 
 
-    override fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T {
-        gauge(asId(name, tags), number, Number::toDouble)
-        return number
+    override fun gauge(name: String, vararg tags: String): Gauge {
+        return gauge(asId(name, tagsAsMap(tags), MeterType.GAUGE))
     }
 
-    override fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T {
-        gauge(asId(name, tags), stateObject, valueFunction)
-        return stateObject
-    }
-
-    override fun <T : Collection<*>> gaugeCollectionSize(name: String, tags: Iterable<Tag>, collection: T): T {
-        gauge(asId(name, tags), collection) { it.size.toDouble() }
-        return collection
-    }
-
-    override fun <T : Map<*, *>> gaugeMapSize(name: String, tags: Iterable<Tag>, map: T): T {
-        gauge(asId(name, tags), map) { it.size.toDouble() }
-        return map
-    }
-
-    override fun <T : Number> gauge(
+    override fun gauge(
         scenarioName: ScenarioName,
         stepName: StepName,
         name: String,
         tags: Map<String, String>,
-        number: T
     ): Gauge {
         return gauge(
             Meter.Id(
@@ -175,78 +188,15 @@ internal class CampaignMeterRegistryImpl(
                 scenarioName = scenarioName,
                 stepName = stepName,
                 meterName = name,
-                tags = tags
-            ),
-            number,
-            Number::toDouble
+                tags = tags + additionalTags,
+                type = MeterType.GAUGE
+            )
         )
     }
 
-    override fun <T> gauge(
-        scenarioName: ScenarioName,
-        stepName: StepName,
-        name: String,
-        tags: Map<String, String>,
-        stateObject: T,
-        valueFunction: ToDoubleFunction<T>
-    ): Gauge {
-        return gauge(
-            Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
-                meterName = name,
-                tags = tags
-            ),
-            stateObject,
-            valueFunction
-        )
-    }
-
-    override fun <T : Collection<*>> gaugeCollectionSize(
-        scenarioName: ScenarioName,
-        stepName: StepName,
-        name: String,
-        tags: Map<String, String>,
-        collection: T
-    ): Gauge {
-        return gauge(
-            Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
-                meterName = name,
-                tags = tags
-            ),
-            collection
-        ) { it.size.toDouble() }
-    }
-
-    override fun <T : Map<*, *>> gaugeMapSize(
-        scenarioName: ScenarioName,
-        stepName: StepName,
-        name: String,
-        tags: Map<String, String>,
-        map: T
-    ): Gauge {
-        return gauge(
-            Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
-                meterName = name,
-                tags = tags
-            ),
-            map
-        ) { it.size.toDouble() }
-    }
-
-    private fun <T> gauge(meterId: Meter.Id, stateObject: T, valueFunction: ToDoubleFunction<T>): Gauge {
+    private fun gauge(meterId: Meter.Id): Gauge {
         return meters.computeIfAbsent(meterId) {
             GaugeImpl(
-                MicrometerGauge.builder(meterId.meterName, stateObject, valueFunction)
-                    .tags(meterId.tags.forMicrometer())
-                    .register(meterRegistry),
                 meterId,
                 meterReporter
             )
@@ -254,104 +204,113 @@ internal class CampaignMeterRegistryImpl(
     }
 
     override fun summary(name: String, vararg tags: String): DistributionSummary {
-        return summary(asId(name, tagsAsList(tags)))
-    }
-
-    override fun summary(name: String, tags: Iterable<Tag>): DistributionSummary {
-        return summary(asId(name, tags))
+        val meterId = asId(name, tagsAsMap(tags), MeterType.DISTRIBUTION_SUMMARY)
+        return summary(
+            meterId.scenarioName,
+            meterId.stepName,
+            meterId.meterName,
+            meterId.tags
+        )
     }
 
     override fun summary(
         scenarioName: ScenarioName,
         stepName: StepName,
         name: String,
-        tags: Map<String, String>
+        tags: Map<String, String>,
+        percentiles: Collection<Double>
     ): DistributionSummary {
         return summary(
-            Meter.Id(
+            meterId = Meter.Id(
                 campaignKey = currentCampaignKey,
                 scenarioName = scenarioName,
                 stepName = stepName,
                 meterName = name,
-                tags = tags
-            )
+                tags = tags + additionalTags,
+                type = MeterType.DISTRIBUTION_SUMMARY
+            ),
+            percentiles = measurementConfiguration.summary.percentiles ?: percentiles,
         )
     }
 
-    private fun summary(meterId: Meter.Id): DistributionSummary {
+    private fun summary(
+        meterId: Meter.Id,
+        percentiles: Collection<Double>
+    ): DistributionSummary {
         return meters.computeIfAbsent(meterId) {
             DistributionSummaryImpl(
-                MicrometerDistributionSummary.builder(meterId.meterName)
-                    .tags(meterId.tags.forMicrometer())
-                    .register(meterRegistry),
                 meterId,
-                meterReporter
+                meterReporter,
+                percentiles = percentiles
             )
         } as DistributionSummary
     }
 
     override fun timer(name: String, vararg tags: String): Timer {
-        return timer(asId(name, tagsAsList(tags)))
-    }
-
-    override fun timer(name: String, tags: Iterable<Tag>): Timer {
-        return timer(asId(name, tags))
-    }
-
-    override fun timer(scenarioName: ScenarioName, stepName: StepName, name: String, tags: Map<String, String>): Timer {
+        val meterId = asId(name, tagsAsMap(tags), MeterType.TIMER)
         return timer(
-            Meter.Id(
+            meterId.scenarioName,
+            meterId.stepName,
+            meterId.meterName,
+            meterId.tags
+        )
+    }
+
+    override fun timer(
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        name: String,
+        tags: Map<String, String>,
+        percentiles: Collection<Double>
+    ): Timer {
+        return timer(
+            meterId = Meter.Id(
                 campaignKey = currentCampaignKey,
                 scenarioName = scenarioName,
                 stepName = stepName,
                 meterName = name,
-                tags = tags
-            )
+                tags = tags + additionalTags,
+                type = MeterType.TIMER
+            ),
+            percentiles = measurementConfiguration.timer.percentiles ?: percentiles,
         )
     }
 
-    private fun timer(meterId: Meter.Id): Timer {
+    private fun timer(
+        meterId: Meter.Id,
+        percentiles: Collection<Double>,
+    ): Timer {
         return meters.computeIfAbsent(meterId) {
             TimerImpl(
-                MicrometerTimer.builder(meterId.meterName)
-                    .tags(meterId.tags.forMicrometer())
-                    .register(meterRegistry),
                 meterId,
-                meterReporter
+                meterReporter,
+                percentiles = percentiles,
             )
         } as Timer
     }
 
     /**
-     * Convert the provided tags to be used for Micrometer.
+     * Converts the provided details to a meter id.
      */
-    private fun Map<String, String>.forMicrometer() = additionalTags + this.map { Tag.of(it.key, it.value) }
-
-    /**
-     * Converts the provided details to a [Meter.Id].
-     */
-    private fun asId(name: String, tags: Iterable<Tag>): Meter.Id = asId(name, tags.associate { it.key to it.value })
-
-
-    /**
-     * Converts the provided details to a [MeterId].
-     */
-    private fun asId(name: String, tags: Map<String, String>): Meter.Id = Meter.Id(
+    private fun asId(name: String, tags: Map<String, String>, type: MeterType): Meter.Id = Meter.Id(
         campaignKey = currentCampaignKey,
         scenarioName = tags["scenario"] ?: "",
         stepName = tags["step"] ?: "",
         meterName = name,
-        tags = tags
+        tags = tags + additionalTags,
+        type = type
     )
 
     /**
-     * Build a list of [Tag]s from a variable number of tags.
+     * Build a map of key/value pairs from a variable number of tags.
      */
-    private fun tagsAsList(tags: Array<out String>): List<Tag> {
-        return tags.toList().windowed(2, 2, false).map {
-            Tag.of(it[0], it[1])
+    private fun tagsAsMap(tags: Array<out String>): Map<String, String> {
+        return tags.toList().windowed(2, 2, false).associate {
+            it[0] to it[1]
         }
     }
 
-
+    companion object {
+        val logger = logger()
+    }
 }

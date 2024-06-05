@@ -20,7 +20,6 @@
 package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.Counter
-import io.micrometer.core.instrument.Counter as MicrometerCounter
 
 /**
  * Composite class to encapsulate the [Counter]s at the scenario and campaign
@@ -30,13 +29,13 @@ import io.micrometer.core.instrument.Counter as MicrometerCounter
  * The meter registries are the only one aware of the existence of the [campaignLevelCounter]
  * and will ask for its publication when required.
  *
- * This instance of [Counter] is not known by the instances of [io.micrometer.core.instrument.MeterRegistry].
+ * This instance of [Counter] is not known by the instances of QALIPSIS measurement publisher.
  *
  * @author Joël Valère
  */
 internal class CompositeCounter(
     private val scenarioLevelCounter: Counter,
-    private val campaignLevelCounter: MicrometerCounter
+    private val campaignLevelCounter: Counter
 ) : Counter by scenarioLevelCounter {
 
     override fun increment(amount: Double) {
