@@ -82,9 +82,11 @@ dependencies {
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
     implementation("io.micronaut.kotlin:micronaut-kotlin-extension-functions")
     implementation("io.micronaut.rxjava3:micronaut-rxjava3")
+    implementation("io.micronaut.liquibase:micronaut-liquibase")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.module:jackson-module-paranamer")
     implementation("org.apache.commons:commons-lang3")
+    implementation("org.postgresql:postgresql")
     implementation("org.thymeleaf:thymeleaf:3.1.1.RELEASE")
     implementation("io.micronaut.views:micronaut-views-thymeleaf")
     implementation("org.xhtmlrenderer:flying-saucer-pdf:9.1.22")
@@ -98,9 +100,6 @@ dependencies {
 
     runtimeOnly("io.r2dbc:r2dbc-pool")
     runtimeOnly("org.postgresql:r2dbc-postgresql")
-    runtimeOnly("io.micronaut.liquibase:micronaut-liquibase")
-    runtimeOnly("io.micronaut.sql:micronaut-jdbc-hikari")
-    runtimeOnly("org.postgresql:postgresql")
 
     kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kapt("io.micronaut:micronaut-inject-java")
