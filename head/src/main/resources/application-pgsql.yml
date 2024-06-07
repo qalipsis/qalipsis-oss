@@ -6,17 +6,6 @@ datasource:
   username: qalipsis
   password: qalipsis
 
-# The standard JDBC datasource is required for Liquibase.
-datasources:
-  default:
-    url: jdbc:postgresql://${datasource.host}:${datasource.port}/${datasource.database}
-    username: ${datasource.username}
-    password: ${datasource.password}
-    dialect: POSTGRES
-    driverClassName: org.postgresql.Driver
-    schema: ${datasource.schema}
-    schema-generate: none
-
 r2dbc:
   datasources:
     default:
@@ -41,5 +30,5 @@ liquibase:
   enabled: true
   datasources:
     default:
-      change-log: 'classpath:db/liquibase-changelog.xml'
+      change-log: 'db/liquibase-changelog.xml'
       liquibase-schema: qalipsis_liquibase
