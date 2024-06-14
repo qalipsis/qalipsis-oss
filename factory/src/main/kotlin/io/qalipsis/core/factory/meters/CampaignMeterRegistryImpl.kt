@@ -43,10 +43,11 @@ import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.reporter.MeterReporter
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import java.time.Duration
-import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.fixedRateTimer
 
 /**
@@ -80,7 +81,7 @@ internal class CampaignMeterRegistryImpl(
      * Contains all the unique meters.
      */
     @KTestable
-    private val meters = HashMap<Meter.Id, Meter<*>>()
+    private val meters = ConcurrentHashMap<Meter.Id, Meter<*>>()
 
     init {
         additionalTags.putAll(factoryConfiguration.tags)
