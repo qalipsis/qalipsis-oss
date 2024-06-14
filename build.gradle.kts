@@ -55,6 +55,9 @@ val target = JavaVersion.VERSION_11
 java {
     sourceCompatibility = target
     targetCompatibility = target
+
+    withSourcesJar()
+    withJavadocJar()
 }
 
 tasks.withType<Wrapper> {
