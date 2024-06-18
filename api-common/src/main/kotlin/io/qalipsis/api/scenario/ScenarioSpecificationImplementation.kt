@@ -20,7 +20,7 @@ import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.executionprofile.ExecutionProfile
-import io.qalipsis.api.executionprofile.ImmediatelyExecutionProfile
+import io.qalipsis.api.executionprofile.ImmediateExecutionProfile
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.retry.RetryPolicy
@@ -48,7 +48,7 @@ internal class ScenarioSpecificationImplementation(
     @KTestable
     private val registeredSteps = ConcurrentHashMap<String, ImmutableSlot<StepSpecification<*, *, *>>>()
 
-    override var executionProfile: ExecutionProfile = ImmediatelyExecutionProfile()
+    override var executionProfile: ExecutionProfile = ImmediateExecutionProfile()
 
     override var retryPolicy: RetryPolicy? = null
 

@@ -23,12 +23,12 @@ import io.qalipsis.api.scenario.ExecutionProfileSpecification
  *
  * @author Eric Jessé
  */
-class ImmediatelyExecutionProfile : ExecutionProfile {
+class ImmediateExecutionProfile : ExecutionProfile {
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double) =
-        ImmediatelyExecutionProfileIterator(totalMinionsCount)
+        ImmediateExecutionProfileIterator(totalMinionsCount)
 
-    inner class ImmediatelyExecutionProfileIterator(private val totalMinionsCount: Int) : ExecutionProfileIterator {
+    inner class ImmediateExecutionProfileIterator(private val totalMinionsCount: Int) : ExecutionProfileIterator {
 
         var hasNext = true
 
@@ -46,6 +46,6 @@ class ImmediatelyExecutionProfile : ExecutionProfile {
 /**
  * Start all the minions at once.
  */
-fun ExecutionProfileSpecification.immediately() {
-    strategy(ImmediatelyExecutionProfile())
+fun ExecutionProfileSpecification.immediate() {
+    strategy(ImmediateExecutionProfile())
 }

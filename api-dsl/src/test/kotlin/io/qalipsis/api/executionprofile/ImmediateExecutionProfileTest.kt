@@ -28,29 +28,29 @@ import org.junit.jupiter.api.Test
 /**
  * @author Eric Jessé
  */
-internal class ImmediatelyExecutionProfileTest {
+internal class ImmediateExecutionProfileTest {
 
     @Test
     internal fun `the default strategy should be immediately`() {
         val scenario = TestScenarioFactory.scenario {}
 
-        assertThat(scenario).prop("executionProfile").isNotNull().isInstanceOf<ImmediatelyExecutionProfile>()
+        assertThat(scenario).prop("executionProfile").isNotNull().isInstanceOf<ImmediateExecutionProfile>()
     }
 
     @Test
     internal fun `should define the strategy on the scenario`() {
         val scenario = TestScenarioFactory.scenario {
             profile {
-                immediately()
+                immediate()
             }
         }
 
-        assertThat(scenario).prop("executionProfile").isNotNull().isInstanceOf<ImmediatelyExecutionProfile>()
+        assertThat(scenario).prop("executionProfile").isNotNull().isInstanceOf<ImmediateExecutionProfile>()
     }
 
     @Test
     internal fun `should provide constant count at constant pace`() {
-        val executionProfile = ImmediatelyExecutionProfile()
+        val executionProfile = ImmediateExecutionProfile()
 
         val iterator = executionProfile.iterator(11, 1.0)
 
