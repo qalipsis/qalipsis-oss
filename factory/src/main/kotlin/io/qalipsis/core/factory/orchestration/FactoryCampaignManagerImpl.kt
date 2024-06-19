@@ -29,7 +29,7 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.executionprofile.AcceleratingExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfile
-import io.qalipsis.api.executionprofile.ImmediatelyExecutionProfile
+import io.qalipsis.api.executionprofile.ImmediateExecutionProfile
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.executionprofile.PercentageStage
 import io.qalipsis.api.executionprofile.PercentageStageExecutionProfile
@@ -49,7 +49,7 @@ import io.qalipsis.core.annotations.LogOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
-import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediateExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
@@ -145,7 +145,7 @@ internal class FactoryCampaignManagerImpl(
                 configuration.minionsCountProLaunch
             )
 
-            is ImmediatelyExecutionProfileConfiguration -> ImmediatelyExecutionProfile()
+            is ImmediateExecutionProfileConfiguration -> ImmediateExecutionProfile()
 
             is RegularExecutionProfileConfiguration -> RegularExecutionProfile(
                 configuration.periodInMs,

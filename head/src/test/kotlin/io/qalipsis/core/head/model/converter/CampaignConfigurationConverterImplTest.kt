@@ -35,7 +35,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
-import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediateExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.PercentageStage
 import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
@@ -245,7 +245,7 @@ internal class CampaignConfigurationConverterImplTest {
 
             // then
             assertThat(convertedExecutionProfile).all {
-                prop(Pair<*, *>::first).isNotNull().isInstanceOf<ImmediatelyExecutionProfileConfiguration>()
+                prop(Pair<*, *>::first).isNotNull().isInstanceOf<ImmediateExecutionProfileConfiguration>()
                 prop(Pair<*, *>::second).isEqualTo(28712342)
             }
 

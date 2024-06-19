@@ -27,7 +27,7 @@ import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
-import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediateExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.PercentageStage
 import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
@@ -143,7 +143,7 @@ internal class CampaignConfigurationConverterImpl(
                 config.timeFrameInMs
             ) to scenario.minionsCount
 
-            is ImmediatelyExternalExecutionProfileConfiguration -> ImmediatelyExecutionProfileConfiguration() to scenario.minionsCount
+            is ImmediatelyExternalExecutionProfileConfiguration -> ImmediateExecutionProfileConfiguration() to scenario.minionsCount
 
             else -> DefaultExecutionProfileConfiguration() to scenario.minionsCount
         }

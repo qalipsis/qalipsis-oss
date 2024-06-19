@@ -48,7 +48,7 @@ import io.qalipsis.api.executionprofile.AcceleratingExecutionProfile
 import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
 import io.qalipsis.api.executionprofile.ExecutionProfile
 import io.qalipsis.api.executionprofile.ExecutionProfileIterator
-import io.qalipsis.api.executionprofile.ImmediatelyExecutionProfile
+import io.qalipsis.api.executionprofile.ImmediateExecutionProfile
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.executionprofile.PercentageStageExecutionProfile
 import io.qalipsis.api.executionprofile.ProgressiveVolumeExecutionProfile
@@ -63,7 +63,7 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
-import io.qalipsis.core.executionprofile.ImmediatelyExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediateExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.PercentageStage
 import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
@@ -1315,12 +1315,12 @@ internal class FactoryCampaignManagerImplTest {
 
             // when
             executionProfile = factoryCampaignManager.convertExecutionProfile(
-                ImmediatelyExecutionProfileConfiguration(),
+                ImmediateExecutionProfileConfiguration(),
                 defaultExecutionProfile
             )
 
             // then
-            assertThat(executionProfile).isInstanceOf<ImmediatelyExecutionProfile>()
+            assertThat(executionProfile).isInstanceOf<ImmediateExecutionProfile>()
 
             // when
             executionProfile = factoryCampaignManager.convertExecutionProfile(

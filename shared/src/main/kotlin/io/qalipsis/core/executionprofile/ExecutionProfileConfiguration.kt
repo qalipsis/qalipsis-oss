@@ -42,7 +42,7 @@ import javax.validation.constraints.Positive
 @JsonSubTypes(
     JsonSubTypes.Type(value = RegularExecutionProfileConfiguration::class, name = "REGULAR"),
     JsonSubTypes.Type(value = AcceleratingExecutionProfileConfiguration::class, name = "ACCELERATING"),
-    JsonSubTypes.Type(value = ImmediatelyExecutionProfileConfiguration::class, name = "IMMEDIATELY"),
+    JsonSubTypes.Type(value = ImmediateExecutionProfileConfiguration::class, name = "IMMEDIATE"),
     JsonSubTypes.Type(value = ProgressiveVolumeExecutionProfileConfiguration::class, name = "PROGRESSING_VOLUME"),
     JsonSubTypes.Type(value = PercentageStageExecutionProfileConfiguration::class, name = "PERCENTAGE_STAGE"),
     JsonSubTypes.Type(value = StageExecutionProfileConfiguration::class, name = "STAGE"),
@@ -80,9 +80,9 @@ data class AcceleratingExecutionProfileConfiguration(
 
 @Serializable
 @SerialName("imm")
-class ImmediatelyExecutionProfileConfiguration : ExecutionProfileConfiguration {
+class ImmediateExecutionProfileConfiguration : ExecutionProfileConfiguration {
 
-    override fun clone(): ImmediatelyExecutionProfileConfiguration {
+    override fun clone(): ImmediateExecutionProfileConfiguration {
         return this
     }
 
