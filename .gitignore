@@ -9,12 +9,6 @@
 .cache
 dist
 
-# Gradle
-gradle
-.gradle
-gradlew
-gradlew.bat
-
 # Node dependencies
 node_modules
 
@@ -22,10 +16,14 @@ node_modules
 logs
 *.log
 
+# Node files
+package-lock.json
+
 # Misc
 .DS_Store
 .fleet
 .idea
+.gradle
 
 # Local env files
 .env

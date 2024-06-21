@@ -1,0 +1,1 @@
+rootProject.name = "qalipsis-web-oss"
