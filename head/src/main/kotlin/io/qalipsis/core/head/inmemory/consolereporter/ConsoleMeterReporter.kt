@@ -21,9 +21,11 @@ package io.qalipsis.core.head.inmemory.consolereporter
 
 import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
-import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.render.RenderScope
+import com.varabyte.kotterx.grid.Cols
+import com.varabyte.kotterx.grid.GridCharacters
+import com.varabyte.kotterx.grid.grid
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.util.StringUtils
@@ -66,6 +68,7 @@ internal class ConsoleMeterReporter : MeterReporter {
     ) {
         meters.computeIfAbsent(meter.id.scenarioName) { ConcurrentHashMap() }
             .computeIfAbsent(meter.id.stepName) { ConcurrentHashMap() }.apply {
+                log.trace { "Logging the " }
                 if (size > 10) {
                     throw RuntimeException("The step ${meter.id.stepName} has too many rows: $size")
                 }
@@ -76,8 +79,8 @@ internal class ConsoleMeterReporter : MeterReporter {
                 }
             }
             .computeIfAbsent(column) { concurrentList() }.apply {
-                if (size > 5) {
-                    throw RuntimeException("The step ${meter.id.stepName} has too many values at console position ${row}:${column}. Meters: ${map { it.meter.id }}")
+                if (size > 4) {
+                    throw ConsoleException("The step ${meter.id.stepName} has too many values at console position ${row}:${column}. Meters: ${map { it.meter.id }}")
                 }
                 add(ReportedValue(meter, format, severity, toNumber))
             }
@@ -91,28 +94,40 @@ internal class ConsoleMeterReporter : MeterReporter {
         renderScope: RenderScope,
         scenarioName: ScenarioName,
         stepName: StepName,
-        width: Int,
-        indentation: String
+        renderWidth: Int
     ) {
-        meters[scenarioName]?.get(stepName)?.toSortedMap()?.values?.forEach { columns ->
-            val columnSize = width / columns.size
-            with(renderScope) {
-                columns.toSortedMap().values.flatMap { reportedValue ->
-                    reportedValue.sorted()
-                }.forEach { (meter, format, severity, toNumber) ->
-                    tryAndLog(log) {
-                        val toNumberBlock = toNumber as (Meter<*>.() -> Number)
-                        val value = meter.toNumberBlock().toDouble()
-                        val text = ((indentation + String.format(format, value)).padEnd(columnSize))
-                        when (value.severity()) {
-                            ReportMessageSeverity.ERROR -> red { text(text) }
-                            ReportMessageSeverity.ABORT -> red { text(text) }
-                            ReportMessageSeverity.WARN -> yellow { text(text) }
-                            else -> text(text)
+        if (!stepName.startsWith('_')) {
+            meters[scenarioName]?.get(stepName)?.toSortedMap()?.apply {
+                val colsCount = values.maxOf { it.values.size }
+                val cellWidth = (renderWidth / colsCount) - 2 // Remove two spaces for the borders.
+                with(renderScope) {
+                    grid(
+                        Cols { repeat(colsCount) { fixed(width = cellWidth - 1) } },
+                        characters = GridCharacters.CURVED,
+                        paddingLeftRight = 0,
+                        //targetWidth = renderWidth - colsCount * 2 // Remove two spaces by cell for the borders.
+                    ) {
+                        forEach { (rowIndex, columns) ->
+                            columns.forEach { (columnIndex, cellValues) ->
+                                cell(row = rowIndex.toInt(), col = columnIndex.toInt()) {
+                                    cellValues.forEach { (meter, format, severity, toNumber) ->
+                                        tryAndLog(log) {
+                                            val toNumberBlock = toNumber as (Meter<*>.() -> Number)
+                                            val value = meter.toNumberBlock().toDouble()
+                                            val text = String.format(format, value)
+                                            when (value.severity()) {
+                                                ReportMessageSeverity.ERROR -> red { text(text) }
+                                                ReportMessageSeverity.ABORT -> red { text(text) }
+                                                ReportMessageSeverity.WARN -> yellow { text(text) }
+                                                else -> text(text)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                textLine()
             }
         }
     }

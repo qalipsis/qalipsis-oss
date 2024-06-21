@@ -31,8 +31,6 @@ import com.varabyte.kotter.runtime.MainRenderScope
 import com.varabyte.kotter.runtime.render.RenderScope
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
-import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.math.percentOf
 import java.util.concurrent.atomic.AtomicInteger
@@ -43,20 +41,19 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 internal class ConsoleRenderer(
     private val campaignState: CampaignState,
-    private val meterRegistry: CampaignMeterRegistry,
     private val meterReporter: ConsoleMeterReporter
 ) {
 
-    fun render(renderScope: MainRenderScope) {
+    fun render(renderScope: MainRenderScope, renderWidth: Int) {
         with(renderScope) {
             // Use the official QALIPSIS blue.
             rgb(87, 203, 204) {
-                renderTitle()
-                renderCampaign(this, campaignState)
+                renderTitle(renderWidth)
+                renderCampaign(this, campaignState, renderWidth)
                 p {
-                    textLine("-".repeat(2 * TWO_COLS_SIZE))
+                    textLine("-".repeat(renderWidth))
                 }
-                renderScenarios(this, campaignState.scenarios)
+                renderScenarios(this, campaignState.scenarios, renderWidth)
             }
         }
     }
@@ -64,34 +61,35 @@ internal class ConsoleRenderer(
     /**
      * Renders the title of the report and the overall current status of the campaign.
      */
-    private fun RenderScope.renderTitle() {
+    private fun RenderScope.renderTitle(renderWidth: Int) {
+        val threeColsSize = renderWidth / 3
         p {
             bold {
                 val title = if (campaignState.end.get() == null) {
-                    "QALIPSIS - A campaign is running".padEnd(THREE_COLS_SIZE)
+                    "QALIPSIS - A campaign is running".padEnd(threeColsSize)
                 } else {
-                    "QALIPSIS".padEnd(THREE_COLS_SIZE)
+                    "QALIPSIS".padEnd(threeColsSize)
                 }
                 text(title)
             }
 
             when {
                 campaignState.end.get() == null && campaignState.scenarios.values.any { it.reportableErrors.get() > 0 } ->
-                    red { text("RUNNING (failing)".padEnd(THREE_COLS_SIZE)) }
+                    red { text("RUNNING (failing)".padEnd(threeColsSize)) }
 
                 campaignState.end.get() == null && campaignState.scenarios.values.any { it.reportableWarnings.get() > 0 } ->
-                    yellow { text("RUNNING (warnings)".padEnd(THREE_COLS_SIZE)) }
+                    yellow { text("RUNNING (warnings)".padEnd(threeColsSize)) }
 
                 campaignState.end.get() == null ->
-                    green { text("RUNNING".padEnd(THREE_COLS_SIZE)) }
+                    green { text("RUNNING".padEnd(threeColsSize)) }
 
                 campaignState.scenarios.values.any { it.reportableErrors.get() > 0 } ->
-                    red { text("FAILED".padEnd(THREE_COLS_SIZE)) }
+                    red { text("FAILED".padEnd(threeColsSize)) }
 
                 campaignState.scenarios.values.any { it.reportableWarnings.get() > 0 } ->
-                    yellow { text("WITH WARNINGS".padEnd(THREE_COLS_SIZE)) }
+                    yellow { text("WITH WARNINGS".padEnd(threeColsSize)) }
 
-                else -> green { text("SUCCESSFUL".padEnd(THREE_COLS_SIZE)) }
+                else -> green { text("SUCCESSFUL".padEnd(threeColsSize)) }
             }
 
             textLine()
@@ -101,31 +99,37 @@ internal class ConsoleRenderer(
     /**
      * Renders the overall information of the campaign.
      */
-    private fun renderCampaign(renderScope: RenderScope, campaignState: CampaignState) {
+    private fun renderCampaign(renderScope: RenderScope, campaignState: CampaignState, renderWidth: Int) {
+        val threeColsSize = renderWidth / 3
         renderScope.p {
             textLine(campaignState.campaignText)
             textLine(campaignState.scenariosListText)
-            text(campaignState.startText.padEnd(THREE_COLS_SIZE))
-            text(campaignState.endText.padEnd(THREE_COLS_SIZE))
+            text(campaignState.startText.padEnd(threeColsSize))
+            text(campaignState.endText.padEnd(threeColsSize))
             textLine(campaignState.durationText)
         }
-        renderScope.renderOverallProgression(campaignState.progressionState)
+        renderScope.renderOverallProgression(campaignState.progressionState, renderWidth)
     }
 
-    private fun RenderScope.renderOverallProgression(progressionState: ProgressionState, indent: String = "") {
+    private fun RenderScope.renderOverallProgression(
+        progressionState: ProgressionState,
+        renderWidth: Int,
+        indent: String = ""
+    ) {
         val started = progressionState.startedMinions.get()
         val completed = progressionState.completedMinions.get()
         val scheduled = progressionState.scheduledMinions.get().coerceAtLeast(started)
             .coerceAtLeast(0)
+        val threeColsSize = renderWidth / 2
 
         p {
             bold {
-                text("${indent}Minions: $scheduled".padEnd(THREE_COLS_SIZE))
+                text("${indent}Minions: $scheduled".padEnd(threeColsSize))
             }
             if (scheduled > 0) {
                 text(
                     "Started: $started (${started.percentOf(scheduled)}%)".padEnd(
-                        THREE_COLS_SIZE
+                        threeColsSize
                     )
                 )
                 textLine("Completed: $completed (${completed.percentOf(scheduled)}%)")
@@ -136,12 +140,12 @@ internal class ConsoleRenderer(
             val totalExecutions = successes + failures
             if (totalExecutions > 0) {
                 bold {
-                    text("${indent}Steps executions: $totalExecutions".padEnd(THREE_COLS_SIZE))
+                    text("${indent}Steps executions: $totalExecutions".padEnd(threeColsSize))
                 }
                 // Passing executions are green.
-                green { text("\u2713 $successes (${successes.percentOf(totalExecutions)}%)".padEnd(THREE_COLS_SIZE)) }
+                green { text("\u2713 $successes (${successes.percentOf(totalExecutions)}%)") }
                 // Failing executions are red.
-                red { text("\u2715 $failures (${failures.percentOf(totalExecutions)}%)") }
+                red { text("    \u2715 $failures (${failures.percentOf(totalExecutions)}%)") }
             }
             textLine()
         }
@@ -150,10 +154,14 @@ internal class ConsoleRenderer(
     /**
      * Renders the details of all the scenarios.
      */
-    private fun renderScenarios(renderScope: RenderScope, scenarios: Map<ScenarioName, ScenarioState>) {
+    private fun renderScenarios(
+        renderScope: RenderScope,
+        scenarios: Map<ScenarioName, ScenarioState>,
+        renderWidth: Int
+    ) {
         scenarios.toSortedMap().forEach { (name, state) ->
             with(renderScope) {
-                renderScenario(name, state)
+                renderScenario(name, state, renderWidth)
             }
         }
     }
@@ -164,22 +172,24 @@ internal class ConsoleRenderer(
      */
     private fun RenderScope.renderScenario(
         scenarioName: ScenarioName,
-        scenarioState: ScenarioState
+        scenarioState: ScenarioState,
+        renderWidth: Int
     ) {
+        val threeColsSize = renderWidth / 2
         bold {
-            text("Scenario $scenarioName".padEnd(THREE_COLS_SIZE))
+            text("Scenario $scenarioName".padEnd(threeColsSize))
         }
         when {
             scenarioState.end.get() == null && scenarioState.reportableErrors.get() > 0 ->
-                red { text("RUNNING (failing)".padEnd(THREE_COLS_SIZE)) }
+                red { text("RUNNING (failing)".padEnd(threeColsSize)) }
 
             scenarioState.end.get() == null && scenarioState.reportableWarnings.get() > 0 ->
-                yellow { text("RUNNING (warnings)".padEnd(THREE_COLS_SIZE)) }
+                yellow { text("RUNNING (warnings)".padEnd(threeColsSize)) }
 
-            scenarioState.end.get() == null -> green { text("RUNNING".padEnd(THREE_COLS_SIZE)) }
-            scenarioState.reportableErrors.get() > 0 -> red { text("FAILED".padEnd(THREE_COLS_SIZE)) }
-            scenarioState.reportableWarnings.get() > 0 -> yellow { text("WITH WARNINGS".padEnd(THREE_COLS_SIZE)) }
-            else -> green { text("SUCCESSFUL".padEnd(THREE_COLS_SIZE)) }
+            scenarioState.end.get() == null -> green { text("RUNNING".padEnd(threeColsSize)) }
+            scenarioState.reportableErrors.get() > 0 -> red { text("FAILED".padEnd(threeColsSize)) }
+            scenarioState.reportableWarnings.get() > 0 -> yellow { text("WITH WARNINGS".padEnd(threeColsSize)) }
+            else -> green { text("SUCCESSFUL".padEnd(threeColsSize)) }
         }
 
         scenarioState.endText?.let(this::text)
@@ -189,12 +199,12 @@ internal class ConsoleRenderer(
                 textLine("The initialization of the scenario failed, look at the messages below")
             }
         }
-        renderOverallProgression(scenarioState.progressionState, INDENTATION)
+        renderOverallProgression(scenarioState.progressionState, renderWidth, INDENTATION)
         renderErrors(scenarioState.errorsByType)
         renderMessages(scenarioState.messages)
 
         scenarioState.stepInitializationOrder.distinct().forEach { stepName ->
-            scenarioState.steps[stepName]?.let { state -> renderStep(scenarioName, stepName, state) }
+            scenarioState.steps[stepName]?.let { state -> renderStep(scenarioName, stepName, state, renderWidth) }
         }
     }
 
@@ -238,9 +248,11 @@ internal class ConsoleRenderer(
     private fun RenderScope.renderStep(
         scenarioName: ScenarioName,
         stepName: StepName,
-        stepState: StepState
+        stepState: StepState,
+        renderWidth: Int
     ) {
-        text("  \u2699 Step $stepName".padEnd(TWO_COLS_SIZE))
+        val twoColsSize = renderWidth / 2
+        text("  \u2699 Step $stepName".padEnd(twoColsSize))
         if (stepState.failedInitialization.get()) {
             red {
                 text("Initialization failed, look at the messages below")
@@ -262,23 +274,15 @@ internal class ConsoleRenderer(
         }
         textLine()
 
-        meterReporter.renderStepMeters(this, scenarioName, stepName, WIDTH, "${INDENTATION}${INDENTATION}")
+        meterReporter.renderStepMeters(this, scenarioName, stepName, renderWidth)
 
         renderErrors(stepState.errorsByType)
         renderMessages(stepState.messages.values)
     }
 
 
-    private companion object {
+    companion object {
 
-        val log = logger()
-
-        const val WIDTH = 120
-
-        const val TWO_COLS_SIZE = WIDTH / 2
-
-        const val THREE_COLS_SIZE = WIDTH / 3
-
-        val INDENTATION = " ".repeat(2)
+        private val INDENTATION = " ".repeat(2)
     }
 }

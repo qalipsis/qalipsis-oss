@@ -30,7 +30,6 @@ import io.qalipsis.core.reporter.MeterReporter
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.DoubleAdder
-import java.util.function.Supplier
 
 /**
  * Implementation of meter to record monotonically increasing values.
@@ -46,7 +45,6 @@ internal class CounterImpl(
 
     @KTestable
     private val current = DoubleAdder()
-    private fun valueSupplier(): Supplier<Double> = Supplier { current.sumThenReset() }
 
     override fun report(configure: Meter.ReportingConfiguration<Counter>.() -> Unit): Counter {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -65,7 +63,7 @@ internal class CounterImpl(
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
 
-    override fun count(): Double = valueSupplier().get()
+    override fun count(): Double = current.sum()
 
     override fun increment() {
         increment(1.0)
