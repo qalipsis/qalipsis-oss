@@ -148,7 +148,11 @@ internal class InnerJoinStep<I, O>(
                                 minion.launch(this) {
                                     val secondaryValues = entry.get()
                                     log.trace { "Forwarding a correlated set of values to context $context" }
-                                    context.send(outputSupplier(input, secondaryValues))
+                                    kotlin.runCatching {
+                                        // It might be that the arrival of the right record
+                                        // is concurrent to the timeout, which might lead to errors.
+                                        context.send(outputSupplier(input, secondaryValues))
+                                    }
                                     waitingRightLatch.cancel()
                                 }
                                 MDC.clear()

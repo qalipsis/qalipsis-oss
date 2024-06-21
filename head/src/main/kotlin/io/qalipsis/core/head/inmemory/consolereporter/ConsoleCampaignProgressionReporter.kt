@@ -21,16 +21,19 @@ package io.qalipsis.core.head.inmemory.consolereporter
 
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.ConsoleAppender
+import com.varabyte.kotter.foundation.firstSuccess
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.timer.addTimer
+import com.varabyte.kotter.terminal.system.SystemTerminal
+import com.varabyte.kotter.terminal.virtual.TerminalSize
+import com.varabyte.kotter.terminal.virtual.VirtualTerminal
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -39,11 +42,10 @@ import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.inject.Singleton
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.delay
-import org.slf4j.LoggerFactory
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 
@@ -54,7 +56,6 @@ import kotlin.time.Duration.Companion.seconds
     Requires(property = "report.export.console-live.enabled", defaultValue = "false", value = "true")
 )
 internal class ConsoleCampaignProgressionReporter(
-    private val meterRegistry: CampaignMeterRegistry,
     private val consoleMeterReporter: ConsoleMeterReporter
 ) : CampaignHook, ProcessBlocker {
 
@@ -89,13 +90,13 @@ internal class ConsoleCampaignProgressionReporter(
         }
 
         consoleAppender = disableLogbackConsoleAppender()
-        val consoleRenderer = ConsoleRenderer(campaignState, meterRegistry, consoleMeterReporter)
+        val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
         campaignCompletion = CompletableFuture()
 
         thread(name = "console-live-reporter", isDaemon = false) {
-            session(clearTerminal = true) {
+            session(clearTerminal = false, terminal = defaultTerminal()) {
                 section {
-                    consoleRenderer.render(this)
+                    consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
                 }.runUntilSignal {
                     addTimer(1.seconds, repeat = true) {
                         rerender()
@@ -111,6 +112,20 @@ internal class ConsoleCampaignProgressionReporter(
     }
 
     /**
+     * Creates the terminal for the rendering, first trying to use the system terminal, or a virtual terminal when not possible.
+     */
+    private fun defaultTerminal() = listOf(
+        { SystemTerminal() },
+        {
+            VirtualTerminal.create(
+                title = "QALIPSIS",
+                fontSize = 11,
+                terminalSize = TerminalSize(WIDTH, 50)
+            )
+        }
+    ).firstSuccess()
+
+    /**
      * Disables the console appender to avoid having all the exceptions listed in the console.
      */
     private fun disableLogbackConsoleAppender(): ConsoleAppender<*>? {
@@ -121,24 +136,19 @@ internal class ConsoleCampaignProgressionReporter(
     }
 
     suspend fun report() {
-        delay(2000)
-        val consoleRenderer = ConsoleRenderer(campaignState, meterRegistry, consoleMeterReporter)
-        session(clearTerminal = true) {
+        val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
+        session(terminal = defaultTerminal()) {
             section {
-                consoleRenderer.render(this)
+                consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
             }.runUntilSignal {
-                addTimer(1.seconds, repeat = true) {
+                addTimer(2.seconds, repeat = false) {
                     rerender()
-                    if (campaignCompletion.isDone) {
-                        log.info { "Stopping the rendering of the live in the console" }
-                        repeat = false
-                        signal()
-                    }
+                    consoleAppender?.start()
+                    processBlocker.cancel()
+                    signal()
                 }
             }
         }
-        consoleAppender?.start()
-        processBlocker.cancel()
     }
 
     override suspend fun preSchedule(
@@ -292,6 +302,8 @@ internal class ConsoleCampaignProgressionReporter(
 
 
     private companion object {
+
+        const val WIDTH = 120
 
         val log = logger()
     }
