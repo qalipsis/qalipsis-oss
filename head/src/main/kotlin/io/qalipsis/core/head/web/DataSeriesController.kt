@@ -370,4 +370,25 @@ internal class DataSeriesController(
         )
     }
 
+    @Patch("/refresh-all")
+    @Operation(
+        summary = "Refresh the prepared queries of the data series",
+        description = "Update the prepared queries of all the data series",
+        responses = [
+            ApiResponse(responseCode = "202", description = "Data series refreshed"),
+            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+        ],
+        security = [
+            SecurityRequirement(name = "JWT")
+        ]
+    )
+    @Secured(Permissions.WRITE_DATA_SERIES_PREPARED_QUERIES)
+    @Timed("data-series-refresh")
+    @Status(HttpStatus.ACCEPTED)
+    suspend fun refresh(
+        @Parameter(hidden = true) authentication: Authentication
+    ) {
+        dataSeriesService.refresh()
+    }
+
 }

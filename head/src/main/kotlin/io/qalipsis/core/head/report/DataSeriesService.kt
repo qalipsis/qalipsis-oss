@@ -75,4 +75,9 @@ internal interface DataSeriesService {
         size: Int
     ): Page<DataSeries>
 
+    /**
+     * Update and refresh the prepared queries for all existing the data series.
+     */
+    suspend fun refresh()
+
 }

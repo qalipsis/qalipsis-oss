@@ -201,6 +201,12 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
     )
     suspend fun searchDataSeries(tenant: String, username: String, pageable: Pageable): Page<DataSeriesEntity>
 
+    @Query(
+        value = """SELECT tenant_id, * FROM data_series ORDER BY tenant_id""",
+        countQuery = """SELECT COUNT(*) FROM data_series""",
+        nativeQuery = true
+    )
+    suspend fun findAll(pageable: Pageable): Page<DataSeriesEntity>
 
     @Query(
         """SELECT 

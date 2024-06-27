@@ -20,11 +20,14 @@
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.exceptions.HttpStatusException
+import io.qalipsis.api.Executors
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClause
 import io.qalipsis.api.query.QueryClauseOperator.IS
@@ -39,9 +42,13 @@ import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
-import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.head.utils.SortingUtil
+import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.launch
 import io.qalipsis.api.query.Page as QalipsisPage
 
 /**
@@ -56,7 +63,8 @@ internal class DataSeriesServiceImpl(
     private val tenantRepository: TenantRepository,
     private val userRepository: UserRepository,
     private val idGenerator: IdGenerator,
-    private val dataProvider: DataProvider
+    private val dataProvider: DataProvider,
+    @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
 ) : DataSeriesService {
 
     override suspend fun get(tenant: String, username: String, reference: String): DataSeries {
@@ -113,7 +121,7 @@ internal class DataSeriesServiceImpl(
         tenant: String,
         username: String,
         reference: String,
-        patches: Collection<DataSeriesPatch>
+        patches: Collection<DataSeriesPatch>,
     ): DataSeries {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant, reference)
         val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId) ?: ""
@@ -149,7 +157,7 @@ internal class DataSeriesServiceImpl(
 
     private fun convertFiltersEntity(
         filters: Collection<DataSeriesFilterEntity>,
-        valueName: String
+        valueName: String,
     ): Collection<QueryClause> {
         return filters.map { QueryClause("tag.${it.name}", it.operator, it.value) } + QueryClause("name", IS, valueName)
     }
@@ -171,7 +179,7 @@ internal class DataSeriesServiceImpl(
         filters: Collection<String>,
         sort: String?,
         page: Int,
-        size: Int
+        size: Int,
     ): QalipsisPage<DataSeries> {
         val sorting = sort?.let { SortingUtil.sort(DataSeriesEntity::class, it) }
             ?: Sort.of(Sort.Order(DataSeriesEntity::displayName.name))
@@ -196,4 +204,49 @@ internal class DataSeriesServiceImpl(
         )
     }
 
+    override suspend fun refresh() {
+        backgroundScope.launch {
+            var pageable = Pageable.from(0, SIZE)
+            var pagedDataSeries: Page<DataSeriesEntity>
+            do {
+                pagedDataSeries = dataSeriesRepository.findAll(pageable)
+                handleQueryUpdate(pagedDataSeries)
+                pageable = pagedDataSeries.nextPageable()
+            } while (pagedDataSeries.pageNumber < pagedDataSeries.totalPages - 1)
+        }
+    }
+
+    /**
+     * Handle the update of each query for a given batch of data series entity.
+     */
+    private suspend fun handleQueryUpdate(pagedDataSeries: Page<DataSeriesEntity>) {
+        try {
+            val tenantIdReference = mutableMapOf<Long, String>()
+            val countOfUpdatedQueries = pagedDataSeries.numberOfElements
+            logger.trace { "Updating the queries of ${pagedDataSeries.numberOfElements} retrieved data series" }
+            val dataSeriesEntities = pagedDataSeries.content
+            dataSeriesEntities.forEach { dataSeriesEntity ->
+                val tenant = tenantIdReference.getOrPut(dataSeriesEntity.tenantId) {
+                    tenantRepository.findReferenceById(dataSeriesEntity.tenantId)
+                }
+                dataSeriesEntity.query = dataProvider.createQuery(
+                    tenant, dataSeriesEntity.dataType, QueryDescription(
+                        filters = convertFiltersEntity(dataSeriesEntity.filters, dataSeriesEntity.valueName),
+                        fieldName = dataSeriesEntity.fieldName,
+                        aggregationOperation = dataSeriesEntity.aggregationOperation,
+                        timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration
+                    )
+                ).takeUnless(String::isNullOrBlank)
+            }
+            dataSeriesRepository.saveAll(dataSeriesEntities).count()
+            logger.info { "Successfully updated $countOfUpdatedQueries queries of the data series" }
+        } catch (ex: Exception) {
+            logger.error(ex) { "Encountered an error while trying to update a data series: ${ex.message}" }
+        }
+    }
+
+    companion object {
+        val logger = logger()
+        private const val SIZE = 10
+    }
 }

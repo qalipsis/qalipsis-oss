@@ -34,6 +34,7 @@ object Permissions {
     const val READ_REPORT = "read:report"
     const val WRITE_REPORT = "write:report"
     const val READ_TIME_SERIES = "read:time-series"
+    const val WRITE_DATA_SERIES_PREPARED_QUERIES = "write:series-prepared-queries"
 
     val FOR_TESTER = setOf(
         WRITE_CAMPAIGN,
