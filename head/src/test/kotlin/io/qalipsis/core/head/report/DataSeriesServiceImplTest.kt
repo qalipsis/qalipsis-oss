@@ -38,6 +38,7 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.excludeRecords
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
@@ -59,11 +60,13 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
+import java.time.Duration
+import java.time.Instant
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.time.Duration
-import java.time.Instant
 
 @WithMockk
 internal class DataSeriesServiceImplTest {
@@ -86,6 +89,9 @@ internal class DataSeriesServiceImplTest {
 
     @MockK
     private lateinit var dataProvider: DataProvider
+
+    @MockK
+    private lateinit var coroutineScope: CoroutineScope
 
     @InjectMockKs
     private lateinit var dataSeriesService: DataSeriesServiceImpl
@@ -1171,4 +1177,108 @@ internal class DataSeriesServiceImplTest {
             }
             confirmVerified(dataSeriesRepository)
         }
+
+    @Test
+    internal fun `should refresh the queries of all the data series and update the db`() =
+        testDispatcherProvider.runTest {
+            // given
+            val dataSeriesServiceImpl = DataSeriesServiceImpl(
+                dataSeriesRepository,
+                tenantRepository,
+                userRepository,
+                idGenerator,
+                dataProvider,
+                this
+            )
+            val now = Instant.now()
+            val dataSeriesEntity1 = DataSeriesEntity(
+                id = -1,
+                version = now,
+                reference = "my-data-series-1",
+                tenantId = -1,
+                creatorId = 3912L,
+                displayName = "the-name-1",
+                dataType = DataType.METERS,
+                valueName = "my-meter",
+                sharingMode = SharingMode.READONLY,
+                color = "#FF761C",
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                fieldName = "the field",
+                aggregationOperation = QueryAggregationOperator.COUNT,
+                timeframeUnitMs = 2_000,
+                displayFormat = "#0.000",
+                query = "the query"
+            )
+            val dataSeriesEntity2 = DataSeriesEntity(
+                id = -2,
+                version = now,
+                reference = "my-data-series-2",
+                tenantId = -1,
+                creatorId = 3912L,
+                displayName = "the-name-2",
+                dataType = DataType.EVENTS,
+                valueName = "my-event",
+                sharingMode = SharingMode.WRITE,
+                color = "#FF761C",
+                filters = setOf(DataSeriesFilterEntity("field-2", QueryClauseOperator.IS_IN, "B,A")),
+                fieldName = "the field",
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
+                timeframeUnitMs = 2_000,
+                displayFormat = "#0.000",
+                query = "the query"
+            )
+            val pageable = Pageable.from(0, 10)
+            val dataSeriesEntities = listOf(dataSeriesEntity1, dataSeriesEntity2)
+            coEvery { dataSeriesRepository.findAll(any()) } returns Page.of(
+                dataSeriesEntities,
+                pageable,
+                2
+            )
+            coEvery { dataSeriesRepository.saveAll(any<Iterable<DataSeriesEntity>>()) } answers {
+                flowOf(*firstArg<Iterable<DataSeriesEntity>>().toList().toTypedArray())
+            }
+            coEvery { tenantRepository.findReferenceById(any()) } returns "my-tenant"
+            coEvery { dataProvider.createQuery("my-tenant", DataType.METERS, any()) } returns "the-updated-query-1"
+            coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-updated-query-2"
+            excludeRecords { dataProvider.toString() }
+
+            // when
+            dataSeriesServiceImpl.refresh()
+
+            // then
+            coVerify {
+                tenantRepository.findReferenceById(-1)
+                dataProvider.createQuery("my-tenant", DataType.METERS, withArg {
+                    assertThat(it).isDataClassEqualTo(
+                        QueryDescription(
+                            filters = listOf(
+                                QueryClause("tag.field-1", QueryClauseOperator.IS_IN, "A,B"),
+                                QueryClause("name", QueryClauseOperator.IS, "my-meter")
+                            ),
+                            fieldName = "the field",
+                            aggregationOperation = QueryAggregationOperator.COUNT,
+                            timeframeUnit = Duration.ofSeconds(2)
+                        )
+                    )
+                })
+                dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
+                    assertThat(it).isDataClassEqualTo(
+                        QueryDescription(
+                            filters = listOf(
+                                QueryClause("tag.field-2", QueryClauseOperator.IS_IN, "B,A"),
+                                QueryClause("name", QueryClauseOperator.IS, "my-event")
+                            ),
+                            fieldName = "the field",
+                            aggregationOperation = QueryAggregationOperator.AVERAGE,
+                            timeframeUnit = Duration.ofSeconds(2)
+                        )
+                    )
+                })
+                dataSeriesRepository.saveAll(listOf(
+                    dataSeriesEntity1.copy(query = "the-updated-query-1"),
+                    dataSeriesEntity2.copy(query = "the-updated-query-2")
+                ))
+            }
+        }
+
 }

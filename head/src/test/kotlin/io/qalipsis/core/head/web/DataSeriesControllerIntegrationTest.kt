@@ -141,7 +141,7 @@ internal class DataSeriesControllerIntegrationTest {
     @Test
     fun `should fail when creating an invalid data series`() {
         // given
-        val dataSeries = DataSeries(displayName = "", dataType = DataType.EVENTS, valueName = "my-event")
+        val dataSeries = DataSeries(displayName = "", dataType = EVENTS, valueName = "my-event")
         val createDataSeriesRequest = HttpRequest.POST("/", dataSeries)
 
         // when
@@ -342,7 +342,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataProvider.searchNames(
                 tenant = Defaults.TENANT,
-                dataType = DataType.EVENTS,
+                dataType = EVENTS,
                 filters = emptyList(),
                 size = 20
             )
@@ -434,7 +434,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataProvider.listFields(
                 tenant = Defaults.TENANT,
-                dataType = DataType.EVENTS
+                dataType = EVENTS
             )
         }
 
@@ -461,7 +461,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataProvider.searchTagsAndValues(
                 tenant = Defaults.TENANT,
-                dataType = DataType.EVENTS,
+                dataType = EVENTS,
                 filters = emptyList(),
                 size = 20
             )
@@ -547,7 +547,7 @@ internal class DataSeriesControllerIntegrationTest {
         // given
         val dataSeries = DataSeries(
             displayName = "NewData",
-            dataType = DataType.EVENTS,
+            dataType = EVENTS,
             valueName = "my-event",
             color = "#ff0000",
             filters = emptySet(),
@@ -729,6 +729,25 @@ internal class DataSeriesControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isDataClassEqualTo(Page(0, 1, 2, listOf(dataSeries2, dataSeries)))
+        }
+    }
+
+    @Test
+    internal fun `should refresh the queries of all the data series`() {
+        //given
+        coJustRun { dataSeriesService.refresh() }
+
+        // when
+        val response = httpClient.toBlocking().exchange(HttpRequest.PATCH("/refresh-all", null), Unit::class.java)
+
+
+        // then
+        coVerifyOnce {
+            dataSeriesService.refresh()
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
         }
     }
 }

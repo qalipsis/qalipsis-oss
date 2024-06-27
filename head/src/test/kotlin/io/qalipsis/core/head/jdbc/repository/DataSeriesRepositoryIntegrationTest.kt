@@ -46,14 +46,14 @@ import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
+import java.time.Duration
+import java.time.Instant
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import java.time.Duration
-import java.time.Instant
 
 internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
@@ -1188,6 +1188,139 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).content
             assertThat(dataSeriesEntities.size).isEqualTo(2)
             assertThat(dataSeriesEntities).doesNotContain(defaultDataSeries)
+        }
+
+    @Test
+    fun `should return a paginated list of all the data series`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val dataSeries1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                )
+            )
+            val dataSeries2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    reference = "my-series-2",
+                    fieldName = "field-7",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-display-name"
+                )
+            )
+            val dataSeries3 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "ds-with-user",
+                    reference = "my-series-3",
+                    fieldName = "foo"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+            val pageable = Pageable.from(0, 2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.findAll(pageable)
+
+            //then
+            assertThat(dataSeriesEntities.size).isEqualTo(2)
+            assertThat(dataSeriesEntities.totalPages).isEqualTo(2)
+            assertThat(dataSeriesEntities.pageNumber).isEqualTo(0)
+            assertThat(dataSeriesEntities.totalSize).isEqualTo(3)
+            assertThat(dataSeriesEntities.content).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeries1.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(dataSeries1.tenantId)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries1.creatorId)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeries2.id)
+                index(1).prop(DataSeriesEntity::tenantId).isEqualTo(dataSeries2.tenantId)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries2.creatorId)
+                index(1).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeries2.sharingMode)
+            }
+            val nextPageable = dataSeriesEntities.nextPageable()
+            val nextPageDataSeries = dataSeriesRepository.findAll(nextPageable)
+            assertThat(nextPageDataSeries.size).isEqualTo(2)
+            assertThat(nextPageDataSeries.pageNumber).isEqualTo(1)
+            assertThat(nextPageDataSeries.content).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeries3.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(dataSeries3.tenantId)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries3.creatorId)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeries3.sharingMode)
+            }
+        }
+
+    @Test
+    fun `should return a paginated list of all the data series grouped by their tenant ids`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy(reference = "ten-2"))
+            val creator = userRepository.save(userPrototype.copy())
+            val dataSeries1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                )
+            )
+            val dataSeries2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = creator.id,
+                    reference = "my-series-2",
+                    fieldName = "field-7",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-display-name"
+                )
+            )
+            val dataSeries3 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "ds-with-user",
+                    reference = "my-series-3",
+                    fieldName = "foo"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+            val pageable = Pageable.from(0, 2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.findAll(pageable)
+
+            //then
+            assertThat(dataSeriesEntities.size).isEqualTo(2)
+            assertThat(dataSeriesEntities.totalPages).isEqualTo(2)
+            assertThat(dataSeriesEntities.pageNumber).isEqualTo(0)
+            assertThat(dataSeriesEntities.totalSize).isEqualTo(3)
+            assertThat(dataSeriesEntities.content).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeries1.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(dataSeries1.tenantId)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries1.creatorId)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeries3.id)
+                index(1).prop(DataSeriesEntity::tenantId).isEqualTo(dataSeries3.tenantId)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries3.creatorId)
+                index(1).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeries3.sharingMode)
+            }
+            val nextPageable = dataSeriesEntities.nextPageable()
+            val nextPageDataSeries = dataSeriesRepository.findAll(nextPageable)
+            assertThat(nextPageDataSeries.size).isEqualTo(2)
+            assertThat(nextPageDataSeries.pageNumber).isEqualTo(1)
+            assertThat(nextPageDataSeries.content).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeries2.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(dataSeries2.tenantId)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries2.creatorId)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeries2.sharingMode)
+            }
         }
 
 }
