@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import assertk.all
 import assertk.assertThat
@@ -31,8 +31,11 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.meters.Measurement
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterType
 import io.qalipsis.api.meters.Statistic
-import io.qalipsis.core.factory.meters.catadioptre.current
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.currentCount
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.measure
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -42,7 +45,7 @@ import java.time.Instant
 import java.util.concurrent.atomic.DoubleAdder
 
 @WithMockk
-internal class CounterImplTest {
+internal class StepCounterTest {
 
     @JvmField
     @RegisterExtension
@@ -55,13 +58,13 @@ internal class CounterImplTest {
     internal fun `should increment the counter by 1 when increment is called without an argument`() {
         //given
         val id = mockk<Meter.Id>()
-        val counter = CounterImpl(id, meterReporter)
+        val counter = StepCounter(id, meterReporter)
 
         //when
         counter.increment()
 
         //then
-        assertThat(counter.current()).isNotNull().all {
+        assertThat(counter.currentCount()).isNotNull().all {
             prop(DoubleAdder::toDouble).isEqualTo(1.0)
         }
     }
@@ -70,13 +73,13 @@ internal class CounterImplTest {
     internal fun `should increment the counter by the argument passed in when increment is called`() {
         //given
         val id = mockk<Meter.Id>()
-        val counter = CounterImpl(id, meterReporter)
+        val counter = StepCounter(id, meterReporter)
 
         //when
         counter.increment(5.0)
 
         //then
-        assertThat(counter.current()).isNotNull().all {
+        assertThat(counter.currentCount()).isNotNull().all {
             prop(DoubleAdder::toDouble).isEqualTo(5.0)
         }
     }
@@ -85,12 +88,12 @@ internal class CounterImplTest {
     internal fun `should return the cumulative count`() {
         //given
         val id = mockk<Meter.Id>()
-        val counter = CounterImpl(id, meterReporter)
+        val counter = StepCounter(id, meterReporter)
         assertThat(counter.count()).isEqualTo(0.0)
         counter.increment(5.0)
         counter.increment()
         counter.increment(2.0)
-        assertThat(counter.current()).isNotNull().all {
+        assertThat(counter.currentCount()).isNotNull().all {
             prop(DoubleAdder::toDouble).isEqualTo(8.0)
         }
 
@@ -109,17 +112,17 @@ internal class CounterImplTest {
     }
 
     @Test
-    internal fun measure() = testDispatcherProvider.run {
+    internal fun `should generate the correct measures and reset`() = testDispatcherProvider.run {
         //given
         val id = mockk<Meter.Id>()
-        val counter = CounterImpl(id, meterReporter)
+        val counter = StepCounter(id, meterReporter)
         assertThat(counter.count()).isEqualTo(0.0)
         counter.increment(5.0)
         counter.increment()
         counter.increment(2.0)
 
         //when
-        val result = counter.measure().toList()
+        var result = counter.measure().toList()
 
         //then
         assertThat(result).isNotNull().all {
@@ -129,13 +132,25 @@ internal class CounterImplTest {
                 prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
             }
         }
+
+        //when
+        result = counter.measure().toList()
+
+        //then
+        assertThat(result).isNotNull().all {
+            hasSize(1)
+            index(0).all {
+                prop(Measurement::value).isEqualTo(0.0)
+                prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
+            }
+        }
     }
 
     @Test
-    internal fun `should build the snapshot`() = testDispatcherProvider.run {
+    internal fun `should build the snapshot and reset`() = testDispatcherProvider.run {
         //given
-        val id = mockk<Meter.Id>()
-        val counter = CounterImpl(id, meterReporter)
+        val id = Meter.Id("any-test", type = MeterType.COUNTER, tags = mapOf("a" to "b", "c" to "d"))
+        val counter = StepCounter(id, meterReporter)
         assertThat(counter.count()).isEqualTo(0.0)
         counter.increment(5.0)
         counter.increment()
@@ -143,16 +158,44 @@ internal class CounterImplTest {
         val now = Instant.now()
 
         //when
-        val result = counter.buildSnapshot(now)
+        var result = counter.snapshot(now)
 
         //then
         assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
-            prop(MeterSnapshotImpl<*>::meter).isEqualTo(counter)
-            prop(MeterSnapshotImpl<*>::timestamp).isEqualTo(now)
-            prop(MeterSnapshotImpl<*>::measurements).transform { it.toList() }.all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.COUNTER,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "period")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
                 hasSize(1)
                 index(0).all {
                     prop(Measurement::value).isEqualTo(8.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
+                }
+            }
+        }
+
+        //when
+        result = counter.snapshot(now)
+
+        //then
+        assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.COUNTER,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "period")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
+                hasSize(1)
+                index(0).all {
+                    prop(Measurement::value).isEqualTo(0.0)
                     prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
                 }
             }

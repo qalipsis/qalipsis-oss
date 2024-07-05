@@ -26,8 +26,13 @@ import java.time.Instant
  *
  * @author Francisca Eze
  */
-class MeterSnapshotImpl<T : Meter<T>>(
+data class MeterSnapshotImpl(
     override val timestamp: Instant,
-    override val meter: T,
+    override val meterId: Meter.Id,
     override val measurements: Collection<Measurement>,
-) : MeterSnapshot<T>
+) : MeterSnapshot {
+
+    override fun duplicate(meterId: Meter.Id): MeterSnapshot {
+        return copy(meterId = meterId)
+    }
+}

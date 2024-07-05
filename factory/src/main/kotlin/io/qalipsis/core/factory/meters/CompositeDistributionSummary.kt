@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2023 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -20,26 +20,21 @@
 package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.DistributionSummary
+import io.qalipsis.api.meters.Meter
 
 /**
- * Composite class to encapsulate the [DistributionSummary]s at the scenario and campaign
- * level in order to update both at the same time.
- *
- * This [DistributionSummary] should be seen as the [scenarioLevelSummary] by the calling application.
- * The meter registries are the only one aware of the existence of the [campaignLevelSummary]
- * and will ask for its publication when required.
- *
- * This instance of [DistributionSummary] is not known by the instances of QALIPSIS measurement publisher.
- *
- * @author Joël Valère
+ * Implementation of [DistributionSummary] that updates the scenario-relevant meter [scenarioMeter], as well as
+ * the meter at the global campaign level [globalMeter].
  */
-internal data class CompositeDistributionSummary(
-    private val scenarioLevelSummary: DistributionSummary,
-    private val campaignLevelSummary: DistributionSummary
-) : DistributionSummary by scenarioLevelSummary {
+@Suppress("UNCHECKED_CAST")
+class CompositeDistributionSummary(
+    private val scenarioMeter: DistributionSummary,
+    private val globalMeter: DistributionSummary,
+) : DistributionSummary by scenarioMeter,
+    Meter.ReportingConfiguration<DistributionSummary> by (scenarioMeter as Meter.ReportingConfiguration<DistributionSummary>) {
 
     override fun record(amount: Double) {
-        scenarioLevelSummary.record(amount)
-        campaignLevelSummary.record(amount)
+        scenarioMeter.record(amount)
+        globalMeter.record(amount)
     }
 }

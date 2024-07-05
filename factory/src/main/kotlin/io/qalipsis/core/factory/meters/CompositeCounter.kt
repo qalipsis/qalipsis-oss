@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2023 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -20,26 +20,26 @@
 package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.Meter
 
 /**
- * Composite class to encapsulate the [Counter]s at the scenario and campaign
- * level in order to update both at the same time.
- *
- * This [Counter] should be seen as the [scenarioLevelCounter] by the calling application.
- * The meter registries are the only one aware of the existence of the [campaignLevelCounter]
- * and will ask for its publication when required.
- *
- * This instance of [Counter] is not known by the instances of QALIPSIS measurement publisher.
- *
- * @author Joël Valère
+ * Implementation of [Counter] that updates the scenario-relevant meter [scenarioMeter], as well as
+ * the meter at the global campaign level [globalMeter].
  */
-internal class CompositeCounter(
-    private val scenarioLevelCounter: Counter,
-    private val campaignLevelCounter: Counter
-) : Counter by scenarioLevelCounter {
+@Suppress("UNCHECKED_CAST")
+class CompositeCounter(
+    private val scenarioMeter: Counter,
+    private val globalMeter: Counter,
+) : Counter by scenarioMeter,
+    Meter.ReportingConfiguration<Counter> by (scenarioMeter as Meter.ReportingConfiguration<Counter>) {
+
+    override fun increment() {
+        scenarioMeter.increment()
+        globalMeter.increment()
+    }
 
     override fun increment(amount: Double) {
-        scenarioLevelCounter.increment(amount)
-        campaignLevelCounter.increment(amount)
+        scenarioMeter.increment(amount)
+        globalMeter.increment(amount)
     }
 }

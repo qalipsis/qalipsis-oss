@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import assertk.assertThat
 import assertk.assertions.isBetween
@@ -25,8 +25,8 @@ import assertk.assertions.isEqualTo
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.meters.Meter
-import io.qalipsis.core.factory.meters.catadioptre.counter
-import io.qalipsis.core.factory.meters.catadioptre.total
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.counter
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.total
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -47,7 +47,7 @@ import kotlin.random.Random
  *  CDIT here stands for ClusterDeploymentIntegrationTest
  */
 @WithMockk
-internal class TimerImplTDigestTests {
+internal class StepTimerTDigestTests {
 
     @JvmField
     @RegisterExtension
@@ -66,7 +66,7 @@ internal class TimerImplTDigestTests {
     internal fun `should add a single problematic value to the digest`() {
         //given
         val id = mockk<Meter.Id>()
-        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+        val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
         timer.record(Duration.of(3696750, ChronoUnit.NANOS))
@@ -86,7 +86,7 @@ internal class TimerImplTDigestTests {
     internal fun `should add a single really high value to the digest`() {
         //given
         val id = mockk<Meter.Id>()
-        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+        val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
         timer.record(Duration.of(3696724567502349956, ChronoUnit.NANOS))
@@ -106,7 +106,7 @@ internal class TimerImplTDigestTests {
     internal fun `should not throw exception when adding 50 values to the digest`() {
         //given
         val id = mockk<Meter.Id>()
-        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+        val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
         for (i in 1..50) {
@@ -127,7 +127,7 @@ internal class TimerImplTDigestTests {
     internal fun `should not throw exception when adding a huge number of values, about 596, to the digest`() {
         //given
         val id = mockk<Meter.Id>()
-        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+        val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
         File("duration_in_nanos2.txt").forEachLine {
@@ -148,7 +148,7 @@ internal class TimerImplTDigestTests {
     internal fun `should return accurate percentiles when recording values from 0 to 10_000 milliseconds with a compression factor of 100 to the digest`() {
         //given
         val id = mockk<Meter.Id>()
-        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+        val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
         var count = 0.0
@@ -177,7 +177,7 @@ internal class TimerImplTDigestTests {
     internal fun `should return accurate percentiles when recording values from 0 t0 20_000 milliseconds with a compression factor of 100 to the digest`() {
         //given
         val id = mockk<Meter.Id>()
-        val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+        val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
         var count = 0.0
@@ -209,7 +209,7 @@ internal class TimerImplTDigestTests {
         testDispatcherProvider.run {
             //given
             val id = mockk<Meter.Id>()
-            val timer = TimerImpl(id, meterReporter, listOf(25.0, 50.0))
+            val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
             val threadPool = Executors.newFixedThreadPool(30).asCoroutineDispatcher()
 
             // when

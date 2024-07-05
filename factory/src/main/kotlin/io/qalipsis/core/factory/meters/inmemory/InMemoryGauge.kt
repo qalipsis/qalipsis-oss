@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2023 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import com.google.common.util.concurrent.AtomicDouble
 import io.aerisconsulting.catadioptre.KTestable
@@ -28,6 +28,7 @@ import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
 import io.qalipsis.core.reporter.MeterReporter
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * @author Francisca Eze
  */
-internal class GaugeImpl(
+internal class InMemoryGauge(
     override val id: Meter.Id,
     private val meterReporter: MeterReporter
 ) : Gauge, Meter.ReportingConfiguration<Gauge> {
@@ -49,10 +50,14 @@ internal class GaugeImpl(
 
     override fun value(): Double = current.get()
 
-    override suspend fun measure(): Collection<Measurement> = listOf(MeasurementMetric(value(), Statistic.VALUE))
+    @KTestable
+    private fun measure(): Collection<Measurement> = listOf(MeasurementMetric(value(), Statistic.VALUE))
 
-    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
-        MeterSnapshotImpl(timestamp, this, this.measure())
+    override suspend fun snapshot(timestamp: Instant): MeterSnapshot =
+        MeterSnapshotImpl(timestamp, id.copy(tags = id.tags + ("scope" to "period")), measure())
+
+    override suspend fun summarize(timestamp: Instant): MeterSnapshot =
+        MeterSnapshotImpl(timestamp, id.copy(tags = id.tags + ("scope" to "campaign")), measure())
 
     override fun increment(): Double {
         return increment(1.0)
@@ -93,7 +98,7 @@ internal class GaugeImpl(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as GaugeImpl
+        other as InMemoryGauge
         return id == other.id
     }
 

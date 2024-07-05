@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import assertk.all
 import assertk.assertThat
@@ -31,16 +31,19 @@ import io.mockk.mockk
 import io.qalipsis.api.meters.Measurement
 import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterType
 import io.qalipsis.api.meters.Statistic
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.measure
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import java.time.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
-internal class GaugeImplTest {
+internal class InMemoryGaugeTest {
 
     @JvmField
     @RegisterExtension
@@ -53,7 +56,7 @@ internal class GaugeImplTest {
     internal fun `should increment the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()
-        val gauge = GaugeImpl(id, meterReporter)
+        val gauge = InMemoryGauge(id, meterReporter)
         gauge.increment()
         gauge.increment()
         gauge.increment(7.0)
@@ -69,7 +72,7 @@ internal class GaugeImplTest {
     internal fun `should decrement the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()
-        val gauge = GaugeImpl(id, meterReporter)
+        val gauge = InMemoryGauge(id, meterReporter)
         gauge.increment(13.0)
         gauge.decrement()
         gauge.decrement(7.0)
@@ -85,7 +88,7 @@ internal class GaugeImplTest {
     internal fun `should increment and decrement the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()
-        val gauge = GaugeImpl(id, meterReporter)
+        val gauge = InMemoryGauge(id, meterReporter)
         gauge.increment(13.0)
         gauge.decrement(7.0)
         gauge.decrement()
@@ -104,7 +107,7 @@ internal class GaugeImplTest {
     internal fun measure() = testDispatcherProvider.run {
         // given
         val id = mockk<Meter.Id>()
-        val gauge = GaugeImpl(id, meterReporter)
+        val gauge = InMemoryGauge(id, meterReporter)
         gauge.increment(13.0)
         gauge.decrement(7.0)
         gauge.decrement()
@@ -115,28 +118,90 @@ internal class GaugeImplTest {
         val result = gauge.measure()
 
         // then
-        assertThat(result.size).isEqualTo(1)
+        assertThat(result.size()).isEqualTo(1)
         assertThat(result.containsAll(listOf(MeasurementMetric(10.0, Statistic.COUNT))))
     }
 
     @Test
-    internal fun buildSnapshot() = testDispatcherProvider.run {
+    internal fun `should build the snapshot and not reset`() = testDispatcherProvider.run {
         // given
-        val id = mockk<Meter.Id>()
-        val gauge = GaugeImpl(id, meterReporter)
+        val id = Meter.Id("any-test", type = MeterType.GAUGE, tags = mapOf("a" to "b", "c" to "d"))
+        val gauge = InMemoryGauge(id, meterReporter)
         gauge.increment(2.0)
         gauge.increment(5.0)
         gauge.decrement()
         val now = Instant.now()
 
         // when
-        val result = gauge.buildSnapshot(now)
+        var result = gauge.snapshot(now)
 
         // then
         assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
-            prop(MeterSnapshotImpl<*>::meter).isEqualTo(gauge)
-            prop(MeterSnapshotImpl<*>::timestamp).isEqualTo(now)
-            prop(MeterSnapshotImpl<*>::measurements).transform { it.toList() }.all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.GAUGE,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "period")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
+                hasSize(1)
+                index(0).all {
+                    prop(Measurement::value).isEqualTo(6.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.VALUE)
+                }
+            }
+        }
+
+        // when
+        gauge.increment(5.0)
+        result = gauge.snapshot(now)
+
+        // then
+        assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.GAUGE,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "period")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
+                hasSize(1)
+                index(0).all {
+                    prop(Measurement::value).isEqualTo(11.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.VALUE)
+                }
+            }
+        }
+    }
+
+    @Test
+    internal fun `should build the total snapshot`() = testDispatcherProvider.run {
+        // given
+        val id = Meter.Id("any-test", type = MeterType.GAUGE, tags = mapOf("a" to "b", "c" to "d"))
+        val gauge = InMemoryGauge(id, meterReporter)
+        gauge.increment(2.0)
+        gauge.increment(5.0)
+        gauge.decrement()
+        val now = Instant.now()
+
+        // when
+        val result = gauge.summarize(now)
+
+        // then
+        assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.GAUGE,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "campaign")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
                 hasSize(1)
                 index(0).all {
                     prop(Measurement::value).isEqualTo(6.0)

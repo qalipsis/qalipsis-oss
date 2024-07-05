@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2023 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.meters.Counter
@@ -26,17 +26,18 @@ import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
 import io.qalipsis.core.reporter.MeterReporter
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.DoubleAdder
 
 /**
- * Implementation of meter to record monotonically increasing values.
+ * Implementation of meter to record monotonically increasing values, that resets when snapshots are generated.
  *
  * @author Francisca Eze
  */
-internal class CounterImpl(
+internal class StepCounter(
     override val id: Meter.Id,
     private val meterReporter: MeterReporter,
 ) : Counter, Meter.ReportingConfiguration<Counter> {
@@ -44,7 +45,7 @@ internal class CounterImpl(
     private var reportingConfigured = AtomicBoolean()
 
     @KTestable
-    private val current = DoubleAdder()
+    private val currentCount = DoubleAdder()
 
     override fun report(configure: Meter.ReportingConfiguration<Counter>.() -> Unit): Counter {
         if (!reportingConfigured.compareAndExchange(false, true)) {
@@ -63,26 +64,31 @@ internal class CounterImpl(
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
 
-    override fun count(): Double = current.sum()
+    override fun count(): Double = currentCount.sum()
 
     override fun increment() {
         increment(1.0)
     }
 
     override fun increment(amount: Double) {
-        current.add(amount)
+        currentCount.add(amount)
     }
 
-    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
-        MeterSnapshotImpl(timestamp, this, this.measure())
+    override suspend fun snapshot(timestamp: Instant): MeterSnapshot =
+        MeterSnapshotImpl(timestamp, id.copy(tags = id.tags + ("scope" to "period")), measure())
 
-    override suspend fun measure(): Collection<MeasurementMetric> = listOf(MeasurementMetric(count(), Statistic.COUNT))
+    override suspend fun summarize(timestamp: Instant) = snapshot(timestamp)
+
+    @KTestable
+    private fun measure(): Collection<MeasurementMetric> {
+        return listOf(MeasurementMetric(currentCount.sumThenReset(), Statistic.COUNT))
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as CounterImpl
+        other as StepCounter
         return id == other.id
     }
 

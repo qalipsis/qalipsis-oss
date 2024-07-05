@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2023 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,47 +17,51 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import com.google.common.util.concurrent.AtomicDouble
 import com.tdunning.math.stats.TDigest
-import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.meters.DistributionMeasurementMetric
 import io.qalipsis.api.meters.DistributionSummary
-import io.qalipsis.api.meters.Measurement
 import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
 import io.qalipsis.core.reporter.MeterReporter
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.DoubleAdder
 import java.util.concurrent.atomic.LongAdder
 
 /**
- * Implementation of distribution summary to determine the statistical distribution of events.
+ * Implementation of [DistributionSummary] able to create step-period snapshots, while keeping the overall values over the campaign.
  *
- * @author Francisca Eze
+ * It uses a round-robin strategy to avoid reading and writing at the same time.
+ *
+ * @author Eric Jessé
  */
-internal class DistributionSummaryImpl(
+internal class InMemoryCumulativeDistributionSummary(
     override val id: Meter.Id,
     private val meterReporter: MeterReporter,
-    private val percentiles: Collection<Double>,
+    override val percentiles: Collection<Double>,
+    private val bufferSize: Int = 3,
 ) : DistributionSummary, Meter.ReportingConfiguration<DistributionSummary> {
 
     private var reportingConfigured = AtomicBoolean()
 
-    @KTestable
-    private val observationCount = LongAdder()
+    private val currentBucketHolder = AtomicInteger(0)
 
-    @KTestable
+    private val buckets = List(bufferSize) { StepDistributionSummary(id, meterReporter, percentiles) }.toTypedArray()
+
+    private val counter = LongAdder()
+
     private val total = DoubleAdder()
 
-    @KTestable
-    private val tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private var tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
     private val max = AtomicDouble(0.0)
 
@@ -78,58 +82,66 @@ internal class DistributionSummaryImpl(
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
 
-    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
-        MeterSnapshotImpl(timestamp, this, this.measure())
+    override fun count(): Long = counter.toLong() + buckets[currentBucketHolder.get()].count()
 
-    override fun count(): Long = observationCount.toLong()
+    override fun totalAmount(): Double = total.toDouble() + buckets[currentBucketHolder.get()].totalAmount()
 
-    override fun totalAmount(): Double = total.toDouble()
+    override fun max(): Double = max.get().coerceAtLeast(buckets[currentBucketHolder.get()].max())
 
-    override fun max(): Double = max.get()
+    override fun mean(): Double {
+        val count = count()
+        return if (count == 0L) 0.0 else totalAmount() / count
+    }
 
     override fun record(amount: Double) {
         if (amount > 0) {
-            var curMax: Double
-            do {
-                curMax = max.get()
-                // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
-            } while (curMax < amount && !max.compareAndSet(curMax, amount))
-            total.add(amount)
-            observationCount.add(1)
+            buckets[currentBucketHolder.get()].record(amount)
             tDigestBucket?.let {
-                synchronized(tDigestBucket) {
+                synchronized(it) {
                     it.add(amount)
                 }
             }
         }
     }
 
-    override fun mean(): Double {
-        val count = count()
-        return if (count == 0L) 0.0 else (totalAmount() / count)
+    override suspend fun snapshot(timestamp: Instant): MeterSnapshot {
+        val currentBucket = currentBucketHolder.get()
+        // Change to the next available bucket to avoid concurrent changes during the reading.
+        return if (currentBucketHolder.compareAndSet(currentBucket, (currentBucket + 1) % bufferSize)) {
+            buckets[currentBucket].let { timer ->
+                counter.add(timer.count())
+                total.add(timer.totalAmount())
+                max.set(max.get().coerceAtLeast(timer.max()))
+                timer.snapshot(timestamp)
+            }
+        } else {
+            MeterSnapshotImpl(timestamp, id, emptyList())
+        }
     }
 
-    override fun percentile(percentile: Double): Double {
-        return tDigestBucket?.let { tDigestBucket.quantile(percentile / 100) } ?: 0.0
-    }
-
-    override suspend fun measure(): Collection<Measurement> {
-        return listOf(
-            MeasurementMetric(count().toDouble(), Statistic.COUNT),
-            MeasurementMetric(totalAmount(), Statistic.TOTAL),
-            MeasurementMetric(max(), Statistic.MAX),
-            MeasurementMetric(mean(), Statistic.MEAN)
+    override suspend fun summarize(timestamp: Instant): MeterSnapshot {
+        snapshot(timestamp)
+        val measures = listOf(
+            MeasurementMetric(mean(), Statistic.MEAN),
+            MeasurementMetric(counter.sum().toDouble(), Statistic.COUNT),
+            MeasurementMetric(total.sum(), Statistic.TOTAL),
+            MeasurementMetric(max.get(), Statistic.MAX),
         ) + (percentiles.map {
             DistributionMeasurementMetric(percentile(it), Statistic.PERCENTILE, it)
         })
+
+        return MeterSnapshotImpl(timestamp, id.copy(tags = id.tags + ("scope" to "campaign")), measures)
     }
 
+    override fun percentile(percentile: Double): Double {
+        return tDigestBucket?.quantile(percentile / 100) ?: 0.0
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as DistributionSummaryImpl
+        other as InMemoryCumulativeDistributionSummary
         return id == other.id
     }
 

@@ -66,21 +66,21 @@ internal class ConsoleMeterReporter : MeterReporter {
         column: Short,
         toNumber: T.() -> Number
     ) {
-        meters.computeIfAbsent(meter.id.scenarioName) { ConcurrentHashMap() }
-            .computeIfAbsent(meter.id.stepName) { ConcurrentHashMap() }.apply {
-                log.trace { "Logging the " }
+        val step = meter.id.tags["step"]!!
+        meters.computeIfAbsent(meter.id.tags["scenario"]!!) { ConcurrentHashMap() }
+            .computeIfAbsent(step) { ConcurrentHashMap() }.apply {
                 if (size > 10) {
-                    throw RuntimeException("The step ${meter.id.stepName} has too many rows: $size")
+                    throw RuntimeException("The step $step has too many rows to display: $size")
                 }
             }
             .computeIfAbsent(row) { ConcurrentHashMap() }.apply {
                 if (size > 10) {
-                    throw RuntimeException("The step ${meter.id.stepName} has too many columns for row $row: $size")
+                    throw RuntimeException("The step $step has too many columns to display for row $row: $size")
                 }
             }
             .computeIfAbsent(column) { concurrentList() }.apply {
                 if (size > 4) {
-                    throw ConsoleException("The step ${meter.id.stepName} has too many values at console position ${row}:${column}. Meters: ${map { it.meter.id }}")
+                    throw ConsoleException("The step $step has too many values to display at console position ${row}:${column}. Meters: ${map { it.meter.id }}")
                 }
                 add(ReportedValue(meter, format, severity, toNumber))
             }

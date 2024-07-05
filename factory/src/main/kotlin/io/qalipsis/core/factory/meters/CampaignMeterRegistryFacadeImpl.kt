@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package io.qalipsis.core.factory.meters
 
 import io.aerisconsulting.catadioptre.KTestable
@@ -40,48 +39,43 @@ import io.qalipsis.api.meters.Timer
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.reporter.MeterReporter
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.TickerMode
+import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.concurrent.fixedRateTimer
+import java.time.temporal.ChronoUnit
 
 /**
  * Implementation of meter registry.
  */
 @Singleton
-internal class CampaignMeterRegistryImpl(
+internal class CampaignMeterRegistryFacadeImpl(
     private val publisherFactories: Collection<MeasurementPublisherFactory>,
+    private val meterRegistry: MeterRegistry,
     factoryConfiguration: FactoryConfiguration,
-    private val meterReporter: MeterReporter,
-    @Value("\${${MetersConfig.EXPORT_CONFIGURATION}.campaign-step:PT5S}") private val step: Duration,
     private val measurementConfiguration: MeasurementConfiguration,
+    @Value("\${${MetersConfig.EXPORT_CONFIGURATION}.campaign-step:PT5S}") private val step: Duration,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
 ) : CampaignMeterRegistry, CampaignLifeCycleAware {
 
+    @KTestable
     private val additionalTags = mutableMapOf<String, String>()
 
     @KTestable
     private lateinit var currentCampaignKey: CampaignKey
 
     @KTestable
-    private var publishingTimer: java.util.Timer? = null
-
-    @KTestable
-    private var snapshots = listOf<MeterSnapshot<*>>()
+    private lateinit var ticker: ReceiveChannel<*>
 
     @KTestable
     private var publishers = listOf<MeasurementPublisher>()
-
-    /**
-     * Contains all the unique meters.
-     */
-    @KTestable
-    private val meters = ConcurrentHashMap<Meter.Id, Meter<*>>()
 
     init {
         additionalTags.putAll(factoryConfiguration.tags)
@@ -95,50 +89,48 @@ internal class CampaignMeterRegistryImpl(
     }
 
     override suspend fun init(campaign: Campaign) {
-        meters.clear()
         currentCampaignKey = campaign.campaignKey
         publishers = publisherFactories.map { it.getPublisher() }
         publishers.forEach { it.init() }
         startPublishingJob()
     }
 
-    suspend fun startPublishingJob() {
+    @KTestable
+    private suspend fun startPublishingJob() {
         logger.debug { "Starting publishing job" }
-        require(publishingTimer == null) { "Previous job has not yet completed" }
-
         val stepMillis = step.toMillis()
-        val initialDelayMillis: Long = stepMillis - System.currentTimeMillis() % stepMillis + 1
-        publishingTimer = fixedRateTimer(
-            name = "meter-publishing",
-            daemon = true,
-            initialDelay = initialDelayMillis,
-            period = stepMillis
-        ) {
-            coroutineScope.launch {
-                snapshots = takeSnapshots(Instant.now(), meters).toList()
-                publishers.forEach {
-                    logger.trace { "Publishing ${snapshots.size} snapshots with $it publisher." }
-                    it.publish(snapshots)
-                }
+        ticker = ticker(stepMillis, stepMillis, mode = TickerMode.FIXED_PERIOD)
+        coroutineScope.launch {
+            for (event in ticker) {
+                val snapshots = meterRegistry.snapshots(Instant.now().truncatedTo(ChronoUnit.SECONDS))
+                publishSnapshots(snapshots)
             }
         }
     }
 
-    @KTestable
-    private suspend fun takeSnapshots(
-        timestamp: Instant,
-        meters: Map<Meter.Id, Meter<*>>,
-    ): Collection<MeterSnapshot<*>> =
-        meters.values.map { it.buildSnapshot(timestamp) }
-
     override suspend fun close(campaign: Campaign) {
-        clear()
-        publishingTimer?.cancel()
+        ticker.cancel()
+        val snapshots = meterRegistry.summarize(Instant.now().truncatedTo(ChronoUnit.SECONDS))
+        publishSnapshots(snapshots).joinAll()
         publishers.forEach { it.stop() }
     }
 
-    override fun clear() {
-        meters.clear()
+    @KTestable
+    private fun publishSnapshots(snapshots: Collection<MeterSnapshot>): Collection<Job> {
+        return if (snapshots.isNotEmpty()) {
+            publishers.map { publisher ->
+                logger.trace { "Publishing ${snapshots.size} snapshots with publisher $publisher." }
+                coroutineScope.launch {
+                    try {
+                        publisher.publish(snapshots)
+                    } catch (e: Exception) {
+                        logger.error(e) { "Publishing ${snapshots.size} snapshots failed for the publisher ${publisher::class}: ${e.message}" }
+                    }
+                }
+            }
+        } else {
+            emptyList()
+        }
     }
 
     override fun counter(name: String, vararg tags: String): Counter {
@@ -153,23 +145,19 @@ internal class CampaignMeterRegistryImpl(
     ): Counter {
         return counter(
             Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
                 meterName = name,
-                tags = tags + additionalTags,
+                tags = tags + additionalTags + mapOf(
+                    CAMPAIGN_KEY to currentCampaignKey,
+                    SCENARIO_NAME to scenarioName,
+                    STEP_NAME to stepName
+                ),
                 type = MeterType.COUNTER
             )
         )
     }
 
     private fun counter(meterId: Meter.Id): Counter {
-        return meters.computeIfAbsent(meterId) {
-            CounterImpl(
-                meterId,
-                meterReporter
-            )
-        } as Counter
+        return meterRegistry.counter(meterId)
     }
 
 
@@ -185,33 +173,24 @@ internal class CampaignMeterRegistryImpl(
     ): Gauge {
         return gauge(
             Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
                 meterName = name,
-                tags = tags + additionalTags,
+                tags = tags + additionalTags + mapOf(
+                    CAMPAIGN_KEY to currentCampaignKey,
+                    SCENARIO_NAME to scenarioName,
+                    STEP_NAME to stepName
+                ),
                 type = MeterType.GAUGE
             )
         )
     }
 
     private fun gauge(meterId: Meter.Id): Gauge {
-        return meters.computeIfAbsent(meterId) {
-            GaugeImpl(
-                meterId,
-                meterReporter
-            )
-        } as Gauge
+        return meterRegistry.gauge(meterId)
     }
 
     override fun summary(name: String, vararg tags: String): DistributionSummary {
         val meterId = asId(name, tagsAsMap(tags), MeterType.DISTRIBUTION_SUMMARY)
-        return summary(
-            meterId.scenarioName,
-            meterId.stepName,
-            meterId.meterName,
-            meterId.tags
-        )
+        return summary(meterId, emptyList())
     }
 
     override fun summary(
@@ -223,14 +202,15 @@ internal class CampaignMeterRegistryImpl(
     ): DistributionSummary {
         return summary(
             meterId = Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
                 meterName = name,
-                tags = tags + additionalTags,
+                tags = tags + additionalTags + mapOf(
+                    CAMPAIGN_KEY to currentCampaignKey,
+                    SCENARIO_NAME to scenarioName,
+                    STEP_NAME to stepName
+                ),
                 type = MeterType.DISTRIBUTION_SUMMARY
             ),
-            percentiles = measurementConfiguration.summary.percentiles ?: percentiles,
+            percentiles = percentiles,
         )
     }
 
@@ -238,23 +218,14 @@ internal class CampaignMeterRegistryImpl(
         meterId: Meter.Id,
         percentiles: Collection<Double>
     ): DistributionSummary {
-        return meters.computeIfAbsent(meterId) {
-            DistributionSummaryImpl(
-                meterId,
-                meterReporter,
-                percentiles = percentiles
-            )
-        } as DistributionSummary
+        return meterRegistry.summary(
+            meterId,
+            (percentiles.takeIf { it.isNotEmpty() } ?: measurementConfiguration.summary.percentiles.orEmpty()).toSet())
     }
 
     override fun timer(name: String, vararg tags: String): Timer {
         val meterId = asId(name, tagsAsMap(tags), MeterType.TIMER)
-        return timer(
-            meterId.scenarioName,
-            meterId.stepName,
-            meterId.meterName,
-            meterId.tags
-        )
+        return timer(meterId, emptyList())
     }
 
     override fun timer(
@@ -266,14 +237,15 @@ internal class CampaignMeterRegistryImpl(
     ): Timer {
         return timer(
             meterId = Meter.Id(
-                campaignKey = currentCampaignKey,
-                scenarioName = scenarioName,
-                stepName = stepName,
                 meterName = name,
-                tags = tags + additionalTags,
+                tags = tags + additionalTags + mapOf(
+                    CAMPAIGN_KEY to currentCampaignKey,
+                    SCENARIO_NAME to scenarioName,
+                    STEP_NAME to stepName
+                ),
                 type = MeterType.TIMER
             ),
-            percentiles = measurementConfiguration.timer.percentiles ?: percentiles,
+            percentiles = percentiles
         )
     }
 
@@ -281,22 +253,15 @@ internal class CampaignMeterRegistryImpl(
         meterId: Meter.Id,
         percentiles: Collection<Double>,
     ): Timer {
-        return meters.computeIfAbsent(meterId) {
-            TimerImpl(
-                meterId,
-                meterReporter,
-                percentiles = percentiles,
-            )
-        } as Timer
+        return meterRegistry.timer(
+            meterId,
+            (percentiles.takeIf { it.isNotEmpty() } ?: measurementConfiguration.timer.percentiles.orEmpty()).toSet())
     }
 
     /**
      * Converts the provided details to a meter id.
      */
     private fun asId(name: String, tags: Map<String, String>, type: MeterType): Meter.Id = Meter.Id(
-        campaignKey = currentCampaignKey,
-        scenarioName = tags["scenario"] ?: "",
-        stepName = tags["step"] ?: "",
         meterName = name,
         tags = tags + additionalTags,
         type = type
@@ -308,10 +273,17 @@ internal class CampaignMeterRegistryImpl(
     private fun tagsAsMap(tags: Array<out String>): Map<String, String> {
         return tags.toList().windowed(2, 2, false).associate {
             it[0] to it[1]
-        }
+        } + (CAMPAIGN_KEY to currentCampaignKey) // The scenario and step tags should normally be already added by the caller function
     }
 
     companion object {
+
         val logger = logger()
+
+        const val CAMPAIGN_KEY = "campaign"
+
+        const val SCENARIO_NAME = "scenario"
+
+        const val STEP_NAME = "step"
     }
 }
