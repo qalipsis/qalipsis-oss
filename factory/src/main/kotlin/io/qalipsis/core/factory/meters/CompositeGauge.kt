@@ -1,43 +1,56 @@
+/*
+ * QALIPSIS
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 package io.qalipsis.core.factory.meters
 
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.Meter
 
 /**
- * Composite class to encapsulate the [Gauge]s at the scenario and campaign
- * level in order to update both at the same time.
- *
- * This [Gauge] should be seen as the [scenarioLevelGauge] by the calling application.
- * The meter registries are the only one aware of the existence of the [campaignLevelGauge]
- * and will ask for its publication when required.
- *
- * This instance of [Gauge] is not known by the instances of Qalipsis measurement publisher.
- *
- * @author Joël Valère
+ * Implementation of [Gauge] that updates the scenario-relevant meter [scenarioMeter], as well as
+ * the meter at the global campaign level [globalMeter].
  */
-internal data class CompositeGauge(
-    private val scenarioLevelGauge: Gauge,
-    private val campaignLevelGauge: Gauge
-) : Gauge by scenarioLevelGauge {
+@Suppress("UNCHECKED_CAST")
+class CompositeGauge(
+    private val scenarioMeter: Gauge,
+    private val globalMeter: Gauge,
+) : Gauge by scenarioMeter,
+    Meter.ReportingConfiguration<Gauge> by (scenarioMeter as Meter.ReportingConfiguration<Gauge>) {
 
-    override val id: Meter.Id
-        get() = scenarioLevelGauge.id
+    override fun decrement(): Double {
+        globalMeter.decrement()
+        return scenarioMeter.decrement()
+    }
 
-    override fun report(configure: Meter.ReportingConfiguration<Gauge>.() -> Unit): Gauge =
-        scenarioLevelGauge.report(configure)
+    override fun decrement(amount: Double): Double {
+        globalMeter.decrement(amount)
+        return scenarioMeter.decrement(amount)
+    }
 
-    fun toByte() = scenarioLevelGauge.value().toInt().toByte()
+    override fun increment(): Double {
+        globalMeter.increment()
+        return scenarioMeter.increment()
+    }
 
-    fun toChar(): Char = scenarioLevelGauge.value().toInt().toChar()
-
-    fun toDouble() = scenarioLevelGauge.value()
-
-    fun toFloat() = scenarioLevelGauge.value().toFloat()
-
-    fun toInt() = scenarioLevelGauge.value().toInt()
-
-    fun toLong() = scenarioLevelGauge.value().toLong()
-
-    fun toShort() = scenarioLevelGauge.value().toInt().toShort()
+    override fun increment(amount: Double): Double {
+        globalMeter.increment(amount)
+        return scenarioMeter.increment(amount)
+    }
 
 }

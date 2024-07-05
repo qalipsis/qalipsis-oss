@@ -22,6 +22,7 @@ plugins {
     kotlin("kapt")
     kotlin("plugin.allopen")
     kotlin("plugin.serialization")
+    id("me.champeau.jmh") version "0.7.2"
 }
 
 description = "QALIPSIS Factory microservice"
@@ -33,7 +34,8 @@ allOpen {
         "io.qalipsis.api.annotations.StepConverter",
         "io.qalipsis.api.annotations.StepDecorator",
         "io.qalipsis.api.annotations.PluginComponent",
-        "io.micronaut.validation.Validated"
+        "io.micronaut.validation.Validated",
+        "org.openjdk.jmh.annotations.State"
     )
 }
 
@@ -45,6 +47,18 @@ kapt {
 }
 
 val apiVersion: String by project
+
+jmh {
+    includeTests.set(false)
+    jvmArgsAppend.set(listOf("-Duser.language=en"))
+
+    operationsPerInvocation.set(4)
+    timeOnIteration.set("1s")
+    threads.set(2)
+
+    benchmarkMode.set(listOf("thrpt", "avgt"))
+    timeUnit.set("us")
+}
 
 dependencies {
     compileOnly("org.graalvm.nativeimage:svm")
@@ -91,5 +105,9 @@ dependencies {
     kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")
     kaptTest("io.qalipsis:qalipsis-api-processors:$apiVersion")
+
+    jmh("io.qalipsis:qalipsis-test:$apiVersion")
+    //jmh("org.openjdk.jmh:jmh-generator-annprocess:1.36")
+    //jmhAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.36")
 }
 

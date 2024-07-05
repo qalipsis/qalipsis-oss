@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import assertk.all
 import assertk.assertThat
@@ -32,9 +32,12 @@ import io.mockk.mockk
 import io.qalipsis.api.meters.DistributionMeasurementMetric
 import io.qalipsis.api.meters.Measurement
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.MeterType
 import io.qalipsis.api.meters.Statistic
-import io.qalipsis.core.factory.meters.catadioptre.observationCount
-import io.qalipsis.core.factory.meters.catadioptre.total
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.counter
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.measure
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.total
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -44,7 +47,7 @@ import java.time.Instant
 
 
 @WithMockk
-internal class DistributionSummaryImplTest {
+internal class StepDistributionSummaryTest {
 
     @JvmField
     @RegisterExtension
@@ -57,7 +60,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should increment the counter by 1 when record is called`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf())
+        val summary = StepDistributionSummary(id, meterReporter, listOf())
         summary.record(5.0)
         summary.record(6.0)
         summary.record(2.0)
@@ -73,7 +76,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should return the total of the collected observations`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf())
+        val summary = StepDistributionSummary(id, meterReporter, listOf())
         summary.record(5.0)
         summary.record(6.0)
         summary.record(2.0)
@@ -89,7 +92,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should return the max of the collected observations`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf())
+        val summary = StepDistributionSummary(id, meterReporter, listOf())
         summary.record(5.0)
         summary.record(6.0)
         summary.record(2.0)
@@ -105,7 +108,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should return the mean of the collected observations`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf())
+        val summary = StepDistributionSummary(id, meterReporter, listOf())
         summary.record(5.0)
         summary.record(6.0)
         summary.record(5.5)
@@ -121,7 +124,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should record collected observations`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf())
+        val summary = StepDistributionSummary(id, meterReporter, listOf())
 
         // when
         summary.record(5.0)
@@ -129,7 +132,7 @@ internal class DistributionSummaryImplTest {
         summary.record(11.2)
 
         //then
-        assertThat(summary.observationCount()).transform { it.toDouble() }.isEqualTo(3.0)
+        assertThat(summary.counter()).transform { it.toDouble() }.isEqualTo(3.0)
         assertThat(summary.total()).transform { it.toDouble() }.isEqualTo(27.4)
     }
 
@@ -137,7 +140,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should not return any observationPoint from the collected observations when no percentile is specified`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf())
+        val summary = StepDistributionSummary(id, meterReporter, listOf())
         summary.record(33.0)
         summary.record(68.9)
         summary.record(2.0)
@@ -156,7 +159,7 @@ internal class DistributionSummaryImplTest {
     internal fun `should return the observationPoint of the collected observations`() {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf(50.0))
+        val summary = StepDistributionSummary(id, meterReporter, listOf(50.0))
         summary.record(33.0)
         summary.record(68.9)
         summary.record(2.0)
@@ -172,10 +175,10 @@ internal class DistributionSummaryImplTest {
     }
 
     @Test
-    internal fun measure() = testDispatcherProvider.run {
+    internal fun `should generate the measures and reset`() = testDispatcherProvider.run {
         //given
         val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf(75.0, 99.0))
+        val summary = StepDistributionSummary(id, meterReporter, listOf(75.0, 99.0))
         summary.record(33.0)
         summary.record(68.9)
         summary.record(2.0)
@@ -184,26 +187,26 @@ internal class DistributionSummaryImplTest {
         summary.record(77.0)
 
         // when
-        val result = summary.measure().toList()
+        var result = summary.measure().toList()
 
         //then
         assertThat(result).isNotNull().all {
             hasSize(6)
             index(0).all {
+                prop(Measurement::value).isEqualTo(39.75)
+                prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
+            }
+            index(1).all {
                 prop(Measurement::value).isEqualTo(6.0)
                 prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
             }
-            index(1).all {
+            index(2).all {
                 prop(Measurement::value).isEqualTo(238.5)
                 prop(Measurement::statistic).isEqualTo(Statistic.TOTAL)
             }
-            index(2).all {
+            index(3).all {
                 prop(Measurement::value).isEqualTo(77.0)
                 prop(Measurement::statistic).isEqualTo(Statistic.MAX)
-            }
-            index(3).all {
-                prop(Measurement::value).isEqualTo(39.75)
-                prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
             }
             index(4).all {
                 isInstanceOf(DistributionMeasurementMetric::class).all {
@@ -220,13 +223,51 @@ internal class DistributionSummaryImplTest {
                 }
             }
         }
+
+        // when
+        result = summary.measure().toList()
+
+        //then
+        assertThat(result).isNotNull().all {
+            hasSize(6)
+            index(0).all {
+                prop(Measurement::value).isEqualTo(0.0)
+                prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
+            }
+            index(1).all {
+                prop(Measurement::value).isEqualTo(0.0)
+                prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
+            }
+            index(2).all {
+                prop(Measurement::value).isEqualTo(0.0)
+                prop(Measurement::statistic).isEqualTo(Statistic.TOTAL)
+            }
+            index(3).all {
+                prop(Measurement::value).isEqualTo(0.0)
+                prop(Measurement::statistic).isEqualTo(Statistic.MAX)
+            }
+            index(4).all {
+                isInstanceOf(DistributionMeasurementMetric::class).all {
+                    prop(DistributionMeasurementMetric::value).isEqualTo(Double.NaN)
+                    prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
+                    prop(DistributionMeasurementMetric::observationPoint).isEqualTo(75.0)
+                }
+            }
+            index(5).all {
+                isInstanceOf(DistributionMeasurementMetric::class).all {
+                    prop(DistributionMeasurementMetric::value).isEqualTo(Double.NaN)
+                    prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
+                    prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
+                }
+            }
+        }
     }
 
     @Test
-    internal fun buildSnapshot() = testDispatcherProvider.run {
+    internal fun `should build the snapshot and reset`() = testDispatcherProvider.run {
         //given
-        val id = mockk<Meter.Id>()
-        val summary = DistributionSummaryImpl(id, meterReporter, listOf(75.0, 99.0))
+        val id = Meter.Id("any-test", type = MeterType.DISTRIBUTION_SUMMARY, tags = mapOf("a" to "b", "c" to "d"))
+        val summary = StepDistributionSummary(id, meterReporter, listOf(75.0, 99.0))
         summary.record(33.0)
         summary.record(68.9)
         summary.record(2.0)
@@ -236,29 +277,35 @@ internal class DistributionSummaryImplTest {
 
         // when
         val now = Instant.now()
-        val result = summary.buildSnapshot(now)
+        var result = summary.snapshot(now)
 
         //then
         assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
-            prop(MeterSnapshotImpl<*>::meter).isEqualTo(summary)
-            prop(MeterSnapshotImpl<*>::timestamp).isEqualTo(now)
-            prop(MeterSnapshotImpl<*>::measurements).transform { it.toList() }.all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.DISTRIBUTION_SUMMARY,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "period")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
                 hasSize(6)
                 index(0).all {
+                    prop(Measurement::value).isEqualTo(39.75)
+                    prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
+                }
+                index(1).all {
                     prop(Measurement::value).isEqualTo(6.0)
                     prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
                 }
-                index(1).all {
+                index(2).all {
                     prop(Measurement::value).isEqualTo(238.5)
                     prop(Measurement::statistic).isEqualTo(Statistic.TOTAL)
                 }
-                index(2).all {
+                index(3).all {
                     prop(Measurement::value).isEqualTo(77.0)
                     prop(Measurement::statistic).isEqualTo(Statistic.MAX)
-                }
-                index(3).all {
-                    prop(Measurement::value).isEqualTo(39.75)
-                    prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
                 }
                 index(4).all {
                     isInstanceOf(DistributionMeasurementMetric::class).all {
@@ -270,6 +317,54 @@ internal class DistributionSummaryImplTest {
                 index(5).all {
                     isInstanceOf(DistributionMeasurementMetric::class).all {
                         prop(DistributionMeasurementMetric::value).isEqualTo(77.0)
+                        prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
+                        prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
+                    }
+                }
+            }
+        }
+
+        // when
+        result = summary.snapshot(now)
+
+        //then
+        assertThat(result).isInstanceOf(MeterSnapshotImpl::class).all {
+            prop(MeterSnapshotImpl::meterId).isEqualTo(
+                Meter.Id(
+                    "any-test",
+                    type = MeterType.DISTRIBUTION_SUMMARY,
+                    tags = mapOf("a" to "b", "c" to "d", "scope" to "period")
+                )
+            )
+            prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
+            prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
+                hasSize(6)
+                index(0).all {
+                    prop(Measurement::value).isEqualTo(0.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.MEAN)
+                }
+                index(1).all {
+                    prop(Measurement::value).isEqualTo(0.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.COUNT)
+                }
+                index(2).all {
+                    prop(Measurement::value).isEqualTo(0.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.TOTAL)
+                }
+                index(3).all {
+                    prop(Measurement::value).isEqualTo(0.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.MAX)
+                }
+                index(4).all {
+                    isInstanceOf(DistributionMeasurementMetric::class).all {
+                        prop(DistributionMeasurementMetric::value).isEqualTo(Double.NaN)
+                        prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
+                        prop(DistributionMeasurementMetric::observationPoint).isEqualTo(75.0)
+                    }
+                }
+                index(5).all {
+                    isInstanceOf(DistributionMeasurementMetric::class).all {
+                        prop(DistributionMeasurementMetric::value).isEqualTo(Double.NaN)
                         prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                         prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
                     }

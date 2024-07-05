@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2023 AERIS IT Solutions GmbH
+ * Copyright (C) 2024 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,52 +17,56 @@
  *
  */
 
-package io.qalipsis.core.factory.meters
+package io.qalipsis.core.factory.meters.inmemory
 
 import com.tdunning.math.stats.TDigest
-import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.meters.DistributionMeasurementMetric
-import io.qalipsis.api.meters.Measurement
 import io.qalipsis.api.meters.MeasurementMetric
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.Statistic
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.factory.meters.MeterSnapshotImpl
 import io.qalipsis.core.reporter.MeterReporter
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.LongAdder
 
 /**
- * Implementation of [Timer] to track large number of short running events.
+ * Implementation of [Timer] able to create step-period snapshots, while keeping the overall values over the campaign.
  *
- * @author Francisca Eze
+ * It uses a round-robin strategy to avoid reading and writing at the same time.
+ *
+ * @author Eric Jessé
  */
-internal class TimerImpl(
+internal class InMemoryCumulativeTimer(
     override val id: Meter.Id,
     private val meterReporter: MeterReporter,
-    private val percentiles: Collection<Double>,
+    override val percentiles: Collection<Double>,
+    private val bufferSize: Int = 3,
 ) : Timer, Meter.ReportingConfiguration<Timer> {
 
     private var reportingConfigured = AtomicBoolean()
 
-    @KTestable
+    private val currentBucketHolder = AtomicInteger(0)
+
+    private val buckets = List(bufferSize) { StepTimer(id, meterReporter, percentiles) }.toTypedArray()
+
     private val counter = LongAdder()
 
-    @KTestable
     private val total = LongAdder()
 
-    @KTestable
-    private val tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private var tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
     private val max = AtomicLong(0)
 
     override fun report(configure: Meter.ReportingConfiguration<Timer>.() -> Unit): Timer {
-        if (!reportingConfigured.compareAndExchange(false, true)) {
+        if (reportingConfigured.compareAndSet(false, true)) {
             this.configure()
         }
         return this
@@ -78,14 +82,15 @@ internal class TimerImpl(
         meterReporter.report(this, format, severity, row, column, toNumber)
     }
 
-    override suspend fun buildSnapshot(timestamp: Instant): MeterSnapshot<*> =
-        MeterSnapshotImpl(timestamp, this, this.measure())
+    override fun count(): Long {
+        return counter.sum() + buckets[currentBucketHolder.get()].count()
+    }
 
-    override fun count() = counter.toLong()
-
-    override fun totalTime(unit: TimeUnit?) = microsToUnitConverter(total.toDouble(), unit)
-
-    override fun max(unit: TimeUnit?) = microsToUnitConverter(max.get().toDouble(), unit)
+    override fun max(unit: TimeUnit?): Double {
+        return microsToUnitConverter(max.get().toDouble(), unit).coerceAtLeast(
+            buckets[currentBucketHolder.get()].max(unit)
+        )
+    }
 
     override fun mean(unit: TimeUnit?): Double {
         val count = count()
@@ -94,16 +99,10 @@ internal class TimerImpl(
 
     override fun record(amount: Long, unit: TimeUnit?) {
         if (amount >= 0) {
-            val amountInMicros = TimeUnit.MICROSECONDS.convert(amount, unit)
-            var curMax: Long
-            do {
-                curMax = max.get()
-                // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
-            } while (curMax < amountInMicros && !max.compareAndSet(curMax, amountInMicros))
-            total.add(amountInMicros)
-            counter.add(1)
+            buckets[currentBucketHolder.get()].record(amount, unit)
             tDigestBucket?.let {
-                synchronized(tDigestBucket) {
+                val amountInMicros = TimeUnit.MICROSECONDS.convert(amount, unit)
+                synchronized(it) {
                     it.add(amountInMicros.toDouble())
                 }
             }
@@ -120,23 +119,49 @@ internal class TimerImpl(
         }
     }
 
-    override fun percentile(percentile: Double, unit: TimeUnit?): Double {
-        return tDigestBucket?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+    override fun totalTime(unit: TimeUnit?): Double {
+        return microsToUnitConverter(total.toDouble(), unit) + buckets[currentBucketHolder.get()].totalTime(unit)
     }
 
-    override suspend fun measure(): Collection<Measurement> =
-        listOf(
-            MeasurementMetric(count().toDouble(), Statistic.COUNT),
-            MeasurementMetric(totalTime(BASE_TIME_UNIT), Statistic.TOTAL_TIME),
-            MeasurementMetric(max(BASE_TIME_UNIT), Statistic.MAX),
+    override suspend fun snapshot(timestamp: Instant): MeterSnapshot {
+        val currentBucket = currentBucketHolder.get()
+        // Change to the next available bucket to avoid concurrent changes during the reading.
+        return if (currentBucketHolder.compareAndSet(currentBucket, (currentBucket + 1) % bufferSize)) {
+            buckets[currentBucket].let { timer ->
+                counter.add(timer.count())
+                total.add(timer.totalTime(null).toLong())
+                val actualMax = max.get().coerceAtLeast(timer.max(null).toLong())
+                max.set(actualMax)
+                timer.snapshot(timestamp)
+            }
+        } else {
+            MeterSnapshotImpl(timestamp, id, emptyList())
+        }
+    }
+
+    override suspend fun summarize(timestamp: Instant): MeterSnapshot {
+        snapshot(timestamp)
+        val measures = listOf(
             MeasurementMetric(mean(BASE_TIME_UNIT), Statistic.MEAN),
+            MeasurementMetric(counter.sum().toDouble(), Statistic.COUNT),
+            MeasurementMetric(
+                microsToUnitConverter(total.toDouble(), BASE_TIME_UNIT),
+                Statistic.TOTAL_TIME
+            ),
+            MeasurementMetric(microsToUnitConverter(max.toDouble(), BASE_TIME_UNIT), Statistic.MAX),
         ) + (percentiles.map {
             DistributionMeasurementMetric(percentile(it, BASE_TIME_UNIT), Statistic.PERCENTILE, it)
         })
 
+        return MeterSnapshotImpl(timestamp, id.copy(tags = id.tags + ("scope" to "campaign")), measures)
+    }
+
+    override fun percentile(percentile: Double, unit: TimeUnit?): Double {
+        return tDigestBucket?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+    }
 
     /**
-     * Converts the total time to the specified format. Defaults to nanoseconds when not specified
+     * Converts the total time to the specified format. Defaults to nanoseconds when not specified.
      */
     private fun microsToUnitConverter(totalTimeInMicros: Double, unit: TimeUnit?): Double {
         return when (unit) {
@@ -158,7 +183,7 @@ internal class TimerImpl(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as TimerImpl
+        other as InMemoryCumulativeTimer
         return id == other.id
     }
 
