@@ -60,13 +60,13 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Duration
-import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.time.Instant
 
 @WithMockk
 internal class DataSeriesServiceImplTest {
@@ -1014,10 +1014,23 @@ internal class DataSeriesServiceImplTest {
             )
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
-            coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
+            coEvery {
+                dataSeriesRepository.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    pageable = pageable
+                )
+            } returns page
 
             // when
-            val result = dataSeriesService.searchDataSeries("my-tenant", "user", emptyList(), null, 0, 20)
+            val result = dataSeriesService.searchDataSeries(
+                tenant = "my-tenant",
+                username = "user",
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
 
             // then
             assertThat(result).all {
@@ -1030,7 +1043,7 @@ internal class DataSeriesServiceImplTest {
                 }
             }
             coVerifyOrder {
-                dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable)
+                dataSeriesRepository.searchDataSeries(tenant = "my-tenant", username = "user", pageable = pageable)
             }
             confirmVerified(dataSeriesRepository)
         }
@@ -1055,10 +1068,23 @@ internal class DataSeriesServiceImplTest {
             )
             val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("fieldName", true)))
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
-            coEvery { dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable) } returns page
+            coEvery {
+                dataSeriesRepository.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    pageable = pageable
+                )
+            } returns page
 
             // when
-            val result = dataSeriesService.searchDataSeries("my-tenant", "user", emptyList(), "fieldName", 0, 20)
+            val result = dataSeriesService.searchDataSeries(
+                tenant = "my-tenant",
+                username = "user",
+                filters = emptyList(),
+                sort = "fieldName",
+                page = 0,
+                size = 20
+            )
 
             // then
             assertThat(result).all {
@@ -1071,7 +1097,7 @@ internal class DataSeriesServiceImplTest {
                 }
             }
             coVerifyOrder {
-                dataSeriesRepository.searchDataSeries("my-tenant", "user", pageable)
+                dataSeriesRepository.searchDataSeries(tenant = "my-tenant", username = "user", pageable = pageable)
             }
             confirmVerified(dataSeriesRepository)
         }
@@ -1100,16 +1126,23 @@ internal class DataSeriesServiceImplTest {
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
             coEvery {
                 dataSeriesRepository.searchDataSeries(
-                    "my-tenant",
-                    "user",
-                    listOf(filter1, filter2),
-                    pageable
+                    tenant = "my-tenant",
+                    username = "user",
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
                 )
             } returns page
 
             // when
             val result =
-                dataSeriesService.searchDataSeries("my-tenant", "user", listOf("Un*u_", "u_Er"), null, 0, 20)
+                dataSeriesService.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    filters = listOf("Un*u_", "u_Er"),
+                    sort = null,
+                    page = 0,
+                    size = 20
+                )
 
             // then
             assertThat(result).all {
@@ -1122,7 +1155,12 @@ internal class DataSeriesServiceImplTest {
                 }
             }
             coVerifyOrder {
-                dataSeriesRepository.searchDataSeries("my-tenant", "user", listOf(filter1, filter2), pageable)
+                dataSeriesRepository.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
+                )
             }
             confirmVerified(dataSeriesRepository)
         }
@@ -1151,16 +1189,23 @@ internal class DataSeriesServiceImplTest {
             val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
             coEvery {
                 dataSeriesRepository.searchDataSeries(
-                    "my-tenant",
-                    "user",
-                    listOf(filter1, filter2),
-                    pageable
+                    tenant = "my-tenant",
+                    username = "user",
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
                 )
             } returns page
 
             // when
             val result =
-                dataSeriesService.searchDataSeries("my-tenant", "user", listOf("F_oo", "Us_r"), "fieldName", 0, 20)
+                dataSeriesService.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    filters = listOf("F_oo", "Us_r"),
+                    sort = "fieldName",
+                    page = 0,
+                    size = 20
+                )
 
             // then
             assertThat(result).all {
@@ -1173,7 +1218,12 @@ internal class DataSeriesServiceImplTest {
                 }
             }
             coVerifyOrder {
-                dataSeriesRepository.searchDataSeries("my-tenant", "user", listOf(filter1, filter2), pageable)
+                dataSeriesRepository.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
+                )
             }
             confirmVerified(dataSeriesRepository)
         }
@@ -1274,10 +1324,12 @@ internal class DataSeriesServiceImplTest {
                         )
                     )
                 })
-                dataSeriesRepository.saveAll(listOf(
-                    dataSeriesEntity1.copy(query = "the-updated-query-1"),
-                    dataSeriesEntity2.copy(query = "the-updated-query-2")
-                ))
+                dataSeriesRepository.saveAll(
+                    listOf(
+                        dataSeriesEntity1.copy(query = "the-updated-query-1"),
+                        dataSeriesEntity2.copy(query = "the-updated-query-2")
+                    )
+                )
             }
         }
 

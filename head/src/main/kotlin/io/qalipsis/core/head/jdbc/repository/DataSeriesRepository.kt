@@ -29,6 +29,7 @@ import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 
 /**
  * Micronaut data repository to operate with [DataSeriesEntity].
@@ -83,8 +84,8 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
                     ELSE creator_id
                 END AS creator_id
                 FROM data_series data_series
-                    LEFT JOIN tenant t ON data_series.tenant_id = t.id
-                WHERE data_series.reference in (:references) AND (t.reference = :tenant OR t.reference = '_qalipsis_ten_')
+                    JOIN tenant t ON data_series.tenant_id = t.id
+                WHERE data_series.reference in (:references) AND t.reference IN (:tenant, '${Defaults.TENANT}')
             """
     )
     suspend fun findAllByTenantAndReferences(
@@ -110,16 +111,17 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
                     data_series_entity_.query, 
                     data_series_entity_.color_opacity,
                         CASE 
-                            WHEN t.reference = '_qalipsis_ten_' THEN 'READONLY'
+                            WHEN t.id <> current_tenant.id THEN 'READONLY'
                             ELSE sharing_mode
                         END AS sharing_mode,
                         CASE 
-                            WHEN t.reference = '_qalipsis_ten_' THEN -1
+                            WHEN t.id <> current_tenant.id THEN -1
                             ELSE creator_id
                         END AS creator_id 
                         FROM data_series AS data_series_entity_
                             LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
-                            LEFT JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                            JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                            JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
                         WHERE 
                         (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
                         AND (
@@ -129,7 +131,7 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
                          OR u.username ILIKE any (array[:filters]) 
                          OR u.display_name ILIKE any (array[:filters])
                         )
-                        AND (t.reference = :tenant OR t.reference = '_qalipsis_ten_')
+                        AND t.reference IN (:tenant, '${Defaults.TENANT}')
         """,
         countQuery = """
             SELECT COUNT(*)
@@ -145,13 +147,13 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
              OR u.display_name ILIKE any (array[:filters])
             )
             AND EXISTS
-            (SELECT * FROM tenant tenant_entity_ WHERE tenant_entity_.id = data_series_entity_.tenant_id 
-            AND (tenant_entity_.reference = :tenant OR tenant_entity_.reference = '_qalipsis_ten_'))""",
+            (SELECT * FROM tenant t WHERE t.id = data_series_entity_.tenant_id AND t.reference IN (:tenant, :currentTenant, '${Defaults.TENANT}'))""",
         nativeQuery = true
     )
     suspend fun searchDataSeries(
         tenant: String,
         username: String,
+        currentTenant: String = tenant,
         @Expandable filters: Collection<String>,
         pageable: Pageable
     ): Page<DataSeriesEntity>
@@ -175,19 +177,20 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
             data_series_entity_.query, 
             data_series_entity_.color_opacity,
                 CASE 
-                    WHEN t.reference = '_qalipsis_ten_' THEN 'READONLY'
+                    WHEN t.id <> current_tenant.id THEN 'READONLY'
                     ELSE sharing_mode
                 END AS sharing_mode,
                 CASE 
-                    WHEN t.reference = '_qalipsis_ten_' THEN -1
+                    WHEN t.id <> current_tenant.id THEN -1
                     ELSE creator_id
                 END AS creator_id 
                 FROM data_series AS data_series_entity_
                     LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
-                    LEFT JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                    JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                    JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
                 WHERE 
                 (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
-                AND (t.reference = :tenant OR t.reference = '_qalipsis_ten_')""",
+                AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
         countQuery = """
             SELECT COUNT(*) 
             FROM data_series AS data_series_entity_
@@ -195,11 +198,15 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
             WHERE 
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
             AND EXISTS
-            (SELECT * FROM tenant tenant_entity_ WHERE tenant_entity_.id = data_series_entity_.tenant_id 
-            AND (tenant_entity_.reference = :tenant OR tenant_entity_.reference = '_qalipsis_ten_'))""",
+            (SELECT * FROM tenant t WHERE t.id = data_series_entity_.tenant_id AND t.reference IN (:tenant, :currentTenant, '${Defaults.TENANT}'))""",
         nativeQuery = true
     )
-    suspend fun searchDataSeries(tenant: String, username: String, pageable: Pageable): Page<DataSeriesEntity>
+    suspend fun searchDataSeries(
+        tenant: String,
+        username: String,
+        currentTenant: String = tenant,
+        pageable: Pageable
+    ): Page<DataSeriesEntity>
 
     @Query(
         value = """SELECT tenant_id, * FROM data_series ORDER BY tenant_id""",
