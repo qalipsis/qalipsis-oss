@@ -393,9 +393,9 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            pageable = Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -430,9 +430,9 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            Pageable.from(0, 2, Sort.of(Sort.Order("color")))
+            tenant = tenant.reference,
+            username = creator.username,
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("color")))
         )
 
         //then
@@ -487,9 +487,9 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             //when
             val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-                tenant.reference,
-                creator.username,
-                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+                tenant = tenant.reference,
+                username = creator.username,
+                pageable = Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
             ).content
 
             //then
@@ -526,9 +526,9 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            otherTenant.reference,
-            creator.username,
-            Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
+            tenant = otherTenant.reference,
+            username = creator.username,
+            pageable = Pageable.from(0, 1, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -565,10 +565,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%I_l%1%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%I_l%1%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -606,10 +606,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%even%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%even%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -647,10 +647,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%my-naME%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%my-naME%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -687,10 +687,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%another%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%another%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -726,10 +726,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%unique%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%unique%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -766,10 +766,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%minionsCount%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%minionsCount%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
 
         //then
@@ -813,10 +813,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         //when
         val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-            tenant.reference,
-            creator.username,
-            listOf("%foo%", "%uNIQ%"),
-            Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%foo%", "%uNIQ%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
         ).content
         assertThat(dataSeriesEntities.size).isEqualTo(2)
 
@@ -1029,10 +1029,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             //when
             val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-                tenant.reference,
-                creator.username,
-                listOf("%foo%", "%uNIQ%", "%DEfAu%"),
-                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+                tenant = tenant.reference,
+                username = creator.username,
+                filters = listOf("%foo%", "%uNIQ%", "%DEfAu%"),
+                pageable = Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
             ).content
             assertThat(dataSeriesEntities.size).isEqualTo(3)
             assertThat(dataSeriesEntities.contains(defaultDataSeries))
@@ -1105,9 +1105,9 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             //when
             val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-                tenant.reference,
-                creator.username,
-                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+                tenant = tenant.reference,
+                username = creator.username,
+                pageable = Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
             ).content
             assertThat(dataSeriesEntities.size).isEqualTo(3)
             assertThat(dataSeriesEntities.contains(defaultDataSeries))
@@ -1181,10 +1181,10 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             //when
             val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
-                tenant.reference,
-                creator.username,
-                listOf("%foo%", "%uNIQ%", "%DEfAu%"),
-                Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+                tenant = tenant.reference,
+                username = creator.username,
+                filters = listOf("%foo%", "%uNIQ%", "%DEfAu%"),
+                pageable = Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
             ).content
             assertThat(dataSeriesEntities.size).isEqualTo(2)
             assertThat(dataSeriesEntities).doesNotContain(defaultDataSeries)
@@ -1321,6 +1321,148 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 index(0).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeries2.creatorId)
                 index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(dataSeries2.sharingMode)
             }
+        }
+
+    @Test
+    fun `should return only the data series for tenant with a not-none sharing mode`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy(reference = "second-tenant"))
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val dataSeries1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            val dataSeries2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-name-2",
+                )
+            )
+            val dataSeries3 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-3",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-name-3"
+                )
+            )
+            val dataSeries4 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-4",
+                    sharingMode = SharingMode.READONLY,
+                    displayName = "my-name-4"
+                )
+            )
+            val dataSeries5 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = creator.id,
+                    reference = "my-series-5",
+                    sharingMode = SharingMode.NONE,
+                    displayName = "my-name-5"
+                )
+            )
+            val dataSeries6 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-6",
+                    sharingMode = SharingMode.NONE,
+                    displayName = "my-name-6"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(6)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
+                tenant = tenant2.reference,
+                username = creator.username,
+                pageable = Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeries3.id)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeries4.id)
+                index(2).prop(DataSeriesEntity::id).isEqualTo(dataSeries5.id)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(dataSeries1)
+            assertThat(dataSeriesEntities).doesNotContain(dataSeries2)
+            assertThat(dataSeriesEntities).doesNotContain(dataSeries6)
+        }
+
+    @Test
+    fun `should fetch the data series belonging to the default tenant`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val tenant2 = tenantRepository.save(tenantPrototype.copy(reference = "second-tenant"))
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val dataSeries1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = anotherCreator.id,
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            val dataSeries2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-name-2",
+                )
+            )
+            val dataSeries3 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-3",
+                    sharingMode = SharingMode.NONE,
+                    displayName = "my-name-3"
+                )
+            )
+            val dataSeries4 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant2.id,
+                    creatorId = creator.id,
+                    reference = "my-series-4",
+                    sharingMode = SharingMode.NONE,
+                    displayName = "my-name-4"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
+                tenant = tenant2.reference,
+                username = creator.username,
+                pageable = Pageable.from(0, 3, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeries1.id)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeries4.id)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(dataSeries2)
+            assertThat(dataSeriesEntities).doesNotContain(dataSeries3)
         }
 
 }

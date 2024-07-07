@@ -186,9 +186,13 @@ internal class DataSeriesServiceImpl(
         val pageable = Pageable.from(page, size, sorting)
 
         val dataSeriesEntityPage = if (filters.isNotEmpty()) {
-            dataSeriesRepository.searchDataSeries(tenant, username, filters.formatsFilters(), pageable)
+            dataSeriesRepository.searchDataSeries(
+                tenant = tenant,
+                username = username,
+                filters = filters.formatsFilters(), pageable = pageable
+            )
         } else {
-            dataSeriesRepository.searchDataSeries(tenant, username, pageable)
+            dataSeriesRepository.searchDataSeries(tenant = tenant, username = username, pageable = pageable)
         }
         val creatorsIds = dataSeriesEntityPage.content.map { it.creatorId }.toSet()
         val creatorsNamesByIds = if (creatorsIds.isNotEmpty()) {
