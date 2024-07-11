@@ -24,7 +24,8 @@ package io.qalipsis.api.meters
  * @property TIMER track a large number of short running events
  * @property DISTRIBUTION_SUMMARY tracks the statistical distribution of events
  * @property STATISTICS tracks the sum total statistical distribution of events across the application
- *
+ * @property RATE measures the ratio between two independently tracked measurements
+ * @property THROUGHPUT tracks the number of hits measured per a configured unit of time
  * @author Francisca Eze
  */
 enum class MeterType(val value: String) {
@@ -32,5 +33,7 @@ enum class MeterType(val value: String) {
     GAUGE("gauge"),
     TIMER("timer"),
     DISTRIBUTION_SUMMARY("summary"),
-    STATISTICS("statistics")
+    STATISTICS("statistics"),
+    RATE("rate"),
+    THROUGHPUT("throughput")
 }

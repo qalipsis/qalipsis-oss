@@ -18,6 +18,9 @@ package io.qalipsis.api.meters
 
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
+import java.time.temporal.ChronoUnit
+import java.util.Collections.emptyList
+import java.util.Collections.emptyMap
 
 /**
  * Campaign lifecycle relevant meter registry.
@@ -60,7 +63,7 @@ interface CampaignMeterRegistry {
         stepName: StepName,
         name: String,
         tags: Map<String, String> = emptyMap(),
-        percentiles: Collection<Double> = emptyList()
+        percentiles: Collection<Double> = emptyList(),
     ): Timer
 
     /**
@@ -98,7 +101,7 @@ interface CampaignMeterRegistry {
         stepName: StepName,
         name: String,
         tags: Map<String, String> = emptyMap(),
-        percentiles: Collection<Double> = emptyList()
+        percentiles: Collection<Double> = emptyList(),
     ): DistributionSummary
 
     /**
@@ -122,6 +125,73 @@ interface CampaignMeterRegistry {
      * @sample counterExampleWithVarargTags
      */
     fun counter(name: String, vararg tags: String): Counter
+
+    /**
+     * Creates a new [Rate] metric to be added to the registry. This metric calculates the
+     * ratio between two independently tracked measurements.
+     *
+     * @param scenarioName the name of the scenario under which the rate is collected
+     * @param stepName the name of a step within the scenario
+     * @param name the name of the metric
+     * @param tags additional key-value pairs to associate with the rate metric
+     *
+     * @sample rateExample
+     */
+    fun rate(
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        name: String,
+        tags: Map<String, String> = emptyMap(),
+    ): Rate
+
+    /**
+     * Creates a new [Rate] metric to be added to the registry. This metric calculates the
+     * ratio between two independently tracked measurements.
+     *
+     * @param name the name of the metric
+     * @param tags additional key-value pairs to associate with the rate metric
+     *
+     * @sample rateExampleWithVarargTags
+     */
+    fun rate(
+        name: String,
+        vararg tags: String,
+    ): Rate
+
+    /**
+     * Creates a new [Throughput] metric to be added to the registry. This metric
+     * tracks the number of hits measured per a configured unit of time, default to seconds.
+     *
+     * @param scenarioName the name of the scenario within which the throughput is measured
+     * @param stepName the name of a step within the scenario
+     * @param name the name of the metric
+     * @param tags additional key-value pairs to associate with the metric
+     * @param unit the time unit for the configured measurement interval, defaults to [ChronoUnit.SECONDS]
+     * @param percentiles a list of values within the range of 1.0-100.0, representing specific points of observation,
+     * defaults to an empty list
+     *
+     * @sample throughputExample
+     */
+    fun throughput(
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        name: String,
+        unit: ChronoUnit = ChronoUnit.SECONDS,
+        percentiles: Collection<Double> = emptyList(),
+        tags: Map<String, String> = emptyMap(),
+    ): Throughput
+
+    /**
+     * Creates a new [Throughput] metric to be added to the registry. This metric
+     * tracks the number of hits measured per a configured unit of time, default to seconds.
+     *
+     * @param name the name of the metric
+     * @param unit the time unit for the configured measurement interval, defaults to [ChronoUnit.SECONDS]
+     * @param tags additional key-value pairs to associate with this meter
+     *
+     * @sample throughputExampleWithVarargTags
+     */
+    fun throughput(name: String, vararg tags: String): Throughput
 
     /**
      * Creates a new [DistributionSummary] metric to be added to the registry. This metric
@@ -232,6 +302,53 @@ interface CampaignMeterRegistry {
         summary(
             name = "requests spread",
             tags = arrayOf("foo", "bar", "region", "us-east", "hello", "world", "scenario", "scenario-2"),
+        )
+    }
+
+    /**
+     * Example usage of the `rate` function with vararg tags.
+     */
+    private fun rateExampleWithVarargTags() {
+        rate(
+            name = "requests rate",
+            tags = arrayOf("foo", "bar", "region", "us-east")
+        )
+    }
+
+
+    /**
+     * Example usage of the `rate` function with tags as a [Map].
+     */
+    private fun rateExample() {
+        rate(
+            scenarioName = "scenario 1",
+            stepName = "step 1",
+            name = "requests rate",
+            tags = mapOf("foo" to "bar", "region" to "us-east")
+        )
+    }
+
+    /**
+     * Example usage of the `throughput` function with tags as a [Map].
+     */
+    private fun throughputExample() {
+        throughput(
+            scenarioName = "scenario 1",
+            stepName = "step 1",
+            name = "requests throughput",
+            tags = mapOf("foo" to "bar", "region" to "us-east"),
+            percentiles = emptyList(),
+            unit = ChronoUnit.SECONDS
+        )
+    }
+
+    /**
+     * Example usage of the `throughput` function with vararg tags.
+     */
+    private fun throughputExampleWithVarargTags() {
+        throughput(
+            name = "http-requests throughput",
+            tags = arrayOf("environment", "production", "region", "us-west", "stepName", "step-2"),
         )
     }
 
