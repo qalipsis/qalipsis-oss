@@ -35,28 +35,7 @@ object Permissions {
     const val WRITE_REPORT = "write:report"
     const val READ_TIME_SERIES = "read:time-series"
 
-    val FOR_TESTER = setOf(
-        WRITE_CAMPAIGN,
-        READ_CAMPAIGN,
-        READ_SCENARIO,
-        WRITE_DATA_SERIES,
-        READ_TIME_SERIES,
-    )
-
-    val FOR_REPORTER = setOf(
-        READ_CAMPAIGN,
-        READ_SCENARIO,
-        READ_DATA_SERIES,
-        WRITE_DATA_SERIES,
-        READ_REPORT,
-        WRITE_REPORT,
-        WRITE_DATA_SERIES,
-        READ_TIME_SERIES,
-    )
-
-    val FOR_TENANT_ADMINISTRATOR = emptySet<Permission>()
-
-    val ALL_PERMISSIONS = setOf(
+    private val REGISTERED_PERMISSIONS = mutableSetOf(
         WRITE_CAMPAIGN,
         READ_CAMPAIGN,
         READ_SCENARIO,
@@ -67,5 +46,12 @@ object Permissions {
         READ_DATA_SERIES,
         READ_TIME_SERIES,
     )
+
+    fun register(vararg permissions: Permission) {
+        REGISTERED_PERMISSIONS.addAll(permissions)
+    }
+
+    val ALL_PERMISSIONS: Set<String>
+        get() = REGISTERED_PERMISSIONS
 
 }

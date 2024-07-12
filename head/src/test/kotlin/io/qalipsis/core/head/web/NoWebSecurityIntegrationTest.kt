@@ -34,7 +34,14 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
-import io.qalipsis.cluster.security.RoleName
+import io.qalipsis.cluster.security.Permissions.READ_CAMPAIGN
+import io.qalipsis.cluster.security.Permissions.READ_DATA_SERIES
+import io.qalipsis.cluster.security.Permissions.READ_REPORT
+import io.qalipsis.cluster.security.Permissions.READ_SCENARIO
+import io.qalipsis.cluster.security.Permissions.READ_TIME_SERIES
+import io.qalipsis.cluster.security.Permissions.WRITE_CAMPAIGN
+import io.qalipsis.cluster.security.Permissions.WRITE_DATA_SERIES
+import io.qalipsis.cluster.security.Permissions.WRITE_REPORT
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.web.AuthenticatedController.CallResult
@@ -74,7 +81,15 @@ internal class NoWebSecurityIntegrationTest {
                 prop(CallResult::tenant).isEqualTo(Defaults.TENANT)
                 prop(CallResult::name).isEqualTo(Defaults.USER)
                 prop(CallResult::roles).containsAll(
-                    *RoleName.values().asSequence().flatMap { it.permissions }.toSet().toTypedArray()
+                    WRITE_CAMPAIGN,
+                    READ_CAMPAIGN,
+                    READ_SCENARIO,
+                    WRITE_DATA_SERIES,
+                    READ_DATA_SERIES,
+                    READ_REPORT,
+                    WRITE_REPORT,
+                    READ_DATA_SERIES,
+                    READ_TIME_SERIES
                 )
             }
         }
@@ -93,7 +108,15 @@ internal class NoWebSecurityIntegrationTest {
                 prop(CallResult::tenant).isEqualTo(Defaults.TENANT)
                 prop(CallResult::name).isEqualTo(Defaults.USER)
                 prop(CallResult::roles).containsAll(
-                    *RoleName.values().asSequence().flatMap { it.permissions }.toSet().toTypedArray()
+                    WRITE_CAMPAIGN,
+                    READ_CAMPAIGN,
+                    READ_SCENARIO,
+                    WRITE_DATA_SERIES,
+                    READ_DATA_SERIES,
+                    READ_REPORT,
+                    WRITE_REPORT,
+                    READ_DATA_SERIES,
+                    READ_TIME_SERIES
                 )
             }
         }
