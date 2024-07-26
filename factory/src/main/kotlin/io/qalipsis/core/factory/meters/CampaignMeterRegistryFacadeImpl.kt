@@ -35,12 +35,17 @@ import io.qalipsis.api.meters.MeasurementPublisherFactory
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.MeterType
+import io.qalipsis.api.meters.Rate
+import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import java.time.Duration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -48,9 +53,6 @@ import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import java.time.Duration
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 /**
  * Implementation of meter registry.
@@ -165,6 +167,28 @@ internal class CampaignMeterRegistryFacadeImpl(
         return gauge(asId(name, tagsAsMap(tags), MeterType.GAUGE))
     }
 
+    override fun rate(scenarioName: ScenarioName, stepName: StepName, name: String, tags: Map<String, String>): Rate {
+        return rate(
+            Meter.Id(
+                meterName = name,
+                tags = tags + additionalTags + mapOf(
+                    CAMPAIGN_KEY to currentCampaignKey,
+                    SCENARIO_NAME to scenarioName,
+                    STEP_NAME to stepName
+                ),
+                type = MeterType.RATE
+            )
+        )
+    }
+
+    override fun rate(name: String, vararg tags: String): Rate {
+        return rate(asId(name, tagsAsMap(tags), type = MeterType.RATE))
+    }
+
+    private fun rate(meterId: Meter.Id): Rate {
+        return meterRegistry.rate(meterId)
+    }
+
     override fun gauge(
         scenarioName: ScenarioName,
         stepName: StepName,
@@ -193,12 +217,50 @@ internal class CampaignMeterRegistryFacadeImpl(
         return summary(meterId, emptyList())
     }
 
+    override fun throughput(
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        name: String,
+        unit: ChronoUnit,
+        percentiles: Collection<Double>,
+        tags: Map<String, String>,
+    ): Throughput {
+        return throughput(
+            Meter.Id(
+                meterName = name,
+                tags = tags + additionalTags + mapOf(
+                    CAMPAIGN_KEY to currentCampaignKey,
+                    SCENARIO_NAME to scenarioName,
+                    STEP_NAME to stepName
+                ),
+                type = MeterType.THROUGHPUT
+            ),
+            unit = unit,
+            percentiles = percentiles
+        )
+    }
+
+    override fun throughput(name: String, vararg tags: String): Throughput {
+        return throughput(asId(name, tagsAsMap(tags), MeterType.THROUGHPUT), ChronoUnit.SECONDS, emptyList())
+    }
+
+    private fun throughput(
+        meterId: Meter.Id,
+        unit: ChronoUnit,
+        percentiles: Collection<Double>,
+    ): Throughput {
+        return meterRegistry.throughput(
+            meterId,
+            unit,
+            (percentiles.takeIf { it.isNotEmpty() } ?: measurementConfiguration.throughput.percentiles.orEmpty()).toSet())
+    }
+
     override fun summary(
         scenarioName: ScenarioName,
         stepName: StepName,
         name: String,
         tags: Map<String, String>,
-        percentiles: Collection<Double>
+        percentiles: Collection<Double>,
     ): DistributionSummary {
         return summary(
             meterId = Meter.Id(
@@ -216,7 +278,7 @@ internal class CampaignMeterRegistryFacadeImpl(
 
     private fun summary(
         meterId: Meter.Id,
-        percentiles: Collection<Double>
+        percentiles: Collection<Double>,
     ): DistributionSummary {
         return meterRegistry.summary(
             meterId,
@@ -233,7 +295,7 @@ internal class CampaignMeterRegistryFacadeImpl(
         stepName: StepName,
         name: String,
         tags: Map<String, String>,
-        percentiles: Collection<Double>
+        percentiles: Collection<Double>,
     ): Timer {
         return timer(
             meterId = Meter.Id(

@@ -26,6 +26,8 @@ import io.qalipsis.api.meters.DistributionSummary
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.Rate
+import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
@@ -37,6 +39,7 @@ import io.qalipsis.core.factory.meters.MeterRegistry
 import io.qalipsis.core.reporter.MeterReporter
 import jakarta.inject.Singleton
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -110,6 +113,30 @@ internal class InMemoryCumulativeMeterRegistry(
         return snapshotsConverter(meters.values.map { meter -> meter.snapshot(instant) })
     }
 
+    override fun rate(meterId: Meter.Id): Rate {
+        return meters.computeIfAbsent(meterId) {
+            meterConverter.decorate(
+                InMemoryCumulativeRate(
+                    id = meterId,
+                    meterReporter = meterReporter
+                )
+            )
+        } as Rate
+    }
+
+    override fun throughput(meterId: Meter.Id, unit: ChronoUnit, percentiles: Set<Double>): Throughput {
+        return meters.computeIfAbsent(meterId) {
+            meterConverter.decorate(
+                InMemoryCumulativeThroughput(
+                    id = meterId,
+                    meterReporter = meterReporter,
+                    unit = unit,
+                    percentiles = percentiles
+                )
+            )
+        } as Throughput
+    }
+
     override suspend fun summarize(instant: Instant): Collection<MeterSnapshot> {
         return snapshotsConverter(meters.values.map { meter -> meter.summarize(instant) })
     }
@@ -149,6 +176,16 @@ internal class InMemoryCumulativeMeterRegistry(
                     is Counter -> CompositeCounter(
                         scenarioMeter = meter,
                         globalMeter = meterRegistry.counter(globalMeterId)
+                    )
+
+                    is Rate -> CompositeRate(
+                        scenarioMeter = meter,
+                        globalMeter = meterRegistry.rate(globalMeterId)
+                    )
+
+                    is Throughput -> CompositeThroughput(
+                        scenarioMeter = meter,
+                        globalMeter = meterRegistry.throughput(globalMeterId, meter.unit, meter.percentiles.toSet())
                     )
 
                     else -> IllegalArgumentException("The meter of type ${meter::class} is not supported")
