@@ -61,7 +61,7 @@ internal class InMemoryCumulativeTimer(
 
     private val total = LongAdder()
 
-    private var tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
     private val max = AtomicLong(0)
 
@@ -100,7 +100,7 @@ internal class InMemoryCumulativeTimer(
     override fun record(amount: Long, unit: TimeUnit?) {
         if (amount >= 0) {
             buckets[currentBucketHolder.get()].record(amount, unit)
-            tDigestBucket?.let {
+            tDigest?.let {
                 val amountInMicros = TimeUnit.MICROSECONDS.convert(amount, unit)
                 synchronized(it) {
                     it.add(amountInMicros.toDouble())
@@ -157,7 +157,7 @@ internal class InMemoryCumulativeTimer(
     }
 
     override fun percentile(percentile: Double, unit: TimeUnit?): Double {
-        return tDigestBucket?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+        return tDigest?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
     }
 
     /**

@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.meters
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.core.bind.annotation.Bindable
+import io.qalipsis.api.meters.Throughput
 import io.qalipsis.core.factory.meters.MeasurementConfiguration.Summary
 import io.qalipsis.core.factory.meters.MeasurementConfiguration.Timer
 
@@ -40,6 +41,8 @@ internal interface MeasurementConfiguration {
 
     val timer: Timer
 
+    val throughput: Throughput
+
     @ConfigurationProperties("summary")
     interface Summary {
 
@@ -49,6 +52,14 @@ internal interface MeasurementConfiguration {
 
     @ConfigurationProperties("timer")
     interface Timer {
+
+        @get:Bindable(defaultValue = "")
+        val percentiles: List<Double>?
+
+    }
+
+    @ConfigurationProperties("throughput")
+    interface Throughput {
 
         @get:Bindable(defaultValue = "")
         val percentiles: List<Double>?
