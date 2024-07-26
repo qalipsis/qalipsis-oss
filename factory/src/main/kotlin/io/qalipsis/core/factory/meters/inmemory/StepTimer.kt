@@ -58,7 +58,7 @@ internal class StepTimer(
     private val total = LongAdder()
 
     @KTestable
-    private var tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
     private val max = AtomicLong(0)
 
@@ -95,9 +95,9 @@ internal class StepTimer(
         ) + (percentiles.map {
             DistributionMeasurementMetric(percentile(it, BASE_TIME_UNIT), Statistic.PERCENTILE, it)
         })
-        tDigestBucket?.let {
+        tDigest?.let {
             synchronized(it) {
-                tDigestBucket = TDigest.createMergingDigest(100.0)
+                tDigest = TDigest.createMergingDigest(100.0)
             }
         }
         return result
@@ -126,7 +126,7 @@ internal class StepTimer(
             } while (curMax < amountInMicros && !max.compareAndSet(curMax, amountInMicros))
             total.add(amountInMicros)
             counter.add(1)
-            tDigestBucket?.let {
+            tDigest?.let {
                 synchronized(it) {
                     it.add(amountInMicros.toDouble())
                 }
@@ -145,7 +145,7 @@ internal class StepTimer(
     }
 
     override fun percentile(percentile: Double, unit: TimeUnit?): Double {
-        return tDigestBucket?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+        return tDigest?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
     }
 
     /**
