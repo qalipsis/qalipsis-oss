@@ -21,8 +21,11 @@ import io.qalipsis.api.meters.DistributionSummary
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
+import io.qalipsis.api.meters.Rate
+import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * Module to manage global meter statistics.
@@ -68,6 +71,28 @@ interface MeterRegistry {
      * Creates the set of instantaneous snapshots for each meter.
      */
     suspend fun snapshots(instant: Instant): Collection<MeterSnapshot>
+
+    /**
+     * Creates a new [Rate] metric to be added to the registry. This metric calculates the
+     * ratio between two independently tracked measurements.
+     *
+     * @param meterId the ID of the rate metric
+     */
+    fun rate(
+        meterId: Meter.Id
+    ): Rate
+
+    /**
+     * Creates a new [Throughput] metric to be added to the registry. This metric
+     * tracks the number of hits measured per a configured unit of time, default to seconds.
+     *
+     * @param meterId the ID of the throughput metric
+     */
+    fun throughput(
+        meterId: Meter.Id,
+        unit: ChronoUnit,
+        percentiles: Set<Double> = emptySet()
+    ): Throughput
 
     /**
      * Creates the set of cumulative snapshots for each meter.

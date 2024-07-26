@@ -43,6 +43,8 @@ import io.qalipsis.api.meters.MeasurementPublisherFactory
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.MeterType
+import io.qalipsis.api.meters.Rate
+import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factory.campaign.Campaign
@@ -56,6 +58,8 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.verifyOnce
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import org.apache.commons.lang3.RandomStringUtils
@@ -63,7 +67,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.time.Duration
 
 @WithMockk
 internal class CampaignMeterRegistryFacadeImplTest {
@@ -89,6 +92,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
 
     @MockK
     lateinit var campaign: Campaign
+
 
     @ParameterizedTest
     @ValueSource(longs = [60, 100, 200])
@@ -173,14 +177,20 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 meterRegistry.snapshots(any())
                 campaignMeterRegistry.publishSnapshots(emptyList())
             }
+            coExcludeRecords {
+                meterRegistry.snapshots(any())
+                campaignMeterRegistry.publishSnapshots(emptyList())
+            }
+
             confirmVerified(
-                campaignMeterRegistry,
                 publisherFactory1,
                 publisherFactory2,
                 publisher1,
                 publisher2,
+                campaignMeterRegistry,
                 meterRegistry
             )
+
         }
 
     @Test
@@ -942,5 +952,353 @@ internal class CampaignMeterRegistryFacadeImplTest {
             )
         }
         confirmVerified(meterRegistry, summary)
+    }
+
+    @Test
+    internal fun `should create a throughput with percentiles`() = testDispatcherProvider.run {
+        // given
+        every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
+        every { factoryConfiguration.zone } returns "at"
+        val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+            publisherFactories = emptyList(),
+            meterRegistry = meterRegistry,
+            factoryConfiguration = factoryConfiguration,
+            measurementConfiguration = measurementConfiguration,
+            step = Duration.ofSeconds(10),
+            coroutineScope = this
+        )
+        val campaignKey = RandomStringUtils.randomAlphabetic(8)
+        val scenario = RandomStringUtils.randomAlphabetic(8)
+        val step = RandomStringUtils.randomAlphabetic(8)
+        val meterName = RandomStringUtils.randomAlphabetic(8)
+        val tag1Key = RandomStringUtils.randomAlphabetic(8)
+        val tag1Value = RandomStringUtils.randomAlphabetic(8)
+        val tag2Key = RandomStringUtils.randomAlphabetic(8)
+        val tag2Value = RandomStringUtils.randomAlphabetic(8)
+        every { campaign.campaignKey } returns campaignKey
+        campaignMeterRegistry.init(campaign)
+        val throughput = mockk<Throughput>()
+        every { meterRegistry.throughput(any(), any(), any()) } returns throughput
+
+        // when
+        val result = campaignMeterRegistry.throughput(
+            scenarioName = scenario,
+            stepName = step,
+            name = meterName,
+            tags = mapOf(tag1Key to tag1Value, tag2Key to tag2Value),
+            percentiles = listOf(50.0, 75.0, 52.65)
+        )
+
+        // then
+        assertThat(result).isSameAs(throughput)
+        verifyOnce {
+            meterRegistry.throughput(
+                Meter.Id(
+                    tags = mapOf(
+                        tag1Key to tag1Value,
+                        tag2Key to tag2Value,
+                        "tag-1" to "value-1",
+                        "tag-2" to "value-2",
+                        "campaign" to campaignKey,
+                        "scenario" to scenario,
+                        "step" to step
+                    ),
+                    type = MeterType.THROUGHPUT,
+                    meterName = meterName
+                ),
+                unit = ChronoUnit.SECONDS,
+                percentiles = setOf(50.0, 75.0, 52.65)
+            )
+        }
+        confirmVerified(meterRegistry, throughput)
+    }
+
+    @Test
+    internal fun `should create a throughput with percentiles and configured unit interval`() =
+        testDispatcherProvider.run {
+            // given
+            every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
+            every { factoryConfiguration.zone } returns "at"
+            val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+                publisherFactories = emptyList(),
+                meterRegistry = meterRegistry,
+                factoryConfiguration = factoryConfiguration,
+                measurementConfiguration = measurementConfiguration,
+                step = Duration.ofSeconds(10),
+                coroutineScope = this
+            )
+            val campaignKey = RandomStringUtils.randomAlphabetic(8)
+            val scenario = RandomStringUtils.randomAlphabetic(8)
+            val step = RandomStringUtils.randomAlphabetic(8)
+            val meterName = RandomStringUtils.randomAlphabetic(8)
+            val tag1Key = RandomStringUtils.randomAlphabetic(8)
+            val tag1Value = RandomStringUtils.randomAlphabetic(8)
+            val tag2Key = RandomStringUtils.randomAlphabetic(8)
+            val tag2Value = RandomStringUtils.randomAlphabetic(8)
+            every { campaign.campaignKey } returns campaignKey
+            campaignMeterRegistry.init(campaign)
+            val throughput = mockk<Throughput>()
+            every { meterRegistry.throughput(any(), any(), any()) } returns throughput
+
+            // when
+            val result = campaignMeterRegistry.throughput(
+                scenarioName = scenario,
+                stepName = step,
+                name = meterName,
+                tags = mapOf(tag1Key to tag1Value, tag2Key to tag2Value),
+                percentiles = listOf(50.0, 75.0, 52.65),
+                unit = ChronoUnit.MINUTES
+            )
+
+            // then
+            assertThat(result).isSameAs(throughput)
+            verifyOnce {
+                meterRegistry.throughput(
+                    Meter.Id(
+                        tags = mapOf(
+                            tag1Key to tag1Value,
+                            tag2Key to tag2Value,
+                            "tag-1" to "value-1",
+                            "tag-2" to "value-2",
+                            "campaign" to campaignKey,
+                            "scenario" to scenario,
+                            "step" to step
+                        ),
+                        type = MeterType.THROUGHPUT,
+                        meterName = meterName
+                    ),
+                    unit = ChronoUnit.MINUTES,
+                    percentiles = setOf(50.0, 75.0, 52.65)
+                )
+            }
+            confirmVerified(meterRegistry, throughput)
+        }
+
+    @Test
+    internal fun `should create a throughput without percentiles`() = testDispatcherProvider.run {
+        // given
+        every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
+        every { factoryConfiguration.zone } returns "at"
+        val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+            publisherFactories = emptyList(),
+            meterRegistry = meterRegistry,
+            factoryConfiguration = factoryConfiguration,
+            measurementConfiguration = measurementConfiguration,
+            step = Duration.ofSeconds(10),
+            coroutineScope = this
+        )
+        val campaignKey = RandomStringUtils.randomAlphabetic(8)
+        val scenario = RandomStringUtils.randomAlphabetic(8)
+        val step = RandomStringUtils.randomAlphabetic(8)
+        val meterName = RandomStringUtils.randomAlphabetic(8)
+        val tag1Key = RandomStringUtils.randomAlphabetic(8)
+        val tag1Value = RandomStringUtils.randomAlphabetic(8)
+        val tag2Key = RandomStringUtils.randomAlphabetic(8)
+        val tag2Value = RandomStringUtils.randomAlphabetic(8)
+        every { campaign.campaignKey } returns campaignKey
+        campaignMeterRegistry.init(campaign)
+        val throughput = mockk<Throughput>()
+        every { meterRegistry.throughput(any(), any(), any()) } returns throughput
+        every { measurementConfiguration.throughput.percentiles } returns listOf(42.52, 63.33)
+
+        // when
+        val result = campaignMeterRegistry.throughput(
+            scenarioName = scenario,
+            stepName = step,
+            name = meterName,
+            tags = mapOf(tag1Key to tag1Value, tag2Key to tag2Value)
+        )
+
+        // then
+        assertThat(result).isSameAs(throughput)
+        verifyOnce {
+            meterRegistry.throughput(
+                Meter.Id(
+                    tags = mapOf(
+                        tag1Key to tag1Value,
+                        tag2Key to tag2Value,
+                        "tag-1" to "value-1",
+                        "tag-2" to "value-2",
+                        "campaign" to campaignKey,
+                        "scenario" to scenario,
+                        "step" to step
+                    ),
+                    type = MeterType.THROUGHPUT,
+                    meterName = meterName
+                ),
+                ChronoUnit.SECONDS,
+                percentiles = setOf(42.52, 63.33)
+            )
+        }
+        confirmVerified(meterRegistry, throughput)
+    }
+
+    @Test
+    internal fun `should create a throughput with tags only`() = testDispatcherProvider.run {
+        // given
+        every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
+        every { factoryConfiguration.zone } returns "at"
+        val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+            publisherFactories = emptyList(),
+            meterRegistry = meterRegistry,
+            factoryConfiguration = factoryConfiguration,
+            measurementConfiguration = measurementConfiguration,
+            step = Duration.ofSeconds(10),
+            coroutineScope = this
+        )
+        val campaignKey = RandomStringUtils.randomAlphabetic(8)
+        val scenario = RandomStringUtils.randomAlphabetic(8)
+        val step = RandomStringUtils.randomAlphabetic(8)
+        val meterName = RandomStringUtils.randomAlphabetic(8)
+        val tag1Key = RandomStringUtils.randomAlphabetic(8)
+        val tag1Value = RandomStringUtils.randomAlphabetic(8)
+        val tag2Key = RandomStringUtils.randomAlphabetic(8)
+        val tag2Value = RandomStringUtils.randomAlphabetic(8)
+        every { campaign.campaignKey } returns campaignKey
+        campaignMeterRegistry.init(campaign)
+        val throughput = mockk<Throughput>()
+        every { meterRegistry.throughput(any(), any(), any()) } returns throughput
+        every { measurementConfiguration.throughput.percentiles } returns listOf(42.52, 63.33)
+
+        // when
+        val result = campaignMeterRegistry.throughput(
+            meterName, "scenario", scenario, "step", step,
+            tag1Key, tag1Value, tag2Key, tag2Value,
+            "tag-1", "value-1", "tag-2", "value-2"
+        )
+
+        // then
+        assertThat(result).isSameAs(throughput)
+        verifyOnce {
+            meterRegistry.throughput(
+                Meter.Id(
+                    tags = mapOf(
+                        tag1Key to tag1Value,
+                        tag2Key to tag2Value,
+                        "tag-1" to "value-1",
+                        "tag-2" to "value-2",
+                        "campaign" to campaignKey,
+                        "scenario" to scenario,
+                        "step" to step
+                    ),
+                    type = MeterType.THROUGHPUT,
+                    meterName = meterName
+                ),
+                unit = ChronoUnit.SECONDS,
+                setOf(42.52, 63.33)
+            )
+        }
+        confirmVerified(meterRegistry, throughput)
+    }
+
+    @Test
+    internal fun `should create a rate with tags only`() = testDispatcherProvider.run {
+        // given
+        every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
+        every { factoryConfiguration.zone } returns "at"
+        val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+            publisherFactories = emptyList(),
+            meterRegistry = meterRegistry,
+            factoryConfiguration = factoryConfiguration,
+            measurementConfiguration = measurementConfiguration,
+            step = Duration.ofSeconds(10),
+            coroutineScope = this
+        )
+        val campaignKey = RandomStringUtils.randomAlphabetic(8)
+        val scenario = RandomStringUtils.randomAlphabetic(8)
+        val step = RandomStringUtils.randomAlphabetic(8)
+        val meterName = RandomStringUtils.randomAlphabetic(8)
+        val tag1Key = RandomStringUtils.randomAlphabetic(8)
+        val tag1Value = RandomStringUtils.randomAlphabetic(8)
+        val tag2Key = RandomStringUtils.randomAlphabetic(8)
+        val tag2Value = RandomStringUtils.randomAlphabetic(8)
+        every { campaign.campaignKey } returns campaignKey
+        campaignMeterRegistry.init(campaign)
+        val rate = mockk<Rate>()
+        every { meterRegistry.rate(any()) } returns rate
+
+        // when
+        val result = campaignMeterRegistry.rate(
+            meterName, "scenario", scenario, "step", step,
+            tag1Key, tag1Value, tag2Key, tag2Value,
+            "tag-1", "value-1", "tag-2", "value-2"
+        )
+
+        // then
+        assertThat(result).isSameAs(rate)
+        verifyOnce {
+            meterRegistry.rate(
+                Meter.Id(
+                    tags = mapOf(
+                        tag1Key to tag1Value,
+                        tag2Key to tag2Value,
+                        "tag-1" to "value-1",
+                        "tag-2" to "value-2",
+                        "campaign" to campaignKey,
+                        "scenario" to scenario,
+                        "step" to step
+                    ),
+                    type = MeterType.RATE,
+                    meterName = meterName
+                )
+            )
+        }
+        confirmVerified(meterRegistry, rate)
+    }
+
+    @Test
+    internal fun `should create a rate`() = testDispatcherProvider.run {
+        // given
+        every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
+        every { factoryConfiguration.zone } returns "at"
+        val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+            publisherFactories = emptyList(),
+            meterRegistry = meterRegistry,
+            factoryConfiguration = factoryConfiguration,
+            measurementConfiguration = measurementConfiguration,
+            step = Duration.ofSeconds(10),
+            coroutineScope = this
+        )
+        val campaignKey = RandomStringUtils.randomAlphabetic(8)
+        val scenario = RandomStringUtils.randomAlphabetic(8)
+        val step = RandomStringUtils.randomAlphabetic(8)
+        val meterName = RandomStringUtils.randomAlphabetic(8)
+        val tag1Key = RandomStringUtils.randomAlphabetic(8)
+        val tag1Value = RandomStringUtils.randomAlphabetic(8)
+        val tag2Key = RandomStringUtils.randomAlphabetic(8)
+        val tag2Value = RandomStringUtils.randomAlphabetic(8)
+        every { campaign.campaignKey } returns campaignKey
+        campaignMeterRegistry.init(campaign)
+        val rate = mockk<Rate>()
+        every { meterRegistry.rate(any()) } returns rate
+
+        // when
+        val result = campaignMeterRegistry.rate(
+            scenarioName = scenario,
+            stepName = step,
+            name = meterName,
+            tags = mapOf(tag1Key to tag1Value, tag2Key to tag2Value)
+        )
+
+        // then
+        assertThat(result).isSameAs(rate)
+        verifyOnce {
+            meterRegistry.rate(
+                Meter.Id(
+                    tags = mapOf(
+                        tag1Key to tag1Value,
+                        tag2Key to tag2Value,
+                        "tag-1" to "value-1",
+                        "tag-2" to "value-2",
+                        "campaign" to campaignKey,
+                        "scenario" to scenario,
+                        "step" to step
+                    ),
+                    type = MeterType.RATE,
+                    meterName = meterName
+                )
+            )
+        }
+        confirmVerified(meterRegistry, rate)
     }
 }

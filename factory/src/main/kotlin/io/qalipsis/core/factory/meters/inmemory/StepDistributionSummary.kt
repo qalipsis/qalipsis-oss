@@ -58,7 +58,7 @@ internal class StepDistributionSummary(
     private val total = DoubleAdder()
 
     @KTestable
-    private var tDigestBucket: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
     private val max = AtomicDouble(0.0)
 
@@ -92,9 +92,9 @@ internal class StepDistributionSummary(
         ) + (percentiles.map {
             DistributionMeasurementMetric(percentile(it), Statistic.PERCENTILE, it)
         })
-        tDigestBucket?.let {
+        tDigest?.let {
             synchronized(it) {
-                tDigestBucket = TDigest.createMergingDigest(100.0)
+                tDigest = TDigest.createMergingDigest(100.0)
             }
         }
         return result
@@ -117,7 +117,7 @@ internal class StepDistributionSummary(
             } while (curMax < amount && !max.compareAndSet(curMax, amount))
             total.add(amount)
             counter.add(1)
-            tDigestBucket?.let {
+            tDigest?.let {
                 synchronized(it) {
                     it.add(amount)
                 }
@@ -131,7 +131,7 @@ internal class StepDistributionSummary(
     }
 
     override fun percentile(percentile: Double): Double {
-        return tDigestBucket?.quantile(percentile / 100) ?: 0.0
+        return tDigest?.quantile(percentile / 100) ?: 0.0
     }
 
 
