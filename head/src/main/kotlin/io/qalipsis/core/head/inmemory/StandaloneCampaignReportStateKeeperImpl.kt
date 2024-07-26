@@ -19,11 +19,11 @@
 
 package io.qalipsis.core.head.inmemory
 
-import com.github.benmanes.caffeine.cache.Caffeine
-import com.github.benmanes.caffeine.cache.LoadingCache
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.annotation.Value
+import io.micronaut.scheduling.TaskExecutors
+import io.micronaut.scheduling.TaskScheduler
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
@@ -45,26 +45,26 @@ import io.qalipsis.core.head.report.toCampaignExecutionDetails
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.annotation.Nullable
+import jakarta.inject.Named
 import jakarta.inject.Singleton
+import org.slf4j.event.Level
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PreDestroy
-import org.slf4j.event.Level
 
 @Singleton
 @Requires(env = [STANDALONE])
 internal class StandaloneCampaignReportStateKeeperImpl(
     private val idGenerator: IdGenerator,
     @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?,
-    @Value("\${campaign.report.cache.time-to-live:PT10M}") cacheExpire: Duration
+    @Value("\${campaign.report.cache.time-to-live:PT10M}") private val cacheExpire: Duration,
+    @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
 ) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker, CampaignReportProvider {
 
     @KTestable
-    private val campaignStates: LoadingCache<CampaignKey, MutableMap<ScenarioName, InMemoryScenarioReportingExecutionState>> =
-        Caffeine.newBuilder()
-            .expireAfterAccess(cacheExpire)
-            .build { ConcurrentHashMap<ScenarioName, InMemoryScenarioReportingExecutionState>() }
+    private val campaignStates =
+        ConcurrentHashMap<CampaignKey, MutableMap<ScenarioName, InMemoryScenarioReportingExecutionState>>()
 
     /**
      * Counter for the running scenarios to block the process until the campaign is completed.
@@ -86,7 +86,8 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     override suspend fun start(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         consoleCampaignProgressionReporter?.start(scenarioName)
         runningCampaignLatch.lock()
-        campaignStates[campaignKey]!![scenarioName] = InMemoryScenarioReportingExecutionState(scenarioName)
+        campaignStates.computeIfAbsent(campaignKey) { ConcurrentHashMap() }[scenarioName] =
+            InMemoryScenarioReportingExecutionState(scenarioName)
     }
 
     @LogInput(Level.DEBUG)
@@ -99,6 +100,8 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     override suspend fun complete(campaignKey: CampaignKey) {
         consoleCampaignProgressionReporter?.stop()
         runningCampaignLatch.cancel()
+        // Deletes the campaign key after the retention delay.
+        taskScheduler.schedule(cacheExpire) { campaignStates.remove(campaignKey) }
     }
 
     @LogInput(Level.DEBUG)
@@ -111,6 +114,8 @@ internal class StandaloneCampaignReportStateKeeperImpl(
                 state.status = ExecutionStatus.ABORTED
             }
         runningCampaignLatch.cancel()
+        // Deletes the campaign key after the retention delay.
+        taskScheduler.schedule(cacheExpire) { campaignStates.remove(campaignKey) }
     }
 
     @LogInputAndOutput
@@ -130,7 +135,7 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     }
 
     override suspend fun clear(campaignKey: CampaignKey) {
-        campaignStates.invalidate(campaignKey)
+        campaignStates.remove(campaignKey)
         runningCampaignLatch.lock()
     }
 
@@ -206,9 +211,10 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     @LogInputAndOutput
     override suspend fun generateReport(campaignKey: CampaignKey): CampaignReport? {
         join()
-        val scenariosReports = campaignStates[campaignKey]
-            ?.map { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
-        return scenariosReports?.toCampaignReport()
+        val campaignState = campaignStates[campaignKey] ?: throw NoSuchElementException()
+        val scenariosReports =
+            campaignState.map { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
+        return scenariosReports.toCampaignReport()
     }
 
     @LogInputAndOutput
@@ -221,7 +227,7 @@ internal class StandaloneCampaignReportStateKeeperImpl(
                 ?.mapNotNull { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
             if (scenariosReports?.isNotEmpty() == true) {
                 scenariosReports.toCampaignExecutionDetails()
-            }else{
+            } else {
                 null
             }
         }

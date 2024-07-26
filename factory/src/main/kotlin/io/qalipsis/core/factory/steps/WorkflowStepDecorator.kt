@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.factory.steps
 
-import com.github.benmanes.caffeine.cache.Caffeine
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.StepContext
@@ -41,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -64,19 +64,11 @@ internal class WorkflowStepDecorator<I, O>(
 
     private var started = AtomicBoolean()
 
-    private val minionsInProgress = Caffeine.newBuilder()
-        .expireAfterAccess(Duration.ofSeconds(10))
-        .build<MinionId, SuspendedCountLatch> { minionId ->
-            SuspendedCountLatch { invalidate(minionId) }
-        }
+    private val minionsInProgress = ConcurrentHashMap<MinionId, SuspendedCountLatch>()
 
     private val debugEnteredMinions = supplyIf(log.isTraceEnabled) { concurrentSet<String>() }
 
     private val debugExitedMinions = supplyIf(log.isTraceEnabled) { concurrentSet<String>() }
-
-    private fun invalidate(minionId: MinionId) {
-        minionsInProgress.invalidate(minionId)
-    }
 
     override suspend fun start(context: StepStartStopContext) {
         if (started.compareAndExchange(false, true)) {
@@ -109,14 +101,16 @@ internal class WorkflowStepDecorator<I, O>(
                     "Minions still in progress ${minionsStillInProgress.size}: $minionsStillInProgress"
                 )
             }
-            minionsInProgress.invalidateAll()
+            minionsInProgress.clear()
             super<StepDecorator>.stop(context)
         }
     }
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         debugEnteredMinions?.add(minion.id)
-        val counter = minionsInProgress[minion.id]
+        val counter = minionsInProgress.computeIfAbsent(minion.id) { minionId ->
+            SuspendedCountLatch { minionsInProgress.remove(minionId) }
+        }
         counter.increment()
         try {
             super<StepDecorator>.execute(minion, context)
@@ -140,15 +134,13 @@ internal class WorkflowStepDecorator<I, O>(
             } else if (completionContext.minionId !in debugExitedMinions) {
                 log.warn {
                     "The minion ${completionContext.minionId} is still visiting the step ${decorated.name} with ${
-                        minionsInProgress.getIfPresent(
-                            completionContext.minionId
-                        )?.get() ?: 0
+                        minionsInProgress[completionContext.minionId]?.get() ?: 0
                     } active workflows"
                 }
             }
         }
         // Wait that all the workflows executing the step for the same minion are completed.
-        val counter = minionsInProgress.getIfPresent(completionContext.minionId)
+        val counter = minionsInProgress[completionContext.minionId]
         log.trace { "Waiting for all the ${counter?.get() ?: 0} workflow(s) of minion to be completed" }
         counter?.await()
         log.trace { "Completing the step ${decorated.name} for the context $completionContext" }

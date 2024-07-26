@@ -29,6 +29,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.key
 import assertk.assertions.prop
+import io.micronaut.scheduling.TaskScheduler
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.RelaxedMockK
@@ -46,15 +47,15 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
-import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.TimeoutException
 
 @WithMockk
 internal class StandaloneCampaignReportStateKeeperImplTest {
@@ -66,13 +67,16 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     private val idGenerator = TestIdGenerator
 
     @RelaxedMockK
+    private lateinit var taskScheduler: TaskScheduler
+
+    @RelaxedMockK
     private lateinit var consoleReporter: ConsoleCampaignProgressionReporter
 
     @Test
     internal fun `should start the scenario in all the campaigns`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
 
         // when
         campaignStateKeeper.start("the campaign-1", "the scenario-1")
@@ -80,7 +84,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignStateKeeper.start("the campaign-2", "the scenario-2")
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap()).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates()).isNotNull().all {
             key("the campaign-1").all {
                 hasSize(1)
                 key("the scenario-1").all {
@@ -124,13 +128,13 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should start the scenario`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
 
         // when
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -153,14 +157,14 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should complete the started scenario`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
         campaignStateKeeper.complete("the campaign", "the scenario")
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -188,7 +192,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should add a message to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -201,7 +205,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         )
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -243,7 +247,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should delete a message from the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
         val messageId = campaignStateKeeper.put(
             "the campaign",
@@ -257,7 +261,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignStateKeeper.delete("the campaign", "the scenario", "the step", messageId)
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -292,7 +296,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should record started minions to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -300,7 +304,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordStartedMinion("the campaign", "the scenario", 3)
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -329,7 +333,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should record completed minions to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -337,7 +341,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordCompletedMinion("the campaign", "the scenario", 3)
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -366,7 +370,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should successful steps to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -375,7 +379,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordSuccessfulStepExecution("the campaign", "the scenario", "the other step", 10)
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -405,7 +409,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should record failed steps to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -415,7 +419,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "the other step", 10)
 
         // then
-        assertThat(campaignStateKeeper.campaignStates().asMap().get("the campaign")).isNotNull().all {
+        assertThat(campaignStateKeeper.campaignStates().get("the campaign")).isNotNull().all {
             hasSize(1)
             key("the scenario").all {
                 prop(InMemoryScenarioReportingExecutionState::scenarioName).isEqualTo("the scenario")
@@ -446,7 +450,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should not generate a report while there are running scenarios`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario 1")
 
         // when + then
@@ -462,7 +466,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should not generate a report when nothing started`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
 
         // when + then
         assertThrows<NoSuchElementException> {
@@ -475,7 +479,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should allow the report when the campaign started and is aborted`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignStateKeeper.start("the campaign", "the scenario 1")
         campaignStateKeeper.abort("the campaign")
 
@@ -500,13 +504,14 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 StandaloneCampaignReportStateKeeperImpl(
                     idGenerator,
                     consoleReporter,
-                    Duration.ofSeconds(5)
+                    Duration.ofSeconds(5),
+                    taskScheduler
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
-            val states = campaignStateKeeper.campaignStates().asMap().get("the campaign")!!
+            val states = campaignStateKeeper.campaignStates().get("the campaign")!!
             val state1 = states["the scenario 1"]!!
             val state2 = states["the scenario 2"]!!
 
@@ -555,13 +560,14 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 StandaloneCampaignReportStateKeeperImpl(
                     idGenerator,
                     consoleReporter,
-                    Duration.ofSeconds(5)
+                    Duration.ofSeconds(5),
+                    taskScheduler
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
-            val states = campaignStateKeeper.campaignStates().asMap().get("the campaign")!!
+            val states = campaignStateKeeper.campaignStates().get("the campaign")!!
             val state1 = states["the scenario 1"]!!
             val state2 = states["the scenario 2"]!!
 
@@ -610,13 +616,14 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 StandaloneCampaignReportStateKeeperImpl(
                     idGenerator,
                     consoleReporter,
-                    Duration.ofSeconds(5)
+                    Duration.ofSeconds(5),
+                    taskScheduler
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
-            val states = campaignStateKeeper.campaignStates().asMap().get("the campaign")!!
+            val states = campaignStateKeeper.campaignStates().get("the campaign")!!
             val state1 = states["the scenario 1"]!!
             val state2 = states["the scenario 2"]!!
 
@@ -667,13 +674,14 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 StandaloneCampaignReportStateKeeperImpl(
                     idGenerator,
                     consoleReporter,
-                    Duration.ofSeconds(5)
+                    Duration.ofSeconds(5),
+                    taskScheduler
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
             campaignStateKeeper.complete("the campaign", "the scenario 1")
             campaignStateKeeper.complete("the campaign", "the scenario 2")
-            val states = campaignStateKeeper.campaignStates().asMap()["the campaign"]!!
+            val states = campaignStateKeeper.campaignStates()["the campaign"]!!
             val state1 = states["the scenario 1"]!!
             val state2 = states["the scenario 2"]!!
 
@@ -720,12 +728,12 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details for a unique campaign`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.complete("key-1", "the scenario 1")
         campaignReportProvider.complete("key-1", "the scenario 2")
-        val states1 = campaignReportProvider.campaignStates().asMap()["key-1"]!!
+        val states1 = campaignReportProvider.campaignStates()["key-1"]!!
         val state11 = states1["the scenario 1"]!!
         val state12 = states1["the scenario 2"]!!
 
@@ -784,7 +792,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details for a collection of campaigns`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-2", "the scenario 1")
@@ -793,12 +801,12 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         campaignReportProvider.complete("key-1", "the scenario 2")
         campaignReportProvider.complete("key-2", "the scenario 1")
         campaignReportProvider.complete("key-3", "the scenario 2")
-        val states1 = campaignReportProvider.campaignStates().asMap()["key-1"]!!
+        val states1 = campaignReportProvider.campaignStates()["key-1"]!!
         val state11 = states1["the scenario 1"]!!
         val state12 = states1["the scenario 2"]!!
-        val states2 = campaignReportProvider.campaignStates().asMap()["key-2"]!!
+        val states2 = campaignReportProvider.campaignStates()["key-2"]!!
         val state21 = states2["the scenario 1"]!!
-        val states3 = campaignReportProvider.campaignStates().asMap()["key-3"]!!
+        val states3 = campaignReportProvider.campaignStates()["key-3"]!!
         val state31 = states3["the scenario 2"]!!
 
         state11.end = Instant.now().minusSeconds(123)
@@ -913,17 +921,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details when a campaign key is missing`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5))
+            StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5), taskScheduler)
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-3", "the scenario 2")
         campaignReportProvider.complete("key-1", "the scenario 1")
         campaignReportProvider.complete("key-1", "the scenario 2")
         campaignReportProvider.complete("key-3", "the scenario 2")
-        val states1 = campaignReportProvider.campaignStates().asMap()["key-1"]!!
+        val states1 = campaignReportProvider.campaignStates()["key-1"]!!
         val state11 = states1["the scenario 1"]!!
         val state12 = states1["the scenario 2"]!!
-        val states3 = campaignReportProvider.campaignStates().asMap()["key-3"]!!
+        val states3 = campaignReportProvider.campaignStates()["key-3"]!!
         val state31 = states3["the scenario 2"]!!
 
         state11.end = Instant.now().minusSeconds(123)
@@ -1010,7 +1018,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignReportProvider =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5))
+                StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5), taskScheduler)
 
             // when
             val report =

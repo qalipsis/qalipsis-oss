@@ -39,12 +39,12 @@ import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Registry to keep the minions of the current factory.
@@ -59,7 +59,7 @@ internal class MinionsKeeperImpl(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
-    @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
 ) : MinionsKeeper, CampaignLifeCycleAware {
 
     private val minions: MutableMap<MinionId, MinionImpl> = ConcurrentHashMap()
