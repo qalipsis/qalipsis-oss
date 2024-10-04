@@ -90,7 +90,9 @@ dependencies {
     implementation("org.postgresql:postgresql")
     implementation("org.thymeleaf:thymeleaf:3.1.1.RELEASE")
     implementation("io.micronaut.views:micronaut-views-thymeleaf")
-    implementation("org.xhtmlrenderer:flying-saucer-pdf:9.1.22")
+    implementation("org.xhtmlrenderer:flying-saucer-pdf:9.1.22") {
+        exclude("org.bouncycastle")
+    }
     implementation("org.xhtmlrenderer:flying-saucer-core")
     implementation("org.jsoup:jsoup")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.17")
