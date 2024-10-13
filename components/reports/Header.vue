@@ -42,8 +42,8 @@ const reportReferences = computed(() => reportsTableStore.selectedRowKeys);
 const deleteModalContent = computed(() => `${reportsTableStore.selectedRows.map(r => r.displayName).join(',')}`)
 const modalOpen = ref(false);
 
-const handleCreateReportBtnClick = () => {
-    navigateTo('reports/new')
+const handleCreateReportBtnClick = async () => {
+    await navigateTo('reports/new')
 }
 
 const handleDeleteSelectedReportsBtnClick = () => {

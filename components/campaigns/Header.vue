@@ -33,8 +33,8 @@ const handleSearch = (searchTerm: string) => {
     campaignsTableStore.fetchCampaignsTableDataSource();
 }
 
-const handleCreateCampaignBtnClick = () => {
-    navigateTo('campaigns/new');
+const handleCreateCampaignBtnClick = async () => {
+    await navigateTo('campaigns/new');
 }
 
 </script>

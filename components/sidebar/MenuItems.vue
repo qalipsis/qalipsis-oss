@@ -130,18 +130,18 @@ onMounted(() => {
  *  
  * @param path The path url to be navigated
  */
-const handleMenuItemClick = (menuItemId: string, path: string) => {
+const handleMenuItemClick = async (menuItemId: string, path: string) => {
     activeMenuItemId.value = menuItemId;
     activeSubMenuItemId.value = '';
-    navigateTo(`/${path}`);
+    await navigateTo(`/${path}`);
 }
 
-const handleSubMenuItemClick = (menuItemId: string, subMenuItemId: string, path: string) => {
+const handleSubMenuItemClick = async (menuItemId: string, subMenuItemId: string, path: string) => {
     activeMenuItemId.value = menuItemId;
     activeSubMenuItemId.value = subMenuItemId;
     // Sets the hover item id to be empty to hide the sub menu.
     hoveredMenuItemId.value = '';
-    navigateTo(`/${path}`);
+    await navigateTo(`/${path}`);
 }
 
 </script>

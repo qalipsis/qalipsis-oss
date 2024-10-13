@@ -6,7 +6,7 @@
                     icon="/icons/icon-arrow-left-black.svg"
                     class="cursor-pointer pr-2"
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="navigateTo('/reports')"
+                    @click="handleReportNameClick"
                 />
                 <BaseTitle v-model:content="reportName" :editable="true" />
             </div>
@@ -38,6 +38,10 @@ const reportDetailsStore = useReportDetailsStore();
 const toastStore = useToastStore();
 const { updateReport, downloadReport } = useReportApi();
 const { reportName } = storeToRefs(reportDetailsStore);
+
+const handleReportNameClick = async () => {
+    await navigateTo('/reports')
+}
 
 const handleDownloadReportBtnClick = async () => {
     const reportReference = reportDetailsStore.reportDetails!.reference;

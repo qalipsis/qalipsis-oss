@@ -6,7 +6,7 @@
                     icon="/icons/icon-arrow-left-black.svg"
                     class="cursor-pointer pr-2"
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="navigateTo('/campaigns')"
+                    @click="handleBackBtnClick"
                 />
                 <BaseTitle v-model:content="name" />
             </div>
@@ -42,6 +42,10 @@ onMounted(() => {
     name.value = props.campaignDetails.name;
     scenarioNames.value = props.campaignDetails.scenarios?.length ? props.campaignDetails.scenarios.map(s => s.name) : [];
 })
+
+const handleBackBtnClick = async () => {
+    await navigateTo('/campaigns');
+}
 
 const handleScenarioChange = async (scenarioNames: string[]) => {
     // Updates the selected scenarios from the store

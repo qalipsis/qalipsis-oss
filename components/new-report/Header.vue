@@ -6,7 +6,7 @@
                     icon="/icons/icon-arrow-left-black.svg"
                     class="cursor-pointer pr-2"
                     :class="TailwindClassHelper.primaryColorFilterHoverClass"
-                    @click="navigateTo('/reports')"
+                    @click="handleBackBtnClick"
                 />
                 <BaseTitle v-model:content="reportName" :editable="true" />
             </div>
@@ -59,6 +59,9 @@ const reportDescription = ref("");
 const campaignPatterns = ref<string[]>([]);
 const presetCampaignPatterns = ref("");
 
+const handleBackBtnClick = async () => {
+    await navigateTo('/reports');
+}
 
 const handleDescriptionValueChange = (description: string) => {
     reportDescription.value = description;
@@ -108,7 +111,7 @@ const handleCreateReportBtnClick = async () => {
 
     try {
         const report = await createReport(reportCreationRequest);
-        navigateTo(`/reports/${report.reference}`);
+        await navigateTo(`/reports/${report.reference}`);
     } catch (error) {
         toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
     }
