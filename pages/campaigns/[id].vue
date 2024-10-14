@@ -62,8 +62,8 @@ onMounted(async () => {
 
 })
 
-watch(() => userStore.currentTenantReference, async () => {
-    await navigateTo('/campaigns');
+watch(() => userStore.currentTenantReference, () => {
+    navigateTo('/campaigns');
 })
 
 onBeforeUnmount(() => {

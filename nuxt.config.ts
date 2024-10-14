@@ -3,7 +3,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
   spaLoadingTemplate: false,
-
   app: {
     head: {
       title: 'QALIPSIS',
@@ -22,30 +21,24 @@ export default defineNuxtConfig({
       ]
     }
   },
-
   modules: [
     "@vueuse/nuxt",
     "@pinia/nuxt",
     'nuxt-headlessui'
   ],
-
   runtimeConfig: {
     // Public keys that are exposed to the client
     public: {
       apiBaseUrl: process.env.API_BASE_URL || 'localhost:3000',
     }
   },
-
   css: [
     '~/assets/scss/main.scss'
   ],
-
   postcss: {
     plugins: {
       tailwindcss: {},
       autoprefixer: {},
     },
   },
-
-  compatibilityDate: '2024-10-13',
 })

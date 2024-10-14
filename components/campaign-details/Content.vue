@@ -21,7 +21,7 @@
             />
             <div class="mt-10">
                 <apexchart
-                    v-if="!isUpdatingChart && chartOptions"
+                    v-if="!isUpdatingChart"
                     :options="chartOptions"
                     :series="chartDataSeries"
                     :height="460"

@@ -43,8 +43,8 @@ onMounted(async () => {
     })
 })
 
-watch(() => userStore.currentTenantReference, async () => {
-    await navigateTo('/reports');
+watch(() => userStore.currentTenantReference, () => {
+    navigateTo('/reports');
 })
 
 onBeforeRouteLeave((to: RouteLocationNormalized, _: RouteLocationNormalized) => {
@@ -59,9 +59,9 @@ onBeforeUnmount(() => {
     reportDetailsStore.$reset();
 })
 
-const handleConfirmBtnClick = async () => {
+const handleConfirmBtnClick = () => {
     shouldDiscardChanges = true;
-    await navigateTo(redirectPath);
+    navigateTo(redirectPath);
 }
 
 const _fetchReport = async () => {

@@ -114,8 +114,8 @@ const handlePaginationChange = (pageIndex: number) => {
   _fetchTableData();
 }
 
-const handleReportNameClick = async (reportTableData: ReportTableData) => {
-    await navigateTo(`/reports/${reportTableData.reference}`)
+const handleReportNameClick = (reportTableData: ReportTableData) => {
+    navigateTo(`/reports/${reportTableData.reference}`)
 }
 
 const handleRefreshBtnClick = () => {

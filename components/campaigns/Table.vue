@@ -213,22 +213,22 @@ const handleRunNowBtnClick = async (
     // Creates the campaign
     const campaign = await createCampaign(campaignConfig);
     // navigate to the campaign details
-    await (`/campaigns/${campaign.key}`);
+    navigateTo(`/campaigns/${campaign.key}`);
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
   }
 };
 
-const handleNameClick = async (
+const handleNameClick = (
   campaignTableData: CampaignTableData
 ) => {
   if (!props.actionsEnabled) return;
 
   const pageLink = campaignTableData.status === ExecutionStatusConstant.SCHEDULED
     ? `/campaigns/config/${campaignTableData.key}`
-    : `/campaigns/${campaignTableData.key}`;
+    : `campaigns/${campaignTableData.key}`;
 
-  await navigateTo(pageLink);
+  navigateTo(pageLink);
 };
 
 const _fetchTableData = async () => {

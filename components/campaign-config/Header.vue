@@ -6,7 +6,7 @@
           icon="/icons/icon-arrow-left-black.svg"
           class="cursor-pointer pr-2"
           :class="TailwindClassHelper.primaryColorFilterHoverClass"
-          @click="handleBackBtnClick()"
+          @click="navigateTo('/campaigns')"
         />
         <BaseTitle v-model:content="campaignName" :editable="true" />
       </div>
@@ -81,10 +81,6 @@ const open = ref(false);
 const executionText = computed(() => {
   return campaignConfigForm.value?.scheduled ? "Schedule" : "Run immediately";
 });
-
-const handleBackBtnClick = async () => {
-  await navigateTo('/campaigns')
-}
 
 const handleSearch = (searchTerm: string) => {
   if (searchTerm) {
@@ -178,12 +174,12 @@ const handleRunBtnClick = async () => {
         await scheduleCampaign(request);
       }
 
-      await navigateTo("/campaigns");
+      navigateTo("/campaigns");
     } else {
       // Creates a new campaign
       const newCampaign = await createCampaign(request);
       // navigate to the campaign details
-      await navigateTo(`/campaigns/${newCampaign.key}`);
+      navigateTo(`/campaigns/${newCampaign.key}`);
     }
     
 
