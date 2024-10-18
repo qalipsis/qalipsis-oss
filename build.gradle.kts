@@ -5,7 +5,7 @@ plugins {
 }
 
 description = "QALIPSIS Web OSS"
-version = File(rootDir, "project.version").readText().trim()
+version = File(rootDir, "project.version").readText().trim().lowercase()
 
 node {
   version = "20.11.0"
@@ -13,9 +13,19 @@ node {
   download = true
 }
 
-val dockerTag = "${project.version}".lowercase()
+val dockerImage = "zakd79ka.gra7.container-registry.ovh.net/oss/${project.name}"
+val projectVersionAsTag = "${project.version}".lowercase()
+val dockerImageTag = if (System.getenv("GITHUB_ACTIONS") == "true" && projectVersionAsTag.contains("snapshot")) {
+    projectVersionAsTag + "-" + System.getenv("GITHUB_RUN_NUMBER")
+} else {
+    projectVersionAsTag
+}
+
 docker {
-    name = "zakd79ka.gra7.container-registry.ovh.net/oss/${project.name}:${dockerTag}"
+    name = dockerImage
+    if (dockerImageTag != projectVersionAsTag) {
+        tag(dockerImageTag, "$dockerImage:$dockerImageTag")
+    }
 
     if (System.getenv("GITHUB_ACTIONS") != "true") {
         platform("linux/amd64", "linux/arm64")
@@ -54,5 +64,11 @@ tasks {
 
     named("build") {
         dependsOn("buildProd")
+    }
+
+    named("dockerPush") {
+        doLast {
+            project.logger.lifecycle("The build specific Docker image was published with name $dockerImage:$dockerImageTag")
+        }
     }
 }

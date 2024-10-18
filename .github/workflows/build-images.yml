@@ -24,4 +24,6 @@ jobs:
           password: ${{ secrets.PROPRIETARY_DOCKER_PASSWORD }}
 
       - name: Build and publish
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: ./gradlew buildDocker dockerPush
