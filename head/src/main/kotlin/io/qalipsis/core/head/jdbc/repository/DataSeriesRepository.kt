@@ -137,6 +137,8 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
             SELECT COUNT(*)
             FROM data_series AS data_series_entity_
             LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+            JOIN tenant t ON data_series_entity_.tenant_id = t.id
+            JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
             WHERE 
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
             AND (
@@ -146,8 +148,7 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
              OR u.username ILIKE any (array[:filters]) 
              OR u.display_name ILIKE any (array[:filters])
             )
-            AND EXISTS
-            (SELECT * FROM tenant t WHERE t.id = data_series_entity_.tenant_id AND t.reference IN (:tenant, :currentTenant, '${Defaults.TENANT}'))""",
+            AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
         nativeQuery = true
     )
     suspend fun searchDataSeries(
@@ -195,10 +196,11 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
             SELECT COUNT(*) 
             FROM data_series AS data_series_entity_
             LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+            JOIN tenant t ON data_series_entity_.tenant_id = t.id
+            JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
             WHERE 
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
-            AND EXISTS
-            (SELECT * FROM tenant t WHERE t.id = data_series_entity_.tenant_id AND t.reference IN (:tenant, :currentTenant, '${Defaults.TENANT}'))""",
+            AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
         nativeQuery = true
     )
     suspend fun searchDataSeries(
