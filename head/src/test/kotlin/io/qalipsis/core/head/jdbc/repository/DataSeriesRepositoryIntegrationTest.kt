@@ -1465,4 +1465,38 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             assertThat(dataSeriesEntities).doesNotContain(dataSeries3)
         }
 
+    @Test
+    fun `should return the correct count for the dataseries when fetched`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val dataSeries =
+            dataSeriesRepository.save(dataSeriesPrototype.copy(tenantId = tenant.id, creatorId = creator.id))
+        val noneDataSeries = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                sharingMode = SharingMode.NONE,
+                displayName = "ds-2",
+                reference = "ref-2"
+            )
+        )
+        assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+        //when
+        val pagedDataSeries = dataSeriesRepository.searchDataSeries(
+            tenant = tenant.reference,
+            username = creator.username,
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+        )
+
+        //then
+        assertThat(pagedDataSeries.totalSize).isEqualTo(2)
+        assertThat(pagedDataSeries.content).all {
+            hasSize(2)
+            index(0).prop(DataSeriesEntity::id).isEqualTo(noneDataSeries.id)
+            index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeries.id)
+        }
+    }
+
 }
