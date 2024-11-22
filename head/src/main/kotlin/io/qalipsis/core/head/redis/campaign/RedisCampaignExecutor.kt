@@ -117,7 +117,7 @@ internal class RedisCampaignExecutor(
     ): AbstractCampaignExecutionState<CampaignExecutionContext> {
         val executionState = when (currentState?.second) {
             CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE -> RedisFactoryAssignmentState(
-                currentState.first,
+                campaign = currentState.first,
                 operations = redisOperations
             )
 
