@@ -51,6 +51,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyNever
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
 internal class FactoryAssignmentStateTest : AbstractStateTest() {
@@ -58,8 +59,17 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should not be a completion state`() {
         assertThat(
-            FactoryAssignmentState(campaign, mockk(), mockk()).isCompleted
+            FactoryAssignmentState(campaign = campaign, factories = listOf(mockk()), scenarios = mockk()).isCompleted
         ).isFalse()
+    }
+
+    @Test
+    fun `should not create a state without factory`() = testDispatcherProvider.runTest {
+        val state = FactoryAssignmentState(campaign = campaign, factories = emptyList(), scenarios = mockk())
+
+        assertThrows<IllegalArgumentException> {
+            state.init()
+        }
     }
 
     @Test
@@ -68,7 +78,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
         every { campaign.broadcastChannel } returns "broadcast-channel"
         every { campaign.feedbackChannel } returns "feedback-channel"
         every { campaign.factories } returns mutableMapOf()
-        val factories = mockk<Collection<Factory>>()
+        val factories = listOf(mockk<Factory>())
         val scenarios = mockk<List<ScenarioSummary>>()
         val state = FactoryAssignmentState(campaign, factories, scenarios)
         coEvery {
@@ -152,7 +162,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign, mockk(), mockk())
+        val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -178,7 +188,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     internal fun `should return a failure state when the feedback is failure without error message`() =
         testDispatcherProvider.runTest {
             // given
-            val state = FactoryAssignmentState(campaign, mockk(), mockk())
+            val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -204,7 +214,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     internal fun `should return itself in case of any unsupported feedback`() =
         testDispatcherProvider.runTest {
             // given
-            val state = FactoryAssignmentState(campaign, mockk(), mockk())
+            val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -226,7 +236,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                 "node-1" to relaxedMockk(),
                 "node-2" to relaxedMockk()
             )
-            val state = FactoryAssignmentState(campaign, mockk(), mockk())
+            val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -266,7 +276,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should return a disabled state when no factory can be found`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign, mockk(), mockk())
+        val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -296,7 +306,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should return an aborting state when some factories are unhealthy`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign, mockk(), mockk())
+        val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -335,7 +345,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should return an aborting state when all factories are healthy`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign, mockk(), mockk())
+        val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -374,7 +384,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
     @Test
     fun `should return a disabled state when all factories are unhealthy`() = testDispatcherProvider.runTest {
         // given
-        val state = FactoryAssignmentState(campaign, mockk(), mockk())
+        val state = FactoryAssignmentState(campaign, listOf(mockk()), mockk())
         state.run {
             inject(campaignExecutionContext)
             init()

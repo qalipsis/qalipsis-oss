@@ -37,15 +37,15 @@ internal open class FactoryAssignmentState(
     private val factories: Collection<Factory>,
     private val scenarios: Collection<ScenarioSummary>
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
-
     private val expectedFeedbacks = concurrentSet<NodeId>()
 
     override suspend fun doInit(): List<Directive> {
+        require(campaign.factories.isNotEmpty() || factories.isNotEmpty()) { "No available factory found to execute the campaign" }
+
         // Locks all the factories from a concurrent assignment resolution.
         if (campaign.factories.isEmpty()) {
             context.assignmentResolver.assignFactories(campaign, factories, scenarios)
         }
-
         expectedFeedbacks.addAll(campaign.factories.keys)
 
         // Creates one directive by factory to notify its assignments.

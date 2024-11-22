@@ -56,6 +56,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyNever
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
@@ -63,7 +64,29 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
     @Test
     fun `should not be a completion state`() {
-        assertThat(RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations).isCompleted).isFalse()
+        assertThat(
+            RedisFactoryAssignmentState(
+                campaign = campaign,
+                factories = listOf(mockk()),
+                scenarios = mockk(),
+                operations = operations
+            ).isCompleted
+        ).isFalse()
+    }
+
+    @Test
+    fun `should not create a state without factory`() = testDispatcherProvider.run {
+        every { campaign.factories } returns mutableMapOf()
+        val state = RedisFactoryAssignmentState(
+            campaign = campaign,
+            factories = emptyList(),
+            scenarios = mockk(),
+            operations = operations
+        )
+
+        assertThrows<IllegalArgumentException> {
+            state.init()
+        }
     }
 
     @Test
@@ -72,7 +95,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
         every { campaign.broadcastChannel } returns "broadcast-channel"
         every { campaign.feedbackChannel } returns "feedback-channel"
         every { campaign.factories } returns mutableMapOf()
-        val factories = mockk<Collection<Factory>>()
+        val factories = listOf(mockk<Factory>())
         val scenarios = mockk<List<ScenarioSummary>>()
         coEvery {
             assignmentResolver.assignFactories(refEq(campaign), refEq(factories), refEq(scenarios))
@@ -179,7 +202,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                     )
                 }
             )
-            val factories = mockk<Collection<Factory>>()
+            val factories = listOf(mockk<Factory>())
             val scenarios = mockk<List<ScenarioSummary>>()
             operations.saveConfiguration(campaign)
             val state = RedisFactoryAssignmentState(campaign, factories, scenarios, operations)
@@ -245,7 +268,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     @Test
     internal fun `should return a failure state when the feedback is failure`() = testDispatcherProvider.run {
         // given
-        val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+        val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -271,7 +294,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     internal fun `should return a failure state when the feedback is failure without error message`() =
         testDispatcherProvider.run {
             // given
-            val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -297,7 +320,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     internal fun `should return itself in case of any unsupported feedback`() =
         testDispatcherProvider.run {
             // given
-            val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -319,7 +342,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                 "node-1" to relaxedMockk(),
                 "node-2" to relaxedMockk()
             )
-            var state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            var state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -339,7 +362,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             }
 
             // when
-            state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.initialized = true
             assertThat(state.run {
                 inject(campaignExecutionContext)
@@ -362,7 +385,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     @Test
     internal fun `should return a new disabled state when no factory can be found`() = testDispatcherProvider.run {
         // given
-        val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+        val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
         state.run {
             inject(campaignExecutionContext)
             init()
@@ -393,7 +416,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     internal fun `should return a new redis aborting state when some factories are unhealthy`() =
         testDispatcherProvider.run {
             // given
-            val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -434,7 +457,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     internal fun `should return a new redis aborting state when all factories are healthy`() =
         testDispatcherProvider.run {
             // given
-            val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()
@@ -475,7 +498,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
     internal fun `should return a new redis aborting state when all factories are unhealthy`() =
         testDispatcherProvider.run {
             // given
-            val state = RedisFactoryAssignmentState(campaign, mockk(), mockk(), operations)
+            val state = RedisFactoryAssignmentState(campaign, listOf(mockk()), mockk(), operations)
             state.run {
                 inject(campaignExecutionContext)
                 init()

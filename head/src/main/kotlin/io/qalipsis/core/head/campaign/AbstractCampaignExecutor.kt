@@ -46,9 +46,9 @@ import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import kotlinx.coroutines.CoroutineScope
 import java.time.Instant
 import javax.validation.constraints.NotBlank
-import kotlinx.coroutines.CoroutineScope
 
 /**
  * Service in charge of keeping track of the campaigns executions across the whole cluster.
@@ -111,8 +111,6 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         val runningCampaign = campaignService.create(tenant, configurer, configuration)
         try {
             val factories = factoryService.getAvailableFactoriesForScenarios(tenant, selectedScenarios)
-            require(factories.isNotEmpty()) { "No available factory found to execute the campaign" }
-
             coroutineScope.contextualLaunch {
                 try {
                     prepareAndExecute(runningCampaign, factories, configuration, tenant, selectedScenarios, scenarios)
