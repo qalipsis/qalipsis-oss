@@ -83,7 +83,7 @@
         </div>
       </div>
     </form>
-    <div class="pr-1" v-if="!isRenderingChart">
+    <div class="pr-1" v-if="canChartBeRendered">
       <apexchart
         :options="chartOptions"
         :height="250"
@@ -97,11 +97,12 @@
 import { type ApexOptions } from "apexcharts";
 import { useFieldArray, useForm } from "vee-validate";
 
+const { fetchZones } = useZonesApi();
+
 const props = defineProps<{
   open: boolean;
   scenario: ScenarioSummary;
   configuration: DefaultCampaignConfiguration;
-  zoneOptions: FormMenuOption[];
   scenarioForm?: ScenarioConfigurationForm;
 }>();
 const emit = defineEmits<{
@@ -117,7 +118,8 @@ const maxDurationInMilliSeconds = computed(() =>
   )
 );
 
-const isRenderingChart = ref(false);
+const zoneOptions = ref<FormMenuOption[]>([]);
+const canChartBeRendered = ref(false);
 const chartOptions = ref<ApexOptions>({
   ...ScenarioDetailsConfig.CHART_OPTIONS,
 });
@@ -158,6 +160,7 @@ const { push: pushZones, fields: zoneFields } =
   useFieldArray<ZoneForm>("zones");
 
 onMounted(() => {
+  _initZoneOptions();
   const initialExecutionProfiles: ExecutionProfileStage[] = props.scenarioForm
     ?.executionProfileStages ?? [
     {
@@ -195,6 +198,15 @@ const handleConfirmBtnClick = handleSubmit(
     }
   }
 );
+
+const _initZoneOptions = async () => {
+  // Prepares the available zone options for configuring the scenario.
+  const zones = await fetchZones();
+  zoneOptions.value = zones.map(zone => ({
+    label: zone.title,
+    value: zone.key
+  }));
+}
 
 const handleExecutionProfileChange = (
   executionProfileStage: ExecutionProfileStage | null,
@@ -304,14 +316,14 @@ const _validateStartDurationAndDuration = (
 const _setScenarioConfigChartDataSeries = (
   executionProfileStages: ExecutionProfileStage[]
 ) => {
-  isRenderingChart.value = true;
+  canChartBeRendered.value = false;
   // Notes: Needs to add the timeout to rerender the chart
   setTimeout(() => {
     const chartData =
       ScenarioHelper.toScenarioConfigChartData(executionProfileStages);
     chartDataSeries.value = chartData.chartDataSeries;
     chartOptions.value = chartData.chartOptions;
-    isRenderingChart.value = false;
+    canChartBeRendered.value = true;
   }, 100);
 };
 </script>

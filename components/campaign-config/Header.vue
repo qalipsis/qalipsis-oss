@@ -56,6 +56,7 @@ const toastStore = useToastStore();
 const { selectedRowKeys } = storeToRefs(scenarioTaleStore);
 
 const props = defineProps<{
+  campaignConfiguration: DefaultCampaignConfiguration,
   campaignKey?: string,
   campaignName?: string,
   campaignConfigForm?: CampaignConfigurationForm
@@ -83,35 +84,28 @@ const executionText = computed(() => {
 });
 
 const handleSearch = (searchTerm: string) => {
-  if (searchTerm) {
-    const query = SearchHelper.getSanitizedQuery(searchTerm);
-    const filteredScenarioSummary = SearchHelper.performFuzzySearch(
-      query,
-      scenarioTaleStore.allScenarioSummary,
-      ["name"]
-    );
-    scenarioTaleStore.$patch({
-      currentPageIndex: 0,
-      dataSource: filteredScenarioSummary,
-      totalElements: filteredScenarioSummary.length,
-    });
-  } else {
-    scenarioTaleStore.$patch({
-      currentPageIndex: 0,
-      dataSource: scenarioTaleStore.allScenarioSummary,
-      totalElements: scenarioTaleStore.allScenarioSummary.length,
-    });
-  }
+  scenarioTaleStore.$patch({
+    query: searchTerm
+  });
+
+  // When search event is triggered, always resets the current page index to be 0.
+  scenarioTaleStore.$patch({
+    currentPageIndex: 0,
+  });
+
+  scenarioTaleStore.refreshScenarios();
 };
 
 const handleCheckedChange = (checked: boolean) => {
+  // When show checked event is changed, always resets the current page index to be 0.
   scenarioTaleStore.$patch({
+    currentPageIndex: 0,
     dataSource: checked
       ? scenarioTaleStore.selectedRows
-      : scenarioTaleStore.allScenarioSummary,
+      : scenarioTaleStore.allScenarios,
     totalElements: checked
       ? scenarioTaleStore.selectedRows.length
-      : scenarioTaleStore.allScenarioSummary.length,
+      : scenarioTaleStore.allScenarios.length,
   });
 };
 
@@ -132,8 +126,7 @@ const handleRunBtnClick = async () => {
       selectedScenarioConfigMap[scenario.name] =
         scenarioTaleStore.scenarioConfig[scenario.name];
     } else {
-      const defaultStage =
-        scenarioTaleStore.defaultCampaignConfiguration!.validation.stage;
+      const defaultStage = props.campaignConfiguration.validation.stage;
       const defaultScenarioForm: ScenarioConfigurationForm = {
         executionProfileStages: [
           {

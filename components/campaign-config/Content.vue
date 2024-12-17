@@ -1,5 +1,13 @@
 <template>
     <BaseContentWrapper>
-        <ScenarioTable />
+        <ScenarioTable 
+            :campaignConfiguration="campaignConfiguration"
+        />
     </BaseContentWrapper>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  campaignConfiguration: DefaultCampaignConfiguration,
+}>();
+</script>

@@ -13,6 +13,7 @@
     row-class="group"
     @page-change="handlePaginationChange"
     @selection-change="handleSelectionChange"
+    @refresh="handleRefreshBtnClick"
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'description'">
@@ -38,7 +39,6 @@
     v-if="configDrawerOpen"
     v-model:open="configDrawerOpen"
     :scenario="selectedScenarioSummary"
-    :zone-options="zoneOptions"
     :configuration="campaignConfiguration"
     :scenario-form="selectedScenarioConfigForm"
     @submit="handleScenarioConfigFormSubmit($event)"
@@ -48,35 +48,31 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 
-const { fetchCampaignConfiguration } = useConfigurationApi();
+const props = defineProps<{
+  campaignConfiguration: DefaultCampaignConfiguration;
+}>();
+
 const { fetchScenarios } = useScenarioApi();
-const { fetchZones } = useZonesApi();
+
 const toastStore = useToastStore();
 const scenarioTableStore = useScenarioTableStore();
 
 const { selectedRowKeys, dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(scenarioTableStore);
 
-let campaignConfiguration: DefaultCampaignConfiguration;
 let selectedScenarioSummary: ScenarioSummary;
-const zoneOptions = ref<FormMenuOption[]>([]);
+
 const selectedScenarioConfigForm = ref<ScenarioConfigurationForm>();
 
 const configDrawerOpen = ref(false);
 
 onMounted(async () => {
   try {
-    const allScenarioSummary = await fetchScenarios();
-    const zones = await fetchZones();
-    campaignConfiguration = await fetchCampaignConfiguration();
-    zoneOptions.value = zones.map(zone => ({
-      label: zone.title,
-      value: zone.key
-    }))
+    // Fetches all scenarios and sets to the scenario table store.
+    const scenarios = await fetchScenarios();
     scenarioTableStore.$patch({
-      allScenarioSummary: allScenarioSummary,
-      dataSource: allScenarioSummary,
-      totalElements: allScenarioSummary.length,
-      defaultCampaignConfiguration: campaignConfiguration
+      dataSource: scenarios,
+      allScenarios: scenarios,
+      totalElements: scenarios.length,
     });
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
@@ -87,11 +83,15 @@ onBeforeUnmount(() => {
   scenarioTableStore.$reset();
 });
 
+const handleRefreshBtnClick = async () => {
+  await scenarioTableStore.refreshScenarios();
+}
+
 const disableRow = (record: ScenarioSummary) => {
-  if (!campaignConfiguration) return false;
+  if (!props.campaignConfiguration) return false;
 
   return !selectedRowKeys.value.includes(record.name)
-    && selectedRowKeys.value.length >= campaignConfiguration.validation.maxScenariosCount;
+    && selectedRowKeys.value.length >= props.campaignConfiguration.validation.maxScenariosCount;
 }
 
 const handlePaginationChange = (pageIndex: number) => {
