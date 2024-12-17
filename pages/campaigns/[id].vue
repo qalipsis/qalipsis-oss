@@ -17,7 +17,7 @@ const toastStore = useToastStore();
 const route = useRoute();
 const campaignDetails = ref<CampaignExecutionDetails>();
 const isPageReady = ref(false);
-let intervalId: number;
+const polling = ref();
 
 onMounted(async () => {
     // Fetches the campaign details.
@@ -68,12 +68,16 @@ watch(() => userStore.currentTenantReference, () => {
 
 onBeforeUnmount(() => {
     campaignDetailsStore.$reset();
+    if (polling.value) {
+        clearInterval(polling.value);
+    }
 })
 
 const _triggerRefreshInterval = () => {
-    // Keep refreshing the campaign details every 2 seconds.
-    intervalId = window.setInterval(async () => {
+    // Keep refreshing the campaign details every 5 seconds.
+    polling.value = setInterval(async () => {
         await _fetchCampaignDetails();
+
         // Updates the campaign details store.
         campaignDetailsStore.$patch({
             campaignDetails: campaignDetails.value,
@@ -81,8 +85,8 @@ const _triggerRefreshInterval = () => {
         })
 
         // Remove the interval when the status is not IN_PROGRESS anymore.
-        if (intervalId && campaignDetails.value?.status !== 'IN_PROGRESS') {
-            window.clearInterval(intervalId);
+        if (polling.value && campaignDetails.value?.status !== 'IN_PROGRESS') {
+            clearInterval(polling.value);
         }
     }, 5000);
 }
@@ -97,5 +101,3 @@ const _fetchCampaignDetails = async () => {
 }
 
 </script>
-
-<style scoped></style>

@@ -92,29 +92,11 @@ onMounted(async () => {
     }
 })
 
-// When the campaign is still running (in progress status), the data are updated every 10 seconds.
-watch(campaignDetailStatus, () => {
-  if(campaignDetailStatus.value === ExecutionStatusConstant.IN_PROGRESS) {
-    polling.value = setInterval(async() => {
-        try {
-            // Fetches the details of the campaign.
-            const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails!.key);
-            campaignDetailsStore.$patch({
-              campaignDetails: campaignDetails
-            })
-      
-            // Updates the line chart.
-            isUpdatingChart.value = true;
-            await campaignDetailsStore.updateChart();
-            isUpdatingChart.value = false;
-        } catch (error) {
-            toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
-            isUpdatingChart.value = false;
-        }
-    }, 10000)
-  } else {
-    clearInterval(polling.value)
-  }
+watch(campaignDetailStatus, async () => {
+    // Rerenders the line chart when the status is changed.
+    isUpdatingChart.value = true;
+    await campaignDetailsStore.updateChart();
+    isUpdatingChart.value = false;
 })
 
 const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSeriesOption[]) => {
